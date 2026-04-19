@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<!--
+  ================================================================
+  📁 index.html — الطبقة الأولى: الهيكل (HTML)
+  ================================================================
+  📌 هذا الملف يحتوي على:
+     - هيكل جميع الصفحات (Home / Login / Signup / Dashboard)
+     - روابط ملف التصميم (style.css) وملف السلوك (app.js)
+     - لا يحتوي على تصميم أو كود برمجي — هذا في الملفات الأخرى
+
+  📁 بنية المشروع:
+     📄 index.html   ← الهيكل (أنت هنا)
+     🎨 style.css    ← التصميم والألوان
+     ⚙️  app.js      ← الوظائف والبيانات
+
+  ⚠️ مهم لـ Cloudflare Pages:
+     - ارفع الثلاثة ملفات معاً في مجلد واحد
+     - Cloudflare ستقرأ index.html تلقائياً كصفحة رئيسية
+  ================================================================
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مكاني Spot — منصة تأجير المساحات الصغيرة</title>
+
+<!-- روابط الخطوط من Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+
+<!-- ملف التصميم — الطبقة الثانية -->
+<link rel="stylesheet" href="style.css">
+
+<!-- مكتبة Supabase لتسجيل الدخول -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+
+<!-- ================================================================
+     🧭 شريط التنقل العلوي (Navbar)
+     يظهر في جميع الصفحات
+     ================================================================ -->
+<nav class="nav">
+
+  <!-- اللوجو — الضغط عليه يرجع للصفحة الرئيسية -->
+  <a class="logo" onclick="showPage('home')">
+    <div class="logo-text">
+      <span class="logo-ar">مكاني</span>
+      <span class="logo-en">Spot</span>
+    </div>
+  </a>
+
+  <!-- روابط التنقل (تختفي على الموبايل) -->
+  <div class="nav-links">
+    <a class="active" onclick="showPage('home')">استكشف المساحات</a>
+    <a onclick="showPage('how')">إزاي بيشتغل؟</a>
+    <a onclick="showPage('owner')">عندك مساحة فاضية؟</a>
+    <a onclick="scrollToSearch()">دوّر على مساحتك</a>
+  </div>
+
+  <!-- منطقة المستخدم — تتغير حسب حالة تسجيل الدخول -->
+  <div class="nav-user-area" id="nav-user-area">
+
+    <!-- الحالة الأولى: زائر غير مسجّل -->
+    <div id="nav-guest" style="display:flex;align-items:center;gap:8px">
+      <button class="btn-login-nav" onclick="goToLogin()">
+        👤 دخول / سجّل
+      </button>
+      <button class="btn btn-primary"
+              onclick="showPage('owner')"
+              style="white-space:nowrap;font-size:13px;padding:9px 18px">
+        استغل مساحتك ←
+      </button>
+    </div>
+
+    <!-- الحالة الثانية: مستخدم مسجّل (مخفي افتراضياً) -->
+    <div id="nav-logged" style="display:none;align-items:center;gap:8px">
+
+      <!-- الأفاتار + الاسم + القائمة المنسدلة -->
+      <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleUserDropdown()">
+        <div class="nav-avatar-circle" id="nav-av-circle">م</div>
+        <div class="nav-avatar-info">
+          <div class="nav-avatar-name"  id="nav-av-name">—</div>
+          <div class="nav-avatar-email" id="nav-av-email">—</div>
+        </div>
+        <div class="nav-avatar-caret">▼</div>
+
+        <!-- القائمة المنسدلة — تظهر عند الضغط على الأفاتار -->
+        <div class="nav-dropdown" id="nav-dropdown">
+          <div class="nav-dropdown-header">
+            <div class="nav-dropdown-name"  id="dd-name">—</div>
+            <div class="nav-dropdown-email" id="dd-email">—</div>
+            <div class="nav-dropdown-role"  id="dd-role">مستخدم</div>
+          </div>
+          <button class="nav-dropdown-item" onclick="goToDashboard()">
+            🏠 لوحة التحكم
+          </button>
+          <button class="nav-dropdown-item" onclick="scrollToSearch();closeUserDropdown()">
+            🔍 دوّر على مساحة
+          </button>
+          <div class="nav-dropdown-sep"></div>
+          <button class="nav-dropdown-item danger" onclick="doLogout()">
+            🚪 تسجيل الخروج
+          </button>
+        </div>
+
+      </div><!-- end nav-avatar-btn -->
+    </div><!-- end nav-logged -->
+
+  </div><!-- end nav-user-area -->
+</nav>
+
+
+<!-- ================================================================
+     📄 الصفحة الأولى: الصفحة الرئيسية (Home)
+     ================================================================ -->
+<div id="pg-home" class="page active">
+
+  <!-- قسم الهيرو الكبير -->
+  <section class="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-inner">
+
+      <!-- شارة صغيرة في الأعلى -->
+      <div class="hero-pill">
+        <span class="hero-pill-dot"></span>
+        المنصة الأولى لتأجير المساحات الصغيرة في مصر
+      </div>
+
+      <!-- العنوان الرئيسي -->
+      <h1>ابدأ مشروعك من<br><em>موقع صغير</em><br>من اختيارك</h1>
+
+      <!-- الوصف -->
+      <p class="hero-desc">
+        بنوصّل أصحاب المشاريع الصغيرة بمساحات متاحة في المولات —
+        لبدء تجربة نشاط تجاري بأقل تكلفة وأقل مخاطرة
+      </p>
+
+      <!-- أزرار الهيرو -->
+      <div class="hero-btns">
+        <button class="btn btn-primary btn-hero" onclick="scrollToSearch()">ابدأ على طول واختار مساحتك ←</button>
+        <button class="btn btn-ghost  btn-hero" onclick="showPage('how')">إزاي بيشتغل؟</button>
+      </div>
+
+      <!-- إحصائيات سريعة -->
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">+١٢٠</div>
+          <div class="hero-stat-lbl">مساحة متاحة</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">٣٢</div>
+          <div class="hero-stat-lbl">موقع شريك</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">+٨٥٠</div>
+          <div class="hero-stat-lbl">مستأجر ناجح</div>
+        </div>
+      </div>
+
+    </div>
+  </section><!-- end hero -->
+
+
+  <!-- صندوق البحث والفلترة -->
+  <div class="search-wrap" id="search-anchor">
+    <div class="search-box">
+      <div class="search-title">🔍 صمّم مساحتك — ابحث بالنشاط أو المنطقة أو السعر</div>
+
+      <!-- صف الفلاتر الرئيسية -->
+      <div class="filter-row">
+        <div class="fg">
+          <label>المنطقة</label>
+          <select id="f-region">
+            <option value="">كل المناطق</option>
+            <option>مدينة نصر</option>
+            <option>التجمع الخامس</option>
+            <option>المهندسين</option>
+            <option>الزمالك</option>
+            <option>الشيخ زايد</option>
+            <option>6 أكتوبر</option>
+            <option>مصر الجديدة</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>مدة الإيجار</label>
+          <select id="f-dur">
+            <option value="">أي مدة</option>
+            <option>يومي</option>
+            <option>أسبوعي</option>
+            <option>شهري</option>
+            <option>موسمي (3 شهور)</option>
+            <option>سنوي</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>السعر / شهر (جنيه)</label>
+          <div class="price-inputs">
+            <input type="number" id="f-min" placeholder="من" min="0">
+            <input type="number" id="f-max" placeholder="إلى" min="0">
+          </div>
+        </div>
+        <div class="fg">
+          <label>نوع المكان</label>
+          <select id="f-type">
+            <option value="">الكل</option>
+            <option value="mall">مول تجاري</option>
+            <option value="club">نادي رياضي</option>
+            <option value="school">مدرسة</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="doSearch()" style="height:45px;padding:0 26px">بحث</button>
+        </div>
+      </div>
+
+      <!-- فلتر النشاط التجاري (يُملأ تلقائياً من الشيت) -->
+      <div class="act-filter-section">
+        <div class="act-filter-lbl">🏷 فلتر بالنشاط التجاري</div>
+        <div class="fg" style="max-width:320px">
+          <select id="f-act" onchange="onActDropdown(this.value)"
+                  style="padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);
+                         background:var(--surface2);font-size:14px;color:var(--ink);
+                         font-family:'Cairo',sans-serif;outline:none;transition:all 0.15s;cursor:pointer;">
+            <option value="">— اختر النشاط —</option>
+            <!-- تُضاف الأنشطة هنا تلقائياً من Google Sheets -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Chips الفلاتر المحددة -->
+      <div class="active-chips" id="active-chips"></div>
+
+    </div>
+  </div><!-- end search-wrap -->
+
+
+  <!-- قسم كروت المساحات -->
+  <div class="section">
+
+    <!-- البانر الترويجي -->
+    <div class="cta-banner">
+      <div class="cta-text">
+        <div class="cta-title">🚀 ابدأ على طول — <span>واختار مساحتك</span></div>
+        <div class="cta-sub">اختر مساحتك → اضغط "احجز دلوقتي" → اكمل نموذج بسيط → هنتواصل معاك في ٢٤ ساعة</div>
+      </div>
+      <div class="cta-btns">
+        <button class="btn btn-primary" onclick="scrollToSearch()">دوّر على مساحتك</button>
+        <button class="btn btn-ghost"   onclick="showPage('owner')"
+                style="color:#fff;border-color:rgba(255,255,255,0.22)">عندك مساحة فاضية؟</button>
+      </div>
+    </div>
+
+    <!-- رأس قسم الكروت -->
+    <div class="section-head">
+      <div>
+        <div class="section-title">المساحات المتاحة</div>
+        <div class="section-sub">اختار المساحة المناسبة لنشاطك واضغط "احجز دلوقتي"</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="result-badge" id="res-count">جاري التحميل…</span>
+        <!-- التبويبات: الكل / مولات / نوادي / مدارس -->
+        <div class="tabs-row">
+          <button class="tab-btn active" onclick="setTab(this,'')">الكل</button>
+          <button class="tab-btn" onclick="setTab(this,'mall')">مولات</button>
+          <button class="tab-btn" onclick="setTab(this,'club')">نوادي</button>
+          <button class="tab-btn" onclick="setTab(this,'school')">مدارس</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- شبكة الكروت — تُملأ تلقائياً من Google Sheets -->
+    <div class="cards-grid" id="spaces-grid">
+      <!-- الكروت تظهر هنا بعد تحميل البيانات -->
+    </div>
+
+  </div><!-- end section -->
+
+
+  <!-- قسم "إزاي بيشتغل" المختصر في الهوم -->
+  <div class="how-section">
+    <div class="how-inner">
+      <div class="how-head">
+        <div class="how-title">إزاي <span>مكاني Spot</span> بيشتغل؟</div>
+        <div class="how-sub">٣ خطوات بسيطة — من غير تسجيل أو دفع مسبق</div>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-num">١</div>
+          <h3>دوّر على مساحتك</h3>
+          <p>فلتر بالنشاط أو المنطقة أو السعر — كل مساحة مكتوب فيها الأنشطة المناسبة ليها بالظبط</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">٢</div>
+          <h3>احجز في ثواني</h3>
+          <p>اضغط "احجز دلوقتي" واملا نموذج بسيط — مش محتاج تسجيل ولا دفع مسبق خالص</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">٣</div>
+          <h3>هنكلمك في ٢٤ ساعة</h3>
+          <p>فريقنا بيتواصل معاك يوم واحد بس عشان يكمل الترتيبات ويوقّع العقد بأحسن الشروط</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end pg-home -->
+
+
+<!-- ================================================================
+     📄 الصفحة الثانية: "إزاي بيشتغل؟"
+     ================================================================ -->
+<div id="pg-how" class="page">
+  <div style="background:var(--dark);padding:60px 24px 80px;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(255,107,0,0.12),transparent)"></div>
+    <div style="max-width:860px;margin:0 auto;position:relative;z-index:1">
+
+      <div style="text-align:center;margin-bottom:52px">
+        <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:-0.5px;margin-bottom:10px;line-height:1.3">
+          إزاي <span style="color:var(--orange)">مكاني Spot</span> بيشتغل؟
+        </div>
+        <div style="font-size:15px;color:rgba(255,255,255,0.50);max-width:460px;margin:0 auto">
+          منصة بتربط بين أصحاب المساحات وأصحاب المشاريع — بشكل شفاف ومن غير تعقيد
+        </div>
+      </div>
+
+      <div style="display:grid;gap:16px;margin-bottom:48px">
+        <!-- بطاقة ١ -->
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
+             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">🔍</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">دوّر على المساحة المناسبة</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">ادخل الموقع، فلتر بنشاطك أو منطقتك أو سعرك — وهتلاقي المساحات المتاحة بكل تفاصيلها.</div>
+          </div>
+        </div>
+        <!-- بطاقة ٢ -->
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
+             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">📋</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">احجز في ثواني من غير تعقيد</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">اضغط "احجز دلوقتي" على أي مساحة، واملا نموذج بسيط باسمك ونشاطك — مش محتاج تسجيل حساب ولا دفع أي فلوس مسبقاً.</div>
+          </div>
+        </div>
+        <!-- بطاقة ٣ -->
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
+             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">📞</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">هنكلمك في أقل من ٢٤ ساعة</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">فريقنا بيتواصل معاك على طول عشان يأكدلك التفاصيل ويوقّع العقد معاك.</div>
+          </div>
+        </div>
+        <!-- بطاقة ٤ -->
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
+             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">💰</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">إزاي بنكسب؟</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">بناخد عمولة بسيطة ٨٪ بس من قيمة العقد — لو ما اتاكدش الحجز، مفيش حاجة بتتدفع خالص.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" style="padding:14px 36px;font-size:15px;font-weight:800"
+                onclick="showPage('home');setTimeout(scrollToSearch,200)">دوّر على مساحتك دلوقتي ←</button>
+        <button class="btn btn-ghost"  style="padding:14px 36px;font-size:15px"
+                onclick="showPage('owner')">عندك مساحة فاضية؟ 🏬</button>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end pg-how -->
+
+
+<!-- ================================================================
+     📄 الصفحة الثالثة: أصحاب المساحات
+     ================================================================ -->
+<div id="pg-owner" class="page">
+  <div style="background:var(--dark);padding:60px 24px 80px;position:relative;overflow:hidden;min-height:100vh">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 30% 0%,rgba(255,107,0,0.14),transparent)"></div>
+    <div style="max-width:860px;margin:0 auto;position:relative;z-index:1">
+
+      <div style="text-align:center;margin-bottom:52px">
+        <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,107,0,0.14);color:var(--orange-light);padding:8px 22px;border-radius:30px;font-size:13px;font-weight:600;border:1px solid rgba(255,107,0,0.28);margin-bottom:24px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--orange);animation:blink 2s ease infinite;display:inline-block"></span>
+          لأصحاب المولات والنوادي والمدارس
+        </div>
+        <div style="font-size:34px;font-weight:900;color:#fff;line-height:1.3;margin-bottom:14px">
+          عندك <span style="color:var(--orange)">مساحة فاضية</span>؟<br>خليها تجيب فلوس!
+        </div>
+        <div style="font-size:15px;color:rgba(255,255,255,0.55);max-width:500px;margin:0 auto;line-height:1.85">
+          بدل ما المساحة تفضل فاضية — إحنا بنجيبلك مستأجرين مناسبين ونتعامل معاهم بدلاً عنك
+        </div>
+      </div>
+
+      <!-- مميزات للأصحاب -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:44px">
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
+          <div style="font-size:36px;margin-bottom:12px">💰</div>
+          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">دخل إضافي ثابت</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">المساحات الفاضية بتبقى مصدر دخل شهري بدل ما تفضل معطّلة</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
+          <div style="font-size:36px;margin-bottom:12px">🤝</div>
+          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">إحنا بنتعامل بدلاً عنك</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنجيب المستأجرين، بنتفاوض، بنوقّع العقود — إنت بتتعامل معانا بس</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
+          <div style="font-size:36px;margin-bottom:12px">📊</div>
+          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">بنحلل المساحة معاك</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنقترح أحسن تقسيم وأنسب أنشطة للمكان عشان تاخد أعلى عائد</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
+          <div style="font-size:36px;margin-bottom:12px">⚡</div>
+          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">مفيش التزامات</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">عمولتنا ٨٪ فقط من قيمة العقد — لو ما حصلش حجز، مفيش حاجة بتتدفع</div>
+        </div>
+      </div>
+
+      <!-- خطوات العمل -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:30px 28px;margin-bottom:40px">
+        <div style="font-size:17px;font-weight:800;color:var(--orange);margin-bottom:20px;text-align:center">إزاي بنشتغل مع بعض؟</div>
+        <div style="display:grid;gap:14px">
+          <div style="display:flex;align-items:flex-start;gap:16px"><div style="width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">١</div><div style="font-size:14px;color:rgba(255,255,255,0.70);line-height:1.75;padding-top:6px">تواصل معانا على واتساب أو من خلال النموذج — وقولنا عندك إيه من مساحات</div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px"><div style="width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">٢</div><div style="font-size:14px;color:rgba(255,255,255,0.70);line-height:1.75;padding-top:6px">بنيجي نشوف المكان ونعمل تحليل مجاني — بنحدد أنسب أنشطة وأفضل تسعير</div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px"><div style="width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">٣</div><div style="font-size:14px;color:rgba(255,255,255,0.70);line-height:1.75;padding-top:6px">بنضيف المساحة على المنصة وبنبدأ نجيبلك مستأجرين مناسبين من غير ما تتعب</div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px"><div style="width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">٤</div><div style="font-size:14px;color:rgba(255,255,255,0.70);line-height:1.75;padding-top:6px">بنوقّع العقد وبنتابع — وانت بتاخد عائدك شهرياً بدون أي تعب</div></div>
+        </div>
+      </div>
+
+      <!-- أزرار التواصل -->
+      <div style="text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">كلمنا دلوقتي على واتساب 👇</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.50);margin-bottom:28px">بنرد في أقل من ساعة خلال أوقات العمل</div>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a href="https://wa.me/201103467711?text=مرحبا، عندي مساحة فاضية وعايز أعرف أكتر عن مكاني Spot"
+             target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:10px;background:#25D366;color:#fff;padding:14px 32px;border-radius:var(--radius-lg);font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,0.35);transition:all 0.15s"
+             onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            </svg>
+            تواصل على واتساب — 011 0346 7711
+          </a>
+          <button class="btn btn-ghost" style="padding:14px 28px;font-size:15px"
+                  onclick="showPage('home');setTimeout(scrollToSearch,200)">استكشف المساحات ←</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end pg-owner -->
+
+
+<!-- ================================================================
+     📄 الصفحة الرابعة: تسجيل الدخول (Login)
+     ================================================================ -->
+<div id="pg-login" class="page">
+  <div class="auth-fullpage">
+
+    <!-- يسار: Brand Panel (يختفي على الموبايل) -->
+    <div class="auth-panel-left">
+      <div class="auth-grid-bg"></div>
+      <div class="auth-panel-left-inner">
+        <div class="auth-brand" onclick="showPage('home')">
+          <div><div class="auth-brand-ar">مكاني</div><div class="auth-brand-en">Spot</div></div>
+        </div>
+        <div class="auth-headline">أسرع طريق<br>تلاقي <em>مكان تبدأ منه</em></div>
+        <p class="auth-subline">منصة بتربط أصحاب المشاريع الصغيرة بمساحات متاحة في المولات والنوادي — بشكل شفاف وسريع.</p>
+        <div class="auth-feats">
+          <div class="auth-feat-row"><div class="auth-feat-ico">🔍</div><div><div class="auth-feat-t">فلتر وابحث بسهولة</div><div class="auth-feat-s">بالنشاط أو المنطقة أو السعر</div></div></div>
+          <div class="auth-feat-row"><div class="auth-feat-ico">📋</div><div><div class="auth-feat-t">احجز في ثواني</div><div class="auth-feat-s">بدون دفع مسبق — نموذج بسيط بس</div></div></div>
+          <div class="auth-feat-row"><div class="auth-feat-ico">💰</div><div><div class="auth-feat-t">عمولة 8% بس</div><div class="auth-feat-s">لو ما اتأكدش الحجز — مفيش حاجة بتتدفع</div></div></div>
+        </div>
+      </div>
+      <div class="auth-panel-stats">
+        <div><div class="auth-stat-n">+١٢٠</div><div class="auth-stat-l">مساحة متاحة</div></div>
+        <div class="auth-stat-sep"></div>
+        <div><div class="auth-stat-n">٣٢</div><div class="auth-stat-l">موقع شريك</div></div>
+        <div class="auth-stat-sep"></div>
+        <div><div class="auth-stat-n">+٨٥٠</div><div class="auth-stat-l">مستأجر ناجح</div></div>
+      </div>
+    </div>
+
+    <!-- يمين: فورم تسجيل الدخول -->
+    <div class="auth-panel-right">
+      <div class="auth-form-box">
+        <div class="auth-form-title">أهلاً بيك مجدداً 👋</div>
+        <div class="auth-form-sub">سجّل دخولك عشان تكمل اختيار مساحتك</div>
+
+        <!-- منطقة رسائل التنبيه -->
+        <div id="login-alert"></div>
+
+        <!-- زرار Google -->
+        <button class="btn-google-auth" id="btn-google-login" onclick="authWithGoogle()">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          تسجيل الدخول باستخدام Google
+        </button>
+
+        <div class="auth-or">أو بالبريد الإلكتروني</div>
+
+        <div class="afg">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="li-email" placeholder="example@email.com" dir="ltr">
+        </div>
+        <div class="afg">
+          <label>كلمة المرور</label>
+          <div class="pass-wrap-a">
+            <span class="pass-eye" onclick="togglePassVis('li-pass')">👁</span>
+            <input type="password" id="li-pass" placeholder="••••••••" dir="ltr">
+          </div>
+        </div>
+
+        <button class="btn-auth-submit" id="btn-login-submit" onclick="doEmailLogin()">تسجيل الدخول ←</button>
+
+        <div class="auth-switch-link" style="margin-top:18px">
+          مش عندك حساب؟ <a onclick="showPage('signup')">أنشئ حساب مجاني</a>
+        </div>
+        <div class="auth-switch-link" style="margin-top:8px">
+          <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end pg-login -->
+
+
+<!-- ================================================================
+     📄 الصفحة الخامسة: إنشاء حساب (Signup)
+     ================================================================ -->
+<div id="pg-signup" class="page">
+  <div class="auth-fullpage">
+
+    <!-- يسار: Brand Panel -->
+    <div class="auth-panel-left">
+      <div class="auth-grid-bg"></div>
+      <div class="auth-panel-left-inner">
+        <div class="auth-brand" onclick="showPage('home')">
+          <div><div class="auth-brand-ar">مكاني</div><div class="auth-brand-en">Spot</div></div>
+        </div>
+        <div class="auth-headline">ابدأ مشروعك من<br><em>موقع صغير</em></div>
+        <p class="auth-subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
+        <div class="auth-feats">
+          <div class="auth-feat-row"><div class="auth-feat-ico">✅</div><div><div class="auth-feat-t">مجاني تماماً</div><div class="auth-feat-s">إنشاء الحساب وتصفح المساحات والحجز</div></div></div>
+          <div class="auth-feat-row"><div class="auth-feat-ico">⚡</div><div><div class="auth-feat-t">دقيقتين بس</div><div class="auth-feat-s">ملي البيانات وابدأ على طول</div></div></div>
+          <div class="auth-feat-row"><div class="auth-feat-ico">🔒</div><div><div class="auth-feat-t">بياناتك آمنة</div><div class="auth-feat-s">ما بنشاركهاش مع أي طرف تالت</div></div></div>
+        </div>
+      </div>
+      <div class="auth-panel-stats">
+        <div><div class="auth-stat-n">+١٢٠</div><div class="auth-stat-l">مساحة متاحة</div></div>
+        <div class="auth-stat-sep"></div>
+        <div><div class="auth-stat-n">٣٢</div><div class="auth-stat-l">موقع شريك</div></div>
+        <div class="auth-stat-sep"></div>
+        <div><div class="auth-stat-n">+٨٥٠</div><div class="auth-stat-l">مستأجر ناجح</div></div>
+      </div>
+    </div>
+
+    <!-- يمين: فورم إنشاء الحساب -->
+    <div class="auth-panel-right">
+      <div class="auth-form-box">
+        <div class="auth-form-title">إنشاء حساب جديد 🚀</div>
+        <div class="auth-form-sub">ابدأ رحلتك مع مكاني Spot دلوقتي</div>
+
+        <div id="signup-alert"></div>
+
+        <button class="btn-google-auth" id="btn-google-signup" onclick="authWithGoogle()">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          إنشاء حساب باستخدام Google
+        </button>
+        <div class="auth-or">أو بالبريد الإلكتروني</div>
+
+        <!-- حقول الفورم -->
+        <div class="afg-row">
+          <div class="afg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="su-name" placeholder="اسمك الكريم"></div>
+          <div class="afg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="su-phone" placeholder="01xxxxxxxxx" dir="ltr"></div>
+        </div>
+        <div class="afg" style="margin-top:13px">
+          <label>البريد الإلكتروني *</label>
+          <input type="email" id="su-email" placeholder="example@email.com" dir="ltr">
+        </div>
+        <div class="afg">
+          <label>كلمة المرور *</label>
+          <div class="pass-wrap-a">
+            <span class="pass-eye" onclick="togglePassVis('su-pass')">👁</span>
+            <input type="password" id="su-pass" placeholder="٨ أحرف على الأقل" dir="ltr">
+          </div>
+        </div>
+        <div class="afg-row">
+          <div class="afg" style="margin:0">
+            <label>نوع الحساب *</label>
+            <select id="su-role">
+              <option value="">اختر نوعك</option>
+              <option value="tenant">مستأجر — صاحب مشروع</option>
+              <option value="owner">صاحب مساحة</option>
+            </select>
+          </div>
+          <div class="afg" style="margin:0">
+            <label>المدينة</label>
+            <select id="su-city">
+              <option value="">اختر مدينتك</option>
+              <option>القاهرة</option>
+              <option>الجيزة</option>
+              <option>الإسكندرية</option>
+              <option>المنصورة</option>
+              <option>أسيوط</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px">إنشاء حساب ←</button>
+
+        <div class="auth-switch-link" style="margin-top:18px">
+          عندك حساب بالفعل؟ <a onclick="showPage('login')">سجّل دخولك</a>
+        </div>
+        <div class="auth-switch-link" style="margin-top:8px">
+          <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end pg-signup -->
+
+
+<!-- ================================================================
+     📄 الصفحة السادسة: تأكيد البريد الإلكتروني
+     ================================================================ -->
+<div id="pg-confirm" class="page">
+  <div class="confirm-wrap">
+    <div class="confirm-box">
+      <div class="confirm-icon-c">✉️</div>
+      <div class="confirm-title-c">اتحقق من <span>بريدك</span></div>
+      <p style="font-size:14px;color:var(--ink2);line-height:1.85;margin-bottom:20px">
+        بعتنالك رسالة تأكيد على<br>
+        <strong id="confirm-em-addr" style="color:var(--ink)">بريدك الإلكتروني</strong>.<br>
+        افتح الرسالة واضغط على رابط التأكيد عشان تفعّل حسابك.
+      </p>
+      <div class="auth-alert auth-alert-info" style="text-align:right;margin-bottom:18px">
+        <span>💡</span>
+        <span>لو ما لقتش الرسالة، فتش في Spam أو Junk.</span>
+      </div>
+      <button class="btn-auth-submit" onclick="showPage('login')">ارجع لتسجيل الدخول</button>
+    </div>
+  </div>
+</div><!-- end pg-confirm -->
+
+
+<!-- ================================================================
+     📄 الصفحة السابعة: لوحة التحكم (Dashboard)
+     ================================================================ -->
+<div id="pg-dashboard" class="page">
+  <div class="dash-page">
+    <div class="dash-content-wrap">
+
+      <!-- بانر الترحيب -->
+      <div class="dash-welcome-bar">
+        <div class="dash-welcome-inner">
+          <div class="dash-pill">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--orange);animation:blink 2s ease infinite;display:inline-block"></span>
+            مرحباً بيك في مكاني Spot
+          </div>
+          <div class="dash-hello">أهلاً، <span id="dash-firstname">—</span>! 👋</div>
+          <div class="dash-hello-sub">دلوقتي تقدر تبدأ تدوّر على مساحتك المثالية وتحجز في ثواني.</div>
+        </div>
+      </div>
+
+      <!-- إحصائيات سريعة -->
+      <div class="dash-grid-2">
+        <div class="dash-stat-card">
+          <div class="dash-stat-ico">📍</div>
+          <div class="dash-stat-lbl">طلبات الحجز</div>
+          <div class="dash-stat-val">٠</div>
+          <div class="dash-stat-sub">لا يوجد طلبات بعد</div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-ico">❤️</div>
+          <div class="dash-stat-lbl">المساحات المفضلة</div>
+          <div class="dash-stat-val">٠</div>
+          <div class="dash-stat-sub">لم تُضف مساحات للمفضلة</div>
+        </div>
+      </div>
+
+      <!-- بيانات الملف الشخصي -->
+      <div class="dash-profile-card">
+        <div class="dash-profile-header">
+          <div class="dash-profile-title">بياناتك الشخصية</div>
+          <span class="dash-role-badge" id="dash-role-badge">مستخدم</span>
+        </div>
+        <div class="dash-profile-grid">
+          <div><div class="dpf-label">الاسم الكامل</div><div class="dpf-value" id="dpf-name">—</div></div>
+          <div><div class="dpf-label">البريد الإلكتروني</div><div class="dpf-value" id="dpf-email" dir="ltr" style="text-align:right">—</div></div>
+          <div><div class="dpf-label">رقم الموبايل</div><div class="dpf-value" id="dpf-phone" dir="ltr" style="text-align:right">—</div></div>
+          <div><div class="dpf-label">المدينة</div><div class="dpf-value" id="dpf-city">—</div></div>
+          <div><div class="dpf-label">نوع الحساب</div><div class="dpf-value" id="dpf-role">—</div></div>
+          <div><div class="dpf-label">تاريخ الانضمام</div><div class="dpf-value" id="dpf-date">—</div></div>
+        </div>
+      </div>
+
+      <!-- أزرار الإجراءات -->
+      <div class="dash-actions-row">
+        <button class="dash-act-btn dash-act-primary" onclick="showPage('home');setTimeout(scrollToSearch,150)">🔍 دوّر على مساحة</button>
+        <button class="dash-act-btn dash-act-ghost"   onclick="showPage('owner')">🏬 عندك مساحة فاضية؟</button>
+        <button class="dash-act-btn dash-act-ghost"   onclick="doLogout()" style="color:var(--red);border-color:rgba(239,68,68,0.3)">🚪 تسجيل الخروج</button>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end pg-dashboard -->
+
+
+<!-- ================================================================
+     📋 مودال الحجز (يظهر فوق أي صفحة عند الضغط على "احجز دلوقتي")
+     ================================================================ -->
+<div class="modal-overlay" id="booking-modal" onclick="closeModalOnBg(event)">
+  <div class="modal">
+
+    <!-- فورم الحجز -->
+    <div id="modal-form-wrap">
+      <div class="modal-header">
+        <div class="modal-header-inner">
+          <div class="modal-icon">📍</div>
+          <div>
+            <div class="modal-title">احجز مساحتك</div>
+            <div class="modal-sub">هنتواصل معاك في ٢٤ ساعة لإتمام الترتيبات</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- معلومات المساحة المختارة -->
+        <div class="space-info-box">
+          <div class="space-info-name" id="msi-name">—</div>
+          <div class="space-info-meta" id="msi-meta">—</div>
+        </div>
+
+        <!-- بيانات العميل -->
+        <div class="mfg-2" style="gap:10px;margin-bottom:15px">
+          <div class="mfg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="bk-name" placeholder="اسمك الكريم"></div>
+          <div class="mfg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="bk-phone" placeholder="01xxxxxxxxx"></div>
+        </div>
+        <div class="mfg">
+          <label>البريد الإلكتروني (اختياري)</label>
+          <input type="email" id="bk-email" placeholder="email@example.com">
+        </div>
+
+        <!-- اختيار النشاط التجاري -->
+        <div class="mfg" style="margin-top:4px">
+          <label>نوع نشاطك التجاري *</label>
+          <div class="act-picker" id="modal-act-picker">
+            <!-- تُملأ تلقائياً من Google Sheets -->
+          </div>
+        </div>
+        <div class="mfg" id="other-act-wrap" style="display:none">
+          <label>اذكر نشاطك</label>
+          <input type="text" id="bk-other-act" placeholder="مثال: عربية سكر قطن، منتجات يدوية...">
+        </div>
+
+        <!-- الحجم والمدة -->
+        <div class="mfg-2" style="gap:10px;margin-top:4px">
+          <div class="mfg" style="margin:0">
+            <label>الحجم المطلوب</label>
+            <select id="bk-size"><option value="">اختر الحجم</option></select>
+          </div>
+          <div class="mfg" style="margin:0">
+            <label>مدة الإيجار</label>
+            <select id="bk-dur">
+              <option value="">اختر المدة</option>
+              <option>يومي</option><option>أسبوعي</option><option>شهري</option>
+              <option>٣ شهور</option><option>٦ شهور</option><option>سنة</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mfg" style="margin-top:15px">
+          <label>تاريخ البدء المقترح</label>
+          <input type="date" id="bk-date">
+        </div>
+        <div class="mfg" style="margin-top:4px">
+          <label>ملاحظات أو أسئلة عندك</label>
+          <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
+        </div>
+
+        <div class="form-error" id="bk-error"></div>
+
+        <button class="btn btn-primary" onclick="submitBooking()"
+                style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)">
+          ابعت طلب الحجز ←
+        </button>
+        <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
+          مفيش أي دفع مسبق — هنتواصل معاك لتأكيد الحجز وإتمام الترتيبات
+        </div>
+      </div>
+    </div><!-- end modal-form-wrap -->
+
+    <!-- شاشة النجاح بعد إرسال الطلب -->
+    <div class="modal-success" id="modal-success">
+      <div class="success-circle">✓</div>
+      <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
+      <div class="success-body">
+        شكراً ليك — اتستلم طلب الحجز.<br>
+        فريق <strong>مكاني Spot</strong> هيتواصل معاك في
+        <strong style="color:var(--orange)">٢٤ ساعة</strong><br>
+        على رقم الموبايل اللي دخّلته لإتمام الترتيبات.
+      </div>
+      <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px">
+        تمام، شكراً ←
+      </button>
+    </div>
+
+  </div>
+</div><!-- end booking-modal -->
+
+
+<!-- ================================================================
+     🦶 الفوتر (أسفل الصفحة الرئيسية)
+     ================================================================ -->
+<footer>
+  <div class="footer-brand">
+    <div class="footer-brand-name">مكاني <span>Spot</span></div>
+  </div>
+  <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
+
+  <div class="footer-social">
+    <a class="footer-wa"
+       href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot"
+       target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      </svg>
+      011 0346 7711
+    </a>
+    <a class="footer-fb"
+       href="https://www.facebook.com/profile.php?id=100069918048151"
+       target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.93-1.956 1.886v2.286h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+      </svg>
+      Makani Spot
+    </a>
+  </div>
+
+  <div class="footer-divider"></div>
+  <div class="footer-copy">© ٢٠٢٦ Makani Spot · جميع الحقوق محفوظة</div>
+</footer>
+
+
+<!-- ================================================================
+     ⚙️ ملف JavaScript — الطبقة الثالثة
+     (يُوضع في آخر الصفحة لضمان تحميل HTML أولاً)
+     ================================================================ -->
+<script src="app.js"></script>
+
+</body>
+</html>
