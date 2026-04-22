@@ -8,7 +8,7 @@
   📁 index.html — الطبقة الأولى: الهيكل (HTML)
   ================================================================
   📌 هذا الملف يحتوي على:
-     - هيكل جميع الصفحات (Home / Login / Signup / Dashboard)
+     - هيكل جميع الصفحات (Home / Login / Signup / Dashboard / Marketplace)
      - روابط ملف التصميم (style.css) وملف السلوك (app.js)
      - لا يحتوي على تصميم أو كود برمجي — هذا في الملفات الأخرى
 
@@ -58,7 +58,7 @@
     <a class="active" onclick="showPage('home')">استكشف المساحات</a>
     <a onclick="showPage('how')">إزاي بيشتغل؟</a>
     <a onclick="showPage('owner')">عندك مساحة فاضية؟</a>
-    <a onclick="scrollToSearch()">دوّر على مساحتك</a>
+    <a onclick="goToMarketplace()">كل المساحات</a>
   </div>
 
   <!-- منطقة المستخدم — تتغير حسب حالة تسجيل الدخول -->
@@ -197,13 +197,6 @@
           </select>
         </div>
         <div class="fg">
-          <label>السعر / شهر (جنيه)</label>
-          <div class="price-inputs">
-            <input type="number" id="f-min" placeholder="من" min="0">
-            <input type="number" id="f-max" placeholder="إلى" min="0">
-          </div>
-        </div>
-        <div class="fg">
           <label>نوع المكان</label>
           <select id="f-type">
             <option value="">الكل</option>
@@ -218,6 +211,23 @@
         </div>
       </div>
 
+      <!-- مؤشر السعر (price slider من الكود الأول) -->
+      <div class="price-slider-wrap">
+        <div class="price-slider-label-row">
+          <span class="price-slider-title">💰 نطاق السعر / شهر</span>
+          <span class="price-labels">
+            <span id="price-min-label">٠ ج</span>
+            <span style="color:var(--ink3)">—</span>
+            <span id="price-max-label">بلا حد</span>
+          </span>
+        </div>
+        <div class="slider-container">
+          <div class="slider-track" id="slider-track"></div>
+          <input type="range" class="price-slider" id="slider-min" min="0" max="50000" value="0" step="500">
+          <input type="range" class="price-slider" id="slider-max" min="0" max="50000" value="50000" step="500">
+        </div>
+      </div>
+
       <!-- فلتر النشاط التجاري (يُملأ تلقائياً من الشيت) -->
       <div class="act-filter-section">
         <div class="act-filter-lbl">🏷 فلتر بالنشاط التجاري</div>
@@ -227,7 +237,6 @@
                          background:var(--surface2);font-size:14px;color:var(--ink);
                          font-family:'Cairo',sans-serif;outline:none;transition:all 0.15s;cursor:pointer;">
             <option value="">— اختر النشاط —</option>
-            <!-- تُضاف الأنشطة هنا تلقائياً من Google Sheets -->
           </select>
         </div>
       </div>
@@ -246,7 +255,7 @@
     <div class="cta-banner">
       <div class="cta-text">
         <div class="cta-title">🚀 ابدأ على طول — <span>واختار مساحتك</span></div>
-        <div class="cta-sub">اختر مساحتك → اضغط "احجز دلوقتي" → اكمل نموذج بسيط → هنتواصل معاك في ٢٤ ساعة</div>
+        <div class="cta-sub">اختر مساحتك → اضغط "احجز دلوقتي" → هنتواصل معاك في ٢٤ ساعة</div>
       </div>
       <div class="cta-btns">
         <button class="btn btn-primary" onclick="scrollToSearch()">دوّر على مساحتك</button>
@@ -259,7 +268,7 @@
     <div class="section-head">
       <div>
         <div class="section-title">المساحات المتاحة</div>
-        <div class="section-sub">اختار المساحة المناسبة لنشاطك واضغط "احجز دلوقتي"</div>
+        <div class="section-sub">اختار المساحة المناسبة واضغط "احجز دلوقتي"</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <span class="result-badge" id="res-count">جاري التحميل…</span>
@@ -274,9 +283,7 @@
     </div>
 
     <!-- شبكة الكروت — تُملأ تلقائياً من Google Sheets -->
-    <div class="cards-grid" id="spaces-grid">
-      <!-- الكروت تظهر هنا بعد تحميل البيانات -->
-    </div>
+    <div class="cards-grid" id="spaces-grid"></div>
 
   </div><!-- end section -->
 
@@ -320,7 +327,7 @@
     <div style="max-width:860px;margin:0 auto;position:relative;z-index:1">
 
       <div style="text-align:center;margin-bottom:52px">
-        <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:-0.5px;margin-bottom:10px;line-height:1.3">
+        <div style="font-size:34px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.3">
           إزاي <span style="color:var(--orange)">مكاني Spot</span> بيشتغل؟
         </div>
         <div style="font-size:15px;color:rgba(255,255,255,0.50);max-width:460px;margin:0 auto">
@@ -329,47 +336,27 @@
       </div>
 
       <div style="display:grid;gap:16px;margin-bottom:48px">
-        <!-- بطاقة ١ -->
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
-             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">🔍</div>
-          <div>
-            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">دوّر على المساحة المناسبة</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">ادخل الموقع، فلتر بنشاطك أو منطقتك أو سعرك — وهتلاقي المساحات المتاحة بكل تفاصيلها.</div>
-          </div>
+        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div class="how-detail-ico">🔍</div>
+          <div><div class="how-detail-t">دوّر على المساحة المناسبة</div><div class="how-detail-s">ادخل الموقع، فلتر بنشاطك أو منطقتك أو سعرك — وهتلاقي المساحات المتاحة بكل تفاصيلها.</div></div>
         </div>
-        <!-- بطاقة ٢ -->
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
-             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">📋</div>
-          <div>
-            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">احجز في ثواني من غير تعقيد</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">اضغط "احجز دلوقتي" على أي مساحة، واملا نموذج بسيط باسمك ونشاطك — مش محتاج تسجيل حساب ولا دفع أي فلوس مسبقاً.</div>
-          </div>
+        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div class="how-detail-ico">📋</div>
+          <div><div class="how-detail-t">احجز في ثواني من غير تعقيد</div><div class="how-detail-s">اضغط "احجز دلوقتي" واملا نموذج بسيط باسمك ونشاطك — مش محتاج تسجيل حساب ولا دفع أي فلوس مسبقاً.</div></div>
         </div>
-        <!-- بطاقة ٣ -->
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
-             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">📞</div>
-          <div>
-            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">هنكلمك في أقل من ٢٤ ساعة</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">فريقنا بيتواصل معاك على طول عشان يأكدلك التفاصيل ويوقّع العقد معاك.</div>
-          </div>
+        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div class="how-detail-ico">📞</div>
+          <div><div class="how-detail-t">هنكلمك في أقل من ٢٤ ساعة</div><div class="how-detail-s">فريقنا بيتواصل معاك على طول عشان يأكدلك التفاصيل ويوقّع العقد معاك.</div></div>
         </div>
-        <!-- بطاقة ٤ -->
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:26px 28px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start;transition:border-color 0.2s"
-             onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-          <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange-pale),var(--orange-ultra));display:flex;align-items:center;justify-content:center;font-size:28px">💰</div>
-          <div>
-            <div style="font-size:16px;font-weight:800;color:var(--orange);margin-bottom:6px">إزاي بنكسب؟</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.85">بناخد عمولة بسيطة ٨٪ بس من قيمة العقد — لو ما اتاكدش الحجز، مفيش حاجة بتتدفع خالص.</div>
-          </div>
+        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+          <div class="how-detail-ico">💰</div>
+          <div><div class="how-detail-t">إزاي بنكسب؟</div><div class="how-detail-s">بناخد عمولة بسيطة ٨٪ بس من قيمة العقد — لو ما اتاكدش الحجز، مفيش حاجة بتتدفع.</div></div>
         </div>
       </div>
 
       <div style="text-align:center;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" style="padding:14px 36px;font-size:15px;font-weight:800"
-                onclick="showPage('home');setTimeout(scrollToSearch,200)">دوّر على مساحتك دلوقتي ←</button>
+        <button class="btn btn-primary" style="padding:14px 36px;font-size:15px"
+                onclick="showPage('home');setTimeout(scrollToSearch,200)">دوّر على مساحتك ←</button>
         <button class="btn btn-ghost"  style="padding:14px 36px;font-size:15px"
                 onclick="showPage('owner')">عندك مساحة فاضية؟ 🏬</button>
       </div>
@@ -400,31 +387,14 @@
         </div>
       </div>
 
-      <!-- مميزات للأصحاب -->
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:44px">
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
-          <div style="font-size:36px;margin-bottom:12px">💰</div>
-          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">دخل إضافي ثابت</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">المساحات الفاضية بتبقى مصدر دخل شهري بدل ما تفضل معطّلة</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
-          <div style="font-size:36px;margin-bottom:12px">🤝</div>
-          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">إحنا بنتعامل بدلاً عنك</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنجيب المستأجرين، بنتفاوض، بنوقّع العقود — إنت بتتعامل معانا بس</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
-          <div style="font-size:36px;margin-bottom:12px">📊</div>
-          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">بنحلل المساحة معاك</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنقترح أحسن تقسيم وأنسب أنشطة للمكان عشان تاخد أعلى عائد</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.09)'">
-          <div style="font-size:36px;margin-bottom:12px">⚡</div>
-          <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">مفيش التزامات</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">عمولتنا ٨٪ فقط من قيمة العقد — لو ما حصلش حجز، مفيش حاجة بتتدفع</div>
-        </div>
+        <div class="owner-feat-card"><div style="font-size:36px;margin-bottom:12px">💰</div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">دخل إضافي ثابت</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">المساحات الفاضية بتبقى مصدر دخل شهري بدل ما تفضل معطّلة</div></div>
+        <div class="owner-feat-card"><div style="font-size:36px;margin-bottom:12px">🤝</div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">إحنا بنتعامل بدلاً عنك</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنجيب المستأجرين، بنتفاوض، بنوقّع العقود — إنت بتتعامل معانا بس</div></div>
+        <div class="owner-feat-card"><div style="font-size:36px;margin-bottom:12px">📊</div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">بنحلل المساحة معاك</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">بنقترح أحسن تقسيم وأنسب أنشطة للمكان عشان تاخد أعلى عائد</div></div>
+        <div class="owner-feat-card"><div style="font-size:36px;margin-bottom:12px">⚡</div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px">مفيش التزامات</div><div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">عمولتنا ٨٪ فقط — لو ما حصلش حجز، مفيش حاجة بتتدفع</div></div>
       </div>
 
-      <!-- خطوات العمل -->
+      <!-- خطوات العمل (من الكود الجديد — إضافة) -->
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:30px 28px;margin-bottom:40px">
         <div style="font-size:17px;font-weight:800;color:var(--orange);margin-bottom:20px;text-align:center">إزاي بنشتغل مع بعض؟</div>
         <div style="display:grid;gap:14px">
@@ -435,20 +405,14 @@
         </div>
       </div>
 
-      <!-- أزرار التواصل -->
       <div style="text-align:center">
         <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">كلمنا دلوقتي على واتساب 👇</div>
         <div style="font-size:14px;color:rgba(255,255,255,0.50);margin-bottom:28px">بنرد في أقل من ساعة خلال أوقات العمل</div>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
           <a href="https://wa.me/201103467711?text=مرحبا، عندي مساحة فاضية وعايز أعرف أكتر عن مكاني Spot"
              target="_blank" rel="noopener"
-             style="display:inline-flex;align-items:center;gap:10px;background:#25D366;color:#fff;padding:14px 32px;border-radius:var(--radius-lg);font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,0.35);transition:all 0.15s"
-             onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-            </svg>
-            تواصل على واتساب — 011 0346 7711
+             style="display:inline-flex;align-items:center;gap:10px;background:#25D366;color:#fff;padding:14px 32px;border-radius:var(--radius-lg);font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,0.35)">
+            واتساب — 011 0346 7711
           </a>
           <button class="btn btn-ghost" style="padding:14px 28px;font-size:15px"
                   onclick="showPage('home');setTimeout(scrollToSearch,200)">استكشف المساحات ←</button>
@@ -461,12 +425,107 @@
 
 
 <!-- ================================================================
+     📄 صفحة الماركت بليس (كل المساحات) — من الكود الأول
+     ================================================================ -->
+<div id="pg-market" class="page">
+  <div class="mp-page">
+
+    <!-- هيدر الصفحة -->
+    <div class="mp-header">
+      <div class="mp-header-inner">
+        <div>
+          <div class="mp-header-title">🏪 جميع المساحات المتاحة</div>
+          <div class="mp-header-sub">اختار مساحتك بالفلاتر المتقدمة — واحجز في ثواني</div>
+        </div>
+        <div class="mp-header-actions">
+          <span class="result-badge" id="mp-count">—</span>
+          <select id="mp-sort" onchange="applyMpFilters()" class="mp-sort-select">
+            <option value="default">الترتيب الافتراضي</option>
+            <option value="price-asc">السعر: من الأرخص</option>
+            <option value="price-desc">السعر: من الأغلى</option>
+          </select>
+          <button class="mp-filter-toggle" onclick="toggleMpSidebar()">🔽 الفلاتر</button>
+        </div>
+      </div>
+      <div class="mp-active-chips" id="mp-active-chips"></div>
+    </div>
+
+    <!-- المحتوى الرئيسي: sidebar + grid -->
+    <div class="mp-body">
+
+      <!-- overlay على الموبايل -->
+      <div class="mp-sidebar-overlay" id="mp-sidebar-overlay" onclick="toggleMpSidebar()"></div>
+
+      <!-- الفلتر الجانبي -->
+      <aside class="mp-sidebar" id="mp-sidebar">
+        <div class="mp-sidebar-inner">
+
+          <!-- نوع المكان -->
+          <div class="mp-filter-group">
+            <div class="mp-filter-title">نوع المكان</div>
+            <div class="mp-type-btns">
+              <button class="mp-type-btn" data-type="mall"   onclick="toggleMpType('mall',this)">🏬 مول تجاري</button>
+              <button class="mp-type-btn" data-type="club"   onclick="toggleMpType('club',this)">⚽ نادي رياضي</button>
+              <button class="mp-type-btn" data-type="school" onclick="toggleMpType('school',this)">🏫 مدرسة</button>
+            </div>
+          </div>
+
+          <!-- المنطقة -->
+          <div class="mp-filter-group">
+            <div class="mp-filter-title">المنطقة</div>
+            <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
+              <option value="">كل المناطق</option>
+              <option>مدينة نصر</option><option>التجمع الخامس</option>
+              <option>المهندسين</option><option>الزمالك</option>
+              <option>الشيخ زايد</option><option>6 أكتوبر</option>
+              <option>مصر الجديدة</option>
+            </select>
+          </div>
+
+          <!-- مؤشر السعر -->
+          <div class="mp-filter-group">
+            <div class="mp-filter-title">نطاق السعر / شهر</div>
+            <div class="price-labels" style="margin-bottom:10px">
+              <span id="mp-price-min-label">٠ ج</span>
+              <span style="color:var(--ink3)">—</span>
+              <span id="mp-price-max-label">بلا حد</span>
+            </div>
+            <div class="slider-container">
+              <div class="slider-track" id="mp-slider-track"></div>
+              <input type="range" class="price-slider" id="mp-slider-min" min="0" max="50000" value="0" step="500" onchange="applyMpFilters()">
+              <input type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500" onchange="applyMpFilters()">
+            </div>
+          </div>
+
+          <!-- الأنشطة -->
+          <div class="mp-filter-group">
+            <div class="mp-filter-title">النشاط التجاري</div>
+            <div class="mp-act-filters" id="mp-act-filters"></div>
+          </div>
+
+          <!-- مسح الفلاتر -->
+          <button class="mp-clear-btn" onclick="clearMpFilters()">🗑 مسح الفلاتر</button>
+
+        </div>
+      </aside>
+
+      <!-- شبكة المساحات -->
+      <div class="mp-main">
+        <div class="cards-grid mp-cards-grid" id="mp-grid"></div>
+        <div class="mp-pagination" id="mp-pagination"></div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end pg-market -->
+
+
+<!-- ================================================================
      📄 الصفحة الرابعة: تسجيل الدخول (Login)
      ================================================================ -->
 <div id="pg-login" class="page">
   <div class="auth-fullpage">
 
-    <!-- يسار: Brand Panel (يختفي على الموبايل) -->
     <div class="auth-panel-left">
       <div class="auth-grid-bg"></div>
       <div class="auth-panel-left-inner">
@@ -490,16 +549,11 @@
       </div>
     </div>
 
-    <!-- يمين: فورم تسجيل الدخول -->
     <div class="auth-panel-right">
       <div class="auth-form-box">
         <div class="auth-form-title">أهلاً بيك مجدداً 👋</div>
         <div class="auth-form-sub">سجّل دخولك عشان تكمل اختيار مساحتك</div>
-
-        <!-- منطقة رسائل التنبيه -->
         <div id="login-alert"></div>
-
-        <!-- زرار Google -->
         <button class="btn-google-auth" id="btn-google-login" onclick="authWithGoogle()">
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -509,9 +563,7 @@
           </svg>
           تسجيل الدخول باستخدام Google
         </button>
-
         <div class="auth-or">أو بالبريد الإلكتروني</div>
-
         <div class="afg">
           <label>البريد الإلكتروني</label>
           <input type="email" id="li-email" placeholder="example@email.com" dir="ltr">
@@ -523,9 +575,7 @@
             <input type="password" id="li-pass" placeholder="••••••••" dir="ltr">
           </div>
         </div>
-
         <button class="btn-auth-submit" id="btn-login-submit" onclick="doEmailLogin()">تسجيل الدخول ←</button>
-
         <div class="auth-switch-link" style="margin-top:18px">
           مش عندك حساب؟ <a onclick="showPage('signup')">أنشئ حساب مجاني</a>
         </div>
@@ -545,7 +595,6 @@
 <div id="pg-signup" class="page">
   <div class="auth-fullpage">
 
-    <!-- يسار: Brand Panel -->
     <div class="auth-panel-left">
       <div class="auth-grid-bg"></div>
       <div class="auth-panel-left-inner">
@@ -569,14 +618,11 @@
       </div>
     </div>
 
-    <!-- يمين: فورم إنشاء الحساب -->
     <div class="auth-panel-right">
       <div class="auth-form-box">
         <div class="auth-form-title">إنشاء حساب جديد 🚀</div>
         <div class="auth-form-sub">ابدأ رحلتك مع مكاني Spot دلوقتي</div>
-
         <div id="signup-alert"></div>
-
         <button class="btn-google-auth" id="btn-google-signup" onclick="authWithGoogle()">
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -587,8 +633,6 @@
           إنشاء حساب باستخدام Google
         </button>
         <div class="auth-or">أو بالبريد الإلكتروني</div>
-
-        <!-- حقول الفورم -->
         <div class="afg-row">
           <div class="afg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="su-name" placeholder="اسمك الكريم"></div>
           <div class="afg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="su-phone" placeholder="01xxxxxxxxx" dir="ltr"></div>
@@ -626,9 +670,7 @@
             </select>
           </div>
         </div>
-
         <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px">إنشاء حساب ←</button>
-
         <div class="auth-switch-link" style="margin-top:18px">
           عندك حساب بالفعل؟ <a onclick="showPage('login')">سجّل دخولك</a>
         </div>
@@ -666,11 +708,14 @@
 
 
 <!-- ================================================================
-     📄 الصفحة السابعة: لوحة التحكم (Dashboard)
+     📄 الصفحة السابعة: لوحة التحكم (Dashboard) — النسخة المحسّنة
      ================================================================ -->
 <div id="pg-dashboard" class="page">
   <div class="dash-page">
     <div class="dash-content-wrap">
+
+      <!-- تنبيهات -->
+      <div id="dash-alert"></div>
 
       <!-- بانر الترحيب -->
       <div class="dash-welcome-bar">
@@ -680,33 +725,38 @@
             مرحباً بيك في مكاني Spot
           </div>
           <div class="dash-hello">أهلاً، <span id="dash-firstname">—</span>! 👋</div>
-          <div class="dash-hello-sub">دلوقتي تقدر تبدأ تدوّر على مساحتك المثالية وتحجز في ثواني.</div>
+          <div class="dash-hello-sub">من لوحة التحكم تقدر تشوف حجوزاتك وتعدّل بياناتك وتضيف تقييماتك.</div>
         </div>
       </div>
 
-      <!-- إحصائيات سريعة -->
+      <!-- إحصائيات -->
       <div class="dash-grid-2">
         <div class="dash-stat-card">
           <div class="dash-stat-ico">📍</div>
           <div class="dash-stat-lbl">طلبات الحجز</div>
-          <div class="dash-stat-val">٠</div>
-          <div class="dash-stat-sub">لا يوجد طلبات بعد</div>
+          <div class="dash-stat-val" id="dash-booking-count">٠</div>
+          <div class="dash-stat-sub">إجمالي الطلبات</div>
         </div>
         <div class="dash-stat-card">
-          <div class="dash-stat-ico">❤️</div>
-          <div class="dash-stat-lbl">المساحات المفضلة</div>
-          <div class="dash-stat-val">٠</div>
-          <div class="dash-stat-sub">لم تُضف مساحات للمفضلة</div>
+          <div class="dash-stat-ico">⭐</div>
+          <div class="dash-stat-lbl">تقييماتك</div>
+          <div class="dash-stat-val">—</div>
+          <div class="dash-stat-sub">تقييمات المساحات</div>
         </div>
       </div>
 
-      <!-- بيانات الملف الشخصي -->
-      <div class="dash-profile-card">
-        <div class="dash-profile-header">
-          <div class="dash-profile-title">بياناتك الشخصية</div>
-          <span class="dash-role-badge" id="dash-role-badge">مستخدم</span>
+      <!-- ======================== البيانات الشخصية ======================== -->
+      <div class="dash-section-card">
+        <div class="dash-section-head">
+          <div class="dash-section-title">👤 بياناتك الشخصية</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="dash-role-badge" id="dash-role-badge">مستخدم</span>
+            <button class="edit-profile-btn" onclick="toggleEditProfile()" title="تعديل البيانات">✏️ تعديل</button>
+          </div>
         </div>
-        <div class="dash-profile-grid">
+
+        <!-- عرض البيانات -->
+        <div id="profile-view" class="dash-profile-grid">
           <div><div class="dpf-label">الاسم الكامل</div><div class="dpf-value" id="dpf-name">—</div></div>
           <div><div class="dpf-label">البريد الإلكتروني</div><div class="dpf-value" id="dpf-email" dir="ltr" style="text-align:right">—</div></div>
           <div><div class="dpf-label">رقم الموبايل</div><div class="dpf-value" id="dpf-phone" dir="ltr" style="text-align:right">—</div></div>
@@ -714,12 +764,75 @@
           <div><div class="dpf-label">نوع الحساب</div><div class="dpf-value" id="dpf-role">—</div></div>
           <div><div class="dpf-label">تاريخ الانضمام</div><div class="dpf-value" id="dpf-date">—</div></div>
         </div>
+
+        <!-- فورم التعديل (مخفي) -->
+        <div id="profile-edit" style="display:none">
+          <div class="edit-profile-form">
+            <div class="afg"><label>الاسم الكامل</label><input type="text" id="ef-name" placeholder="اسمك الكريم"></div>
+            <div class="afg"><label>رقم الموبايل</label><input type="tel" id="ef-phone" placeholder="01xxxxxxxxx" dir="ltr"></div>
+            <div class="afg">
+              <label>المدينة</label>
+              <select id="ef-city">
+                <option value="">اختر مدينتك</option>
+                <option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option>
+                <option>المنصورة</option><option>أسيوط</option><option>أخرى</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button class="btn-auth-submit" id="btn-save-profile" onclick="saveProfile()" style="margin-top:0;flex:1">💾 حفظ التعديلات</button>
+              <button class="btn" onclick="toggleEditProfile()" style="padding:12px 20px">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== الحجوزات ======================== -->
+      <div class="dash-section-card">
+        <div class="dash-section-head">
+          <div class="dash-section-title">📋 حجوزاتك</div>
+          <button class="btn btn-primary" style="font-size:13px;padding:8px 18px" onclick="showPage('home');setTimeout(scrollToSearch,150)">+ حجز جديد</button>
+        </div>
+        <div id="dash-bookings">
+          <div class="no-bookings">جاري التحميل…</div>
+        </div>
+      </div>
+
+      <!-- ======================== التقييمات ======================== -->
+      <div class="dash-section-card">
+        <div class="dash-section-head">
+          <div class="dash-section-title">⭐ تقييماتك</div>
+          <button class="edit-profile-btn" onclick="toggleRatingForm()">+ إضافة تقييم</button>
+        </div>
+
+        <!-- فورم التقييم -->
+        <div id="rating-form-wrap" style="display:none;margin-bottom:22px">
+          <div class="rating-form-box">
+            <div class="afg"><label>اسم المساحة التي استأجرتها *</label><input type="text" id="rating-space-name" placeholder="مثال: مول مدينة نصر — كشك A3"></div>
+            <div class="afg">
+              <label>تقييمك *</label>
+              <div class="stars-row">
+                <button class="star-btn" data-val="1" onclick="selectStar(1,this)">★</button>
+                <button class="star-btn" data-val="2" onclick="selectStar(2,this)">★</button>
+                <button class="star-btn" data-val="3" onclick="selectStar(3,this)">★</button>
+                <button class="star-btn" data-val="4" onclick="selectStar(4,this)">★</button>
+                <button class="star-btn" data-val="5" onclick="selectStar(5,this)">★</button>
+              </div>
+            </div>
+            <div class="afg"><label>تعليقك (اختياري)</label><textarea id="rating-comment" placeholder="شاركنا تجربتك مع المساحة…" style="min-height:70px;resize:vertical"></textarea></div>
+            <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()" style="margin-top:0">⭐ إرسال التقييم</button>
+          </div>
+        </div>
+
+        <div id="dash-ratings">
+          <div class="no-bookings">جاري التحميل…</div>
+        </div>
       </div>
 
       <!-- أزرار الإجراءات -->
       <div class="dash-actions-row">
         <button class="dash-act-btn dash-act-primary" onclick="showPage('home');setTimeout(scrollToSearch,150)">🔍 دوّر على مساحة</button>
-        <button class="dash-act-btn dash-act-ghost"   onclick="showPage('owner')">🏬 عندك مساحة فاضية؟</button>
+        <button class="dash-act-btn dash-act-ghost"   onclick="goToMarketplace()">🏪 كل المساحات</button>
+        <button class="dash-act-btn dash-act-ghost"   onclick="showPage('owner')">🏬 عندك مساحة؟</button>
         <button class="dash-act-btn dash-act-ghost"   onclick="doLogout()" style="color:var(--red);border-color:rgba(239,68,68,0.3)">🚪 تسجيل الخروج</button>
       </div>
 
@@ -729,12 +842,10 @@
 
 
 <!-- ================================================================
-     📋 مودال الحجز (يظهر فوق أي صفحة عند الضغط على "احجز دلوقتي")
+     📋 مودال الحجز
      ================================================================ -->
 <div class="modal-overlay" id="booking-modal" onclick="closeModalOnBg(event)">
   <div class="modal">
-
-    <!-- فورم الحجز -->
     <div id="modal-form-wrap">
       <div class="modal-header">
         <div class="modal-header-inner">
@@ -747,13 +858,10 @@
         <button class="modal-close" onclick="closeModal()">×</button>
       </div>
       <div class="modal-body">
-        <!-- معلومات المساحة المختارة -->
         <div class="space-info-box">
           <div class="space-info-name" id="msi-name">—</div>
           <div class="space-info-meta" id="msi-meta">—</div>
         </div>
-
-        <!-- بيانات العميل -->
         <div class="mfg-2" style="gap:10px;margin-bottom:15px">
           <div class="mfg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="bk-name" placeholder="اسمك الكريم"></div>
           <div class="mfg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="bk-phone" placeholder="01xxxxxxxxx"></div>
@@ -762,84 +870,58 @@
           <label>البريد الإلكتروني (اختياري)</label>
           <input type="email" id="bk-email" placeholder="email@example.com">
         </div>
-
-        <!-- اختيار النشاط التجاري -->
         <div class="mfg" style="margin-top:4px">
           <label>نوع نشاطك التجاري *</label>
-          <div class="act-picker" id="modal-act-picker">
-            <!-- تُملأ تلقائياً من Google Sheets -->
-          </div>
+          <div class="act-picker" id="modal-act-picker"></div>
         </div>
         <div class="mfg" id="other-act-wrap" style="display:none">
           <label>اذكر نشاطك</label>
           <input type="text" id="bk-other-act" placeholder="مثال: عربية سكر قطن، منتجات يدوية...">
         </div>
-
-        <!-- الحجم والمدة -->
         <div class="mfg-2" style="gap:10px;margin-top:4px">
-          <div class="mfg" style="margin:0">
-            <label>الحجم المطلوب</label>
-            <select id="bk-size"><option value="">اختر الحجم</option></select>
-          </div>
-          <div class="mfg" style="margin:0">
-            <label>مدة الإيجار</label>
-            <select id="bk-dur">
-              <option value="">اختر المدة</option>
-              <option>يومي</option><option>أسبوعي</option><option>شهري</option>
-              <option>٣ شهور</option><option>٦ شهور</option><option>سنة</option>
-            </select>
-          </div>
+          <div class="mfg" style="margin:0"><label>الحجم المطلوب</label><select id="bk-size"><option value="">اختر الحجم</option></select></div>
+          <div class="mfg" style="margin:0"><label>مدة الإيجار</label><select id="bk-dur"><option value="">اختر المدة</option><option>يومي</option><option>أسبوعي</option><option>شهري</option><option>٣ شهور</option><option>٦ شهور</option><option>سنة</option></select></div>
         </div>
-
         <div class="mfg" style="margin-top:15px">
           <label>تاريخ البدء المقترح</label>
           <input type="date" id="bk-date">
         </div>
         <div class="mfg" style="margin-top:4px">
-          <label>ملاحظات أو أسئلة عندك</label>
+          <label>ملاحظات أو أسئلة</label>
           <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
         </div>
-
         <div class="form-error" id="bk-error"></div>
-
         <button class="btn btn-primary" onclick="submitBooking()"
                 style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)">
           ابعت طلب الحجز ←
         </button>
         <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
-          مفيش أي دفع مسبق — هنتواصل معاك لتأكيد الحجز وإتمام الترتيبات
+          مفيش أي دفع مسبق — هنتواصل معاك لتأكيد الحجز
         </div>
       </div>
-    </div><!-- end modal-form-wrap -->
-
-    <!-- شاشة النجاح بعد إرسال الطلب -->
+    </div>
     <div class="modal-success" id="modal-success">
       <div class="success-circle">✓</div>
       <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
       <div class="success-body">
         شكراً ليك — اتستلم طلب الحجز.<br>
         فريق <strong>مكاني Spot</strong> هيتواصل معاك في
-        <strong style="color:var(--orange)">٢٤ ساعة</strong><br>
-        على رقم الموبايل اللي دخّلته لإتمام الترتيبات.
+        <strong style="color:var(--orange)">٢٤ ساعة</strong>.
       </div>
-      <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px">
-        تمام، شكراً ←
-      </button>
+      <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px">تمام، شكراً ←</button>
     </div>
-
   </div>
-</div><!-- end booking-modal -->
+</div>
 
 
 <!-- ================================================================
-     🦶 الفوتر (أسفل الصفحة الرئيسية)
+     🦶 الفوتر
      ================================================================ -->
 <footer>
   <div class="footer-brand">
     <div class="footer-brand-name">مكاني <span>Spot</span></div>
   </div>
   <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
-
   <div class="footer-social">
     <a class="footer-wa"
        href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot"
@@ -859,7 +941,6 @@
       Makani Spot
     </a>
   </div>
-
   <div class="footer-divider"></div>
   <div class="footer-copy">© ٢٠٢٦ Makani Spot · جميع الحقوق محفوظة</div>
 </footer>
@@ -867,7 +948,6 @@
 
 <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
-     (يُوضع في آخر الصفحة لضمان تحميل HTML أولاً)
      ================================================================ -->
 <script src="app.js"></script>
 
