@@ -981,7 +981,36 @@ async function submitBooking() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
     });
+// ── تحديث بيانات المستخدم تلقائياً لو كانت فارغة ──
+if (sbClient && currentUser) {
+  const needsUpdate =
+    !currentProfile?.full_name && name ||
+    !currentProfile?.phone && phone;
 
+  if (needsUpdate) {
+    const updateData = {};
+    if (!currentProfile?.full_name && name)  updateData.full_name = name;
+    if (!currentProfile?.phone     && phone) updateData.phone     = phone;
+
+    if (Object.keys(updateData).length) {
+      const { data: updatedProfile } = await sbClient
+        .from('profiles')
+        .upsert({ id: currentUser.id, ...updateData }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (updatedProfile) {
+        currentProfile = { ...currentProfile, ...updateData };
+        setNavUser(currentUser, currentProfile);
+        // تحديث شاشة الداشبورد لو كانت مفتوحة
+        const dpfName = document.getElementById('dpf-name');
+        const dpfPhone = document.getElementById('dpf-phone');
+        if (dpfName  && updateData.full_name) dpfName.textContent  = updateData.full_name;
+        if (dpfPhone && updateData.phone)     dpfPhone.textContent = updateData.phone;
+      }
+    }
+  }
+}
     // لو المستخدم مسجّل — احفظ الحجز في Supabase أيضاً
     if (sbClient && currentUser) {
       await sbClient.from('bookings').insert({
@@ -1352,7 +1381,21 @@ async function loadDashboardData(user) {
     badge.textContent = roleLabel;
     badge.className   = 'dash-role-badge' + (profile?.role === 'owner' ? ' owner' : '');
   }
-
+// تحديث مربع نوع الحساب في البيانات الشخصية
+const roleBox = document.getElementById('dpf-role-box');
+if (roleBox) {
+  if (profile?.role === 'owner') {
+    roleBox.textContent = '🏬 صاحب مساحة';
+    roleBox.style.background = 'var(--green-light)';
+    roleBox.style.color = '#16a34a';
+    roleBox.style.borderColor = 'rgba(34,197,94,0.25)';
+  } else {
+    roleBox.textContent = '🏠 مستأجر';
+    roleBox.style.background = 'var(--orange-ultra)';
+    roleBox.style.color = 'var(--orange)';
+    roleBox.style.borderColor = 'var(--orange-pale)';
+  }
+}
   // تحديث الـ Navbar
   setNavUser(user, profile);
 
@@ -1367,10 +1410,31 @@ async function loadDashboardData(user) {
 function toggleEditProfile() {
   const viewEl = document.getElementById('profile-view');
   const editEl = document.getElementById('profile-edit');
+  const formEl = document.getElementById('edit-profile-form-inner');
   if (!viewEl || !editEl) return;
-  const editing = editEl.style.display !== 'none';
-  viewEl.style.display = editing ? 'block' : 'none';
-  editEl.style.display = editing ? 'none'  : 'block';
+
+  const isEditing = editEl.style.display === 'block';
+
+  if (isEditing) {
+    // إغلاق التعديل
+    viewEl.style.display = 'block';
+    editEl.style.display = 'none';
+  } else {
+    // فتح التعديل — ملّي الحقول بالبيانات الحالية
+    const efName  = document.getElementById('ef-name');
+    const efPhone = document.getElementById('ef-phone');
+    const efCity  = document.getElementById('ef-city');
+    const name    = document.getElementById('dpf-name')?.textContent;
+    const phone   = document.getElementById('dpf-phone')?.textContent;
+    const city    = currentProfile?.city || '';
+
+    if (efName  && name  !== '—') efName.value  = name;
+    if (efPhone && phone !== '—') efPhone.value = phone;
+    if (efCity)                   efCity.value  = city;
+
+    viewEl.style.display = 'none';
+    editEl.style.display = 'block';
+  }
 }
 
 /**
@@ -1430,12 +1494,14 @@ async function loadUserBookings(userId) {
   const cntEl  = document.getElementById('dash-booking-count');
 
   try {
-    const { data: bookings } = await sbClient
-      .from('bookings')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    const { data: bookings, error: bookErr } = await sbClient
+  .from('bookings')
+  .select('*')
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+  .limit(100);  // يجلب آخر 100 طلب
 
+if (bookErr) console.error('خطأ في جلب الحجوزات:', bookErr);
     // تحديث عداد الحجوزات
     if (cntEl) cntEl.textContent = bookings?.length || 0;
 
