@@ -797,6 +797,11 @@ function clearAllFilters() {
  * @param {string} p — اسم الصفحة (home / how / owner / market / login / signup / dashboard / confirm)
  */
 function showPage(p) {
+  // حفظ الصفحة الحالية عشان تترجعلها بعد Refresh
+  if (['home','how','owner','market','dashboard'].includes(p)) {
+    localStorage.setItem('lastPage', p);
+  }
+
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('pg-' + p);
   if (target) target.classList.add('active');
@@ -1093,7 +1098,31 @@ async function initAuth() {
         .from('profiles').select('*').eq('id', session.user.id).single();
       currentProfile = profile;
       setNavUser(session.user, profile);
+
+      // ── استعادة آخر صفحة كانت مفتوحة قبل الـ Refresh ──
+      const lastPage = localStorage.getItem('lastPage');
+      if (lastPage && lastPage !== 'home') {
+        // أظهر الصفحة بدون تسكرول (مش showPage عشان ما يحفظش مرة ثانية)
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById('pg-' + lastPage);
+        if (target) target.classList.add('active');
+
+        // لو الصفحة هي الداشبورد — حمّل بياناته
+        if (lastPage === 'dashboard') {
+          await loadDashboardData(session.user);
+        }
+        // لو الصفحة هي الماركت بليس — هيّئه
+        if (lastPage === 'market') {
+          setTimeout(initMpSlider, 120);
+          if (SPACES.length && !mpFiltered.length) {
+            mpFiltered = [...SPACES];
+            renderMarketplace();
+          }
+        }
+      }
     } else {
+      // لو مش مسجّل — امسح أي صفحة محفوظة وارجع للهوم
+      localStorage.removeItem('lastPage');
       setNavUser(null, null);
     }
   } catch (_) {
@@ -1342,8 +1371,9 @@ async function doLogout() {
   await sbClient.auth.signOut();
   currentUser    = null;
   currentProfile = null;
+  localStorage.removeItem('lastPage'); // امسح الصفحة المحفوظة عند الخروج
   setNavUser(null, null);
-  showPage('home'); // رجّعه للصفحة الرئيسية
+  showPage('home');
 }
 
 
