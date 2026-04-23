@@ -780,25 +780,40 @@
 </div>
         <!-- فورم التعديل (مخفي) -->
         <div id="profile-edit" style="display:none">
-          <div class="edit-profile-form">
-            <div class="afg"><label>الاسم الكامل</label><input type="text" id="ef-name" placeholder="اسمك الكريم"></div>
-            <div class="afg"><label>رقم الموبايل</label><input type="tel" id="ef-phone" placeholder="01xxxxxxxxx" dir="ltr"></div>
-            <div class="afg">
-              <label>المدينة</label>
-              <select id="ef-city">
-                <option value="">اختر مدينتك</option>
-                <option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option>
-                <option>المنصورة</option><option>أسيوط</option><option>أخرى</option>
-              </select>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:4px">
-              <button class="btn-auth-submit" id="btn-save-profile" onclick="saveProfile()" style="margin-top:0;flex:1">💾 حفظ التعديلات</button>
-              <button class="btn" onclick="toggleEditProfile()" style="padding:12px 20px">إلغاء</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <div class="edit-profile-form" style="display:block !important">
+    <div class="afg">
+      <label>الاسم الكامل</label>
+      <input type="text" id="ef-name" placeholder="اسمك الكريم">
+    </div>
+    <div class="afg">
+      <label>رقم الموبايل</label>
+      <input type="tel" id="ef-phone" placeholder="01xxxxxxxxx" dir="ltr">
+    </div>
+    <div class="afg">
+      <label>المدينة</label>
+      <select id="ef-city">
+        <option value="">اختر مدينتك</option>
+        <option>القاهرة</option>
+        <option>الجيزة</option>
+        <option>الإسكندرية</option>
+        <option>المنصورة</option>
+        <option>أسيوط</option>
+        <option>أخرى</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-auth-submit" id="btn-save-profile"
+              onclick="saveProfile()"
+              style="margin-top:0;flex:1">
+        💾 حفظ التعديلات
+      </button>
+      <button class="btn" onclick="toggleEditProfile()"
+              style="padding:12px 20px">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</div>
       <!-- ======================== الحجوزات ======================== -->
       <div class="dash-section-card">
         <div class="dash-section-head">
