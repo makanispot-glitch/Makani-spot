@@ -761,15 +761,23 @@
         </div>
 
         <!-- عرض البيانات -->
-        <div id="profile-view" class="dash-profile-grid">
-          <div><div class="dpf-label">الاسم الكامل</div><div class="dpf-value" id="dpf-name">—</div></div>
-          <div><div class="dpf-label">البريد الإلكتروني</div><div class="dpf-value" id="dpf-email" dir="ltr" style="text-align:right">—</div></div>
-          <div><div class="dpf-label">رقم الموبايل</div><div class="dpf-value" id="dpf-phone" dir="ltr" style="text-align:right">—</div></div>
-          <div><div class="dpf-label">المدينة</div><div class="dpf-value" id="dpf-city">—</div></div>
-          <div><div class="dpf-label">نوع الحساب</div><div class="dpf-value" id="dpf-role">—</div></div>
-          <div><div class="dpf-label">تاريخ الانضمام</div><div class="dpf-value" id="dpf-date">—</div></div>
-        </div>
-
+       <div class="dash-profile-grid">
+  <div><div class="dpf-label">الاسم الكامل</div><div class="dpf-value" id="dpf-name">—</div></div>
+  <div><div class="dpf-label">البريد الإلكتروني</div><div class="dpf-value" id="dpf-email" dir="ltr" style="text-align:right">—</div></div>
+  <div><div class="dpf-label">رقم الموبايل</div><div class="dpf-value" id="dpf-phone" dir="ltr" style="text-align:right">—</div></div>
+  <div><div class="dpf-label">المدينة</div><div class="dpf-value" id="dpf-city">—</div></div>
+  <div>
+    <div class="dpf-label">نوع الحساب</div>
+    <div id="dpf-role-box"
+         style="display:inline-flex;align-items:center;gap:6px;
+                padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700;
+                background:var(--orange-ultra);color:var(--orange);
+                border:1px solid var(--orange-pale);margin-top:3px">
+      🏠 مستأجر
+    </div>
+  </div>
+  <div><div class="dpf-label">تاريخ الانضمام</div><div class="dpf-value" id="dpf-date">—</div></div>
+</div>
         <!-- فورم التعديل (مخفي) -->
         <div id="profile-edit" style="display:none">
           <div class="edit-profile-form">
