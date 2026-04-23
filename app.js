@@ -95,52 +95,38 @@ document.addEventListener('DOMContentLoaded', function () {
    ================================================================ */
 
 /**
- * يُهيّئ مؤشر السعر المزدوج في الصفحة الرئيسية
+ * يُهيّئ مؤشر السعر في الصفحة الرئيسية
  * يربط الأحداث بالعناصر ويرسم الشريط الملوّن
  */
 function initPriceSlider() {
-  const s1 = document.getElementById('slider-min');
-  const s2 = document.getElementById('slider-max');
-  if (!s1 || !s2) return;
-  s1.addEventListener('input', updateMainSlider);
-  s2.addEventListener('input', updateMainSlider);
+  const slider = document.getElementById('price-slider');
+  if (!slider) return;
+  slider.addEventListener('input', updateMainSlider);
   updateMainSlider(); // رسم مبدئي
 }
 
 /**
- * يحدّث مظهر الشريط والتسميات عند تحريك أي من المؤشرين
- * يضمن أن الحد الأدنى لا يتجاوز الحد الأقصى
+ * يحدّث مظهر الشريط والتسميات عند تحريك المؤشر
  */
 function updateMainSlider() {
-  const s1 = document.getElementById('slider-min');
-  const s2 = document.getElementById('slider-max');
-  if (!s1 || !s2) return;
+  const slider = document.getElementById('price-slider');
+  if (!slider) return;
 
-  let minVal = parseInt(s1.value);
-  let maxVal = parseInt(s2.value);
-  const RANGE_MAX = parseInt(s1.max) || 50000;
-
-  // منع التقاطع بين المؤشرين
-  if (minVal > maxVal - 500) {
-    minVal = maxVal - 500;
-    s1.value = minVal;
-  }
-
-  const pMin = (minVal / RANGE_MAX) * 100;
-  const pMax = (maxVal / RANGE_MAX) * 100;
+  const value = parseInt(slider.value);
+  const percent = (value / 50) * 100;
 
   // تلوين الجزء النشط من الشريط باللون البرتقالي
   const track = document.getElementById('slider-track');
   if (track) {
     track.style.background =
-      `linear-gradient(to left, #e8e8e8 ${100 - pMax}%, #FF6B00 ${100 - pMax}%, #FF6B00 ${100 - pMin}%, #e8e8e8 ${100 - pMin}%)`;
+      `linear-gradient(to left, #FF6B00 0%, #FF6B00 ${percent}%, #e8e8e8 ${percent}%, #e8e8e8 100%)`;
   }
 
-  // تحديث تسميات الأسعار
-  const lMin = document.getElementById('price-min-label');
-  const lMax = document.getElementById('price-max-label');
-  if (lMin) lMin.textContent = Number(minVal).toLocaleString('ar-EG') + ' ج';
-  if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? 'بلا حد' : Number(maxVal).toLocaleString('ar-EG') + ' ج';
+  // تحديث تسمية السعر
+  const label = document.getElementById('price-label');
+  if (label) {
+    label.textContent = value >= 50 ? 'بلا حد' : Number(value).toLocaleString('ar-EG') + ' ج';
+  }
 }
 
 
@@ -685,19 +671,18 @@ function doSearch() {
 
 /**
  * يصفّي المساحات حسب الفلاتر المحددة ويعرض النتائج
- * يأخذ قيم الـ slider بدلاً من الـ input القديم
+ * يأخذ قيمة الـ slider الواحدة
  */
 function filterAndRender() {
   let data = [...SPACES];
 
   const reg  = document.getElementById('f-region')?.value || '';
   const type = document.getElementById('f-type')?.value || activeTab;
-  const mn   = parseInt(document.getElementById('slider-min')?.value) || 0;
-  const mx   = parseInt(document.getElementById('slider-max')?.value) || 999999;
+  const maxPrice = parseInt(document.getElementById('price-slider')?.value) || 50;
 
   if (reg)  data = data.filter(s => s.loc === reg);
   if (type) data = data.filter(s => s.type === type);
-  data = data.filter(s => s.price >= mn && s.price <= mx);
+  data = data.filter(s => s.price <= (maxPrice >= 50 ? 999999 : maxPrice));
   if (selectedAct) data = data.filter(s => s.allActs || (s.acts && s.acts.includes(selectedAct)));
 
   // تحديث العداد
@@ -714,12 +699,11 @@ function filterAndRender() {
 function showSearchChips() {
   const chips = [];
   const r  = document.getElementById('f-region')?.value;
-  const mn = document.getElementById('slider-min')?.value;
-  const mx = document.getElementById('slider-max')?.value;
+  const maxPrice = parseInt(document.getElementById('price-slider')?.value) || 50;
 
   if (r) chips.push(r);
-  if (mn || mx) {
-    chips.push(`${Number(mn || 0).toLocaleString('ar-EG')} – ${Number(mx || 0).toLocaleString('ar-EG')} ج`);
+  if (maxPrice < 50) {
+    chips.push(`حتى ${Number(maxPrice).toLocaleString('ar-EG')} ج`);
   }
   if (selectedAct) {
     const a = ACTIVITIES.find(x => x.id === selectedAct);
@@ -751,10 +735,8 @@ function clearAllFilters() {
   selectedAct = '';
 
   // إعادة ضبط مؤشر السعر
-  const s1 = document.getElementById('slider-min');
-  const s2 = document.getElementById('slider-max');
-  if (s1) s1.value = 0;
-  if (s2) s2.value = parseInt(s2?.max || 50000);
+  const slider = document.getElementById('price-slider');
+  if (slider) slider.value = 50;
   updateMainSlider();
 
   // إعادة عرض أول 6 مساحات
@@ -981,36 +963,7 @@ async function submitBooking() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
     });
-// ── تحديث بيانات المستخدم تلقائياً لو كانت فارغة ──
-if (sbClient && currentUser) {
-  const needsUpdate =
-    !currentProfile?.full_name && name ||
-    !currentProfile?.phone && phone;
 
-  if (needsUpdate) {
-    const updateData = {};
-    if (!currentProfile?.full_name && name)  updateData.full_name = name;
-    if (!currentProfile?.phone     && phone) updateData.phone     = phone;
-
-    if (Object.keys(updateData).length) {
-      const { data: updatedProfile } = await sbClient
-        .from('profiles')
-        .upsert({ id: currentUser.id, ...updateData }, { onConflict: 'id' })
-        .select()
-        .single();
-
-      if (updatedProfile) {
-        currentProfile = { ...currentProfile, ...updateData };
-        setNavUser(currentUser, currentProfile);
-        // تحديث شاشة الداشبورد لو كانت مفتوحة
-        const dpfName = document.getElementById('dpf-name');
-        const dpfPhone = document.getElementById('dpf-phone');
-        if (dpfName  && updateData.full_name) dpfName.textContent  = updateData.full_name;
-        if (dpfPhone && updateData.phone)     dpfPhone.textContent = updateData.phone;
-      }
-    }
-  }
-}
     // لو المستخدم مسجّل — احفظ الحجز في Supabase أيضاً
     if (sbClient && currentUser) {
       await sbClient.from('bookings').insert({
@@ -1381,21 +1334,7 @@ async function loadDashboardData(user) {
     badge.textContent = roleLabel;
     badge.className   = 'dash-role-badge' + (profile?.role === 'owner' ? ' owner' : '');
   }
-// تحديث مربع نوع الحساب في البيانات الشخصية
-const roleBox = document.getElementById('dpf-role-box');
-if (roleBox) {
-  if (profile?.role === 'owner') {
-    roleBox.textContent = '🏬 صاحب مساحة';
-    roleBox.style.background = 'var(--green-light)';
-    roleBox.style.color = '#16a34a';
-    roleBox.style.borderColor = 'rgba(34,197,94,0.25)';
-  } else {
-    roleBox.textContent = '🏠 مستأجر';
-    roleBox.style.background = 'var(--orange-ultra)';
-    roleBox.style.color = 'var(--orange)';
-    roleBox.style.borderColor = 'var(--orange-pale)';
-  }
-}
+
   // تحديث الـ Navbar
   setNavUser(user, profile);
 
@@ -1410,31 +1349,10 @@ if (roleBox) {
 function toggleEditProfile() {
   const viewEl = document.getElementById('profile-view');
   const editEl = document.getElementById('profile-edit');
-  const formEl = document.getElementById('edit-profile-form-inner');
   if (!viewEl || !editEl) return;
-
-  const isEditing = editEl.style.display === 'block';
-
-  if (isEditing) {
-    // إغلاق التعديل
-    viewEl.style.display = 'block';
-    editEl.style.display = 'none';
-  } else {
-    // فتح التعديل — ملّي الحقول بالبيانات الحالية
-    const efName  = document.getElementById('ef-name');
-    const efPhone = document.getElementById('ef-phone');
-    const efCity  = document.getElementById('ef-city');
-    const name    = document.getElementById('dpf-name')?.textContent;
-    const phone   = document.getElementById('dpf-phone')?.textContent;
-    const city    = currentProfile?.city || '';
-
-    if (efName  && name  !== '—') efName.value  = name;
-    if (efPhone && phone !== '—') efPhone.value = phone;
-    if (efCity)                   efCity.value  = city;
-
-    viewEl.style.display = 'none';
-    editEl.style.display = 'block';
-  }
+  const editing = editEl.style.display !== 'none';
+  viewEl.style.display = editing ? 'block' : 'none';
+  editEl.style.display = editing ? 'none'  : 'block';
 }
 
 /**
@@ -1494,14 +1412,12 @@ async function loadUserBookings(userId) {
   const cntEl  = document.getElementById('dash-booking-count');
 
   try {
-    const { data: bookings, error: bookErr } = await sbClient
-  .from('bookings')
-  .select('*')
-  .eq('user_id', userId)
-  .order('created_at', { ascending: false })
-  .limit(100);  // يجلب آخر 100 طلب
+    const { data: bookings } = await sbClient
+      .from('bookings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-if (bookErr) console.error('خطأ في جلب الحجوزات:', bookErr);
     // تحديث عداد الحجوزات
     if (cntEl) cntEl.textContent = bookings?.length || 0;
 
