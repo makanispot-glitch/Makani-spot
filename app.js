@@ -1005,38 +1005,11 @@ async function submitBooking() {
       body:    JSON.stringify(payload),
     });
 
-    // لو المستخدم مسجّل — تحديث بيانات المستخدم تلقائياً لو كانت فارغة ثم احفظ الحجز
+    // لو المستخدم مسجّل — احفظ الحجز في Supabase + حدّث البيانات الشخصية
     if (sbClient && currentUser) {
-      const needsUpdate =
-        !currentProfile?.full_name && name ||
-        !currentProfile?.phone && phone;
-
-      if (needsUpdate) {
-        const updateData = {};
-        if (!currentProfile?.full_name && name)  updateData.full_name = name;
-        if (!currentProfile?.phone     && phone) updateData.phone     = phone;
-
-        if (Object.keys(updateData).length) {
-          const { data: updatedProfile } = await sbClient
-            .from('profiles')
-            .upsert({ id: currentUser.id, ...updateData }, { onConflict: 'id' })
-            .select()
-            .single();
-
-          if (updatedProfile) {
-            currentProfile = { ...currentProfile, ...updateData };
-            setNavUser(currentUser, currentProfile);
-            // تحديث شاشة الداشبورد لو كانت مفتوحة
-            const dpfName = document.getElementById('dpf-name');
-            const dpfPhone = document.getElementById('dpf-phone');
-            if (dpfName  && updateData.full_name) dpfName.textContent  = updateData.full_name;
-            if (dpfPhone && updateData.phone)     dpfPhone.textContent = updateData.phone;
-          }
-        }
-      }
-
-      // احفظ الحجز في Supabase
-      await sbClient.from('bookings').insert({
+    
+      // ── حفظ الحجز ──
+      const { error: bookingError } = await sbClient.from('bookings').insert({
         user_id:    currentUser.id,
         space_name: payload.spaceName,
         space_loc:  payload.spaceLoc,
@@ -1049,7 +1022,27 @@ async function submitBooking() {
         status:     'pending',
         created_at: new Date().toISOString(),
       });
-      // تحديث لوحة التحكم فوراً
+      if (bookingError) console.error('خطأ في حفظ الحجز:', bookingError);
+    
+      // ── حفظ البيانات الشخصية في Supabase لو كانت فارغة ──
+      const profileUpdate = {};
+      if (name  && !currentProfile?.full_name) profileUpdate.full_name = name;
+      if (phone && !currentProfile?.phone)     profileUpdate.phone     = phone;
+      if (email && !currentProfile?.email)     profileUpdate.email     = email;
+    
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error: profileError } = await sbClient
+          .from('profiles')
+          .upsert(
+            { id: currentUser.id, ...profileUpdate },
+            { onConflict: 'id' }
+          );
+        if (!profileError) {
+          currentProfile = { ...currentProfile, ...profileUpdate };
+        }
+      }
+    
+      // ── تحديث لوحة التحكم ──
       await loadDashboardData(currentUser);
     }
 
@@ -1398,11 +1391,20 @@ async function loadDashboardData(user) {
   if (efPhone) efPhone.value = profile?.phone || '';
   if (efCity)  efCity.value  = profile?.city  || '';
 
-  // تحديث Badge الدور
+  // تحديث Badge نوع الحساب
   const badge = document.getElementById('dash-role-badge');
   if (badge) {
-    badge.textContent = roleLabel;
-    badge.className   = 'dash-role-badge' + (profile?.role === 'owner' ? ' owner' : '');
+    if (profile?.role === 'owner') {
+      badge.innerHTML   = '🏬 صاحب مساحة';
+      badge.style.background   = 'var(--green-light)';
+      badge.style.color        = '#16a34a';
+      badge.style.borderColor  = 'rgba(34,197,94,0.25)';
+    } else {
+      badge.innerHTML   = '🏠 مستأجر';
+      badge.style.background   = 'var(--orange-ultra)';
+      badge.style.color        = 'var(--orange)';
+      badge.style.borderColor  = 'var(--orange-pale)';
+    }
   }
 
   // تحديث مربع نوع الحساب في البيانات الشخصية
@@ -1477,7 +1479,10 @@ async function saveProfile() {
   setBtnLoading('btn-save-profile', true);
   const { error } = await sbClient
     .from('profiles')
-    .upsert({ id: currentUser.id, full_name: name, phone, city }, { onConflict: 'id' });
+    .upsert(
+      { id: currentUser.id, full_name: name, phone: phone, city: city },
+      { onConflict: 'id' }
+    );
   setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
 
   if (error) { showDashAlert('error', 'في مشكلة في الحفظ'); return; }
