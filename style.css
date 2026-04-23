@@ -66,8 +66,17 @@ body {
   font-size: 15px;
   line-height: 1.65;
   min-height: 100vh;
+  /* 👇 الأسطر الجديدة لترتيب الصفحة والفوتر */
+  display: flex;
+  flex-direction: column;
 }
 
+.page { display: none; animation: fadeUp 0.3s ease; }
+.page.active { 
+  display: block; 
+  /* 👇 هذا السطر يجعل الصفحة تتمدد وتدفع الفوتر للأسفل */
+  flex-grow: 1; 
+}
 /* ============================================================
    🧭 القسم الثالث: شريط التنقل العلوي (Navbar)
    ============================================================ */
@@ -764,7 +773,16 @@ body {
 /* ============================================================
    🦶 القسم الخامس عشر: الفوتر (أسفل الصفحة)
    ============================================================ */
-footer { background: var(--dark); border-top: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); text-align: center; padding: 44px 24px 32px; font-size: 13px; }
+footer { 
+  background: var(--dark); 
+  border-top: 1px solid rgba(255,255,255,0.06); 
+  color: rgba(255,255,255,0.45); 
+  text-align: center; 
+  padding: 44px 24px 32px; 
+  font-size: 13px; 
+  margin-top: auto; /* 👈 هذا هو السطر الذي سيجبر الفوتر على البقاء في الأسفل */
+  width: 100%;
+}
 .footer-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
 .footer-brand-name { color: #fff; font-size: 20px; font-weight: 900; }
 .footer-brand-name span { color: var(--orange); }
@@ -778,7 +796,6 @@ footer { background: var(--dark); border-top: 1px solid rgba(255,255,255,0.06); 
 .footer-fb:hover  { background: #1877F2 !important; color: #fff !important; border-color: #1877F2 !important; }
 .footer-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 auto 20px; max-width: 400px; }
 .footer-copy { font-size: 12px; color: rgba(255,255,255,0.20); }
-
 /* ============================================================
    📱 القسم السادس عشر: الاستجابة للموبايل (Responsive)
    ============================================================ */
