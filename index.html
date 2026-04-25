@@ -981,5 +981,25 @@
      ================================================================ -->
 <script src="app.js"></script>
 
+  <!-- Bottom Navigation للموبايل -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-item active" id="bn-home" onclick="showPage('home');updateBottomNav('home')">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-label">الرئيسية</span>
+  </button>
+  <button class="bn-item" id="bn-market" onclick="goToMarketplace();updateBottomNav('market')">
+    <span class="bn-icon">🏪</span>
+    <span class="bn-label">المساحات</span>
+  </button>
+  <button class="bn-item" id="bn-how" onclick="showPage('how');updateBottomNav('how')">
+    <span class="bn-icon">❓</span>
+    <span class="bn-label">كيف؟</span>
+  </button>
+  <button class="bn-item" id="bn-user" onclick="handleBnUser()">
+    <span class="bn-icon" id="bn-user-icon">👤</span>
+    <span class="bn-label" id="bn-user-label">دخول</span>
+  </button>
+</nav>
+  
 </body>
 </html>
