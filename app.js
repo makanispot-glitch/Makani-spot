@@ -1166,27 +1166,40 @@ function setNavUser(user, profile) {
     // زائر غير مسجّل
     guestEl.style.display  = 'flex';
     loggedEl.style.display = 'none';
-    return;
+  } else {
+    const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+    const email     = user.email || '';
+    const initial   = name.trim()[0] || '؟';
+    const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
+
+    // أخفِ زرار "دخول" وأظهر الأفاتار
+    guestEl.style.display  = 'none';
+    loggedEl.style.display = 'flex';
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('nav-av-circle', initial);
+    set('nav-av-name',   name);
+    set('nav-av-email',  email);
+    set('dd-name',       name);
+    set('dd-email',      email);
+    set('dd-role',       roleLabel);
   }
 
-  const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
-  const email     = user.email || '';
-  const initial   = name.trim()[0] || '؟';
-  const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
+  // 👇 الكود الجديد (Bottom Nav)
+  const bnUserIcon  = document.getElementById('bn-user-icon');
+  const bnUserLabel = document.getElementById('bn-user-label');
 
-  // أخفِ زرار "دخول" وأظهر الأفاتار
-  guestEl.style.display  = 'none';
-  loggedEl.style.display = 'flex';
-
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set('nav-av-circle', initial);
-  set('nav-av-name',   name);
-  set('nav-av-email',  email);
-  set('dd-name',       name);
-  set('dd-email',      email);
-  set('dd-role',       roleLabel);
+  if (bnUserIcon && bnUserLabel) {
+    if (user) {
+      const initial = (profile?.full_name || user.email || 'م')[0];
+      bnUserIcon.textContent  = '👤';
+      bnUserLabel.textContent = initial + '..';
+    } else {
+      bnUserIcon.textContent  = '👤';
+      bnUserLabel.textContent = 'دخول';
+    }
+  }
 }
-
 
 /* ================================================================
    🔽 القسم الرابع عشر: القائمة المنسدلة للمستخدم
@@ -1779,4 +1792,22 @@ function togglePassVis(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* ── دوال Bottom Navigation ── */
+
+function updateBottomNav(page) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('bn-' + page);
+  if (el) el.classList.add('active');
+}
+
+function handleBnUser() {
+  if (currentUser) {
+    goToDashboard();
+    updateBottomNav('user');
+  } else {
+    goToLogin();
+    updateBottomNav('user');
+  }
 }
