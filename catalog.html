@@ -28,6 +28,8 @@
   --radius:     16px;
   --radius-lg:  22px;
   --radius-xl:  28px;
+  --nav-h:      60px;
+  --subnav-h:   52px;
 }
 
 /* ══════════════════════════════════════
@@ -54,34 +56,27 @@ a{text-decoration:none;color:inherit}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes slideInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ══════════════════════════════════════
-   STICKY NAV BAR
+   STICKY NAV BAR (Top Level)
 ══════════════════════════════════════ */
 .top-nav{
   position:sticky;top:0;z-index:999;
-  background:rgba(12,12,12,0.95);
+  background:rgba(12,12,12,0.97);
   backdrop-filter:blur(18px);
   border-bottom:1px solid var(--border);
   padding:0 32px;
   display:flex;align-items:center;justify-content:space-between;
-  height:60px;
+  height:var(--nav-h);
 }
 .nav-brand{
   font-family:'Tajawal',sans-serif;
   font-size:22px;font-weight:900;
   color:var(--text);cursor:pointer;
+  white-space:nowrap;
 }
 .nav-brand span{color:var(--orange)}
-.nav-links{display:flex;gap:4px}
-.nav-link{
-  font-size:12px;font-weight:600;
-  color:var(--text3);
-  padding:7px 14px;border-radius:8px;
-  cursor:pointer;transition:all .15s;
-  border:none;background:none;font-family:'Cairo',sans-serif;
-}
-.nav-link:hover{color:var(--orange);background:var(--orange-dim)}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-back-btn{
   display:inline-flex;align-items:center;gap:7px;
@@ -90,7 +85,7 @@ a{text-decoration:none;color:inherit}
   border:1px solid var(--border);
   padding:7px 16px;border-radius:10px;
   font-size:12px;font-weight:600;
-  transition:all .15s;text-decoration:none;
+  transition:all .15s;
   font-family:'Cairo',sans-serif;white-space:nowrap;
 }
 .nav-back-btn:hover{color:#fff;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.1)}
@@ -100,123 +95,65 @@ a{text-decoration:none;color:inherit}
   font-size:12px;font-weight:700;
   border:none;font-family:'Cairo',sans-serif;
   cursor:pointer;transition:all .15s;
-  white-space:nowrap;text-decoration:none;
+  white-space:nowrap;
   display:inline-flex;align-items:center;
 }
 .nav-cta:hover{background:#e85e00;transform:translateY(-1px)}
 
 /* ══════════════════════════════════════
-   FLOATING BACK-TO-SECTIONS BUTTON
+   STICKY SECTIONS SUB-NAV (Second Level)
+   Appears after hero, stays under top-nav
 ══════════════════════════════════════ */
-.float-sections-btn{
-  position:fixed;
-  bottom:28px;
-  left:28px;
-  z-index:9999;
-  display:flex;align-items:center;gap:9px;
-  background:rgba(20,20,20,0.92);
-  color:#fff;
-  border:1px solid rgba(255,107,0,0.35);
-  padding:12px 20px;
-  border-radius:40px;
-  font-size:13px;font-weight:700;
-  font-family:'Cairo',sans-serif;
+.sections-subnav{
+  position:sticky;
+  top:var(--nav-h);
+  z-index:998;
+  background:rgba(14,14,14,0.98);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,107,0,0.15);
+  overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  display:none; /* hidden until hero passes */
+  transition:box-shadow .3s;
+}
+.sections-subnav.visible{
+  display:block;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5);
+}
+.sections-subnav::-webkit-scrollbar{display:none}
+.subnav-inner{
+  display:flex;align-items:center;
+  gap:4px;padding:0 20px;
+  height:var(--subnav-h);
+  min-width:max-content;
+}
+.subnav-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 16px;
+  border-radius:30px;
+  font-size:12px;font-weight:700;
+  color:var(--text3);
+  background:transparent;
+  border:1px solid transparent;
   cursor:pointer;
-  backdrop-filter:blur(14px);
-  box-shadow:0 8px 32px rgba(0,0,0,0.45),0 0 0 1px rgba(255,107,0,0.1);
-  transition:all .22s cubic-bezier(.4,0,.2,1);
-  animation:slideInUp .4s ease both;
-  animation-delay:.5s;
-  opacity:0;
+  transition:all .18s;
+  white-space:nowrap;
+  font-family:'Cairo',sans-serif;
+  flex-shrink:0;
 }
-.float-sections-btn.visible{opacity:1}
-.float-sections-btn:hover{
-  background:var(--orange);
-  border-color:var(--orange);
-  transform:translateY(-3px);
-  box-shadow:0 12px 36px rgba(255,107,0,0.35);
-}
-.float-sections-btn .fsb-ico{
-  width:28px;height:28px;border-radius:50%;
-  background:rgba(255,107,0,0.2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;flex-shrink:0;
-  transition:background .2s;
-}
-.float-sections-btn:hover .fsb-ico{background:rgba(255,255,255,0.2)}
-.float-sections-btn .fsb-txt{white-space:nowrap}
-
-/* ══════════════════════════════════════
-   SECTIONS DRAWER (Popup)
-══════════════════════════════════════ */
-.sections-drawer-overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,0.7);
-  backdrop-filter:blur(6px);
-  z-index:10000;
-  opacity:0;pointer-events:none;
-  transition:opacity .25s ease;
-}
-.sections-drawer-overlay.open{opacity:1;pointer-events:auto}
-.sections-drawer{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  z-index:10001;
-  background:var(--dark2);
-  border-top:1px solid rgba(255,107,0,0.2);
-  border-radius:24px 24px 0 0;
-  padding:24px 24px 32px;
-  transform:translateY(100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-  max-height:80vh;overflow-y:auto;
-}
-.sections-drawer.open{transform:translateY(0)}
-.drawer-handle{
-  width:40px;height:4px;border-radius:2px;
-  background:rgba(255,255,255,0.15);
-  margin:0 auto 20px;
-}
-.drawer-title{
-  font-family:'Tajawal',sans-serif;
-  font-size:18px;font-weight:900;color:#fff;
-  margin-bottom:16px;text-align:center;
-}
-.drawer-title span{color:var(--orange)}
-.drawer-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:10px;
-}
-.drawer-item{
-  background:var(--dark3);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
-  cursor:pointer;transition:all .2s;
-}
-.drawer-item:hover{
+.subnav-btn:hover{
+  color:var(--orange);
+  background:var(--orange-dim);
   border-color:var(--border-o);
-  background:rgba(255,107,0,0.06);
-  transform:translateY(-2px);
 }
-.drawer-item-ico{
-  width:38px;height:38px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;flex-shrink:0;
+.subnav-btn.active{
+  color:var(--orange);
+  background:var(--orange-dim);
+  border-color:var(--border-o);
+  font-weight:800;
 }
-.drawer-item-name{font-size:13px;font-weight:700;color:#fff}
-.drawer-item-count{font-size:10px;color:var(--text3);margin-top:1px}
-.drawer-close{
-  display:flex;align-items:center;justify-content:center;
-  margin-top:18px;
-  padding:12px;border-radius:12px;
-  background:rgba(255,255,255,0.05);
-  color:var(--text3);font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .15s;border:1px solid var(--border);
-  font-family:'Cairo',sans-serif;width:100%;
-}
-.drawer-close:hover{background:rgba(255,255,255,0.1);color:#fff}
+.subnav-ico{font-size:14px}
 
 /* ══════════════════════════════════════
    COVER PAGE
@@ -275,6 +212,7 @@ a{text-decoration:none;color:inherit}
   width:8px;height:8px;border-radius:50%;
   background:var(--orange);
   animation:pulse 2s ease infinite;
+  display:inline-block;
 }
 .cover-logo{
   font-family:'Tajawal',sans-serif;
@@ -450,7 +388,7 @@ a{text-decoration:none;color:inherit}
 }
 .catalog-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
   gap:22px;
 }
 
@@ -470,46 +408,69 @@ a{text-decoration:none;color:inherit}
   transform:translateY(-7px);
   box-shadow:0 24px 64px rgba(255,107,0,.14),0 0 0 1px rgba(255,107,0,.08);
 }
+
+/* ── Card Thumb with photo grid ── */
 .act-thumb{
   height:220px;position:relative;overflow:hidden;
 }
 .act-photos{
-  display:flex;gap:0;height:220px;
+  display:flex;gap:1px;height:220px;
   position:relative;overflow:hidden;
 }
 .act-photo-main{
   flex:2;position:relative;overflow:hidden;
+  background:var(--dark3);
 }
 .act-photo-main img{
   width:100%;height:100%;object-fit:cover;
   transition:transform .4s ease;
 }
 .act-card:hover .act-photo-main img{transform:scale(1.06)}
+
 .act-photo-side{
   flex:1;display:flex;flex-direction:column;gap:1px;
 }
 .act-photo-side-item{
   flex:1;position:relative;overflow:hidden;
+  background:var(--dark4);
 }
 .act-photo-side-item img{
   width:100%;height:100%;object-fit:cover;
   transition:transform .4s ease;
 }
 .act-card:hover .act-photo-side-item img{transform:scale(1.08)}
+
+/* ── Fallback placeholder (no image) ── */
+.act-photo-placeholder{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;
+  background:var(--dark3);
+  border:1px dashed rgba(255,255,255,0.07);
+}
+.act-photo-placeholder-ico{font-size:26px;opacity:.3}
+.act-photo-placeholder-txt{font-size:10px;color:var(--text3);font-weight:600;opacity:.7}
+
+/* ── Category-colored fallback backgrounds ── */
+.thumb-food{background:linear-gradient(145deg,#1a0800,#2a1000)}
+.thumb-beauty{background:linear-gradient(145deg,#1a0015,#2d0025)}
+.thumb-retail{background:linear-gradient(145deg,#080818,#121230)}
+.thumb-tech{background:linear-gradient(145deg,#001515,#002828)}
+.thumb-kids{background:linear-gradient(145deg,#081500,#122500)}
+.thumb-health{background:linear-gradient(145deg,#150000,#280a0a)}
+.thumb-service{background:linear-gradient(145deg,#001208,#002018)}
+.thumb-event{background:linear-gradient(145deg,#100018,#200030)}
+.thumb-craft{background:linear-gradient(145deg,#151000,#2a2000)}
+.thumb-fashion{background:linear-gradient(145deg,#15000f,#2a0020)}
+
 .act-photo-overlay{
   position:absolute;inset:0;
-  background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.5) 100%);
+  background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.45) 100%);
   pointer-events:none;
 }
-.act-photo-upload{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:var(--dark3);
-  border:2px dashed rgba(255,107,0,.2);
-  gap:8px;transition:all .15s;
-}
-.act-photo-upload-ico{font-size:28px;opacity:.45}
-.act-photo-upload-txt{font-size:11px;color:var(--text3);font-weight:600}
+
+/* Badges */
 .act-badge{
   position:absolute;top:14px;right:14px;z-index:2;
   padding:5px 14px;border-radius:30px;
@@ -520,11 +481,19 @@ a{text-decoration:none;color:inherit}
 .badge-new{background:rgba(255,107,0,.85);color:#fff}
 .badge-top{background:rgba(245,200,66,.85);color:#111}
 .badge-trend{background:rgba(99,102,241,.85);color:#fff}
+
+/* Demand bar */
 .demand-bar{
   position:absolute;bottom:0;left:0;right:0;z-index:2;
   height:4px;background:rgba(255,255,255,.1);
 }
 .demand-fill{height:100%;border-radius:0 2px 0 0}
+.df-5{background:linear-gradient(90deg,#22c55e,#16a34a);width:100%}
+.df-4{background:linear-gradient(90deg,#FF6B00,#e85e00);width:80%}
+.df-3{background:linear-gradient(90deg,#f5c842,#d4a200);width:60%}
+.df-2{background:linear-gradient(90deg,#6366f1,#4f46e5);width:40%}
+
+/* Card Body */
 .act-body{padding:20px 22px 22px}
 .act-cat{
   display:inline-flex;align-items:center;gap:6px;
@@ -562,19 +531,7 @@ a{text-decoration:none;color:inherit}
 .loc-transit{background:rgba(6,182,212,.15);color:#67E8F9;border:1px solid rgba(6,182,212,.3);}
 .loc-event{background:rgba(217,70,239,.15);color:#F0ABFC;border:1px solid rgba(217,70,239,.3);}
 
-/* category thumb fallbacks */
-.tb-food{background:linear-gradient(145deg,#1a0800,#3d1500)}
-.tb-beauty{background:linear-gradient(145deg,#1a0015,#3d0030)}
-.tb-retail{background:linear-gradient(145deg,#08081a,#15153d)}
-.tb-tech{background:linear-gradient(145deg,#001515,#003535)}
-.tb-kids{background:linear-gradient(145deg,#081500,#153500)}
-.tb-health{background:linear-gradient(145deg,#150000,#350808)}
-.tb-service{background:linear-gradient(145deg,#001208,#003020)}
-.tb-event{background:linear-gradient(145deg,#100018,#280035)}
-.tb-craft{background:linear-gradient(145deg,#151000,#352800)}
-.tb-fashion{background:linear-gradient(145deg,#15000f,#350025)}
-
-/* category tag colors */
+/* Category tag colors */
 .cat-food{background:rgba(255,107,0,.13);color:#FFB570;border:1px solid rgba(255,107,0,.22)}
 .cat-beauty{background:rgba(236,72,153,.13);color:#F9A8D4;border:1px solid rgba(236,72,153,.22)}
 .cat-retail{background:rgba(99,102,241,.13);color:#A5B4FC;border:1px solid rgba(99,102,241,.22)}
@@ -585,12 +542,6 @@ a{text-decoration:none;color:inherit}
 .cat-event{background:rgba(167,139,250,.13);color:#C4B5FD;border:1px solid rgba(167,139,250,.22)}
 .cat-craft{background:rgba(245,200,66,.13);color:#FDE68A;border:1px solid rgba(245,200,66,.22)}
 .cat-fashion{background:rgba(244,114,182,.13);color:#FBCFE8;border:1px solid rgba(244,114,182,.22)}
-
-/* demand fill colors */
-.df-5{background:linear-gradient(90deg,#22c55e,#16a34a);width:100%}
-.df-4{background:linear-gradient(90deg,#FF6B00,#e85e00);width:80%}
-.df-3{background:linear-gradient(90deg,#f5c842,#d4a200);width:60%}
-.df-2{background:linear-gradient(90deg,#6366f1,#4f46e5);width:40%}
 
 /* ══════════════════════════════════════
    HOW TO USE SECTION
@@ -606,6 +557,48 @@ a{text-decoration:none;color:inherit}
 .howto-s{font-size:13px;color:var(--text2);line-height:1.75}
 
 /* ══════════════════════════════════════
+   LOADING SPINNER
+══════════════════════════════════════ */
+.loading-wrap{
+  grid-column:1/-1;
+  text-align:center;padding:80px 20px;
+}
+.loading-ico{
+  font-size:44px;
+  display:inline-block;
+  animation:spin 1.4s linear infinite;
+  margin-bottom:16px;
+}
+.loading-txt{font-size:14px;color:var(--text2);font-weight:600}
+.loading-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* ══════════════════════════════════════
+   ERROR STATE
+══════════════════════════════════════ */
+.error-wrap{
+  grid-column:1/-1;
+  text-align:center;padding:80px 20px;
+}
+.error-ico{font-size:44px;margin-bottom:16px}
+.error-txt{font-size:15px;font-weight:700;color:#FCA5A5;margin-bottom:8px}
+.error-sub{font-size:13px;color:var(--text3);margin-bottom:22px;max-width:400px;margin-inline:auto}
+.retry-btn{
+  background:var(--orange);color:#fff;
+  border:none;padding:10px 28px;border-radius:10px;
+  cursor:pointer;font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:700;
+  transition:all .15s;
+}
+.retry-btn:hover{background:#e85e00}
+
+/* Empty section */
+.empty-wrap{
+  grid-column:1/-1;
+  text-align:center;padding:60px 20px;
+  color:var(--text3);font-size:13px;
+}
+
+/* ══════════════════════════════════════
    FOOTER
 ══════════════════════════════════════ */
 .cat-footer{background:var(--dark);border-top:1px solid rgba(255,107,0,.15);padding:60px 24px 40px;text-align:center;}
@@ -615,102 +608,118 @@ a{text-decoration:none;color:inherit}
 .footer-links{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
 .footer-link{display:inline-flex;align-items:center;gap:8px;color:var(--orange);background:var(--orange-dim);border:1px solid var(--border-o);padding:11px 24px;border-radius:30px;font-size:13px;font-weight:700;transition:all .18s;}
 .footer-link:hover{background:var(--orange);color:#fff}
-.footer-main-link{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.1);padding:10px 24px;border-radius:30px;font-size:13px;font-weight:600;transition:all .18s;margin-bottom:28px;}
+.footer-main-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.1);padding:10px 24px;border-radius:30px;font-size:13px;font-weight:600;transition:all .18s;margin-bottom:28px;text-decoration:none;}
 .footer-main-link:hover{background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.2)}
 .footer-divider{height:1px;background:rgba(255,255,255,.06);margin:0 auto 20px;max-width:400px;}
 .footer-copy{font-size:12px;color:var(--text3);}
 
 /* ══════════════════════════════════════
-   RESPONSIVE
+   SECTION WRAPPERS
 ══════════════════════════════════════ */
-@media(max-width:768px){
-  .top-nav{padding:0 16px}
-  .nav-links{display:none}
-  .cover-logo{font-size:52px}
-  .cover-headline{font-size:30px}
-  .catalog-grid{grid-template-columns:1fr}
-  .act-specs{grid-template-columns:1fr 1fr}
-  .cover-stats{flex-direction:column}
-  .cstat{border-left:none;border-top:1px solid var(--border)}
-  .howto-grid{grid-template-columns:1fr 1fr}
-  .sec-title{font-size:28px}
-  .float-sections-btn{bottom:20px;left:16px;padding:10px 16px;font-size:12px;}
-  .drawer-grid{grid-template-columns:1fr 1fr}
-  .nav-back-btn .back-label{display:none}
+.section-wrap{
+  scroll-margin-top:calc(var(--nav-h) + var(--subnav-h) + 8px);
 }
-@media(max-width:480px){
+
+/* ══════════════════════════════════════
+   RESPONSIVE — TABLET (max 900px)
+══════════════════════════════════════ */
+@media(max-width:900px){
+  .cover-logo{font-size:60px}
+  .cover-headline{font-size:36px}
+  .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .toc-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .sec-title{font-size:32px}
+  .howto-grid{grid-template-columns:repeat(2,1fr)}
+  .subnav-inner{padding:0 12px;gap:2px}
+  .subnav-btn{padding:6px 12px;font-size:11px}
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — MOBILE (max 640px)
+══════════════════════════════════════ */
+@media(max-width:640px){
+  :root{
+    --nav-h:56px;
+    --subnav-h:46px;
+  }
+  .top-nav{padding:0 14px}
+  .nav-brand{font-size:18px}
+  .nav-back-btn .back-label{display:none}
+  .nav-back-btn{padding:6px 12px}
+  .nav-cta{padding:7px 14px;font-size:11px}
+
+  .cover{padding:70px 16px 60px;min-height:auto}
+  .cover-logo{font-size:44px;letter-spacing:-1px}
+  .cover-logo-en{font-size:10px;letter-spacing:.15em;margin-bottom:28px}
+  .cover-headline{font-size:24px;margin-bottom:14px}
+  .cover-desc{font-size:13px;margin-bottom:32px}
+  .cover-stats{flex-direction:column;max-width:100%}
+  .cstat{border-left:none;border-top:1px solid var(--border);padding:16px 12px}
+  .cstat:first-child{border-top:none}
+  .cstat-n{font-size:24px}
+  .cover-tag{font-size:10px;padding:6px 14px;margin-bottom:20px}
+  .cover-divider{margin-bottom:24px}
+
+  .toc-section{padding:40px 14px}
+  .toc-title{font-size:24px}
+  .toc-grid{grid-template-columns:1fr 1fr}
+  .toc-item{padding:12px 12px;gap:10px}
+  .toc-ico{width:34px;height:34px;font-size:16px}
+  .toc-name{font-size:12px}
+  .toc-count{font-size:10px}
+
+  .sec-header{padding:36px 16px 28px}
+  .sec-title{font-size:24px}
+  .sec-sub{font-size:13px}
+  .sec-badge{font-size:10px;padding:5px 14px}
+
+  .sec-label-row{padding:20px 14px 0;gap:10px}
+  .sec-label-title{font-size:16px}
+  .sec-label-badge{font-size:10px}
+
+  .catalog-wrap{padding:18px 12px 30px}
+  .catalog-grid{grid-template-columns:1fr;gap:14px}
+
+  .act-thumb{height:180px}
+  .act-photos{height:180px}
+  .act-name{font-size:18px}
+  .act-body{padding:14px 16px 16px}
+  .act-specs{gap:6px}
+  .spec{padding:8px 10px}
+  .spec-l{font-size:8px}
+  .spec-v{font-size:12px}
+
+  .howto-section{padding:36px 14px}
   .howto-grid{grid-template-columns:1fr}
+  .howto-card{padding:20px 16px}
+
+  .cat-footer{padding:36px 16px 28px}
+  .footer-logo{font-size:28px}
+  .footer-links{gap:8px}
+  .footer-link{padding:9px 18px;font-size:12px}
+
+  /* Subnav on mobile — horizontal scroll */
+  .subnav-btn{padding:5px 10px;font-size:10px;gap:4px}
+  .subnav-ico{font-size:12px}
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE (max 380px)
+══════════════════════════════════════ */
+@media(max-width:380px){
+  .cover-logo{font-size:36px}
+  .cover-headline{font-size:20px}
   .toc-grid{grid-template-columns:1fr}
-  .drawer-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════════════
-     FLOATING SECTIONS BUTTON + DRAWER
+     STICKY TOP NAV
 ════════════════════════════════════════════════════════ -->
-<button class="float-sections-btn" id="floatBtn" onclick="openDrawer()" aria-label="عرض الأقسام">
-  <div class="fsb-ico">☰</div>
-  <span class="fsb-txt">الأقسام</span>
-</button>
-
-<div class="sections-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-<div class="sections-drawer" id="sectionsDrawer">
-  <div class="drawer-handle"></div>
-  <div class="drawer-title">اختار <span>القسم</span> اللي يهمك</div>
-  <div class="drawer-grid">
-    <div class="drawer-item" onclick="goToSection('sec-food')">
-      <div class="drawer-item-ico" style="background:rgba(255,107,0,.12)">🍕</div>
-      <div><div class="drawer-item-name">الأكل والمشروبات</div><div class="drawer-item-count">٧ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-beauty')">
-      <div class="drawer-item-ico" style="background:rgba(236,72,153,.12)">💄</div>
-      <div><div class="drawer-item-name">الجمال والعناية</div><div class="drawer-item-count">٥ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-retail')">
-      <div class="drawer-item-ico" style="background:rgba(99,102,241,.12)">🛍</div>
-      <div><div class="drawer-item-name">البيع والمنتجات</div><div class="drawer-item-count">٦ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-kids')">
-      <div class="drawer-item-ico" style="background:rgba(34,197,94,.12)">🎒</div>
-      <div><div class="drawer-item-name">الأطفال والتعليم</div><div class="drawer-item-count">٥ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-health')">
-      <div class="drawer-item-ico" style="background:rgba(239,68,68,.12)">💪</div>
-      <div><div class="drawer-item-name">الصحة واللياقة</div><div class="drawer-item-count">٤ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-service')">
-      <div class="drawer-item-ico" style="background:rgba(16,185,129,.12)">⚡</div>
-      <div><div class="drawer-item-name">الخدمات السريعة</div><div class="drawer-item-count">٦ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-fashion')">
-      <div class="drawer-item-ico" style="background:rgba(244,114,182,.12)">👗</div>
-      <div><div class="drawer-item-name">الأزياء والملابس</div><div class="drawer-item-count">٤ أنشطة</div></div>
-    </div>
-    <div class="drawer-item" onclick="goToSection('sec-event')">
-      <div class="drawer-item-ico" style="background:rgba(167,139,250,.12)">🎪</div>
-      <div><div class="drawer-item-name">الفعاليات والترفيه</div><div class="drawer-item-count">٤ أنشطة</div></div>
-    </div>
-  </div>
-  <button class="drawer-close" onclick="closeDrawer()">✕ إغلاق</button>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     STICKY NAVBAR
-════════════════════════════════════════════════════════ -->
-<nav class="top-nav">
+<nav class="top-nav" id="topNav">
   <div class="nav-brand" onclick="window.location.href='index.html'">مكاني <span>Spot</span></div>
-  <div class="nav-links">
-    <button class="nav-link" onclick="scrollTo('sec-food')">أكل ومشروبات</button>
-    <button class="nav-link" onclick="scrollTo('sec-beauty')">جمال وعناية</button>
-    <button class="nav-link" onclick="scrollTo('sec-retail')">منتجات وبيع</button>
-    <button class="nav-link" onclick="scrollTo('sec-kids')">أطفال وتعليم</button>
-    <button class="nav-link" onclick="scrollTo('sec-health')">صحة ولياقة</button>
-    <button class="nav-link" onclick="scrollTo('sec-service')">خدمات سريعة</button>
-    <button class="nav-link" onclick="scrollTo('sec-fashion')">أزياء وملابس</button>
-    <button class="nav-link" onclick="scrollTo('sec-event')">فعاليات وترفيه</button>
-  </div>
   <div class="nav-right">
     <a href="index.html" class="nav-back-btn">
       ← <span class="back-label">العودة للمنصة</span>
@@ -718,6 +727,38 @@ a{text-decoration:none;color:inherit}
     <a href="https://wa.me/201103467711?text=مرحبا،+أريد+الاستفسار+عن+مكاني+Spot" target="_blank" rel="noopener" class="nav-cta">احجز مساحتك ←</a>
   </div>
 </nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     STICKY SECTIONS SUB-NAV (appears on scroll)
+════════════════════════════════════════════════════════ -->
+<div class="sections-subnav" id="sectionsSubnav">
+  <div class="subnav-inner">
+    <button class="subnav-btn" data-target="sec-food" onclick="smoothScrollTo('sec-food')">
+      <span class="subnav-ico">🍕</span> أكل ومشروبات
+    </button>
+    <button class="subnav-btn" data-target="sec-beauty" onclick="smoothScrollTo('sec-beauty')">
+      <span class="subnav-ico">💄</span> جمال وعناية
+    </button>
+    <button class="subnav-btn" data-target="sec-retail" onclick="smoothScrollTo('sec-retail')">
+      <span class="subnav-ico">🛍</span> منتجات وبيع
+    </button>
+    <button class="subnav-btn" data-target="sec-kids" onclick="smoothScrollTo('sec-kids')">
+      <span class="subnav-ico">🎒</span> أطفال وتعليم
+    </button>
+    <button class="subnav-btn" data-target="sec-health" onclick="smoothScrollTo('sec-health')">
+      <span class="subnav-ico">💪</span> صحة ولياقة
+    </button>
+    <button class="subnav-btn" data-target="sec-service" onclick="smoothScrollTo('sec-service')">
+      <span class="subnav-ico">⚡</span> خدمات سريعة
+    </button>
+    <button class="subnav-btn" data-target="sec-fashion" onclick="smoothScrollTo('sec-fashion')">
+      <span class="subnav-ico">👗</span> أزياء وملابس
+    </button>
+    <button class="subnav-btn" data-target="sec-event" onclick="smoothScrollTo('sec-event')">
+      <span class="subnav-ico">🎪</span> فعاليات وترفيه
+    </button>
+  </div>
+</div>
 
 
 <!-- ═══════════════════════════════════════════════════════
@@ -748,13 +789,13 @@ a{text-decoration:none;color:inherit}
     </p>
 
     <div class="cover-stats">
-      <div class="cstat"><div class="cstat-n">+٤٠</div><div class="cstat-l">نشاط تجاري</div></div>
+      <div class="cstat"><div class="cstat-n" id="stat-count">+٤٠</div><div class="cstat-l">نشاط تجاري</div></div>
       <div class="cstat"><div class="cstat-n">٨</div><div class="cstat-l">فئة رئيسية</div></div>
       <div class="cstat"><div class="cstat-n">٨</div><div class="cstat-l">أنواع مواقع</div></div>
       <div class="cstat"><div class="cstat-n">١ م²</div><div class="cstat-l">أدنى مساحة</div></div>
     </div>
 
-    <div class="cover-scroll" onclick="scrollTo('toc-anchor')">
+    <div class="cover-scroll" onclick="smoothScrollTo('toc-anchor')">
       <div class="cover-scroll-arrow">↓</div>
       اكتشف الكتالوج
     </div>
@@ -775,37 +816,37 @@ a{text-decoration:none;color:inherit}
       <div class="toc-title">٨ أقسام — <span>كل ما تحتاجه في مكان واحد</span></div>
     </div>
     <div class="toc-grid">
-      <div class="toc-item" onclick="scrollTo('sec-food')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-food')">
         <div class="toc-ico" style="background:rgba(255,107,0,.12)">🍕</div>
-        <div class="toc-info"><div class="toc-num">القسم الأول</div><div class="toc-name">الأكل والمشروبات</div><div class="toc-count">٧ أنشطة</div></div>
+        <div><div class="toc-num">القسم الأول</div><div class="toc-name">الأكل والمشروبات</div><div class="toc-count" id="toc-count-food">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-beauty')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-beauty')">
         <div class="toc-ico" style="background:rgba(236,72,153,.12)">💄</div>
-        <div class="toc-info"><div class="toc-num">القسم الثاني</div><div class="toc-name">الجمال والعناية</div><div class="toc-count">٥ أنشطة</div></div>
+        <div><div class="toc-num">القسم الثاني</div><div class="toc-name">الجمال والعناية</div><div class="toc-count" id="toc-count-beauty">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-retail')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-retail')">
         <div class="toc-ico" style="background:rgba(99,102,241,.12)">🛍</div>
-        <div class="toc-info"><div class="toc-num">القسم الثالث</div><div class="toc-name">البيع والمنتجات</div><div class="toc-count">٦ أنشطة</div></div>
+        <div><div class="toc-num">القسم الثالث</div><div class="toc-name">البيع والمنتجات</div><div class="toc-count" id="toc-count-retail">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-kids')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-kids')">
         <div class="toc-ico" style="background:rgba(34,197,94,.12)">🎒</div>
-        <div class="toc-info"><div class="toc-num">القسم الرابع</div><div class="toc-name">الأطفال والتعليم</div><div class="toc-count">٥ أنشطة</div></div>
+        <div><div class="toc-num">القسم الرابع</div><div class="toc-name">الأطفال والتعليم</div><div class="toc-count" id="toc-count-kids">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-health')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-health')">
         <div class="toc-ico" style="background:rgba(239,68,68,.12)">💪</div>
-        <div class="toc-info"><div class="toc-num">القسم الخامس</div><div class="toc-name">الصحة واللياقة</div><div class="toc-count">٤ أنشطة</div></div>
+        <div><div class="toc-num">القسم الخامس</div><div class="toc-name">الصحة واللياقة</div><div class="toc-count" id="toc-count-health">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-service')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-service')">
         <div class="toc-ico" style="background:rgba(16,185,129,.12)">⚡</div>
-        <div class="toc-info"><div class="toc-num">القسم السادس</div><div class="toc-name">الخدمات السريعة</div><div class="toc-count">٦ أنشطة</div></div>
+        <div><div class="toc-num">القسم السادس</div><div class="toc-name">الخدمات السريعة</div><div class="toc-count" id="toc-count-service">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-fashion')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-fashion')">
         <div class="toc-ico" style="background:rgba(244,114,182,.12)">👗</div>
-        <div class="toc-info"><div class="toc-num">القسم السابع</div><div class="toc-name">الأزياء والملابس</div><div class="toc-count">٤ أنشطة</div></div>
+        <div><div class="toc-num">القسم السابع</div><div class="toc-name">الأزياء والملابس</div><div class="toc-count" id="toc-count-fashion">جاري التحميل…</div></div>
       </div>
-      <div class="toc-item" onclick="scrollTo('sec-event')">
+      <div class="toc-item" onclick="smoothScrollTo('sec-event')">
         <div class="toc-ico" style="background:rgba(167,139,250,.12)">🎪</div>
-        <div class="toc-info"><div class="toc-num">القسم الثامن</div><div class="toc-name">الفعاليات والترفيه</div><div class="toc-count">٤ أنشطة</div></div>
+        <div><div class="toc-num">القسم الثامن</div><div class="toc-name">الفعاليات والترفيه</div><div class="toc-count" id="toc-count-event">جاري التحميل…</div></div>
       </div>
     </div>
   </div>
@@ -815,576 +856,140 @@ a{text-decoration:none;color:inherit}
 <!-- ═══════════════════════════════════════════════════════
      SECTION 1 — FOOD & DRINKS
 ════════════════════════════════════════════════════════ -->
-<div id="sec-food">
-<div class="sec-header" style="background:var(--dark2)">
-  <div class="sec-badge">القسم الأول · ٧ أنشطة</div>
-  <div class="sec-title">الأكل <span>والمشروبات</span> 🍕</div>
-  <div class="sec-sub">الأنشطة الأعلى طلباً — هامش ربح ممتاز وقرار شراء سريع في أي وقت</div>
+<div id="sec-food" class="section-wrap">
+  <div class="sec-header" style="background:var(--dark2)">
+    <div class="sec-badge">القسم الأول</div>
+    <div class="sec-title">الأكل <span>والمشروبات</span> 🍕</div>
+    <div class="sec-sub">الأنشطة الأعلى طلباً — هامش ربح ممتاز وقرار شراء سريع في أي وقت</div>
+  </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>🍊</span> Food &amp; Beverages</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-food">—</div>
+  </div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-food"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري تحميل الأنشطة…</div><div class="loading-sub">بنجيب البيانات من المصدر</div></div></div>
+  </div>
 </div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>🍊</span> Food &amp; Beverages</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٧ أنشطة متاحة</div>
+
+<!-- SECTION 2 — BEAUTY -->
+<div id="sec-beauty" class="section-wrap" style="background:var(--dark2)">
+  <div class="sec-header" style="background:var(--dark3)">
+    <div class="sec-badge">القسم الثاني</div>
+    <div class="sec-title">الجمال <span>والعناية</span> 💄</div>
+    <div class="sec-sub">قطاع في نمو متسارع — عميل يعود بانتظام وولاء عالي</div>
+  </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>💄</span> Beauty &amp; Personal Care</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-beauty">—</div>
+  </div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-beauty"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
+  </div>
 </div>
-<div class="catalog-wrap">
-<div class="catalog-grid">
 
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة رئيسية للنشاط</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-top">⭐ الأكثر طلباً</span>
-      <div class="demand-bar"><div class="demand-fill df-5"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🍊 مشروبات</div>
-      <div class="act-name">عربية عصير طازج</div>
-      <div class="act-desc">من أعلى الأنشطة ربحاً في المساحات الصغيرة — هامش 300–500% وقرار شراء فوري بدون تفكير. تصلح لمدخل المول أو بجوار الجيم مباشرة.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١×١</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">رأس مال صغير</span><span class="tag">هامش +300%</span><span class="tag">قرار فوري</span><span class="tag">كل الأعمار</span></div>
-      <div class="act-locs">
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-club">⚽ نوادي</span>
-        <span class="loc loc-school">🏫 مدارس</span>
-        <span class="loc loc-hospital">🏥 مستشفيات</span>
-        <span class="loc loc-transit">🚌 مواقف</span>
-        <span class="loc loc-gas">⛽ محطات</span>
-      </div>
-    </div>
+<!-- SECTION 3 — RETAIL -->
+<div id="sec-retail" class="section-wrap">
+  <div class="sec-header" style="background:var(--dark2)">
+    <div class="sec-badge">القسم الثالث</div>
+    <div class="sec-title">البيع <span>والمنتجات</span> 🛍</div>
+    <div class="sec-sub">كل ما يمكن بيعه في مساحة صغيرة — من إكسسوار إلى منتجات يدوية</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كشك قهوة</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-top">⭐ الأكثر طلباً</span>
-      <div class="demand-bar"><div class="demand-fill df-5"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">☕ مشروبات ساخنة</div>
-      <div class="act-name">كشك قهوة ومشروبات</div>
-      <div class="act-desc">طلب يومي ثابت طول السنة بدون موسمية. يصلح بشكل ممتاز في المداخل والنوادي وأماكن العمل المزدحمة.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">طلب يومي</span><span class="tag">ولاء عملاء</span><span class="tag">قابل للتطوير</span></div>
-      <div class="act-locs">
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-office">🏢 شركات</span>
-        <span class="loc loc-hospital">🏥 مستشفيات</span>
-        <span class="loc loc-transit">🚌 مواقف</span>
-        <span class="loc loc-gas">⛽ محطات</span>
-      </div>
-    </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>🛍</span> Retail &amp; Products</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-retail">—</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة عربية سكر قطن</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-new">جذاب بصرياً</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🍭 حلويات خفيفة</div>
-      <div class="act-name">سكر قطن وفشار مميز</div>
-      <div class="act-desc">جذب قوي للأطفال والعائلات — المعدات صغيرة والعرض المرئي يشتغل كإعلان مجاني. ديكور Instagram-worthy يرفع الطلب بقوة.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١×١</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٢×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">أطفال وعائلات</span><span class="tag">Instagram</span><span class="tag">موسمي</span></div>
-      <div class="act-locs">
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-club">⚽ نوادي</span>
-        <span class="loc loc-event">🎪 فعاليات</span>
-      </div>
-    </div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-retail"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن آيس كريم</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-trend">ترند ٢٠٢٦</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🍦 حلويات باردة</div>
-      <div class="act-name">بارتيشن آيس كريم مميز</div>
-      <div class="act-desc">من أنجح الأنشطة في الأماكن العائلية والترفيهية. الديكور الجذاب يشتغل كمغناطيس للزوار وكمحتوى مجاني. يصلح للفرانشايز.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">عائلات</span><span class="tag">صور للسوشيال</span><span class="tag">فرانشايز</span></div>
-      <div class="act-locs">
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-club">⚽ نوادي</span>
-        <span class="loc loc-event">🎪 فعاليات</span>
-        <span class="loc loc-transit">🚌 مواقف</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بوفيه أو كافتيريا</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-top">سوق مضمون</span>
-      <div class="demand-bar"><div class="demand-fill df-5"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🥙 وجبات خفيفة</div>
-      <div class="act-name">بوفيه / كافتيريا سريعة</div>
-      <div class="act-desc">سوق مضمون مع جمهور ثابت كل يوم. يصلح للساندوتشات والعصائر والمأكولات الخفيفة للموظفين والطلاب وزوار الأماكن المغلقة.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٣</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٤</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">سوق مضمون</span><span class="tag">عقد سنوي</span><span class="tag">جمهور يومي</span></div>
-      <div class="act-locs">
-        <span class="loc loc-school">🏫 مدارس</span>
-        <span class="loc loc-office">🏢 شركات</span>
-        <span class="loc loc-club">⚽ نوادي</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن أكل صحي</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-trend">ترند صاعد</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🥗 أكل صحي</div>
-      <div class="act-name">ركن وجبات صحية وسلطات</div>
-      <div class="act-desc">ترند صاعد مع تزايد الوعي الصحي. يناسب النوادي الرياضية والمكاتب الكبرى بشكل مثالي. فاتورة ممتازة وعميل يعود بانتظام.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٢</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٥×٣</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">Fitness lovers</span><span class="tag">ترند صاعد</span><span class="tag">هامش عالي</span></div>
-      <div class="act-locs">
-        <span class="loc loc-club">⚽ نوادي</span>
-        <span class="loc loc-office">🏢 شركات</span>
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-hospital">🏥 مستشفيات</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-food">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن حلويات</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-new">مناسبات</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-food">🍮 حلويات شرقية</div>
-      <div class="act-name">بارتيشن حلويات وحلاوة طحينية</div>
-      <div class="act-desc">طلب موسمي قوي في رمضان والمناسبات. يمكن تطويره لكنافة وقطايف وحلويات عصرية. الجمهور واسع والقرار الشرائي عاطفي وسريع.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">موسمي قوي</span><span class="tag">رمضان</span><span class="tag">مناسبات</span></div>
-      <div class="act-locs">
-        <span class="loc loc-mall">🏬 مولات</span>
-        <span class="loc loc-event">🎪 فعاليات</span>
-      </div>
-    </div>
-  </div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 2 — BEAUTY
-════════════════════════════════════════════════════════ -->
-<div id="sec-beauty" style="background:var(--dark2)">
-<div class="sec-header" style="background:var(--dark3)">
-  <div class="sec-badge">القسم الثاني · ٥ أنشطة</div>
-  <div class="sec-title">الجمال <span>والعناية</span> 💄</div>
-  <div class="sec-sub">قطاع في نمو متسارع — عميل يعود بانتظام وولاء عالي</div>
 </div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>💄</span> Beauty &amp; Personal Care</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٥ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
 
-  <div class="act-card">
-    <div class="act-thumb tb-beauty">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كشك نيلز</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-top">⭐ الأكثر طلباً</span>
-      <div class="demand-bar"><div class="demand-fill df-5"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-beauty">💅 نيلز وتجميل</div>
-      <div class="act-name">كشك نيلز ومانيكير وباديكير</div>
-      <div class="act-desc">من أكثر الأنشطة ملاءمة للمساحات الصغيرة جداً. يكفيه كرسيان وطاولة. العميل يعود كل أسبوعين بانتظام — ولاء وإيراد ثابت.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">عميل كل أسبوعين</span><span class="tag">مساحة صغيرة</span><span class="tag">هامش عالي</span></div>
-      <div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span></div>
-    </div>
+<!-- SECTION 4 — KIDS -->
+<div id="sec-kids" class="section-wrap" style="background:var(--dark2)">
+  <div class="sec-header" style="background:var(--dark3)">
+    <div class="sec-badge">القسم الرابع</div>
+    <div class="sec-title">الأطفال <span>والتعليم</span> 🎒</div>
+    <div class="sec-sub">قطاع لا ينكسر — الأهل يدفعون دائماً على تعليم وترفيه أطفالهم</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-beauty">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كشك حلاقة</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-new">أسبوعي</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-beauty">✂️ حلاقة</div>
-      <div class="act-name">كشك حلاقة للرجال (Barber)</div>
-      <div class="act-desc">يتناسب مع الأماكن ذات الحركة العالية والتجمعات. يصلح لكرسي واحد أو اثنين. عميل ثابت أسبوعياً مع بناء سريع لقاعدة عملاء وفية.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٢</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٥×٣</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">عميل أسبوعي</span><span class="tag">مرخّص</span><span class="tag">ولاء عالي</span></div>
-      <div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-transit">🚌 مواقف</span></div>
-    </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>🎒</span> Kids &amp; Education</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-kids">—</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-beauty">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن منتجات سكينكير</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-trend">ترند ٢٠٢٦</span>
-      <div class="demand-bar"><div class="demand-fill df-5"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-beauty">🧴 منتجات جمال</div>
-      <div class="act-name">بارتيشن سكينكير ومنتجات بيوتي</div>
-      <div class="act-desc">ترند Instagram قوي جداً. يصلح لعرض منتجات بيوتي وسكينكير. يمكن تشغيله كـ Brand أونلاين مع نقطة بيع فيزيائية لتعزيز الثقة.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">Instagram Brand</span><span class="tag">ترند ٢٠٢٦</span></div>
-      <div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div>
-    </div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-kids"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
   </div>
+</div>
 
-  <div class="act-card">
-    <div class="act-thumb tb-beauty">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة رسم حناء</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-new">رأس مال منخفض</span>
-      <div class="demand-bar"><div class="demand-fill df-3"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-beauty">🌸 فنون تجميلية</div>
-      <div class="act-name">رسم حناء وتاتو مؤقت</div>
-      <div class="act-desc">مساحة صغيرة جداً مع عائد سريع. يصلح للمناسبات والفعاليات. جذاب بصرياً ويولّد محتوى سوشيال ميديا مجاني يومياً.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١×١</em> متر</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٢×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">رأس مال أدنى</span><span class="tag">مناسبات</span><span class="tag">صيف</span></div>
-      <div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-event">🎪 فعاليات</span></div>
-    </div>
+<!-- SECTION 5 — HEALTH -->
+<div id="sec-health" class="section-wrap">
+  <div class="sec-header" style="background:var(--dark2)">
+    <div class="sec-badge">القسم الخامس</div>
+    <div class="sec-title">الصحة <span>واللياقة</span> 💪</div>
+    <div class="sec-sub">قطاع في نمو متسارع — جمهور يعود بانتظام ويدفع بسعادة</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-beauty">
-      <div class="act-photos" style="height:220px">
-        <div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن عطور</div></div></div>
-        <div class="act-photo-side">
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-          <div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div>
-        </div>
-        <div class="act-photo-overlay"></div>
-      </div>
-      <span class="act-badge badge-trend">هامش عالي</span>
-      <div class="demand-bar"><div class="demand-fill df-4"></div></div>
-    </div>
-    <div class="act-body">
-      <div class="act-cat cat-beauty">🌹 عطور</div>
-      <div class="act-name">بارتيشن عطور وبرفان</div>
-      <div class="act-desc">من أعلى المنتجات هامشاً وأقلها حجماً. العرض الجميل يجذب انتباه المارة ويصنع تجربة شراء لا تُنسى. يصلح للعطور الفاخرة أو التجارية.</div>
-      <div class="act-specs">
-        <div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١.٥×١.٥</em> م</div></div>
-        <div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٢</em> متر</div></div>
-      </div>
-      <div class="act-tags"><span class="tag">هامش 500%+</span><span class="tag">مساحة صغيرة</span></div>
-      <div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-office">🏢 شركات</span><span class="loc loc-event">🎪 فعاليات</span></div>
-    </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>💪</span> Health &amp; Fitness</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-health">—</div>
   </div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 3 — RETAIL
-════════════════════════════════════════════════════════ -->
-<div id="sec-retail">
-<div class="sec-header" style="background:var(--dark2)">
-  <div class="sec-badge">القسم الثالث · ٦ أنشطة</div>
-  <div class="sec-title">البيع <span>والمنتجات</span> 🛍</div>
-  <div class="sec-sub">كل ما يمكن بيعه في مساحة صغيرة — من إكسسوار إلى منتجات يدوية</div>
-</div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>🛍</span> Retail &amp; Products</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٦ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card">
-    <div class="act-thumb tb-retail"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن إكسسوار</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">هامش 300%+</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-retail">💍 إكسسوار</div><div class="act-name">بارتيشن إكسسوار وحلي</div><div class="act-desc">منتجات صغيرة = عرض كبير في مساحة صغيرة. هامش ربح مرتفع جداً والتنوع في المنتجات يجذب شرائح مختلفة من الزوار في نفس الوقت.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١.٥×١.٥</em> م</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">هامش 200–400%</span><span class="tag">جمهور واسع</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-transit">🚌 مواقف</span><span class="loc loc-event">🎪 فعاليات</span></div></div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-health"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
   </div>
+</div>
 
-  <div class="act-card">
-    <div class="act-thumb tb-craft"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن منتجات يدوية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">Popup Store</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-craft">🎨 هاندميد</div><div class="act-name">ركن منتجات يدوية وهاندميد</div><div class="act-desc">طلب متزايد مع ثقافة دعم المنتج المحلي. يمكن تقديمه مع قصة البراند لزيادة القيمة المدركة. يصلح للـ Popup Stores والمعارض الدورية.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">دعم محلي</span><span class="tag">Popup</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div>
+<!-- SECTION 6 — SERVICES -->
+<div id="sec-service" class="section-wrap" style="background:var(--dark2)">
+  <div class="sec-header" style="background:var(--dark3)">
+    <div class="sec-badge">القسم السادس</div>
+    <div class="sec-title">الخدمات <span>السريعة</span> ⚡</div>
+    <div class="sec-sub">خدمات يومية تحل مشكلة فورية — قرار شراء سريع وعائد ثابت</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-kids"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن ألعاب أطفال</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">أطفال</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-kids">🧸 ألعاب أطفال</div><div class="act-name">بارتيشن ألعاب وبضاعة أطفال</div><div class="act-desc">الأهل ينفقون باستمرار على أطفالهم. القرار الشرائي سريع خاصة لو الطفل موجود. يصلح للأماكن العائلية والأكثر حركة.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">قرار شراء عاطفي</span><span class="tag">موسمي</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-hospital">🏥 مستشفيات</span></div></div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>⚡</span> Quick Services</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-service">—</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-tech"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة إكسسوار موبايل</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">طلب يومي</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-tech">📱 تقنية</div><div class="act-name">بارتيشن إكسسوار موبايل وتقنية</div><div class="act-desc">طلب يومي ثابت من كل الفئات العمرية. يمكن إضافة خدمة تركيب الشاشات أو الكفرات بالطباعة المخصصة لرفع الإيراد بشكل كبير.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">طلب يومي</span><span class="tag">كل الأعمار</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-transit">🚌 مواقف</span><span class="loc loc-gas">⛽ محطات</span><span class="loc loc-office">🏢 شركات</span></div></div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-service"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
   </div>
+</div>
 
-  <div class="act-card">
-    <div class="act-thumb tb-retail"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن كتب وقرطاسية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">مدارس وجامعات</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-retail">📚 قرطاسية</div><div class="act-name">بارتيشن قرطاسية وأدوات مكتبية</div><div class="act-desc">طلب موسمي قوي بداية العام الدراسي وطلب يومي أقل خلال السنة. يصلح بجوار أماكن التعليم والمكاتب والتجمعات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">موسمي قوي</span><span class="tag">بداية دراسية</span></div><div class="act-locs"><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-office">🏢 شركات</span><span class="loc loc-mall">🏬 مولات</span></div></div>
+<!-- SECTION 7 — FASHION -->
+<div id="sec-fashion" class="section-wrap">
+  <div class="sec-header" style="background:var(--dark2)">
+    <div class="sec-badge">القسم السابع</div>
+    <div class="sec-title">الأزياء <span>والملابس</span> 👗</div>
+    <div class="sec-sub">من أكبر قطاعات البيع — المساحة الصغيرة مناسبة للتخصص</div>
   </div>
-
-  <div class="act-card">
-    <div class="act-thumb tb-retail"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن هدايا وتغليف</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">مناسبات</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div>
-    <div class="act-body"><div class="act-cat cat-craft">🎁 هدايا</div><div class="act-name">بارتيشن هدايا وتغليف فاخر</div><div class="act-desc">القرار الشرائي عاطفي وسريع. يجمع بين بيع الهدايا الجاهزة وخدمة التغليف المميز. يصلح بجوار محلات المجوهرات والمستشفيات والفعاليات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">عاطفي وسريع</span><span class="tag">مناسبات</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-event">🎪 فعاليات</span></div></div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>👗</span> Fashion &amp; Apparel</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-fashion">—</div>
   </div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 4 — KIDS
-════════════════════════════════════════════════════════ -->
-<div id="sec-kids" style="background:var(--dark2)">
-<div class="sec-header" style="background:var(--dark3)">
-  <div class="sec-badge">القسم الرابع · ٥ أنشطة</div>
-  <div class="sec-title">الأطفال <span>والتعليم</span> 🎒</div>
-  <div class="sec-sub">قطاع لا ينكسر — الأهل يدفعون دائماً على تعليم وترفيه أطفالهم</div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-fashion"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
+  </div>
 </div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>🎒</span> Kids &amp; Education</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٥ أنشطة متاحة</div>
+
+<!-- SECTION 8 — EVENTS -->
+<div id="sec-event" class="section-wrap" style="background:var(--dark2)">
+  <div class="sec-header" style="background:var(--dark3)">
+    <div class="sec-badge">القسم الثامن</div>
+    <div class="sec-title">الفعاليات <span>والترفيه</span> 🎪</div>
+    <div class="sec-sub">أنشطة تخلق تجربة لا تُنسى وتحول الزيارة لذكرى</div>
+  </div>
+  <div class="sec-label-row">
+    <div class="sec-label-title"><span>🎪</span> Events &amp; Entertainment</div>
+    <div class="sec-label-line"></div>
+    <div class="sec-label-badge" id="badge-event">—</div>
+  </div>
+  <div class="catalog-wrap">
+    <div class="catalog-grid" id="grid-event"><div class="loading-wrap"><div class="loading-ico">⏳</div><div class="loading-txt">جاري التحميل…</div></div></div>
+  </div>
 </div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card"><div class="act-thumb tb-kids"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة فصل رسم أطفال</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">⭐ الأكثر طلباً</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-kids">🖌️ فنون</div><div class="act-name">كورسات رسم وفنون للأطفال</div><div class="act-desc">المساحة تصلح كفصل صغير إبداعي. الأهل يبحثون عن أنشطة تنمية طول الوقت. يمكن تشغيله مساءً وأيام الإجازات لاستغلال المكان بأفضل شكل.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٤</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٥</em> متر</div></div></div><div class="act-tags"><span class="tag">اشتراك شهري</span><span class="tag">إجازات</span><span class="tag">مستدام</span></div><div class="act-locs"><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-mall">🏬 مولات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-kids"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة مركز دروس خصوصية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">سوق ضخم</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-kids">📚 تعليم</div><div class="act-name">مركز دروس خصوصية</div><div class="act-desc">السوق ضخم جداً في مصر. مساحة صغيرة تكفي لـ 4–6 طلاب. يصلح للمناطق السكنية أو داخل المدارس أو المولات المخصصة للخدمات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٥</em> متر</div></div></div><div class="act-tags"><span class="tag">سوق ضخم</span><span class="tag">دخل ثابت</span></div><div class="act-locs"><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-mall">🏬 مولات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-tech"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كورنر ألعاب PS5</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">شباب</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-tech">🎮 ترفيه</div><div class="act-name">كورنر ألعاب فيديو (PS5 / VR)</div><div class="act-desc">يجذب الشباب بشكل ممتاز. عائد بالساعة بدون تعقيد. يصلح بجوار فود كورت المولات، في النوادي، أو أماكن الفعاليات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">فئة الشباب</span><span class="tag">بالساعة</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-kids"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كورس لغات أطفال</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">مستقبلي</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-kids">🌐 لغات</div><div class="act-name">سنتر كورسات لغات وبرمجة</div><div class="act-desc">طلب متزايد من الأهل لتطوير مهارات أطفالهم. كورسات الإنجليزي والبرمجة والروبوتيكا ترتفع طلباً كل سنة. يصلح للمساحات المتوسطة.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٤</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٧×٥</em> متر</div></div></div><div class="act-tags"><span class="tag">اشتراك شهري</span><span class="tag">برمجة</span></div><div class="act-locs"><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-kids"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة حضانة أو مساحة لعب</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-hot">🔥 مطلوب</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-kids">🎪 ترفيه أطفال</div><div class="act-name">كورنر لعب آمن للأطفال الصغار</div><div class="act-desc">الأهل محتاجين مكان آمن للأطفال أثناء التسوق أو التواجد في النادي. يمكن تشغيله باشتراك بالساعة مع إشراف. طلب مرتفع باستمرار.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٦×٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>١٠×٨</em> متر</div></div></div><div class="act-tags"><span class="tag">بالساعة</span><span class="tag">أمان أطفال</span><span class="tag">عائلات</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 5 — HEALTH
-════════════════════════════════════════════════════════ -->
-<div id="sec-health">
-<div class="sec-header" style="background:var(--dark2)">
-  <div class="sec-badge">القسم الخامس · ٤ أنشطة</div>
-  <div class="sec-title">الصحة <span>واللياقة</span> 💪</div>
-  <div class="sec-sub">قطاع في نمو متسارع — جمهور يعود بانتظام ويدفع بسعادة</div>
-</div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>💪</span> Health &amp; Fitness</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٤ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card"><div class="act-thumb tb-health"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن مكملات غذائية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">جمهور ثابت</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-health">💊 مكملات</div><div class="act-name">بارتيشن مكملات غذائية</div><div class="act-desc">يناسب النوادي الرياضية بشكل مثالي — الجمهور منتظم ومحتاج المنتج باستمرار. يمكن الجمع بينه وبين بروتين شيك طازج لرفع الإيراد.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">جمهور ثابت</span><span class="tag">عميل متكرر</span></div><div class="act-locs"><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-mall">🏬 مولات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-health"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بار بروتين شيك</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">بعد التمرين</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-health">🥛 مشروبات رياضية</div><div class="act-name">بار بروتين شيك ومشروبات رياضية</div><div class="act-desc">مباشرة بعد التمرين = أعلى احتمالية شراء. يجمع بين الصحة والمذاق والانتماء لمجتمع الفيتنس. ممتاز لمواقع النوادي.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">بعد التمرين</span><span class="tag">هامش عالي</span></div><div class="act-locs"><span class="loc loc-club">⚽ نوادي</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-health"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كورنر صيدلية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">طلب ثابت</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-health">🏥 صيدلة</div><div class="act-name">كورنر صيدلية ومستلزمات طبية</div><div class="act-desc">الطلب ثابت طول السنة بدون موسمية. يصلح بجوار العيادات والمستشفيات، وكمنصة خدمة سريعة في التجمعات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">طلب ثابت</span><span class="tag">مرخص</span></div><div class="act-locs"><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-gas">⛽ محطات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-health"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن ملابس رياضية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">ترند صاعد</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-health">👟 رياضة</div><div class="act-name">بارتيشن ملابس وأدوات رياضية</div><div class="act-desc">ترند Athleisure صاعد قوي جداً. الجمهور يشتري الملابس الرياضية للتمرين والحياة اليومية. يصلح بشكل ممتاز داخل أو جوار النوادي.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٥×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">Athleisure</span><span class="tag">ترند صاعد</span></div><div class="act-locs"><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-mall">🏬 مولات</span></div></div></div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 6 — SERVICES
-════════════════════════════════════════════════════════ -->
-<div id="sec-service" style="background:var(--dark2)">
-<div class="sec-header" style="background:var(--dark3)">
-  <div class="sec-badge">القسم السادس · ٦ أنشطة</div>
-  <div class="sec-title">الخدمات <span>السريعة</span> ⚡</div>
-  <div class="sec-sub">خدمات يومية تحل مشكلة فورية — قرار شراء سريع وعائد ثابت</div>
-</div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>⚡</span> Quick Services</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٦ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card"><div class="act-thumb tb-service"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كشك طباعة وتصوير</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">طلب يومي</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-service">🖨️ طباعة</div><div class="act-name">كشك طباعة وتصوير مستندات</div><div class="act-desc">طلب يومي ثابت بدون موسمية خالص. قرار الشراء فوري. يناسب المدارس والمستشفيات والشركات بشكل قوي جداً.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">طلب يومي</span><span class="tag">لا موسمية</span></div><div class="act-locs"><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-office">🏢 شركات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-tech"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة صيانة موبايلات</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">هامش عالي</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-tech">🔧 صيانة</div><div class="act-name">صيانة موبايلات وإكسسوار تقنية</div><div class="act-desc">طلب لا ينقطع أبداً. هامش ربح مرتفع على الخدمات. يمكن البدء بمساحة صغيرة جداً وتوسيعها لاحقاً. مناسب لمعظم التجمعات الحيوية.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×١.٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٣×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">هامش عالي</span><span class="tag">طلب دائم</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-transit">🚌 مواقف</span><span class="loc loc-gas">⛽ محطات</span><span class="loc loc-office">🏢 شركات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-service"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة خياطة وتعديل ملابس</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">خدمة نادرة</span><div class="demand-bar"><div class="demand-fill df-3"></div></div></div><div class="act-body"><div class="act-cat cat-service">🧵 خياطة</div><div class="act-name">كشك خياطة وتعديل ملابس</div><div class="act-desc">خدمة نادرة في المولات مع طلب حقيقي عالي. يصلح لتعديل الملابس بجوار محلات الملابس. المعدات بسيطة وتكلفة الإنشاء منخفضة جداً.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">خدمة نادرة</span><span class="tag">رأس مال منخفض</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-event"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة استوديو تصوير سريع</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">سوشيال ميديا</span><div class="demand-bar"><div class="demand-fill df-3"></div></div></div><div class="act-body"><div class="act-cat cat-event">📸 تصوير</div><div class="act-name">استوديو تصوير سريع (فوتو بوث)</div><div class="act-desc">صور السوشيال ميديا، صور التوثيق والمستندات. يمكن إضافة خلفيات مميزة وتحويله لتجربة لا تنسى في الفعاليات وأماكن التجمع.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">سوشيال ميديا</span><span class="tag">مستندات</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-service"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة كشك خدمات مالية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">طلب يومي</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-service">💳 مالية</div><div class="act-name">كشك خدمات مالية / فودافون كاش</div><div class="act-desc">طلب يومي من كل الفئات. المساحة المطلوبة صغيرة جداً ومطلوب في كافة أماكن التجمع والمستشفيات والجامعات والمحطات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>١.٥×١.٥</em> م</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٢×٢</em> متر</div></div></div><div class="act-tags"><span class="tag">إضافي</span><span class="tag">مساحة أدنى</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-school">🏫 مدارس</span><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-transit">🚌 مواقف</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-service"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن غسيل سيارات سريع</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">خارجي</span><div class="demand-bar"><div class="demand-fill df-3"></div></div></div><div class="act-body"><div class="act-cat cat-service">🚗 سيارات</div><div class="act-name">خدمة غسيل سيارات سريع</div><div class="act-desc">العميل يترك سيارته أثناء التسوق أو التواجد في العمل/النادي. نموذج خدمة مع هامش مرتفع وتكلفة منخفضة.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">خارجي</span><span class="tag">خدمة ذاتية</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-gas">⛽ محطات</span></div></div></div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 7 — FASHION
-════════════════════════════════════════════════════════ -->
-<div id="sec-fashion">
-<div class="sec-header" style="background:var(--dark2)">
-  <div class="sec-badge">القسم السابع · ٤ أنشطة</div>
-  <div class="sec-title">الأزياء <span>والملابس</span> 👗</div>
-  <div class="sec-sub">من أكبر قطاعات البيع — المساحة الصغيرة مناسبة للتخصص</div>
-</div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>👗</span> Fashion &amp; Apparel</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٤ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card"><div class="act-thumb tb-fashion"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن ملابس نسائية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-hot">🔥 مطلوب</span><div class="demand-bar"><div class="demand-fill df-5"></div></div></div><div class="act-body"><div class="act-cat cat-fashion">👗 ملابس نسائية</div><div class="act-name">بارتيشن ملابس نسائية مميزة</div><div class="act-desc">التخصص في فئة واحدة (ملابس محجبات / كاجوال / سهرات) يجعل المساحة الصغيرة أكثر جذباً من المحل الكبير، والهوية الواضحة تجذب الجمهور.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">تخصص</span><span class="tag">هوية واضحة</span><span class="tag">موسمي</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-fashion"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن ملابس أطفال</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-top">عائلات</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-fashion">👶 ملابس أطفال</div><div class="act-name">بارتيشن ملابس أطفال وبيبي</div><div class="act-desc">الأهل ينفقون باستمرار على ملابس أطفالهم. تنوع الموديلات يصنع تجربة تسوق ممتعة للعائلة بالكامل.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٣</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٥×٤</em> متر</div></div></div><div class="act-tags"><span class="tag">شراء متكرر</span><span class="tag">موسمي</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-hospital">🏥 مستشفيات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-fashion"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن شنط وحقائب</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">هامش عالي</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-fashion">👜 شنط وحقائب</div><div class="act-name">بارتيشن شنط وحقائب نسائية</div><div class="act-desc">منتج بهامش ربح مرتفع وقرار شراء عاطفي سريع. يمكن تقديمه بمفهوم أسعار معقولة لجذب جمهور أوسع من الشباب والسيدات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">هامش عالي</span><span class="tag">قرار عاطفي</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-fashion"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة بارتيشن أحذية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">مشترك</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-fashion">👟 أحذية</div><div class="act-name">بارتيشن أحذية وأكسسوار</div><div class="act-desc">التخصص في فئة معينة (سنيكرز / كاجوال / أطفال) في مساحة صغيرة يصنع عرض محدود ومتخصص = قرار شراء أسرع وأوضح.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٣×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٥×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">تخصص</span><span class="tag">سنيكرز</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-</div></div></div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 8 — EVENTS
-════════════════════════════════════════════════════════ -->
-<div id="sec-event" style="background:var(--dark2)">
-<div class="sec-header" style="background:var(--dark3)">
-  <div class="sec-badge">القسم الثامن · ٤ أنشطة</div>
-  <div class="sec-title">الفعاليات <span>والترفيه</span> 🎪</div>
-  <div class="sec-sub">أنشطة تخلق تجربة لا تُنسى وتحول الزيارة لذكرى</div>
-</div>
-<div class="sec-label-row">
-  <div class="sec-label-title"><span>🎪</span> Events &amp; Entertainment</div>
-  <div class="sec-label-line"></div>
-  <div class="sec-label-badge">٤ أنشطة متاحة</div>
-</div>
-<div class="catalog-wrap"><div class="catalog-grid">
-
-  <div class="act-card"><div class="act-thumb tb-event"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن VR أو تجربة تقنية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">تقنية</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-event">🥽 تقنية ترفيهية</div><div class="act-name">كورنر VR وتجارب تقنية</div><div class="act-desc">تجربة فريدة تجذب الشباب وتولد محتوى سوشيال ميديا. مثالية بجوار الفود كورت، والنوادي الشبابية، وأماكن الفعاليات.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٤</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٥</em> متر</div></div></div><div class="act-tags"><span class="tag">بالجلسة</span><span class="tag">فريد</span><span class="tag">شباب</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-event"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة Popup مؤقت / فعالية</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-new">Popup</span><div class="demand-bar"><div class="demand-fill df-3"></div></div></div><div class="act-body"><div class="act-cat cat-event">🎭 فعاليات</div><div class="act-name">Popup Store مؤقت أو موسمي</div><div class="act-desc">يصلح للبراندات الأونلاين لتجربة البيع الفيزيائي. خلق حالة الندرة تزيد الإقبال. مثالي للمواسم، الفعاليات، ومقرات الشركات الكبرى.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٢×٢</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٤×٣</em> متر</div></div></div><div class="act-tags"><span class="tag">مؤقت</span><span class="tag">FOMO</span><span class="tag">براندات</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span><span class="loc loc-office">🏢 شركات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-event"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة ركن فن تفاعلي</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-trend">انتشار سريع</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-event">🎨 تجربة تفاعلية</div><div class="act-name">كورنر رسم تفاعلي وفن حديث</div><div class="act-desc">تجربة Immersive Art صغيرة — زوار يلتقطون صور ويشاركونها. يشتغل كآلة تسويق ذاتية في المولات كعنصر جذب مبتكر.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٤×٤</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>٦×٦</em> متر</div></div></div><div class="act-tags"><span class="tag">Immersive</span><span class="tag">سوشيال</span><span class="tag">فريد</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-  <div class="act-card"><div class="act-thumb tb-event"><div class="act-photos" style="height:220px"><div class="act-photo-main"><div class="act-photo-upload"><div class="act-photo-upload-ico">🖼</div><div class="act-photo-upload-txt">صورة مساحة حفلات صغيرة</div></div></div><div class="act-photo-side"><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div><div class="act-photo-side-item"><div class="act-photo-upload"><div class="act-photo-upload-ico" style="font-size:18px">📷</div></div></div></div><div class="act-photo-overlay"></div></div><span class="act-badge badge-hot">🔥 مطلوب</span><div class="demand-bar"><div class="demand-fill df-4"></div></div></div><div class="act-body"><div class="act-cat cat-event">🎂 مناسبات</div><div class="act-name">مساحة حفلات أطفال صغيرة</div><div class="act-desc">طلب قوي جداً على مساحات مؤجرة بالساعة مع ديكور جاهز لحفلات أعياد الميلاد. مناسبة للنوادي والمولات ذات الجمهور العائلي.</div><div class="act-specs"><div class="spec"><div class="spec-l">الحجم الأدنى</div><div class="spec-v"><em>٦×٥</em> متر</div></div><div class="spec"><div class="spec-l">الحجم المثالي</div><div class="spec-v"><em>١٠×٨</em> متر</div></div></div><div class="act-tags"><span class="tag">بالساعة</span><span class="tag">حفلات</span><span class="tag">عائلات</span></div><div class="act-locs"><span class="loc loc-mall">🏬 مولات</span><span class="loc loc-club">⚽ نوادي</span><span class="loc loc-event">🎪 فعاليات</span></div></div></div>
-
-</div></div></div>
 
 
 <!-- ═══════════════════════════════════════════════════════
@@ -1409,16 +1014,14 @@ a{text-decoration:none;color:inherit}
         دوّر على مساحتك الآن ←
       </a>
       <a href="https://wa.me/201103467711?text=مرحبا،+أريد+الاستفسار+عن+مكاني+Spot" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#25D366;color:#fff;padding:15px 36px;border-radius:14px;font-size:15px;font-weight:800;font-family:'Cairo',sans-serif;text-decoration:none;box-shadow:0 6px 24px rgba(37,211,102,.3)">
-        📱 واتساب — 011 0346 7711
+        📱 واتساب — <span dir="ltr">011 0346 7711</span>
       </a>
     </div>
   </div>
 </div>
 
 
-<!-- ═══════════════════════════════════════════════════════
-     FOOTER
-════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
 <footer class="cat-footer">
   <div class="footer-logo">مكاني <span>Spot</span></div>
   <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر · كتالوج الأنشطة ٢٠٢٦</div>
@@ -1439,50 +1042,328 @@ a{text-decoration:none;color:inherit}
      JAVASCRIPT
 ════════════════════════════════════════════════════════ -->
 <script>
-// ── Smooth scroll helper ──
-function scrollTo(id) {
+/* ════════════════════════════════
+   CONFIG
+════════════════════════════════ */
+const CATALOG_API_URL = "https://script.google.com/macros/s/AKfycbxOX-6KpAhs46TmOO990wuGbTrrhC0Z1KdrxZBqY9sO0uUe3Ftxha0CPmY2jTXdKkJd/exec";
+
+/* Section metadata */
+const SECTIONS = [
+  { code: 'food',    label: 'أكل ومشروبات', ico: '🍕' },
+  { code: 'beauty',  label: 'جمال وعناية',  ico: '💄' },
+  { code: 'retail',  label: 'بيع ومنتجات',  ico: '🛍' },
+  { code: 'kids',    label: 'أطفال وتعليم', ico: '🎒' },
+  { code: 'health',  label: 'صحة ولياقة',   ico: '💪' },
+  { code: 'service', label: 'خدمات سريعة',  ico: '⚡' },
+  { code: 'fashion', label: 'أزياء وملابس', ico: '👗' },
+  { code: 'event',   label: 'فعاليات وترفيه',ico: '🎪' },
+];
+
+/* ════════════════════════════════
+   SMOOTH SCROLL with offset
+   Accounts for sticky nav + subnav heights
+════════════════════════════════ */
+function smoothScrollTo(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const offset = 70; // height of sticky nav
-  const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+  const subnav = document.getElementById('sectionsSubnav');
+  const subnavH = subnav && subnav.classList.contains('visible')
+    ? subnav.offsetHeight : 0;
+  const navH = document.getElementById('topNav').offsetHeight;
+  const extra = 12; // small gap
+  const top = el.getBoundingClientRect().top + window.pageYOffset - navH - subnavH - extra;
   window.scrollTo({ top, behavior: 'smooth' });
 }
 
-// ── Drawer: open / close / go-to-section ──
-function openDrawer() {
-  document.getElementById('drawerOverlay').classList.add('open');
-  document.getElementById('sectionsDrawer').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
+/* ════════════════════════════════
+   STICKY SUB-NAV — show/hide + active tracking
+════════════════════════════════ */
+const subnav    = document.getElementById('sectionsSubnav');
+const coverEl   = document.getElementById('cover');
+const sectionEls = SECTIONS.map(s => document.getElementById('sec-' + s.code)).filter(Boolean);
 
-function closeDrawer() {
-  document.getElementById('drawerOverlay').classList.remove('open');
-  document.getElementById('sectionsDrawer').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function updateSubnav() {
+  const coverBottom = coverEl.getBoundingClientRect().bottom;
 
-function goToSection(id) {
-  closeDrawer();
-  setTimeout(() => scrollTo(id), 280);
-}
-
-// ── Show/hide floating button based on scroll ──
-const floatBtn = document.getElementById('floatBtn');
-const tocSection = document.getElementById('toc-anchor');
-
-window.addEventListener('scroll', () => {
-  const tocTop = tocSection ? tocSection.getBoundingClientRect().top : 999;
-  // Show button after user scrolls past the TOC
-  if (tocTop < -50) {
-    floatBtn.classList.add('visible');
+  /* Show subnav after cover is scrolled away */
+  if (coverBottom < 0) {
+    subnav.classList.add('visible');
   } else {
-    floatBtn.classList.remove('visible');
+    subnav.classList.remove('visible');
   }
-}, { passive: true });
 
-// Close drawer on Escape key
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeDrawer();
+  /* Highlight active section */
+  const navH = document.getElementById('topNav').offsetHeight;
+  const subH = subnav.offsetHeight;
+  const offset = navH + subH + 40;
+
+  let activeCode = null;
+  sectionEls.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= offset) {
+      activeCode = sec.id.replace('sec-', '');
+    }
+  });
+
+  document.querySelectorAll('.subnav-btn').forEach(btn => {
+    const target = btn.getAttribute('data-target') || '';
+    btn.classList.toggle('active', target === 'sec-' + activeCode);
+  });
+
+  /* Auto-scroll subnav to active button on mobile */
+  if (activeCode) {
+    const activeBtn = subnav.querySelector(`.subnav-btn[data-target="sec-${activeCode}"]`);
+    if (activeBtn) {
+      const inner = subnav.querySelector('.subnav-inner');
+      const btnLeft = activeBtn.offsetLeft;
+      const innerW  = inner.offsetWidth;
+      const btnW    = activeBtn.offsetWidth;
+      inner.scrollLeft = btnLeft - (innerW / 2) + (btnW / 2);
+    }
+  }
+}
+
+window.addEventListener('scroll', updateSubnav, { passive: true });
+window.addEventListener('resize', updateSubnav, { passive: true });
+document.addEventListener('DOMContentLoaded', updateSubnav);
+
+/* ════════════════════════════════
+   IMAGE FALLBACK HELPER
+   Returns HTML for either an img tag or a placeholder div
+════════════════════════════════ */
+function imgOrPlaceholder(url, alt, isSmall) {
+  if (url && url.trim() !== '') {
+    const onerror = `this.style.display='none';this.nextElementSibling.style.display='flex'`;
+    return `
+      <img src="${url.trim()}" alt="${alt || ''}"
+           style="width:100%;height:100%;object-fit:cover;transition:transform .4s ease"
+           onerror="${onerror}">
+      <div class="act-photo-placeholder" style="display:none">
+        <div class="act-photo-placeholder-ico">${isSmall ? '📷' : '🖼'}</div>
+        ${!isSmall ? '<div class="act-photo-placeholder-txt">لا توجد صورة</div>' : ''}
+      </div>`;
+  }
+  return `
+    <div class="act-photo-placeholder">
+      <div class="act-photo-placeholder-ico">${isSmall ? '📷' : '🖼'}</div>
+      ${!isSmall ? '<div class="act-photo-placeholder-txt">لا توجد صورة</div>' : ''}
+    </div>`;
+}
+
+/* ════════════════════════════════
+   BUILD SINGLE CARD HTML
+════════════════════════════════ */
+function buildActivityCard(act) {
+  /* ── Badge ── */
+  const badgeHtml = act.badgeText
+    ? `<span class="act-badge ${act.badgeType || 'badge-new'}">${act.badgeText}</span>`
+    : '';
+
+  /* ── Demand bar ── */
+  const demandClass = { 5:'df-5', 4:'df-4', 3:'df-3', 2:'df-2' }[parseInt(act.demandLevel)] || 'df-3';
+
+  /* ── Tags ── */
+  const tagsHtml = Array.isArray(act.tags) && act.tags.length
+    ? act.tags.map(t => `<span class="tag">${t}</span>`).join('')
+    : '';
+
+  /* ── Location map ── */
+  const locClassMap = {
+    'مولات':              'loc-mall',
+    'مولات تجارية':      'loc-mall',
+    'نوادي':              'loc-club',
+    'نوادي رياضية':       'loc-club',
+    'مستشفيات':           'loc-hospital',
+    'مستشفيات وعيادات':  'loc-hospital',
+    'مدارس وجامعات':      'loc-school',
+    'مدارس':              'loc-school',
+    'شركات ومكاتب':       'loc-office',
+    'محطات بنزين':        'loc-gas',
+    'مواقف مواصلات':      'loc-transit',
+    'مواقف ومحطات مواصلات':'loc-transit',
+    'أماكن فعاليات':      'loc-event',
+  };
+  const locsHtml = Array.isArray(act.locations) && act.locations.length
+    ? act.locations.map(loc => {
+        const cls = locClassMap[loc] || 'loc-mall';
+        return `<span class="loc ${cls}">${loc}</span>`;
+      }).join('')
+    : '';
+
+  /* ── Determine category code for thumb bg ── */
+  const catCode = (act.categoryCode || act.sectionCode || 'food').toLowerCase();
+
+  /* ── Photo grid ── */
+  const mainHtml  = imgOrPlaceholder(act.mainImage,  act.name, false);
+  const side1Html = imgOrPlaceholder(act.sideImage1, '',       true);
+  const side2Html = imgOrPlaceholder(act.sideImage2, '',       true);
+
+  /* ── Seasonality row ── */
+  const seasonHtml = act.seasonality
+    ? `<div style="margin-top:10px;font-size:11px;color:var(--text3)">🗓 ${act.seasonality}</div>`
+    : '';
+
+  return `
+  <div class="act-card">
+    <div class="act-thumb thumb-${catCode}">
+      <div class="act-photos">
+        <div class="act-photo-main">${mainHtml}</div>
+        <div class="act-photo-side">
+          <div class="act-photo-side-item">${side1Html}</div>
+          <div class="act-photo-side-item">${side2Html}</div>
+        </div>
+        <div class="act-photo-overlay"></div>
+      </div>
+      ${badgeHtml}
+      <div class="demand-bar"><div class="demand-fill ${demandClass}"></div></div>
+    </div>
+    <div class="act-body">
+      <div class="act-cat cat-${catCode}">${act.categoryEn || ''}</div>
+      <div class="act-name">${act.name || '—'}</div>
+      <div class="act-desc">${act.description || ''}</div>
+      <div class="act-specs">
+        <div class="spec">
+          <div class="spec-l">الحجم الأدنى</div>
+          <div class="spec-v"><em>${act.minDims || '—'}</em></div>
+        </div>
+        <div class="spec">
+          <div class="spec-l">الحجم المثالي</div>
+          <div class="spec-v"><em>${act.idealDims || '—'}</em></div>
+        </div>
+        <div class="spec">
+          <div class="spec-l">رأس المال</div>
+          <div class="spec-v">${act.capital || '—'}</div>
+        </div>
+        <div class="spec">
+          <div class="spec-l">هامش الربح</div>
+          <div class="spec-v"><em>${act.margin || '—'}</em></div>
+        </div>
+      </div>
+      ${tagsHtml ? `<div class="act-tags">${tagsHtml}</div>` : ''}
+      ${locsHtml ? `<div class="act-locs">${locsHtml}</div>` : ''}
+      ${seasonHtml}
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════
+   SET LOADING STATE
+════════════════════════════════ */
+function setLoading(code) {
+  const grid = document.getElementById('grid-' + code);
+  if (!grid) return;
+  grid.innerHTML = `
+    <div class="loading-wrap">
+      <div class="loading-ico">⏳</div>
+      <div class="loading-txt">جاري تحميل الأنشطة…</div>
+      <div class="loading-sub">بنجيب البيانات من المصدر</div>
+    </div>`;
+}
+
+/* ════════════════════════════════
+   SET ERROR STATE
+════════════════════════════════ */
+function setError(code, msg) {
+  const grid = document.getElementById('grid-' + code);
+  if (!grid) return;
+  grid.innerHTML = `
+    <div class="error-wrap">
+      <div class="error-ico">⚠️</div>
+      <div class="error-txt">تعذّر تحميل البيانات</div>
+      <div class="error-sub">${msg || 'تأكد من الاتصال بالإنترنت وحاول مجدداً'}</div>
+      <button class="retry-btn" onclick="loadCatalogData()">🔄 حاول تاني</button>
+    </div>`;
+}
+
+/* ════════════════════════════════
+   SET EMPTY STATE
+════════════════════════════════ */
+function setEmpty(code) {
+  const grid = document.getElementById('grid-' + code);
+  if (!grid) return;
+  grid.innerHTML = `<div class="empty-wrap">لا توجد أنشطة في هذا القسم حتى الآن</div>`;
+}
+
+/* ════════════════════════════════
+   UPDATE BADGE & TOC COUNT
+════════════════════════════════ */
+function updateCount(code, count) {
+  const badge = document.getElementById('badge-' + code);
+  if (badge) badge.textContent = count + ' نشاط متاح';
+
+  const tocCount = document.getElementById('toc-count-' + code);
+  if (tocCount) tocCount.textContent = count + ' نشاط';
+}
+
+/* ════════════════════════════════
+   MAIN DATA LOAD
+════════════════════════════════ */
+async function loadCatalogData() {
+  /* Show loading in all grids */
+  SECTIONS.forEach(s => setLoading(s.code));
+
+  try {
+    const res  = await fetch(CATALOG_API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    if (!json || json.status !== 'ok') {
+      throw new Error(json?.message || 'البيانات غير صحيحة');
+    }
+
+    const activities = json.activities || [];
+
+    /* Group by sectionCode */
+    const bySection = {};
+    activities.forEach(act => {
+      const code = (act.sectionCode || '').trim().toLowerCase();
+      if (!bySection[code]) bySection[code] = [];
+      bySection[code].push(act);
+    });
+
+    /* Update total stat in cover */
+    const totalEl = document.getElementById('stat-count');
+    if (totalEl && activities.length) {
+      totalEl.textContent = '+' + activities.length;
+    }
+
+    /* Render each section */
+    SECTIONS.forEach(sec => {
+      const items = bySection[sec.code] || [];
+      const grid  = document.getElementById('grid-' + sec.code);
+      if (!grid) return;
+
+      updateCount(sec.code, items.length);
+
+      if (items.length === 0) {
+        setEmpty(sec.code);
+        return;
+      }
+
+      grid.innerHTML = items.map(act => buildActivityCard(act)).join('');
+    });
+
+    /* If API returns section metadata, use it for counts */
+    if (Array.isArray(json.sections)) {
+      json.sections.forEach(sec => {
+        const code = (sec.code || '').toLowerCase();
+        if (sec.count !== undefined) updateCount(code, sec.count);
+      });
+    }
+
+  } catch (err) {
+    console.error('Catalog load error:', err);
+    const msg = err.message || 'خطأ غير متوقع';
+    SECTIONS.forEach(s => setError(s.code, msg));
+  }
+}
+
+/* ════════════════════════════════
+   INIT
+════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadCatalogData();
+  updateSubnav();
 });
 </script>
 
