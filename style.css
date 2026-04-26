@@ -55,7 +55,6 @@ body {
   color: var(--ink);
   font-size: 15px;
   line-height: 1.65;
-  min-height: 100vh;
   overflow-x: hidden; /* منع السكرول الأفقي */
   /* مساحة للـ bottom nav على الموبايل */
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -1371,11 +1370,6 @@ input, select {
   overflow: hidden;
 }
 
-/* 8. مساحة الـ bottom nav */
-body {
-  padding-bottom: 70px;
-}
-
 /* =================================
    📱 MOBILE ONLY (تحت 768px)
 ================================ */
@@ -1516,17 +1510,11 @@ main, .page, .app {
 footer {
   margin-top: auto;
 }
-/* الحل النهائي بدون تغيير ألوان */
-
-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 
 .page.active {
   flex: 1;
 }
+
 .page:not(.active) {
   display: none !important;
   height: 0 !important;
