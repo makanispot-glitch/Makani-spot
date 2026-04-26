@@ -1493,3 +1493,22 @@ body {
   }
 
 }
+/* حل الشريط الأبيض تحت */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main, .page, .app {
+  flex: 1;
+}
+
+/* تأكد إن الفوتر في الآخر */
+footer {
+  margin-top: auto;
+}
