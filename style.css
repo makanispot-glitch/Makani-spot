@@ -381,7 +381,7 @@ body {
 /* ============================================================
    📦 القسم الثامن: كروت المساحات
    ============================================================ */
-.section { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+.section { max-width: 1100px; margin: 0 auto; padding: 40px 16px; }
 .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; flex-wrap: wrap; gap: 14px; }
 .section-title { font-size: 22px; font-weight: 900; color: var(--ink); }
 .section-sub { font-size: 13px; color: var(--ink2); margin-top: 4px; }
@@ -1303,28 +1303,40 @@ footer {
   .bn-label { font-size: 9px; }
   .bn-icon { font-size: 18px; }
 }
-/* =========================
-   FIX OVERFLOW (أهم حاجة)
-========================= */
-* {
-  box-sizing: border-box;
+/* =================================
+   🔥 FINAL MOBILE & RESPONSIVE FIXES
+================================ */
+
+/* 1. منع أي overflow */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-html, body {
-  overflow-x: hidden;
+/* box model ثابت */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. تحسين الصور والميديا */
+img, iframe {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 3. تحسين تجربة اللمس */
+button, .btn {
+  min-height: 44px;
   max-width: 100%;
 }
 
-/* =========================
-   FIX GLOBAL WIDTH
-========================= */
-body {
-  width: 100%;
+input, select {
+  min-height: 44px;
 }
 
-/* =========================
-   FIX SECTIONS WIDTH
-========================= */
+/* 4. إصلاح عرض السكاشن */
 .hero,
 .section,
 .search-wrap,
@@ -1333,107 +1345,151 @@ body {
 .dash-page {
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
 }
 
-/* =========================
-   FIX GRID BREAKING MOBILE
-========================= */
+/* 5. الكروت (Grid) */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
 
-@media (max-width: 768px) {
-  .cards-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* =========================
-   FIX SEARCH BOX
-========================= */
+/* 6. صندوق البحث */
 .search-box {
   width: 100%;
   max-width: 100%;
   padding: 16px;
 }
 
-/* =========================
-   FIX FILTER ROW
-========================= */
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.filter-row .fg {
-  flex: 1 1 100%;
-}
-
-/* =========================
-   FIX HERO TEXT
-========================= */
-.hero h1 {
-  font-size: 26px;
-  line-height: 1.4;
-}
-
-.hero-desc {
-  font-size: 14px;
-}
-
-/* =========================
-   FIX AUTH PAGE (مهم جداً)
-========================= */
-.auth-fullpage {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.auth-panel-left,
-.auth-panel-right {
-  width: 100%;
-}
-
-/* =========================
-   FIX NAVBAR
-========================= */
-.nav {
-  padding: 10px 14px;
-}
-
-.nav-links {
-  display: none; /* تختفي في الموبايل */
-}
-
-/* =========================
-   FIX BUTTONS
-========================= */
-button {
-  max-width: 100%;
-}
-
-/* =========================
-   FIX SLIDER OVERFLOW
-========================= */
+/* 7. إصلاح الـ slider */
 .slider-container {
   width: 100%;
   overflow: hidden;
 }
 
-/* =========================
-   FIX BOTTOM NAV SPACE
-========================= */
+/* 8. مساحة الـ bottom nav */
 body {
   padding-bottom: 70px;
 }
 
-/* =========================
-   EXTRA SAFETY
-========================= */
-img, iframe {
-  max-width: 100%;
-  height: auto;
+/* =================================
+   📱 MOBILE ONLY (تحت 768px)
+================================ */
+@media (max-width: 768px) {
+
+  /* NAV */
+  .nav {
+    padding: 0 14px;
+    height: 60px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 50px 16px 80px;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+    line-height: 1.4;
+  }
+
+  .hero-desc {
+    font-size: 14px;
+  }
+
+  .hero-stats {
+    padding: 18px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero-stat + .hero-stat {
+    border-right: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 10px;
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    padding: 0 12px;
+  }
+
+  .search-box {
+    padding: 18px;
+  }
+
+  /* FIX FILTER ROW (يرجع Grid مش Flex) */
+  .filter-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* CARDS */
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .space-card {
+    border-radius: 14px;
+  }
+
+  /* HOW */
+  .how-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* CTA */
+  .cta-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* AUTH */
+  .auth-fullpage {
+    display: block;
+  }
+
+  .auth-panel-left {
+    display: none;
+  }
+
+  .auth-panel-right {
+    width: 100%;
+    padding: 24px 16px;
+  }
+
+  /* DASHBOARD */
+  .dash-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* MARKETPLACE */
+  .mp-body {
+    grid-template-columns: 1fr;
+  }
+
+  .mp-sidebar {
+    position: fixed;
+    right: -100%;
+    top: 0;
+    width: 85%;
+    height: 100%;
+    z-index: 200;
+    transition: 0.3s;
+  }
+
+  .mp-sidebar.open {
+    right: 0;
+  }
+
+  .mp-filter-toggle {
+    display: inline-flex;
+  }
+
 }
