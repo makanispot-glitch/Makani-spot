@@ -1137,7 +1137,7 @@ footer {
   .mp-filter-toggle { display: flex; }
   .mp-body { grid-template-columns: 1fr; }
   .mp-sidebar {
-    position: fixed; top: 0; right: -300px; width: 280px; height: 100vh;
+    position: fixed; top: 0; right: -300px; width: 280px; min-height: 100vh;
     z-index: 150; transition: right 0.3s ease;
     box-shadow: -4px 0 20px rgba(0,0,0,0.15); overflow-y: auto;
   }
