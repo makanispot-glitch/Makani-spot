@@ -1527,3 +1527,9 @@ body {
 .page.active {
   flex: 1;
 }
+.page:not(.active) {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
