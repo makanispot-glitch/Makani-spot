@@ -1512,3 +1512,14 @@ main, .page, .app {
 footer {
   margin-top: auto;
 }
+/* الحل النهائي بدون تغيير ألوان */
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page.active {
+  flex: 1;
+}
