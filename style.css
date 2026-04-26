@@ -1303,3 +1303,137 @@ footer {
   .bn-label { font-size: 9px; }
   .bn-icon { font-size: 18px; }
 }
+/* =========================
+   FIX OVERFLOW (أهم حاجة)
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* =========================
+   FIX GLOBAL WIDTH
+========================= */
+body {
+  width: 100%;
+}
+
+/* =========================
+   FIX SECTIONS WIDTH
+========================= */
+.hero,
+.section,
+.search-wrap,
+.mp-page,
+.auth-fullpage,
+.dash-page {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* =========================
+   FIX GRID BREAKING MOBILE
+========================= */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   FIX SEARCH BOX
+========================= */
+.search-box {
+  width: 100%;
+  max-width: 100%;
+  padding: 16px;
+}
+
+/* =========================
+   FIX FILTER ROW
+========================= */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-row .fg {
+  flex: 1 1 100%;
+}
+
+/* =========================
+   FIX HERO TEXT
+========================= */
+.hero h1 {
+  font-size: 26px;
+  line-height: 1.4;
+}
+
+.hero-desc {
+  font-size: 14px;
+}
+
+/* =========================
+   FIX AUTH PAGE (مهم جداً)
+========================= */
+.auth-fullpage {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.auth-panel-left,
+.auth-panel-right {
+  width: 100%;
+}
+
+/* =========================
+   FIX NAVBAR
+========================= */
+.nav {
+  padding: 10px 14px;
+}
+
+.nav-links {
+  display: none; /* تختفي في الموبايل */
+}
+
+/* =========================
+   FIX BUTTONS
+========================= */
+button {
+  max-width: 100%;
+}
+
+/* =========================
+   FIX SLIDER OVERFLOW
+========================= */
+.slider-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* =========================
+   FIX BOTTOM NAV SPACE
+========================= */
+body {
+  padding-bottom: 70px;
+}
+
+/* =========================
+   EXTRA SAFETY
+========================= */
+img, iframe {
+  max-width: 100%;
+  height: auto;
+}
