@@ -1183,6 +1183,7 @@ function setNavUser(user, profile) {
     set('dd-name',       name);
     set('dd-email',      email);
     set('dd-role',       roleLabel);
+    updateBnUser(user, profile); 
   }
 
   // 👇 الكود الجديد (Bottom Nav)
@@ -1809,5 +1810,20 @@ function handleBnUser() {
   } else {
     goToLogin();
     updateBottomNav('user');
+  }
+}
+/* ── تحديث زرار المستخدم في Bottom Nav ── */
+function updateBnUser(user, profile) {
+  const icon  = document.getElementById('bn-user-icon');
+  const label = document.getElementById('bn-user-label');
+  if (!icon || !label) return;
+
+  if (user) {
+    const name = profile?.full_name || user.email?.split('@')[0] || '؟';
+    icon.textContent  = name.trim()[0] || '👤';
+    label.textContent = 'حسابي';
+  } else {
+    icon.textContent  = '👤';
+    label.textContent = 'دخول';
   }
 }
