@@ -66,8 +66,8 @@ body {
   font-size: 15px;
   line-height: 1.65;
   min-height: 100vh;
+  overflow-x: hidden;
 }
-
 /* ============================================================
    🧭 القسم الثالث: شريط التنقل العلوي (Navbar)
    ============================================================ */
@@ -135,7 +135,7 @@ body {
 
 /* القائمة المنسدلة عند الضغط على الأفاتار */
 .nav-dropdown {
-  position: absolute; top: calc(100% + 10px); left: 0;
+  position: absolute; top: calc(100% + 10px); right: 0;
   background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--radius-lg); min-width: 220px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.13);
@@ -804,8 +804,7 @@ footer { background: var(--dark); border-top: 1px solid rgba(255,255,255,0.06); 
   .nav-links { display: none; }
   .nav-avatar-name { max-width: 72px; }
   .nav-avatar-email { display: none; }
-  .nav-dropdown { left: auto; right: 0; min-width: 200px; }
-
+.nav-dropdown { left: auto; right: 0; min-width: 190px; max-width: calc(100vw - 24px); }
   /* الهيرو */
   .hero { padding: 52px 20px 90px; }
   .hero h1 { font-size: 28px; letter-spacing: -0.5px; }
