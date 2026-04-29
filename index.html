@@ -929,8 +929,53 @@
   </div>
 </div>
 
-
 <!-- ================================================================
+     📄 الصفحة الثامنة: تفاصيل المساحة الرئيسية + الوحدات الفرعية
+     ================================================================ -->
+<div id="pg-space-detail" class="page">
+  <div class="sd-page">
+
+    <!-- رأس الصفحة: زرار الرجوع + اسم المساحة + السعر -->
+    <div id="sd-header">
+      <!-- يُملأ تلقائياً من app.js عند فتح الصفحة -->
+    </div>
+
+    <!-- معرض الصور -->
+    <div class="sd-section">
+      <div id="sd-gallery">
+        <!-- يُملأ تلقائياً من app.js -->
+      </div>
+    </div>
+
+    <!-- معلومات المساحة: الوصف + الأنشطة + الأحجام + المرافق -->
+    <div class="sd-section">
+      <div id="sd-info">
+        <!-- يُملأ تلقائياً من app.js -->
+      </div>
+    </div>
+
+    <!-- الوحدات الفرعية (A1, A2, ...) -->
+    <div class="sd-section">
+      <div id="sd-subspaces">
+        <!-- يُملأ تلقائياً من app.js -->
+      </div>
+    </div>
+
+    <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
+    <div class="sd-sticky-footer">
+      <button class="btn btn-primary sd-book-btn"
+              onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
+        احجز هذا المكان ←
+      </button>
+      <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()">
+        → العودة للمساحات
+      </button>
+    </div>
+
+  </div>
+</div>
+<!-- ================================================================
+  
      🦶 الفوتر
      ================================================================ -->
 <footer>
