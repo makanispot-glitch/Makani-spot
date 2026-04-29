@@ -7,6 +7,7 @@
       - عرض الكروت والفلاتر
       - مودال الحجز وإرسال البيانات
       - صفحة الماركت بليس (كل المساحات)
+      - صفحة تفاصيل المساحة الرئيسية + المساحات الفرعية  ← جديد
       - لوحة التحكم: تعديل البيانات، الحجوزات، التقييمات
 
    📌 كيف تعدّل؟
@@ -61,6 +62,15 @@ let mpFiltered    = [];     // المساحات بعد تطبيق الفلاتر
 let mpActiveTypes = [];     // أنواع المكان المفلترة حالياً (mall / club / school)
 let mpActiveActs  = [];     // الأنشطة المفلترة حالياً
 
+// ── متغيرات خاصة بصفحة تفاصيل المساحة ── (جديد)
+let currentSpaceDetail = null;  // المساحة الرئيسية المعروضة حالياً في صفحة التفاصيل
+let detailPrevPage     = 'market'; // الصفحة السابقة للرجوع إليها من التفاصيل
+
+// ── متغيرات نظام الـ Slider (سلايدر الصور) ──
+// يُستخدم في: كروت المساحات (الهوم + الماركت) + صفحة التفاصيل
+const _sliders = {};  // يحفظ حالة كل سلايدر { index, images, autoTimer }
+//   المفتاح = معرّف فريد لكل سلايدر (مثل: "card-5" أو "detail-5")
+
 
 /* ================================================================
    🚀 القسم الثالث: نقطة البداية (تشغيل الموقع)
@@ -104,7 +114,6 @@ function initPriceSlider() {
   
   if (!sliderMin || !sliderMax) return;
   
-  // التأكد من أن قيمة min أصغر من max
   if (parseInt(sliderMin.value) > parseInt(sliderMax.value)) {
     sliderMin.value = sliderMax.value;
   }
@@ -114,7 +123,7 @@ function initPriceSlider() {
   
   sliderMin.addEventListener('input', updateMainSlider);
   sliderMax.addEventListener('input', updateMainSlider);
-  updateMainSlider(); // رسم مبدئي
+  updateMainSlider();
 }
 
 /**
@@ -129,33 +138,28 @@ function updateMainSlider() {
   let min = parseInt(sliderMin.value);
   let max = parseInt(sliderMax.value);
 
-  // التأكد من أن min لا يتجاوز max والعكس
   if (min > max) {
     [min, max] = [max, min];
     sliderMin.value = min;
     sliderMax.value = max;
   }
 
-  // حساب النسب المئوية للتلوين
   const range = parseInt(sliderMax.max);
   const minPercent = (min / range) * 100;
   const maxPercent = (max / range) * 100;
 
-  // تلوين الشريط
   const track = document.getElementById('slider-track');
   if (track) {
     track.style.background =
       `linear-gradient(to left, #e8e8e8 0%, #e8e8e8 ${minPercent}%, #FF6B00 ${minPercent}%, #FF6B00 ${maxPercent}%, #e8e8e8 ${maxPercent}%, #e8e8e8 100%)`;
   }
 
-  // تحديث تسميات السعر
   const minLabel = document.getElementById('price-min-label');
   const maxLabel = document.getElementById('price-max-label');
   
   if (minLabel) {
     minLabel.textContent = min === 0 ? '٠ ج' : Number(min).toLocaleString('ar-EG') + ' ج';
   }
-  
   if (maxLabel) {
     maxLabel.textContent = max >= 50000 ? 'بلا حد' : Number(max).toLocaleString('ar-EG') + ' ج';
   }
@@ -170,6 +174,30 @@ function updateMainSlider() {
  * يجيب المساحات والأنشطة من Google Sheets عبر Apps Script
  * يُعرض مؤشر تحميل أثناء الانتظار
  * بعد التحميل يعرض أول 6 مساحات في الهوم فقط
+ *
+ * 📌 بنية البيانات المتوقعة من الشيت (المحدّثة):
+ *   json.spaces[i] = {
+ *     id, name, loc, type, price, sizes[], acts[], allActs,
+ *     badge, badgeClass, season, insight, image, icon, thumbClass,
+ *
+ *     // حقول جديدة للمساحات الرئيسية:
+ *     extraImages: ["url1","url2",...],   // صور إضافية للمساحة الرئيسية
+ *     description: "نص وصف مفصّل",
+ *     amenities:   ["واي فاي","كهرباء",...], // المرافق المتاحة
+ *     subSpaces: [                         // المساحات الفرعية داخل هذا المكان
+ *       {
+ *         unitId:      "A1",               // رقم/كود الوحدة
+ *         name:        "وحدة A1",
+ *         location:    "قريب من المدخل",   // وصف موقعها الدقيق
+ *         size:        "٢×٢ م",
+ *         price:       2500,
+ *         status:      "available" | "rented" | "reserved",
+ *         image:       "url أو فاضي",
+ *         floor:       "الدور الأرضي",
+ *         notes:       "بجانب المصعد",
+ *       }, ...
+ *     ]
+ *   }
  */
 async function loadData() {
   showLoadingState('spaces-grid');
@@ -182,14 +210,14 @@ async function loadData() {
     ACTIVITIES = json.activities || [];
     SPACES     = json.spaces     || [];
 
-    buildActivityFilters();      // ابنِ قائمة الأنشطة في الفلتر الرئيسي
-    buildModalActivityPicker();  // ابنِ أزرار الأنشطة في مودال الحجز
-    buildMpActivityFilters();    // ابنِ أزرار الأنشطة في فلتر الماركت بليس
+    buildActivityFilters();
+    buildModalActivityPicker();
+    buildMpActivityFilters();
 
-    // أظهر أول 6 مساحات فقط في الهوم + زرار "عرض الكل"
-    renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6);
+    renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6, 'home');
+    // تهيئة الـ sliders بعد رسم الكروت
+    setTimeout(() => csInitAll(), 120);
 
-    // تحديث العداد
     const counter = document.getElementById('res-count');
     if (counter) counter.textContent = SPACES.length + ' مساحة';
 
@@ -200,7 +228,6 @@ async function loadData() {
 
 /**
  * يعرض شاشة التحميل داخل أي grid
- * @param {string} gridId — id الـ grid المراد إظهار التحميل فيه
  */
 function showLoadingState(gridId) {
   const grid = document.getElementById(gridId || 'spaces-grid');
@@ -215,8 +242,6 @@ function showLoadingState(gridId) {
 
 /**
  * يعرض شاشة الخطأ مع زرار "حاول تاني"
- * @param {string} msg    — رسالة الخطأ
- * @param {string} gridId — id الـ grid المراد إظهار الخطأ فيه
  */
 function showErrorState(msg, gridId) {
   const grid = document.getElementById(gridId || 'spaces-grid');
@@ -237,9 +262,6 @@ function showErrorState(msg, gridId) {
    🏷️ القسم السادس: بناء فلاتر الأنشطة
    ================================================================ */
 
-/**
- * يملأ قائمة الأنشطة في صندوق البحث الرئيسي (dropdown)
- */
 function buildActivityFilters() {
   const sel = document.getElementById('f-act');
   if (!sel) return;
@@ -247,19 +269,12 @@ function buildActivityFilters() {
     ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('');
 }
 
-/**
- * يُشغَّل عند اختيار نشاط من القائمة الرئيسية
- * @param {string} id — id النشاط المختار
- */
 function onActDropdown(id) {
   selectedAct = id;
   filterAndRender();
   showSearchChips();
 }
 
-/**
- * يملأ أزرار الأنشطة داخل مودال الحجز
- */
 function buildModalActivityPicker() {
   const picker = document.getElementById('modal-act-picker');
   if (!picker) return;
@@ -268,12 +283,6 @@ function buildModalActivityPicker() {
   ).join('');
 }
 
-/**
- * تحديد/إلغاء نشاط في مودال الحجز
- * يخفي/يظهر حقل "اذكر نشاطك" لو اختار "أخرى"
- * @param {string} id — id النشاط
- * @param {Element} el — الزرار المضغوط
- */
 function toggleModalAct(id, el) {
   document.querySelectorAll('.act-pick-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on');
@@ -281,9 +290,6 @@ function toggleModalAct(id, el) {
   if (wrap) wrap.style.display = (id === 'other') ? 'block' : 'none';
 }
 
-/**
- * يبني أزرار الأنشطة في الفلتر الجانبي لصفحة الماركت بليس
- */
 function buildMpActivityFilters() {
   const cont = document.getElementById('mp-act-filters');
   if (!cont) return;
@@ -300,15 +306,64 @@ function buildMpActivityFilters() {
 /**
  * يبني HTML لكارد مساحة واحدة
  * (دالة مشتركة بين الهوم والماركت بليس)
+ *
+ * ✨ تعديل: أُضيف زرار "المزيد من التفاصيل" بجانب "احجز دلوقتي"
+ *           لو المساحة عندها subSpaces أو extraImages
  * @param {Object} s — بيانات المساحة
+ * @param {string} fromPage — من أين يُستدعى الكارد (home / market) — يُحفظ للرجوع منه
  * @returns {string} — HTML الكارد
  */
-function buildCardHtml(s) {
-  // ── صورة الكارد أو الإيموجي البديل ──
-  const thumbHtml = s.image
-    ? `<img src="${s.image}" alt="${s.name}" loading="lazy"
-           onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder ${s.thumbClass}\\'>${s.icon}</div>'">`
-    : `<div class="card-thumb-placeholder ${s.thumbClass}">${s.icon}</div>`;
+function buildCardHtml(s, fromPage) {
+  fromPage = fromPage || 'market';
+
+  // ── بناء قائمة الصور (الصورة الرئيسية + الصور الإضافية) ──
+  // extraImages يمكن أن تكون: مصفوفة، أو نص مفصول بـ | من الشيت
+  const rawExtra = s.extraImages || [];
+  const extraList = Array.isArray(rawExtra)
+    ? rawExtra
+    : String(rawExtra).split('|').map(u => u.trim()).filter(Boolean);
+
+  const allImgs = [];
+  if (s.image) allImgs.push(s.image);
+  extraList.forEach(u => { if (u && u !== s.image) allImgs.push(u); });
+
+  const sliderId = `card-${s.id}`;
+
+  // ── إذا كان في أكثر من صورة نبني Slider، وإلا صورة واحدة عادية ──
+  let thumbHtml;
+  if (allImgs.length > 1) {
+    // بناء الـ slides
+    const slidesHtml = allImgs.map((url, i) => `
+      <div class="cs-slide${i === 0 ? ' cs-active' : ''}" data-index="${i}">
+        <img src="${url}" alt="${s.name}" loading="${i === 0 ? 'eager' : 'lazy'}"
+             onerror="this.parentElement.style.display='none'">
+      </div>`).join('');
+
+    // نقاط التنقل (dots)
+    const dotsHtml = allImgs.map((_, i) =>
+      `<span class="cs-dot${i === 0 ? ' cs-dot-on' : ''}"
+             onclick="event.stopPropagation();csGoTo('${sliderId}',${i})"></span>`
+    ).join('');
+
+    thumbHtml = `
+      <div class="card-slider" id="${sliderId}"
+           data-slider="${sliderId}"
+           onmouseenter="csPause('${sliderId}')"
+           onmouseleave="csResume('${sliderId}')">
+        <div class="cs-track">${slidesHtml}</div>
+        <button class="cs-arrow cs-arrow-r"
+                onclick="event.stopPropagation();csPrev('${sliderId}')">&#8250;</button>
+        <button class="cs-arrow cs-arrow-l"
+                onclick="event.stopPropagation();csNext('${sliderId}')">&#8249;</button>
+        <div class="cs-dots">${dotsHtml}</div>
+        <div class="cs-count">${allImgs.length} 📷</div>
+      </div>`;
+  } else if (allImgs.length === 1) {
+    thumbHtml = `<img src="${allImgs[0]}" alt="${s.name}" loading="lazy"
+       onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder ${s.thumbClass}\\'>${s.icon}</div>'">`;
+  } else {
+    thumbHtml = `<div class="card-thumb-placeholder ${s.thumbClass}">${s.icon}</div>`;
+  }
 
   // ── أزرار الأنشطة ──
   const actsHtml = s.allActs
@@ -319,7 +374,6 @@ function buildCardHtml(s) {
       }).join('') + (s.acts && s.acts.length > 5 ? `<span class="act-tag">+${s.acts.length - 5}</span>` : '');
 
   // ── نظام التسعير حسب الحجم ──
-  // كل حجم عنده سعره الخاص — مثال: "١×١ م:1900"
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -333,7 +387,7 @@ function buildCardHtml(s) {
   const defaultSize  = sizesClean[0] || '';
   const defaultPrice = sizePrices[defaultSize] || s.price;
 
-  // ── أزرار الأحجام (كل زرار يغيّر السعر في الكارد) ──
+  // ── أزرار الأحجام ──
   const sizesHtml = sizesClean.map((sz, i) =>
     `<span class="size-chip${i === 0 ? ' on' : ''}"
       data-price="${sizePrices[sz]}"
@@ -348,11 +402,30 @@ function buildCardHtml(s) {
     </span>`
   ).join('');
 
+  // ── زرار المزيد من التفاصيل (يظهر لو في subSpaces أو extraImages) ──
+  const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
+                     (s.extraImages && s.extraImages.length > 0) ||
+                     s.description;
+
+  const detailsBtnHtml = hasDetails
+    ? `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
+              onclick="event.stopPropagation();openSpaceDetail(${s.id},'${fromPage}')">
+         تفاصيل ←
+       </button>`
+    : '';
+
+  // ── بادج عدد الوحدات المتاحة ──
+  const availableUnits = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
+  const unitsBadgeHtml = s.subSpaces && s.subSpaces.length > 0
+    ? `<span class="units-badge">${availableUnits} وحدة متاحة</span>`
+    : '';
+
   return `
   <div class="space-card">
     <div class="card-thumb">
       ${thumbHtml}
       <span class="card-badge ${s.badgeClass}">${s.badge}</span>
+      ${unitsBadgeHtml}
     </div>
     <div class="card-body">
       <div class="card-name">${s.name}</div>
@@ -361,8 +434,11 @@ function buildCardHtml(s) {
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
         <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
-        <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
+        <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+          ${detailsBtnHtml}
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
+                  onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
+        </div>
       </div>
       <div class="card-tip">
         <div class="tip-dot"></div>
@@ -374,15 +450,16 @@ function buildCardHtml(s) {
 
 /**
  * يرسم كروت المساحات في أي grid
- * @param {Array}   data       — قائمة المساحات المراد عرضها
- * @param {string}  gridId     — id العنصر المراد الرسم فيه (افتراضي: spaces-grid)
- * @param {boolean} showViewAll — هل يُظهر زرار "عرض الكل" في نهاية الكروت؟
+ * @param {Array}   data        — قائمة المساحات المراد عرضها
+ * @param {string}  gridId      — id العنصر المراد الرسم فيه
+ * @param {boolean} showViewAll — هل يُظهر زرار "عرض الكل"؟
+ * @param {string}  fromPage    — الصفحة المصدر (home / market)
  */
-function renderCards(data, gridId, showViewAll) {
+function renderCards(data, gridId, showViewAll, fromPage) {
   const grid = document.getElementById(gridId || 'spaces-grid');
   if (!grid) return;
+  fromPage = fromPage || (gridId === 'spaces-grid' ? 'home' : 'market');
 
-  // رسالة "لا توجد نتائج"
   if (!data.length) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--ink2)">
@@ -393,7 +470,6 @@ function renderCards(data, gridId, showViewAll) {
     return;
   }
 
-  // زرار "عرض جميع المساحات" يظهر لو في مساحات أكتر من المعروضة
   const viewAllHtml = showViewAll ? `
     <div style="grid-column:1/-1;text-align:center;padding:14px 0 4px">
       <button class="btn-view-all" onclick="goToMarketplace()">
@@ -402,7 +478,649 @@ function renderCards(data, gridId, showViewAll) {
       </button>
     </div>` : '';
 
-  grid.innerHTML = data.map(s => buildCardHtml(s)).join('') + viewAllHtml;
+  grid.innerHTML = data.map(s => buildCardHtml(s, fromPage)).join('') + viewAllHtml;
+}
+
+
+/* ================================================================
+   🏢 القسم السابع-ب: صفحة تفاصيل المساحة الرئيسية  ← جديد كلياً
+   ================================================================ */
+
+/**
+ * يفتح صفحة التفاصيل لمساحة رئيسية معينة
+ * يعرض: صور إضافية + وصف + قائمة المساحات الفرعية
+ *
+ * @param {number} spaceId  — id المساحة الرئيسية
+ * @param {string} fromPage — الصفحة التي جاء منها المستخدم (للرجوع)
+ */
+function openSpaceDetail(spaceId, fromPage) {
+  const s = SPACES.find(x => x.id === spaceId);
+  if (!s) return;
+
+  currentSpaceDetail = s;
+  detailPrevPage = fromPage || 'market';
+
+  // ── بناء رأس الصفحة ──
+  const headerEl = document.getElementById('sd-header');
+  if (headerEl) {
+    headerEl.innerHTML = `
+      <div class="sd-header-inner">
+        <div class="sd-back-row">
+          <button class="sd-back-btn" onclick="closeSpaceDetail()">
+            → العودة
+          </button>
+          <div class="sd-breadcrumb">
+            <span onclick="showPage('home')" style="cursor:pointer">الرئيسية</span>
+            <span class="sd-bc-sep">·</span>
+            <span onclick="goToMarketplace()" style="cursor:pointer">المساحات</span>
+            <span class="sd-bc-sep">·</span>
+            <span style="color:var(--orange)">${s.name}</span>
+          </div>
+        </div>
+        <div class="sd-title-row">
+          <div>
+            <h1 class="sd-name">${s.name}</h1>
+            <div class="sd-meta">
+              <span>📍 ${s.loc}</span>
+              <span class="sd-meta-sep">·</span>
+              <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
+              ${s.subSpaces && s.subSpaces.length > 0
+                ? `<span class="sd-meta-sep">·</span>
+                   <span style="color:var(--orange);font-weight:700">${s.subSpaces.length} وحدة</span>`
+                : ''}
+            </div>
+          </div>
+          <div class="sd-price-box">
+            <div class="sd-price-val">${Number(s.price).toLocaleString('ar-EG')} ج</div>
+            <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
+            <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center"
+                    onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── معرض الصور ──
+  _renderDetailGallery(s);
+
+  // ── الوصف والمرافق ──
+  _renderDetailInfo(s);
+
+  // ── المساحات الفرعية ──
+  _renderSubSpaces(s);
+
+  // ── الانتقال للصفحة ──
+  showPage('space-detail');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/**
+ * يغلق صفحة التفاصيل ويرجع للصفحة السابقة
+ */
+function closeSpaceDetail() {
+  // تنظيف Slider التفاصيل لمنع تراكم timers
+  if (currentSpaceDetail) {
+    _sdCleanup(`detail-${currentSpaceDetail.id}`);
+  }
+  const prevPage = detailPrevPage || 'market';
+  currentSpaceDetail = null;
+  detailPrevPage = 'market';
+  showPage(prevPage);
+}
+
+/**
+ * يبني معرض الصور التفاعلي في صفحة التفاصيل
+ * — Slider كامل مع أسهم + dots + swipe + auto-play
+ * @param {Object} s — بيانات المساحة
+ */
+function _renderDetailGallery(s) {
+  const galleryEl = document.getElementById('sd-gallery');
+  if (!galleryEl) return;
+
+  // ── جمع الصور: الرئيسية + الإضافية ──
+  const rawExtra = s.extraImages || [];
+  const extraList = Array.isArray(rawExtra)
+    ? rawExtra
+    : String(rawExtra).split('|').map(u => u.trim()).filter(Boolean);
+
+  const allImages = [];
+  if (s.image) allImages.push({ url: s.image, caption: s.name });
+  extraList.forEach((url, i) => {
+    if (url && url !== s.image)
+      allImages.push({ url, caption: `${s.name} — صورة ${i + 2}` });
+  });
+
+  // ── لا توجد صور ──
+  if (!allImages.length) {
+    galleryEl.innerHTML = `
+      <div class="sd-gallery-placeholder">
+        <div style="font-size:64px;opacity:0.25">${s.icon || '🏪'}</div>
+        <div style="font-size:13px;color:var(--ink3);margin-top:10px">لا توجد صور متاحة</div>
+      </div>`;
+    return;
+  }
+
+  // ── صورة واحدة فقط — عرض بسيط بدون Slider ──
+  if (allImages.length === 1) {
+    galleryEl.innerHTML = `
+      <div class="sd-gallery-wrap">
+        <div class="sd-main-img-wrap">
+          <img src="${allImages[0].url}" alt="${allImages[0].caption}"
+               style="width:100%;height:100%;object-fit:cover"
+               onerror="this.parentElement.innerHTML='<div class=sd-gallery-placeholder><div style=font-size:64px;opacity:.25>${s.icon || '🏪'}</div></div>'">
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── أكثر من صورة — Slider كامل ──
+  const detailSliderId = `detail-${s.id}`;
+
+  const slidesHtml = allImages.map((img, i) => `
+    <div class="sd-slide${i === 0 ? ' sd-slide-active' : ''}" data-index="${i}">
+      <img src="${img.url}" alt="${img.caption}"
+           loading="${i === 0 ? 'eager' : 'lazy'}"
+           onerror="this.parentElement.style.display='none'">
+    </div>`).join('');
+
+  const dotsHtml = allImages.map((_, i) =>
+    `<span class="sd-dot${i === 0 ? ' sd-dot-on' : ''}"
+           onclick="event.stopPropagation();sdGoTo('${detailSliderId}',${i})"></span>`
+  ).join('');
+
+  // صف الـ thumbnails أسفل الـ Slider
+  const thumbsHtml = allImages.map((img, i) => `
+    <div class="sd-thumb-item${i === 0 ? ' sd-thumb-on' : ''}"
+         data-thumb-index="${i}"
+         onclick="sdGoTo('${detailSliderId}',${i})">
+      <img src="${img.url}" alt="${img.caption}" loading="lazy"
+           onerror="this.parentElement.style.display='none'">
+    </div>`).join('');
+
+  galleryEl.innerHTML = `
+    <div class="sd-gallery-wrap">
+
+      <!-- الـ Slider الرئيسي -->
+      <div class="sd-slider" id="${detailSliderId}"
+           onmouseenter="sdPause('${detailSliderId}')"
+           onmouseleave="sdResume('${detailSliderId}')">
+
+        <!-- الشرائح -->
+        <div class="sd-slides-track">${slidesHtml}</div>
+
+        <!-- أسهم التنقل -->
+        <button class="sd-arrow sd-arrow-next"
+                onclick="event.stopPropagation();sdNext('${detailSliderId}')"
+                title="الصورة التالية">&#8250;</button>
+        <button class="sd-arrow sd-arrow-prev"
+                onclick="event.stopPropagation();sdPrev('${detailSliderId}')"
+                title="الصورة السابقة">&#8249;</button>
+
+        <!-- عداد الصور -->
+        <div class="sd-counter" id="${detailSliderId}-counter">1 / ${allImages.length}</div>
+
+        <!-- نقاط التنقل (dots) -->
+        <div class="sd-dots" id="${detailSliderId}-dots">${dotsHtml}</div>
+
+      </div>
+
+      <!-- صف الـ thumbnails -->
+      <div class="sd-thumbs-row" id="${detailSliderId}-thumbs">
+        ${thumbsHtml}
+      </div>
+
+    </div>`;
+
+  // تهيئة الـ Slider + Swipe + Auto-play
+  _sdInit(detailSliderId, allImages.length);
+}
+
+/* ================================================================
+   🎠 القسم السابع-د: نظام الـ Slider للصور — يعمل في الكروت والتفاصيل
+   ================================================================ */
+
+/**
+ * ══════════════════════════════════════════════════════
+ *  نظام الـ Slider — مشترك بين الكروت وصفحة التفاصيل
+ *
+ *  كيف يشتغل:
+ *  - كل Slider له معرّف فريد يُحفظ في _sliders{}
+ *  - يدعم: أسهم + dots + thumbnails + Swipe + Auto-play
+ *  - Auto-play يتوقف عند hover ويعود بعده
+ *  - csInitAll() تُشغَّل بعد رسم الكروت لتهيئة كل Sliders الكروت
+ *  - _sdInit() تُشغَّل لتهيئة Slider صفحة التفاصيل
+ * ══════════════════════════════════════════════════════
+ */
+
+// ── ثوابت الـ Slider ──
+const CS_AUTO_DELAY = 3800;  // مدة Auto-play بالمللي ثانية (3.8 ثانية)
+const SD_AUTO_DELAY = 4500;  // مدة Auto-play في صفحة التفاصيل
+
+/* ─────────────────────────────────────────────────────
+   الجزء الأول: Slider الكروت (cs = card slider)
+───────────────────────────────────────────────────── */
+
+/**
+ * تهيئة جميع Sliders الكروت الموجودة في الصفحة حالياً
+ * تُستدعى بعد renderCards و renderMarketplace
+ */
+function csInitAll() {
+  document.querySelectorAll('.card-slider').forEach(el => {
+    const id = el.dataset.slider;
+    if (!id || _sliders[id]) return;  // تجنب التهيئة المزدوجة
+    const slides = el.querySelectorAll('.cs-slide');
+    if (!slides.length) return;
+    _sliders[id] = { index: 0, total: slides.length, autoTimer: null, paused: false };
+    _csStartAuto(id);
+    _csInitSwipe(el, id);
+  });
+}
+
+/**
+ * الانتقال لشريحة محددة في Slider الكارد
+ * @param {string} id  — معرّف الـ Slider
+ * @param {number} idx — رقم الشريحة (يبدأ من 0)
+ */
+function csGoTo(id, idx) {
+  const el = document.getElementById(id);
+  if (!el || !_sliders[id]) return;
+  const state = _sliders[id];
+  state.index = (idx + state.total) % state.total;
+
+  // تحديث الشرائح
+  el.querySelectorAll('.cs-slide').forEach((s, i) =>
+    s.classList.toggle('cs-active', i === state.index));
+
+  // تحديث الـ dots
+  el.querySelectorAll('.cs-dot').forEach((d, i) =>
+    d.classList.toggle('cs-dot-on', i === state.index));
+}
+
+/** الشريحة التالية */
+function csNext(id) { csGoTo(id, (_sliders[id]?.index ?? 0) + 1); }
+/** الشريحة السابقة */
+function csPrev(id) { csGoTo(id, (_sliders[id]?.index ?? 0) - 1); }
+
+/** إيقاف Auto-play مؤقتاً (عند hover) */
+function csPause(id) {
+  if (_sliders[id]) {
+    _sliders[id].paused = true;
+    clearInterval(_sliders[id].autoTimer);
+  }
+}
+
+/** استئناف Auto-play (بعد مغادرة hover) */
+function csResume(id) {
+  if (_sliders[id] && !_sliders[id].paused) return;
+  if (_sliders[id]) {
+    _sliders[id].paused = false;
+    _csStartAuto(id);
+  }
+}
+
+/** تشغيل Auto-play للـ Slider */
+function _csStartAuto(id) {
+  if (!_sliders[id]) return;
+  clearInterval(_sliders[id].autoTimer);
+  _sliders[id].autoTimer = setInterval(() => {
+    if (!_sliders[id]?.paused) csNext(id);
+  }, CS_AUTO_DELAY);
+}
+
+/**
+ * إضافة Swipe (للموبايل) لعنصر Slider معين
+ * @param {Element} el — عنصر الـ Slider
+ * @param {string}  id — معرّف الـ Slider
+ */
+function _csInitSwipe(el, id) {
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) > 40 && dy < 60) {  // swipe أفقي واضح
+      dx < 0 ? csNext(id) : csPrev(id);
+      csPause(id);
+      setTimeout(() => csResume(id), 3000);
+    }
+  }, { passive: true });
+}
+
+
+/* ─────────────────────────────────────────────────────
+   الجزء الثاني: Slider صفحة التفاصيل (sd = space detail)
+   نفس المنطق لكن مع thumbnails أسفل الـ Slider
+───────────────────────────────────────────────────── */
+
+/**
+ * تهيئة Slider صفحة التفاصيل
+ * @param {string} id    — معرّف الـ Slider
+ * @param {number} total — إجمالي عدد الصور
+ */
+function _sdInit(id, total) {
+  _sliders[id] = { index: 0, total, autoTimer: null, paused: false };
+  const el = document.getElementById(id);
+  if (!el) return;
+  _sdStartAuto(id);
+  _sdInitSwipe(el, id);
+}
+
+/**
+ * الانتقال لشريحة محددة في Slider التفاصيل
+ * @param {string} id  — معرّف الـ Slider
+ * @param {number} idx — رقم الشريحة
+ */
+function sdGoTo(id, idx) {
+  const el = document.getElementById(id);
+  if (!el || !_sliders[id]) return;
+  const state = _sliders[id];
+  state.index = (idx + state.total) % state.total;
+
+  // تحديث الشرائح
+  el.querySelectorAll('.sd-slide').forEach((s, i) =>
+    s.classList.toggle('sd-slide-active', i === state.index));
+
+  // تحديث الـ dots
+  const dotsEl = document.getElementById(`${id}-dots`);
+  if (dotsEl) {
+    dotsEl.querySelectorAll('.sd-dot').forEach((d, i) =>
+      d.classList.toggle('sd-dot-on', i === state.index));
+  }
+
+  // تحديث الـ thumbnails
+  const thumbsEl = document.getElementById(`${id}-thumbs`);
+  if (thumbsEl) {
+    thumbsEl.querySelectorAll('.sd-thumb-item').forEach((t, i) =>
+      t.classList.toggle('sd-thumb-on', i === state.index));
+    // scroll للـ thumbnail النشط
+    const activeThumb = thumbsEl.querySelector('.sd-thumb-on');
+    if (activeThumb) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }
+
+  // تحديث العداد (1/5)
+  const counterEl = document.getElementById(`${id}-counter`);
+  if (counterEl) counterEl.textContent = `${state.index + 1} / ${state.total}`;
+}
+
+/** الصورة التالية في التفاصيل */
+function sdNext(id) { sdGoTo(id, (_sliders[id]?.index ?? 0) + 1); }
+/** الصورة السابقة في التفاصيل */
+function sdPrev(id) { sdGoTo(id, (_sliders[id]?.index ?? 0) - 1); }
+
+/** إيقاف Auto-play مؤقتاً */
+function sdPause(id) {
+  if (_sliders[id]) {
+    _sliders[id].paused = true;
+    clearInterval(_sliders[id].autoTimer);
+  }
+}
+
+/** استئناف Auto-play */
+function sdResume(id) {
+  if (_sliders[id] && _sliders[id].paused) {
+    _sliders[id].paused = false;
+    _sdStartAuto(id);
+  }
+}
+
+function _sdStartAuto(id) {
+  if (!_sliders[id]) return;
+  clearInterval(_sliders[id].autoTimer);
+  _sliders[id].autoTimer = setInterval(() => {
+    if (!_sliders[id]?.paused) sdNext(id);
+  }, SD_AUTO_DELAY);
+}
+
+function _sdInitSwipe(el, id) {
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) > 40 && dy < 60) {
+      dx < 0 ? sdNext(id) : sdPrev(id);
+      sdPause(id);
+      setTimeout(() => sdResume(id), 3000);
+    }
+  }, { passive: true });
+}
+
+/**
+ * تنظيف Slider عند إغلاق صفحة التفاصيل
+ * يُستدعى من closeSpaceDetail لمنع تراكم الـ timers
+ */
+function _sdCleanup(id) {
+  if (_sliders[id]) {
+    clearInterval(_sliders[id].autoTimer);
+    delete _sliders[id];
+  }
+}
+
+/**
+ * [قديم — محتفظ به للتوافق]
+ * يغيّر الصورة الرئيسية في معرض التفاصيل
+ * الآن يُستخدم sdGoTo بدلاً منه
+ */
+function sdSetMainImage(url, caption) {
+  // يبحث عن الـ Slider النشط في صفحة التفاصيل ويذهب للصورة المطلوبة
+  const activeDetail = currentSpaceDetail;
+  if (!activeDetail) return;
+  const id = `detail-${activeDetail.id}`;
+  const state = _sliders[id];
+  if (!state) return;
+  // ابحث عن index الصورة المطلوبة وانتقل إليها
+  const el = document.getElementById(id);
+  if (!el) return;
+  const slides = el.querySelectorAll('.sd-slide img');
+  slides.forEach((img, i) => {
+    if (img.src === url || img.src.endsWith(url)) sdGoTo(id, i);
+  });
+}
+
+/**
+ * يبني قسم الوصف والمرافق في صفحة التفاصيل
+ * @param {Object} s — بيانات المساحة
+ */
+function _renderDetailInfo(s) {
+  const infoEl = document.getElementById('sd-info');
+  if (!infoEl) return;
+
+  // ── الأنشطة المناسبة ──
+  const actsHtml = s.allActs
+    ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
+    : (s.acts || []).map(id => {
+        const a = ACTIVITIES.find(x => x.id === id);
+        return a ? `<span class="act-tag">${a.label}</span>` : '';
+      }).join('');
+
+  // ── الأحجام والأسعار ──
+  const sizesHtml = (s.sizes || []).map(sz => {
+    const parts = sz.split(':');
+    const label = parts[0].trim();
+    const price = parts[1] ? parseInt(parts[1]) : s.price;
+    return `
+      <div class="sd-size-row">
+        <span class="sd-size-label">${label}</span>
+        <span class="sd-size-price">${Number(price).toLocaleString('ar-EG')} ج / شهر</span>
+      </div>`;
+  }).join('');
+
+  // ── المرافق ──
+  const amenitiesHtml = (s.amenities || []).map(a =>
+    `<span class="sd-amenity">✓ ${a}</span>`
+  ).join('');
+
+  infoEl.innerHTML = `
+    <div class="sd-info-grid">
+
+      ${s.description ? `
+      <div class="sd-info-card sd-info-full">
+        <div class="sd-info-title">📝 عن هذا المكان</div>
+        <p class="sd-description">${s.description}</p>
+      </div>` : ''}
+
+      <div class="sd-info-card">
+        <div class="sd-info-title">🏷️ الأنشطة المناسبة</div>
+        <div class="card-acts" style="margin-top:8px">${actsHtml || '—'}</div>
+      </div>
+
+      ${sizesHtml ? `
+      <div class="sd-info-card">
+        <div class="sd-info-title">📐 الأحجام والأسعار</div>
+        <div class="sd-sizes-list" style="margin-top:10px">${sizesHtml}</div>
+      </div>` : ''}
+
+      ${amenitiesHtml ? `
+      <div class="sd-info-card">
+        <div class="sd-info-title">⚡ المرافق المتاحة</div>
+        <div class="sd-amenities-wrap" style="margin-top:10px">${amenitiesHtml}</div>
+      </div>` : ''}
+
+      ${s.season ? `
+      <div class="sd-info-card">
+        <div class="sd-info-title">📅 معلومات إضافية</div>
+        <div style="margin-top:8px">
+          <div class="sd-extra-row"><span>موسم البيع:</span><span>${s.season}</span></div>
+          ${s.insight ? `<div style="font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.7">${s.insight}</div>` : ''}
+        </div>
+      </div>` : ''}
+
+    </div>`;
+}
+
+/**
+ * يبني قائمة المساحات الفرعية في صفحة التفاصيل
+ * يعرض كل وحدة بكارد منفصل يحتوي على صورة + رقم الوحدة + الوصف + السعر + زرار حجز
+ * @param {Object} s — بيانات المساحة الرئيسية
+ */
+function _renderSubSpaces(s) {
+  const subEl = document.getElementById('sd-subspaces');
+  if (!subEl) return;
+
+  const units = s.subSpaces || [];
+
+  if (!units.length) {
+    subEl.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--ink3)">
+        <div style="font-size:36px;margin-bottom:10px">🏪</div>
+        <div style="font-size:14px">لا توجد وحدات مفصّلة لهذا المكان بعد</div>
+        <div style="font-size:12px;margin-top:6px">يمكنك الحجز مباشرة وسيتواصل معك فريقنا</div>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="openBooking(${s.id})">
+          احجز دلوقتي ←
+        </button>
+      </div>`;
+    return;
+  }
+
+  // ── عداد الوحدات المتاحة ──
+  const availCount  = units.filter(u => u.status === 'available' || !u.status).length;
+  const rentedCount = units.filter(u => u.status === 'rented').length;
+
+  const statusMap = {
+    available: { label: 'متاحة',    cls: 'sub-status-available' },
+    rented:    { label: 'مؤجّرة',   cls: 'sub-status-rented'    },
+    reserved:  { label: 'محجوزة',   cls: 'sub-status-reserved'  },
+  };
+
+  const unitsHtml = units.map(unit => {
+    const st        = statusMap[unit.status] || statusMap.available;
+    const isBlocked = unit.status === 'rented' || unit.status === 'reserved';
+
+    // صورة الوحدة أو placeholder
+    const imgHtml = unit.image
+      ? `<div class="sub-thumb">
+           <img src="${unit.image}" alt="${unit.unitId}" loading="lazy"
+                onerror="this.parentElement.innerHTML='<div class=\\'sub-thumb-placeholder\\'>${unit.unitId || '📦'}</div>'">
+         </div>`
+      : `<div class="sub-thumb sub-thumb-placeholder">${unit.unitId || '📦'}</div>`;
+
+    return `
+    <div class="sub-card ${isBlocked ? 'sub-card-blocked' : ''}">
+      ${imgHtml}
+      <div class="sub-body">
+        <div class="sub-header-row">
+          <div class="sub-unit-id">${unit.unitId || '—'}</div>
+          <span class="sub-status ${st.cls}">${st.label}</span>
+        </div>
+        ${unit.name ? `<div class="sub-name">${unit.name}</div>` : ''}
+        ${unit.floor ? `<div class="sub-meta">🏢 ${unit.floor}</div>` : ''}
+        ${unit.location ? `<div class="sub-location">📌 ${unit.location}</div>` : ''}
+        ${unit.notes ? `<div class="sub-notes">${unit.notes}</div>` : ''}
+        <div class="sub-footer">
+          <div class="sub-specs">
+            ${unit.size ? `<span class="sub-spec">📐 ${unit.size}</span>` : ''}
+            ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString('ar-EG')} ج/شهر</span>` : ''}
+          </div>
+          ${!isBlocked
+            ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
+                       onclick="openBookingForUnit(${s.id},'${unit.unitId}')">
+                 احجز ←
+               </button>`
+            : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  subEl.innerHTML = `
+    <div class="sd-subspaces-header">
+      <h2 class="sd-section-title">🏪 الوحدات المتاحة (${units.length})</h2>
+      <div class="sd-units-summary">
+        <span class="sd-units-avail">${availCount} متاحة</span>
+        ${rentedCount > 0 ? `<span class="sd-units-rented">${rentedCount} مؤجّرة</span>` : ''}
+      </div>
+    </div>
+    <div class="sub-grid">${unitsHtml}</div>`;
+}
+
+/**
+ * مساعد: يحوّل كود نوع المكان لنص عربي
+ * @param {string} type — mall / club / school
+ * @returns {string}
+ */
+function _typeLabel(type) {
+  return { mall: '🏬 مول تجاري', club: '⚽ نادي رياضي', school: '🏫 مدرسة' }[type] || type;
+}
+
+
+/* ================================================================
+   📋 القسم السابع-ج: فتح مودال الحجز لوحدة فرعية محددة  ← جديد
+   ================================================================ */
+
+/**
+ * يفتح مودال الحجز مع تحديد الوحدة الفرعية مسبقاً
+ * @param {number} spaceId — id المساحة الرئيسية
+ * @param {string} unitId  — رقم/كود الوحدة الفرعية
+ */
+function openBookingForUnit(spaceId, unitId) {
+  const s = SPACES.find(x => x.id === spaceId);
+  if (!s) return;
+
+  // افتح مودال الحجز الاعتيادي أولاً
+  openBooking(spaceId);
+
+  // ثم حدّد الوحدة في حقل الحجم/الملاحظات
+  setTimeout(() => {
+    const notesEl = document.getElementById('bk-notes');
+    if (notesEl && unitId) {
+      notesEl.value = `الوحدة المطلوبة: ${unitId}`;
+    }
+    // تحديث عنوان المودال ليشير للوحدة
+    const metaEl = document.getElementById('msi-meta');
+    if (metaEl) {
+      metaEl.insertAdjacentHTML('beforeend',
+        ` · <strong style="color:var(--orange)">وحدة ${unitId}</strong>`);
+    }
+  }, 50);
 }
 
 
@@ -412,7 +1130,6 @@ function renderCards(data, gridId, showViewAll) {
 
 /**
  * يفتح صفحة الماركت بليس ويصفّرها
- * يُستدعى من زرار "عرض الكل" في الهوم
  */
 function goToMarketplace() {
   showPage('market');
@@ -421,14 +1138,12 @@ function goToMarketplace() {
   mpActiveActs  = [];
   mpFiltered    = [...SPACES];
 
-  // صفّر مؤشرات السعر
   const s1 = document.getElementById('mp-slider-min');
   const s2 = document.getElementById('mp-slider-max');
   if (s1) s1.value = 0;
   if (s2) s2.value = parseInt(s2?.max || 50000);
   updateMpSlider();
 
-  // صفّر باقي الفلاتر
   const mpRegion = document.getElementById('mp-region');
   if (mpRegion) mpRegion.value = '';
   const mpSort = document.getElementById('mp-sort');
@@ -440,11 +1155,6 @@ function goToMarketplace() {
   renderMarketplace();
 }
 
-/**
- * تبديل حالة زرار نوع المكان (mall / club / school) في الفلتر الجانبي
- * @param {string}  type — نوع المكان
- * @param {Element} el   — الزرار المضغوط
- */
 function toggleMpType(type, el) {
   el.classList.toggle('on');
   mpActiveTypes = el.classList.contains('on')
@@ -454,11 +1164,6 @@ function toggleMpType(type, el) {
   applyMpFilters();
 }
 
-/**
- * تبديل حالة زرار النشاط في الفلتر الجانبي
- * @param {string}  id — id النشاط
- * @param {Element} el — الزرار المضغوط
- */
 function toggleMpAct(id, el) {
   el.classList.toggle('on');
   mpActiveActs = el.classList.contains('on')
@@ -468,10 +1173,6 @@ function toggleMpAct(id, el) {
   applyMpFilters();
 }
 
-/**
- * يطبّق جميع فلاتر الماركت بليس ويرتّب النتائج
- * يُستدعى عند أي تغيير في الفلاتر أو الترتيب
- */
 function applyMpFilters() {
   const region = document.getElementById('mp-region')?.value || '';
   const minVal = parseInt(document.getElementById('mp-slider-min')?.value) || 0;
@@ -480,21 +1181,16 @@ function applyMpFilters() {
 
   let data = [...SPACES];
 
-  // فلترة بالمنطقة
   if (region) data = data.filter(s => s.loc === region);
-
-  // فلترة بنوع المكان
   if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
-
-  // فلترة بالسعر
-  data = data.filter(s => s.price >= minVal && s.price <= maxVal);
-
-  // فلترة بالنشاط (يظهر لو يصلح لأي نشاط أو يصلح للأنشطة المحددة)
+  data = data.filter(s => {
+    const p = parseInt(s.price) || 0;
+    return p >= minVal && p <= maxVal;
+  });
   if (mpActiveActs.length) {
     data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
   }
 
-  // الترتيب
   if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
   if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
 
@@ -504,9 +1200,6 @@ function applyMpFilters() {
   updateMpChips();
 }
 
-/**
- * يمسح جميع فلاتر الماركت بليس ويرجع للحالة الأصلية
- */
 function clearMpFilters() {
   mpActiveTypes = [];
   mpActiveActs  = [];
@@ -530,10 +1223,6 @@ function clearMpFilters() {
   updateMpChips();
 }
 
-/**
- * يحدّث Chips الفلاتر النشطة فوق الشبكة
- * يُظهر الفلاتر المحددة حالياً كـ tags قابلة للإزالة
- */
 function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
@@ -551,10 +1240,6 @@ function updateMpChips() {
   cont.innerHTML = chips.join('');
 }
 
-/**
- * يرسم الصفحة الحالية من مساحات الماركت بليس
- * يتحكم في الـ pagination
- */
 function renderMarketplace() {
   const grid    = document.getElementById('mp-grid');
   const countEl = document.getElementById('mp-count');
@@ -577,14 +1262,12 @@ function renderMarketplace() {
     return;
   }
 
-  grid.innerHTML = pageData.map(s => buildCardHtml(s)).join('');
+  grid.innerHTML = pageData.map(s => buildCardHtml(s, 'market')).join('');
+  // تهيئة الـ sliders في الماركت بعد الرسم
+  setTimeout(() => csInitAll(), 120);
   renderMpPagination();
 }
 
-/**
- * يرسم أزرار التنقل بين الصفحات (Pagination)
- * يعرض أرقام الصفحات مع نقاط للصفحات البعيدة
- */
 function renderMpPagination() {
   const cont = document.getElementById('mp-pagination');
   if (!cont) return;
@@ -607,10 +1290,6 @@ function renderMpPagination() {
   cont.innerHTML = html;
 }
 
-/**
- * ينتقل لصفحة معينة في الماركت بليس ويسكرول للأعلى
- * @param {number} n — رقم الصفحة المراد الانتقال إليها
- */
 function mpGoPage(n) {
   mpPage = n;
   renderMarketplace();
@@ -619,10 +1298,6 @@ function mpGoPage(n) {
 
 /* ── مؤشر سعر الماركت بليس ── */
 
-/**
- * يُهيّئ مؤشر السعر المزدوج في صفحة الماركت بليس
- * يُستدعى عند فتح الصفحة (مؤجّل قليلاً لضمان وجود العناصر)
- */
 function initMpSlider() {
   const s1 = document.getElementById('mp-slider-min');
   const s2 = document.getElementById('mp-slider-max');
@@ -632,9 +1307,6 @@ function initMpSlider() {
   updateMpSlider();
 }
 
-/**
- * يحدّث مظهر الشريط والتسميات في مؤشر سعر الماركت بليس
- */
 function updateMpSlider() {
   const s1 = document.getElementById('mp-slider-min');
   const s2 = document.getElementById('mp-slider-max');
@@ -644,7 +1316,6 @@ function updateMpSlider() {
   let maxVal = parseInt(s2.value);
   const RANGE_MAX = parseInt(s1.max) || 50000;
 
-  // منع التقاطع
   if (minVal > maxVal - 500) {
     minVal = maxVal - 500;
     s1.value = minVal;
@@ -653,23 +1324,18 @@ function updateMpSlider() {
   const pMin = (minVal / RANGE_MAX) * 100;
   const pMax = (maxVal / RANGE_MAX) * 100;
 
-  // تلوين الشريط
   const track = document.getElementById('mp-slider-track');
   if (track) {
     track.style.background =
       `linear-gradient(to left, #e8e8e8 ${100 - pMax}%, #FF6B00 ${100 - pMax}%, #FF6B00 ${100 - pMin}%, #e8e8e8 ${100 - pMin}%)`;
   }
 
-  // تحديث التسميات
   const lMin = document.getElementById('mp-price-min-label');
   const lMax = document.getElementById('mp-price-max-label');
   if (lMin) lMin.textContent = Number(minVal).toLocaleString('ar-EG') + ' ج';
   if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? 'بلا حد' : Number(maxVal).toLocaleString('ar-EG') + ' ج';
 }
 
-/**
- * يفتح/يغلق الفلتر الجانبي على الموبايل
- */
 function toggleMpSidebar() {
   document.getElementById('mp-sidebar')?.classList.toggle('open');
   document.getElementById('mp-sidebar-overlay')?.classList.toggle('open');
@@ -680,11 +1346,6 @@ function toggleMpSidebar() {
    🔍 القسم التاسع: الفلترة والبحث — الصفحة الرئيسية
    ================================================================ */
 
-/**
- * تغيير التبويب (الكل / مولات / نوادي / مدارس)
- * @param {Element} el   — الزرار المضغوط
- * @param {string}  type — نوع المكان
- */
 function setTab(el, type) {
   document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -692,19 +1353,11 @@ function setTab(el, type) {
   filterAndRender();
 }
 
-/**
- * يُشغَّل عند الضغط على زرار "بحث"
- * يطبّق الفلاتر ويعرض الـ chips
- */
 function doSearch() {
   filterAndRender();
   showSearchChips();
 }
 
-/**
- * يصفّي المساحات حسب الفلاتر المحددة ويعرض النتائج
- * يأخذ قيمة مؤشرات السعر الجديدة
- */
 function filterAndRender() {
   let data = [...SPACES];
 
@@ -721,17 +1374,12 @@ function filterAndRender() {
   });
   if (selectedAct) data = data.filter(s => s.allActs || (s.acts && s.acts.includes(selectedAct)));
 
-  // تحديث العداد
   const counter = document.getElementById('res-count');
   if (counter) counter.textContent = data.length + ' مساحة';
 
-  // أظهر أول 6 نتائج + زرار "عرض الكل" لو في أكتر
-  renderCards(data.slice(0, 6), 'spaces-grid', data.length > 6);
+  renderCards(data.slice(0, 6), 'spaces-grid', data.length > 6, 'home');
 }
 
-/**
- * يعرض الفلاتر المحددة كـ chips قابلة للحذف
- */
 function showSearchChips() {
   const chips = [];
   const r  = document.getElementById('f-region')?.value;
@@ -757,9 +1405,6 @@ function showSearchChips() {
   }
 }
 
-/**
- * يمسح كل الفلاتر ويرجع للعرض الافتراضي
- */
 function clearAllFilters() {
   const chipsEl = document.getElementById('active-chips');
   if (chipsEl) chipsEl.innerHTML = '';
@@ -773,15 +1418,13 @@ function clearAllFilters() {
   if (actSel) actSel.value = '';
   selectedAct = '';
 
-  // إعادة ضبط مؤشر السعر
   const sliderMin = document.getElementById('slider-min');
   const sliderMax = document.getElementById('slider-max');
   if (sliderMin) sliderMin.value = 0;
   if (sliderMax) sliderMax.value = 50000;
   updateMainSlider();
 
-  // إعادة عرض أول 6 مساحات
-  renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6);
+  renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6, 'home');
   const counter = document.getElementById('res-count');
   if (counter) counter.textContent = SPACES.length + ' مساحة';
 }
@@ -794,10 +1437,11 @@ function clearAllFilters() {
 /**
  * يُظهر صفحة ويُخفي باقي الصفحات
  * يحدّث الرابط النشط في الـ Nav
- * @param {string} p — اسم الصفحة (home / how / owner / market / login / signup / dashboard / confirm)
+ * @param {string} p — اسم الصفحة:
+ *   home / how / owner / market / login / signup / dashboard / confirm / space-detail  ← جديد
  */
 function showPage(p) {
-  // حفظ الصفحة الحالية عشان تترجعلها بعد Refresh
+  // حفظ الصفحة الحالية (باستثناء صفحة التفاصيل — لا نحفظها في localStorage)
   if (['home','how','owner','market','dashboard'].includes(p)) {
     localStorage.setItem('lastPage', p);
   }
@@ -814,7 +1458,7 @@ function showPage(p) {
   if (p === 'owner')  links[2]?.classList.add('active');
   if (p === 'market') links[3]?.classList.add('active');
 
-  // لو فتحنا الماركت بليس — هيّئ الـ slider وارسم الكروت لو مش مرسومة
+  // لو فتحنا الماركت بليس
   if (p === 'market') {
     setTimeout(initMpSlider, 120);
     if (SPACES.length && !mpFiltered.length) {
@@ -826,9 +1470,6 @@ function showPage(p) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * يرجع للصفحة الرئيسية ويسكرول لصندوق البحث
- */
 function scrollToSearch() {
   showPage('home');
   setTimeout(() => {
@@ -836,10 +1477,8 @@ function scrollToSearch() {
   }, 150);
 }
 
-/** الانتقال لصفحة تسجيل الدخول */
 function goToLogin() { showPage('login'); }
 
-/** الانتقال للوحة التحكم مع إغلاق القائمة المنسدلة */
 function goToDashboard() {
   closeUserDropdown();
   showPage('dashboard');
@@ -850,16 +1489,10 @@ function goToDashboard() {
    📋 القسم الحادي عشر: مودال الحجز
    ================================================================ */
 
-/**
- * يفتح مودال الحجز لمساحة معينة
- * يملأ بيانات المستخدم تلقائياً لو هو مسجّل دخول
- * @param {number} spaceId — id المساحة
- */
 function openBooking(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
 
-  // استخرج الأحجام والأسعار
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -873,25 +1506,21 @@ function openBooking(spaceId) {
   const selSize  = sizesClean[0] || '';
   const selPrice = sizePrices[selSize] || s.price;
 
-  // عرض معلومات المساحة في المودال
   document.getElementById('msi-name').textContent = s.name;
   document.getElementById('msi-meta').innerHTML =
     `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(selPrice).toLocaleString('ar-EG')} ج/شهر</strong>`;
 
-  // بناء خيارات الحجم
   const sizeSelect = document.getElementById('bk-size');
   sizeSelect.innerHTML = '<option value="">اختر الحجم</option>' +
     sizesClean.map(sz => `<option value="${sz}" ${sz === selSize ? 'selected' : ''}>${sz}</option>`).join('') +
     '<option value="مخصص">مخصص — هحدده لاحقاً</option>';
 
-  // تغيير السعر عند تغيير الحجم
   sizeSelect.onchange = function () {
     const p = sizePrices[this.value] || s.price;
     document.getElementById('msi-meta').innerHTML =
       `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(p).toLocaleString('ar-EG')} ج/شهر</strong>`;
   };
 
-  // ── تعبئة تلقائية لو المستخدم مسجّل دخول ──
   if (currentUser) {
     const nameEl  = document.getElementById('bk-name');
     const phoneEl = document.getElementById('bk-phone');
@@ -906,7 +1535,6 @@ function openBooking(spaceId) {
     });
   }
 
-  // إعادة ضبط باقي الحقول
   document.getElementById('modal-form-wrap').style.display = 'block';
   document.getElementById('modal-success').style.display   = 'none';
   document.getElementById('bk-error').style.display        = 'none';
@@ -920,7 +1548,6 @@ function openBooking(spaceId) {
   if (otherWrap) otherWrap.style.display = 'none';
   document.querySelectorAll('.act-pick-btn').forEach(b => b.classList.remove('on'));
 
-  // لو الشخص اختار نشاط في الفلتر — حدده تلقائياً في المودال
   if (selectedAct) {
     const btn = document.querySelector(`.act-pick-btn[data-id="${selectedAct}"]`);
     if (btn) {
@@ -933,13 +1560,11 @@ function openBooking(spaceId) {
   document.body.style.overflow = 'hidden';
 }
 
-/** إغلاق المودال وإعادة التمرير الطبيعي */
 function closeModal() {
   document.getElementById('booking-modal').classList.remove('open');
   document.body.style.overflow = '';
 }
 
-/** إغلاق المودال عند الضغط على الخلفية */
 function closeModalOnBg(e) {
   if (e.target === document.getElementById('booking-modal')) closeModal();
 }
@@ -949,10 +1574,6 @@ function closeModalOnBg(e) {
    📬 القسم الثاني عشر: إرسال طلب الحجز لـ Google Sheets
    ================================================================ */
 
-/**
- * يرسل بيانات الحجز لـ Google Apps Script
- * لو المستخدم مسجّل — يحفظ الحجز أيضاً في Supabase
- */
 async function submitBooking() {
   const name     = document.getElementById('bk-name').value.trim();
   const phone    = document.getElementById('bk-phone').value.trim();
@@ -964,7 +1585,6 @@ async function submitBooking() {
   const date     = document.getElementById('bk-date').value;
   const notes    = document.getElementById('bk-notes').value.trim();
 
-  // ── التحقق من صحة البيانات ──
   if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
@@ -973,14 +1593,12 @@ async function submitBooking() {
 
   document.getElementById('bk-error').style.display = 'none';
 
-  // تعطيل زرار الإرسال أثناء الانتظار
   const submitBtn     = document.querySelector('#modal-form-wrap .btn-primary');
   const origText      = submitBtn.innerHTML;
   submitBtn.innerHTML = '⏳ جاري الإرسال…';
   submitBtn.disabled  = true;
   submitBtn.style.opacity = '0.7';
 
-  // استخرج معلومات المساحة من المودال
   const spaceName  = document.getElementById('msi-name').textContent;
   const metaText   = document.getElementById('msi-meta').textContent;
   const locMatch   = metaText.match(/📍\s*([^·]+)/);
@@ -988,7 +1606,6 @@ async function submitBooking() {
   const spaceLoc   = locMatch   ? locMatch[1].trim()   : '';
   const spacePrice = priceMatch ? priceMatch[1].trim() : '';
 
-  // البيانات التي ستُرسَل للشيت
   const payload = {
     name, phone, email,
     spaceName, spaceLoc, spacePrice,
@@ -1001,8 +1618,6 @@ async function submitBooking() {
   };
 
   try {
-    // إرسال البيانات لـ Google Apps Script
-    // no-cors: لأن Apps Script لا يدعم CORS الكامل
     await fetch(BOOKING_URL, {
       method:  'POST',
       mode:    'no-cors',
@@ -1010,10 +1625,8 @@ async function submitBooking() {
       body:    JSON.stringify(payload),
     });
 
-    // لو المستخدم مسجّل — احفظ الحجز في Supabase + حدّث البيانات الشخصية
     if (sbClient && currentUser) {
     
-      // ── حفظ الحجز ──
       const { error: bookingError } = await sbClient.from('bookings').insert({
         user_id:    currentUser.id,
         space_name: payload.spaceName,
@@ -1029,7 +1642,6 @@ async function submitBooking() {
       });
       if (bookingError) console.error('خطأ في حفظ الحجز:', bookingError);
     
-      // ── حفظ البيانات الشخصية في Supabase لو كانت فارغة ──
       const profileUpdate = {};
       if (name  && !currentProfile?.full_name) profileUpdate.full_name = name;
       if (phone && !currentProfile?.phone)     profileUpdate.phone     = phone;
@@ -1047,16 +1659,13 @@ async function submitBooking() {
         }
       }
     
-      // ── تحديث لوحة التحكم ──
       await loadDashboardData(currentUser);
     }
 
-    // نجاح الإرسال — أظهر رسالة النجاح
     document.getElementById('modal-form-wrap').style.display = 'none';
     document.getElementById('modal-success').style.display   = 'block';
 
   } catch (fetchErr) {
-    // فشل الإرسال — أعِد تفعيل الزرار وأظهر رسالة الخطأ
     submitBtn.innerHTML     = origText;
     submitBtn.disabled      = false;
     submitBtn.style.opacity = '1';
@@ -1064,10 +1673,6 @@ async function submitBooking() {
   }
 }
 
-/**
- * يعرض رسالة خطأ داخل مودال الحجز
- * @param {string} msg — نص الخطأ
- */
 function showFormError(msg) {
   const el = document.getElementById('bk-error');
   if (!el) return;
@@ -1081,15 +1686,10 @@ function showFormError(msg) {
    🔐 القسم الثالث عشر: نظام تسجيل الدخول (Supabase Auth)
    ================================================================ */
 
-/**
- * يُهيّئ نظام المصادقة عند فتح الصفحة
- * يتحقق من وجود جلسة مستخدم مسجّل
- */
 async function initAuth() {
   if (!sbClient) return;
 
   try {
-    // تحقق من الجلسة الحالية
     const { data: { session } } = await sbClient.auth.getSession();
 
     if (session?.user) {
@@ -1099,19 +1699,15 @@ async function initAuth() {
       currentProfile = profile;
       setNavUser(session.user, profile);
 
-      // ── استعادة آخر صفحة كانت مفتوحة قبل الـ Refresh ──
       const lastPage = localStorage.getItem('lastPage');
       if (lastPage && lastPage !== 'home') {
-        // أظهر الصفحة بدون تسكرول (مش showPage عشان ما يحفظش مرة ثانية)
         document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
         const target = document.getElementById('pg-' + lastPage);
         if (target) target.classList.add('active');
 
-        // لو الصفحة هي الداشبورد — حمّل بياناته
         if (lastPage === 'dashboard') {
           await loadDashboardData(session.user);
         }
-        // لو الصفحة هي الماركت بليس — هيّئه
         if (lastPage === 'market') {
           setTimeout(initMpSlider, 120);
           if (SPACES.length && !mpFiltered.length) {
@@ -1121,7 +1717,6 @@ async function initAuth() {
         }
       }
     } else {
-      // لو مش مسجّل — امسح أي صفحة محفوظة وارجع للهوم
       localStorage.removeItem('lastPage');
       setNavUser(null, null);
     }
@@ -1129,8 +1724,6 @@ async function initAuth() {
     setNavUser(null, null);
   }
 
-  // استمع لأي تغيير في حالة تسجيل الدخول
-  // (مثلاً لو سجّل من نافذة ثانية، أو بعد Google OAuth)
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
@@ -1139,7 +1732,6 @@ async function initAuth() {
       currentProfile = profile;
       setNavUser(session.user, profile);
 
-      // لو رجع من Google OAuth — ابعته للداشبورد
       if (['pg-login', 'pg-signup'].some(id => document.getElementById(id)?.classList.contains('active'))) {
         await loadDashboardData(session.user);
         showPage('dashboard');
@@ -1152,18 +1744,12 @@ async function initAuth() {
   });
 }
 
-/**
- * يحدّث شريط التنقل حسب حالة المستخدم
- * @param {object|null} user    — بيانات المستخدم أو null لو زائر
- * @param {object|null} profile — بيانات الـ profile من قاعدة البيانات
- */
 function setNavUser(user, profile) {
   const guestEl  = document.getElementById('nav-guest');
   const loggedEl = document.getElementById('nav-logged');
   if (!guestEl || !loggedEl) return;
 
   if (!user) {
-    // زائر غير مسجّل
     guestEl.style.display  = 'flex';
     loggedEl.style.display = 'none';
   } else {
@@ -1172,7 +1758,6 @@ function setNavUser(user, profile) {
     const initial   = name.trim()[0] || '؟';
     const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
 
-    // أخفِ زرار "دخول" وأظهر الأفاتار
     guestEl.style.display  = 'none';
     loggedEl.style.display = 'flex';
 
@@ -1186,7 +1771,6 @@ function setNavUser(user, profile) {
     updateBnUser(user, profile); 
   }
 
-  // 👇 الكود الجديد (Bottom Nav)
   const bnUserIcon  = document.getElementById('bn-user-icon');
   const bnUserLabel = document.getElementById('bn-user-label');
 
@@ -1202,11 +1786,11 @@ function setNavUser(user, profile) {
   }
 }
 
+
 /* ================================================================
    🔽 القسم الرابع عشر: القائمة المنسدلة للمستخدم
    ================================================================ */
 
-/** فتح أو إغلاق القائمة المنسدلة */
 function toggleUserDropdown() {
   const btn = document.getElementById('nav-avatar-btn');
   const dd  = document.getElementById('nav-dropdown');
@@ -1216,13 +1800,11 @@ function toggleUserDropdown() {
     : (btn.classList.add('open'), dd.classList.add('open'));
 }
 
-/** إغلاق القائمة المنسدلة */
 function closeUserDropdown() {
   document.getElementById('nav-avatar-btn')?.classList.remove('open');
   document.getElementById('nav-dropdown')?.classList.remove('open');
 }
 
-// إغلاق القائمة لو ضغط المستخدم في أي مكان آخر
 document.addEventListener('click', e => {
   const area = document.getElementById('nav-avatar-btn');
   if (area && !area.contains(e.target)) closeUserDropdown();
@@ -1233,9 +1815,6 @@ document.addEventListener('click', e => {
    📧 القسم الخامس عشر: تسجيل الدخول بالبريد الإلكتروني
    ================================================================ */
 
-/**
- * تسجيل دخول بالبريد وكلمة المرور
- */
 async function doEmailLogin() {
   if (!sbClient) return;
   clearAuthAlert('login-alert');
@@ -1251,7 +1830,6 @@ async function doEmailLogin() {
   setBtnLoading('btn-login-submit', false, 'تسجيل الدخول ←');
 
   if (error) {
-    // ترجمة رسائل الخطأ للعربية
     const msgs = {
       'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غلط',
       'Email not confirmed':       'لازم تأكد بريدك الإلكتروني الأول — فتش في الـ Inbox',
@@ -1270,10 +1848,6 @@ async function doEmailLogin() {
    ✍️ القسم السادس عشر: إنشاء حساب جديد
    ================================================================ */
 
-/**
- * إنشاء حساب جديد بالبريد وكلمة المرور
- * يحفظ بيانات المستخدم في جدول profiles تلقائياً
- */
 async function doEmailSignup() {
   if (!sbClient) return;
   clearAuthAlert('signup-alert');
@@ -1285,7 +1859,6 @@ async function doEmailSignup() {
   const role  = document.getElementById('su-role')?.value;
   const city  = document.getElementById('su-city')?.value;
 
-  // ── التحقق من صحة البيانات ──
   if (!name)  { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showAuthAlert('signup-alert', 'error', 'ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
@@ -1298,13 +1871,12 @@ async function doEmailSignup() {
 
   setBtnLoading('btn-signup-submit', true);
 
-  // إنشاء المستخدم في Supabase Auth
   const { data, error } = await sbClient.auth.signUp({
     email,
     password: pass,
     options: {
-      emailRedirectTo: window.location.origin,           // رابط التأكيد الذي يُرسَل بالبريد
-      data: { full_name: name, phone, role, city }       // بيانات إضافية تُحفظ مع المستخدم
+      emailRedirectTo: window.location.origin,
+      data: { full_name: name, phone, role, city }
     }
   });
 
@@ -1319,8 +1891,6 @@ async function doEmailSignup() {
     return;
   }
 
-  // حفظ بيانات المستخدم في جدول profiles
-  // (يحدث تلقائياً إذا كان عندك Trigger في Supabase، لكن نعمله يدوياً كاحتياط)
   if (data.user) {
     await sbClient.from('profiles').upsert({
       id:         data.user.id,
@@ -1332,7 +1902,6 @@ async function doEmailSignup() {
     }, { onConflict: 'id' });
   }
 
-  // أظهر صفحة "اتحقق من بريدك"
   const addrEl = document.getElementById('confirm-em-addr');
   if (addrEl) addrEl.textContent = email;
   showPage('confirm');
@@ -1343,29 +1912,16 @@ async function doEmailSignup() {
    🌐 القسم السابع عشر: تسجيل الدخول بـ Google
    ================================================================ */
 
-/**
- * 🌐 تسجيل الدخول أو إنشاء حساب باستخدام Google OAuth
- * هذه الدالة يتم استدعاؤها عند الضغط على زر "تسجيل الدخول بجوجل"
- */
 async function authWithGoogle() {
-
-  // ⚠️ تأكد إن Supabase متحمّل قبل ما نستخدمه
   if (!sbClient) return;
 
-  // 🚀 بدء عملية تسجيل الدخول عبر Google
   const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      /**
-       * 🔁 الرابط الذي سيعود إليه المستخدم بعد تسجيل الدخول
-       * مهم جداً يكون ثابت (مش ديناميك)
-       * لأن ده اللي بيحل مشكلة Error 522
-       */
       redirectTo: "https://makanispot.com"
     }
   });
 
-  // ❌ في حالة حدوث خطأ
   if (error) {
     showAuthAlert('login-alert', 'error', 'في مشكلة مع Google: ' + error.message);
   }
@@ -1376,16 +1932,13 @@ async function authWithGoogle() {
    🚪 القسم الثامن عشر: تسجيل الخروج
    ================================================================ */
 
-/**
- * تسجيل الخروج وإعادة الـ Navbar للحالة الأصلية
- */
 async function doLogout() {
   if (!sbClient) return;
   closeUserDropdown();
   await sbClient.auth.signOut();
   currentUser    = null;
   currentProfile = null;
-  localStorage.removeItem('lastPage'); // امسح الصفحة المحفوظة عند الخروج
+  localStorage.removeItem('lastPage');
   setNavUser(null, null);
   showPage('home');
 }
@@ -1395,15 +1948,9 @@ async function doLogout() {
    🏠 القسم التاسع عشر: لوحة التحكم (Dashboard)
    ================================================================ */
 
-/**
- * يحمّل بيانات المستخدم ويملأ لوحة التحكم
- * يجلب الحجوزات والتقييمات أيضاً
- * @param {object} user — بيانات المستخدم من Supabase
- */
 async function loadDashboardData(user) {
   if (!sbClient) return;
 
-  // جيب الـ profile من قاعدة البيانات
   const { data: profile } = await sbClient
     .from('profiles').select('*').eq('id', user.id).single();
 
@@ -1417,7 +1964,6 @@ async function loadDashboardData(user) {
     ? new Date(profile.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
     : '—';
 
-  // ملّي عناصر الصفحة بالبيانات
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   set('dash-firstname', firstName);
   set('dpf-name',       name);
@@ -1427,7 +1973,6 @@ async function loadDashboardData(user) {
   set('dpf-role',       roleLabel);
   set('dpf-date',       dateStr);
 
-  // ملّي حقول التعديل بالقيم الحالية
   const efName  = document.getElementById('ef-name');
   const efPhone = document.getElementById('ef-phone');
   const efCity  = document.getElementById('ef-city');
@@ -1435,7 +1980,6 @@ async function loadDashboardData(user) {
   if (efPhone) efPhone.value = profile?.phone || '';
   if (efCity)  efCity.value  = profile?.city  || '';
 
-  // تحديث Badge نوع الحساب
   const badge = document.getElementById('dash-role-badge');
   if (badge) {
     if (profile?.role === 'owner') {
@@ -1451,7 +1995,6 @@ async function loadDashboardData(user) {
     }
   }
 
-  // تحديث مربع نوع الحساب في البيانات الشخصية
   const roleBox = document.getElementById('dpf-role-box');
   if (roleBox) {
     if (profile?.role === 'owner') {
@@ -1467,31 +2010,23 @@ async function loadDashboardData(user) {
     }
   }
 
-  // تحديث الـ Navbar
   setNavUser(user, profile);
 
-  // جلب الحجوزات والتقييمات
   await loadUserBookings(user.id);
   await loadUserRatings(user.id);
 }
 
-/**
- * يُظهر/يُخفي فورم تعديل البيانات الشخصية
- */
 function toggleEditProfile() {
   const viewEl = document.getElementById('profile-view');
   const editEl = document.getElementById('profile-edit');
-  const formEl = document.getElementById('edit-profile-form-inner');
   if (!viewEl || !editEl) return;
 
   const isEditing = editEl.style.display === 'block';
 
   if (isEditing) {
-    // إغلاق التعديل
     viewEl.style.display = 'block';
     editEl.style.display = 'none';
   } else {
-    // فتح التعديل — ملّي الحقول بالبيانات الحالية
     const efName  = document.getElementById('ef-name');
     const efPhone = document.getElementById('ef-phone');
     const efCity  = document.getElementById('ef-city');
@@ -1508,9 +2043,6 @@ function toggleEditProfile() {
   }
 }
 
-/**
- * يحفظ التعديلات على البيانات الشخصية في Supabase
- */
 async function saveProfile() {
   if (!sbClient || !currentUser) return;
 
@@ -1532,16 +2064,10 @@ async function saveProfile() {
   if (error) { showDashAlert('error', 'في مشكلة في الحفظ'); return; }
 
   showDashAlert('success', 'اتحفظت بياناتك بنجاح ✅');
-  await loadDashboardData(currentUser);  // تحديث الصفحة بالبيانات الجديدة
-  toggleEditProfile();                   // إغلاق فورم التعديل
+  await loadDashboardData(currentUser);
+  toggleEditProfile();
 }
 
-/**
- * يعرض رسالة تنبيه داخل لوحة التحكم
- * تختفي تلقائياً بعد 4 ثوانٍ
- * @param {string} type — نوع الرسالة (error / success)
- * @param {string} msg  — نص الرسالة
- */
 function showDashAlert(type, msg) {
   const el = document.getElementById('dash-alert');
   if (!el) return;
@@ -1557,10 +2083,6 @@ function showDashAlert(type, msg) {
    📋 القسم العشرون: حجوزات المستخدم
    ================================================================ */
 
-/**
- * يجلب حجوزات المستخدم من Supabase ويعرضها في لوحة التحكم
- * @param {string} userId — id المستخدم
- */
 async function loadUserBookings(userId) {
   if (!sbClient) return;
 
@@ -1573,11 +2095,10 @@ async function loadUserBookings(userId) {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(100);  // يجلب آخر 100 طلب
+      .limit(100);
 
     if (bookErr) console.error('خطأ في جلب الحجوزات:', bookErr);
 
-    // تحديث عداد الحجوزات
     if (cntEl) cntEl.textContent = bookings?.length || 0;
 
     if (!contEl) return;
@@ -1593,7 +2114,6 @@ async function loadUserBookings(userId) {
       return;
     }
 
-    // خريطة حالات الحجز
     const statusMap = {
       pending:   { label: 'في الانتظار', cls: 'status-pending'   },
       confirmed: { label: 'مؤكد',        cls: 'status-confirmed' },
@@ -1634,10 +2154,6 @@ async function loadUserBookings(userId) {
    ⭐ القسم الواحد والعشرون: تقييمات المستخدم
    ================================================================ */
 
-/**
- * يجلب تقييمات المستخدم من Supabase ويعرضها في لوحة التحكم
- * @param {string} userId — id المستخدم
- */
 async function loadUserRatings(userId) {
   if (!sbClient) return;
 
@@ -1680,9 +2196,6 @@ async function loadUserRatings(userId) {
   }
 }
 
-/**
- * يرسل تقييم جديد لـ Supabase
- */
 async function submitRating() {
   if (!sbClient || !currentUser) {
     showDashAlert('error', 'لازم تسجّل دخولك الأول');
@@ -1710,31 +2223,20 @@ async function submitRating() {
 
   showDashAlert('success', 'شكراً! اتضاف تقييمك ⭐');
 
-  // إعادة ضبط الفورم
   document.getElementById('rating-space-name').value = '';
   document.getElementById('rating-comment').value    = '';
   document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('on'));
   document.getElementById('rating-form-wrap').style.display = 'none';
 
-  // تحديث قائمة التقييمات
   await loadUserRatings(currentUser.id);
 }
 
-/**
- * يُفعّل النجوم عند الضغط عليها
- * @param {number}  val — القيمة (1-5)
- * @param {Element} el  — الزرار المضغوط
- */
 function selectStar(val, el) {
   const btns = document.querySelectorAll('.star-btn');
   btns.forEach((b, i) => b.classList.toggle('on', i < val));
-  // نحفظ القيمة في الزرار الأخير لنقرأها وقت الإرسال
   if (btns[val - 1]) btns[val - 1].dataset.val = val;
 }
 
-/**
- * يُظهر/يُخفي فورم إضافة تقييم جديد
- */
 function toggleRatingForm() {
   const formEl = document.getElementById('rating-form-wrap');
   if (!formEl) return;
@@ -1746,12 +2248,6 @@ function toggleRatingForm() {
    🛠️ القسم الثاني والعشرون: دوال مساعدة مشتركة
    ================================================================ */
 
-/**
- * يعرض رسالة تنبيه في صفحات Auth (تسجيل الدخول / إنشاء حساب)
- * @param {string} containerId — id الـ container
- * @param {string} type        — نوع الرسالة (error / success / info)
- * @param {string} msg         — نص الرسالة
- */
 function showAuthAlert(containerId, type, msg) {
   const icons = { error: '⚠️', success: '✅', info: '💡' };
   const el = document.getElementById(containerId);
@@ -1762,21 +2258,11 @@ function showAuthAlert(containerId, type, msg) {
   </div>`;
 }
 
-/**
- * يمسح رسالة التنبيه من الـ container
- * @param {string} id — id الـ container
- */
 function clearAuthAlert(id) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = '';
 }
 
-/**
- * يعطّل/يفعّل زرار مع إظهار حالة التحميل
- * @param {string}  id   — id الزرار
- * @param {boolean} on   — true لتعطيل، false لتفعيل
- * @param {string}  orig — النص الأصلي للزرار (لإعادته بعد التحميل)
- */
 function setBtnLoading(id, on, orig) {
   const b = document.getElementById(id);
   if (!b) return;
@@ -1785,10 +2271,6 @@ function setBtnLoading(id, on, orig) {
   else if (orig)  b.innerHTML = orig;
 }
 
-/**
- * يُظهر/يُخفي كلمة المرور في حقل الإدخال
- * @param {string} id — id حقل كلمة المرور
- */
 function togglePassVis(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1812,7 +2294,7 @@ function handleBnUser() {
     updateBottomNav('user');
   }
 }
-/* ── تحديث زرار المستخدم في Bottom Nav ── */
+
 function updateBnUser(user, profile) {
   const icon  = document.getElementById('bn-user-icon');
   const label = document.getElementById('bn-user-label');
