@@ -1701,43 +1701,6 @@ footer {
   backdrop-filter: blur(4px);
 }
 
-/* صف الصور المصغّرة */
-.sd-thumbs-row {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--surface2);
-}
-.sd-thumb-item {
-  flex: 1;
-  height: 90px;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-  background: var(--dark);
-  transition: opacity 0.15s;
-}
-.sd-thumb-item:hover { opacity: 0.85; }
-.sd-thumb-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* الصورة الأخيرة لو في أكتر من 5 صور — تظهر عليها "+X صورة" */
-.sd-thumb-more img { filter: brightness(0.45); }
-.sd-thumb-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 800;
-  color: #fff;
-}
-
 /* placeholder لو مفيش صور */
 .sd-gallery-placeholder {
   width: 100%;
