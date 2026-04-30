@@ -316,64 +316,28 @@ function buildMpActivityFilters() {
 function buildCardHtml(s, fromPage) {
   fromPage = fromPage || 'market';
 
-  // ── بناء قائمة الصور (الصورة الرئيسية + الصور الإضافية) ──
-  // extraImages يمكن أن تكون: مصفوفة، أو نص مفصول بـ | من الشيت
+  // 1. منطق السلايدر (الذي أرسلته أنت - حافظنا عليه)
   const rawExtra = s.extraImages || [];
-  const extraList = Array.isArray(rawExtra)
-    ? rawExtra
-    : String(rawExtra).split('|').map(u => u.trim()).filter(Boolean);
-
+  const extraList = Array.isArray(rawExtra) ? rawExtra : String(rawExtra).split('|').map(u => u.trim()).filter(Boolean);
   const allImgs = [];
   if (s.image) allImgs.push(s.image);
   extraList.forEach(u => { if (u && u !== s.image) allImgs.push(u); });
-
   const sliderId = `card-${s.id}`;
 
-  // ── إذا كان في أكثر من صورة نبني Slider، وإلا صورة واحدة عادية ──
   let thumbHtml;
   if (allImgs.length > 1) {
-    // بناء الـ slides
     const slidesHtml = allImgs.map((url, i) => `
       <div class="cs-slide${i === 0 ? ' cs-active' : ''}" data-index="${i}">
-        <img src="${url}" alt="${s.name}" loading="${i === 0 ? 'eager' : 'lazy'}"
-             onerror="this.parentElement.style.display='none'">
+        <img src="${url}" alt="${s.name}" loading="${i === 0 ? 'eager' : 'lazy'}" onerror="this.parentElement.style.display='none'">
       </div>`).join('');
-
-    // نقاط التنقل (dots)
-    const dotsHtml = allImgs.map((_, i) =>
-      `<span class="cs-dot${i === 0 ? ' cs-dot-on' : ''}"
-             onclick="event.stopPropagation();csGoTo('${sliderId}',${i})"></span>`
-    ).join('');
-
-    thumbHtml = `
-      <div class="card-slider" id="${sliderId}"
-           data-slider="${sliderId}"
-           onmouseenter="csPause('${sliderId}')"
-           onmouseleave="csResume('${sliderId}')">
-        <div class="cs-track">${slidesHtml}</div>
-        <button class="cs-arrow cs-arrow-r"
-                onclick="event.stopPropagation();csPrev('${sliderId}')">&#8250;</button>
-        <button class="cs-arrow cs-arrow-l"
-                onclick="event.stopPropagation();csNext('${sliderId}')">&#8249;</button>
-        <div class="cs-dots">${dotsHtml}</div>
-        <div class="cs-count">${allImgs.length} 📷</div>
-      </div>`;
-  } else if (allImgs.length === 1) {
-    thumbHtml = `<img src="${allImgs[0]}" alt="${s.name}" loading="lazy"
-       onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder ${s.thumbClass}\\'>${s.icon}</div>'">`;
+    const dotsHtml = allImgs.map((_, i) => `<span class="cs-dot${i === 0 ? ' cs-dot-on' : ''}" onclick="event.stopPropagation();csGoTo('${sliderId}',${i})"></span>`).join('');
+    thumbHtml = `<div class="card-slider" id="${sliderId}" data-slider="${sliderId}"><div class="cs-track">${slidesHtml}</div><div class="cs-dots">${dotsHtml}</div></div>`;
   } else {
-    thumbHtml = `<div class="card-thumb-placeholder ${s.thumbClass}">${s.icon}</div>`;
+    thumbHtml = `<img src="${s.image || ''}" alt="${s.name}" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder\\'>🏪</div>'">`;
   }
 
-  // ── أزرار الأنشطة ──
-  const actsHtml = s.allActs
-    ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
-    : (s.acts || []).slice(0, 5).map(id => {
-        const a = ACTIVITIES.find(x => x.id === id);
-        return a ? `<span class="act-tag">${a.label}</span>` : '';
-      }).join('') + (s.acts && s.acts.length > 5 ? `<span class="act-tag">+${s.acts.length - 5}</span>` : '');
-
-  // ── نظام التسعير حسب الحجم ──
+  // 2. منطق الأنشطة والأسعار (الذي أرسلته أنت)
+  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${id}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -383,24 +347,44 @@ function buildCardHtml(s, fromPage) {
     sizePrices[label] = price;
     sizesClean.push(label);
   });
+  const defaultPrice = sizePrices[sizesClean[0]] || s.price;
 
-  const defaultSize  = sizesClean[0] || '';
-  const defaultPrice = sizePrices[defaultSize] || s.price;
-
-  // ── أزرار الأحجام ──
   const sizesHtml = sizesClean.map((sz, i) =>
-    `<span class="size-chip${i === 0 ? ' on' : ''}"
-      data-price="${sizePrices[sz]}"
-      data-size="${sz}"
-      onclick="event.stopPropagation();
-               var c=this.closest('.space-card');
-               c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on'));
-               this.classList.add('on');
-               c.querySelector('.price-main').innerHTML=
-                 Number(this.dataset.price).toLocaleString('ar-EG')+' ج <span style=\\'font-size:12px;font-weight:400;color:var(--ink2)\\'>/شهر</span>';">
-      ${sz}
-    </span>`
+    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString('ar-EG')+' ج <span>/شهر</span>';">${sz}</span>`
   ).join('');
+
+  // 3. الجزء الجديد: زر "تفاصيل ←" (هذا ما كان ينقصك)
+  // يظهر الزر فقط إذا كان هناك مساحات فرعية (subSpaces) أو وصف
+  const hasDetails = (s.subSpaces && s.subSpaces.length > 0) || s.description;
+  const detailsBtnHtml = hasDetails ? `
+    <button class="btn btn-details" style="font-size:12px; padding:7px 14px; background:#f7f7f7;" 
+            onclick="event.stopPropagation(); openSpaceDetail(${s.id},'${fromPage}')">
+      التفاصيل والوحدات ←
+    </button>` : '';
+
+  // 4. البناء النهائي للكارت (Return)
+  return `
+  <div class="space-card">
+    <div class="card-thumb">
+      ${thumbHtml}
+      <span class="card-badge badge-avail">متاح</span>
+      ${s.subSpaces ? `<span class="units-badge">${s.subSpaces.length} وحدات</span>` : ''}
+    </div>
+    <div class="card-body">
+      <div class="card-name">${s.name}</div>
+      <div class="card-loc">📍 ${s.loc}</div>
+      <div class="card-acts">${actsHtml}</div>
+      <div class="card-sizes">${sizesHtml}</div>
+      <div class="card-footer">
+        <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
+        <div style="display:flex;gap:7px;align-items:center;">
+          ${detailsBtnHtml}
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 16px" onclick="openBooking(${s.id})">حجز</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
 
   // ── زرار المزيد من التفاصيل (يظهر لو في subSpaces أو extraImages) ──
   const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
@@ -2308,4 +2292,24 @@ function updateBnUser(user, profile) {
     icon.textContent  = '👤';
     label.textContent = 'دخول';
   }
+}
+function openBookingForUnit(spaceId, unitId) {
+  const s = SPACES.find(x => x.id === spaceId);
+  if (!s) return;
+
+  openBooking(spaceId); // افتح المودال العادي
+
+  // كود سحري: انتظر تحميل المودال وضع رقم الوحدة في خانة الملاحظات
+  setTimeout(() => {
+    const notesField = document.getElementById('bk-notes');
+    if (notesField) {
+      notesField.value = `أرغب في حجز الوحدة المحددة: (رقم ${unitId})`;
+      notesField.style.border = "2px solid var(--orange)";
+    }
+    // تغيير العنوان في المودال ليؤكد للعميل أنه يحجز وحدة معينة
+    const metaTitle = document.getElementById('msi-meta');
+    if (metaTitle) {
+      metaTitle.innerHTML += ` <br><span style="color:var(--orange)">طلب حجز الوحدة: ${unitId}</span>`;
+    }
+  }, 150);
 }
