@@ -353,40 +353,7 @@ function buildCardHtml(s, fromPage) {
     `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString('ar-EG')+' ج <span>/شهر</span>';">${sz}</span>`
   ).join('');
 
-  // 3. الجزء الجديد: زر "تفاصيل ←" (هذا ما كان ينقصك)
-  // يظهر الزر فقط إذا كان هناك مساحات فرعية (subSpaces) أو وصف
-  const hasDetails = (s.subSpaces && s.subSpaces.length > 0) || s.description;
-  const detailsBtnHtml = hasDetails ? `
-    <button class="btn btn-details" style="font-size:12px; padding:7px 14px; background:#f7f7f7;" 
-            onclick="event.stopPropagation(); openSpaceDetail(${s.id},'${fromPage}')">
-      التفاصيل والوحدات ←
-    </button>` : '';
-
-  // 4. البناء النهائي للكارت (Return)
-  return `
-  <div class="space-card">
-    <div class="card-thumb">
-      ${thumbHtml}
-      <span class="card-badge badge-avail">متاح</span>
-      ${s.subSpaces ? `<span class="units-badge">${s.subSpaces.length} وحدات</span>` : ''}
-    </div>
-    <div class="card-body">
-      <div class="card-name">${s.name}</div>
-      <div class="card-loc">📍 ${s.loc}</div>
-      <div class="card-acts">${actsHtml}</div>
-      <div class="card-sizes">${sizesHtml}</div>
-      <div class="card-footer">
-        <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
-        <div style="display:flex;gap:7px;align-items:center;">
-          ${detailsBtnHtml}
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 16px" onclick="openBooking(${s.id})">حجز</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-  // ── زرار المزيد من التفاصيل (يظهر لو في subSpaces أو extraImages) ──
+  // 3. زرار التفاصيل + بادج الوحدات المتاحة
   const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
                      (s.extraImages && s.extraImages.length > 0) ||
                      s.description;
@@ -398,17 +365,17 @@ function buildCardHtml(s, fromPage) {
        </button>`
     : '';
 
-  // ── بادج عدد الوحدات المتاحة ──
   const availableUnits = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
   const unitsBadgeHtml = s.subSpaces && s.subSpaces.length > 0
     ? `<span class="units-badge">${availableUnits} وحدة متاحة</span>`
     : '';
 
+  // 4. البناء النهائي
   return `
   <div class="space-card">
     <div class="card-thumb">
       ${thumbHtml}
-      <span class="card-badge ${s.badgeClass}">${s.badge}</span>
+      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
       ${unitsBadgeHtml}
     </div>
     <div class="card-body">
@@ -424,10 +391,11 @@ function buildCardHtml(s, fromPage) {
                   onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
         </div>
       </div>
+      ${(s.season || s.insight) ? `
       <div class="card-tip">
         <div class="tip-dot"></div>
-        <div><strong>موسم البيع:</strong> ${s.season}<br>${s.insight}</div>
-      </div>
+        <div>${s.season ? `<strong>موسم البيع:</strong> ${s.season}` : ''}${s.insight ? `<br>${s.insight}` : ''}</div>
+      </div>` : ''}
     </div>
   </div>`;
 }
@@ -2292,24 +2260,4 @@ function updateBnUser(user, profile) {
     icon.textContent  = '👤';
     label.textContent = 'دخول';
   }
-}
-function openBookingForUnit(spaceId, unitId) {
-  const s = SPACES.find(x => x.id === spaceId);
-  if (!s) return;
-
-  openBooking(spaceId); // افتح المودال العادي
-
-  // كود سحري: انتظر تحميل المودال وضع رقم الوحدة في خانة الملاحظات
-  setTimeout(() => {
-    const notesField = document.getElementById('bk-notes');
-    if (notesField) {
-      notesField.value = `أرغب في حجز الوحدة المحددة: (رقم ${unitId})`;
-      notesField.style.border = "2px solid var(--orange)";
-    }
-    // تغيير العنوان في المودال ليؤكد للعميل أنه يحجز وحدة معينة
-    const metaTitle = document.getElementById('msi-meta');
-    if (metaTitle) {
-      metaTitle.innerHTML += ` <br><span style="color:var(--orange)">طلب حجز الوحدة: ${unitId}</span>`;
-    }
-  }, 150);
 }
