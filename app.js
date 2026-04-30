@@ -26,7 +26,7 @@
  * 📊 رابط Google Apps Script الذي يجيب بيانات المساحات والأنشطة
  * لو غيّرت الشيت أو أعدت نشر الـ Script، ضع الرابط الجديد هنا
  */
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbwpfHaeIG9UBYmO_QmchJCqnKgJcahvncYkS1gRRAD_RxIla9JvSQmPSO2soBwpuX6N2g/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz_p-dNCnTR7S06WZHp4WhktvnhaLl-34zgkibaGxO0fQkvKBTmno8_YMMkRJcbOKYlVw/exec";
 
 /**
  * 📬 رابط Google Apps Script الذي يستقبل طلبات الحجز ويحفظها في الشيت
