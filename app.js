@@ -32,7 +32,7 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbxyCDOQW3SlaoSEPAAFfC
  * 📬 رابط Google Apps Script الذي يستقبل طلبات الحجز ويحفظها في الشيت
  * لو غيّرت شيت الحجوزات، ضع الرابط الجديد هنا
  */
-const BOOKING_URL = "https://script.google.com/macros/s/AKfycbyjhFQ_owlHoRibE5XLxh882fOQJg9A6RGwUfKeHOioYJWK6E43c51n7HsncRqXE0IP/exec";
+const BOOKING_URL = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 
 /**
  * 🔐 إعدادات Supabase — قاعدة بيانات المستخدمين
@@ -1558,6 +1558,9 @@ async function submitBooking() {
   const spaceLoc   = locMatch   ? locMatch[1].trim()   : '';
   const spacePrice = priceMatch ? priceMatch[1].trim() : '';
 
+  // ✅ [تعديل 1] توليد bookingId مسبقاً لربط السجل بين Supabase والشيت
+  const bookingId = crypto.randomUUID();
+
   const payload = {
     name, phone, email,
     spaceName, spaceLoc, spacePrice,
@@ -1566,7 +1569,8 @@ async function submitBooking() {
     duration:  dur,
     startDate: date,
     notes,
-    userId: currentUser?.id || '',
+    userId:    currentUser?.id || '',
+    bookingId: bookingId,   // ← يُحفظ في الشيت عشان Apps Script يقدر يحدّث الحالة لاحقاً
   };
 
   try {
@@ -1578,8 +1582,10 @@ async function submitBooking() {
     });
 
     if (sbClient && currentUser) {
-    
+
+      // ✅ [تعديل 2] حفظ bookingId في Supabase لربط الحجز بالشيت
       const { error: bookingError } = await sbClient.from('bookings').insert({
+        id:         bookingId,
         user_id:    currentUser.id,
         space_name: payload.spaceName,
         space_loc:  payload.spaceLoc,
@@ -1593,12 +1599,12 @@ async function submitBooking() {
         created_at: new Date().toISOString(),
       });
       if (bookingError) console.error('خطأ في حفظ الحجز:', bookingError);
-    
+
       const profileUpdate = {};
       if (name  && !currentProfile?.full_name) profileUpdate.full_name = name;
       if (phone && !currentProfile?.phone)     profileUpdate.phone     = phone;
       if (email && !currentProfile?.email)     profileUpdate.email     = email;
-    
+
       if (Object.keys(profileUpdate).length > 0) {
         const { error: profileError } = await sbClient
           .from('profiles')
@@ -1610,7 +1616,7 @@ async function submitBooking() {
           currentProfile = { ...currentProfile, ...profileUpdate };
         }
       }
-    
+
       await loadDashboardData(currentUser);
     }
 
@@ -1676,6 +1682,7 @@ async function initAuth() {
     setNavUser(null, null);
   }
 
+  // ✅ [تعديل 3] إصلاح onAuthStateChange — الداشبورد يظهر فوراً بدون Refresh
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
@@ -1684,10 +1691,25 @@ async function initAuth() {
       currentProfile = profile;
       setNavUser(session.user, profile);
 
-      if (['pg-login', 'pg-signup'].some(id => document.getElementById(id)?.classList.contains('active'))) {
+      // تحديد الصفحة النشطة حالياً
+      const activePage = document.querySelector('.page.active')?.id || '';
+      const isOnAuthPage = ['pg-login', 'pg-signup'].some(
+        id => document.getElementById(id)?.classList.contains('active')
+      );
+
+      if (isOnAuthPage) {
+        // جاي من صفحة login أو signup — روّح للداشبورد مباشرة
+        await loadDashboardData(session.user);
+        showPage('dashboard');
+      } else if (activePage === 'pg-dashboard') {
+        // الصفحة الحالية هي الداشبورد (مثلاً بعد Google OAuth) — حمّل البيانات فقط
+        await loadDashboardData(session.user);
+      } else {
+        // Google OAuth redirect للـ home أو أي صفحة تانية — روّح للداشبورد
         await loadDashboardData(session.user);
         showPage('dashboard');
       }
+
     } else if (event === 'SIGNED_OUT') {
       currentUser    = null;
       currentProfile = null;
@@ -1720,7 +1742,7 @@ function setNavUser(user, profile) {
     set('dd-name',       name);
     set('dd-email',      email);
     set('dd-role',       roleLabel);
-    updateBnUser(user, profile); 
+    updateBnUser(user, profile);
   }
 
   const bnUserIcon  = document.getElementById('bn-user-icon');
