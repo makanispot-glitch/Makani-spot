@@ -1582,19 +1582,18 @@ async function submitBooking() {
     // ✅ حذفنا no-cors عشان نعرف لو في خطأ حقيقي
     // لو الشيت Apps Script بيرفع CORS error، فعّل CORS في doPost
     let sheetOk = false;
-    try {
-      const sheetRes = await fetch(BOOKING_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-      const sheetData = await sheetRes.json();
-      sheetOk = sheetData?.status === 'ok';
-    } catch (sheetErr) {
-      // لو فيه CORS error نكمّل وبس — الشيت غالباً استلم حتى مع الـ error
-      console.warn('⚠️ تحذير الشيت (غالباً CORS — الحجز وصل):', sheetErr.message);
-      sheetOk = true; // نكمّل في Supabase
-    }
+try {
+  await fetch(BOOKING_URL, {
+    method:  'POST',
+    mode:    'no-cors',          // ← رجّعناه
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+  sheetOk = true; // no-cors دايماً بيكمّل بدون error
+} catch (sheetErr) {
+  console.warn('⚠️ تحذير الشيت:', sheetErr.message);
+  sheetOk = true; // نكمّل في Supabase على أي حال
+}
 
     // ── 2) حفظ في Supabase (لو المستخدم مسجّل) ────────────────
     if (sbClient && currentUser) {
