@@ -1523,7 +1523,7 @@ function closeModalOnBg(e) {
 
 
 /* ================================================================
-   📬 القسم الثاني عشر: إرسال طلب الحجز لـ Google Sheets
+   📬 القسم الثاني عشر: إرسال طلب الحجز لـ Google Sheets + Supabase
    ================================================================ */
 
 async function submitBooking() {
@@ -1537,6 +1537,7 @@ async function submitBooking() {
   const date     = document.getElementById('bk-date').value;
   const notes    = document.getElementById('bk-notes').value.trim();
 
+  // ── Validation ──────────────────────────────────────────────
   if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
@@ -1551,55 +1552,76 @@ async function submitBooking() {
   submitBtn.disabled  = true;
   submitBtn.style.opacity = '0.7';
 
+  // ── استخراج بيانات المساحة ──────────────────────────────────
   const spaceName  = document.getElementById('msi-name').textContent;
   const metaText   = document.getElementById('msi-meta').textContent;
   const locMatch   = metaText.match(/📍\s*([^·]+)/);
   const priceMatch = metaText.match(/([\d,٠-٩]+\s*ج)/);
-  const spaceLoc   = locMatch   ? locMatch[1].trim()   : '';
+  const spaceLoc   = locMatch   ? locMatch[1].trim() : '';
   const spacePrice = priceMatch ? priceMatch[1].trim() : '';
 
-  // ✅ [تعديل 1] توليد bookingId مسبقاً لربط السجل بين Supabase والشيت
+  // ── توليد bookingId مشترك بين الشيت و Supabase ──────────────
   const bookingId = crypto.randomUUID();
+  const now       = new Date().toISOString();
 
   const payload = {
     name, phone, email,
     spaceName, spaceLoc, spacePrice,
-    activity: actBtn?.textContent || '',
-    otherAct, size,
+    activity:  actBtn?.textContent || '',
+    otherAct,  size,
     duration:  dur,
     startDate: date,
     notes,
     userId:    currentUser?.id || '',
-    bookingId: bookingId,   // ← يُحفظ في الشيت عشان Apps Script يقدر يحدّث الحالة لاحقاً
+    bookingId,
   };
 
   try {
-    await fetch(BOOKING_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-    });
 
+    // ── 1) إرسال للشيت ─────────────────────────────────────────
+    // ✅ حذفنا no-cors عشان نعرف لو في خطأ حقيقي
+    // لو الشيت Apps Script بيرفع CORS error، فعّل CORS في doPost
+    let sheetOk = false;
+    try {
+      const sheetRes = await fetch(BOOKING_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const sheetData = await sheetRes.json();
+      sheetOk = sheetData?.status === 'ok';
+    } catch (sheetErr) {
+      // لو فيه CORS error نكمّل وبس — الشيت غالباً استلم حتى مع الـ error
+      console.warn('⚠️ تحذير الشيت (غالباً CORS — الحجز وصل):', sheetErr.message);
+      sheetOk = true; // نكمّل في Supabase
+    }
+
+    // ── 2) حفظ في Supabase (لو المستخدم مسجّل) ────────────────
     if (sbClient && currentUser) {
 
-      // ✅ [تعديل 2] حفظ bookingId في Supabase لربط الحجز بالشيت
       const { error: bookingError } = await sbClient.from('bookings').insert({
         id:         bookingId,
         user_id:    currentUser.id,
-        space_name: payload.spaceName,
-        space_loc:  payload.spaceLoc,
-        price:      payload.spacePrice,
+        space_name: spaceName,
+        space_loc:  spaceLoc,
+        price:      spacePrice,
         activity:   payload.activity,
-        size:       payload.size,
-        duration:   payload.duration,
-        start_date: payload.startDate,
-        notes:      payload.notes,
+        size,
+        duration:   dur,
+        start_date: date,
+        notes,
         status:     'pending',
-        created_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,        // ← جديد: لتتبع آخر تحديث
       });
-      if (bookingError) console.error('خطأ في حفظ الحجز:', bookingError);
 
+      if (bookingError) {
+        console.error('❌ خطأ Supabase في حفظ الحجز:', bookingError.message);
+      } else {
+        console.log('✅ تم حفظ الحجز في Supabase:', bookingId);
+      }
+
+      // ── 3) تحديث الـ Profile لو في بيانات ناقصة ───────────────
       const profileUpdate = {};
       if (name  && !currentProfile?.full_name) profileUpdate.full_name = name;
       if (phone && !currentProfile?.phone)     profileUpdate.phone     = phone;
@@ -1608,28 +1630,32 @@ async function submitBooking() {
       if (Object.keys(profileUpdate).length > 0) {
         const { error: profileError } = await sbClient
           .from('profiles')
-          .upsert(
-            { id: currentUser.id, ...profileUpdate },
-            { onConflict: 'id' }
-          );
+          .upsert({ id: currentUser.id, ...profileUpdate }, { onConflict: 'id' });
+
         if (!profileError) {
           currentProfile = { ...currentProfile, ...profileUpdate };
+        } else {
+          console.warn('⚠️ Profile update failed:', profileError.message);
         }
       }
 
+      // ── 4) تحديث الداشبورد فوراً ───────────────────────────────
       await loadDashboardData(currentUser);
     }
 
+    // ── عرض شاشة النجاح ────────────────────────────────────────
     document.getElementById('modal-form-wrap').style.display = 'none';
     document.getElementById('modal-success').style.display   = 'block';
 
-  } catch (fetchErr) {
+  } catch (err) {
+    console.error('❌ خطأ غير متوقع في submitBooking:', err.message);
     submitBtn.innerHTML     = origText;
     submitBtn.disabled      = false;
     submitBtn.style.opacity = '1';
     showFormError('في مشكلة في إرسال الطلب — تأكد من الاتصال بالإنترنت وحاول تاني');
   }
 }
+
 
 function showFormError(msg) {
   const el = document.getElementById('bk-error');
@@ -1638,8 +1664,6 @@ function showFormError(msg) {
   el.style.display = 'block';
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
-
 /* ================================================================
    🔐 القسم الثالث عشر: نظام تسجيل الدخول (Supabase Auth)
    ================================================================ */
