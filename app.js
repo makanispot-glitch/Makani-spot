@@ -2092,12 +2092,12 @@ async function loadUserBookings(userId) {
     }
 
     const statusMap = {
-      pending:   { label: 'في الانتظار', cls: 'status-pending'   },
-      confirmed: { label: 'مؤكد',        cls: 'status-confirmed' },
-      cancelled: { label: 'ملغي',        cls: 'status-cancelled' },
-      completed: { label: 'مكتمل',       cls: 'status-confirmed' },
-    };
-
+  pending:   { label: 'قيد المراجعة ⏳', cls: 'status-pending'   },
+  confirmed: { label: 'مؤكد ✅',          cls: 'status-confirmed' },
+  cancelled: { label: 'ملغي ❌',          cls: 'status-cancelled' },
+  completed: { label: 'مكتمل 🏁',        cls: 'status-confirmed' },
+};
+     
     contEl.innerHTML = bookings.map(b => {
       const st      = statusMap[b.status] || statusMap.pending;
       const dateStr = b.created_at
