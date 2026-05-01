@@ -1957,12 +1957,12 @@ async function loadDashboardData(user) {
   const badge = document.getElementById('dash-role-badge');
   if (badge) {
     if (profile?.role === 'owner') {
-      badge.innerHTML   = '🏬 صاحب مساحة';
+      badge.innerHTML          = '🏬 صاحب مساحة';
       badge.style.background   = 'var(--green-light)';
       badge.style.color        = '#16a34a';
       badge.style.borderColor  = 'rgba(34,197,94,0.25)';
     } else {
-      badge.innerHTML   = '🏠 مستأجر';
+      badge.innerHTML          = '🏠 مستأجر';
       badge.style.background   = 'var(--orange-ultra)';
       badge.style.color        = 'var(--orange)';
       badge.style.borderColor  = 'var(--orange-pale)';
@@ -1972,14 +1972,14 @@ async function loadDashboardData(user) {
   const roleBox = document.getElementById('dpf-role-box');
   if (roleBox) {
     if (profile?.role === 'owner') {
-      roleBox.textContent = '🏬 صاحب مساحة';
+      roleBox.textContent      = '🏬 صاحب مساحة';
       roleBox.style.background = 'var(--green-light)';
-      roleBox.style.color = '#16a34a';
+      roleBox.style.color      = '#16a34a';
       roleBox.style.borderColor = 'rgba(34,197,94,0.25)';
     } else {
-      roleBox.textContent = '🏠 مستأجر';
+      roleBox.textContent      = '🏠 مستأجر';
       roleBox.style.background = 'var(--orange-ultra)';
-      roleBox.style.color = 'var(--orange)';
+      roleBox.style.color      = 'var(--orange)';
       roleBox.style.borderColor = 'var(--orange-pale)';
     }
   }
@@ -1988,6 +1988,9 @@ async function loadDashboardData(user) {
 
   await loadUserBookings(user.id);
   await loadUserRatings(user.id);
+
+  // ✅ Realtime — يراقب أي تغيير في حالة الحجوزات ويحدّث الداشبورد تلقائياً
+  _subscribeBookings(user.id);
 }
 
 function toggleEditProfile() {
@@ -2092,6 +2095,7 @@ async function loadUserBookings(userId) {
       pending:   { label: 'في الانتظار', cls: 'status-pending'   },
       confirmed: { label: 'مؤكد',        cls: 'status-confirmed' },
       cancelled: { label: 'ملغي',        cls: 'status-cancelled' },
+      completed: { label: 'مكتمل',       cls: 'status-confirmed' },
     };
 
     contEl.innerHTML = bookings.map(b => {
@@ -2123,6 +2127,44 @@ async function loadUserBookings(userId) {
   }
 }
 
+
+/* ================================================================
+   🔄 القسم العشرون-ب: Realtime — مراقبة تغييرات حالة الحجوزات
+   ================================================================ */
+
+let _bookingChannel = null; // نحفظ الـ channel عشان منعملش subscribe أكتر من مرة
+
+function _subscribeBookings(userId) {
+  if (!sbClient) return;
+
+  // لو في subscription قديمة — شيلها الأول
+  if (_bookingChannel) {
+    sbClient.removeChannel(_bookingChannel);
+    _bookingChannel = null;
+  }
+
+  _bookingChannel = sbClient
+    .channel('bookings-status-' + userId)
+    .on(
+      'postgres_changes',
+      {
+        event:  'UPDATE',
+        schema: 'public',
+        table:  'bookings',
+        filter: `user_id=eq.${userId}`,
+      },
+      async (payload) => {
+        // أي تغيير في أي حجز للمستخدم ده → حدّث قائمة الحجوزات فوراً
+        console.log('📡 تحديث حجز:', payload.new?.id, '→', payload.new?.status);
+        await loadUserBookings(userId);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Realtime مفعّل — بيراقب تغييرات الحجوزات');
+      }
+    });
+}
 
 /* ================================================================
    ⭐ القسم الواحد والعشرون: تقييمات المستخدم
