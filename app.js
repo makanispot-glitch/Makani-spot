@@ -2152,43 +2152,31 @@ async function loadUserBookings(userId) {
 
 
 /* ================================================================
-   🔄 القسم العشرون-ب: Realtime — مراقبة تغييرات حالة الحجوزات
+   🔄 القسم العشرون-ب: Auto-refresh — تحديث الحجوزات كل 15 ثانية
    ================================================================ */
-
-let _bookingChannel = null; // نحفظ الـ channel عشان منعملش subscribe أكتر من مرة
+let _bookingInterval = null;
 
 function _subscribeBookings(userId) {
-  if (!sbClient) return;
+  if (!userId) return;
 
-  // لو في subscription قديمة — شيلها الأول
-  if (_bookingChannel) {
-    sbClient.removeChannel(_bookingChannel);
-    _bookingChannel = null;
+  // امسح أي interval قديم
+  if (_bookingInterval) {
+    clearInterval(_bookingInterval);
+    _bookingInterval = null;
   }
 
-  _bookingChannel = sbClient
-    .channel('bookings-status-' + userId)
-    .on(
-      'postgres_changes',
-      {
-        event:  'UPDATE',
-        schema: 'public',
-        table:  'bookings',
-        filter: `user_id=eq.${userId}`,
-      },
-      async (payload) => {
-        // أي تغيير في أي حجز للمستخدم ده → حدّث قائمة الحجوزات فوراً
-        console.log('📡 تحديث حجز:', payload.new?.id, '→', payload.new?.status);
-        await loadUserBookings(userId);
-      }
-    )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('✅ Realtime مفعّل — بيراقب تغييرات الحجوزات');
-      }
-    });
-}
+  // حدّث كل 15 ثانية
+  _bookingInterval = setInterval(async () => {
+    // بس لو المستخدم على صفحة الداشبورد
+    const onDash = document.getElementById('pg-dashboard')?.classList.contains('active');
+    if (!onDash) return;
 
+    await loadUserBookings(userId);
+    console.log('🔄 تحديث الحجوزات تلقائياً');
+  }, 15000);
+
+  console.log('✅ Auto-refresh مفعّل — كل 15 ثانية');
+}
 /* ================================================================
    ⭐ القسم الواحد والعشرون: تقييمات المستخدم
    ================================================================ */
