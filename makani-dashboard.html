@@ -1,0 +1,2078 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مكاني Spot — لوحة تحكم أصحاب المساحات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ================================================================
+   MAKANI SPOT — OWNER DASHBOARD
+   هوية بصرية: داكن + برتقالي + تفاصيل mono tech
+   ================================================================ */
+
+:root {
+  --orange:       #FF6B00;
+  --orange-dim:   #cc5500;
+  --orange-glow:  rgba(255,107,0,0.18);
+  --orange-pale:  rgba(255,107,0,0.08);
+
+  --bg:           #0D0D0F;
+  --bg2:          #111114;
+  --bg3:          #18181D;
+  --panel:        #1C1C22;
+  --panel2:       #222229;
+  --border:       rgba(255,255,255,0.07);
+  --border2:      rgba(255,107,0,0.25);
+
+  --text:         #F0F0F5;
+  --text2:        #9090A0;
+  --text3:        #55555F;
+
+  --green:        #22D46E;
+  --green-bg:     rgba(34,212,110,0.12);
+  --red:          #FF4D4D;
+  --red-bg:       rgba(255,77,77,0.12);
+  --yellow:       #FFB800;
+  --yellow-bg:    rgba(255,184,0,0.12);
+  --blue:         #4D9FFF;
+  --blue-bg:      rgba(77,159,255,0.12);
+
+  --r:            10px;
+  --r2:           16px;
+  --r3:           22px;
+  --shadow:       0 4px 24px rgba(0,0,0,0.40);
+  --shadow-o:     0 4px 24px rgba(255,107,0,0.25);
+
+  --sidebar-w:    260px;
+  --topbar-h:     64px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
+#login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(255,107,0,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 80%, rgba(255,107,0,0.06) 0%, transparent 60%);
+}
+
+.login-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,107,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,107,0,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.login-box {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  padding: 48px 40px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.60);
+  animation: loginFade 0.5s ease;
+}
+
+@keyframes loginFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.login-logo-ar {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--orange);
+}
+
+.login-logo-en {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+}
+
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--orange-pale);
+  border: 1px solid var(--border2);
+  color: var(--orange);
+  padding: 4px 14px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+
+.login-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.login-sub {
+  font-size: 13px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.lf-group {
+  margin-bottom: 16px;
+}
+
+.lf-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lf-group input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 16px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.lf-group input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px var(--orange-glow);
+}
+
+.lf-group input::placeholder {
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+}
+
+.btn-login {
+  width: 100%;
+  background: var(--orange);
+  border: none;
+  border-radius: var(--r);
+  padding: 14px;
+  color: #fff;
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-top: 6px;
+  box-shadow: var(--shadow-o);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-login:hover {
+  background: var(--orange-dim);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(255,107,0,0.40);
+}
+
+.login-error {
+  background: var(--red-bg);
+  border: 1px solid rgba(255,77,77,0.25);
+  color: var(--red);
+  padding: 10px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  margin-bottom: 14px;
+  display: none;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+}
+
+/* ============================================================
+   MAIN APP LAYOUT
+   ============================================================ */
+#app {
+  display: none;
+  min-height: 100vh;
+}
+
+#app.visible {
+  display: flex;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo-ar {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--orange);
+}
+
+.sidebar-logo-en {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: 'Space Mono', monospace;
+}
+
+.sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--orange-pale);
+  border: 1px solid var(--border2);
+  color: var(--orange);
+  padding: 3px 10px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.sidebar-owner-info {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-owner-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-dim));
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.sidebar-owner-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.sidebar-owner-place {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 8px;
+  margin: 14px 0 6px;
+  font-family: 'Space Mono', monospace;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: right;
+  font-family: 'Cairo', sans-serif;
+}
+
+.nav-item:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--orange-pale);
+  color: var(--orange);
+  font-weight: 700;
+  border: 1px solid rgba(255,107,0,0.15);
+}
+
+.nav-item-ico {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.nav-item-badge {
+  margin-right: auto;
+  background: var(--orange);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+
+.sidebar-bottom {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Topbar ── */
+.main-area {
+  margin-right: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  height: var(--topbar-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-notif {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.topbar-notif:hover {
+  border-color: var(--orange);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--orange);
+  border: 2px solid var(--bg2);
+}
+
+.topbar-period {
+  display: flex;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 4px;
+}
+
+.period-btn {
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text2);
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.12s;
+}
+
+.period-btn.on {
+  background: var(--orange);
+  color: #fff;
+}
+
+/* ── Page Content ── */
+.page-content {
+  padding: 28px;
+  flex: 1;
+}
+
+.view { display: none; }
+.view.active { display: block; animation: fadeUp 0.25s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   CARDS & COMPONENTS
+   ============================================================ */
+
+/* KPI Row */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.kpi-card:hover { border-color: rgba(255,107,0,0.25); }
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 80% 20%, var(--orange-pale), transparent);
+  pointer-events: none;
+}
+
+.kpi-ico {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  font-family: 'Space Mono', monospace;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 6px;
+  font-family: 'Space Mono', monospace;
+}
+
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.kpi-delta.up   { background: var(--green-bg);  color: var(--green); }
+.kpi-delta.down { background: var(--red-bg);    color: var(--red); }
+.kpi-delta.flat { background: var(--yellow-bg); color: var(--yellow); }
+
+/* Grid layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+/* Panel Card */
+.pcard {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.pcard-head {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pcard-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pcard-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.pcard-body { padding: 20px 22px; }
+
+/* DB Connect tag — marks database-linked areas */
+.db-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(77,159,255,0.12);
+  border: 1px solid rgba(77,159,255,0.25);
+  color: var(--blue);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  flex-shrink: 0;
+}
+
+.db-tag::before { content: '⬡'; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--panel2);
+  color: var(--text2);
+  transition: all 0.15s;
+  font-family: 'Cairo', sans-serif;
+}
+.btn:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+.btn-primary { background: var(--orange); color: #fff; border-color: var(--orange); box-shadow: var(--shadow-o); }
+.btn-primary:hover { background: var(--orange-dim); transform: translateY(-1px); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text3); }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-green  { background: var(--green-bg);  color: var(--green); }
+.badge-red    { background: var(--red-bg);    color: var(--red); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.badge-orange { background: var(--orange-pale); color: var(--orange); border: 1px solid var(--border2); }
+.badge-blue   { background: var(--blue-bg);   color: var(--blue); }
+
+/* Section title */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  font-family: 'Space Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Alerts */
+.alert-list { display: flex; flex-direction: column; gap: 8px; }
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.alert-item.warning { background: var(--yellow-bg); border-color: rgba(255,184,0,0.20); color: #e0a800; }
+.alert-item.danger  { background: var(--red-bg);    border-color: rgba(255,77,77,0.20);  color: #ff6b6b; }
+.alert-item.info    { background: var(--blue-bg);   border-color: rgba(77,159,255,0.20); color: #7ab8ff; }
+.alert-item.success { background: var(--green-bg);  border-color: rgba(34,212,110,0.20); color: #22d46e; }
+.alert-ico { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.alert-text strong { display: block; font-size: 12px; font-weight: 800; margin-bottom: 2px; }
+
+/* Progress bar */
+.prog-bar {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--orange);
+  transition: width 0.6s ease;
+}
+.prog-fill.green  { background: var(--green); }
+.prog-fill.yellow { background: var(--yellow); }
+.prog-fill.red    { background: var(--red); }
+
+/* Rating Stars */
+.stars { color: var(--orange); font-size: 16px; letter-spacing: 2px; }
+.stars-sm { color: var(--orange); font-size: 13px; letter-spacing: 1px; }
+
+/* Score circle */
+.score-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: conic-gradient(var(--orange) calc(var(--pct) * 1%), var(--bg3) 0%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.score-inner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+}
+
+/* Tenant Row */
+.tenant-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tenant-row:last-child { border-bottom: none; }
+
+.tenant-av {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background: var(--bg3);
+}
+
+.tenant-info { flex: 1; min-width: 0; }
+.tenant-name { font-size: 13px; font-weight: 800; color: var(--text); }
+.tenant-space { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.tenant-meta  { font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: right;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  background: var(--bg3);
+}
+.data-table td {
+  padding: 13px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Chart bars (CSS only) */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding: 0 4px; }
+.bar {
+  flex: 1;
+  background: var(--orange-pale);
+  border-radius: 4px 4px 0 0;
+  border: 1px solid var(--border2);
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.bar:hover { background: rgba(255,107,0,0.25); }
+.bar.high { background: rgba(255,107,0,0.35); border-color: var(--orange); }
+.bar-label {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--text3);
+  white-space: nowrap;
+  font-family: 'Space Mono', monospace;
+}
+.bar-val {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--orange);
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.bar:hover .bar-val { opacity: 1; }
+
+/* Donut chart (CSS) */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.donut {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--orange) 0% 45%,
+    var(--green) 45% 70%,
+    var(--blue) 70% 85%,
+    var(--yellow) 85% 100%
+  );
+  position: relative;
+  flex-shrink: 0;
+}
+.donut::after {
+  content: '';
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--panel);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.donut-legend { display: flex; flex-direction: column; gap: 7px; }
+.donut-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+.donut-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Rating Form */
+.star-input { display: flex; gap: 6px; margin: 8px 0 14px; }
+.si-star {
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text3);
+  transition: all 0.15s;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+}
+.si-star.on { color: var(--orange); transform: scale(1.1); }
+
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  font-family: 'Space Mono', monospace;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--orange); }
+.form-group textarea { min-height: 80px; resize: vertical; }
+.form-group select option { background: var(--bg2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Contract card */
+.contract-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.contract-card:hover { border-color: rgba(255,107,0,0.20); }
+.contract-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
+.contract-name { font-size: 13px; font-weight: 800; color: var(--text); }
+.contract-space { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.contract-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text3); font-family: 'Space Mono', monospace; }
+.contract-bar { margin-top: 10px; }
+.contract-bar-top { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+
+/* Experiment card */
+.exp-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 18px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.exp-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--orange);
+}
+.exp-card.active-exp::before { background: var(--green); }
+
+/* Tooltip */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-text {
+  position: absolute;
+  bottom: 120%;
+  right: 50%;
+  transform: translateX(50%);
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 9;
+}
+.tooltip-wrap:hover .tooltip-text { opacity: 1; }
+
+/* Insight card */
+.insight-card {
+  background: linear-gradient(135deg, rgba(255,107,0,0.08), transparent);
+  border: 1px solid rgba(255,107,0,0.20);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.insight-ico { font-size: 22px; flex-shrink: 0; }
+.insight-title { font-size: 13px; font-weight: 800; color: var(--orange); margin-bottom: 3px; }
+.insight-body  { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+  .sidebar { transform: translateX(100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main-area { margin-right: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     LOGIN PAGE
+     🔐 DB-LINK: جلب بيانات تسجيل الدخول من قاعدة البيانات (owners table في Supabase)
+     ================================================================ -->
+<div id="login-page">
+  <div class="login-bg"></div>
+  <div class="login-grid-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-ar">مكاني</div>
+      <div class="login-logo-en">SPOT</div>
+      <div>
+        <span class="login-badge">🏢 لوحة أصحاب المساحات</span>
+      </div>
+    </div>
+    <div class="login-title">مرحباً بك مجدداً</div>
+    <div class="login-sub">سجّل دخولك للوصول للوحة التحكم الخاصة بمساحاتك</div>
+    <div id="login-error" class="login-error">⚠ بيانات الدخول غير صحيحة — تأكد من اسم المستخدم وكلمة المرور</div>
+    <!-- 🔗 DB-LINK: username + password → مقارنة مع جدول owners في قاعدة البيانات -->
+    <div class="lf-group">
+      <label>اسم المستخدم</label>
+      <input type="text" id="li-user" placeholder="your_username" dir="ltr" autocomplete="username">
+    </div>
+    <div class="lf-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="li-pass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
+    </div>
+    <button class="btn-login" onclick="doLogin()">دخول للوحة التحكم →</button>
+    <div class="login-footer">v1.0 · Makani Spot Internal · للاستخدام الداخلي فقط</div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MAIN APP
+     ================================================================ -->
+<div id="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-ar">مكاني</div>
+      <div class="sidebar-logo-en">SPOT — OWNER PANEL</div>
+      <div class="sidebar-badge">🏢 لوحة المساحات</div>
+    </div>
+
+    <!-- 🔗 DB-LINK: بيانات الأونر من جدول owners في Supabase أو DB -->
+    <div class="sidebar-owner-info">
+      <div class="sidebar-owner-av" id="sb-initial">م</div>
+      <div class="sidebar-owner-name" id="sb-name">اسم صاحب المكان</div>
+      <div class="sidebar-owner-place" id="sb-place">📍 اسم المكان</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">الرئيسية</div>
+      <button class="nav-item active" onclick="goTo('overview', this)">
+        <span class="nav-item-ico">📊</span> نظرة عامة
+      </button>
+      <button class="nav-item" onclick="goTo('tenants', this)">
+        <span class="nav-item-ico">👥</span> المستأجرون
+        <span class="nav-item-badge" id="nb-tenants">8</span>
+      </button>
+      <button class="nav-item" onclick="goTo('spaces', this)">
+        <span class="nav-item-ico">📍</span> المساحات
+      </button>
+      <button class="nav-item" data-view="add-space" onclick="goTo('add-space', this)">
+        <span class="nav-item-ico">➕</span> إضافة مساحة
+      </button>
+
+      <div class="nav-section-label">الإدارة</div>
+      <button class="nav-item" onclick="goTo('contracts', this)">
+        <span class="nav-item-ico">📄</span> العقود
+        <span class="nav-item-badge" id="nb-expiring" style="background:var(--red)">2</span>
+      </button>
+      <button class="nav-item" onclick="goTo('ratings', this)">
+        <span class="nav-item-ico">⭐</span> التقييمات
+      </button>
+      <button class="nav-item" onclick="goTo('revenue', this)">
+        <span class="nav-item-ico">💰</span> الإيرادات
+      </button>
+
+      <div class="nav-section-label">تحليل وتطوير</div>
+      <button class="nav-item" onclick="goTo('insights', this)">
+        <span class="nav-item-ico">🧠</span> الرؤى والتوصيات
+      </button>
+      <button class="nav-item" onclick="goTo('experiments', this)">
+        <span class="nav-item-ico">🧪</span> وضع التجربة
+      </button>
+      <button class="nav-item" onclick="goTo('alerts', this)">
+        <span class="nav-item-ico">🚨</span> التنبيهات
+        <span class="nav-item-badge" id="nb-alerts" style="background:var(--yellow);color:#000">5</span>
+      </button>
+
+      <div class="nav-section-label">الإعدادات</div>
+      <button class="nav-item" onclick="goTo('settings', this)">
+        <span class="nav-item-ico">⚙️</span> الإعدادات
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="index.html" class="btn btn-ghost" style="width:100%;justify-content:center;font-size:12px;text-decoration:none;display:flex;margin-bottom:8px">🏠 المنصة الرئيسية</a>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:12px" onclick="doLogout()">🚪 تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN AREA ── -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">نظرة عامة</div>
+      <div class="topbar-right">
+        <div class="topbar-period">
+          <button class="period-btn on" onclick="setPeriod('month',this)">هذا الشهر</button>
+          <button class="period-btn"    onclick="setPeriod('quarter',this)">ربع سنوي</button>
+          <button class="period-btn"    onclick="setPeriod('year',this)">سنوي</button>
+        </div>
+        <div class="topbar-notif tooltip-wrap" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">
+          🔔
+          <div class="notif-dot"></div>
+          <span class="tooltip-text">5 تنبيهات جديدة</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content">
+
+      <!-- ============================================================
+           VIEW: OVERVIEW
+           🔗 DB-LINK: جلب الـ KPIs من Google Sheets أو Supabase
+           ============================================================ -->
+      <div class="view active" id="view-overview">
+        <div class="section-label">مؤشرات الأداء الرئيسية</div>
+
+        <!-- 🔗 DB-LINK: KPIs → جلب من جدول spaces + bookings + payments -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-ico">💰</div>
+            <div class="kpi-label">الإيراد الشهري</div>
+            <div class="kpi-value" id="kpi-revenue">—</div>
+            <span class="kpi-delta up">↑ محدّث</span>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">ج.م. / الشهر الحالي</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📍</div>
+            <div class="kpi-label">إشغال المساحات</div>
+            <div class="kpi-value" id="kpi-occ">—</div>
+            <span class="kpi-delta up">↑ محدّث</span>
+            <div style="margin-top:8px">
+              <div class="prog-bar"><div class="prog-fill green" id="kpi-occ-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">👥</div>
+            <div class="kpi-label">المستأجرون النشطون</div>
+            <div class="kpi-value" id="kpi-tenants">—</div>
+            <span class="kpi-delta flat">→ محدّث</span>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">مساحات مؤجّرة حالياً</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">⭐</div>
+            <div class="kpi-label">متوسط التقييم</div>
+            <div class="kpi-value" id="kpi-score">—</div>
+            <span class="kpi-delta up">↑ محدّث</span>
+            <div class="stars-sm" style="margin-top:6px">★★★★☆</div>
+          </div>
+        </div>
+
+        <div class="grid-2-1">
+          <!-- إيرادات شهرية بالرسم -->
+          <div class="pcard">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title">📈 الإيرادات الشهرية</div>
+                <div class="pcard-sub">آخر 8 أشهر</div>
+              </div>
+              <span class="db-tag">DB: payments</span>
+            </div>
+            <div class="pcard-body">
+              <div class="bar-chart" style="height:100px;align-items:flex-end">
+                <div class="bar" style="height:60%"><span class="bar-label">يوليو</span><span class="bar-val">٣٢ك</span></div>
+                <div class="bar" style="height:72%"><span class="bar-label">أغسطس</span><span class="bar-val">٣٨ك</span></div>
+                <div class="bar" style="height:55%"><span class="bar-label">سبتمبر</span><span class="bar-val">٢٩ك</span></div>
+                <div class="bar" style="height:80%"><span class="bar-label">أكتوبر</span><span class="bar-val">٤٢ك</span></div>
+                <div class="bar" style="height:65%"><span class="bar-label">نوفمبر</span><span class="bar-val">٣٤ك</span></div>
+                <div class="bar" style="height:90%"><span class="bar-label">ديسمبر</span><span class="bar-val">٤٨ك</span></div>
+                <div class="bar" style="height:75%"><span class="bar-label">يناير</span><span class="bar-val">٣٩ك</span></div>
+                <div class="bar high" style="height:100%"><span class="bar-label">فبراير</span><span class="bar-val">٥٢ك</span></div>
+              </div>
+              <div style="margin-top:30px"></div>
+            </div>
+          </div>
+
+          <!-- توزيع الأنشطة -->
+          <div class="pcard">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title">🏷️ الأنشطة</div>
+                <div class="pcard-sub">توزيع الإيرادات</div>
+              </div>
+              <span class="db-tag">DB: spaces</span>
+            </div>
+            <div class="pcard-body">
+              <div class="donut-wrap">
+                <div class="donut"></div>
+                <div class="donut-legend">
+                  <div class="donut-item"><div class="donut-dot" style="background:var(--orange)"></div>قهوة ومشروبات (45%)</div>
+                  <div class="donut-item"><div class="donut-dot" style="background:var(--green)"></div>سناكس وحلويات (25%)</div>
+                  <div class="donut-item"><div class="donut-dot" style="background:var(--blue)"></div>إكسسوارات (15%)</div>
+                  <div class="donut-item"><div class="donut-dot" style="background:var(--yellow)"></div>أخرى (15%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Tenants quick view -->
+        <div class="pcard" style="margin-bottom:20px">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">🏆 أفضل المستأجرين — هذا الشهر</div>
+              <div class="pcard-sub">حسب متوسط التقييم والإيراد</div>
+            </div>
+            <button class="btn btn-sm" onclick="goTo('tenants', document.querySelector('[onclick*=tenants]'))">عرض الكل</button>
+          </div>
+          <div class="pcard-body">
+            <!-- 🔗 DB-LINK: جلب من جدول tenants مرتبة بـ avg_score -->
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>المستأجر</th>
+                  <th>المساحة</th>
+                  <th>النشاط</th>
+                  <th>التقييم</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--orange);font-weight:900;font-family:'Space Mono',monospace">١</td>
+                  <td><strong>أحمد — كشك القهوة</strong></td>
+                  <td style="color:var(--text2)">A-12</td>
+                  <td><span class="badge badge-orange">☕ قهوة</span></td>
+                  <td><strong style="color:var(--green)">9.2</strong></td>
+                  <td><span class="badge badge-green">ممتاز</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٢</td>
+                  <td><strong>سارة — إكسسوارات</strong></td>
+                  <td style="color:var(--text2)">B-03</td>
+                  <td><span class="badge badge-blue">💎 إكسسوار</span></td>
+                  <td><strong style="color:var(--green)">8.7</strong></td>
+                  <td><span class="badge badge-green">ممتاز</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٣</td>
+                  <td><strong>محمد — حلويات</strong></td>
+                  <td style="color:var(--text2)">C-07</td>
+                  <td><span class="badge badge-yellow">🍬 حلويات</span></td>
+                  <td><strong style="color:var(--yellow)">7.4</strong></td>
+                  <td><span class="badge badge-yellow">جيد</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٤</td>
+                  <td><strong>نور — مشروبات</strong></td>
+                  <td style="color:var(--text2)">A-05</td>
+                  <td><span class="badge badge-orange">🥤 مشروبات</span></td>
+                  <td><strong style="color:var(--yellow)">6.9</strong></td>
+                  <td><span class="badge badge-yellow">متوسط</span></td>
+                </tr>
+                <tr>
+                  <td style="color:var(--red);font-family:'Space Mono',monospace">⚠</td>
+                  <td><strong>خالد — فاست فود</strong></td>
+                  <td style="color:var(--text2)">D-02</td>
+                  <td><span class="badge badge-red">🍔 فاست فود</span></td>
+                  <td><strong style="color:var(--red)">4.2</strong></td>
+                  <td><span class="badge badge-red">ضعيف</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Smart Alerts Preview -->
+        <div class="pcard">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">🚨 أحدث التنبيهات</div>
+            </div>
+            <button class="btn btn-sm" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">كل التنبيهات</button>
+          </div>
+          <div class="pcard-body">
+            <div class="alert-list">
+              <div class="alert-item danger">
+                <span class="alert-ico">📉</span>
+                <div class="alert-text">
+                  <strong>تقييم خالد بينزل 3 شهور متتالية</strong>
+                  انخفض من 6.8 → 4.2. يُنصح بمراجعة الوضع أو طلب تجديد النشاط.
+                </div>
+              </div>
+              <div class="alert-item warning">
+                <span class="alert-ico">📅</span>
+                <div class="alert-text">
+                  <strong>عقد سارة ينتهي خلال ٢١ يوم</strong>
+                  يُنصح بالتواصل لتجديد العقد أو طرح المساحة للإيجار.
+                </div>
+              </div>
+              <div class="alert-item info">
+                <span class="alert-ico">💡</span>
+                <div class="alert-text">
+                  <strong>المساحة D-08 فاضية منذ 45 يوم</strong>
+                  مكاني Spot عندها 3 مستأجرين مناسبين لهذه المساحة.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end overview -->
+
+      <!-- ============================================================
+           VIEW: TENANTS
+           🔗 DB-LINK: جدول tenants + ratings + contracts
+           ============================================================ -->
+      <div class="view" id="view-tenants">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <div class="section-label">إدارة المستأجرين</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <select style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;color:var(--text2);font-family:'Cairo',sans-serif;font-size:13px;outline:none;cursor:pointer">
+              <option>ترتيب: التقييم الأعلى</option>
+              <option>ترتيب: التقييم الأدنى</option>
+              <option>ترتيب: تاريخ الانضمام</option>
+            </select>
+            <button class="btn btn-primary btn-sm">+ إضافة مستأجر</button>
+          </div>
+        </div>
+
+        <!-- Ranking Banner -->
+        <div style="background:linear-gradient(135deg,rgba(255,107,0,0.10),transparent);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:32px">🏆</div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--orange)">أفضل مستأجر هذا الشهر</div>
+            <div style="font-size:15px;font-weight:900;color:var(--text)">أحمد — كشك القهوة A-12</div>
+            <div style="font-size:11px;color:var(--text2)">تقييم 9.2/10 · التزام كامل بالعقد · نظافة ممتازة</div>
+          </div>
+          <div style="margin-right:auto;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:var(--green);font-family:'Space Mono',monospace">9.2</div>
+            <div class="stars-sm">★★★★★</div>
+          </div>
+        </div>
+
+        <!-- Tenants Full Table -->
+        <div class="pcard">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">جميع المستأجرين</div>
+              <div class="pcard-sub">🔗 DB: tenants + ratings + contracts</div>
+            </div>
+            <span class="db-tag">DB: tenants</span>
+          </div>
+          <div class="pcard-body" style="padding:0">
+            <!-- 🔗 DB-LINK: جلب هذه البيانات من جدول tenants في قاعدة البيانات -->
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>المستأجر</th>
+                  <th>المساحة</th>
+                  <th>النشاط</th>
+                  <th>التقييم الكلي</th>
+                  <th>مؤشر الأداء</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="tenants-tbody">
+                <!-- مملوء من JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tenant Detail Modal (hidden, toggled) -->
+        <div id="tenant-detail" style="display:none;margin-top:20px">
+          <div class="pcard">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title" id="td-name">— تفاصيل المستأجر —</div>
+                <div class="pcard-sub" id="td-space">المساحة —</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('tenant-detail').style.display='none'">✕ إغلاق</button>
+            </div>
+            <div class="pcard-body">
+              <div class="grid-2">
+                <!-- Score breakdown -->
+                <div>
+                  <div class="section-label">تفصيل التقييم</div>
+                  <!-- 🔗 DB-LINK: جلب ratings breakdown من جدول ratings -->
+                  <div id="td-scores"></div>
+                </div>
+                <!-- Monthly trend -->
+                <div>
+                  <div class="section-label">تطور التقييم شهرياً</div>
+                  <div class="bar-chart" id="td-chart" style="height:70px;margin-bottom:28px"></div>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:16px">
+                <label>ملاحظات إضافية</label>
+                <textarea id="td-notes" placeholder="اكتب ملاحظاتك على هذا المستأجر…"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm">💾 حفظ الملاحظات</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- end tenants -->
+
+      <!-- ============================================================
+           VIEW: SPACES
+           🔗 DB-LINK: جدول spaces في قاعدة البيانات أو Google Sheet
+           ============================================================ -->
+      <div class="view" id="view-spaces">
+        <div class="section-label">خريطة المساحات</div>
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card">
+            <div class="kpi-ico">✅</div>
+            <div class="kpi-label">مؤجّرة</div>
+            <div class="kpi-value" id="kpi-main">—</div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill green" style="width:80%"></div></div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">🔓</div>
+            <div class="kpi-label">متاحة</div>
+            <div class="kpi-value" id="kpi-avail">—</div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill" style="width:20%"></div></div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">🔧</div>
+            <div class="kpi-label">قيد الصيانة</div>
+            <div class="kpi-value" id="kpi-maint">—</div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill yellow" style="width:10%"></div></div></div>
+          </div>
+        </div>
+
+        <!-- ── قسم المساحات المهملة (يظهر فقط عند وجودها) ── -->
+        <div id="abandoned-section" style="display:none;margin-bottom:20px">
+          <div class="pcard" style="border-color:rgba(255,77,77,0.30)">
+            <div class="pcard-head" style="background:rgba(255,77,77,0.06)">
+              <div>
+                <div class="pcard-title" style="color:var(--red)">🏚️ مساحات مهملة — تحتاج اهتمام</div>
+                <div class="pcard-sub">فارغة أكثر من 30 يوم — مكاني Spot تستطيع مساعدتك في إيجاد مستأجر مناسب</div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="goTo('add-space', document.querySelector('[data-view=add-space]'))">+ طلب مستأجر</button>
+            </div>
+            <div class="pcard-body" style="padding:0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>كود</th><th>الموقع</th><th>الحجم</th><th>مدة الفراغ</th><th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="abandoned-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="pcard">
+          <div class="pcard-head">
+            <div class="pcard-title">📍 جميع المساحات</div>
+            <span class="db-tag">DB: spaces</span>
+          </div>
+          <div class="pcard-body" style="padding:0">
+            <!-- 🔗 DB-LINK: جلب من جدول spaces -->
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>كود</th>
+                  <th>الموقع</th>
+                  <th>الحجم</th>
+                  <th>النشاط المناسب</th>
+                  <th>الإيجار</th>
+                  <th>الحالة</th>
+                  <th>الأداء</th>
+                </tr>
+              </thead>
+              <tbody id="spaces-tbody">
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-12</td><td>مدخل رئيسي</td><td>١×١ م</td><td><span class="badge badge-orange">قهوة</span></td><td style="font-family:'Space Mono',monospace">٤,٢٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:92%"></div></div></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-05</td><td>الدور الأرضي</td><td>٢×١ م</td><td><span class="badge badge-blue">مشروبات</span></td><td style="font-family:'Space Mono',monospace">٦,٥٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:69%"></div></div></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">B-03</td><td>أمام المصعد</td><td>١×٢ م</td><td><span class="badge badge-blue">إكسسوار</span></td><td style="font-family:'Space Mono',monospace">٥,٨٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:87%"></div></div></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">C-07</td><td>ممر الأسواق</td><td>١×١ م</td><td><span class="badge badge-yellow">حلويات</span></td><td style="font-family:'Space Mono',monospace">٣,٩٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:74%"></div></div></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">D-02</td><td>الدور الثاني</td><td>٢×٢ م</td><td><span class="badge badge-red">فاست فود</span></td><td style="font-family:'Space Mono',monospace">٧,٢٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill red" style="width:42%"></div></div></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">D-08</td><td>الدور الثاني</td><td>١×١ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-yellow">متاحة</span></td><td style="color:var(--text3);font-size:11px">غير مؤجّرة (45 يوم)</td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">E-01</td><td>المدخل الخلفي</td><td>١×٢ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-yellow">متاحة</span></td><td style="color:var(--text3);font-size:11px">جديدة — لم تؤجّر</td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">F-11</td><td>بجوار المطعم</td><td>٢×٢ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-red">صيانة</span></td><td style="color:var(--text3);font-size:11px">مغلقة للصيانة</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- end spaces -->
+
+      <!-- ============================================================
+           VIEW: CONTRACTS
+           🔗 DB-LINK: جدول contracts مرتبط بـ tenants + spaces
+           ============================================================ -->
+      <div class="view" id="view-contracts">
+        <div class="section-label">إدارة العقود</div>
+        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi-card"><div class="kpi-ico">📄</div><div class="kpi-label">إجمالي</div><div class="kpi-value">٨</div></div>
+          <div class="kpi-card"><div class="kpi-ico">✅</div><div class="kpi-label">سارية</div><div class="kpi-value">٦</div></div>
+          <div class="kpi-card" style="border-color:rgba(255,184,0,0.30)"><div class="kpi-ico">⏰</div><div class="kpi-label">تنتهي قريباً</div><div class="kpi-value" style="color:var(--yellow)">٢</div></div>
+          <div class="kpi-card"><div class="kpi-ico">🔄</div><div class="kpi-label">تحتاج تجديد</div><div class="kpi-value">١</div></div>
+        </div>
+
+        <!-- 🔗 DB-LINK: جلب من جدول contracts -->
+        <div id="contracts-list">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Add Contract Form -->
+        <div class="pcard" style="margin-top:20px">
+          <div class="pcard-head">
+            <div class="pcard-title">+ إضافة عقد جديد</div>
+            <span class="db-tag">DB: contracts</span>
+          </div>
+          <div class="pcard-body">
+            <div class="form-row">
+              <div class="form-group" style="margin:0">
+                <label>اسم المستأجر</label>
+                <input type="text" placeholder="مثال: أحمد محمد">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>كود المساحة</label>
+                <select class="select-available-space"><option>A-12</option><option>D-08</option><option>E-01</option></select>
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:12px">
+              <div class="form-group" style="margin:0">
+                <label>تاريخ البداية</label>
+                <input type="date">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>تاريخ النهاية</label>
+                <input type="date">
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:12px">
+              <div class="form-group" style="margin:0">
+                <label>قيمة الإيجار الشهري (ج.م.)</label>
+                <input type="number" placeholder="٤٢٠٠">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>نوع النشاط</label>
+                <select><option>قهوة</option><option>مشروبات</option><option>حلويات</option><option>إكسسوار</option><option>أخرى</option></select>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:16px">💾 حفظ العقد</button>
+          </div>
+        </div>
+      </div><!-- end contracts -->
+
+      <!-- ============================================================
+           VIEW: RATINGS
+           🔗 DB-LINK: جدول ratings مرتبط بـ tenants
+           ============================================================ -->
+      <div class="view" id="view-ratings">
+        <div class="section-label">نظام التقييم الشهري</div>
+
+        <div class="grid-2">
+          <!-- Rating Form -->
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">⭐ إضافة تقييم جديد</div>
+              <span class="db-tag">DB: ratings</span>
+            </div>
+            <div class="pcard-body">
+              <!-- 🔗 DB-LINK: اختيار المستأجر من جدول tenants -->
+              <div class="form-group">
+                <label>المستأجر</label>
+                <select id="rate-tenant" class="select-tenant">
+                  <option value="">اختر المستأجر</option>
+                  <option value="1">أحمد — كشك القهوة A-12</option>
+                  <option value="2">سارة — إكسسوارات B-03</option>
+                  <option value="3">محمد — حلويات C-07</option>
+                  <option value="4">نور — مشروبات A-05</option>
+                  <option value="5">خالد — فاست فود D-02</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>الشهر</label>
+                <input type="month" id="rate-month">
+              </div>
+              <div class="section-label" style="margin-top:16px">معايير التقييم (كل معيار من ١ إلى ١٠)</div>
+
+              <!-- Rating criteria -->
+              <div id="rate-criteria">
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:12px;color:var(--text2)">⏰ الالتزام بالمواعيد</span>
+                    <span id="rv-0" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٧</span>
+                  </div>
+                  <input type="range" min="1" max="10" value="7" oninput="updateRVal(0,this.value)" style="width:100%;accent-color:var(--orange)">
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:12px;color:var(--text2)">🧹 نظافة المكان</span>
+                    <span id="rv-1" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٨</span>
+                  </div>
+                  <input type="range" min="1" max="10" value="8" oninput="updateRVal(1,this.value)" style="width:100%;accent-color:var(--orange)">
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:12px;color:var(--text2)">🎨 شكل البراند والعرض</span>
+                    <span id="rv-2" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٦</span>
+                  </div>
+                  <input type="range" min="1" max="10" value="6" oninput="updateRVal(2,this.value)" style="width:100%;accent-color:var(--orange)">
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:12px;color:var(--text2)">🤝 تعامل مع العملاء</span>
+                    <span id="rv-3" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٩</span>
+                  </div>
+                  <input type="range" min="1" max="10" value="9" oninput="updateRVal(3,this.value)" style="width:100%;accent-color:var(--orange)">
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <span style="font-size:12px;color:var(--text2)">💼 الالتزام بالعقد</span>
+                    <span id="rv-4" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">١٠</span>
+                  </div>
+                  <input type="range" min="1" max="10" value="10" oninput="updateRVal(4,this.value)" style="width:100%;accent-color:var(--orange)">
+                </div>
+              </div>
+
+              <div style="background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;text-align:center">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">متوسط التقييم</div>
+                <div style="font-size:28px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace" id="rate-avg">٨.٠</div>
+              </div>
+
+              <div class="form-group">
+                <label>ملاحظات (اختياري)</label>
+                <textarea placeholder="مثال: أداء ممتاز هذا الشهر، لكن النظافة تحتاج تحسين…"></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="submitRating()">⭐ حفظ التقييم</button>
+            </div>
+          </div>
+
+          <!-- Rating History -->
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">📊 سجل التقييمات</div>
+              <span class="db-tag">DB: ratings</span>
+            </div>
+            <div class="pcard-body" style="padding:0">
+              <!-- 🔗 DB-LINK: جلب آخر التقييمات من جدول ratings -->
+              <table class="data-table">
+                <thead>
+                  <tr><th>المستأجر</th><th>الشهر</th><th>التقييم</th><th>التغيير</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>أحمد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--green)">9.2</strong></td><td><span class="kpi-delta up" style="font-size:11px">↑ +0.4</span></td></tr>
+                  <tr><td>سارة</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--green)">8.7</strong></td><td><span class="kpi-delta up" style="font-size:11px">↑ +0.1</span></td></tr>
+                  <tr><td>محمد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--yellow)">7.4</strong></td><td><span class="kpi-delta down" style="font-size:11px">↓ -0.3</span></td></tr>
+                  <tr><td>نور</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--yellow)">6.9</strong></td><td><span class="kpi-delta flat" style="font-size:11px">→ 0.0</span></td></tr>
+                  <tr><td>خالد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--red)">4.2</strong></td><td><span class="kpi-delta down" style="font-size:11px">↓ -1.1</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div><!-- end ratings -->
+
+      <!-- ============================================================
+           VIEW: REVENUE
+           🔗 DB-LINK: جدول payments أو حسابات من contracts
+           ============================================================ -->
+      <div class="view" id="view-revenue">
+        <div class="section-label">تحليل الإيرادات</div>
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-ico">💰</div><div class="kpi-label">هذا الشهر</div><div class="kpi-value">٤٢,٥٠٠</div><span class="kpi-delta up">↑ 12%</span></div>
+          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">هذا الربع</div><div class="kpi-value">١٢٤,٠٠٠</div><span class="kpi-delta up">↑ 8%</span></div>
+          <div class="kpi-card"><div class="kpi-ico">📆</div><div class="kpi-label">هذا العام</div><div class="kpi-value">٣٨٦,٠٠٠</div><span class="kpi-delta up">↑ 18%</span></div>
+          <div class="kpi-card"><div class="kpi-ico">🏦</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-value">٤٦,٠٠٠</div><span class="kpi-delta up">↑ 8%</span></div>
+        </div>
+
+        <div class="pcard">
+          <div class="pcard-head">
+            <div class="pcard-title">💰 إيرادات كل مساحة</div>
+            <span class="db-tag">DB: payments + spaces</span>
+          </div>
+          <div class="pcard-body" style="padding:0">
+            <!-- 🔗 DB-LINK: جلب إيراد كل مساحة من جدول payments أو حساب من contracts -->
+            <table class="data-table">
+              <thead><tr><th>المساحة</th><th>المستأجر</th><th>الإيجار الشهري</th><th>نسبة من الإجمالي</th><th>حالة الدفع</th></tr></thead>
+              <tbody>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-12</td><td>أحمد</td><td style="font-family:'Space Mono',monospace">٤,٢٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:59%"></div></div><span style="font-size:11px;color:var(--text3)">9.9%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-05</td><td>نور</td><td style="font-family:'Space Mono',monospace">٦,٥٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:91%"></div></div><span style="font-size:11px;color:var(--text3)">15.3%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">B-03</td><td>سارة</td><td style="font-family:'Space Mono',monospace">٥,٨٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:81%"></div></div><span style="font-size:11px;color:var(--text3)">13.6%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
+                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">D-02</td><td>خالد</td><td style="font-family:'Space Mono',monospace">٧,٢٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:100%"></div></div><span style="font-size:11px;color:var(--text3)">16.9%</span></div></td><td><span class="badge badge-yellow">تأخّر</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- end revenue -->
+
+      <!-- ============================================================
+           VIEW: INSIGHTS (AI Suggestions)
+           🔗 DB-LINK: تحليل من بيانات ratings + spaces + contracts
+           ============================================================ -->
+      <div class="view" id="view-insights">
+        <div class="section-label">الرؤى والتوصيات الذكية</div>
+
+        <div style="background:linear-gradient(135deg,rgba(255,107,0,0.12),transparent);border:1px solid rgba(255,107,0,0.25);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:36px">🧠</div>
+          <div>
+            <div style="font-size:15px;font-weight:800;color:var(--orange)">مكاني Spot — المستشار الذكي</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-top:4px">بناءً على أداء مساحاتك وتقييمات المستأجرين، هذه هي أهم التوصيات لهذا الشهر.</div>
+          </div>
+        </div>
+
+        <!-- 🔗 DB-LINK: هذه الرؤى ستُحسب تلقائياً من بيانات ratings + spaces + contracts -->
+        <div class="grid-2" style="margin-bottom:0">
+          <div>
+            <div class="section-label">⚠️ تحتاج اهتمام فوري</div>
+            <div class="insight-card" style="border-color:rgba(255,77,77,0.30);background:rgba(255,77,77,0.06)">
+              <div class="insight-ico">📉</div>
+              <div>
+                <div class="insight-title" style="color:var(--red)">خالد في D-02 — أداء ضعيف مستمر</div>
+                <div class="insight-body">تقييمه نزل 3 شهور متتالية من 6.8 → 4.2. عقده ينتهي بعد 42 يوم. التوصية: اجلس معه لمراجعة الوضع أو ابدأ في البحث عن بديل.</div>
+              </div>
+            </div>
+            <div class="insight-card" style="border-color:rgba(255,184,0,0.30);background:rgba(255,184,0,0.06)">
+              <div class="insight-ico">⏰</div>
+              <div>
+                <div class="insight-title" style="color:var(--yellow)">عقد سارة — ينتهي قريباً</div>
+                <div class="insight-body">تقييمها ممتاز 8.7. يُنصح بالتجديد قبل انتهاء العقد بـ 21 يوم. هي تُعتبر من أفضل مستأجريك.</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">💡 فرص للتطوير</div>
+            <div class="insight-card">
+              <div class="insight-ico">☕</div>
+              <div>
+                <div class="insight-title">المساحة D-08 — تنفع قهوة</div>
+                <div class="insight-body">الموقع قريب من المدخل الرئيسي + تقييم نشاط القهوة الأعلى عندك. يُنصح بإضافتها لمنصة مكاني Spot لاستقطاب مستأجر قهوة.</div>
+              </div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-ico">📈</div>
+              <div>
+                <div class="insight-title">رفع سعر A-12 عند التجديد</div>
+                <div class="insight-body">أحمد تقييمه 9.2 وملتزم تماماً — ويدفع 4,200 ج. السوق المحيط بـ 5,000-5,500 ج لنفس الحجم. الفرصة موجودة عند التجديد.</div>
+              </div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-ico">🔄</div>
+              <div>
+                <div class="insight-title">نوّع الأنشطة في الدور الثاني</div>
+                <div class="insight-body">كل مساحات الدور الثاني طعام وشراب. إضافة نشاط مختلف (إكسسوار، خدمات) قد يزيد حركة الناس ويرفع الإيرادات الكلية.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end insights -->
+
+      <!-- ============================================================
+           VIEW: EXPERIMENTS
+           🔗 DB-LINK: جدول experiments مرتبط بـ spaces
+           ============================================================ -->
+      <div class="view" id="view-experiments">
+        <div class="section-label">وضع التجربة — جرّب بدون مخاطرة</div>
+
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px">
+          <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">🧪 ما هو وضع التجربة؟</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7">تقدر تجرّب نشاط تجاري جديد في مساحة فاضية لمدة شهر واحد — تشوف الأداء — وتقرر تكمل أو لا. مكاني Spot تساعدك في إيجاد مستأجر مؤقت مناسب.</div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Active experiments -->
+          <div>
+            <div class="section-label">التجارب الجارية</div>
+            <!-- 🔗 DB-LINK: جلب من جدول experiments حيث status = active -->
+            <div class="exp-card active-exp">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:var(--text)">🍦 آيس كريم — D-08</div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:2px">تجربة شهرية · بدأت 1 فبراير</div>
+                </div>
+                <span class="badge badge-green">جارية</span>
+              </div>
+              <div style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px">
+                  <span>تقدم التجربة</span><span>21/28 يوم</span>
+                </div>
+                <div class="prog-bar"><div class="prog-fill green" style="width:75%"></div></div>
+              </div>
+              <div style="display:flex;gap:10px;font-size:12px;color:var(--text2)">
+                <span>التقييم المبدئي: <strong style="color:var(--green)">7.8</strong></span>
+                <span>|</span>
+                <span>تفاعل العملاء: <strong style="color:var(--green)">جيد</strong></span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:12px">
+                <button class="btn btn-primary btn-sm">✅ تحويل لعقد دائم</button>
+                <button class="btn btn-sm" style="color:var(--red);border-color:rgba(255,77,77,0.25)">❌ إنهاء التجربة</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- New experiment form -->
+          <div>
+            <div class="section-label">تجربة جديدة</div>
+            <div class="pcard">
+              <div class="pcard-body">
+                <!-- 🔗 DB-LINK: اختيار من جدول spaces حيث status = available -->
+                <div class="form-group">
+                  <label>اختر المساحة الفاضية</label>
+                  <select><option>D-08 — الدور الثاني</option><option>E-01 — المدخل الخلفي</option></select>
+                </div>
+                <div class="form-group">
+                  <label>النشاط المقترح للتجربة</label>
+                  <input type="text" placeholder="مثال: عربية فاكهة، حلويات يدوية…">
+                </div>
+                <div class="form-group">
+                  <label>مدة التجربة</label>
+                  <select><option>شهر واحد</option><option>أسبوعان</option><option>شهران</option></select>
+                </div>
+                <div style="background:var(--orange-pale);border:1px solid var(--border2);border-radius:var(--r);padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+                  💡 مكاني Spot ستساعدك في إيجاد مستأجر مناسب لهذه التجربة — سيتم التواصل خلال 24 ساعة.
+                </div>
+                <button class="btn btn-primary">🚀 ابدأ التجربة</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end experiments -->
+
+      <!-- ============================================================
+           VIEW: ADD SPACE
+           🔗 DB-LINK: يرسل البيانات لـ Apps Script → يحفظ في Google Sheets
+           ============================================================ -->
+      <div class="view" id="view-add-space">
+        <div class="section-label">إضافة مساحة جديدة للمنصة</div>
+
+        <!-- Banner -->
+        <div style="background:linear-gradient(135deg,rgba(255,107,0,0.10),transparent);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:32px">📋</div>
+          <div>
+            <div style="font-size:14px;font-weight:800;color:var(--orange)">أضف مساحتك على مكاني Spot</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-top:4px">
+              اكتب بيانات المساحة وسيقوم فريقنا بمراجعتها وإضافتها للمنصة خلال <strong style="color:var(--orange)">24 ساعة</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- ── Form ── -->
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">📝 بيانات المساحة</div>
+              <span class="db-tag">DB: spaces</span>
+            </div>
+            <div class="pcard-body">
+              <!-- رسالة النتيجة -->
+              <div id="add-space-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
+
+              <form id="add-space-form" onsubmit="submitAddSpace(event)">
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>كود / رقم المساحة</label>
+                    <input type="text" id="as-code" placeholder="مثال: G-15" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>الموقع داخل المكان</label>
+                    <input type="text" id="as-location" placeholder="مثال: أمام المصعد، الدور الثاني" required>
+                  </div>
+                </div>
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>الطابق / الدور</label>
+                    <select id="as-floor">
+                      <option value="0">الطابق الأرضي</option>
+                      <option value="1">الدور الأول</option>
+                      <option value="2">الدور الثاني</option>
+                      <option value="3">الدور الثالث</option>
+                      <option value="-1">البدروم</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>الحجم (المساحة)</label>
+                    <input type="text" id="as-size" placeholder="مثال: ١×٢ م أو ٢م²" required>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top:12px">
+                  <label>الأنشطة المناسبة</label>
+                  <input type="text" id="as-activities" placeholder="مثال: قهوة، مشروبات، حلويات (افصل بفاصلة)">
+                </div>
+                <div class="form-group">
+                  <label>السعر المقترح (ج.م. / شهر)</label>
+                  <input type="number" id="as-price" placeholder="مثال: 4500" min="0">
+                </div>
+                <div class="form-group">
+                  <label>وصف المساحة (اختياري)</label>
+                  <textarea id="as-description" placeholder="أي تفاصيل إضافية عن الموقع أو المميزات…"></textarea>
+                </div>
+                <button type="submit" id="add-space-btn" class="btn btn-primary" style="width:100%">🚀 إرسال طلب الإضافة</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- ── Image Upload + Tips ── -->
+          <div>
+            <!-- رفع الصور -->
+            <div class="pcard" style="margin-bottom:20px">
+              <div class="pcard-head">
+                <div>
+                  <div class="pcard-title">📷 صور المساحة</div>
+                  <div class="pcard-sub">الصور تُرفع لـ Google Drive للمراجعة</div>
+                </div>
+              </div>
+              <div class="pcard-body">
+                <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--orange-pale)"
+                     onclick="document.getElementById('img-input').click()"
+                     onmouseenter="this.style.background='rgba(255,107,0,0.14)'"
+                     onmouseleave="this.style.background='var(--orange-pale)'">
+                  <div style="font-size:32px;margin-bottom:8px">📤</div>
+                  <div style="font-size:13px;color:var(--orange);font-weight:700">اضغط لرفع الصور</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG — حتى 5 صور</div>
+                </div>
+                <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this)">
+                <div id="img-preview" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px"></div>
+                <div style="margin-top:12px;background:var(--blue-bg);border:1px solid rgba(77,159,255,0.20);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);line-height:1.6">
+                  📌 الصور ستُرفع لـ Google Drive الخاص بمكاني Spot، ثم يراجعها الفريق قبل النشر على المنصة.
+                </div>
+              </div>
+            </div>
+
+            <!-- نصائح -->
+            <div class="pcard">
+              <div class="pcard-head">
+                <div class="pcard-title">💡 نصائح لإضافة ناجحة</div>
+              </div>
+              <div class="pcard-body" style="padding:16px">
+                <div class="insight-card" style="margin-bottom:10px">
+                  <div class="insight-ico">📍</div>
+                  <div>
+                    <div class="insight-title">حدّد الموقع بدقة</div>
+                    <div class="insight-body">المستأجر يهتم بالموقع أكثر من أي شيء — قرب المدخل أو المصعد يرفع قيمة المساحة.</div>
+                  </div>
+                </div>
+                <div class="insight-card" style="margin-bottom:10px">
+                  <div class="insight-ico">💰</div>
+                  <div>
+                    <div class="insight-title">السعر التنافسي يملأ المساحة</div>
+                    <div class="insight-body">المساحات ذات الأسعار المناسبة تُؤجَّر خلال أسبوع في المتوسط على المنصة.</div>
+                  </div>
+                </div>
+                <div class="insight-card">
+                  <div class="insight-ico">📷</div>
+                  <div>
+                    <div class="insight-title">صورة واضحة = مستأجر أسرع</div>
+                    <div class="insight-body">المساحات التي تحتوي على صور واضحة تحصل على ٣× استفسارات أكثر.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end add-space -->
+
+      <!-- ============================================================
+           VIEW: ALERTS
+           🔗 DB-LINK: حساب التنبيهات من ratings + contracts + spaces
+           ============================================================ -->
+      <div class="view" id="view-alerts">
+        <div class="section-label">مركز التنبيهات الذكية</div>
+        <!-- 🔗 DB-LINK: التنبيهات تُحسب تلقائياً من ratings + contracts + spaces -->
+        <div class="alert-list" id="alerts-list">
+          <!-- Rendered by makani-dashboard-app.js → renderAlerts() -->
+          <div class="alert-item info">
+            <span class="alert-ico">⏳</span>
+            <div class="alert-text"><strong>جاري تحميل التنبيهات…</strong></div>
+          </div>
+        </div>
+      </div><!-- end alerts -->
+
+      <!-- ============================================================
+           VIEW: SETTINGS
+           🔗 DB-LINK: جدول owners في قاعدة البيانات
+           ============================================================ -->
+      <div class="view" id="view-settings">
+        <div class="section-label">الإعدادات</div>
+        <div class="grid-2">
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">👤 بياناتك الشخصية</div>
+              <span class="db-tag">DB: owners</span>
+            </div>
+            <div class="pcard-body">
+              <!-- 🔗 DB-LINK: جلب بيانات الأونر من جدول owners -->
+              <div class="form-group"><label>الاسم الكامل</label><input type="text" value="محمد أحمد" id="st-name"></div>
+              <div class="form-group"><label>رقم الموبايل</label><input type="tel" value="01012345678" dir="ltr" id="st-phone"></div>
+              <div class="form-group"><label>البريد الإلكتروني</label><input type="email" value="owner@place.com" dir="ltr" id="st-email"></div>
+              <div class="form-group"><label>اسم المكان</label><input type="text" value="مول مدينة نصر" id="st-place"></div>
+              <button class="btn btn-primary" onclick="saveSettings()">💾 حفظ التعديلات</button>
+            </div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">🔔 إعدادات التنبيهات</div>
+            </div>
+            <div class="pcard-body">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+                  <span style="font-size:13px;color:var(--text2)">تنبيه قبل انتهاء العقد (بـ 30 يوم)</span>
+                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+                  <span style="font-size:13px;color:var(--text2)">تنبيه لو تقييم نزل لأقل من 5</span>
+                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+                  <span style="font-size:13px;color:var(--text2)">تنبيه لو مساحة فاضية أكتر من 30 يوم</span>
+                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+                  <span style="font-size:13px;color:var(--text2)">تقرير شهري تلقائي</span>
+                  <input type="checkbox" style="accent-color:var(--orange);width:18px;height:18px">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pcard" style="margin-top:0">
+          <div class="pcard-head"><div class="pcard-title">🔑 تغيير كلمة المرور</div></div>
+          <div class="pcard-body">
+            <div class="form-row">
+              <div class="form-group" style="margin:0"><label>كلمة المرور الحالية</label><input type="password" placeholder="••••••••" dir="ltr"></div>
+              <div class="form-group" style="margin:0"><label>كلمة المرور الجديدة</label><input type="password" placeholder="••••••••" dir="ltr"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:14px">تحديث كلمة المرور</button>
+          </div>
+        </div>
+      </div><!-- end settings -->
+
+    </div><!-- end page-content -->
+  </div><!-- end main-area -->
+</div><!-- end app -->
+
+<!-- ================================================================
+     APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
+     ================================================================ -->
+<script src="makani-dashboard-app.js"></script>
+<!-- كل المنطق في makani-dashboard-app.js — لا يوجد inline script -->
+<script>
+/* ═══ كل المنطق في makani-dashboard-app.js ═══ */
+</script>
+</body>
+</html>
