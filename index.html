@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="shortcut icon" type="image/jpeg" href="favicon.jpg">
 <!--
@@ -22,19 +25,18 @@
      - Cloudflare ستقرأ index.html تلقائياً كصفحة رئيسية
   ================================================================
 -->
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مكاني Spot — منصة تأجير المساحات الصغيرة</title>
 
 <!-- روابط الخطوط من Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 
 <!-- ملف التصميم — الطبقة الثانية -->
 <link rel="stylesheet" href="style.css">
 
 <!-- مكتبة Supabase لتسجيل الدخول -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
 <body>
 
@@ -67,12 +69,13 @@
     <!-- الحالة الأولى: زائر غير مسجّل -->
     <div id="nav-guest" style="display:flex;align-items:center;gap:8px">
       <button class="btn-login-nav" onclick="goToLogin()">
-        👤 دخول / سجّل
-      </button>
-      <button class="btn btn-primary"
-              onclick="showPage('owner')"
-              style="white-space:nowrap;font-size:13px;padding:9px 18px">
-        استغل مساحتك ←
+        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+        </svg>
+        <span>دخول</span>
+        <span class="btn-login-sep">|</span>
+        <span>سجّل</span>
       </button>
     </div>
 
@@ -211,24 +214,22 @@
         </div>
       </div>
 
-      <!-- مؤشر السعر المُحسَّن -->
+      <!-- مؤشر السعر — نقطة واحدة (الحد الأقصى) -->
       <div class="price-slider-wrap">
         <div class="price-slider-label-row">
-          <span class="price-slider-title">💰 نطاق السعر / شهر</span>
-          <span class="price-labels">
-            <span class="price-label-val" id="price-min-label">٠ ج</span>
-            <span class="price-label-sep">—</span>
-            <span class="price-label-val" id="price-max-label">بلا حد</span>
-          </span>
+          <span class="price-slider-title">💰 الحد الأقصى للسعر / شهر</span>
+          <span class="price-single-val" id="price-max-label">بلا حد</span>
         </div>
-        <div class="slider-container">
+        <div class="slider-container slider-single">
           <div class="slider-track" id="slider-track"></div>
-          <input type="range" class="price-slider" id="slider-min"
-                 min="0" max="50000" value="0" step="500"
-                 oninput="updateMainSlider()">
           <input type="range" class="price-slider" id="slider-max"
                  min="0" max="50000" value="50000" step="500"
                  oninput="updateMainSlider()">
+        </div>
+        <div class="slider-hints">
+          <span>٠ ج</span>
+          <span>٢٥,٠٠٠ ج</span>
+          <span>بلا حد</span>
         </div>
       </div>
 
@@ -275,7 +276,7 @@
         <div class="section-sub">اختار المساحة المناسبة واضغط "احجز دلوقتي"</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="result-badge" id="res-count">جاري التحميل…</span>
+        <span class="result-badge" id="res-count">جاري تحميل البيانات…</span>
         <!-- التبويبات: الكل / مولات / نوادي / مدارس -->
         <div class="tabs-row">
           <button class="tab-btn active" onclick="setTab(this,'')">الكل</button>
@@ -340,19 +341,19 @@
       </div>
 
       <div style="display:grid;gap:16px;margin-bottom:48px">
-        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div class="how-detail-card">
           <div class="how-detail-ico">🔍</div>
           <div><div class="how-detail-t">دوّر على المساحة المناسبة</div><div class="how-detail-s">ادخل الموقع، فلتر بنشاطك أو منطقتك أو سعرك — وهتلاقي المساحات المتاحة بكل تفاصيلها.</div></div>
         </div>
-        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div class="how-detail-card">
           <div class="how-detail-ico">📋</div>
           <div><div class="how-detail-t">احجز في ثواني من غير تعقيد</div><div class="how-detail-s">اضغط "احجز دلوقتي" واملا نموذج بسيط باسمك ونشاطك — مش محتاج تسجيل حساب ولا دفع أي فلوس مسبقاً.</div></div>
         </div>
-        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div class="how-detail-card">
           <div class="how-detail-ico">📞</div>
           <div><div class="how-detail-t">هنكلمك في أقل من ٢٤ ساعة</div><div class="how-detail-s">فريقنا بيتواصل معاك على طول عشان يأكدلك التفاصيل ويوقّع العقد معاك.</div></div>
         </div>
-        <div class="how-detail-card" onmouseover="this.style.borderColor='rgba(255,107,0,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div class="how-detail-card">
           <div class="how-detail-ico">💰</div>
           <div><div class="how-detail-t">إزاي بنكسب؟</div><div class="how-detail-s">بناخد عمولة بسيطة ٨٪ بس من قيمة العقد — لو ما اتاكدش الحجز، مفيش حاجة بتتدفع.</div></div>
         </div>
@@ -486,18 +487,19 @@
             </select>
           </div>
 
-          <!-- مؤشر السعر -->
+          <!-- مؤشر السعر — نقطة واحدة -->
           <div class="mp-filter-group">
-            <div class="mp-filter-title">نطاق السعر / شهر</div>
-            <div class="price-labels" style="margin-bottom:10px">
-              <span id="mp-price-min-label">٠ ج</span>
-              <span style="color:var(--ink3)">—</span>
-              <span id="mp-price-max-label">بلا حد</span>
-            </div>
-            <div class="slider-container">
+            <div class="mp-filter-title">الحد الأقصى للسعر / شهر</div>
+            <div class="mp-price-single-val" id="mp-price-max-label">بلا حد</div>
+            <div class="slider-container slider-single" style="margin-top:14px">
               <div class="slider-track" id="mp-slider-track"></div>
-              <input type="range" class="price-slider" id="mp-slider-min" min="0" max="50000" value="0" step="500" onchange="applyMpFilters()">
-              <input type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500" onchange="applyMpFilters()">
+              <input type="range" class="price-slider" id="mp-slider-max"
+                     min="0" max="50000" value="50000" step="500"
+                     oninput="updateMpSlider();applyMpFilters()">
+            </div>
+            <div class="slider-hints" style="margin-top:6px">
+              <span>٠</span>
+              <span>بلا حد</span>
             </div>
           </div>
 
@@ -586,6 +588,21 @@
         <div class="auth-switch-link" style="margin-top:8px">
           <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
         </div>
+
+        <!-- ── زر صاحب المساحة ── -->
+        <div class="owner-divider">بوابة أصحاب المساحات</div>
+        <a href="makani-dashboard.html" class="owner-portal-btn">
+          <div class="owner-portal-ico">
+            🏢
+            <div class="owner-portal-dot"></div>
+          </div>
+          <div class="owner-portal-info">
+            <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
+            <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
+          </div>
+          <div class="owner-portal-arrow">←</div>
+        </a>
+
       </div>
     </div>
 
@@ -681,6 +698,21 @@
         <div class="auth-switch-link" style="margin-top:8px">
           <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
         </div>
+
+        <!-- ── زر صاحب المساحة ── -->
+        <div class="owner-divider">بوابة أصحاب المساحات</div>
+        <a href="makani-dashboard.html" class="owner-portal-btn">
+          <div class="owner-portal-ico">
+            🏢
+            <div class="owner-portal-dot"></div>
+          </div>
+          <div class="owner-portal-info">
+            <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
+            <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
+          </div>
+          <div class="owner-portal-arrow">←</div>
+        </a>
+
       </div>
     </div>
 
@@ -871,7 +903,7 @@
             <div class="modal-sub">هنتواصل معاك في ٢٤ ساعة لإتمام الترتيبات</div>
           </div>
         </div>
-        <button class="modal-close" onclick="closeModal()">×</button>
+        <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز">×</button>
       </div>
       <div class="modal-body">
         <div class="space-info-box">
@@ -1024,7 +1056,7 @@
 <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-<script src="app.js"></script>
+<script src="app.js" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
 <nav class="bottom-nav" id="bottom-nav">
