@@ -89,32 +89,170 @@ let ownerTenants   = [];
 let ownerContracts = [];
 
 /* ══════════════════════════════════════════
-   🔐  AUTH
+   🔐  SUPABASE — إعداد العميل
    ══════════════════════════════════════════ */
-function doLogin() {
-  const u   = document.getElementById('li-user').value.trim().toLowerCase();
-  const p   = document.getElementById('li-pass').value;
-  const err = document.getElementById('login-error');
-  err.style.display = 'none';
+const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_otT0XEGfHw3LI2OyFIIMeQ_eXcrkWZ3';
 
-  /* 🔗 DB-LINK: استبدل هذا بـ API call لـ Supabase:
-     const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: p }); */
-  const ownerKey = Object.keys(OWNERS).find(k => k.toLowerCase() === u);
-  if (!ownerKey || OWNERS[ownerKey].password !== p) {
-    err.style.display = 'block';
+let sbClient = null;
+
+function getSB() {
+  if (!sbClient && window.supabase) {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return sbClient;
+}
+
+/* ══════════════════════════════════════════
+   🔐  AUTH — helpers
+   ══════════════════════════════════════════ */
+
+/** يظهر/يخفي رسالة الخطأ في صفحة اللوجين */
+function showLoginError(msg) {
+  const err = document.getElementById('login-error');
+  if (!err) return;
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+function hideLoginError() {
+  const err = document.getElementById('login-error');
+  if (err) err.style.display = 'none';
+}
+
+/** حالة زر اللوجين (loading / normal) */
+function setLoginLoading(isLoading) {
+  const btn = document.getElementById('btn-login');
+  if (!btn) return;
+  btn.disabled    = isLoading;
+  btn.textContent = isLoading ? '⏳ جاري التحقق…' : 'دخول للوحة التحكم ←';
+}
+
+/**
+ * ✅ بعد نجاح الـ Auth — تتحقق من جدول profiles
+ *    لو role = 'owner' → تفتح الداشبورد
+ *    لو مش owner       → تعمل signOut وتعرض خطأ
+ */
+async function checkRoleAndProceed(user) {
+  const sb = getSB();
+  if (!sb) return;
+
+  const { data: profile, error } = await sb
+    .from('profiles')
+    .select('role, full_name, place, phone')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !profile) {
+    await sb.auth.signOut();
+    showLoginError('⚠ تعذّر جلب بيانات الحساب — تواصل مع الإدارة.');
+    setLoginLoading(false);
     return;
   }
 
+  if (profile.role !== 'owner') {
+    await sb.auth.signOut();
+    showLoginError('⛔ هذا الحساب ليس حساب صاحب مساحة — اللوحة مخصصة للأونرز فقط.');
+    setLoginLoading(false);
+    return;
+  }
+
+  /* ✅ role = owner → نبني currentOwner ونفتح الداشبورد */
+  const displayName = profile.full_name || user.email || 'صاحب المساحة';
+  currentOwner = {
+    id:       user.id,
+    username: user.email,
+    email:    user.email,
+    name:     displayName,
+    place:    profile.place || '',
+    initial:  displayName.charAt(0).toUpperCase(),
+    phone:    profile.phone || '',
+    role:     'owner',
+  };
+
+  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  setLoginLoading(false);
+  initDashboard();
+}
+
+/* ══════════════════════════════════════════
+   1️⃣  تسجيل الدخول — Email + Password
+   ══════════════════════════════════════════ */
+async function doLogin() {
+  hideLoginError();
+  setLoginLoading(true);
+
+  const email = document.getElementById('li-user').value.trim();
+  const pass  = document.getElementById('li-pass').value;
+
+  /* ── محاولة Supabase أولاً ── */
+  const sb = getSB();
+  if (sb) {
+    const { data, error } = await sb.auth.signInWithPassword({
+      email,
+      password: pass,
+    });
+
+    if (error) {
+      const ar = {
+        'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+        'Email not confirmed':       'البريد الإلكتروني لم يتم تأكيده بعد.',
+        'Too many requests':         'كثير من المحاولات — انتظر قليلاً وأعد المحاولة.',
+      };
+      showLoginError('⚠ ' + (ar[error.message] || error.message));
+      setLoginLoading(false);
+      return;
+    }
+
+    await checkRoleAndProceed(data.user);
+    return;
+  }
+
+  /* ── Fallback: Hardcoded OWNERS (للتطوير فقط) ── */
+  const ownerKey = Object.keys(OWNERS).find(
+    k => k.toLowerCase() === email.toLowerCase()
+  );
+  if (!ownerKey || OWNERS[ownerKey].password !== pass) {
+    showLoginError('⚠ بيانات الدخول غير صحيحة.');
+    setLoginLoading(false);
+    return;
+  }
   currentOwner = { ...OWNERS[ownerKey], username: ownerKey };
   sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  setLoginLoading(false);
   initDashboard();
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('login-page').style.display !== 'none') doLogin();
+  const loginPage = document.getElementById('login-page');
+  if (e.key === 'Enter' && loginPage && loginPage.style.display !== 'none') doLogin();
 });
 
-function doLogout() {
+/* ══════════════════════════════════════════
+   2️⃣  تسجيل الدخول — Google OAuth
+   ══════════════════════════════════════════ */
+async function doGoogleLogin() {
+  hideLoginError();
+  const sb = getSB();
+  if (!sb) { showLoginError('⚠ Supabase غير متاح.'); return; }
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.href,  /* يرجع لنفس الصفحة بعد الـ OAuth */
+    },
+  });
+
+  if (error) showLoginError('⚠ فشل تسجيل الدخول بـ Google: ' + error.message);
+  /* لو نجح → Supabase يعمل redirect وعند الرجوع checkSessionOnLoad() بتشتغل */
+}
+
+/* ══════════════════════════════════════════
+   تسجيل الخروج
+   ══════════════════════════════════════════ */
+async function doLogout() {
+  const sb = getSB();
+  if (sb) await sb.auth.signOut();
+
   sessionStorage.removeItem('ms_owner');
   currentOwner   = null;
   ownerSpaces    = [];
@@ -719,16 +857,116 @@ function setTxt(id, txt) {
 }
 
 /* ══════════════════════════════════════════
+   3️⃣  حماية الصفحة عند التحميل
+   ══════════════════════════════════════════ */
+
+/**
+ * تشتغل فور تحميل الصفحة:
+ * ① لو مفيش Supabase session → صفحة اللوجين
+ * ② لو فيه session بس role مش owner → signOut + صفحة اللوجين
+ * ③ لو owner ✅ → تفتح الداشبورد مباشرة
+ */
+async function checkSessionOnLoad() {
+  const sb = getSB();
+
+  /* ── بدون Supabase: fallback للـ sessionStorage ── */
+  if (!sb) {
+    const saved = sessionStorage.getItem('ms_owner');
+    if (saved) {
+      try { currentOwner = JSON.parse(saved); initDashboard(); } catch { sessionStorage.removeItem('ms_owner'); }
+    }
+    return;
+  }
+
+  /* ── تحقق من الـ Supabase session ── */
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (!session) {
+    /* لا يوجد session — تحقق من الـ sessionStorage كـ fallback */
+    const saved = sessionStorage.getItem('ms_owner');
+    if (saved) {
+      try { currentOwner = JSON.parse(saved); initDashboard(); return; } catch { sessionStorage.removeItem('ms_owner'); }
+    }
+    /* لا session ولا cached owner → صفحة اللوجين (هي الافتراضية) */
+    return;
+  }
+
+  /* ── فيه session: تحقق من الـ role ── */
+  const { data: profile, error } = await sb
+    .from('profiles')
+    .select('role, full_name, place, phone')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error || !profile || profile.role !== 'owner') {
+    /* مش owner → اطرد وارجع للوجين */
+    await sb.auth.signOut();
+    sessionStorage.removeItem('ms_owner');
+    return;
+  }
+
+  /* ✅ owner — افتح الداشبورد */
+  const displayName = profile.full_name || session.user.email || 'صاحب المساحة';
+  currentOwner = {
+    id:       session.user.id,
+    username: session.user.email,
+    email:    session.user.email,
+    name:     displayName,
+    place:    profile.place || '',
+    initial:  displayName.charAt(0).toUpperCase(),
+    phone:    profile.phone || '',
+    role:     'owner',
+  };
+  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  initDashboard();
+}
+
+/* ══════════════════════════════════════════
+   4️⃣  تغيير كلمة السر من جوه الداشبورد
+   ══════════════════════════════════════════ */
+async function changePassword() {
+  const newPwd    = document.getElementById('pwd-new')?.value?.trim();
+  const confirmPwd= document.getElementById('pwd-confirm')?.value?.trim();
+  const msgEl     = document.getElementById('pwd-msg');
+
+  const showMsg = (type, text) => {
+    if (!msgEl) return;
+    msgEl.className = `alert-item ${type}`;
+    msgEl.style.display = 'flex';
+    const ico = type === 'success' ? '✅' : '❌';
+    msgEl.innerHTML = `<span class="alert-ico">${ico}</span><div class="alert-text"><strong>${text}</strong></div>`;
+    setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
+  };
+
+  if (!newPwd || newPwd.length < 8) {
+    showMsg('danger', 'كلمة المرور الجديدة يجب أن تكون ٨ أحرف على الأقل.');
+    return;
+  }
+  if (newPwd !== confirmPwd) {
+    showMsg('danger', 'كلمة المرور الجديدة وتأكيدها غير متطابقتين.');
+    return;
+  }
+
+  const sb = getSB();
+  if (!sb) { showMsg('danger', 'Supabase غير متاح — لا يمكن تغيير كلمة المرور.'); return; }
+
+  const btn = document.getElementById('btn-change-pwd');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحديث…'; }
+
+  const { error } = await sb.auth.updateUser({ password: newPwd });
+
+  if (btn) { btn.disabled = false; btn.textContent = '🔑 تحديث كلمة المرور'; }
+
+  if (error) {
+    showMsg('danger', 'فشل التحديث: ' + error.message);
+  } else {
+    showMsg('success', 'تم تغيير كلمة المرور بنجاح! ✅');
+    if (document.getElementById('pwd-new'))     document.getElementById('pwd-new').value = '';
+    if (document.getElementById('pwd-confirm')) document.getElementById('pwd-confirm').value = '';
+  }
+}
+
+/* ══════════════════════════════════════════
    🔄  INIT ON PAGE LOAD
    ══════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  const saved = sessionStorage.getItem('ms_owner');
-  if (saved) {
-    try {
-      currentOwner = JSON.parse(saved);
-      initDashboard();
-    } catch {
-      sessionStorage.removeItem('ms_owner');
-    }
-  }
-});
+window.addEventListener('load', () => checkSessionOnLoad());
