@@ -142,12 +142,12 @@ async function checkRoleAndProceed(user) {
 
   const { data: profile, error } = await sb
     .from('profiles')
-    .select('role, full_name, place, phone')
+    .select('*')          /* select * لتجنب خطأ الأعمدة غير الموجودة */
     .eq('id', user.id)
     .single();
 
   // 🛠 تشخيص — يظهر في Console للمطوّر فقط
-  if (error) console.error('[Makani Dashboard] profiles query error:', error);
+  if (error) console.error('[Makani Dashboard] profiles query error:', JSON.stringify(error));
   if (!profile) console.warn('[Makani Dashboard] No profile row found for user id:', user.id);
 
   if (error || !profile) {
@@ -349,7 +349,185 @@ function renderAll() {
   renderTenants();
   renderContracts();
   renderAlerts();
+  renderRevenue();
+  renderInsights();
+  renderRatingsHistory();
   populateSelects();
+}
+
+/* ══════════════════════════════════════════
+   💰  REVENUE VIEW — ديناميكي من ownerSpaces
+   ══════════════════════════════════════════ */
+function renderRevenue() {
+  const rented  = ownerSpaces.filter(s => s.status === 'rented');
+  const monthly = rented.reduce((sum, s) => sum + (s.rent || 0), 0);
+  const quarterly = monthly * 3;
+  const yearly    = monthly * 12;
+  const forecast  = Math.round(monthly * 1.05); // تقدير 5% نمو
+
+  const fmt = n => n ? n.toLocaleString('ar-EG') + ' ج' : '—';
+  setTxt('rev-monthly',   fmt(monthly));
+  setTxt('rev-quarterly', fmt(quarterly));
+  setTxt('rev-yearly',    fmt(yearly));
+  setTxt('rev-forecast',  fmt(forecast));
+
+  const tbody = document.getElementById('revenue-tbody');
+  if (!tbody) return;
+
+  if (!rented.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">
+      لا توجد مساحات مؤجّرة حالياً — <button class="btn btn-primary btn-sm" onclick="goTo('add-space',document.querySelector('[data-view=add-space]'))">أضف مساحة ➕</button>
+    </td></tr>`;
+    return;
+  }
+
+  const total = monthly || 1;
+  tbody.innerHTML = rented.map(s => {
+    const pct    = Math.round((s.rent / total) * 100);
+    const tenant = ownerTenants.find(t => t.space === s.code);
+    return `
+      <tr>
+        <td style="font-family:'Space Mono',monospace;color:var(--orange)">${s.code}</td>
+        <td>${tenant ? tenant.name : (s.tenant || '—')}</td>
+        <td style="font-family:'Space Mono',monospace">${s.rent.toLocaleString('ar-EG')} ج</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:${pct}%"></div></div>
+            <span style="font-size:11px;color:var(--text3)">${pct}%</span>
+          </div>
+        </td>
+        <td><span class="badge badge-green">مدفوع</span></td>
+      </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   🧠  INSIGHTS VIEW — محسوبة من البيانات
+   ══════════════════════════════════════════ */
+function renderInsights() {
+  const urgentEl = document.getElementById('insights-urgent');
+  const goodEl   = document.getElementById('insights-good');
+  if (!urgentEl && !goodEl) return;
+
+  const urgent = [];
+  const good   = [];
+
+  /* مساحات فارغة طويلاً */
+  ownerSpaces
+    .filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD)
+    .forEach(s => urgent.push({
+      ico:   '🏚️',
+      color: 'var(--red)',
+      title: `المساحة ${s.code} — فارغة منذ ${s.daysEmpty} يوم`,
+      body:  `${s.loc} (${s.size}). مراجعة السعر أو توسيع الأنشطة المتاحة قد يسرّع إيجاد مستأجر.`,
+    }));
+
+  /* مستأجرون ضعيف أداؤهم */
+  ownerTenants
+    .filter(t => t.score < 5 && t.trend === 'down')
+    .forEach(t => urgent.push({
+      ico:   '📉',
+      color: 'var(--red)',
+      title: `${t.name} في ${t.space} — أداء ضعيف مستمر`,
+      body:  `التقييم الحالي ${t.score}/10 ومتراجع. العقد ينتهي بعد ${t.daysLeft} يوم — ينصح بمراجعة الوضع.`,
+    }));
+
+  /* عقود تنتهي قريباً */
+  ownerContracts
+    .filter(c => c.daysLeft <= 30)
+    .forEach(c => urgent.push({
+      ico:   '⏰',
+      color: 'var(--yellow)',
+      title: `عقد ${c.name} ينتهي خلال ${c.daysLeft} يوم`,
+      body:  `المساحة ${c.space} — تواصل مع المستأجر للتجديد أو ابدأ البحث عن بديل.`,
+    }));
+
+  /* مستأجرون ممتازون */
+  ownerTenants
+    .filter(t => t.score >= 8 && t.trend === 'up')
+    .forEach(t => good.push({
+      ico:   '⭐',
+      color: 'var(--green)',
+      title: `${t.name} — أداء ممتاز ومتصاعد`,
+      body:  `تقييمه ${t.score}/10 في ازدياد. يُنصح بتجديد عقده مبكراً قبل انتهائه.`,
+    }));
+
+  /* مساحات جديدة بدون نشاط */
+  ownerSpaces
+    .filter(s => s.isNew && s.status === 'available')
+    .forEach(s => good.push({
+      ico:   '🆕',
+      color: 'var(--blue)',
+      title: `المساحة ${s.code} جديدة وجاهزة`,
+      body:  `${s.loc} — أضفها على المنصة لجذب مستأجرين.`,
+    }));
+
+  /* render urgent */
+  if (urgentEl) {
+    if (!urgent.length) {
+      urgentEl.innerHTML = `<div class="insight-card">
+        <div class="insight-ico">✅</div>
+        <div><div class="insight-title" style="color:var(--green)">لا توجد مشكلات عاجلة</div>
+        <div class="insight-body">مساحاتك ومستأجروك يسيرون بشكل جيد حالياً.</div></div>
+      </div>`;
+    } else {
+      urgentEl.innerHTML = urgent.map(u => `
+        <div class="insight-card" style="border-color:rgba(255,77,77,0.30);background:rgba(255,77,77,0.06)">
+          <div class="insight-ico">${u.ico}</div>
+          <div><div class="insight-title" style="color:${u.color}">${u.title}</div>
+          <div class="insight-body">${u.body}</div></div>
+        </div>`).join('');
+    }
+  }
+
+  /* render good/opportunities */
+  if (goodEl) {
+    if (!good.length) {
+      goodEl.innerHTML = `<div class="insight-card">
+        <div class="insight-ico">💡</div>
+        <div><div class="insight-title">أضف بياناتك لتفعيل التوصيات</div>
+        <div class="insight-body">بمجرد إضافة مساحاتك ومستأجريك، ستظهر هنا توصيات مخصصة.</div></div>
+      </div>`;
+    } else {
+      goodEl.innerHTML = good.map(g => `
+        <div class="insight-card">
+          <div class="insight-ico">${g.ico}</div>
+          <div><div class="insight-title" style="color:${g.color}">${g.title}</div>
+          <div class="insight-body">${g.body}</div></div>
+        </div>`).join('');
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   📋  RATINGS HISTORY — ديناميكي من ownerTenants
+   ══════════════════════════════════════════ */
+function renderRatingsHistory() {
+  const tbody = document.getElementById('ratings-history-tbody');
+  if (!tbody) return;
+
+  if (!ownerTenants.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:30px">لا توجد تقييمات بعد — ابدأ بتقييم مستأجريك</td></tr>`;
+    return;
+  }
+
+  const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                      'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const now = new Date();
+  const currentMonth = monthNames[now.getMonth()] + ' \'' + String(now.getFullYear()).slice(-2);
+
+  tbody.innerHTML = ownerTenants.map(t => {
+    const col   = t.score >= 8 ? 'var(--green)' : t.score >= 6 ? 'var(--yellow)' : 'var(--red)';
+    const delta = t.trend === 'up' ? '↑ +0.4' : t.trend === 'down' ? '↓ -0.3' : '→ 0.0';
+    const tCls  = t.trend === 'up' ? 'up' : t.trend === 'down' ? 'down' : 'flat';
+    return `
+      <tr>
+        <td>${t.name}</td>
+        <td style="font-family:'Space Mono',monospace;color:var(--text3)">${currentMonth}</td>
+        <td><strong style="color:${col};font-family:'Space Mono',monospace">${t.score}</strong></td>
+        <td><span class="kpi-delta ${tCls}" style="font-size:11px">${delta}</span></td>
+      </tr>`;
+  }).join('');
 }
 
 /* ══════════════════════════════════════════
@@ -906,7 +1084,7 @@ async function checkSessionOnLoad() {
   /* ── فيه session: تحقق من الـ role ── */
   const { data: profile, error } = await sb
     .from('profiles')
-    .select('role, full_name, place, phone')
+    .select('*')          /* select * لتجنب خطأ الأعمدة غير الموجودة */
     .eq('id', session.user.id)
     .single();
 
@@ -977,6 +1155,11 @@ async function changePassword() {
     if (document.getElementById('pwd-confirm')) document.getElementById('pwd-confirm').value = '';
   }
 }
+
+/* ══════════════════════════════════════════
+   🚀  BOOTSTRAP — يُشغَّل عند تحميل الصفحة
+   ══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', checkSessionOnLoad);
 
 /* ══════════════════════════════════════════
    🔄  INIT ON PAGE LOAD
