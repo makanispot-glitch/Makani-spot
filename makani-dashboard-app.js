@@ -92,7 +92,7 @@ let ownerContracts = [];
    🔐  SUPABASE — إعداد العميل
    ══════════════════════════════════════════ */
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_otT0XEGfHw3LI2OyFIIMeQ_eXcrkWZ3';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
 let sbClient = null;
 
@@ -134,7 +134,11 @@ function setLoginLoading(isLoading) {
  */
 async function checkRoleAndProceed(user) {
   const sb = getSB();
-  if (!sb) return;
+  if (!sb) {
+    showLoginError('⚠ خطأ في الاتصال — أعد تحميل الصفحة.');
+    setLoginLoading(false);
+    return;
+  }
 
   const { data: profile, error } = await sb
     .from('profiles')
@@ -142,16 +146,24 @@ async function checkRoleAndProceed(user) {
     .eq('id', user.id)
     .single();
 
+  // 🛠 تشخيص — يظهر في Console للمطوّر فقط
+  if (error) console.error('[Makani Dashboard] profiles query error:', error);
+  if (!profile) console.warn('[Makani Dashboard] No profile row found for user id:', user.id);
+
   if (error || !profile) {
     await sb.auth.signOut();
-    showLoginError('⚠ تعذّر جلب بيانات الحساب — تواصل مع الإدارة.');
+    // رسالة أوضح: هل المشكلة في الجدول أم في RLS أم في غياب الصف؟
+    const detail = error
+      ? `(${error.code}: ${error.message})`
+      : '(لا يوجد صف في جدول profiles لهذا الحساب)';
+    showLoginError(`⚠ تعذّر جلب بيانات الحساب — تواصل مع الإدارة. ${detail}`);
     setLoginLoading(false);
     return;
   }
 
   if (profile.role !== 'owner') {
     await sb.auth.signOut();
-    showLoginError('⛔ هذا الحساب ليس حساب صاحب مساحة — اللوحة مخصصة للأونرز فقط.');
+    showLoginError(`⛔ هذا الحساب ليس حساب صاحب مساحة (role = "${profile.role}") — اللوحة مخصصة للأونرز فقط.`);
     setLoginLoading(false);
     return;
   }
