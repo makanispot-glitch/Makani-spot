@@ -1695,6 +1695,10 @@ function setNavUser(user, profile) {
     set('dd-name',       name);
     set('dd-email',      email);
     set('dd-role',       roleLabel);
+
+    const ownerBtn = document.getElementById('dd-owner-dash-btn');
+    if (ownerBtn) ownerBtn.style.display = profile?.role === 'owner' ? 'flex' : 'none';
+
     updateBnUser(user, profile);
   }
 
@@ -1939,11 +1943,38 @@ async function loadDashboardData(user) {
 
   setNavUser(user, profile);
 
+  // عرض قسم الترقية / الانتقال لأصحاب المساحات
+  renderUpgradeSection(profile);
+
+  // عرض حالة كلمة المرور
+  const pwdEl = document.getElementById('dpf-password');
+  if (pwdEl) {
+    const hasEmailAuth = (user.identities || []).some(i => i.provider === 'email');
+    pwdEl.textContent     = hasEmailAuth ? '••••••••' : '— (دخول عبر جوجل — يمكنك إنشاء كلمة مرور من التعديل)';
+    pwdEl.style.letterSpacing = hasEmailAuth ? '2px' : 'normal';
+    pwdEl.style.fontSize      = hasEmailAuth ? '' : '11px';
+  }
+
   await loadUserBookings(user.id);
   await loadUserRatings(user.id);
 
   // ✅ Realtime — يراقب أي تغيير في حالة الحجوزات ويحدّث الداشبورد تلقائياً
   _subscribeBookings(user.id);
+   sbClient
+  .channel('profile-role-watch')
+  .on('postgres_changes', {
+    event:  'UPDATE',
+    schema: 'public',
+    table:  'profiles',
+    filter: `id=eq.${user.id}`,
+  }, payload => {
+    if (payload.new?.role !== payload.old?.role) {
+      currentProfile = { ...currentProfile, ...payload.new };
+      renderUpgradeSection(currentProfile);
+      setNavUser(currentUser, currentProfile);
+    }
+  })
+  .subscribe();
 }
 
 function toggleEditProfile() {
@@ -1968,6 +1999,12 @@ function toggleEditProfile() {
     if (efPhone && phone !== '—') efPhone.value = phone;
     if (efCity)                   efCity.value  = city;
 
+    // مسح حقلي كلمة المرور دائماً عند فتح التعديل
+    const efPwd        = document.getElementById('ef-password');
+    const efPwdConfirm = document.getElementById('ef-password-confirm');
+    if (efPwd)        efPwd.value        = '';
+    if (efPwdConfirm) efPwdConfirm.value = '';
+
     viewEl.style.display = 'none';
     editEl.style.display = 'block';
   }
@@ -1976,11 +2013,24 @@ function toggleEditProfile() {
 async function saveProfile() {
   if (!sbClient || !currentUser) return;
 
-  const name  = document.getElementById('ef-name')?.value.trim();
-  const phone = document.getElementById('ef-phone')?.value.trim();
-  const city  = document.getElementById('ef-city')?.value;
+  const name       = document.getElementById('ef-name')?.value.trim();
+  const phone      = document.getElementById('ef-phone')?.value.trim();
+  const city       = document.getElementById('ef-city')?.value;
+  const newPwd     = document.getElementById('ef-password')?.value;
+  const confirmPwd = document.getElementById('ef-password-confirm')?.value;
 
   if (!name) { showDashAlert('error', 'من فضلك ادخل اسمك'); return; }
+
+  if (newPwd) {
+    if (newPwd.length < 8) {
+      showDashAlert('error', 'كلمة المرور يجب أن تكون ٨ أحرف على الأقل');
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      showDashAlert('error', 'كلمة المرور وتأكيدها غير متطابقتين');
+      return;
+    }
+  }
 
   setBtnLoading('btn-save-profile', true);
   const { error } = await sbClient
@@ -1989,11 +2039,27 @@ async function saveProfile() {
       { id: currentUser.id, full_name: name, phone: phone, city: city },
       { onConflict: 'id' }
     );
-  setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
 
-  if (error) { showDashAlert('error', 'في مشكلة في الحفظ'); return; }
+  if (error) {
+    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
+    showDashAlert('error', 'في مشكلة في الحفظ');
+    return;
+  }
 
-  showDashAlert('success', 'اتحفظت بياناتك بنجاح ✅');
+  // تحديث كلمة المرور إذا أدخل المستخدم قيمة
+  if (newPwd) {
+    const { error: pwdErr } = await sbClient.auth.updateUser({ password: newPwd });
+    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
+    if (pwdErr) {
+      showDashAlert('error', 'تم حفظ البيانات لكن فشل تغيير كلمة المرور: ' + pwdErr.message);
+    } else {
+      showDashAlert('success', '✅ تم حفظ البيانات وكلمة المرور بنجاح!');
+    }
+  } else {
+    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
+    showDashAlert('success', 'اتحفظت بياناتك بنجاح ✅');
+  }
+
   await loadDashboardData(currentUser);
   toggleEditProfile();
 }
@@ -2006,6 +2072,97 @@ function showDashAlert(type, msg) {
     <span>${msg}</span>
   </div>`;
   setTimeout(() => { el.innerHTML = ''; }, 4000);
+}
+
+
+/* ================================================================
+   🏬 الانتقال إلى لوحة أصحاب المساحات
+   ================================================================ */
+
+function goToOwnerDashboard() {
+  window.open('makani-dashboard.html', '_blank');
+}
+
+/* ──────────────────────────────────────────────────────────────
+   renderUpgradeSection — يرسم زر الترقية أو زر الانتقال
+   حسب role المستخدم الحالي
+   ────────────────────────────────────────────────────────────── */
+function renderUpgradeSection(profile) {
+  const el = document.getElementById('upgrade-action-section');
+  if (!el) return;
+
+  if (profile?.role === 'owner') {
+    el.innerHTML = `
+      <div style="margin:12px 0 8px;padding:14px 18px;
+                  background:var(--green-light,rgba(34,197,94,0.08));
+                  border:1px solid rgba(34,197,94,0.28);border-radius:14px;
+                  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">🏬</span>
+          <div>
+            <div style="font-weight:800;color:#16a34a;font-size:13px">أنت صاحب مساحة!</div>
+            <div style="font-size:11px;color:#16a34a;opacity:0.75;margin-top:2px">
+              انتقل إلى لوحة تحكم أصحاب المساحات الخاصة بك
+            </div>
+          </div>
+        </div>
+        <button onclick="goToOwnerDashboard()"
+          style="background:#16a34a;color:#fff;border:none;padding:9px 20px;
+                 border-radius:10px;font-family:'Cairo',sans-serif;font-weight:800;
+                 font-size:13px;cursor:pointer;white-space:nowrap">
+          🏬 الانتقال إلى لوحة أصحاب المساحات ←
+        </button>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div style="margin:12px 0 8px;padding:14px 18px;
+                  background:var(--orange-ultra,rgba(249,115,22,0.08));
+                  border:1px solid var(--orange-pale,rgba(249,115,22,0.25));border-radius:14px;
+                  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:22px">🚀</span>
+          <div>
+            <div style="font-weight:800;color:var(--orange);font-size:13px">عندك مساحة للتأجير؟</div>
+            <div style="font-size:11px;color:var(--ink3,#888);margin-top:2px">
+              اطلب تحويل حسابك إلى صاحب مساحة ويصلك رد خلال 24 ساعة
+            </div>
+          </div>
+        </div>
+        <button id="btn-upgrade-request" onclick="requestOwnerUpgrade()"
+          style="background:var(--orange);color:#fff;border:none;padding:9px 20px;
+                 border-radius:10px;font-family:'Cairo',sans-serif;font-weight:800;
+                 font-size:13px;cursor:pointer;white-space:nowrap">
+          🚀 طلب ترقية الحساب
+        </button>
+      </div>`;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   requestOwnerUpgrade — يرسل طلب الترقية لجدول upgrade_requests
+   ────────────────────────────────────────────────────────────── */
+async function requestOwnerUpgrade() {
+  if (!sbClient || !currentUser) return;
+
+  const btn = document.getElementById('btn-upgrade-request');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…'; }
+
+  const { error } = await sbClient
+    .from('upgrade_requests')
+    .insert({
+      user_id:    currentUser.id,
+      user_email: currentUser.email || '',
+      user_name:  currentProfile?.full_name || currentUser.email || '',
+      status:     'pending',
+    });
+
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 طلب ترقية الحساب'; }
+    showDashAlert('error', 'تعذّر إرسال الطلب — ' + (error.message || 'حاول مجدداً'));
+  } else {
+    if (btn) { btn.disabled = true; btn.textContent = '✅ تم إرسال الطلب'; }
+    showDashAlert('success', '✅ تم إرسال طلبك! سنراجعه ونتواصل معك خلال 24 ساعة.');
+  }
 }
 
 
