@@ -104,6 +104,9 @@
           <button class="nav-dropdown-item" onclick="scrollToSearch();closeUserDropdown()">
             🔍 دوّر على مساحة
           </button>
+          <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()" style="display:none;color:#16a34a;font-weight:700">
+            🏬 لوحة تحكم أصحاب المساحات
+          </button>
           <div class="nav-dropdown-sep"></div>
           <button class="nav-dropdown-item danger" onclick="doLogout()">
             🚪 تسجيل الخروج
@@ -803,6 +806,9 @@
           </button>
         </div>
 
+        <!-- قسم طلب الترقية / الانتقال إلى لوحة أصحاب المساحات -->
+        <div id="upgrade-action-section"></div>
+
         <!-- عرض البيانات -->
         <div id="profile-view" class="dash-profile-grid">
           <div><div class="dpf-label">الاسم الكامل</div><div class="dpf-value" id="dpf-name">—</div></div>
@@ -811,6 +817,7 @@
           <div><div class="dpf-label">المدينة</div><div class="dpf-value" id="dpf-city">—</div></div>
 
           <div><div class="dpf-label">تاريخ الانضمام</div><div class="dpf-value" id="dpf-date">—</div></div>
+          <div><div class="dpf-label">كلمة المرور</div><div class="dpf-value" id="dpf-password" style="letter-spacing:2px">••••••••</div></div>
         </div>
 
         <!-- فورم التعديل (مخفي) -->
@@ -825,6 +832,14 @@
                 <option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option>
                 <option>المنصورة</option><option>أسيوط</option><option>أخرى</option>
               </select>
+            </div>
+            <div class="afg">
+              <label>كلمة المرور الجديدة <span style="font-size:11px;opacity:0.55;font-weight:400">(اتركها فارغة إذا لم تريد التغيير)</span></label>
+              <input type="password" id="ef-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
+            </div>
+            <div class="afg">
+              <label>تأكيد كلمة المرور</label>
+              <input type="password" id="ef-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
             </div>
             <div style="display:flex;gap:10px;margin-top:4px">
               <button class="btn-auth-submit" id="btn-save-profile" onclick="saveProfile()" style="margin-top:0;flex:1">💾 حفظ التعديلات</button>
