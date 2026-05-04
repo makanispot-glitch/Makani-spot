@@ -1032,29 +1032,9 @@ body {
         <span class="login-badge">🏢 لوحة أصحاب المساحات</span>
       </div>
     </div>
-    <div class="login-title">مرحباً بك مجدداً</div>
-    <div class="login-sub">سجّل دخولك للوصول للوحة التحكم الخاصة بمساحاتك</div>
+    <div class="login-title">مرحباً بك في لوحتك</div>
+    <div class="login-sub">هذه اللوحة مخصصة لأصحاب المساحات المسجّلين في مكاني Spot</div>
     <div id="login-error" class="login-error" style="display:none"></div>
-
-    <!-- زر Google -->
-    <button class="btn-login" id="btn-google-login"
-            onclick="doGoogleLogin()"
-            style="background:#fff;color:#333;border:1.5px solid rgba(255,255,255,0.15);gap:10px;margin-bottom:6px;box-shadow:0 2px 12px rgba(0,0,0,0.30)">
-      <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      تسجيل الدخول بـ Google
-    </button>
-
-    <!-- أو -->
-    <div style="display:flex;align-items:center;gap:10px;margin:14px 0;font-size:11px;color:var(--text3)">
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-      أو بالبريد الإلكتروني
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-    </div>
 
     <!-- Email + Password -->
     <div class="lf-group">
@@ -1066,7 +1046,18 @@ body {
       <input type="password" id="li-pass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
     </div>
     <button class="btn-login" id="btn-login" onclick="doLogin()">دخول للوحة التحكم ←</button>
-    <div class="login-footer">v1.1 · Makani Spot · للاستخدام الداخلي فقط · Supabase Auth</div>
+
+    <!-- الرجوع للمنصة -->
+    <div style="text-align:center;margin-top:20px">
+      <a href="index.html"
+         style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);text-decoration:none;transition:color 0.15s"
+         onmouseover="this.style.color='var(--orange)'"
+         onmouseout="this.style.color='var(--text3)'">
+        ← الرجوع إلى منصة مكاني Spot
+      </a>
+    </div>
+
+    <div class="login-footer">v1.2 · مكاني Spot · خاص بأصحاب المساحات</div>
   </div>
 </div>
 
@@ -1691,17 +1682,13 @@ body {
               <span class="db-tag">DB: ratings</span>
             </div>
             <div class="pcard-body" style="padding:0">
-              <!-- 🔗 DB-LINK: جلب آخر التقييمات من جدول ratings -->
+              <!-- 🔗 DB-LINK: يُحدَّث من renderRatingsHistory() في makani-dashboard-app.js -->
               <table class="data-table">
                 <thead>
                   <tr><th>المستأجر</th><th>الشهر</th><th>التقييم</th><th>التغيير</th></tr>
                 </thead>
-                <tbody>
-                  <tr><td>أحمد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--green)">9.2</strong></td><td><span class="kpi-delta up" style="font-size:11px">↑ +0.4</span></td></tr>
-                  <tr><td>سارة</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--green)">8.7</strong></td><td><span class="kpi-delta up" style="font-size:11px">↑ +0.1</span></td></tr>
-                  <tr><td>محمد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--yellow)">7.4</strong></td><td><span class="kpi-delta down" style="font-size:11px">↓ -0.3</span></td></tr>
-                  <tr><td>نور</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--yellow)">6.9</strong></td><td><span class="kpi-delta flat" style="font-size:11px">→ 0.0</span></td></tr>
-                  <tr><td>خالد</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">فبراير '25</td><td><strong style="color:var(--red)">4.2</strong></td><td><span class="kpi-delta down" style="font-size:11px">↓ -1.1</span></td></tr>
+                <tbody id="ratings-history-tbody">
+                  <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:24px">⏳ جاري التحميل…</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1715,11 +1702,12 @@ body {
            ============================================================ -->
       <div class="view" id="view-revenue">
         <div class="section-label">تحليل الإيرادات</div>
+        <!-- 🔗 DB-LINK: يُحدَّث من renderRevenue() في makani-dashboard-app.js -->
         <div class="kpi-row">
-          <div class="kpi-card"><div class="kpi-ico">💰</div><div class="kpi-label">هذا الشهر</div><div class="kpi-value">٤٢,٥٠٠</div><span class="kpi-delta up">↑ 12%</span></div>
-          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">هذا الربع</div><div class="kpi-value">١٢٤,٠٠٠</div><span class="kpi-delta up">↑ 8%</span></div>
-          <div class="kpi-card"><div class="kpi-ico">📆</div><div class="kpi-label">هذا العام</div><div class="kpi-value">٣٨٦,٠٠٠</div><span class="kpi-delta up">↑ 18%</span></div>
-          <div class="kpi-card"><div class="kpi-ico">🏦</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-value">٤٦,٠٠٠</div><span class="kpi-delta up">↑ 8%</span></div>
+          <div class="kpi-card"><div class="kpi-ico">💰</div><div class="kpi-label">هذا الشهر</div><div class="kpi-value" id="rev-monthly">—</div></div>
+          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">هذا الربع (تقدير)</div><div class="kpi-value" id="rev-quarterly">—</div></div>
+          <div class="kpi-card"><div class="kpi-ico">📆</div><div class="kpi-label">هذا العام (تقدير)</div><div class="kpi-value" id="rev-yearly">—</div></div>
+          <div class="kpi-card"><div class="kpi-ico">🏦</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-value" id="rev-forecast">—</div></div>
         </div>
 
         <div class="pcard">
@@ -1728,14 +1716,11 @@ body {
             <span class="db-tag">DB: payments + spaces</span>
           </div>
           <div class="pcard-body" style="padding:0">
-            <!-- 🔗 DB-LINK: جلب إيراد كل مساحة من جدول payments أو حساب من contracts -->
+            <!-- 🔗 DB-LINK: يُحدَّث من renderRevenue() في makani-dashboard-app.js -->
             <table class="data-table">
               <thead><tr><th>المساحة</th><th>المستأجر</th><th>الإيجار الشهري</th><th>نسبة من الإجمالي</th><th>حالة الدفع</th></tr></thead>
-              <tbody>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-12</td><td>أحمد</td><td style="font-family:'Space Mono',monospace">٤,٢٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:59%"></div></div><span style="font-size:11px;color:var(--text3)">9.9%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-05</td><td>نور</td><td style="font-family:'Space Mono',monospace">٦,٥٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:91%"></div></div><span style="font-size:11px;color:var(--text3)">15.3%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">B-03</td><td>سارة</td><td style="font-family:'Space Mono',monospace">٥,٨٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:81%"></div></div><span style="font-size:11px;color:var(--text3)">13.6%</span></div></td><td><span class="badge badge-green">مدفوع</span></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">D-02</td><td>خالد</td><td style="font-family:'Space Mono',monospace">٧,٢٠٠ ج</td><td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:100%"></div></div><span style="font-size:11px;color:var(--text3)">16.9%</span></div></td><td><span class="badge badge-yellow">تأخّر</span></td></tr>
+              <tbody id="revenue-tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">⏳ جاري التحميل…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1757,47 +1742,18 @@ body {
           </div>
         </div>
 
-        <!-- 🔗 DB-LINK: هذه الرؤى ستُحسب تلقائياً من بيانات ratings + spaces + contracts -->
+        <!-- 🔗 DB-LINK: يُحدَّث من renderInsights() في makani-dashboard-app.js -->
         <div class="grid-2" style="margin-bottom:0">
           <div>
             <div class="section-label">⚠️ تحتاج اهتمام فوري</div>
-            <div class="insight-card" style="border-color:rgba(255,77,77,0.30);background:rgba(255,77,77,0.06)">
-              <div class="insight-ico">📉</div>
-              <div>
-                <div class="insight-title" style="color:var(--red)">خالد في D-02 — أداء ضعيف مستمر</div>
-                <div class="insight-body">تقييمه نزل 3 شهور متتالية من 6.8 → 4.2. عقده ينتهي بعد 42 يوم. التوصية: اجلس معه لمراجعة الوضع أو ابدأ في البحث عن بديل.</div>
-              </div>
-            </div>
-            <div class="insight-card" style="border-color:rgba(255,184,0,0.30);background:rgba(255,184,0,0.06)">
-              <div class="insight-ico">⏰</div>
-              <div>
-                <div class="insight-title" style="color:var(--yellow)">عقد سارة — ينتهي قريباً</div>
-                <div class="insight-body">تقييمها ممتاز 8.7. يُنصح بالتجديد قبل انتهاء العقد بـ 21 يوم. هي تُعتبر من أفضل مستأجريك.</div>
-              </div>
+            <div id="insights-urgent">
+              <div class="insight-card"><div class="insight-ico">⏳</div><div><div class="insight-title">جاري التحليل…</div></div></div>
             </div>
           </div>
           <div>
-            <div class="section-label">💡 فرص للتطوير</div>
-            <div class="insight-card">
-              <div class="insight-ico">☕</div>
-              <div>
-                <div class="insight-title">المساحة D-08 — تنفع قهوة</div>
-                <div class="insight-body">الموقع قريب من المدخل الرئيسي + تقييم نشاط القهوة الأعلى عندك. يُنصح بإضافتها لمنصة مكاني Spot لاستقطاب مستأجر قهوة.</div>
-              </div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-ico">📈</div>
-              <div>
-                <div class="insight-title">رفع سعر A-12 عند التجديد</div>
-                <div class="insight-body">أحمد تقييمه 9.2 وملتزم تماماً — ويدفع 4,200 ج. السوق المحيط بـ 5,000-5,500 ج لنفس الحجم. الفرصة موجودة عند التجديد.</div>
-              </div>
-            </div>
-            <div class="insight-card">
-              <div class="insight-ico">🔄</div>
-              <div>
-                <div class="insight-title">نوّع الأنشطة في الدور الثاني</div>
-                <div class="insight-body">كل مساحات الدور الثاني طعام وشراب. إضافة نشاط مختلف (إكسسوار، خدمات) قد يزيد حركة الناس ويرفع الإيرادات الكلية.</div>
-              </div>
+            <div class="section-label">💡 فرص وأداء ممتاز</div>
+            <div id="insights-good">
+              <div class="insight-card"><div class="insight-ico">⏳</div><div><div class="insight-title">جاري التحليل…</div></div></div>
             </div>
           </div>
         </div>
