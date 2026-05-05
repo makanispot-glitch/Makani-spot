@@ -1398,6 +1398,7 @@ function goToLogin() { showPage('login'); }
 
 function goToDashboard() {
   closeUserDropdown();
+  if (currentUser) loadDashboardData(currentUser);
   showPage('dashboard');
 }
 
@@ -2192,19 +2193,58 @@ async function loadUserBookings(userId) {
   const cntEl  = document.getElementById('dash-booking-count');
 
   try {
-    const { data: bookings, error: bookErr } = await sbClient
+    const { data: spaceBookings } = await sbClient
       .from('bookings')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(100);
 
+    const { data: bazaarBookings } = await sbClient
+      .from('bazaar_bookings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-    if (cntEl) cntEl.textContent = bookings?.length || 0;
+    const normalizedSpaces = (spaceBookings || []).map(b => ({
+      kind: 'space',
+      title: b.space_name || '—',
+      loc: b.space_loc || '—',
+      price: b.price || '—',
+      status: b.status || 'pending',
+      activity: b.activity || '—',
+      size: b.size || '—',
+      duration: b.duration || '—',
+      created_at: b.created_at,
+    }));
+
+    const normalizedBazaars = (bazaarBookings || []).map(b => {
+      const bazaar = BAZAARS.find(x => String(x.id) === String(b.bazaar_id));
+      const price = bazaar?.price_per_slot
+        ? Number(bazaar.price_per_slot).toLocaleString('ar-EG') + ' ج / مكان'
+        : 'بازار';
+      return {
+        kind: 'bazaar',
+        title: bazaar?.name || b.bazaar_name || 'حجز بازار',
+        loc: bazaar?.location || bazaar?.region || '—',
+        price,
+        status: b.status || 'confirmed',
+        activity: b.business_name || b.activity || '—',
+        size: b.slot_id ? 'مكان رقم ' + b.slot_id : 'مكان بازار',
+        duration: bazaar?.date_start || '—',
+        created_at: b.created_at,
+      };
+    });
+
+    const bookings = [...normalizedSpaces, ...normalizedBazaars]
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    if (cntEl) cntEl.textContent = bookings.length || 0;
 
     if (!contEl) return;
 
-    if (!bookings?.length) {
+    if (!bookings.length) {
       contEl.innerHTML = `
         <div class="no-bookings">
           لا يوجد حجوزات بعد —
@@ -2228,19 +2268,20 @@ async function loadUserBookings(userId) {
       const dateStr = b.created_at
         ? new Date(b.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
+      const kindLabel = b.kind === 'bazaar' ? 'بازار' : 'مساحة';
       return `
-      <div class="booking-card">
+      <div class="booking-card ${b.kind === 'bazaar' ? 'booking-card-bazaar' : ''}">
         <div class="booking-card-header">
           <div>
-            <div class="booking-space-name">${b.space_name || '—'}</div>
-            <div class="booking-space-loc">📍 ${b.space_loc || '—'} · ${b.price || '—'}</div>
+            <div class="booking-space-name"><span class="booking-kind-badge">${kindLabel}</span>${b.title}</div>
+            <div class="booking-space-loc">📍 ${b.loc} · ${b.price}</div>
           </div>
           <span class="booking-status ${st.cls}">${st.label}</span>
         </div>
         <div class="booking-card-details">
-          <span>🏷 ${b.activity || '—'}</span>
-          <span>📐 ${b.size || '—'}</span>
-          <span>⏱ ${b.duration || '—'}</span>
+          <span>🏷 ${b.activity}</span>
+          <span>📐 ${b.size}</span>
+          <span>⏱ ${b.duration}</span>
           <span>📅 ${dateStr}</span>
         </div>
       </div>`;
@@ -2779,44 +2820,47 @@ function renderHomeBazaars() {
   const container = document.getElementById('bz-home-scroll');
   if (!container) return;
 
-  const upcoming = BAZAARS.slice(0, 5);
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = BAZAARS
+    .filter(b => !b.date_start || b.date_start >= today)
+    .sort((a, b) => (a.date_start || '').localeCompare(b.date_start || ''));
 
   if (!upcoming.length) {
     container.innerHTML = `
-      <div style="padding:28px 0;color:rgba(255,255,255,0.35);font-size:13px;text-align:center;width:100%">
-        لا توجد بازارات قريبة الآن — تابعنا قريباً!
+      <div class="bz-home-empty">
+        لا توجد بزارات قريبة الآن — تابعنا قريباً!
       </div>`;
     return;
   }
 
-  container.innerHTML = upcoming.map(b => {
-    const dateStr = b.date_start
-      ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
-      : '—';
-    const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
-    const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
+  const b = upcoming[0];
+  const dateStr = b.date_start
+    ? new Date(b.date_start).toLocaleDateString('ar-EG', { weekday:'short', month:'long', day:'numeric' })
+    : 'قريباً';
+  const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
+  const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
 
-    return `
-    <div class="bz-mini-card" onclick="openBazaarDetail('${b.id}')">
+  container.innerHTML = `
+    <div class="bz-mini-card bz-mini-card-featured" onclick="openBazaarDetail('${b.id}')">
       <div class="bz-mini-img">
         ${b.image
           ? `<img src="${b.image}" alt="${b.name}" loading="lazy"
                   onerror="this.parentElement.innerHTML='<div class=\\'bz-mini-placeholder\\'>🎪</div>'">`
           : `<div class="bz-mini-placeholder">🎪</div>`}
-        <div class="bz-mini-date">📅 ${dateStr}</div>
+        <div class="bz-mini-date">${dateStr}</div>
       </div>
       <div class="bz-mini-body">
+        <div class="bz-mini-kicker">${b.category || 'بازار قريب'}</div>
         <div class="bz-mini-name">${b.name}</div>
-        <div class="bz-mini-loc">📍 ${b.location || '—'}</div>
+        <div class="bz-mini-loc">📍 ${b.location || b.region || 'سيتم تحديد المكان قريباً'}</div>
         <div class="bz-mini-meta">
-          <span>${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</span>
-          <span style="color:${isSoldOut ? 'var(--red)' : '#4ade80'}">
-            ${isSoldOut ? 'مكتمل' : availSlots + ' متاح'}
+          <span>${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج / مكان</span>
+          <span class="${isSoldOut ? 'is-soldout' : 'is-available'}">
+            ${isSoldOut ? 'مكتمل' : availSlots + ' مكان متاح'}
           </span>
         </div>
       </div>
     </div>`;
-  }).join('');
 }
 
 /**
@@ -3448,12 +3492,29 @@ async function submitBazaarBooking() {
   }
 
   try {
+    const bookingId = crypto.randomUUID();
+    const now       = new Date().toISOString();
+
     if (selectedSlotSource === 'sheet') {
       await _bookBazaarSlotViaSheet({ name, phone, email, business, notes });
-    } else {
-      const bookingId = crypto.randomUUID();
-      const now       = new Date().toISOString();
 
+      if (sbClient && currentUser) {
+        const { error: sheetMirrorErr } = await sbClient.from('bazaar_bookings').insert({
+          id:            bookingId,
+          bazaar_id:     currentBazaar.id,
+          slot_id:       selectedSlotId,
+          user_id:       currentUser.id,
+          user_name:     name,
+          user_phone:    phone,
+          user_email:    email || null,
+          business_name: business,
+          notes:         notes || null,
+          status:        'confirmed',
+          created_at:    now,
+        });
+        if (sheetMirrorErr) console.warn('تعذر حفظ نسخة حجز البازار في لوحة التحكم:', sheetMirrorErr.message);
+      }
+    } else {
       // 1) حجز الـ slot — update أولاً للتأكد إنه لسه متاح
       const { error: lockErr } = await sbClient
         .from('bazaar_slots')
