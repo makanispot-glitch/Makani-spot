@@ -57,10 +57,11 @@
 
   <!-- روابط التنقل (تختفي على الموبايل) -->
   <div class="nav-links">
-    <a class="active" onclick="showPage('home')">استكشف المساحات</a>
+    <a class="active" onclick="showPage('home')">استكشف مكاني Spot</a>
     <a onclick="showPage('how')">إزاي بيشتغل؟</a>
     <a onclick="showPage('owner')">عندك مساحة فاضية؟</a>
     <a onclick="goToMarketplace()">كل المساحات</a>
+    <a onclick="showPage('bazaars')">البازارات</a>
   </div>
   
   <!-- منطقة المستخدم — تتغير حسب حالة تسجيل الدخول -->
@@ -256,6 +257,39 @@
   </div><!-- end search-wrap -->
 
 
+  <!-- ============================================================
+       🎪 قسم "بازارات قريبة" — مرفوع لأعلى الصفحة
+       ============================================================ -->
+  <section class="bz-home-section">
+    <div class="bz-home-section-bg"></div>
+    <div class="bz-home-section-inner">
+
+      <!-- هيدر + CTA -->
+      <div class="bz-home-sec-head">
+        <div>
+          <div class="bz-home-pill">🎪 أحداث البازار — القادمة هذا الأسبوع</div>
+          <div class="bz-home-sec-title">ادور على البازار <em>المناسب ليك</em></div>
+          <div class="bz-home-sec-sub">اشترك في بازار وبيع منتجاتك — احجز مكانك قبل ما يكتمل!</div>
+        </div>
+        <button class="bz-home-see-all" onclick="showPage('bazaars')">اكتشف جميع البازارات القادمة ←</button>
+      </div>
+
+      <!-- شريط الكروت الأفقي -->
+      <div class="bz-home-scroll" id="bz-home-scroll">
+        <div style="padding:30px;color:rgba(255,255,255,0.4);font-size:14px">جاري التحميل…</div>
+      </div>
+
+      <!-- زر CTA سفلي -->
+      <div class="bz-home-cta-row">
+        <button class="btn btn-primary bz-home-cta-btn" onclick="showPage('bazaars')">
+          🎪 احجز دلوقتي — وهنتواصل معاك خلال ٢٤ ساعة
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+
   <!-- قسم كروت المساحات -->
   <div class="section">
 
@@ -280,7 +314,6 @@
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <span class="result-badge" id="res-count">جاري تحميل البيانات…</span>
-        <!-- التبويبات: الكل / مولات / نوادي / مدارس -->
         <div class="tabs-row">
           <button class="tab-btn active" onclick="setTab(this,'')">الكل</button>
           <button class="tab-btn" onclick="setTab(this,'mall')">مولات</button>
@@ -294,7 +327,6 @@
     <div class="cards-grid" id="spaces-grid"></div>
 
   </div><!-- end section -->
-
 
   <!-- قسم "إزاي بيشتغل" المختصر في الهوم -->
   <div class="how-section">
@@ -527,6 +559,218 @@
     </div>
   </div>
 </div><!-- end pg-market -->
+
+
+<!-- ================================================================
+     📄 صفحة البازارات — عرض كل البازارات المتاحة
+     ================================================================ -->
+<div id="pg-bazaars" class="page">
+  <div class="bz-page">
+
+    <!-- هيرو البازارات -->
+    <div class="bz-market-hero">
+      <div class="bz-market-hero-bg"></div>
+      <div class="bz-market-hero-inner">
+        <div class="bz-market-hero-pill">🎪 سوق المشاريع الصغيرة</div>
+        <div class="bz-market-hero-title">جميع البازارات المتاحة</div>
+        <div class="bz-market-hero-sub">احجز مكانك في البازار القادم — اختار الوقت والموقع المناسب</div>
+      </div>
+    </div>
+
+    <!-- شريط البحث الرئيسي -->
+    <div class="bz-search-bar">
+      <div class="bz-search-bar-inner">
+        <div class="bz-search-input-wrap">
+          <span class="bz-search-ico">🔍</span>
+          <input type="text" id="bz-search"
+                 class="bz-search-input"
+                 placeholder="ابحث عن بازار… (الاسم، المكان، الفئة)"
+                 oninput="applyBzFilters()">
+        </div>
+        <button class="bz-find-btn" onclick="applyBzFilters()">🔴 ابحث عن البازارات</button>
+      </div>
+    </div>
+
+    <!-- شريط الـ Chips + التنقل الزمني -->
+    <div class="bz-chips-bar">
+      <div class="bz-chips-bar-inner">
+
+        <!-- التنقل الزمني -->
+        <div class="bz-time-nav">
+          <button class="bz-time-btn" data-nav="today"    onclick="setBzTimeNav('today')">اليوم</button>
+          <button class="bz-time-btn bz-time-active" data-nav="upcoming" onclick="setBzTimeNav('upcoming')">القادمة</button>
+        </div>
+
+        <div class="bz-chips-divider"></div>
+
+        <!-- Chips الفلاتر -->
+        <div class="bz-chips-list">
+          <button class="bz-chip" data-chip="recommended" onclick="setBzChip('recommended',this)">⭐ موصى بيه</button>
+          <button class="bz-chip" data-chip="category"    onclick="setBzChip('category',this)">🏷 الفئة</button>
+          <button class="bz-chip" data-chip="venues"      onclick="setBzChip('venues',this)">📍 الأماكن</button>
+          <button class="bz-chip" data-chip="organizers"  onclick="setBzChip('organizers',this)">🧑‍💼 المنظمون</button>
+          <button class="bz-chip" data-chip="city"        onclick="setBzChip('city',this)">🌍 المدينة</button>
+          <button class="bz-chip" data-chip="day"         onclick="setBzChip('day',this)">📆 اليوم</button>
+          <button class="bz-chip" data-chip="time"        onclick="setBzChip('time',this)">⏰ الوقت</button>
+          <button class="bz-chip" data-chip="ticketing"   onclick="setBzChip('ticketing',this)">🎟 التذاكر</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- شريط الفلاتر التفصيلية الأفقي -->
+    <div class="bz-filter-bar">
+      <div class="bz-filter-bar-inner">
+
+        <div class="bz-fbar-group">
+          <label class="bz-fbar-label">المنطقة</label>
+          <select id="bz-region" class="bz-fbar-select" onchange="applyBzFilters()">
+            <option value="">كل المناطق</option>
+            <option>مدينة نصر</option><option>التجمع الخامس</option>
+            <option>المهندسين</option><option>الزمالك</option>
+            <option>الشيخ زايد</option><option>6 أكتوبر</option>
+            <option>مصر الجديدة</option>
+          </select>
+        </div>
+
+        <div class="bz-fbar-group">
+          <label class="bz-fbar-label">من تاريخ</label>
+          <input type="date" id="bz-date-from" class="bz-fbar-select" onchange="applyBzFilters()">
+        </div>
+
+        <div class="bz-fbar-group">
+          <label class="bz-fbar-label">حتى تاريخ</label>
+          <input type="date" id="bz-date-to" class="bz-fbar-select" onchange="applyBzFilters()">
+        </div>
+
+        <div class="bz-fbar-group bz-fbar-price-group">
+          <label class="bz-fbar-label">
+            السعر / مكان:&nbsp;<span id="bz-price-label" class="bz-fbar-price-val">بلا حد</span>
+          </label>
+          <div class="slider-container slider-single" style="margin-top:10px">
+            <div class="slider-track" id="bz-slider-track"></div>
+            <input type="range" class="price-slider" id="bz-slider-max"
+                   min="0" max="10000" value="10000" step="100"
+                   oninput="updateBzSlider();applyBzFilters()">
+          </div>
+        </div>
+
+        <div class="bz-fbar-group">
+          <label class="bz-fbar-label">الترتيب</label>
+          <select id="bz-sort" onchange="applyBzFilters()" class="bz-fbar-select">
+            <option value="date-asc">الأقرب موعداً</option>
+            <option value="price-asc">السعر: من الأرخص</option>
+            <option value="price-desc">السعر: من الأغلى</option>
+            <option value="slots-desc">الأكثر أماكن متاحة</option>
+          </select>
+        </div>
+
+        <button class="bz-fbar-clear" onclick="clearBzFilters()">🗑 مسح الكل</button>
+
+      </div>
+    </div>
+
+    <!-- الشبكة -->
+    <div class="bz-page-body">
+      <div class="bz-page-top">
+        <span class="bz-result-badge" id="bz-count">—</span>
+      </div>
+      <div class="bz-grid" id="bz-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
+          <div style="font-size:40px;margin-bottom:14px;animation:spin 1.2s linear infinite">⏳</div>
+          <div style="font-size:15px;color:var(--ink3)">جاري تحميل البازارات…</div>
+        </div>
+      </div>
+      <div class="mp-pagination" id="bz-pagination"></div>
+    </div>
+
+  </div>
+</div><!-- end pg-bazaars -->
+
+
+<!-- ================================================================
+     📄 صفحة تفاصيل البازار + خريطة الأماكن البصرية
+     ================================================================ -->
+<div id="pg-bazaar-detail" class="page">
+  <div class="sd-page">
+
+    <!-- رأس الصفحة: زرار رجوع + اسم البازار + السعر -->
+    <div id="bzd-header">
+      <!-- يُملأ تلقائياً من app.js -->
+    </div>
+
+    <!-- صورة البازار + المعلومات الأساسية -->
+    <div class="sd-section">
+      <div id="bzd-info">
+        <!-- يُملأ تلقائياً من app.js -->
+      </div>
+    </div>
+
+    <!-- خريطة الأماكن البصرية -->
+    <div class="sd-section">
+      <div id="bzd-slotmap">
+        <!-- يُملأ تلقائياً من app.js بعد تحميل الـ slots -->
+      </div>
+    </div>
+
+    <!-- بانل الحجز — يظهر عند اختيار مكان من الخريطة -->
+    <div id="bzd-booking-panel" class="bz-booking-panel" style="display:none">
+      <div class="bz-bp-inner">
+
+        <!-- هيدر البانل -->
+        <div class="bz-bp-header">
+          <div>
+            <div class="bz-bp-title">✍️ تأكيد حجز المكان</div>
+            <div class="bz-bp-slot-info" id="bzd-slot-info">اختار مكان من الخريطة أعلاه</div>
+          </div>
+          <button class="bz-bp-close" onclick="clearSlotSelection()" title="إلغاء الاختيار">×</button>
+        </div>
+
+        <!-- فورم الحجز -->
+        <div class="bz-bp-form">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div class="afg" style="margin:0">
+              <label>الاسم الكامل *</label>
+              <input type="text" id="bzb-name" placeholder="اسمك الكريم">
+            </div>
+            <div class="afg" style="margin:0">
+              <label>رقم الموبايل *</label>
+              <input type="tel" id="bzb-phone" placeholder="01xxxxxxxxx" dir="ltr">
+            </div>
+          </div>
+          <div class="afg">
+            <label>البريد الإلكتروني (اختياري)</label>
+            <input type="email" id="bzb-email" placeholder="email@example.com" dir="ltr">
+          </div>
+          <div class="afg">
+            <label>اسم النشاط / المشروع *</label>
+            <input type="text" id="bzb-business" placeholder="مثال: عربية كنافة، مجوهرات يدوية، ملابس أطفال…">
+          </div>
+          <div class="afg">
+            <label>ملاحظات (اختياري)</label>
+            <textarea id="bzb-notes" placeholder="أي تفاصيل إضافية تريد إضافتها…"
+                      style="min-height:64px;resize:vertical;width:100%;
+                             border-radius:var(--radius);border:1.5px solid var(--border);
+                             padding:10px 12px;font-family:'Cairo',sans-serif;
+                             font-size:14px;background:var(--surface2);color:var(--ink);
+                             outline:none;transition:border-color 0.15s"></textarea>
+          </div>
+          <div class="form-error" id="bzb-error" style="display:none"></div>
+          <button class="btn btn-primary" onclick="submitBazaarBooking()"
+                  style="width:100%;padding:14px;font-size:15px;margin-top:14px;
+                         justify-content:center;border-radius:var(--radius-lg)">
+            تأكيد حجز المكان ←
+          </button>
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:8px">
+            الحجز مؤكد فور الإرسال — هنتواصل معاك لتأكيد التفاصيل
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end bzd-booking-panel -->
+
+  </div>
+</div><!-- end pg-bazaar-detail -->
 
 
 <!-- ================================================================
@@ -1082,6 +1326,10 @@
   <button class="bn-item" id="bn-market" onclick="goToMarketplace();updateBottomNav('market')">
     <span class="bn-icon">🏪</span>
     <span class="bn-label">المساحات</span>
+  </button>
+  <button class="bn-item" id="bn-bazaars" onclick="showPage('bazaars');updateBottomNav('bazaars')">
+    <span class="bn-icon">🎪</span>
+    <span class="bn-label">البازارات</span>
   </button>
   <button class="bn-item" id="bn-how" onclick="showPage('how');updateBottomNav('how')">
     <span class="bn-icon">❓</span>
