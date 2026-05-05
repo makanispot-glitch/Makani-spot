@@ -2193,6 +2193,10 @@ async function loadUserBookings(userId) {
   const cntEl  = document.getElementById('dash-booking-count');
 
   try {
+    if (!BAZAARS.length) {
+      try { await loadBazaars(); } catch (_) {}
+    }
+
     const { data: spaceBookings } = await sbClient
       .from('bookings')
       .select('*')
@@ -2207,6 +2211,13 @@ async function loadUserBookings(userId) {
       .order('created_at', { ascending: false })
       .limit(100);
 
+    const localBazaarBookings = _loadLocalBazaarBookings(userId);
+    const bazaarById = new Map();
+    [...(bazaarBookings || []), ...localBazaarBookings].forEach(b => {
+      const key = b.id || `${b.bazaar_id}-${b.slot_id}-${b.created_at}`;
+      if (!bazaarById.has(key)) bazaarById.set(key, b);
+    });
+
     const normalizedSpaces = (spaceBookings || []).map(b => ({
       kind: 'space',
       title: b.space_name || '—',
@@ -2219,7 +2230,7 @@ async function loadUserBookings(userId) {
       created_at: b.created_at,
     }));
 
-    const normalizedBazaars = (bazaarBookings || []).map(b => {
+    const normalizedBazaars = [...bazaarById.values()].map(b => {
       const bazaar = BAZAARS.find(x => String(x.id) === String(b.bazaar_id));
       const price = bazaar?.price_per_slot
         ? Number(bazaar.price_per_slot).toLocaleString('ar-EG') + ' ج / مكان'
@@ -2300,6 +2311,31 @@ async function loadUserBookings(userId) {
   } catch (e) {
     if (contEl) contEl.innerHTML = '<div class="no-bookings">تعذّر تحميل الحجوزات</div>';
   }
+}
+
+function _bazaarBookingCacheKey(userId) {
+  return `makani:bazaar-bookings:${userId}`;
+}
+
+function _loadLocalBazaarBookings(userId) {
+  try {
+    const raw = localStorage.getItem(_bazaarBookingCacheKey(userId));
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function _saveLocalBazaarBooking(userId, booking) {
+  if (!userId || !booking) return;
+  const current = _loadLocalBazaarBookings(userId);
+  const key = booking.id || `${booking.bazaar_id}-${booking.slot_id}-${booking.created_at}`;
+  const next = [booking, ...current.filter(b => {
+    const bKey = b.id || `${b.bazaar_id}-${b.slot_id}-${b.created_at}`;
+    return bKey !== key;
+  })].slice(0, 100);
+  localStorage.setItem(_bazaarBookingCacheKey(userId), JSON.stringify(next));
 }
 
 
@@ -3494,23 +3530,37 @@ async function submitBazaarBooking() {
   try {
     const bookingId = crypto.randomUUID();
     const now       = new Date().toISOString();
+    const bazaarBookingRecord = {
+      id:            bookingId,
+      bazaar_id:     currentBazaar.id,
+      bazaar_name:   currentBazaar.name,
+      slot_id:       selectedSlotId,
+      user_id:       currentUser.id,
+      user_name:     name,
+      user_phone:    phone,
+      user_email:    email || null,
+      business_name: business,
+      notes:         notes || null,
+      status:        'confirmed',
+      created_at:    now,
+    };
 
     if (selectedSlotSource === 'sheet') {
       await _bookBazaarSlotViaSheet({ name, phone, email, business, notes });
 
       if (sbClient && currentUser) {
         const { error: sheetMirrorErr } = await sbClient.from('bazaar_bookings').insert({
-          id:            bookingId,
-          bazaar_id:     currentBazaar.id,
-          slot_id:       selectedSlotId,
-          user_id:       currentUser.id,
-          user_name:     name,
-          user_phone:    phone,
-          user_email:    email || null,
-          business_name: business,
-          notes:         notes || null,
-          status:        'confirmed',
-          created_at:    now,
+          id:            bazaarBookingRecord.id,
+          bazaar_id:     bazaarBookingRecord.bazaar_id,
+          slot_id:       bazaarBookingRecord.slot_id,
+          user_id:       bazaarBookingRecord.user_id,
+          user_name:     bazaarBookingRecord.user_name,
+          user_phone:    bazaarBookingRecord.user_phone,
+          user_email:    bazaarBookingRecord.user_email,
+          business_name: bazaarBookingRecord.business_name,
+          notes:         bazaarBookingRecord.notes,
+          status:        bazaarBookingRecord.status,
+          created_at:    bazaarBookingRecord.created_at,
         });
         if (sheetMirrorErr) console.warn('تعذر حفظ نسخة حجز البازار في لوحة التحكم:', sheetMirrorErr.message);
       }
@@ -3526,21 +3576,23 @@ async function submitBazaarBooking() {
 
       // 2) insert في bazaar_bookings
       const { error: bookingErr } = await sbClient.from('bazaar_bookings').insert({
-        id:            bookingId,
-        bazaar_id:     currentBazaar.id,
-        slot_id:       selectedSlotId,
-        user_id:       currentUser.id,
-        user_name:     name,
-        user_phone:    phone,
-        user_email:    email || null,
-        business_name: business,
-        notes:         notes || null,
-        status:        'confirmed',
-        created_at:    now,
+        id:            bazaarBookingRecord.id,
+        bazaar_id:     bazaarBookingRecord.bazaar_id,
+        slot_id:       bazaarBookingRecord.slot_id,
+        user_id:       bazaarBookingRecord.user_id,
+        user_name:     bazaarBookingRecord.user_name,
+        user_phone:    bazaarBookingRecord.user_phone,
+        user_email:    bazaarBookingRecord.user_email,
+        business_name: bazaarBookingRecord.business_name,
+        notes:         bazaarBookingRecord.notes,
+        status:        bazaarBookingRecord.status,
+        created_at:    bazaarBookingRecord.created_at,
       });
 
       if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
     }
+
+    _saveLocalBazaarBooking(currentUser.id, bazaarBookingRecord);
 
     // 3) تحديث الواجهة — المكان يصبح رمادي
     const slotEl = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`);
@@ -3574,7 +3626,7 @@ async function submitBazaarBooking() {
             <button class="btn btn-primary" style="padding:12px 28px"
                     onclick="showPage('bazaars')">← كل البازارات</button>
             <button class="btn" style="padding:12px 28px"
-                    onclick="showPage('dashboard')">حجوزاتي</button>
+                    onclick="goToDashboard()">حجوزاتي</button>
           </div>
         </div>`;
     }
