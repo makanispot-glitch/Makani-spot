@@ -2659,23 +2659,24 @@ footer {
 
 .bz-home-section {
   position: relative;
-  background: linear-gradient(140deg, var(--dark) 0%, var(--dark2) 60%, #1A1A1A 100%);
-  padding: 26px 24px 28px;
-  overflow: hidden;
+  background: transparent;
+  padding: 0 24px;
+  margin: -54px auto 0;
+  overflow: visible;
+  z-index: 12;
 }
 .bz-home-section-bg {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(rgba(255,107,0,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,107,0,0.05) 1px, transparent 1px),
-    radial-gradient(ellipse 70% 80% at 80% 0%, rgba(255,107,0,0.18), transparent 58%);
-  background-size: 48px 48px, 48px 48px, auto;
-  pointer-events: none;
+  display: none;
 }
 .bz-home-section-inner {
-  max-width: 1040px;
+  max-width: 980px;
   margin: 0 auto;
   position: relative; z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  box-shadow: 0 18px 54px rgba(0,0,0,0.13), 0 3px 10px rgba(0,0,0,0.04);
 }
 .bz-home-sec-head {
   display: flex; justify-content: space-between; align-items: flex-end;
@@ -2683,18 +2684,18 @@ footer {
 }
 .bz-home-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,107,0,0.12); color: var(--orange-light);
-  border: 1px solid rgba(255,107,0,0.26);
+  background: var(--orange-ultra); color: var(--orange);
+  border: 1px solid var(--orange-pale);
   border-radius: 30px;
   font-size: 11px; font-weight: 800; padding: 4px 13px;
   margin-bottom: 8px;
 }
 .bz-home-sec-title {
-  font-size: 22px; font-weight: 900; color: #fff;
+  font-size: 22px; font-weight: 900; color: var(--ink);
   line-height: 1.25; margin-bottom: 4px;
 }
 .bz-home-sec-title em { color: var(--orange); font-style: normal; }
-.bz-home-sec-sub { font-size: 13px; color: rgba(255,255,255,0.54); }
+.bz-home-sec-sub { font-size: 13px; color: var(--ink2); }
 .bz-home-see-all {
   background: var(--orange);
   border: 1.5px solid var(--orange);
@@ -2722,27 +2723,27 @@ footer {
 /* الكارد المصغّر في الهوم — على الخلفية الدافئة */
 .bz-mini-card {
   width: 100%;
-  background: rgba(255,255,255,0.96);
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: var(--radius);
+  background: linear-gradient(135deg, #fff, var(--orange-ultra));
+  border: 1px solid var(--orange-pale);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.22s;
   display: grid;
-  grid-template-columns: 210px 1fr;
-  min-height: 136px;
-  box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+  grid-template-columns: 184px 1fr;
+  min-height: 122px;
+  box-shadow: none;
 }
 .bz-mini-card:hover {
   border-color: var(--orange);
-  box-shadow: 0 16px 38px rgba(0,0,0,0.28), 0 0 0 3px rgba(255,107,0,0.10);
+  box-shadow: 0 10px 26px rgba(255,107,0,0.14);
   transform: translateY(-2px);
   background: #fff;
 }
 .bz-mini-img {
   position: relative;
   width: 100%; height: 100%;
-  min-height: 136px;
+  min-height: 122px;
   overflow: hidden; background: var(--surface2);
 }
 .bz-mini-img img { width:100%; height:100%; object-fit:cover; }
@@ -2759,7 +2760,7 @@ footer {
   padding: 3px 10px; border-radius: 16px;
   backdrop-filter: blur(4px);
 }
-.bz-mini-body { padding: 16px 18px; display:flex; flex-direction:column; justify-content:center; min-width:0; }
+.bz-mini-body { padding: 14px 18px; display:flex; flex-direction:column; justify-content:center; min-width:0; }
 .bz-mini-kicker {
   color: var(--orange);
   font-size: 11px;
@@ -2787,9 +2788,13 @@ footer {
 .bz-home-empty {
   width: 100%;
   padding: 20px;
-  color: rgba(255,255,255,0.55);
+  color: var(--ink3);
   font-size: 13px;
   text-align: center;
+}
+
+.bz-home-section + .search-wrap {
+  margin-top: 22px;
 }
 
 
@@ -3403,7 +3408,8 @@ footer {
   .bz-slot { width: 36px; height: 36px; font-size: 10px; border-radius: 7px; }
   .bz-bp-inner { padding: 16px; }
   .bz-bp-header { flex-wrap: wrap; gap: 10px; }
-  .bz-home-section { padding: 36px 16px 40px; }
+  .bz-home-section { margin-top: -34px; padding: 0 12px; }
+  .bz-home-section-inner { padding: 14px; border-radius: var(--radius-lg); }
   .bz-home-sec-title { font-size: 22px; }
   .bz-home-sec-head { flex-direction: column; align-items: flex-start; }
   .bz-home-see-all { align-self: flex-start; }
