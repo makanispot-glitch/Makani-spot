@@ -172,6 +172,28 @@
   </section><!-- end hero -->
 
 
+  <!-- ============================================================
+       قسم البازار القادم — مختصر فوق فلتر المساحات
+       ============================================================ -->
+  <section class="bz-home-section">
+    <div class="bz-home-section-bg"></div>
+    <div class="bz-home-section-inner">
+      <div class="bz-home-sec-head">
+        <div>
+          <div class="bz-home-pill">البازار القادم</div>
+          <div class="bz-home-sec-title">فرصة قريبة لعرض مشروعك</div>
+          <div class="bz-home-sec-sub">أقرب بازار متاح حسب التاريخ، مع الأماكن المتبقية والسعر في لمحة واحدة.</div>
+        </div>
+        <button class="bz-home-see-all" onclick="showPage('bazaars')">عرض جميع البزارات ←</button>
+      </div>
+
+      <div class="bz-home-scroll" id="bz-home-scroll">
+        <div class="bz-home-empty">جاري تحميل البزارات...</div>
+      </div>
+    </div>
+  </section>
+
+
   <!-- صندوق البحث والفلترة -->
   <div class="search-wrap" id="search-anchor">
     <div class="search-box">
@@ -255,39 +277,6 @@
 
     </div>
   </div><!-- end search-wrap -->
-
-
-  <!-- ============================================================
-       🎪 قسم "بازارات قريبة" — مرفوع لأعلى الصفحة
-       ============================================================ -->
-  <section class="bz-home-section">
-    <div class="bz-home-section-bg"></div>
-    <div class="bz-home-section-inner">
-
-      <!-- هيدر + CTA -->
-      <div class="bz-home-sec-head">
-        <div>
-          <div class="bz-home-pill">🎪 أحداث البازار — القادمة هذا الأسبوع</div>
-          <div class="bz-home-sec-title">ادور على البازار <em>المناسب ليك</em></div>
-          <div class="bz-home-sec-sub">اشترك في بازار وبيع منتجاتك — احجز مكانك قبل ما يكتمل!</div>
-        </div>
-        <button class="bz-home-see-all" onclick="showPage('bazaars')">اكتشف جميع البازارات القادمة ←</button>
-      </div>
-
-      <!-- شريط الكروت الأفقي -->
-      <div class="bz-home-scroll" id="bz-home-scroll">
-        <div style="padding:30px;color:rgba(255,255,255,0.4);font-size:14px">جاري التحميل…</div>
-      </div>
-
-      <!-- زر CTA سفلي -->
-      <div class="bz-home-cta-row">
-        <button class="btn btn-primary bz-home-cta-btn" onclick="showPage('bazaars')">
-          🎪 احجز دلوقتي — وهنتواصل معاك خلال ٢٤ ساعة
-        </button>
-      </div>
-
-    </div>
-  </section>
 
 
   <!-- قسم كروت المساحات -->
