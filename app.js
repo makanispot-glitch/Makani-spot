@@ -2095,7 +2095,7 @@ function showDashAlert(type, msg) {
    ================================================================ */
 
 function goToOwnerDashboard() {
-  window.open('makani-dashboard.html', '_blank');
+  window.location.href = 'makani-dashboard.html';
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -2508,14 +2508,31 @@ function updateBottomNav(page) {
   if (el) el.classList.add('active');
 }
 
-function handleBnUser() {
+async function handleBnUser() {
+  updateBottomNav('user');
+
   if (currentUser) {
     goToDashboard();
-    updateBottomNav('user');
-  } else {
-    goToLogin();
-    updateBottomNav('user');
+    return;
   }
+
+  if (sbClient) {
+    try {
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (session?.user) {
+        currentUser = session.user;
+        const { data: profile } = await sbClient
+          .from('profiles').select('*').eq('id', session.user.id).single();
+        currentProfile = profile;
+        setNavUser(session.user, profile);
+        await loadDashboardData(session.user);
+        showPage('dashboard');
+        return;
+      }
+    } catch (_) {}
+  }
+
+  goToLogin();
 }
 
 function updateBnUser(user, profile) {
@@ -2680,6 +2697,7 @@ async function loadBazaars() {
         return b;
       })
       .filter(b => b.name && b.name !== '—') // استبعاد الصفوف الفارغة
+      .filter(b => !b.status || ['published', 'approved', 'active', 'مقبول', 'موافق', 'منشور', 'تمت الموافقة'].includes(String(b.status).trim().toLowerCase()))
       .sort((a, b) => new Date(a.date_start || 0) - new Date(b.date_start || 0));
 
     console.log(`✅ تم تحميل ${rows.length} بازار:`, rows);
