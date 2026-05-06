@@ -360,32 +360,34 @@
           إزاي <span style="color:var(--orange)">مكاني Spot</span> بيشتغل؟
         </div>
         <div style="font-size:15px;color:rgba(255,255,255,0.50);max-width:460px;margin:0 auto">
-          منصة بتربط بين أصحاب المساحات وأصحاب المشاريع — بشكل شفاف ومن غير تعقيد
+          منصة بتساعدك تلاقي مكان مناسب لمشروعك، سواء مساحة ثابتة أو مكان مؤقت داخل بازار.
         </div>
       </div>
 
       <div style="display:grid;gap:16px;margin-bottom:48px">
         <div class="how-detail-card">
           <div class="how-detail-ico">🔍</div>
-          <div><div class="how-detail-t">دوّر على المساحة المناسبة</div><div class="how-detail-s">ادخل الموقع، فلتر بنشاطك أو منطقتك أو سعرك — وهتلاقي المساحات المتاحة بكل تفاصيلها.</div></div>
+          <div><div class="how-detail-t">اختار مساحة ثابتة أو بازار مؤقت</div><div class="how-detail-s">ادخل الموقع، واختار بين المساحات المتاحة للإيجار أو البزارات القادمة حسب نشاطك، منطقتك، وسعرك المناسب.</div></div>
         </div>
         <div class="how-detail-card">
           <div class="how-detail-ico">📋</div>
-          <div><div class="how-detail-t">احجز في ثواني من غير تعقيد</div><div class="how-detail-s">اضغط "احجز دلوقتي" واملا نموذج بسيط باسمك ونشاطك — مش محتاج تسجيل حساب ولا دفع أي فلوس مسبقاً.</div></div>
+          <div><div class="how-detail-t">احجز أو ابعت طلبك في ثواني</div><div class="how-detail-s">اختار المكان المناسب واملأ نموذج بسيط باسمك ونشاطك. في البزارات تقدر تختار مكانك من الخريطة، وفي المساحات الثابتة بنراجع الطلب ونتواصل معاك.</div></div>
         </div>
         <div class="how-detail-card">
           <div class="how-detail-ico">📞</div>
-          <div><div class="how-detail-t">هنكلمك في أقل من ٢٤ ساعة</div><div class="how-detail-s">فريقنا بيتواصل معاك على طول عشان يأكدلك التفاصيل ويوقّع العقد معاك.</div></div>
+          <div><div class="how-detail-t">بنأكد التفاصيل معاك</div><div class="how-detail-s">فريقنا بيتواصل معاك لتأكيد الحجز، ترتيب التفاصيل، وتوضيح الخطوات التالية حسب نوع المكان: مساحة ثابتة أو بازار مؤقت.</div></div>
         </div>
         <div class="how-detail-card">
           <div class="how-detail-ico">💰</div>
-          <div><div class="how-detail-t">إزاي بنكسب؟</div><div class="how-detail-s">بناخد عمولة بسيطة ٨٪ بس من قيمة العقد — لو ما اتاكدش الحجز، مفيش حاجة بتتدفع.</div></div>
+          <div><div class="how-detail-t">إزاي بنكسب؟</div><div class="how-detail-s">بناخد عمولة بسيطة من الحجوزات المؤكدة فقط. لو الحجز ما اتأكدش، مفيش أي تكلفة عليك.</div></div>
         </div>
       </div>
 
       <div style="text-align:center;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-primary" style="padding:14px 36px;font-size:15px"
-                onclick="showPage('home');setTimeout(scrollToSearch,200)">دوّر على مساحتك ←</button>
+                onclick="showPage('home');setTimeout(scrollToSearch,200)">دوّر على مساحة ثابتة ←</button>
+        <button class="btn btn-primary" style="padding:14px 36px;font-size:15px"
+                onclick="showPage('bazaars')">شوف البزارات القادمة ←</button>
         <button class="btn btn-ghost"  style="padding:14px 36px;font-size:15px"
                 onclick="showPage('owner')">عندك مساحة فاضية؟ 🏬</button>
       </div>
@@ -580,28 +582,20 @@
       </div>
     </div>
 
-    <!-- شريط الـ Chips + التنقل الزمني -->
+    <!-- شريط فلاتر سريعة واضحة -->
     <div class="bz-chips-bar">
       <div class="bz-chips-bar-inner">
 
-        <!-- التنقل الزمني -->
         <div class="bz-time-nav">
-          <button class="bz-time-btn" data-nav="today"    onclick="setBzTimeNav('today')">اليوم</button>
-          <button class="bz-time-btn bz-time-active" data-nav="upcoming" onclick="setBzTimeNav('upcoming')">القادمة</button>
+          <button class="bz-time-btn" data-nav="today" onclick="setBzTimeNav('today')">بازارات اليوم</button>
+          <button class="bz-time-btn bz-time-active" data-nav="upcoming" onclick="setBzTimeNav('upcoming')">البازارات القادمة</button>
         </div>
 
         <div class="bz-chips-divider"></div>
 
-        <!-- Chips الفلاتر -->
         <div class="bz-chips-list">
-          <button class="bz-chip" data-chip="recommended" onclick="setBzChip('recommended',this)">⭐ موصى بيه</button>
-          <button class="bz-chip" data-chip="category"    onclick="setBzChip('category',this)">🏷 الفئة</button>
-          <button class="bz-chip" data-chip="venues"      onclick="setBzChip('venues',this)">📍 الأماكن</button>
-          <button class="bz-chip" data-chip="organizers"  onclick="setBzChip('organizers',this)">🧑‍💼 المنظمون</button>
-          <button class="bz-chip" data-chip="city"        onclick="setBzChip('city',this)">🌍 المدينة</button>
-          <button class="bz-chip" data-chip="day"         onclick="setBzChip('day',this)">📆 اليوم</button>
-          <button class="bz-chip" data-chip="time"        onclick="setBzChip('time',this)">⏰ الوقت</button>
-          <button class="bz-chip" data-chip="ticketing"   onclick="setBzChip('ticketing',this)">🎟 التذاكر</button>
+          <button class="bz-chip" data-chip="available" onclick="setBzChip('available',this)">بها أماكن متاحة</button>
+          <button class="bz-chip" data-chip="soldout" onclick="setBzChip('soldout',this)">المكتملة فقط</button>
         </div>
 
       </div>
