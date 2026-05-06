@@ -1379,8 +1379,7 @@ function showPage(p) {
   if (p === 'bazaars') {
     setTimeout(updateBzSlider, 60);
     if (BAZAARS.length && !bzFiltered.length) {
-      bzFiltered = [...BAZAARS];
-      renderBazaarCards();
+      applyBzFilters();
     }
   }
 
@@ -2686,8 +2685,7 @@ async function loadBazaars() {
     console.log(`✅ تم تحميل ${rows.length} بازار:`, rows);
 
     BAZAARS    = rows;
-    bzFiltered = [...BAZAARS];
-    renderBazaarCards();
+    applyBzFilters();
     renderHomeBazaars();
 
   } catch (err) {
@@ -2706,8 +2704,7 @@ async function _loadBazaarsFromSupabase() {
       .order('date_start', { ascending: true });
     if (!error && data?.length) {
       BAZAARS    = data;
-      bzFiltered = [...BAZAARS];
-      renderBazaarCards();
+      applyBzFilters();
       renderHomeBazaars();
     } else {
       _renderBazaarsEmpty();
@@ -2953,19 +2950,32 @@ function applyBzFilters() {
     );
   }
 
-  // ── فلتر الـ chip المفعّل ──
-  if (bzActiveChip === 'today') {
+  // ── فلتر الفترة الزمنية ──
+  if (bzTimeNav === 'today') {
     const today = new Date().toISOString().split('T')[0];
-    data = data.filter(b => b.date_start === today ||
-      (b.date_start <= today && (!b.date_end || b.date_end >= today)));
-  } else if (bzActiveChip === 'upcoming') {
+    data = data.filter(b => b.date_start && (b.date_start === today ||
+      (b.date_start <= today && (!b.date_end || b.date_end >= today))));
+  } else if (bzTimeNav === 'upcoming') {
     const today = new Date().toISOString().split('T')[0];
     data = data.filter(b => !b.date_start || b.date_start >= today);
   }
 
+  // ── فلاتر سريعة واضحة ──
+  if (bzActiveChip === 'available') {
+    data = data.filter(b => {
+      const available = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
+      return available > 0 || !b.total_slots;
+    });
+  } else if (bzActiveChip === 'soldout') {
+    data = data.filter(b => {
+      const available = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
+      return available === 0 && (b.total_slots || 0) > 0;
+    });
+  }
+
   if (region)   data = data.filter(b => (b.region || b.location || '').includes(region));
-  if (dateFrom) data = data.filter(b => !b.date_start || b.date_start >= dateFrom);
-  if (dateTo)   data = data.filter(b => !b.date_start || b.date_start <= dateTo);
+  if (dateFrom) data = data.filter(b => b.date_start && b.date_start >= dateFrom);
+  if (dateTo)   data = data.filter(b => b.date_start && b.date_start <= dateTo);
   data = data.filter(b => (b.price_per_slot || 0) <= maxPrice);
 
   if (sort === 'date-asc')   data.sort((a, b) => (a.date_start||'').localeCompare(b.date_start||''));
@@ -2996,9 +3006,7 @@ function clearBzFilters() {
     btn.classList.toggle('bz-time-active', btn.dataset.nav === 'upcoming');
   });
 
-  bzFiltered = [...BAZAARS];
-  bzPage     = 1;
-  renderBazaarCards();
+  applyBzFilters();
 }
 
 function updateBzSlider() {
@@ -3037,7 +3045,6 @@ function setBzChip(chip, el) {
  */
 function setBzTimeNav(nav) {
   bzTimeNav    = nav;
-  bzActiveChip = nav === 'today' ? 'today' : (nav === 'upcoming' ? 'upcoming' : bzActiveChip);
 
   document.querySelectorAll('.bz-time-btn').forEach(btn => {
     btn.classList.toggle('bz-time-active', btn.dataset.nav === nav);
