@@ -1005,21 +1005,163 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* Responsive */
+/* ============================================================
+   RESPONSIVE — TABLET + MOBILE
+   ============================================================ */
+
+/* ── Sidebar overlay backdrop ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.60);
+  z-index: 98;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  animation: overlayFade 0.25s ease;
+}
+@keyframes overlayFade { from { opacity:0; } to { opacity:1; } }
+.sidebar-overlay.active { display: block; }
+
+/* ── Hamburger menu button ── */
+.menu-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r);
+  background: var(--panel);
+  border: 1.5px solid var(--border);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.menu-toggle:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-pale); }
+.menu-toggle.is-open { border-color: var(--orange); color: var(--orange); background: var(--orange-pale); }
+
+/* ── TABLET WIDE (≤ 1100px) ── */
+@media (max-width: 1100px) {
+  :root { --sidebar-w: 230px; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+  .page-content { padding: 20px; }
+  .topbar { padding: 0 20px; }
+}
+
+/* ── TABLET SMALL + MOBILE (≤ 900px) — سايدبار يختفي ويُفتح يدوياً ── */
 @media (max-width: 900px) {
-  .kpi-row { grid-template-columns: 1fr 1fr; }
-  .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
-  .sidebar { transform: translateX(100%); }
-  .sidebar.open { transform: translateX(0); }
+  :root { --sidebar-w: 260px; }
+
+  /* Sidebar: مخفي افتراضياً، يظهر بعد .open */
+  .sidebar {
+    transform: translateX(calc(var(--sidebar-w) + 20px));
+    box-shadow: none;
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: -20px 0 60px rgba(0,0,0,0.60);
+  }
+
+  /* Main area: يمتد الـ 100% بدون السايدبار */
   .main-area { margin-right: 0; }
+
+  /* Hamburger: يظهر */
+  .menu-toggle { display: flex; }
+
+  /* Grid: عمود واحد */
+  .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Data tables: تمرير أفقي */
+  .pcard-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 520px; }
+
+  /* Period buttons: مخفية لتوفير مساحة */
+  .topbar-period { display: none; }
+}
+
+/* ── MOBILE (≤ 600px) ── */
+@media (max-width: 600px) {
+  :root { --sidebar-w: 280px; --topbar-h: 54px; }
+
+  /* KPI cards: عمودان */
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .kpi-card { padding: 14px 12px; }
+  .kpi-ico  { font-size: 18px; margin-bottom: 6px; }
+  .kpi-value { font-size: 20px; }
+  .kpi-label { font-size: 9px; }
+
+  /* Page padding */
+  .page-content { padding: 14px; }
+  .topbar { padding: 0 14px; }
+  .topbar-title { font-size: 14px; }
+  .topbar-right { gap: 8px; }
+
+  /* Cards */
+  .pcard-head  { padding: 12px 14px 10px; flex-wrap: wrap; gap: 8px; }
+  .pcard-body  { padding: 14px; }
+  .pcard-title { font-size: 13px; }
+
+  /* Login page */
+  .login-box    { padding: 28px 18px; margin: 16px; max-width: calc(100% - 32px); }
+  .login-logo-ar { font-size: 24px; }
+  .login-title   { font-size: 16px; }
+  .login-sub     { font-size: 12px; }
+
+  /* Forms */
+  .form-row  { grid-template-columns: 1fr; gap: 10px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group input,
+  .form-group select,
+  .form-group textarea { padding: 9px 12px; font-size: 13px; }
+
+  /* Section label */
+  .section-label { font-size: 9px; }
+
+  /* Contract */
+  .contract-meta { gap: 6px; font-size: 10px; flex-direction: column; }
+
+  /* Alerts */
+  .alert-item { padding: 10px 12px; font-size: 12px; gap: 10px; }
+  .alert-ico  { font-size: 16px; }
+
+  /* Insight card */
+  .insight-card { padding: 12px 14px; gap: 10px; }
+  .insight-ico  { font-size: 18px; }
+
+  /* Buttons */
+  .btn { padding: 7px 14px; font-size: 12px; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  /* Tenant detail */
+  .bar-chart { height: 60px; }
+
+  /* Donut chart */
+  .donut-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* ── VERY SMALL MOBILE (≤ 390px) ── */
+@media (max-width: 390px) {
+  .kpi-row   { grid-template-columns: 1fr; gap: 8px; }
+  .kpi-value { font-size: 22px; }
+  .page-content { padding: 10px; }
+  .login-box    { padding: 22px 14px; margin: 10px; }
+  .data-table   { min-width: 400px; }
 }
 </style>
 </head>
 <body>
 
 <!-- ================================================================
-     LOGIN PAGE
-     🔐 DB-LINK: جلب بيانات تسجيل الدخول من قاعدة البيانات (owners table في Supabase)
+     OWNER ACCESS GATE
+     يعتمد على جلسة المنصة الرئيسية وصلاحية role = owner
      ================================================================ -->
 <div id="login-page">
   <div class="login-bg"></div>
@@ -1032,28 +1174,15 @@ body {
         <span class="login-badge">🏢 لوحة أصحاب المساحات</span>
       </div>
     </div>
-    <div class="login-title">مرحباً بك في لوحتك</div>
-    <div class="login-sub">هذه اللوحة مخصصة لأصحاب المساحات المسجّلين في مكاني Spot</div>
+    <div class="login-title" id="access-title">جاري التحقق من صلاحية الحساب…</div>
+    <div class="login-sub" id="access-body">تفتح اللوحة مباشرة لحسابات Owner المسجلة في منصة مكاني Spot.</div>
     <div id="login-error" class="login-error" style="display:none"></div>
 
-    <!-- Email + Password -->
-    <div class="lf-group">
-      <label>البريد الإلكتروني</label>
-      <input type="email" id="li-user" placeholder="example@email.com" dir="ltr" autocomplete="email">
-    </div>
-    <div class="lf-group">
-      <label>كلمة المرور</label>
-      <input type="password" id="li-pass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
-    </div>
-    <button class="btn-login" id="btn-login" onclick="doLogin()">دخول للوحة التحكم ←</button>
-
-    <!-- الرجوع للمنصة -->
     <div style="text-align:center;margin-top:20px">
       <a href="index.html"
-         style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);text-decoration:none;transition:color 0.15s"
-         onmouseover="this.style.color='var(--orange)'"
-         onmouseout="this.style.color='var(--text3)'">
-        ← الرجوع إلى منصة مكاني Spot
+         class="btn-login"
+         style="text-decoration:none">
+        الرجوع إلى منصة مكاني Spot ←
       </a>
     </div>
 
@@ -1065,6 +1194,9 @@ body {
      MAIN APP
      ================================================================ -->
 <div id="app">
+
+  <!-- ── Sidebar Overlay (موبايل فقط) ── -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- ── SIDEBAR ── -->
   <aside class="sidebar" id="sidebar">
@@ -1095,6 +1227,9 @@ body {
       </button>
       <button class="nav-item" data-view="add-space" onclick="goTo('add-space', this)">
         <span class="nav-item-ico">➕</span> إضافة مساحة
+      </button>
+      <button class="nav-item" data-view="add-bazaar" onclick="goTo('add-bazaar', this)">
+        <span class="nav-item-ico">🎪</span> تنظيم بازار
       </button>
 
       <div class="nav-section-label">الإدارة</div>
@@ -1138,6 +1273,14 @@ body {
 
     <!-- Topbar -->
     <div class="topbar">
+      <!-- زر القائمة (موبايل/تابلت فقط) -->
+      <button class="menu-toggle" id="menu-toggle" onclick="toggleSidebar()" title="القائمة" aria-label="فتح القائمة">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="currentColor">
+          <rect width="18" height="2" rx="1"/>
+          <rect y="6" width="18" height="2" rx="1"/>
+          <rect y="12" width="18" height="2" rx="1"/>
+        </svg>
+      </button>
       <div class="topbar-title" id="topbar-title">نظرة عامة</div>
       <div class="topbar-right">
         <div class="topbar-period">
@@ -1148,7 +1291,7 @@ body {
         <div class="topbar-notif tooltip-wrap" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">
           🔔
           <div class="notif-dot"></div>
-          <span class="tooltip-text">5 تنبيهات جديدة</span>
+          <span class="tooltip-text">تنبيهات جديدة</span>
         </div>
       </div>
     </div>
@@ -1962,6 +2105,194 @@ body {
           </div>
         </div>
       </div><!-- end add-space -->
+
+      <!-- ============================================================
+           VIEW: ADD BAZAAR
+           🔗 DB-LINK: يرسل البيانات لشيت البازارات للمراجعة قبل النشر
+           ============================================================ -->
+      <div class="view" id="view-add-bazaar">
+        <div class="section-label">تنظيم بازار جديد</div>
+
+        <div style="background:linear-gradient(135deg,rgba(77,159,255,0.12),transparent);border:1px solid rgba(77,159,255,0.22);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:32px">🎪</div>
+          <div>
+            <div style="font-size:14px;font-weight:800;color:var(--blue)">سجّل بيانات البازار والمساحات المتاحة داخله</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-top:4px">
+              بعد الإرسال ستظهر البيانات في شيت البازارات كطلب قيد المراجعة، ثم تظهر على الموقع بعد الموافقة.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="pcard">
+            <div class="pcard-head">
+              <div class="pcard-title">📝 بيانات البازار</div>
+              <span class="db-tag">DB: bazaars</span>
+            </div>
+            <div class="pcard-body">
+              <div id="add-bazaar-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
+
+              <form id="add-bazaar-form" onsubmit="submitAddBazaar(event)">
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>اسم البازار</label>
+                    <input type="text" id="bz-name" placeholder="مثال: بازار الصيف" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>نوع / تصنيف البازار</label>
+                    <select id="bz-category" required>
+                      <option value="">اختر التصنيف</option>
+                      <option>أزياء وإكسسوارات</option>
+                      <option>أكل ومشروبات</option>
+                      <option>حرف يدوية</option>
+                      <option>منتجات محلية</option>
+                      <option>عائلي وترفيهي</option>
+                      <option>متنوع</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>تاريخ البداية</label>
+                    <input type="date" id="bz-start" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>تاريخ النهاية</label>
+                    <input type="date" id="bz-end" required>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>وقت الافتتاح</label>
+                    <input type="time" id="bz-open-time">
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>وقت الإغلاق</label>
+                    <input type="time" id="bz-close-time">
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>المكان / الفرع</label>
+                    <input type="text" id="bz-location" placeholder="مثال: مول مدينة نصر - البوابة الرئيسية" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>المنطقة / المدينة</label>
+                    <input type="text" id="bz-region" placeholder="مثال: مدينة نصر، القاهرة" required>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top:12px">
+                  <label>العنوان التفصيلي</label>
+                  <input type="text" id="bz-address" placeholder="اكتب العنوان أو أقرب علامة مميزة">
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>عدد المساحات الصغيرة المتاحة</label>
+                    <input type="number" id="bz-slots-count" placeholder="مثال: 35" min="1" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>سعر المساحة الواحدة (ج.م.)</label>
+                    <input type="number" id="bz-price-per-slot" placeholder="مثال: 1200" min="0">
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>مقاس المساحة الواحدة</label>
+                    <input type="text" id="bz-slot-size" placeholder="مثال: ٢×٢ م أو ترابيزة ١٨٠ سم">
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>الفئة المستهدفة</label>
+                    <input type="text" id="bz-audience" placeholder="مثال: عائلات، شباب، زوار المول">
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top:12px">
+                  <label>الأنشطة / المنتجات المناسبة</label>
+                  <input type="text" id="bz-activities" placeholder="مثال: ملابس، أكل، هاند ميد، عطور">
+                </div>
+
+                <div class="form-group">
+                  <label>الخدمات المتاحة للعارضين</label>
+                  <input type="text" id="bz-amenities" placeholder="مثال: كهرباء، أمن، نظافة، ترابيزات، واي فاي">
+                </div>
+
+                <div class="form-group">
+                  <label>شروط المشاركة</label>
+                  <textarea id="bz-rules" placeholder="مثال: الالتزام بمواعيد التشغيل، عدم بيع منتجات ممنوعة، تجهيز الستاند قبل الافتتاح…"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label>وصف البازار وتفاصيله</label>
+                  <textarea id="bz-description" placeholder="اكتب نبذة مختصرة تظهر للزوار والعارضين بعد الموافقة…" required></textarea>
+                </div>
+
+                <button type="submit" id="add-bazaar-btn" class="btn btn-primary" style="width:100%">🚀 إرسال طلب تنظيم البازار</button>
+              </form>
+            </div>
+          </div>
+
+          <div>
+            <div class="pcard" style="margin-bottom:20px">
+              <div class="pcard-head">
+                <div>
+                  <div class="pcard-title">📷 صورة البازار</div>
+                  <div class="pcard-sub">صورة الغلاف التي ستظهر في صفحة البازارات بعد الموافقة</div>
+                </div>
+              </div>
+              <div class="pcard-body">
+                <div style="border:2px dashed rgba(77,159,255,0.30);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--blue-bg)"
+                     onclick="document.getElementById('bz-img-input').click()"
+                     onmouseenter="this.style.background='rgba(77,159,255,0.18)'"
+                     onmouseleave="this.style.background='var(--blue-bg)'">
+                  <div style="font-size:32px;margin-bottom:8px">📤</div>
+                  <div style="font-size:13px;color:var(--blue);font-weight:700">اضغط لرفع صورة الغلاف</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG — صورة واحدة واضحة</div>
+                </div>
+                <input type="file" id="bz-img-input" accept="image/*" style="display:none" onchange="handleBazaarImageUpload(this)">
+                <div id="bz-img-preview" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px"></div>
+                <div style="margin-top:12px;background:var(--yellow-bg);border:1px solid rgba(255,184,0,0.22);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--yellow);line-height:1.6">
+                  📌 يفضّل رفع صورة أفقية واضحة للمكان أو أجواء البازار. سيتم إرسالها مع الطلب للمراجعة.
+                </div>
+              </div>
+            </div>
+
+            <div class="pcard">
+              <div class="pcard-head">
+                <div class="pcard-title">💡 بيانات تساعد على الموافقة أسرع</div>
+              </div>
+              <div class="pcard-body" style="padding:16px">
+                <div class="insight-card" style="margin-bottom:10px">
+                  <div class="insight-ico">📍</div>
+                  <div>
+                    <div class="insight-title">اكتب المكان بدقة</div>
+                    <div class="insight-body">اسم الفرع، المنطقة، والعلامات المميزة تساعد الزائر والعارض على فهم موقع البازار بسرعة.</div>
+                  </div>
+                </div>
+                <div class="insight-card" style="margin-bottom:10px">
+                  <div class="insight-ico">🎟️</div>
+                  <div>
+                    <div class="insight-title">وضّح عدد المساحات</div>
+                    <div class="insight-body">عدد الأماكن، مقاس كل مكان، والسعر يجعل حجز العارضين أسهل بعد نشر البازار.</div>
+                  </div>
+                </div>
+                <div class="insight-card">
+                  <div class="insight-ico">⚡</div>
+                  <div>
+                    <div class="insight-title">اذكر التجهيزات</div>
+                    <div class="insight-body">الكهرباء، الترابيزات، الأمن، والنظافة تفاصيل مهمة للعارضين قبل التقديم.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end add-bazaar -->
 
       <!-- ============================================================
            VIEW: ALERTS
