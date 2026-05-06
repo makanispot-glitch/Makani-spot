@@ -2800,22 +2800,22 @@ footer {
 
 /* ── هيرو صفحة البازارات ── */
 
-.bz-page { background: #fff; min-height: 100vh; }
+.bz-page { background: #111; min-height: 100vh; }
 
 .bz-market-hero {
   position: relative;
-  background: #fff;
+  background: #111;
   padding: 44px 28px 36px;
   overflow: hidden;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .bz-market-hero-bg {
   position: absolute; inset: 0;
   background:
-    linear-gradient(rgba(255,107,0,0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,107,0,0.045) 1px, transparent 1px),
-    radial-gradient(ellipse 55% 70% at 80% 20%, rgba(255,107,0,0.11), transparent 58%);
-  background-size: 34px 34px, 34px 34px, auto;
+    linear-gradient(rgba(255,107,0,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,107,0,0.05) 1px, transparent 1px),
+    radial-gradient(ellipse 55% 70% at 80% 20%, rgba(255,107,0,0.14), transparent 58%);
+  background-size: 48px 48px, 48px 48px, auto;
   pointer-events: none;
 }
 .bz-market-hero-inner {
@@ -2823,25 +2823,25 @@ footer {
 }
 .bz-market-hero-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: var(--orange-ultra); color: var(--orange);
-  border: 1px solid var(--orange-pale);
+  background: rgba(255,107,0,0.14); color: var(--orange-light);
+  border: 1px solid rgba(255,107,0,0.28);
   border-radius: 30px;
   font-size: 12px; font-weight: 700; padding: 5px 16px;
   margin-bottom: 14px;
 }
 .bz-market-hero-title {
-  font-size: 28px; font-weight: 900; color: var(--ink);
+  font-size: 28px; font-weight: 900; color: #fff;
   margin-bottom: 8px; line-height: 1.3;
 }
 .bz-market-hero-sub {
-  font-size: 14px; color: var(--ink2);
+  font-size: 14px; color: rgba(255,255,255,0.58);
 }
 
 /* عداد النتائج */
 .bz-result-badge {
   display: inline-flex; align-items: center;
-  background: var(--orange-ultra); color: var(--orange);
-  border: 1px solid var(--orange-pale);
+  background: rgba(255,107,0,0.12); color: var(--orange-light);
+  border: 1px solid rgba(255,107,0,0.28);
   border-radius: 20px; font-size: 13px; font-weight: 700;
   padding: 5px 14px;
 }
@@ -2850,10 +2850,10 @@ footer {
 /* ── شريط الفلاتر الأفقي (بدل السايدبار) ── */
 
 .bz-filter-bar {
-  background: #151515;
-  border-bottom: 2px solid rgba(255,107,0,0.18);
-  padding: 20px 28px;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 18px 28px 22px;
+  box-shadow: none;
 }
 .bz-filter-bar-inner {
   max-width: 1200px; margin: 0 auto;
@@ -2901,7 +2901,7 @@ footer {
 .bz-page-body {
   max-width: 1200px; margin: 0 auto;
   padding: 28px 28px 60px;
-  background: #fff;
+  background: #111;
 }
 .bz-page-top {
   display: flex; align-items: center;
@@ -3292,7 +3292,7 @@ footer {
 .bz-search-bar {
   background: #111;
   border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding: 18px 28px;
+  padding: 8px 28px 18px;
 }
 .bz-search-bar-inner {
   max-width: 1200px; margin: 0 auto;
@@ -3330,8 +3330,8 @@ footer {
 /* ── شريط الـ Chips + التنقل الزمني ── */
 
 .bz-chips-bar {
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 12px 28px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -3344,7 +3344,7 @@ footer {
 }
 .bz-chips-divider {
   width: 1px; height: 24px;
-  background: var(--border);
+  background: rgba(255,255,255,0.14);
   flex-shrink: 0; margin: 0 4px;
 }
 .bz-chips-list {
@@ -3355,9 +3355,9 @@ footer {
 /* الـ chip الواحد */
 .bz-chip {
   display: inline-flex; align-items: center; gap: 5px;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  color: var(--ink2);
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.68);
   border-radius: 30px;
   font-family: 'Cairo', sans-serif;
   font-size: 12px; font-weight: 700;
@@ -3366,13 +3366,13 @@ footer {
 }
 .bz-chip:hover {
   border-color: var(--orange);
-  color: var(--orange);
-  background: var(--orange-ultra);
+  color: var(--orange-light);
+  background: rgba(255,107,0,0.10);
 }
 .bz-chip.active {
-  background: var(--orange-ultra);
+  background: rgba(255,107,0,0.16);
   border-color: var(--orange);
-  color: var(--orange);
+  color: var(--orange-light);
   box-shadow: 0 0 0 2px rgba(255,107,0,0.14);
 }
 
@@ -3384,18 +3384,18 @@ footer {
   gap: 4px; flex-shrink: 0;
 }
 .bz-time-btn {
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  color: var(--ink2);
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.70);
   border-radius: 8px;
   font-family: 'Cairo', sans-serif;
   font-size: 12px; font-weight: 700;
   padding: 6px 14px; cursor: pointer; transition: all 0.18s;
 }
-.bz-time-btn:hover { border-color: var(--orange); color: var(--orange); }
+.bz-time-btn:hover { border-color: var(--orange); color: var(--orange-light); }
 .bz-time-btn.bz-time-active {
-  background: var(--dark);
-  border-color: var(--dark);
+  background: var(--orange);
+  border-color: var(--orange);
   color: #fff;
 }
 
