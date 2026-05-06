@@ -10,6 +10,7 @@
 const SHEET_URL     = "https://script.google.com/macros/s/AKfycbxyCDOQW3SlaoSEPAAFfClUcHYyxA6-iei4Zuvvv5Us8caWP9X3WjgoeyhsOVNGJ9XqQw/exec";
 const BOOKING_URL   = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 const ADD_SPACE_URL = BOOKING_URL; // مؤقت — غيّره لرابط Apps Script خاص بإضافة المساحات
+const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec";
 
 const ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة"
 
@@ -87,6 +88,7 @@ let currentOwner   = null;
 let ownerSpaces    = [];
 let ownerTenants   = [];
 let ownerContracts = [];
+let ownerAuthChecked = false;
 
 /* ══════════════════════════════════════════
    🔐  SUPABASE — إعداد العميل
@@ -117,6 +119,24 @@ function showLoginError(msg) {
 function hideLoginError() {
   const err = document.getElementById('login-error');
   if (err) err.style.display = 'none';
+}
+
+function showOwnerAccessGate(type, title, body) {
+  const loginPage = document.getElementById('login-page');
+  const app = document.getElementById('app');
+  const titleEl = document.getElementById('access-title');
+  const bodyEl = document.getElementById('access-body');
+  const alertEl = document.getElementById('login-error');
+
+  if (app) app.classList.remove('visible');
+  if (loginPage) loginPage.style.display = 'flex';
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl) bodyEl.textContent = body;
+  if (alertEl) {
+    alertEl.className = 'login-error ' + (type || 'info');
+    alertEl.textContent = body;
+    alertEl.style.display = 'block';
+  }
 }
 
 /** حالة زر اللوجين (loading / normal) */
@@ -151,19 +171,25 @@ async function checkRoleAndProceed(user) {
   if (!profile) console.warn('[Makani Dashboard] No profile row found for user id:', user.id);
 
   if (error || !profile) {
-    await sb.auth.signOut();
     // رسالة أوضح: هل المشكلة في الجدول أم في RLS أم في غياب الصف؟
     const detail = error
       ? `(${error.code}: ${error.message})`
       : '(لا يوجد صف في جدول profiles لهذا الحساب)';
-    showLoginError(`⚠ تعذّر جلب بيانات الحساب — تواصل مع الإدارة. ${detail}`);
+    showOwnerAccessGate(
+      'danger',
+      'تعذّر التحقق من صلاحية الحساب',
+      `لم نتمكن من قراءة بيانات حسابك. تواصل مع الإدارة لمراجعة الصلاحية. ${detail}`
+    );
     setLoginLoading(false);
     return;
   }
 
   if (profile.role !== 'owner') {
-    await sb.auth.signOut();
-    showLoginError(`⛔ هذا الحساب ليس حساب صاحب مساحة (role = "${profile.role}") — اللوحة مخصصة للأونرز فقط.`);
+    showOwnerAccessGate(
+      'danger',
+      'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
+      `حسابك الحالي مسجل كـ "${profile.role || 'tenant'}". اطلب ترقية الحساب من المنصة، وبعد تحويله إلى Owner ستفتح هذه اللوحة مباشرة.`
+    );
     setLoginLoading(false);
     return;
   }
@@ -190,53 +216,13 @@ async function checkRoleAndProceed(user) {
    1️⃣  تسجيل الدخول — Email + Password
    ══════════════════════════════════════════ */
 async function doLogin() {
-  hideLoginError();
-  setLoginLoading(true);
-
-  const email = document.getElementById('li-user').value.trim();
-  const pass  = document.getElementById('li-pass').value;
-
-  /* ── محاولة Supabase أولاً ── */
-  const sb = getSB();
-  if (sb) {
-    const { data, error } = await sb.auth.signInWithPassword({
-      email,
-      password: pass,
-    });
-
-    if (error) {
-      const ar = {
-        'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
-        'Email not confirmed':       'البريد الإلكتروني لم يتم تأكيده بعد.',
-        'Too many requests':         'كثير من المحاولات — انتظر قليلاً وأعد المحاولة.',
-      };
-      showLoginError('⚠ ' + (ar[error.message] || error.message));
-      setLoginLoading(false);
-      return;
-    }
-
-    await checkRoleAndProceed(data.user);
-    return;
-  }
-
-  /* ── Fallback: Hardcoded OWNERS (للتطوير فقط) ── */
-  const ownerKey = Object.keys(OWNERS).find(
-    k => k.toLowerCase() === email.toLowerCase()
-  );
-  if (!ownerKey || OWNERS[ownerKey].password !== pass) {
-    showLoginError('⚠ بيانات الدخول غير صحيحة.');
-    setLoginLoading(false);
-    return;
-  }
-  currentOwner = { ...OWNERS[ownerKey], username: ownerKey };
-  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
-  setLoginLoading(false);
-  initDashboard();
+  await checkSessionOnLoad();
 }
 
 document.addEventListener('keydown', e => {
-  const loginPage = document.getElementById('login-page');
-  if (e.key === 'Enter' && loginPage && loginPage.style.display !== 'none') doLogin();
+  if (e.key === 'Enter' && document.getElementById('app')?.classList.contains('visible')) {
+    e.preventDefault();
+  }
 });
 
 /* ══════════════════════════════════════════
@@ -271,7 +257,7 @@ async function doLogout() {
   ownerTenants   = [];
   ownerContracts = [];
   document.getElementById('app').classList.remove('visible');
-  document.getElementById('login-page').style.display = 'flex';
+  window.location.href = 'index.html';
 }
 
 /* ══════════════════════════════════════════
@@ -567,6 +553,36 @@ function renderKPIs() {
 }
 
 /* ══════════════════════════════════════════
+   📱  MOBILE SIDEBAR TOGGLE
+   ══════════════════════════════════════════ */
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const toggle   = document.getElementById('menu-toggle');
+  if (!sidebar) return;
+
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) {
+    closeSidebar();
+  } else {
+    sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+    if (toggle)  toggle.classList.add('is-open');
+    document.body.style.overflow = 'hidden'; /* منع تمرير الخلفية */
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const toggle  = document.getElementById('menu-toggle');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+  if (toggle)  toggle.classList.remove('is-open');
+  document.body.style.overflow = '';
+}
+
+/* ══════════════════════════════════════════
    🗺️  NAVIGATION
    ══════════════════════════════════════════ */
 const VIEW_TITLES = {
@@ -579,6 +595,7 @@ const VIEW_TITLES = {
   'insights':    'الرؤى والتوصيات',
   'experiments': 'وضع التجربة',
   'add-space':   'إضافة مساحة جديدة',
+  'add-bazaar':  'تنظيم بازار',
   'alerts':      'التنبيهات',
   'settings':    'الإعدادات',
 };
@@ -592,6 +609,9 @@ function goTo(viewId, navEl) {
   if (navEl)  navEl.classList.add('active');
 
   setTxt('topbar-title', VIEW_TITLES[viewId] || viewId);
+
+  /* على الموبايل: أغلق السايدبار بعد الاختيار */
+  if (window.innerWidth <= 900) closeSidebar();
 }
 
 function setPeriod(p, btn) {
@@ -987,6 +1007,114 @@ function handleImageUpload(input) {
   }).join('');
 }
 
+function handleBazaarImageUpload(input) {
+  const file = input.files?.[0];
+  const preview = document.getElementById('bz-img-preview');
+  if (!file || !preview) return;
+
+  const url = URL.createObjectURL(file);
+  preview.innerHTML = `<div style="position:relative;display:inline-block;margin:4px;width:100%">
+    <img src="${url}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border)">
+    <div style="position:absolute;bottom:0;left:0;right:0;font-size:10px;color:#fff;background:rgba(0,0,0,0.60);padding:5px 8px;border-radius:0 0 10px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</div>
+  </div>`;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitAddBazaar(e) {
+  e.preventDefault();
+  const btn = document.getElementById('add-bazaar-btn');
+  const msg = document.getElementById('add-bazaar-msg');
+  if (!btn || !msg) return;
+
+  const startDate = document.getElementById('bz-start')?.value;
+  const endDate = document.getElementById('bz-end')?.value;
+  if (startDate && endDate && endDate < startDate) {
+    msg.className = 'alert-item danger';
+    msg.style.display = 'flex';
+    msg.innerHTML = `<span class="alert-ico">❌</span>
+      <div class="alert-text"><strong>راجع مدة البازار</strong>تاريخ النهاية يجب أن يكون بعد تاريخ البداية أو مساويًا له.</div>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري إرسال طلب البازار…';
+
+  const imageFile = document.getElementById('bz-img-input')?.files?.[0] || null;
+  let imageDataUrl = null;
+  try {
+    imageDataUrl = await fileToDataUrl(imageFile);
+  } catch {
+    imageDataUrl = null;
+  }
+
+  const payload = {
+    action: 'addBazaar',
+    sheet: 'bazaars',
+    status: 'pending',
+    ownerId: currentOwner.id,
+    ownerName: currentOwner.name,
+    ownerEmail: currentOwner.email || currentOwner.username || '',
+    ownerPhone: currentOwner.phone || '',
+    ownerPlace: currentOwner.place || '',
+    name: document.getElementById('bz-name')?.value.trim(),
+    category: document.getElementById('bz-category')?.value,
+    date_start: startDate,
+    date_end: endDate,
+    open_time: document.getElementById('bz-open-time')?.value,
+    close_time: document.getElementById('bz-close-time')?.value,
+    location: document.getElementById('bz-location')?.value.trim(),
+    region: document.getElementById('bz-region')?.value.trim(),
+    address: document.getElementById('bz-address')?.value.trim(),
+    slots_count: document.getElementById('bz-slots-count')?.value,
+    price_per_slot: document.getElementById('bz-price-per-slot')?.value,
+    slot_size: document.getElementById('bz-slot-size')?.value.trim(),
+    audience: document.getElementById('bz-audience')?.value.trim(),
+    activities: document.getElementById('bz-activities')?.value.trim(),
+    amenities: document.getElementById('bz-amenities')?.value.trim(),
+    rules: document.getElementById('bz-rules')?.value.trim(),
+    description: document.getElementById('bz-description')?.value.trim(),
+    imageName: imageFile?.name || '',
+    imageType: imageFile?.type || '',
+    imageDataUrl,
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    await fetch(ADD_BAZAAR_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    msg.className = 'alert-item success';
+    msg.style.display = 'flex';
+    msg.innerHTML = `<span class="alert-ico">✅</span>
+      <div class="alert-text"><strong>تم إرسال طلب تنظيم البازار!</strong>
+      سيظهر الطلب في شيت البازارات بحالة pending، وبعد الموافقة سيتم نشره على الموقع.</div>`;
+
+    document.getElementById('add-bazaar-form')?.reset();
+    document.getElementById('bz-img-preview').innerHTML = '';
+  } catch {
+    msg.className = 'alert-item danger';
+    msg.style.display = 'flex';
+    msg.innerHTML = `<span class="alert-ico">❌</span>
+      <div class="alert-text"><strong>تعذّر إرسال طلب البازار</strong>تأكد من الاتصال أو رابط Apps Script الخاص بشيت البازارات.</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🚀 إرسال طلب تنظيم البازار';
+}
+
 /* ══════════════════════════════════════════
    ⭐  RATINGS
    ══════════════════════════════════════════ */
@@ -1057,14 +1185,17 @@ function setTxt(id, txt) {
  * ③ لو owner ✅ → تفتح الداشبورد مباشرة
  */
 async function checkSessionOnLoad() {
+  if (ownerAuthChecked) return;
+  ownerAuthChecked = true;
+
   const sb = getSB();
 
-  /* ── بدون Supabase: fallback للـ sessionStorage ── */
   if (!sb) {
-    const saved = sessionStorage.getItem('ms_owner');
-    if (saved) {
-      try { currentOwner = JSON.parse(saved); initDashboard(); } catch { sessionStorage.removeItem('ms_owner'); }
-    }
+    showOwnerAccessGate(
+      'danger',
+      'تعذّر الاتصال بنظام الحسابات',
+      'لا يمكن فتح لوحة أصحاب المساحات بدون التحقق من حساب المنصة وصلاحية Owner.'
+    );
     return;
   }
 
@@ -1072,12 +1203,12 @@ async function checkSessionOnLoad() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    /* لا يوجد session — تحقق من الـ sessionStorage كـ fallback */
-    const saved = sessionStorage.getItem('ms_owner');
-    if (saved) {
-      try { currentOwner = JSON.parse(saved); initDashboard(); return; } catch { sessionStorage.removeItem('ms_owner'); }
-    }
-    /* لا session ولا cached owner → صفحة اللوجين (هي الافتراضية) */
+    sessionStorage.removeItem('ms_owner');
+    showOwnerAccessGate(
+      'info',
+      'ادخل من حسابك على منصة مكاني Spot',
+      'لا توجد جلسة منصة نشطة في هذا المتصفح. سجل الدخول أو أنشئ حسابًا عاديًا من المنصة، ثم اطلب ترقية الحساب إلى Owner.'
+    );
     return;
   }
 
@@ -1089,9 +1220,12 @@ async function checkSessionOnLoad() {
     .single();
 
   if (error || !profile || profile.role !== 'owner') {
-    /* مش owner → اطرد وارجع للوجين */
-    await sb.auth.signOut();
     sessionStorage.removeItem('ms_owner');
+    showOwnerAccessGate(
+      'danger',
+      'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
+      `حسابك الحالي ${profile?.role ? `مسجل كـ "${profile.role}"` : 'لم يتم العثور على صلاحية Owner له'}. بعد تحويله إلى Owner ستدخل للوحة مباشرة من المنصة.`
+    );
     return;
   }
 
