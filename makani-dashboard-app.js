@@ -9,7 +9,7 @@
    ══════════════════════════════════════════ */
 const SHEET_URL     = "https://script.google.com/macros/s/AKfycbxyCDOQW3SlaoSEPAAFfClUcHYyxA6-iei4Zuvvv5Us8caWP9X3WjgoeyhsOVNGJ9XqQw/exec";
 const BOOKING_URL   = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
-const ADD_SPACE_URL = BOOKING_URL; // مؤقت — غيّره لرابط Apps Script خاص بإضافة المساحات
+const ADD_SPACE_URL = SHEET_URL; // نفس الـ Apps Script الخاص بالمساحات — يدعم doPost بعد التحديث
 const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec";
 
 const ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة"
@@ -523,9 +523,10 @@ function initDashboard() {
   if (stPhone) stPhone.value = currentOwner.phone  || '';
   if (stEmail) stEmail.value = currentOwner.email  || '';
 
-  /* تحميل العقود والتقييمات من localStorage */
+  /* تحميل العقود والتقييمات والمساحات المعلقة من localStorage */
   loadContractsLocal();
   loadRatingsLocal();
+  loadPendingSpaces();
   syncDataFromContracts(); /* يُشتق منها ownerTenants و ownerContracts */
 
   loadOwnerData();
@@ -593,6 +594,7 @@ function applyDemoData() {
 
 function renderAll() {
   renderKPIs();
+  renderOverview();
   renderSpaces();
   renderTenants();
   renderBestTenant();
@@ -790,33 +792,304 @@ function renderKPIs() {
   const rented    = ownerSpaces.filter(s => s.status === 'rented');
   const avail     = ownerSpaces.filter(s => s.status === 'available');
   const maint     = ownerSpaces.filter(s => s.status === 'maintenance');
-  const monthly   = rented.reduce((sum, s) => sum + (s.rent || 0), 0);
-  const occ       = ownerSpaces.length ? Math.round((rented.length / ownerSpaces.length) * 100) : 0;
-  const scored    = rented.filter(s => s.score);
-  const avgScore  = scored.length
-    ? (scored.reduce((s, sp) => s + sp.score, 0) / scored.length).toFixed(1)
+
+  /* الإيراد: من العقود الحقيقية أولاً، ثم من بيانات المساحات (demo) */
+  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+  const monthly = activeContracts.length > 0
+    ? activeContracts.reduce((sum, c) => sum + (parseFloat(c.rent) || 0), 0)
+    : rented.reduce((sum, s) => sum + (s.rent || 0), 0);
+
+  /* عدد المستأجرين: من العقود الحقيقية أولاً */
+  const tenantsCount = activeContracts.length > 0 ? activeContracts.length : rented.length;
+
+  const occ      = ownerSpaces.length ? Math.round((rented.length / ownerSpaces.length) * 100) : 0;
+
+  /* متوسط التقييم: من ownerTenants (المبني من ratingsList الحقيقي) */
+  const scoredT   = ownerTenants.filter(t => t.score !== null);
+  const avgScore  = scoredT.length
+    ? (scoredT.reduce((s, t) => s + (t.score || 0), 0) / scoredT.length).toFixed(1)
     : '—';
   const abandoned = ownerSpaces.filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD);
-  const expiring  = ownerContracts.filter(c => c.daysLeft <= 30);
+  const expiring  = contractsList.filter(c => c.status === 'expiring' || c.status === 'renewal');
 
   /* Overview KPIs */
-  setTxt('kpi-revenue', monthly.toLocaleString('ar-EG'));
+  setTxt('kpi-revenue', monthly > 0 ? monthly.toLocaleString('ar-EG') : '—');
   setTxt('kpi-occ',     occ + '%');
-  setTxt('kpi-tenants', String(rented.length));
+  setTxt('kpi-tenants', String(tenantsCount));
   setTxt('kpi-score',   String(avgScore));
 
   const occBar = document.getElementById('kpi-occ-bar');
   if (occBar) occBar.style.width = occ + '%';
 
-  /* Spaces view KPIs */
-  setTxt('kpi-main',  String(rented.length));
-  setTxt('kpi-avail', String(avail.length));
-  setTxt('kpi-maint', String(maint.length));
+  /* Spaces view KPIs (pending = ownerPendingSpaces) */
+  const totalSpaces = ownerSpaces.length || 1;
+  setTxt('kpi-main',    String(rented.length));
+  setTxt('kpi-avail',   String(avail.length));
+  setTxt('kpi-maint',   String(maint.length));
+  setTxt('kpi-pending', String(ownerPendingSpaces.length));
+  const mainBar  = document.getElementById('kpi-main-bar');
+  const availBar = document.getElementById('kpi-avail-bar');
+  const maintBar = document.getElementById('kpi-maint-bar');
+  if (mainBar)  mainBar.style.width  = Math.round((rented.length / totalSpaces) * 100) + '%';
+  if (availBar) availBar.style.width = Math.round((avail.length  / totalSpaces) * 100) + '%';
+  if (maintBar) maintBar.style.width = Math.round((maint.length  / totalSpaces) * 100) + '%';
 
   /* Sidebar badges */
-  setTxt('nb-tenants',  String(rented.length));
+  setTxt('nb-tenants',  String(tenantsCount));
   setTxt('nb-expiring', String(expiring.length));
   setTxt('nb-alerts',   String(abandoned.length + expiring.length));
+}
+
+/* ══════════════════════════════════════════
+   🏠  OVERVIEW — يملأ كل عناصر الصفحة الرئيسية ديناميكياً
+   ══════════════════════════════════════════ */
+function renderOverview() {
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const COLORS    = ['var(--orange)','var(--green)','var(--blue)','var(--yellow)','var(--red)'];
+  const NUM_AR    = ['١','٢','٣','٤','٥'];
+
+  /* ── 1. Delta indicators على بطاقات KPI ─────────────────────────── */
+  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+  const monthly  = activeContracts.reduce((s, c) => s + (parseFloat(c.rent) || 0), 0);
+  const expiring = activeContracts.filter(c => c.status === 'expiring' || c.status === 'renewal');
+
+  const revDelta = document.getElementById('kpi-rev-delta');
+  if (revDelta) {
+    if (monthly > 0) {
+      revDelta.className = 'kpi-delta up';
+      revDelta.textContent = `↑ ${activeContracts.length} عقد نشط`;
+    } else {
+      revDelta.className = 'kpi-delta flat';
+      revDelta.textContent = '← أضف عقوداً للحساب';
+    }
+  }
+
+  const occDelta = document.getElementById('kpi-occ-delta');
+  if (occDelta) {
+    const pct = ownerSpaces.length
+      ? Math.round((ownerSpaces.filter(s => s.status === 'rented').length / ownerSpaces.length) * 100) : 0;
+    occDelta.className = pct >= 70 ? 'kpi-delta up' : pct >= 40 ? 'kpi-delta flat' : 'kpi-delta down';
+    occDelta.textContent = pct >= 70 ? '↑ إشغال جيد' : pct >= 40 ? '→ متوسط' : '↓ منخفض';
+  }
+
+  const tenDelta = document.getElementById('kpi-ten-delta');
+  if (tenDelta) {
+    if (expiring.length > 0) {
+      tenDelta.className = 'kpi-delta down';
+      tenDelta.textContent = `↓ ${expiring.length} ينتهي قريباً`;
+    } else if (activeContracts.length > 0) {
+      tenDelta.className = 'kpi-delta up';
+      tenDelta.textContent = '↑ كل العقود سارية';
+    } else {
+      tenDelta.className = 'kpi-delta flat';
+      tenDelta.textContent = '← لا توجد عقود';
+    }
+  }
+
+  const scoreDelta = document.getElementById('kpi-score-delta');
+  const starsEl    = document.getElementById('kpi-score-stars');
+  const scoredT    = ownerTenants.filter(t => t.score !== null);
+  if (scoredT.length) {
+    const avg  = scoredT.reduce((s, t) => s + (t.score || 0), 0) / scoredT.length;
+    const full = Math.min(5, Math.round(avg / 2));
+    if (starsEl) starsEl.textContent = '★'.repeat(full) + '☆'.repeat(5 - full);
+    if (scoreDelta) {
+      scoreDelta.className = avg >= 8 ? 'kpi-delta up' : avg >= 6 ? 'kpi-delta flat' : 'kpi-delta down';
+      scoreDelta.textContent = avg >= 8 ? '↑ ممتاز' : avg >= 6 ? '→ جيد' : '↓ يحتاج تحسين';
+    }
+  } else {
+    if (starsEl)    starsEl.textContent = '☆☆☆☆☆';
+    if (scoreDelta) { scoreDelta.className = 'kpi-delta flat'; scoreDelta.textContent = '← لا تقييمات بعد'; }
+  }
+
+  /* ── 2. أفضل المستأجرين (جدول ديناميكي) ────────────────────────── */
+  const tbody = document.getElementById('overview-tenants-tbody');
+  if (tbody) {
+    const sorted = [...ownerTenants]
+      .filter(t => t.score !== null)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 5);
+
+    if (!sorted.length) {
+      /* fallback: عرض المستأجرين بدون تقييم (من العقود النشطة) */
+      const unratedTenants = ownerTenants.slice(0, 5);
+      if (unratedTenants.length) {
+        tbody.innerHTML = unratedTenants.map((t, i) => `
+          <tr>
+            <td><span style="color:var(--text3);font-family:'Space Mono',monospace">${NUM_AR[i] || i+1}</span></td>
+            <td><strong>${t.name}</strong></td>
+            <td style="color:var(--text2)">${t.space}</td>
+            <td><span class="badge badge-orange">${t.icon} ${t.act !== '—' ? t.act : 'غير محدد'}</span></td>
+            <td><span style="color:var(--text3);font-size:11px">لا تقييم</span></td>
+            <td><span class="badge" style="background:var(--bg3);color:var(--text3)">—</span></td>
+          </tr>`).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">
+          أضف عقوداً ثم قيّم مستأجريك لتظهر هنا ←
+          <button class="btn btn-sm btn-primary" style="margin-right:8px" onclick="goTo('contracts',document.querySelector('[onclick*=contracts]'))">أضف عقداً</button>
+        </td></tr>`;
+      }
+    } else {
+      tbody.innerHTML = sorted.map((t, i) => {
+        const col  = t.score >= 8 ? 'var(--green)' : t.score >= 6 ? 'var(--yellow)' : 'var(--red)';
+        const bCls = t.score >= 8 ? 'badge-green'  : t.score >= 6 ? 'badge-yellow'  : 'badge-red';
+        const lbl  = t.score >= 8 ? 'ممتاز' : t.score >= 6 ? 'جيد' : t.score >= 4 ? 'متوسط' : 'ضعيف';
+        const numEl = i === 0
+          ? `<span style="color:var(--orange);font-weight:900;font-family:'Space Mono',monospace">١</span>`
+          : t.score < 4
+            ? `<span style="color:var(--red);font-family:'Space Mono',monospace">⚠</span>`
+            : `<span style="color:var(--text3);font-family:'Space Mono',monospace">${NUM_AR[i]}</span>`;
+        return `
+          <tr>
+            <td>${numEl}</td>
+            <td><strong>${t.name}${t.act && t.act !== '—' ? ' — ' + t.act : ''}</strong></td>
+            <td style="color:var(--text2)">${t.space}</td>
+            <td><span class="badge badge-orange">${t.icon} ${t.act !== '—' ? t.act : '—'}</span></td>
+            <td><strong style="color:${col};font-family:'Space Mono',monospace">${t.score}</strong></td>
+            <td><span class="badge ${bCls}">${lbl}</span></td>
+          </tr>`;
+      }).join('');
+    }
+  }
+
+  /* ── 3. التنبيهات المختصرة (أحدث 3) ────────────────────────────── */
+  const alertsList = document.getElementById('overview-alerts-list');
+  if (alertsList) {
+    const previewAlerts = [];
+
+    /* مستأجرون ضعيف أداؤهم */
+    ownerTenants
+      .filter(t => t.score !== null && t.score < 5 && t.trend === 'down')
+      .slice(0, 1)
+      .forEach(t => previewAlerts.push({
+        cls: 'danger', ico: '📉',
+        title: `تقييم ${t.name} منخفض (${t.score}/10)`,
+        body:  `مستمر في التراجع — يُنصح بمراجعة الوضع.`,
+      }));
+
+    /* عقود تنتهي قريباً */
+    contractsList
+      .filter(c => c.status !== 'expired' && c.daysLeft >= 0 && c.daysLeft <= 30)
+      .slice(0, 2)
+      .forEach(c => previewAlerts.push({
+        cls: c.daysLeft <= 14 ? 'danger' : 'warning', ico: '📅',
+        title: `عقد ${c.tenantName} ينتهي خلال ${c.daysLeft} يوم`,
+        body:  `المساحة ${c.spaceCode} — تواصل للتجديد أو ابحث عن بديل.`,
+      }));
+
+    /* مساحات مهملة */
+    ownerSpaces
+      .filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD)
+      .slice(0, 2)
+      .forEach(s => previewAlerts.push({
+        cls: 'info', ico: '💡',
+        title: `المساحة ${s.code} فارغة منذ ${s.daysEmpty} يوم`,
+        body:  `${s.loc} — راجع السعر أو أوسع نطاق الأنشطة المسموحة.`,
+      }));
+
+    /* مساحات في الصيانة */
+    ownerSpaces
+      .filter(s => s.status === 'maintenance')
+      .slice(0, 1)
+      .forEach(s => previewAlerts.push({
+        cls: 'warning', ico: '🔧',
+        title: `المساحة ${s.code} في الصيانة`,
+        body:  `${s.loc} — تأكد من انتهاء أعمال الصيانة في أقرب وقت.`,
+      }));
+
+    if (!previewAlerts.length) {
+      alertsList.innerHTML = `
+        <div class="alert-item success">
+          <span class="alert-ico">✅</span>
+          <div class="alert-text"><strong>لا توجد تنبيهات عاجلة حالياً</strong>كل شيء يسير بشكل جيد.</div>
+        </div>`;
+    } else {
+      alertsList.innerHTML = previewAlerts.slice(0, 3).map(a => `
+        <div class="alert-item ${a.cls}">
+          <span class="alert-ico">${a.ico}</span>
+          <div class="alert-text"><strong>${a.title}</strong> ${a.body}</div>
+        </div>`).join('');
+    }
+  }
+
+  /* ── 4. رسم بياني للإيرادات — آخر 6 شهور من العقود الحقيقية ──── */
+  const chartEl = document.getElementById('overview-chart');
+  if (chartEl) {
+    const now    = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key:   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: MONTHS_AR[d.getMonth()].slice(0, 3),
+        total: 0,
+      });
+    }
+
+    /* احسب إيراد كل شهر من العقود التي كانت سارية فيه */
+    contractsList.forEach(c => {
+      if (!c.startDate || !c.endDate || !c.rent) return;
+      const start = new Date(c.startDate);
+      const end   = new Date(c.endDate);
+      const rent  = parseFloat(c.rent) || 0;
+      months.forEach(m => {
+        const mDate = new Date(m.key + '-01');
+        if (mDate >= new Date(start.getFullYear(), start.getMonth(), 1) &&
+            mDate <= new Date(end.getFullYear(),   end.getMonth(),   1)) {
+          m.total += rent;
+        }
+      });
+    });
+
+    const maxTotal = Math.max(...months.map(m => m.total), 1);
+    const lastIdx  = months.length - 1;
+
+    if (months.every(m => m.total === 0)) {
+      /* لا توجد عقود — عرض أعمدة placeholder */
+      const pHts = [40, 55, 35, 70, 50, 80];
+      chartEl.innerHTML = pHts.map((h, i) => `
+        <div class="bar${i === lastIdx ? ' high' : ''}" style="height:${h}%;opacity:0.18">
+          <span class="bar-label">${months[i].label}</span>
+          <span class="bar-val">—</span>
+        </div>`).join('');
+    } else {
+      chartEl.innerHTML = months.map((m, i) => {
+        const h   = Math.max(8, Math.round((m.total / maxTotal) * 100));
+        const val = m.total >= 1000
+          ? (m.total / 1000).toFixed(0) + 'ك'
+          : m.total > 0 ? m.total.toLocaleString('ar-EG') : '—';
+        return `<div class="bar${i === lastIdx ? ' high' : ''}" style="height:${h}%">
+          <span class="bar-label">${m.label}</span>
+          <span class="bar-val">${val}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  /* ── 5. توزيع الأنشطة ──────────────────────────────────────────── */
+  const actsLegend = document.getElementById('overview-acts-legend');
+  if (actsLegend) {
+    const actCounts = {};
+    ownerTenants.forEach(t => {
+      const act = (t.act && t.act !== '—') ? t.act : 'أخرى';
+      actCounts[act] = (actCounts[act] || 0) + 1;
+    });
+    const entries = Object.entries(actCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const total   = ownerTenants.length || 1;
+
+    if (!entries.length) {
+      actsLegend.innerHTML = `<div class="donut-item" style="color:var(--text3);font-size:12px">أضف عقوداً لعرض توزيع الأنشطة</div>`;
+    } else {
+      actsLegend.innerHTML = entries.map(([act, count], i) => {
+        const pct = Math.round((count / total) * 100);
+        return `<div class="donut-item">
+          <div class="donut-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+          ${act} (${pct}%)
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -890,6 +1163,46 @@ function setPeriod(p, btn) {
    🗺️  SPACES VIEW
    ══════════════════════════════════════════ */
 function renderSpaces() {
+  /* ── طلبات الإضافة المعلقة ── */
+  const pendingSec = document.getElementById('pending-spaces-section');
+  if (pendingSec) {
+    if (ownerPendingSpaces.length) {
+      pendingSec.style.display = 'block';
+      pendingSec.innerHTML = `
+        <div class="pcard" style="border-color:rgba(255,184,0,0.35)">
+          <div class="pcard-head" style="background:rgba(255,184,0,0.06)">
+            <div>
+              <div class="pcard-title" style="color:var(--yellow)">⏳ طلبات إضافة قيد المراجعة (${ownerPendingSpaces.length})</div>
+              <div class="pcard-sub">أُرسلت للمنصة — فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة</div>
+            </div>
+          </div>
+          <div class="pcard-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>تاريخ الإرسال</th><th></th></tr></thead>
+              <tbody>
+                ${ownerPendingSpaces.map(p => {
+                  const typeLabels = { mall:'🏬 مول', club:'🏊 نادي', school:'🏫 مدرسة' };
+                  const sentDate   = p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('ar-EG') : '—';
+                  return `<tr style="background:rgba(255,184,0,0.03)">
+                    <td style="font-weight:700">${p.name}</td>
+                    <td>${typeLabels[p.type] || p.type}</td>
+                    <td>${p.loc}</td>
+                    <td style="font-size:11px;color:var(--text3)">${p.sizes || '—'}</td>
+                    <td style="font-family:'Space Mono',monospace">${p.price ? p.price.toLocaleString('ar-EG')+' ج' : '—'}</td>
+                    <td style="text-align:center">${p.subCount > 0 ? `<span class="badge badge-blue">${p.subCount} وحدة</span>` : '—'}</td>
+                    <td style="font-size:11px;color:var(--text3)">${sentDate}</td>
+                    <td><button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">إلغاء</button></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    } else {
+      pendingSec.style.display = 'none';
+    }
+  }
+
   const tbody          = document.getElementById('spaces-tbody');
   const abandonedSec   = document.getElementById('abandoned-section');
   const abandonedTbody = document.getElementById('abandoned-tbody');
@@ -1268,6 +1581,321 @@ function renderAlerts() {
 }
 
 /* ══════════════════════════════════════════
+   📦  PENDING SPACES — localStorage
+   ══════════════════════════════════════════ */
+function pendingSpacesKey() { return 'ms_pending_' + (currentOwner?.id || 'guest'); }
+
+function loadPendingSpaces() {
+  try {
+    const raw = localStorage.getItem(pendingSpacesKey());
+    ownerPendingSpaces = raw ? JSON.parse(raw) : [];
+  } catch { ownerPendingSpaces = []; }
+}
+
+function savePendingSpaces() {
+  localStorage.setItem(pendingSpacesKey(), JSON.stringify(ownerPendingSpaces));
+}
+
+function removePendingSpace(id) {
+  if (!confirm('هل تريد إلغاء هذا الطلب؟')) return;
+  ownerPendingSpaces = ownerPendingSpaces.filter(p => p.id !== id);
+  savePendingSpaces();
+  renderSpaces();
+}
+
+/* ══════════════════════════════════════════
+   ➕  ADD SPACE FORM — الأحجام
+   ══════════════════════════════════════════ */
+function addSizeRow() {
+  const container = document.getElementById('as-sizes-container');
+  const emptyMsg  = document.getElementById('as-sizes-empty-msg');
+  if (!container) return;
+  if (emptyMsg) emptyMsg.style.display = 'none';
+
+  const idx = asSizeRowCount++;
+  const div = document.createElement('div');
+  div.id = 'as-size-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 2fr 40px;gap:8px;margin-bottom:8px;align-items:center';
+  div.innerHTML = `
+    <input type="text"   id="as-size-label-${idx}" placeholder="مثال: ١×١ م" style="width:100%" oninput="calcDefaultPrice()">
+    <input type="number" id="as-size-price-${idx}" placeholder="السعر/شهر" min="0" style="width:100%;font-family:'Space Mono',monospace" oninput="calcDefaultPrice()">
+    <button type="button" onclick="removeSizeRow(${idx})"
+            style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:6px 10px;cursor:pointer;font-size:13px;line-height:1">✕</button>`;
+  container.appendChild(div);
+  calcDefaultPrice();
+}
+
+function removeSizeRow(idx) {
+  const el = document.getElementById('as-size-row-' + idx);
+  if (el) el.remove();
+  calcDefaultPrice();
+  const container = document.getElementById('as-sizes-container');
+  const emptyMsg  = document.getElementById('as-sizes-empty-msg');
+  if (container && !container.children.length && emptyMsg) emptyMsg.style.display = 'block';
+}
+
+function calcDefaultPrice() {
+  const prices = Array.from(document.querySelectorAll('[id^="as-size-price-"]'))
+    .map(r => parseFloat(r.value) || 0).filter(p => p > 0);
+  const avg = prices.length ? Math.round(prices.reduce((a,b)=>a+b,0) / prices.length) : 0;
+  const hiddenEl  = document.getElementById('as-default-price');
+  const displayEl = document.getElementById('as-price-display');
+  if (hiddenEl) hiddenEl.value = avg;
+  if (displayEl) {
+    if (avg > 0) {
+      displayEl.style.display = 'block';
+      displayEl.innerHTML = `💰 السعر الافتراضي المحسوب: <strong style="font-family:'Space Mono',monospace">${avg.toLocaleString('ar-EG')} ج.م.</strong> / شهر`;
+    } else {
+      displayEl.style.display = 'none';
+    }
+  }
+}
+
+function getSizesString() {
+  const sizes = [];
+  document.querySelectorAll('[id^="as-size-row-"]').forEach(row => {
+    const idx   = row.id.replace('as-size-row-', '');
+    const label = document.getElementById('as-size-label-' + idx)?.value.trim();
+    const price = document.getElementById('as-size-price-' + idx)?.value.trim();
+    if (label) sizes.push(price ? `${label}:${price}` : label);
+  });
+  return sizes.join(' · ');
+}
+
+function addAct(act) {
+  const el = document.getElementById('as-acts');
+  if (!el) return;
+  const cur = el.value.trim();
+  if (!cur) { el.value = act; return; }
+  if (!cur.split('·').map(s=>s.trim()).includes(act)) el.value = cur + ' · ' + act;
+}
+
+function getAmenitiesString() {
+  const checked = Array.from(document.querySelectorAll('[id^="as-amen-"]:checked')).map(c => c.value);
+  const custom  = document.getElementById('as-amen-custom')?.value.trim();
+  if (custom) checked.push(...custom.split('،').map(s=>s.trim()).filter(Boolean));
+  return checked.join('·');
+}
+
+function updateSpaceIcon() {
+  const type    = document.getElementById('as-type')?.value;
+  const iconSel = document.getElementById('as-icon');
+  if (!iconSel || !type) return;
+  const defaults = { mall:'🏬', club:'🏊', school:'🏫' };
+  if (defaults[type]) iconSel.value = defaults[type];
+}
+
+/* ══════════════════════════════════════════
+   ➕  ADD SPACE FORM — الوحدات الفرعية
+   ══════════════════════════════════════════ */
+function addSubUnitRow() {
+  const container = document.getElementById('as-units-container');
+  const emptyMsg  = document.getElementById('as-units-empty-msg');
+  if (!container) return;
+  if (emptyMsg) emptyMsg.style.display = 'none';
+
+  const idx = asUnitCounter++;
+  const div = document.createElement('div');
+  div.id = 'as-unit-row-' + idx;
+  div.dataset.idx = idx;
+  div.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-weight:700;color:var(--orange);font-size:13px">📦 وحدة فرعية #${idx+1}</div>
+      <button type="button" onclick="removeSubUnitRow(${idx})"
+              style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:4px 12px;cursor:pointer;font-size:12px">حذف ✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">كود الوحدة <span style="color:var(--red)">*</span></label>
+        <input type="text" id="as-unit-uid-${idx}" placeholder="مثال: A1, B2, G-15">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">اسم الوحدة <span style="color:var(--red)">*</span></label>
+        <input type="text" id="as-unit-name-${idx}" placeholder="مثال: كشك أمام المصعد">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">الدور</label>
+        <select id="as-unit-floor-${idx}">
+          <option value="">اختر</option>
+          <option value="أرضي">أرضي</option>
+          <option value="أول">أول</option>
+          <option value="ثاني">ثاني</option>
+          <option value="ثالث">ثالث</option>
+          <option value="بدروم">بدروم</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">المساحة <span style="color:var(--red)">*</span></label>
+        <input type="text" id="as-unit-size-${idx}" placeholder="مثال: ١×١ م، ٢م²">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">السعر / شهر (ج.م.)</label>
+        <input type="number" id="as-unit-price-${idx}" placeholder="مثال: 4500" min="0" style="font-family:'Space Mono',monospace">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:12px">الحالة</label>
+        <select id="as-unit-status-${idx}">
+          <option value="available">✅ متاحة</option>
+          <option value="rented">🔴 مؤجّرة</option>
+          <option value="reserved">🟡 محجوزة</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:10px">
+      <label style="font-size:12px">الموقع الدقيق داخل المساحة</label>
+      <input type="text" id="as-unit-loc-${idx}" placeholder="مثال: أمام المصعد، الركن الغربي">
+    </div>
+    <div class="form-group" style="margin-top:6px">
+      <label style="font-size:12px">ملاحظات</label>
+      <input type="text" id="as-unit-notes-${idx}" placeholder="أي تفاصيل إضافية">
+    </div>
+    <div style="margin-top:12px">
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px">📷 صورة الوحدة (اختياري)</label>
+      <div id="as-unit-img-zone-${idx}"
+           style="border:2px dashed rgba(255,107,0,0.3);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;background:var(--orange-pale);transition:all 0.2s"
+           onclick="document.getElementById('as-unit-img-${idx}').click()"
+           onmouseenter="this.style.borderColor='var(--orange)'"
+           onmouseleave="this.style.borderColor='rgba(255,107,0,0.3)'">
+        <div style="font-size:20px">📤</div>
+        <div style="font-size:11px;color:var(--orange);font-weight:600;margin-top:3px">اختر صورة الوحدة</div>
+      </div>
+      <input type="file" id="as-unit-img-${idx}" accept="image/*" style="display:none" onchange="handleUnitImageUpload(this,${idx})">
+      <div id="as-unit-img-preview-${idx}" style="margin-top:8px"></div>
+    </div>`;
+  container.appendChild(div);
+}
+
+function removeSubUnitRow(idx) {
+  const el = document.getElementById('as-unit-row-' + idx);
+  if (el) el.remove();
+  const container = document.getElementById('as-units-container');
+  const emptyMsg  = document.getElementById('as-units-empty-msg');
+  if (container && !container.children.length && emptyMsg) emptyMsg.style.display = 'block';
+}
+
+async function handleUnitImageUpload(input, idx) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('الصورة أكبر من 5 ميجا — اختر صورة أصغر.');
+    input.value = ''; return;
+  }
+  const resized = await resizeBazaarImage(file, 800, 600, 0.82);
+  input.dataset.imgDataUrl = resized;
+  const preview = document.getElementById('as-unit-img-preview-' + idx);
+  if (preview) {
+    preview.innerHTML = `
+      <div style="position:relative">
+        <img src="${resized}" style="width:100%;max-height:130px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border)">
+        <button type="button"
+                onclick="clearUnitImage(${idx})"
+                style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;line-height:22px;text-align:center">✕</button>
+      </div>`;
+    const zone = document.getElementById('as-unit-img-zone-' + idx);
+    if (zone) zone.style.display = 'none';
+  }
+}
+
+function clearUnitImage(idx) {
+  const input   = document.getElementById('as-unit-img-' + idx);
+  const preview = document.getElementById('as-unit-img-preview-' + idx);
+  const zone    = document.getElementById('as-unit-img-zone-' + idx);
+  if (input)   { input.value = ''; delete input.dataset.imgDataUrl; }
+  if (preview) preview.innerHTML = '';
+  if (zone)    zone.style.display = 'block';
+}
+
+/* ── صورة رئيسية للمساحة ── */
+async function handleMainSpaceImageUpload(input) {
+  const file      = input.files?.[0];
+  const preview   = document.getElementById('as-main-img-preview');
+  const statusEl  = document.getElementById('as-main-img-status');
+  const uploadIco = document.getElementById('as-main-upload-ico');
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">❌ أكبر من 5 ميجا</span>';
+    input.value = ''; return;
+  }
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ جاري المعالجة…</span>';
+  asMainImgDataUrl = await resizeBazaarImage(file, 1200, 800, 0.85);
+  if (preview) {
+    preview.innerHTML = `
+      <div style="position:relative;margin-top:8px">
+        <img src="${asMainImgDataUrl}" style="width:100%;border-radius:var(--r);max-height:180px;object-fit:cover;border:2px solid rgba(0,200,83,0.30)">
+        <button type="button" onclick="clearMainSpaceImage()"
+                style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;line-height:24px;text-align:center">✕</button>
+      </div>`;
+  }
+  if (statusEl)  statusEl.innerHTML  = '<span style="color:var(--green)">✅ جاهزة للإرسال</span>';
+  if (uploadIco) uploadIco.textContent = '✅';
+}
+
+function clearMainSpaceImage() {
+  asMainImgDataUrl = null;
+  const preview   = document.getElementById('as-main-img-preview');
+  const input     = document.getElementById('as-main-img-input');
+  const statusEl  = document.getElementById('as-main-img-status');
+  const uploadIco = document.getElementById('as-main-upload-ico');
+  if (preview)   preview.innerHTML    = '';
+  if (input)     input.value          = '';
+  if (statusEl)  statusEl.textContent = 'لم تُرفع';
+  if (uploadIco) uploadIco.textContent = '📤';
+}
+
+/* ── صور إضافية للمساحة ── */
+async function handleExtraSpaceImagesUpload(input) {
+  const files     = Array.from(input.files).slice(0, 5 - asExtraImgsData.filter(Boolean).length);
+  const container = document.getElementById('as-extra-imgs-container');
+  if (!files.length || !container) return;
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) continue;
+    const resized = await resizeBazaarImage(file, 1000, 700, 0.82);
+    const idx     = asExtraImgsData.length;
+    asExtraImgsData.push({ dataUrl: resized, name: file.name });
+    const div = document.createElement('div');
+    div.id = 'as-extra-img-' + idx;
+    div.style.cssText = 'position:relative;width:calc(50% - 4px);flex-shrink:0';
+    div.innerHTML = `
+      <img src="${resized}" style="width:100%;height:90px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border)">
+      <button type="button" onclick="removeExtraSpaceImage(${idx})"
+              style="position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;line-height:20px;text-align:center">✕</button>`;
+    container.appendChild(div);
+  }
+  input.value = '';
+}
+
+function removeExtraSpaceImage(idx) {
+  asExtraImgsData[idx] = null;
+  const el = document.getElementById('as-extra-img-' + idx);
+  if (el) el.remove();
+}
+
+function collectSubUnits() {
+  const units = [];
+  document.querySelectorAll('[id^="as-unit-row-"]').forEach(div => {
+    const idx     = div.dataset.idx;
+    const imgInput = document.getElementById('as-unit-img-' + idx);
+    const uid  = document.getElementById('as-unit-uid-' + idx)?.value.trim()   || '';
+    const name = document.getElementById('as-unit-name-' + idx)?.value.trim() || '';
+    if (!uid && !name) return;
+    units.push({
+      unitId:     uid,
+      name:       name,
+      floor:      document.getElementById('as-unit-floor-' + idx)?.value   || '',
+      size:       document.getElementById('as-unit-size-' + idx)?.value.trim() || '',
+      price:      parseFloat(document.getElementById('as-unit-price-' + idx)?.value) || 0,
+      status:     document.getElementById('as-unit-status-' + idx)?.value  || 'available',
+      location:   document.getElementById('as-unit-loc-' + idx)?.value.trim() || '',
+      notes:      document.getElementById('as-unit-notes-' + idx)?.value.trim() || '',
+      imgDataUrl: imgInput?.dataset?.imgDataUrl || '',
+      imgName:    imgInput?.files?.[0]?.name || (uid + '.jpg'),
+    });
+  });
+  return units;
+}
+
+/* ══════════════════════════════════════════
    ➕  ADD SPACE FORM
    🔗 DB-LINK: يرسل للـ Apps Script → يحفظ في الشيت
    ══════════════════════════════════════════ */
@@ -1293,26 +1921,70 @@ async function submitAddSpace(e) {
   const msg = document.getElementById('add-space-msg');
   if (!btn || !msg) return;
 
-  btn.disabled    = true;
-  btn.textContent = '⏳ جاري الإرسال…';
+  const get = id => document.getElementById(id)?.value?.trim() || '';
 
+  const spaceName = get('as-name');
+  const spaceType = get('as-type');
+  const spaceLoc  = get('as-loc');
+
+  if (!spaceName || !spaceType || !spaceLoc) {
+    msg.className   = 'alert-item danger';
+    msg.style.display = 'flex';
+    msg.innerHTML   = `<span class="alert-ico">❌</span><div class="alert-text"><strong>اسم المساحة ونوعها ومنطقتها مطلوبة.</strong></div>`;
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '⏳ جاري إرسال الطلب…';
+  msg.style.display = 'none';
+
+  const typeMap = {
+    mall:   { badge:'متاح', badgeClass:'badge-avail', thumbClass:'thumb-mall' },
+    club:   { badge:'متاح', badgeClass:'badge-info',  thumbClass:'thumb-club' },
+    school: { badge:'متاح', badgeClass:'badge-warn',  thumbClass:'thumb-school' },
+  };
+  const tm = typeMap[spaceType] || typeMap.mall;
+
+  const subUnits = collectSubUnits();
+
+  /* ═══ Payload — يطابق أعمدة شيتي المساحات والوحدات الفرعية ═══ */
   const payload = {
-    action:      'addSpace',
-    ownerId:     currentOwner.id,
-    ownerName:   currentOwner.name,
-    place:       currentOwner.place,
-    code:        document.getElementById('as-code')?.value.trim(),
-    location:    document.getElementById('as-location')?.value.trim(),
-    floor:       document.getElementById('as-floor')?.value,
-    size:        document.getElementById('as-size')?.value.trim(),
-    activities:  document.getElementById('as-activities')?.value.trim(),
-    price:       document.getElementById('as-price')?.value,
-    description: document.getElementById('as-description')?.value.trim(),
-    timestamp:   new Date().toISOString(),
+    action:       'addSpace',
+    /* Owner info */
+    ownerId:      currentOwner.id,
+    ownerName:    currentOwner.name,
+    ownerPhone:   currentOwner.phone  || '',
+    ownerEmail:   currentOwner.email  || '',
+    ownerPlace:   currentOwner.place  || '',
+    /* B-U: شيت "🏢 المساحات" */
+    name:         spaceName,                          /* B */
+    type:         spaceType,                          /* C */
+    loc:          spaceLoc,                           /* D */
+    badge:        get('as-badge') || tm.badge,        /* E */
+    badgeClass:   tm.badgeClass,                      /* F */
+    icon:         get('as-icon') || '🏬',             /* I */
+    thumbClass:   tm.thumbClass,                      /* J */
+    sizes:        getSizesString(),                   /* K */
+    defaultPrice: parseFloat(get('as-default-price')) || 0, /* L */
+    allActs:      document.getElementById('as-all-acts')?.checked ? 'نعم' : 'لا', /* M */
+    acts:         get('as-acts'),                     /* N */
+    season:       get('as-season'),                   /* O */
+    insight:      get('as-insight'),                  /* P */
+    description:  get('as-desc'),                     /* Q */
+    amenities:    getAmenitiesString(),               /* R */
+    visible:      'لا',                               /* S — غير ظاهر حتى الموافقة */
+    order:        parseInt(get('as-order')) || 99,    /* T */
+    notes:        get('as-notes'),                    /* U */
+    /* الصور */
+    mainImageDataUrl: asMainImgDataUrl || '',
+    mainImageName:    document.getElementById('as-main-img-input')?.files?.[0]?.name || (spaceName + '.jpg'),
+    extraImages:      asExtraImgsData.filter(Boolean),
+    /* الوحدات الفرعية */
+    subUnits:         subUnits,
+    timestamp:        new Date().toISOString(),
   };
 
   try {
-    /* 🔗 DB-LINK: يُرسَل لـ Apps Script الذي يحفظ في Google Sheets */
     await fetch(ADD_SPACE_URL, {
       method:  'POST',
       mode:    'no-cors',
@@ -1320,23 +1992,59 @@ async function submitAddSpace(e) {
       body:    JSON.stringify(payload),
     });
 
-    msg.className = 'alert-item success';
-    msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">✅</span>
-      <div class="alert-text"><strong>تم إرسال طلب الإضافة بنجاح!</strong>
-      سيراجع فريق مكاني Spot المساحة ويضيفها للمنصة خلال 24 ساعة.</div>`;
+    /* حفظ محلي كـ pending */
+    const pendingEntry = {
+      id:          'ps-' + Date.now(),
+      name:        spaceName,
+      type:        spaceType,
+      loc:         spaceLoc,
+      sizes:       getSizesString(),
+      price:       parseFloat(get('as-default-price')) || 0,
+      acts:        get('as-acts'),
+      subCount:    subUnits.length,
+      status:      'pending',
+      submittedAt: new Date().toISOString(),
+    };
+    ownerPendingSpaces.push(pendingEntry);
+    savePendingSpaces();
+    renderSpaces();
 
-    document.getElementById('add-space-form')?.reset();
-    document.getElementById('img-preview').innerHTML = '';
-  } catch {
-    msg.className = 'alert-item danger';
+    msg.className     = 'alert-item success';
     msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">❌</span>
-      <div class="alert-text"><strong>تعذّر الإرسال</strong>تأكد من الاتصال بالإنترنت وأعد المحاولة.</div>`;
+    msg.innerHTML     = `<span class="alert-ico">✅</span>
+      <div class="alert-text">
+        <strong>تم إرسال طلب إضافة المساحة بنجاح!</strong><br>
+        تظهر في شيت المساحات بحالة <strong>غير ظاهر</strong> — فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة.<br>
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)">للمتابعة: واتساب 01103467711</div>
+      </div>`;
+
+    /* إعادة ضبط النموذج */
+    document.getElementById('add-space-form')?.reset();
+    clearMainSpaceImage();
+    asExtraImgsData = [];
+    const extraCont = document.getElementById('as-extra-imgs-container');
+    const sizesCont = document.getElementById('as-sizes-container');
+    const unitsCont = document.getElementById('as-units-container');
+    if (extraCont) extraCont.innerHTML = '';
+    if (sizesCont) sizesCont.innerHTML = '';
+    if (unitsCont) unitsCont.innerHTML = '';
+    asSizeRowCount = 0; asUnitCounter = 0;
+    const sizeEmpty = document.getElementById('as-sizes-empty-msg');
+    const unitEmpty = document.getElementById('as-units-empty-msg');
+    const priceDisp = document.getElementById('as-price-display');
+    if (sizeEmpty) sizeEmpty.style.display = 'block';
+    if (unitEmpty) unitEmpty.style.display = 'block';
+    if (priceDisp) priceDisp.style.display = 'none';
+
+  } catch {
+    msg.className     = 'alert-item danger';
+    msg.style.display = 'flex';
+    msg.innerHTML     = `<span class="alert-ico">❌</span>
+      <div class="alert-text"><strong>تعذّر إرسال الطلب</strong><br>تأكد من الاتصال بالإنترنت وأعد المحاولة، أو تواصل معنا على واتساب 01103467711.</div>`;
   }
 
-  btn.disabled    = false;
-  btn.textContent = '🚀 إرسال طلب الإضافة';
+  btn.disabled  = false;
+  btn.innerHTML = '🚀 إرسال طلب إضافة المساحة';
 }
 
 /* ══════════════════════════════════════════
@@ -1678,6 +2386,13 @@ async function saveSettings() {
 /* تنبيهات من Supabase (من جدول notifications لو موجود) */
 let supabaseNotifications = [];
 let bzImageDataUrl = null; /* بيانات صورة البازار (base64 مضغوطة) */
+
+/* ── state لصفحة إضافة المساحة ── */
+let asMainImgDataUrl   = null;  /* صورة رئيسية للمساحة */
+let asExtraImgsData    = [];    /* [{dataUrl, name}] — صور إضافية */
+let asSizeRowCount     = 0;     /* عداد صفوف الأحجام */
+let asUnitCounter      = 0;     /* عداد الوحدات الفرعية */
+let ownerPendingSpaces = [];    /* مساحات معلقة محفوظة محلياً */
 
 async function loadNotifications() {
   const sb = getSB();
