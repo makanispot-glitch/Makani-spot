@@ -10,7 +10,8 @@
 const SHEET_URL     = "https://script.google.com/macros/s/AKfycbxyCDOQW3SlaoSEPAAFfClUcHYyxA6-iei4Zuvvv5Us8caWP9X3WjgoeyhsOVNGJ9XqQw/exec";
 const BOOKING_URL   = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 const ADD_SPACE_URL = BOOKING_URL; // مؤقت — غيّره لرابط Apps Script خاص بإضافة المساحات
-const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec";
+const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec
+";
 
 const ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة"
 
@@ -634,15 +635,14 @@ function renderRevenue() {
   tbody.innerHTML = active.map(c => {
     const rent = parseFloat(c.rent) || 0;
     const pct  = Math.round((rent / total) * 100);
-    const enriched = enrichContract(c);
     let statusBadge = '';
-    if (enriched.status === 'renewal')  statusBadge = `<span class="badge badge-red">تجديد عاجل</span>`;
-    else if (enriched.status === 'expiring') statusBadge = `<span class="badge badge-yellow">ينتهي قريباً</span>`;
-    else statusBadge = `<span class="badge badge-green">نشط</span>`;
+    if (c.status === 'renewal')       statusBadge = `<span class="badge badge-red">تجديد عاجل</span>`;
+    else if (c.status === 'expiring') statusBadge = `<span class="badge badge-yellow">ينتهي قريباً</span>`;
+    else                              statusBadge = `<span class="badge badge-green">نشط</span>`;
     return `
       <tr>
-        <td style="font-family:'Space Mono',monospace;color:var(--orange)">${c.space}</td>
-        <td>${c.tenant}</td>
+        <td style="font-family:'Space Mono',monospace;color:var(--orange)">${c.spaceCode}</td>
+        <td>${c.tenantName}</td>
         <td style="font-family:'Space Mono',monospace">${rent.toLocaleString('ar-EG')} ج</td>
         <td>
           <div style="display:flex;align-items:center;gap:8px">
@@ -1284,7 +1284,7 @@ function populateSelects() {
   document.querySelectorAll('.select-tenant').forEach(sel => {
     const active = contractsList.filter(c => c.status !== 'expired');
     sel.innerHTML = '<option value="">اختر المستأجر</option>' +
-      active.map(c => `<option value="${c.id}">${c.tenant} — ${c.space}</option>`).join('');
+      active.map(c => `<option value="${c.id}">${c.tenantName} — ${c.spaceCode}</option>`).join('');
   });
 }
 
@@ -1362,16 +1362,70 @@ function handleImageUpload(input) {
   }).join('');
 }
 
-function handleBazaarImageUpload(input) {
-  const file = input.files?.[0];
-  const preview = document.getElementById('bz-img-preview');
+async function handleBazaarImageUpload(input) {
+  const file      = input.files?.[0];
+  const preview   = document.getElementById('bz-img-preview');
+  const statusEl  = document.getElementById('bz-img-status');
+  const uploadIco = document.getElementById('bz-upload-ico');
   if (!file || !preview) return;
 
-  const url = URL.createObjectURL(file);
-  preview.innerHTML = `<div style="position:relative;display:inline-block;margin:4px;width:100%">
-    <img src="${url}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border)">
-    <div style="position:absolute;bottom:0;left:0;right:0;font-size:10px;color:#fff;background:rgba(0,0,0,0.60);padding:5px 8px;border-radius:0 0 10px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</div>
-  </div>`;
+  /* تحقق من الحجم */
+  if (file.size > 5 * 1024 * 1024) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">❌ الصورة أكبر من 5 ميجا</span>';
+    input.value = '';
+    return;
+  }
+
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ جاري المعالجة…</span>';
+
+  /* ضغط وتحجيم الصورة */
+  const resized = await resizeBazaarImage(file, 1200, 800, 0.85);
+  bzImageDataUrl = resized;
+
+  /* معاينة مع زر حذف */
+  preview.innerHTML = `
+    <div style="position:relative;margin-top:4px">
+      <img src="${resized}" style="width:100%;border-radius:var(--r);max-height:200px;object-fit:cover;border:2px solid rgba(0,200,83,0.35)">
+      <button type="button" onclick="clearBazaarImage()"
+              style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:26px;text-align:center">✕</button>
+      <div style="position:absolute;bottom:0;left:0;right:0;font-size:10px;color:#fff;background:rgba(0,0,0,0.55);padding:4px 8px;border-radius:0 0 var(--r) var(--r);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${file.name}</div>
+    </div>`;
+
+  if (statusEl)  statusEl.innerHTML  = '<span style="color:var(--green)">✅ جاهزة للإرسال</span>';
+  if (uploadIco) uploadIco.textContent = '✅';
+}
+
+function clearBazaarImage() {
+  bzImageDataUrl = null;
+  const preview = document.getElementById('bz-img-preview');
+  const input   = document.getElementById('bz-img-input');
+  const statusEl  = document.getElementById('bz-img-status');
+  const uploadIco = document.getElementById('bz-upload-ico');
+  if (preview)   preview.innerHTML    = '';
+  if (input)     input.value          = '';
+  if (statusEl)  statusEl.textContent = 'لم تُرفع بعد';
+  if (uploadIco) uploadIco.textContent = '📤';
+}
+
+/* ضغط الصورة عبر Canvas */
+function resizeBazaarImage(file, maxW, maxH, quality) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function fileToDataUrl(file) {
@@ -1384,90 +1438,133 @@ function fileToDataUrl(file) {
   });
 }
 
+/* حساب الأيام والإيراد المتوقع في الوقت الفعلي */
+function updateBazaarCalc() {
+  const start  = document.getElementById('bz-start')?.value;
+  const end    = document.getElementById('bz-end')?.value;
+  const slots  = parseInt(document.getElementById('bz-total-slots')?.value) || 0;
+  const price  = parseFloat(document.getElementById('bz-price')?.value)      || 0;
+
+  /* عدد الأيام */
+  const daysEl  = document.getElementById('bz-days-display');
+  const daysVal = document.getElementById('bz-days-val');
+  if (start && end && end >= start && daysEl && daysVal) {
+    const diff = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
+    daysVal.textContent   = diff;
+    daysEl.style.display  = 'block';
+  } else if (daysEl) {
+    daysEl.style.display  = 'none';
+  }
+
+  /* الإيراد المتوقع */
+  const revEl  = document.getElementById('bz-rev-display');
+  const revVal = document.getElementById('bz-rev-val');
+  if (slots > 0 && price > 0 && revEl && revVal) {
+    revVal.textContent  = (slots * price).toLocaleString('ar-EG');
+    revEl.style.display = 'block';
+  } else if (revEl) {
+    revEl.style.display = 'none';
+  }
+}
+
 async function submitAddBazaar(e) {
   e.preventDefault();
   const btn = document.getElementById('add-bazaar-btn');
   const msg = document.getElementById('add-bazaar-msg');
   if (!btn || !msg) return;
 
-  const startDate = document.getElementById('bz-start')?.value;
-  const endDate = document.getElementById('bz-end')?.value;
-  if (startDate && endDate && endDate < startDate) {
-    msg.className = 'alert-item danger';
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+
+  const startDate  = get('bz-start');
+  const endDate    = get('bz-end');
+  const totalSlots = parseInt(get('bz-total-slots')) || 0;
+  const price      = parseFloat(get('bz-price'))     || 0;
+
+  /* Validation */
+  if (endDate && startDate && endDate < startDate) {
+    msg.className   = 'alert-item danger';
     msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">❌</span>
-      <div class="alert-text"><strong>راجع مدة البازار</strong>تاريخ النهاية يجب أن يكون بعد تاريخ البداية أو مساويًا له.</div>`;
+    msg.innerHTML   = `<span class="alert-ico">❌</span><div class="alert-text"><strong>تاريخ النهاية يجب أن يكون بعد تاريخ البداية.</strong></div>`;
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = '⏳ جاري إرسال طلب البازار…';
+  const daysCount   = (startDate && endDate)
+    ? Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1
+    : 1;
+  const expectedRev = totalSlots * price;
 
-  const imageFile = document.getElementById('bz-img-input')?.files?.[0] || null;
-  let imageDataUrl = null;
-  try {
-    imageDataUrl = await fileToDataUrl(imageFile);
-  } catch {
-    imageDataUrl = null;
-  }
+  btn.disabled     = true;
+  btn.innerHTML    = '⏳ جاري إرسال الطلب…';
+  msg.style.display = 'none';
 
+  /* ═══ Payload — يطابق أعمدة شيت Bazaars تماماً ═══ */
   const payload = {
-    action: 'addBazaar',
-    sheet: 'bazaars',
-    status: 'pending',
-    ownerId: currentOwner.id,
-    ownerName: currentOwner.name,
-    ownerEmail: currentOwner.email || currentOwner.username || '',
-    ownerPhone: currentOwner.phone || '',
-    ownerPlace: currentOwner.place || '',
-    name: document.getElementById('bz-name')?.value.trim(),
-    category: document.getElementById('bz-category')?.value,
-    date_start: startDate,
-    date_end: endDate,
-    open_time: document.getElementById('bz-open-time')?.value,
-    close_time: document.getElementById('bz-close-time')?.value,
-    location: document.getElementById('bz-location')?.value.trim(),
-    region: document.getElementById('bz-region')?.value.trim(),
-    address: document.getElementById('bz-address')?.value.trim(),
-    slots_count: document.getElementById('bz-slots-count')?.value,
-    price_per_slot: document.getElementById('bz-price-per-slot')?.value,
-    slot_size: document.getElementById('bz-slot-size')?.value.trim(),
-    audience: document.getElementById('bz-audience')?.value.trim(),
-    activities: document.getElementById('bz-activities')?.value.trim(),
-    amenities: document.getElementById('bz-amenities')?.value.trim(),
-    rules: document.getElementById('bz-rules')?.value.trim(),
-    description: document.getElementById('bz-description')?.value.trim(),
-    imageName: imageFile?.name || '',
-    imageType: imageFile?.type || '',
-    imageDataUrl,
-    timestamp: new Date().toISOString(),
+    action:       'addBazaar',
+    /* معلومات صاحب المساحة */
+    ownerId:      currentOwner.id,
+    ownerName:    currentOwner.name,
+    ownerEmail:   currentOwner.email  || '',
+    ownerPhone:   currentOwner.phone  || '',
+    ownerPlace:   currentOwner.place  || '',
+    /* B→T أعمدة شيت Bazaars */
+    name:         get('bz-name'),          /* B */
+    description:  get('bz-description'),   /* C */
+    venueType:    get('bz-venue-type'),     /* D */
+    venueName:    get('bz-venue-name'),     /* E */
+    area:         get('bz-area'),          /* F */
+    address:      get('bz-address'),       /* G */
+    dateStart:    startDate,               /* H */
+    dateEnd:      endDate,                 /* I */
+    daysCount:    daysCount,               /* J */
+    totalSlots:   totalSlots,             /* K */
+    availSlots:   totalSlots,             /* L — نفس العدد في البداية */
+    bookedSlots:  0,                       /* M */
+    price:        price,                   /* N */
+    expectedRev:  expectedRev,            /* O */
+    collectedRev: 0,                       /* P */
+    minSpace:     parseFloat(get('bz-min-space')) || 2, /* Q */
+    status:       'pending',              /* R */
+    tags:         get('bz-tags'),          /* T */
+    /* الصورة (base64 مضغوطة) → Apps Script يرفعها على Drive */
+    imageDataUrl: bzImageDataUrl || '',
+    imageName:    document.getElementById('bz-img-input')?.files?.[0]?.name || (get('bz-name') + '.jpg'),
+    imageType:    'image/jpeg',
+    timestamp:    new Date().toISOString(),
   };
 
   try {
     await fetch(ADD_BAZAAR_URL, {
-      method: 'POST',
-      mode: 'no-cors',
+      method:  'POST',
+      mode:    'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body:    JSON.stringify(payload),
     });
 
-    msg.className = 'alert-item success';
+    msg.className   = 'alert-item success';
     msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">✅</span>
-      <div class="alert-text"><strong>تم إرسال طلب تنظيم البازار!</strong>
-      سيظهر الطلب في شيت البازارات بحالة pending، وبعد الموافقة سيتم نشره على الموقع.</div>`;
+    msg.innerHTML   = `<span class="alert-ico">✅</span>
+      <div class="alert-text">
+        <strong>تم إرسال طلب تنظيم البازار بنجاح!</strong><br>
+        البيانات ستظهر في شيت Bazaars بحالة <strong>pending</strong>. فريق مكاني Spot سيراجع الطلب وينشره على المنصة.
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)">للمتابعة: واتساب 01103467711</div>
+      </div>`;
 
     document.getElementById('add-bazaar-form')?.reset();
-    document.getElementById('bz-img-preview').innerHTML = '';
+    clearBazaarImage();
+    const daysEl = document.getElementById('bz-days-display');
+    const revEl  = document.getElementById('bz-rev-display');
+    if (daysEl) daysEl.style.display = 'none';
+    if (revEl)  revEl.style.display  = 'none';
+
   } catch {
-    msg.className = 'alert-item danger';
+    msg.className   = 'alert-item danger';
     msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">❌</span>
-      <div class="alert-text"><strong>تعذّر إرسال طلب البازار</strong>تأكد من الاتصال أو رابط Apps Script الخاص بشيت البازارات.</div>`;
+    msg.innerHTML   = `<span class="alert-ico">❌</span>
+      <div class="alert-text"><strong>تعذّر إرسال الطلب</strong><br>تأكد من الاتصال بالإنترنت وأعد المحاولة، أو تواصل معنا على واتساب 01103467711.</div>`;
   }
 
-  btn.disabled = false;
-  btn.textContent = '🚀 إرسال طلب تنظيم البازار';
+  btn.disabled  = false;
+  btn.innerHTML = '🚀 إرسال طلب تنظيم البازار';
 }
 
 /* ══════════════════════════════════════════
@@ -1517,8 +1614,8 @@ function submitRating() {
   const rating = {
     id: genId(),
     contractId,
-    tenantName: contract.tenant,
-    space: contract.space,
+    tenantName: contract.tenantName,
+    space: contract.spaceCode,
     month,
     scores: { schedule, cleanliness, brand, customerService, contractCompliance },
     avgScore,
@@ -1581,6 +1678,7 @@ async function saveSettings() {
 
 /* تنبيهات من Supabase (من جدول notifications لو موجود) */
 let supabaseNotifications = [];
+let bzImageDataUrl = null; /* بيانات صورة البازار (base64 مضغوطة) */
 
 async function loadNotifications() {
   const sb = getSB();
