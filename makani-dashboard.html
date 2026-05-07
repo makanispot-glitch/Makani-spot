@@ -1339,14 +1339,14 @@ body {
             <div class="kpi-ico">💰</div>
             <div class="kpi-label">الإيراد الشهري</div>
             <div class="kpi-value" id="kpi-revenue">—</div>
-            <span class="kpi-delta up">↑ محدّث</span>
+            <span class="kpi-delta flat" id="kpi-rev-delta">← جارٍ الحساب</span>
             <div style="margin-top:6px;font-size:10px;color:var(--text3)">ج.م. / الشهر الحالي</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-ico">📍</div>
             <div class="kpi-label">إشغال المساحات</div>
             <div class="kpi-value" id="kpi-occ">—</div>
-            <span class="kpi-delta up">↑ محدّث</span>
+            <span class="kpi-delta flat" id="kpi-occ-delta">← جارٍ الحساب</span>
             <div style="margin-top:8px">
               <div class="prog-bar"><div class="prog-fill green" id="kpi-occ-bar" style="width:0%"></div></div>
             </div>
@@ -1355,15 +1355,15 @@ body {
             <div class="kpi-ico">👥</div>
             <div class="kpi-label">المستأجرون النشطون</div>
             <div class="kpi-value" id="kpi-tenants">—</div>
-            <span class="kpi-delta flat">→ محدّث</span>
+            <span class="kpi-delta flat" id="kpi-ten-delta">← جارٍ الحساب</span>
             <div style="margin-top:6px;font-size:10px;color:var(--text3)">مساحات مؤجّرة حالياً</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-ico">⭐</div>
             <div class="kpi-label">متوسط التقييم</div>
             <div class="kpi-value" id="kpi-score">—</div>
-            <span class="kpi-delta up">↑ محدّث</span>
-            <div class="stars-sm" style="margin-top:6px">★★★★☆</div>
+            <span class="kpi-delta flat" id="kpi-score-delta">← جارٍ الحساب</span>
+            <div class="stars-sm" id="kpi-score-stars" style="margin-top:6px">☆☆☆☆☆</div>
           </div>
         </div>
 
@@ -1378,15 +1378,8 @@ body {
               <span class="db-tag">DB: payments</span>
             </div>
             <div class="pcard-body">
-              <div class="bar-chart" style="height:100px;align-items:flex-end">
-                <div class="bar" style="height:60%"><span class="bar-label">يوليو</span><span class="bar-val">٣٢ك</span></div>
-                <div class="bar" style="height:72%"><span class="bar-label">أغسطس</span><span class="bar-val">٣٨ك</span></div>
-                <div class="bar" style="height:55%"><span class="bar-label">سبتمبر</span><span class="bar-val">٢٩ك</span></div>
-                <div class="bar" style="height:80%"><span class="bar-label">أكتوبر</span><span class="bar-val">٤٢ك</span></div>
-                <div class="bar" style="height:65%"><span class="bar-label">نوفمبر</span><span class="bar-val">٣٤ك</span></div>
-                <div class="bar" style="height:90%"><span class="bar-label">ديسمبر</span><span class="bar-val">٤٨ك</span></div>
-                <div class="bar" style="height:75%"><span class="bar-label">يناير</span><span class="bar-val">٣٩ك</span></div>
-                <div class="bar high" style="height:100%"><span class="bar-label">فبراير</span><span class="bar-val">٥٢ك</span></div>
+              <div class="bar-chart" id="overview-chart" style="height:100px;align-items:flex-end">
+                <!-- تُملأ ديناميكياً من renderOverview() -->
               </div>
               <div style="margin-top:30px"></div>
             </div>
@@ -1404,11 +1397,9 @@ body {
             <div class="pcard-body">
               <div class="donut-wrap">
                 <div class="donut"></div>
-                <div class="donut-legend">
-                  <div class="donut-item"><div class="donut-dot" style="background:var(--orange)"></div>قهوة ومشروبات (45%)</div>
-                  <div class="donut-item"><div class="donut-dot" style="background:var(--green)"></div>سناكس وحلويات (25%)</div>
-                  <div class="donut-item"><div class="donut-dot" style="background:var(--blue)"></div>إكسسوارات (15%)</div>
-                  <div class="donut-item"><div class="donut-dot" style="background:var(--yellow)"></div>أخرى (15%)</div>
+                <div class="donut-legend" id="overview-acts-legend">
+                  <!-- تُملأ ديناميكياً من renderOverview() -->
+                  <div class="donut-item" style="color:var(--text3);font-size:12px">أضف عقوداً لعرض توزيع الأنشطة</div>
                 </div>
               </div>
             </div>
@@ -1437,47 +1428,9 @@ body {
                   <th>الحالة</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td style="color:var(--orange);font-weight:900;font-family:'Space Mono',monospace">١</td>
-                  <td><strong>أحمد — كشك القهوة</strong></td>
-                  <td style="color:var(--text2)">A-12</td>
-                  <td><span class="badge badge-orange">☕ قهوة</span></td>
-                  <td><strong style="color:var(--green)">9.2</strong></td>
-                  <td><span class="badge badge-green">ممتاز</span></td>
-                </tr>
-                <tr>
-                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٢</td>
-                  <td><strong>سارة — إكسسوارات</strong></td>
-                  <td style="color:var(--text2)">B-03</td>
-                  <td><span class="badge badge-blue">💎 إكسسوار</span></td>
-                  <td><strong style="color:var(--green)">8.7</strong></td>
-                  <td><span class="badge badge-green">ممتاز</span></td>
-                </tr>
-                <tr>
-                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٣</td>
-                  <td><strong>محمد — حلويات</strong></td>
-                  <td style="color:var(--text2)">C-07</td>
-                  <td><span class="badge badge-yellow">🍬 حلويات</span></td>
-                  <td><strong style="color:var(--yellow)">7.4</strong></td>
-                  <td><span class="badge badge-yellow">جيد</span></td>
-                </tr>
-                <tr>
-                  <td style="color:var(--text3);font-family:'Space Mono',monospace">٤</td>
-                  <td><strong>نور — مشروبات</strong></td>
-                  <td style="color:var(--text2)">A-05</td>
-                  <td><span class="badge badge-orange">🥤 مشروبات</span></td>
-                  <td><strong style="color:var(--yellow)">6.9</strong></td>
-                  <td><span class="badge badge-yellow">متوسط</span></td>
-                </tr>
-                <tr>
-                  <td style="color:var(--red);font-family:'Space Mono',monospace">⚠</td>
-                  <td><strong>خالد — فاست فود</strong></td>
-                  <td style="color:var(--text2)">D-02</td>
-                  <td><span class="badge badge-red">🍔 فاست فود</span></td>
-                  <td><strong style="color:var(--red)">4.2</strong></td>
-                  <td><span class="badge badge-red">ضعيف</span></td>
-                </tr>
+              <tbody id="overview-tenants-tbody">
+                <!-- تُملأ ديناميكياً من renderOverview() -->
+                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">جارٍ التحميل…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1492,27 +1445,11 @@ body {
             <button class="btn btn-sm" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">كل التنبيهات</button>
           </div>
           <div class="pcard-body">
-            <div class="alert-list">
-              <div class="alert-item danger">
-                <span class="alert-ico">📉</span>
-                <div class="alert-text">
-                  <strong>تقييم خالد بينزل 3 شهور متتالية</strong>
-                  انخفض من 6.8 → 4.2. يُنصح بمراجعة الوضع أو طلب تجديد النشاط.
-                </div>
-              </div>
-              <div class="alert-item warning">
-                <span class="alert-ico">📅</span>
-                <div class="alert-text">
-                  <strong>عقد سارة ينتهي خلال ٢١ يوم</strong>
-                  يُنصح بالتواصل لتجديد العقد أو طرح المساحة للإيجار.
-                </div>
-              </div>
+            <div class="alert-list" id="overview-alerts-list">
+              <!-- تُملأ ديناميكياً من renderOverview() -->
               <div class="alert-item info">
-                <span class="alert-ico">💡</span>
-                <div class="alert-text">
-                  <strong>المساحة D-08 فاضية منذ 45 يوم</strong>
-                  مكاني Spot عندها 3 مستأجرين مناسبين لهذه المساحة.
-                </div>
+                <span class="alert-ico">⏳</span>
+                <div class="alert-text"><strong>جارٍ تحليل بياناتك…</strong></div>
               </div>
             </div>
           </div>
@@ -1617,26 +1554,35 @@ body {
            ============================================================ -->
       <div class="view" id="view-spaces">
         <div class="section-label">خريطة المساحات</div>
-        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
           <div class="kpi-card">
             <div class="kpi-ico">✅</div>
             <div class="kpi-label">مؤجّرة</div>
             <div class="kpi-value" id="kpi-main">—</div>
-            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill green" style="width:80%"></div></div></div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill green" id="kpi-main-bar" style="width:0%"></div></div></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-ico">🔓</div>
             <div class="kpi-label">متاحة</div>
             <div class="kpi-value" id="kpi-avail">—</div>
-            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill" style="width:20%"></div></div></div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill" id="kpi-avail-bar" style="width:0%"></div></div></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-ico">🔧</div>
             <div class="kpi-label">قيد الصيانة</div>
             <div class="kpi-value" id="kpi-maint">—</div>
-            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill yellow" style="width:10%"></div></div></div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill yellow" id="kpi-maint-bar" style="width:0%"></div></div></div>
+          </div>
+          <div class="kpi-card" style="border-color:rgba(255,184,0,0.25)">
+            <div class="kpi-ico">⏳</div>
+            <div class="kpi-label">قيد المراجعة</div>
+            <div class="kpi-value" id="kpi-pending" style="color:var(--yellow)">—</div>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">طلبات مُرسلة للمنصة</div>
           </div>
         </div>
+
+        <!-- ── طلبات إضافة معلقة ── -->
+        <div id="pending-spaces-section" style="display:none;margin-bottom:20px"></div>
 
         <!-- ── قسم المساحات المهملة (يظهر فقط عند وجودها) ── -->
         <div id="abandoned-section" style="display:none;margin-bottom:20px">
@@ -1994,132 +1940,247 @@ body {
            🔗 DB-LINK: يرسل البيانات لـ Apps Script → يحفظ في Google Sheets
            ============================================================ -->
       <div class="view" id="view-add-space">
-        <div class="section-label">إضافة مساحة جديدة للمنصة</div>
+        <div class="section-label">➕ إضافة مساحة جديدة</div>
 
         <!-- Banner -->
         <div style="background:linear-gradient(135deg,rgba(255,107,0,0.10),transparent);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
           <div style="font-size:32px">📋</div>
           <div>
-            <div style="font-size:14px;font-weight:800;color:var(--orange)">أضف مساحتك على مكاني Spot</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-top:4px">
-              اكتب بيانات المساحة وسيقوم فريقنا بمراجعتها وإضافتها للمنصة خلال <strong style="color:var(--orange)">24 ساعة</strong>.
+            <div style="font-size:14px;font-weight:800;color:var(--orange)">سجّل بيانات مساحتك لإضافتها على المنصة</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px">
+              بعد الإرسال تظهر المساحة في الشيت بحالة <strong>غير ظاهر</strong>. فريق مكاني Spot يراجعها وينشرها خلال <strong style="color:var(--orange)">24 ساعة</strong>. الصور تُرفع تلقائياً على Google Drive.
             </div>
           </div>
         </div>
 
-        <div class="grid-2">
-          <!-- ── Form ── -->
-          <div class="pcard">
-            <div class="pcard-head">
-              <div class="pcard-title">📝 بيانات المساحة</div>
-              <span class="db-tag">DB: spaces</span>
-            </div>
-            <div class="pcard-body">
-              <!-- رسالة النتيجة -->
-              <div id="add-space-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
+        <!-- ═══ الفورم الرئيسي ═══ -->
+        <form id="add-space-form" onsubmit="submitAddSpace(event)">
+          <div id="add-space-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
 
-              <form id="add-space-form" onsubmit="submitAddSpace(event)">
-                <div class="form-row">
-                  <div class="form-group" style="margin:0">
-                    <label>كود / رقم المساحة</label>
-                    <input type="text" id="as-code" placeholder="مثال: G-15" required>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>الموقع داخل المكان</label>
-                    <input type="text" id="as-location" placeholder="مثال: أمام المصعد، الدور الثاني" required>
-                  </div>
-                </div>
-                <div class="form-row" style="margin-top:12px">
-                  <div class="form-group" style="margin:0">
-                    <label>الطابق / الدور</label>
-                    <select id="as-floor">
-                      <option value="0">الطابق الأرضي</option>
-                      <option value="1">الدور الأول</option>
-                      <option value="2">الدور الثاني</option>
-                      <option value="3">الدور الثالث</option>
-                      <option value="-1">البدروم</option>
-                    </select>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>الحجم (المساحة)</label>
-                    <input type="text" id="as-size" placeholder="مثال: ١×٢ م أو ٢م²" required>
-                  </div>
-                </div>
-                <div class="form-group" style="margin-top:12px">
-                  <label>الأنشطة المناسبة</label>
-                  <input type="text" id="as-activities" placeholder="مثال: قهوة، مشروبات، حلويات (افصل بفاصلة)">
-                </div>
-                <div class="form-group">
-                  <label>السعر المقترح (ج.م. / شهر)</label>
-                  <input type="number" id="as-price" placeholder="مثال: 4500" min="0">
-                </div>
-                <div class="form-group">
-                  <label>وصف المساحة (اختياري)</label>
-                  <textarea id="as-description" placeholder="أي تفاصيل إضافية عن الموقع أو المميزات…"></textarea>
-                </div>
-                <button type="submit" id="add-space-btn" class="btn btn-primary" style="width:100%">🚀 إرسال طلب الإضافة</button>
-              </form>
-            </div>
-          </div>
+          <div class="grid-2">
 
-          <!-- ── Image Upload + Tips ── -->
-          <div>
-            <!-- رفع الصور -->
-            <div class="pcard" style="margin-bottom:20px">
-              <div class="pcard-head">
-                <div>
-                  <div class="pcard-title">📷 صور المساحة</div>
-                  <div class="pcard-sub">الصور تُرفع لـ Google Drive للمراجعة</div>
-                </div>
-              </div>
-              <div class="pcard-body">
-                <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--orange-pale)"
-                     onclick="document.getElementById('img-input').click()"
-                     onmouseenter="this.style.background='rgba(255,107,0,0.14)'"
-                     onmouseleave="this.style.background='var(--orange-pale)'">
-                  <div style="font-size:32px;margin-bottom:8px">📤</div>
-                  <div style="font-size:13px;color:var(--orange);font-weight:700">اضغط لرفع الصور</div>
-                  <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG — حتى 5 صور</div>
-                </div>
-                <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this)">
-                <div id="img-preview" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px"></div>
-                <div style="margin-top:12px;background:var(--blue-bg);border:1px solid rgba(77,159,255,0.20);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);line-height:1.6">
-                  📌 الصور ستُرفع لـ Google Drive الخاص بمكاني Spot، ثم يراجعها الفريق قبل النشر على المنصة.
-                </div>
-              </div>
-            </div>
-
-            <!-- نصائح -->
+            <!-- ── اليسار: بيانات المساحة الأساسية ── -->
             <div class="pcard">
               <div class="pcard-head">
-                <div class="pcard-title">💡 نصائح لإضافة ناجحة</div>
+                <div class="pcard-title">📝 بيانات المساحة</div>
+                <span class="db-tag">Sheet: 🏢 المساحات</span>
               </div>
-              <div class="pcard-body" style="padding:16px">
-                <div class="insight-card" style="margin-bottom:10px">
-                  <div class="insight-ico">📍</div>
-                  <div>
-                    <div class="insight-title">حدّد الموقع بدقة</div>
-                    <div class="insight-body">المستأجر يهتم بالموقع أكثر من أي شيء — قرب المدخل أو المصعد يرفع قيمة المساحة.</div>
+              <div class="pcard-body">
+
+                <!-- name + type -->
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>اسم المساحة <span style="color:var(--red)">*</span></label>
+                    <input type="text" id="as-name" placeholder="مثال: كشك مول مدينة نصر" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>نوع المكان <span style="color:var(--red)">*</span></label>
+                    <select id="as-type" required onchange="updateSpaceIcon()">
+                      <option value="">اختر النوع</option>
+                      <option value="mall">🏬 مول تجاري</option>
+                      <option value="club">🏊 نادي رياضي</option>
+                      <option value="school">🏫 مدرسة</option>
+                    </select>
                   </div>
                 </div>
-                <div class="insight-card" style="margin-bottom:10px">
-                  <div class="insight-ico">💰</div>
-                  <div>
-                    <div class="insight-title">السعر التنافسي يملأ المساحة</div>
-                    <div class="insight-body">المساحات ذات الأسعار المناسبة تُؤجَّر خلال أسبوع في المتوسط على المنصة.</div>
+
+                <!-- loc + icon -->
+                <div class="form-row" style="margin-top:12px">
+                  <div class="form-group" style="margin:0">
+                    <label>المنطقة / المدينة <span style="color:var(--red)">*</span></label>
+                    <input type="text" id="as-loc" placeholder="مثال: مدينة نصر، الزمالك" required>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>أيقونة المساحة</label>
+                    <select id="as-icon">
+                      <option value="🏬">🏬 متجر</option>
+                      <option value="☕">☕ قهوة / مقهى</option>
+                      <option value="🥤">🥤 مشروبات</option>
+                      <option value="🍬">🍬 حلويات</option>
+                      <option value="🍔">🍔 أكل</option>
+                      <option value="💎">💎 إكسسوار</option>
+                      <option value="👗">👗 ملابس</option>
+                      <option value="🎨">🎨 هاند ميد</option>
+                      <option value="🌿">🌿 منتجات طبيعية</option>
+                      <option value="📦">📦 متنوع</option>
+                    </select>
                   </div>
                 </div>
-                <div class="insight-card">
-                  <div class="insight-ico">📷</div>
-                  <div>
-                    <div class="insight-title">صورة واضحة = مستأجر أسرع</div>
-                    <div class="insight-body">المساحات التي تحتوي على صور واضحة تحصل على ٣× استفسارات أكثر.</div>
+
+                <!-- allActs toggle -->
+                <div class="form-group" style="margin-top:12px">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+                    <input type="checkbox" id="as-all-acts" style="width:16px;height:16px;accent-color:var(--orange);flex-shrink:0">
+                    <span>يصلح لجميع الأنشطة (allActs = نعم)</span>
+                  </label>
+                </div>
+
+                <!-- activities -->
+                <div class="form-group">
+                  <label>الأنشطة المسموحة <span style="font-size:10px;color:var(--text3)">(افصل بـ · )</span></label>
+                  <input type="text" id="as-acts" placeholder="مثال: قهوة · مشروبات · حلويات">
+                  <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:5px">
+                    <button type="button" onclick="addAct('قهوة')"       style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">☕ قهوة</button>
+                    <button type="button" onclick="addAct('مشروبات')"    style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🥤 مشروبات</button>
+                    <button type="button" onclick="addAct('حلويات')"     style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🍬 حلويات</button>
+                    <button type="button" onclick="addAct('أكل')"        style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🍔 أكل</button>
+                    <button type="button" onclick="addAct('إكسسوار')"   style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">💎 إكسسوار</button>
+                    <button type="button" onclick="addAct('ملابس')"      style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">👗 ملابس</button>
+                    <button type="button" onclick="addAct('هاند ميد')"  style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🎨 هاند ميد</button>
+                    <button type="button" onclick="addAct('متنوع')"      style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">📦 متنوع</button>
                   </div>
+                </div>
+
+                <!-- description -->
+                <div class="form-group">
+                  <label>وصف المساحة <span style="font-size:10px;color:var(--text3)">(يظهر للمستأجرين)</span></label>
+                  <textarea id="as-desc" rows="3" placeholder="اكتب عن موقع المساحة، المميزات، القريب منها، أجواء المكان…"></textarea>
+                </div>
+
+                <!-- season + insight -->
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>موسم البيع <span style="font-size:10px;color:var(--text3)">(اختياري)</span></label>
+                    <input type="text" id="as-season" placeholder="مثال: صيف، رمضان، سنة كاملة">
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>نصيحة/Insight <span style="font-size:10px;color:var(--text3)">(اختياري)</span></label>
+                    <input type="text" id="as-insight" placeholder="مثال: حركة مميزة أمام المصعد">
+                  </div>
+                </div>
+
+                <!-- amenities -->
+                <div class="form-group" style="margin-top:4px">
+                  <label>المرافق المتاحة</label>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;background:var(--bg3);border-radius:var(--r);padding:12px">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-wifi"    value="واي فاي"   style="accent-color:var(--orange)"> 📶 واي فاي</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-elec"    value="كهرباء"    style="accent-color:var(--orange)"> ⚡ كهرباء</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-sec"     value="أمن"       style="accent-color:var(--orange)"> 🔒 أمن ٢٤/٧</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-clean"   value="نظافة"     style="accent-color:var(--orange)"> 🧹 نظافة يومية</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-table"   value="ترابيزات"  style="accent-color:var(--orange)"> 🪑 ترابيزات</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-storage" value="مخزن"      style="accent-color:var(--orange)"> 📦 مخزن</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-cam"     value="كاميرات"   style="accent-color:var(--orange)"> 📷 كاميرات</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-ac"      value="تبريد"     style="accent-color:var(--orange)"> ❄️ تكييف</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-light"   value="إضاءة"     style="accent-color:var(--orange)"> 💡 إضاءة</label>
+                  </div>
+                </div>
+
+                <!-- notes -->
+                <div class="form-group">
+                  <label>ملاحظات داخلية <span style="font-size:10px;color:var(--text3)">(للتواصل الداخلي — لا تظهر للمستأجرين)</span></label>
+                  <textarea id="as-notes" rows="2" placeholder="أي ملاحظات تريد إيصالها لفريق مكاني…"></textarea>
+                </div>
+
+                <!-- Hidden fields -->
+                <input type="hidden" id="as-default-price" value="0">
+                <input type="hidden" id="as-badge"  value="">
+                <input type="hidden" id="as-order"  value="99">
+
+              </div>
+            </div>
+
+            <!-- ── اليمين: الصور ── -->
+            <div>
+              <!-- الصورة الرئيسية -->
+              <div class="pcard" style="margin-bottom:20px">
+                <div class="pcard-head">
+                  <div>
+                    <div class="pcard-title">📷 الصورة الرئيسية</div>
+                    <div class="pcard-sub">صورة الغلاف — تُرفع على Google Drive</div>
+                  </div>
+                  <span id="as-main-img-status" style="font-size:11px;color:var(--text3);white-space:nowrap">لم تُرفع</span>
+                </div>
+                <div class="pcard-body">
+                  <div id="as-main-upload-zone"
+                       style="border:2px dashed rgba(255,107,0,0.35);border-radius:var(--r);padding:26px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--orange-pale)"
+                       onclick="document.getElementById('as-main-img-input').click()"
+                       onmouseenter="this.style.borderColor='var(--orange)';this.style.background='rgba(255,107,0,0.14)'"
+                       onmouseleave="this.style.borderColor='rgba(255,107,0,0.35)';this.style.background='var(--orange-pale)'">
+                    <div id="as-main-upload-ico" style="font-size:32px;margin-bottom:8px">📤</div>
+                    <div style="font-size:13px;color:var(--orange);font-weight:700">اضغط لاختيار الصورة الرئيسية</div>
+                    <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG · PNG · WEBP — حتى 5 ميجا</div>
+                  </div>
+                  <input type="file" id="as-main-img-input" accept="image/*" style="display:none" onchange="handleMainSpaceImageUpload(this)">
+                  <div id="as-main-img-preview" style="margin-top:8px"></div>
+                  <div style="margin-top:10px;font-size:11px;color:var(--text3);padding:8px 10px;background:var(--bg3);border-radius:var(--r);line-height:1.6">
+                    📌 الصورة تُضغَط تلقائياً وتُرسَل مع الطلب لتُحفظ في Google Drive.
+                  </div>
+                </div>
+              </div>
+
+              <!-- صور إضافية -->
+              <div class="pcard">
+                <div class="pcard-head">
+                  <div class="pcard-title">🖼️ صور إضافية <span style="font-size:11px;color:var(--text3)">(حتى 5 صور)</span></div>
+                </div>
+                <div class="pcard-body">
+                  <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg3)"
+                       onclick="document.getElementById('as-extra-imgs-input').click()"
+                       onmouseenter="this.style.borderColor='var(--orange)'"
+                       onmouseleave="this.style.borderColor='var(--border2)'">
+                    <div style="font-size:26px;margin-bottom:6px">🖼️</div>
+                    <div style="font-size:12px;color:var(--text2);font-weight:600">اضغط لإضافة صور إضافية</div>
+                    <div style="font-size:11px;color:var(--text3);margin-top:3px">يمكن اختيار أكثر من صورة دفعة واحدة</div>
+                  </div>
+                  <input type="file" id="as-extra-imgs-input" accept="image/*" multiple style="display:none" onchange="handleExtraSpaceImagesUpload(this)">
+                  <div id="as-extra-imgs-container" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
                 </div>
               </div>
             </div>
+
+          </div><!-- end grid-2 -->
+
+          <!-- ═══ الأحجام والأسعار ═══ -->
+          <div class="pcard" style="margin-top:20px">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title">📐 الأحجام والأسعار</div>
+                <div class="pcard-sub">كل سطر = خيار حجم بسعره — يظهر للمستأجر في صفحة المساحة (عمود K في الشيت)</div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="addSizeRow()">+ إضافة حجم</button>
+            </div>
+            <div class="pcard-body">
+              <div style="display:grid;grid-template-columns:2fr 2fr 40px;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text3);font-weight:600">وصف الحجم <span style="opacity:0.6">(مثال: ١×١ م)</span></div>
+                <div style="font-size:11px;color:var(--text3);font-weight:600">السعر / شهر (ج.م.)</div>
+                <div></div>
+              </div>
+              <div id="as-sizes-container"></div>
+              <div id="as-sizes-empty-msg" style="text-align:center;color:var(--text3);padding:16px;font-size:12px">
+                📐 لم تُضَف أحجام بعد — اضغط "+ إضافة حجم" أعلاه
+              </div>
+              <div id="as-price-display" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r);font-size:12px;color:var(--orange)"></div>
+            </div>
           </div>
-        </div>
+
+          <!-- ═══ الوحدات الفرعية ═══ -->
+          <div class="pcard" style="margin-top:20px">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title">📦 الوحدات الفرعية <span style="font-size:11px;color:var(--text3)">(اختياري)</span></div>
+                <div class="pcard-sub">لو عندك وحدات صغيرة منفصلة داخل المساحة — أضف كل وحدة مع بياناتها وصورتها (شيت الوحدات الفرعية)</div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="addSubUnitRow()">+ إضافة وحدة</button>
+            </div>
+            <div class="pcard-body">
+              <div id="as-units-empty-msg" style="text-align:center;color:var(--text3);padding:20px;font-size:12px">
+                📦 لا توجد وحدات فرعية — اضغط "+ إضافة وحدة" لإضافة وحدة بصورتها
+              </div>
+              <div id="as-units-container"></div>
+            </div>
+          </div>
+
+          <!-- ═══ زر الإرسال ═══ -->
+          <div style="margin-top:22px">
+            <button type="submit" id="add-space-btn" class="btn btn-primary" style="width:100%;font-size:15px;padding:14px">
+              🚀 إرسال طلب إضافة المساحة
+            </button>
+            <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text3)">
+              للمساعدة: <a href="https://wa.me/201103467711" target="_blank" style="color:var(--green);text-decoration:none;font-weight:700">واتساب 01103467711</a>
+            </div>
+          </div>
+
+        </form>
       </div><!-- end add-space -->
 
       <!-- ============================================================
