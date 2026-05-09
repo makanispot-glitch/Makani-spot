@@ -1184,53 +1184,93 @@ body {
 }
 .mp-sidebar-overlay.open { display: block; }
 
-.mp-sidebar { background: var(--surface); border-left: 1px solid var(--border); }
+/* ── الـ Sidebar داكن يتماشى مع الهيدر ── */
+.mp-sidebar {
+  background: var(--dark);
+  border-left: 1px solid rgba(255,255,255,0.08);
+}
 .mp-sidebar-inner {
   padding: 24px 20px; position: sticky; top: 68px;
   max-height: calc(100vh - 68px); overflow-y: auto;
 }
 
-.mp-filter-group { margin-bottom: 26px; padding-bottom: 26px; border-bottom: 1px solid var(--border); }
+.mp-filter-group {
+  margin-bottom: 26px; padding-bottom: 26px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
 .mp-filter-group:last-of-type { border-bottom: none; }
-.mp-filter-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.mp-filter-title {
+  font-size: 13px; font-weight: 800;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+}
 
 .mp-type-btns { display: flex; flex-direction: column; gap: 8px; }
 .mp-type-btn {
-  padding: 10px 14px; border-radius: var(--radius); border: 1.5px solid var(--border);
-  background: var(--surface2); font-family: 'Cairo', sans-serif; font-size: 13px;
-  font-weight: 600; color: var(--ink2); cursor: pointer; text-align: right;
-  transition: all 0.15s; min-height: 44px;
+  padding: 10px 14px; border-radius: var(--radius);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 600; color: rgba(255,255,255,0.70); cursor: pointer;
+  text-align: right; transition: all 0.15s; min-height: 44px;
 }
-.mp-type-btn:hover { border-color: var(--orange-light); background: var(--orange-ultra); color: var(--orange); }
-.mp-type-btn.on   { border-color: var(--orange); background: var(--orange-ultra); color: var(--orange); font-weight: 700; }
+.mp-type-btn:hover {
+  border-color: var(--orange-light);
+  background: rgba(255,107,0,0.12);
+  color: var(--orange-light);
+}
+.mp-type-btn.on {
+  border-color: var(--orange);
+  background: rgba(255,107,0,0.18);
+  color: var(--orange-light);
+  font-weight: 700;
+}
 
 .mp-select {
   width: 100%; padding: 10px 14px; border-radius: var(--radius);
-  border: 1.5px solid var(--border); background: var(--surface2);
-  font-family: 'Cairo', sans-serif; font-size: 13px; color: var(--ink); outline: none;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  color: rgba(255,255,255,0.80); outline: none;
   min-height: 44px;
 }
+.mp-select option { background: var(--dark); color: #fff; }
 .mp-select:focus { border-color: var(--orange); }
 
 .mp-act-filters { display: flex; flex-wrap: wrap; gap: 7px; }
 .mp-act-btn {
-  padding: 6px 13px; border-radius: 20px; border: 1.5px solid var(--border);
-  background: var(--surface2); font-family: 'Cairo', sans-serif; font-size: 12px;
-  font-weight: 500; color: var(--ink2); cursor: pointer; transition: all 0.12s;
+  padding: 6px 13px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-family: 'Cairo', sans-serif; font-size: 12px;
+  font-weight: 500; color: rgba(255,255,255,0.65);
+  cursor: pointer; transition: all 0.12s;
   min-height: 36px; display: inline-flex; align-items: center;
 }
-.mp-act-btn:hover { border-color: var(--orange-light); background: var(--orange-ultra); color: var(--orange); }
-.mp-act-btn.on   { border-color: var(--orange); background: var(--orange-ultra); color: var(--orange); font-weight: 700; }
+.mp-act-btn:hover {
+  border-color: var(--orange-light);
+  background: rgba(255,107,0,0.12);
+  color: var(--orange-light);
+}
+.mp-act-btn.on {
+  border-color: var(--orange);
+  background: rgba(255,107,0,0.18);
+  color: var(--orange-light);
+  font-weight: 700;
+}
 
 .mp-clear-btn {
   width: 100%; padding: 11px; border-radius: var(--radius);
-  border: 1.5px solid var(--red-light); background: var(--red-light); color: var(--red);
+  border: 1.5px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.10);
+  color: #fca5a5;
   font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
   cursor: pointer; transition: all 0.15s; margin-top: 8px; min-height: 44px;
 }
-.mp-clear-btn:hover { background: var(--red); color: #fff; }
+.mp-clear-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
-.mp-main { padding: 28px 24px; }
+/* ── منطقة الكروت — خلفية بيضاء ── */
+.mp-main { padding: 28px 24px; background: var(--surface); }
 .mp-main-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 .mp-count-badge { font-size: 14px; font-weight: 700; color: var(--orange); background: var(--orange-ultra); padding: 6px 18px; border-radius: 30px; }
 .mp-back-btn {
@@ -1255,8 +1295,8 @@ body {
 
 /* مؤشر سعر الماركت بليس — نقطة واحدة */
 .mp-price-single-val {
-  font-size: 15px; font-weight: 900; color: var(--orange);
-  background: var(--orange-ultra); border: 1.5px solid var(--orange-pale);
+  font-size: 15px; font-weight: 900; color: var(--orange-light);
+  background: rgba(255,107,0,0.14); border: 1.5px solid rgba(255,107,0,0.30);
   padding: 5px 16px; border-radius: 20px; display: inline-block;
   margin-bottom: 4px; transition: all 0.2s;
 }
@@ -2840,8 +2880,8 @@ footer {
 /* عداد النتائج */
 .bz-result-badge {
   display: inline-flex; align-items: center;
-  background: rgba(255,107,0,0.12); color: var(--orange-light);
-  border: 1px solid rgba(255,107,0,0.28);
+  background: var(--orange-ultra); color: var(--orange);
+  border: 1px solid var(--orange-pale);
   border-radius: 20px; font-size: 13px; font-weight: 700;
   padding: 5px 14px;
 }
@@ -2897,11 +2937,15 @@ footer {
   box-shadow: 0 3px 14px rgba(255,107,0,0.30);
 }
 
-/* منطقة الشبكة */
+/* منطقة الشبكة — خلفية بيضاء */
 .bz-page-body {
-  max-width: 1200px; margin: 0 auto;
+  max-width: 100%;
   padding: 28px 28px 60px;
-  background: #111;
+  background: var(--surface);
+}
+.bz-page-body-inner {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 .bz-page-top {
   display: flex; align-items: center;
@@ -3441,3 +3485,146 @@ footer {
   .bz-mini-img { min-height: 150px; }
   .bz-home-see-all { width: 100%; justify-content: center; text-align: center; }
 }
+
+
+/* ============================================================
+   🔗 أزرار المشاركة (Share Buttons)
+   ============================================================ */
+
+/* زرار المشاركة العائم داخل card-thumb (أعلى اليسار) */
+.share-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.42);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background 0.2s, transform 0.15s;
+  z-index: 3;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  flex-shrink: 0;
+}
+.share-btn:hover {
+  background: rgba(255,107,0,0.88);
+  transform: scale(1.12);
+}
+.share-btn svg { pointer-events: none; }
+
+/* زرار المشاركة المضمّن (داخل footer الكروت والوحدات) */
+.share-btn-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink3);
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
+  flex-shrink: 0;
+}
+.share-btn-inline:hover {
+  background: var(--orange-ultra);
+  border-color: var(--orange-pale);
+  color: var(--orange);
+  transform: scale(1.1);
+}
+.share-btn-inline svg { pointer-events: none; }
+
+
+/* ============================================================
+   🏬 صفحة أصحاب المساحات — تصميم معدّل
+   ============================================================ */
+
+/* بطاقات نوع الحساب */
+.acct-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+@media (max-width: 600px) { .acct-type-grid { grid-template-columns: 1fr; } }
+
+.acct-type-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-xl);
+  padding: 24px 22px;
+  transition: border-color 0.2s;
+}
+.acct-type-card.owner-highlight {
+  border-color: rgba(255,107,0,0.45);
+  background: rgba(255,107,0,0.06);
+}
+.acct-type-ico { font-size: 36px; margin-bottom: 12px; }
+.acct-type-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.acct-type-desc { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.75; }
+.acct-type-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px;
+  margin-bottom: 12px;
+}
+.acct-type-badge.tenant { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+.acct-type-badge.owner  { background: rgba(255,107,0,0.2); color: var(--orange-light); }
+
+/* شبكة مميزات صاحب المساحة */
+.owner-feats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px,1fr));
+  gap: 14px;
+  margin-bottom: 44px;
+}
+
+/* خطوات الترقية */
+.upgrade-steps-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.upgrade-step {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.upgrade-step-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--orange); color: #fff;
+  font-weight: 900; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.upgrade-step-txt { font-size: 14px; color: rgba(255,255,255,0.72); line-height: 1.75; padding-top: 5px; }
+.upgrade-step-txt strong { color: #fff; }
+
+/* بطاقة داشبورد */
+.owner-dash-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,107,0,0.25);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  margin-bottom: 40px;
+}
+.owner-dash-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.owner-dash-feat {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: rgba(255,255,255,0.65);
+}
+.owner-dash-feat-ico { font-size: 18px; flex-shrink: 0; }
