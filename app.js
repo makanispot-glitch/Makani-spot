@@ -3519,10 +3519,11 @@ async function _bookBazaarSlotViaSheet({ name, phone, email, business, notes }) 
    ================================================================ */
 
 /**
- * يرسل طلب الحجز إلى Supabase:
- * 1. insert في bazaar_bookings
+ * يرسل طلب الحجز إلى Supabase + Google Sheets:
+ * 1. insert في bazaar_bookings (Supabase)
  * 2. update على bazaar_slots (status → booked)
- * 3. تحديث الواجهة فوراً
+ * 3. إرسال نسخة للشيت دائماً (بغض النظر عن المصدر)
+ * 4. تحديث الواجهة فوراً
  */
 async function submitBazaarBooking() {
   if (!selectedSlotId || !currentBazaar) return;
@@ -3562,15 +3563,45 @@ async function submitBazaarBooking() {
     submitBtn.style.opacity = '0.7';
   }
 
+  // ── دالة مساعدة: إرسال للشيت دائماً (fire & forget) ──────────
+  const _sendToSheet = async (source) => {
+    try {
+      await fetch(BAZAAR_SHEET_URL, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:      'book',
+          bookingId:   bookingId,
+          bazaarId:    currentBazaar.id,
+          bazaarName:  currentBazaar.name,
+          slotId:      selectedSlotId,
+          name,
+          phone,
+          email:       email || '',
+          business,
+          notes:       notes || '',
+          userId:      currentUser.id.toString(),
+          status:      'confirmed',
+          source,
+        }),
+      });
+    } catch (_) {
+      // الشيت مش حرج — Supabase هو المصدر الرئيسي
+      console.warn('تعذر إرسال الحجز للشيت — الـ Supabase سجّله بنجاح');
+    }
+  };
+
   try {
     const bookingId = crypto.randomUUID();
     const now       = new Date().toISOString();
+
     const bazaarBookingRecord = {
       id:            bookingId,
-      bazaar_id:     currentBazaar.id,
+      bazaar_id:     String(currentBazaar.id),
       bazaar_name:   currentBazaar.name,
       slot_id:       selectedSlotId,
-      user_id:       currentUser.id,
+      user_id:       currentUser.id.toString(),   // ← text مش uuid
       user_name:     name,
       user_phone:    phone,
       user_email:    email || null,
@@ -3580,11 +3611,60 @@ async function submitBazaarBooking() {
       created_at:    now,
     };
 
+    // ════════════════════════════════════════════════════════════
+    // CASE A: المصدر = شيت (الأماكن جات من Google Sheets)
+    // ════════════════════════════════════════════════════════════
     if (selectedSlotSource === 'sheet') {
+
+      // 1) حجز المكان في الشيت أولاً
       await _bookBazaarSlotViaSheet({ name, phone, email, business, notes });
 
+      // 2) mirror في Supabase
       if (sbClient && currentUser) {
-        const { error: sheetMirrorErr } = await sbClient.from('bazaar_bookings').insert({
+        const { error: sheetMirrorErr } = await sbClient
+          .from('bazaar_bookings')
+          .insert({
+            id:            bazaarBookingRecord.id,
+            bazaar_id:     bazaarBookingRecord.bazaar_id,
+            slot_id:       bazaarBookingRecord.slot_id,
+            user_id:       bazaarBookingRecord.user_id,
+            user_name:     bazaarBookingRecord.user_name,
+            user_phone:    bazaarBookingRecord.user_phone,
+            user_email:    bazaarBookingRecord.user_email,
+            business_name: bazaarBookingRecord.business_name,
+            notes:         bazaarBookingRecord.notes,
+            status:        bazaarBookingRecord.status,
+            created_at:    bazaarBookingRecord.created_at,
+          });
+        if (sheetMirrorErr) {
+          console.warn('تعذر حفظ نسخة حجز البازار في Supabase:', sheetMirrorErr.message);
+        }
+      }
+
+      // 3) الشيت اتحفظ فيه عبر _bookBazaarSlotViaSheet — مش محتاج _sendToSheet
+
+    // ════════════════════════════════════════════════════════════
+    // CASE B: المصدر = Supabase (الأماكن جات من قاعدة البيانات)
+    // ════════════════════════════════════════════════════════════
+    } else {
+
+      // 1) lock الـ slot — تأكد إنه لسه متاح
+      const { error: lockErr } = await sbClient
+        .from('bazaar_slots')
+        .update({
+          status:    'booked',
+          booked_by: currentUser.id.toString(),
+          updated_at: now,
+        })
+        .eq('id', selectedSlotId)
+        .eq('status', 'available');
+
+      if (lockErr) throw new Error('تعذّر حجز المكان: ' + lockErr.message);
+
+      // 2) insert في bazaar_bookings
+      const { error: bookingErr } = await sbClient
+        .from('bazaar_bookings')
+        .insert({
           id:            bazaarBookingRecord.id,
           bazaar_id:     bazaarBookingRecord.bazaar_id,
           slot_id:       bazaarBookingRecord.slot_id,
@@ -3597,39 +3677,17 @@ async function submitBazaarBooking() {
           status:        bazaarBookingRecord.status,
           created_at:    bazaarBookingRecord.created_at,
         });
-        if (sheetMirrorErr) console.warn('تعذر حفظ نسخة حجز البازار في لوحة التحكم:', sheetMirrorErr.message);
-      }
-    } else {
-      // 1) حجز الـ slot — update أولاً للتأكد إنه لسه متاح
-      const { error: lockErr } = await sbClient
-        .from('bazaar_slots')
-        .update({ status: 'booked', booked_by: currentUser.id, updated_at: now })
-        .eq('id', selectedSlotId)
-        .eq('status', 'available');  // شرط: لا يزال متاحاً
-
-      if (lockErr) throw new Error('تعذّر حجز المكان: ' + lockErr.message);
-
-      // 2) insert في bazaar_bookings
-      const { error: bookingErr } = await sbClient.from('bazaar_bookings').insert({
-        id:            bazaarBookingRecord.id,
-        bazaar_id:     bazaarBookingRecord.bazaar_id,
-        slot_id:       bazaarBookingRecord.slot_id,
-        user_id:       bazaarBookingRecord.user_id,
-        user_name:     bazaarBookingRecord.user_name,
-        user_phone:    bazaarBookingRecord.user_phone,
-        user_email:    bazaarBookingRecord.user_email,
-        business_name: bazaarBookingRecord.business_name,
-        notes:         bazaarBookingRecord.notes,
-        status:        bazaarBookingRecord.status,
-        created_at:    bazaarBookingRecord.created_at,
-      });
 
       if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
+
+      // 3) إرسال نسخة للشيت (الخطوة الجديدة ✅)
+      await _sendToSheet('supabase');
     }
 
+    // ── حفظ محلي (backup فقط — مش مصدر العرض) ────────────────
     _saveLocalBazaarBooking(currentUser.id, bazaarBookingRecord);
 
-    // 3) تحديث الواجهة — المكان يصبح رمادي
+    // ── تحديث الواجهة — المكان يصبح رمادي ────────────────────
     const slotEl = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`);
     if (slotEl) {
       slotEl.classList.remove('selected', 'available');
@@ -3638,14 +3696,14 @@ async function submitBazaarBooking() {
       slotEl.title   = `مكان ${slotEl.textContent.trim()} — محجوز`;
     }
 
-    // 4) تحديث عداد الأماكن في البيانات المحلية
+    // ── تحديث عداد الأماكن ────────────────────────────────────
     if (typeof currentBazaar.available_slots === 'number') {
       currentBazaar.available_slots = Math.max(0, currentBazaar.available_slots - 1);
     }
 
     selectedSlotId = null;
 
-    // 5) عرض رسالة النجاح في البانل
+    // ── رسالة النجاح ──────────────────────────────────────────
     const panel = document.getElementById('bzd-booking-panel');
     if (panel) {
       panel.innerHTML = `
@@ -3672,14 +3730,12 @@ async function submitBazaarBooking() {
       submitBtn.disabled   = false;
       submitBtn.style.opacity = '1';
     }
-    // لو فشل الـ lock — ممكن المكان اتحجز من شخص تاني
     const msg = err.message.includes('تعذّر حجز')
       ? 'تم حجز هذا المكان للتو — اختار مكاناً آخر'
       : 'في مشكلة في الحجز — تأكد من الاتصال وحاول تاني';
     showBzbError(msg);
   }
 }
-
 
 /* ================================================================
    🔗 نظام المشاركة — shareCard
