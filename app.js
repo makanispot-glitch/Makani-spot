@@ -365,12 +365,16 @@ function buildCardHtml(s, fromPage) {
     : '';
 
   // 4. البناء النهائي
+  const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space',${s.id},'${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+
   return `
   <div class="space-card">
     <div class="card-thumb">
       ${thumbHtml}
       <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
       ${unitsBadgeHtml}
+      ${_shareSpaceBtn}
     </div>
     <div class="card-body">
       <div class="card-name">${s.name}</div>
@@ -985,13 +989,16 @@ function _renderSubSpaces(s) {
             ${unit.size ? `<span class="sub-spec">📐 ${unit.size}</span>` : ''}
             ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString('ar-EG')} ج/شهر</span>` : ''}
           </div>
-          ${!isBlocked
-            ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                       onclick="openBookingForUnit(${s.id},'${unit.unitId}')">
-                 احجز ←
-               </button>`
-            : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
-          }
+          <div style="display:flex;align-items:center;gap:6px">
+            ${!isBlocked
+              ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
+                         onclick="openBookingForUnit(${s.id},'${unit.unitId}')">
+                   احجز ←
+                 </button>`
+              : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
+            }
+            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId||'').replace(/'/g,"\\'")}','${(unit.name||unit.unitId||'').replace(/'/g,"\\'")}');" title="مشاركة الوحدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1239,9 +1246,9 @@ function updateMpSlider() {
 
   const track = document.getElementById('mp-slider-track');
   if (track) {
-    // RTL: min=يمين → max=يسار، البرتقالي يملأ من اليمين حتى المؤشر
+    // RTL: البرتقالي من اليمين، track فاتح على الخلفية الداكنة للـ sidebar
     track.style.background =
-      `linear-gradient(to right, #e8e8e8 ${100 - pMax}%, #FF6B00 ${100 - pMax}%)`;
+      `linear-gradient(to right, rgba(255,255,255,0.14) ${100 - pMax}%, #FF6B00 ${100 - pMax}%)`;
   }
 
   const lMax = document.getElementById('mp-price-max-label');
@@ -2826,10 +2833,13 @@ function buildBazaarCard(b) {
             ${isSoldOut ? '🔴 لا أماكن متاحة' : `🟢 ${availSlots} مكان متاح`}
           </span>
         </div>
-        <button class="btn btn-primary" style="font-size:12px;padding:8px 14px;white-space:nowrap"
-                onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
-          التفاصيل ←
-        </button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('bazaar','${b.id}','${(b.name||'').replace(/'/g,"\\'")}');" title="مشاركة البازار"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          <button class="btn btn-primary" style="font-size:12px;padding:8px 14px;white-space:nowrap"
+                  onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
+            التفاصيل ←
+          </button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -3667,5 +3677,78 @@ async function submitBazaarBooking() {
       ? 'تم حجز هذا المكان للتو — اختار مكاناً آخر'
       : 'في مشكلة في الحجز — تأكد من الاتصال وحاول تاني';
     showBzbError(msg);
+  }
+}
+
+
+/* ================================================================
+   🔗 نظام المشاركة — shareCard
+   يعمل مع Web Share API (موبايل) أو نسخ الرابط للـ clipboard
+   ================================================================ */
+
+/**
+ * يشارك كارد مساحة أو وحدة أو بازار
+ * @param {string} type  — 'space' | 'unit' | 'bazaar'
+ * @param {string} id    — معرّف العنصر (للوحدة: 'spaceId:unitId')
+ * @param {string} name  — اسم العنصر للعرض في رسالة المشاركة
+ */
+function shareCard(type, id, name) {
+  const base = window.location.origin + window.location.pathname;
+  let url, shareText;
+
+  if (type === 'space') {
+    url       = base + '?space=' + id;
+    shareText = 'شوف المساحة دي على مكاني Spot: ' + name;
+  } else if (type === 'unit') {
+    const parts = String(id).split(':');
+    url       = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
+    shareText = 'شوف الوحدة دي على مكاني Spot: ' + name;
+  } else {
+    url       = base + '?bazaar=' + id;
+    shareText = 'شوف البازار ده على مكاني Spot: ' + name;
+  }
+
+  if (navigator.share) {
+    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(()  => _showShareToast('✅ تم نسخ الرابط!'))
+      .catch(() => _showShareToast('📋 الرابط: ' + url));
+  }
+}
+
+/** يعرض toast صغيرة تأكيداً للمشاركة */
+function _showShareToast(msg) {
+  let t = document.getElementById('_share-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_share-toast';
+    Object.assign(t.style, {
+      position: 'fixed', bottom: '90px', left: '50%',
+      transform: 'translateX(-50%)',
+      background: '#1a1a1a', color: '#fff',
+      padding: '10px 24px', borderRadius: '30px',
+      fontSize: '13px', fontFamily: "'Cairo',sans-serif",
+      zIndex: '9999', opacity: '0',
+      transition: 'opacity 0.25s', pointerEvents: 'none',
+      whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.22)'
+    });
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._tmr);
+  t._tmr = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+/**
+ * يتحقق من حالة تسجيل الدخول ويوجّه لطلب الترقية أو التسجيل
+ * يُستخدم في صفحة "عندك مساحة فاضية؟"
+ */
+function handleOwnerUpgradeBtn() {
+  if (currentUser) {
+    goToDashboard();
+  } else {
+    showPage('signup');
   }
 }
