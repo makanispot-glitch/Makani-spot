@@ -1175,7 +1175,7 @@ body {
 
 .mp-body {
   display: grid; grid-template-columns: 280px 1fr;
-  max-width: 1400px; margin: 0 auto;
+  width: 100%;
   min-height: calc(100vh - 180px);
 }
 .mp-sidebar-overlay {
@@ -1270,7 +1270,11 @@ body {
 .mp-clear-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
 /* ── منطقة الكروت — خلفية بيضاء ── */
-.mp-main { padding: 28px 24px; background: var(--surface); }
+.mp-main {
+  padding: 28px 24px;
+  background: var(--surface);
+  min-width: 0; /* يمنع الـ grid item من التمدد خارج حدوده */
+}
 .mp-main-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 .mp-count-badge { font-size: 14px; font-weight: 700; color: var(--orange); background: var(--orange-ultra); padding: 6px 18px; border-radius: 30px; }
 .mp-back-btn {
