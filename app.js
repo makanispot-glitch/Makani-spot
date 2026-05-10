@@ -3352,12 +3352,17 @@ function renderSlotMap(slots) {
   const el = document.getElementById('bzd-slotmap');
   if (!el) return;
 
-  const availCount  = slots.filter(s => s.status === 'available').length;
-  const bookedCount = slots.filter(s => s.status === 'booked').length;
+  const availCount    = slots.filter(s => s.status === 'available').length;
+  const bookedCount   = slots.filter(s => s.status === 'booked').length;
+  const featuredCount = slots.filter(s =>
+    s.is_featured == true || s.is_featured === 'true' ||
+    s.is_featured === 1   || s.is_featured === '1'    || s.is_featured === 'yes'
+  ).length;
 
   // هل في row/col محدد؟ — نستخدمه لتخطيط Grid مخصص
   const hasLayout = slots.some(s => s.row != null && s.col != null);
   let gridHtml = '';
+  let slotIdx  = 0;
 
   if (hasLayout) {
     const maxRow = Math.max(...slots.map(s => parseInt(s.row) || 1));
@@ -3377,14 +3382,14 @@ function renderSlotMap(slots) {
       for (let c = 0; c < maxCol; c++) {
         const slot = matrix[r][c];
         gridHtml += slot
-          ? _buildSlotHtml(slot)
+          ? _buildSlotHtml(slot, slotIdx++)
           : `<div class="bz-slot bz-slot-empty"></div>`;
       }
     }
     gridHtml += '</div>';
   } else {
     gridHtml = '<div class="bz-slot-grid">' +
-      slots.map(s => _buildSlotHtml(s)).join('') +
+      slots.map((s, i) => _buildSlotHtml(s, i)).join('') +
       '</div>';
   }
 
@@ -3393,7 +3398,8 @@ function renderSlotMap(slots) {
       <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
       <div class="sd-units-summary">
         <span class="sd-units-avail">${availCount} متاح</span>
-        ${bookedCount > 0 ? `<span class="sd-units-rented">${bookedCount} محجوز</span>` : ''}
+        ${bookedCount   > 0 ? `<span class="sd-units-rented">${bookedCount} محجوز</span>` : ''}
+        ${featuredCount > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">⭐ ${featuredCount} مميز</span>` : ''}
       </div>
     </div>
 
@@ -3401,36 +3407,55 @@ function renderSlotMap(slots) {
       <span class="bz-legend-item"><span class="bz-legend-dot available"></span> متاح — اضغط للحجز</span>
       <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> محجوز</span>
       <span class="bz-legend-item"><span class="bz-legend-dot selected"></span> مختارك</span>
+      ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> مكان مميز ⭐</span>` : ''}
     </div>
 
     <div class="bz-slotmap-scroll">${gridHtml}</div>
 
     <div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:10px;padding-bottom:4px">
-      اضغط على أي مكان أخضر لاختياره وإتمام الحجز
+      اضغط على أي مكان متاح لاختياره وإتمام الحجز
     </div>`;
 }
 
 /**
  * يبني HTML لخلية مكان واحدة
- * @param {Object} slot — بيانات المكان
+ * @param {Object} slot    — بيانات المكان
+ * @param {number} [index] — ترتيب الخلية للـ stagger animation
  * @returns {string}
  */
-function _buildSlotHtml(slot) {
+function _buildSlotHtml(slot, index = 0) {
   const isBooked    = slot.status === 'booked';
   const isAvailable = !isBooked;
-  const cls         = isBooked ? 'booked' : 'available';
-  const source      = slot.source || 'supabase';
-  const clickAttr   = isAvailable
+  const isFeatured  = slot.is_featured == true || slot.is_featured === 'true'
+                   || slot.is_featured === 1   || slot.is_featured === '1'
+                   || slot.is_featured === 'yes';
+
+  let cls = isBooked ? 'booked' : 'available';
+  if (isFeatured) cls += ' featured';
+
+  const source    = slot.source || 'supabase';
+  const clickAttr = isAvailable
     ? `onclick="selectSlot('${slot.id}','${slot.slot_number || slot.id}','${source}')"`
     : '';
+
+  const bookedLabel = isFeatured ? `محجوز (مميز ⭐)` : `محجوز`;
+  const availLabel  = isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`;
   const titleAttr   = isBooked
-    ? `title="مكان ${slot.slot_number || ''} — محجوز"`
-    : `title="مكان ${slot.slot_number || ''} — اضغط للحجز"`;
+    ? `title="مكان ${slot.slot_number || ''} — ${bookedLabel}"`
+    : `title="مكان ${slot.slot_number || ''} — ${availLabel}"`;
+
+  const delay       = Math.min(index * 0.028, 0.55).toFixed(3);
+  const featuredTip = isFeatured
+    ? `<span class="bz-featured-tooltip">⭐ مكان مميز</span>`
+    : '';
 
   return `<div class="bz-slot ${cls}"
               data-slot-id="${slot.id}"
+              data-featured="${isFeatured}"
+              style="animation-delay:${delay}s"
               ${clickAttr} ${titleAttr}>
     ${slot.slot_number || ''}
+    ${featuredTip}
   </div>`;
 }
 
@@ -3448,9 +3473,15 @@ function selectSlot(slotId, slotLabel, source = 'supabase') {
 
   // تحديد المكان الجديد
   const slotEl = document.querySelector(`.bz-slot[data-slot-id="${slotId}"]`);
+  const isFeatured = slotEl?.dataset?.featured === 'true';
   if (slotEl) {
     slotEl.classList.remove('available');
     slotEl.classList.add('selected');
+    // أنيميشن pop عند الاختيار
+    slotEl.style.animation = 'none';
+    requestAnimationFrame(() => {
+      slotEl.style.animation = 'slotPop 0.32s cubic-bezier(.22,.68,0,1.2) both';
+    });
   }
 
   selectedSlotId = slotId;
@@ -3459,8 +3490,9 @@ function selectSlot(slotId, slotLabel, source = 'supabase') {
   // تحديث معلومات بانل الحجز
   const slotInfoEl = document.getElementById('bzd-slot-info');
   if (slotInfoEl && currentBazaar) {
-    const price = Number(currentBazaar.price_per_slot || 0).toLocaleString('ar-EG');
-    slotInfoEl.textContent = `مكان رقم ${slotLabel} · ${price} ج`;
+    const price        = Number(currentBazaar.price_per_slot || 0).toLocaleString('ar-EG');
+    const featuredTag  = isFeatured ? ' ⭐ مميز' : '';
+    slotInfoEl.textContent = `مكان رقم ${slotLabel}${featuredTag} · ${price} ج`;
   }
 
   // ملء بيانات المستخدم المسجّل تلقائياً
