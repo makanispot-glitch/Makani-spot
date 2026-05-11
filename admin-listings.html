@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة مراجعة الإعلانات — مكاني Spot Admin</title>
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-size: 14px; }
+
+/* ── Login Screen ── */
+.adm-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%);
+}
+.adm-login-box {
+  background: #fff; border-radius: 20px; padding: 40px 36px;
+  width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.adm-login-box h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+.adm-login-box p  { font-size: 13px; color: #666; margin-bottom: 28px; }
+.adm-login-box input {
+  width: 100%; padding: 13px 16px; border: 2px solid #E8E8E8;
+  border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 15px;
+  outline: none; margin-bottom: 14px; transition: border .2s;
+}
+.adm-login-box input:focus { border-color: #FF6B00; }
+.adm-login-err { color: #EF4444; font-size: 13px; margin-bottom: 10px; display: none; }
+.adm-login-btn {
+  width: 100%; padding: 14px; background: #FF6B00; color: #fff;
+  border: none; border-radius: 10px; font-family: 'Cairo', sans-serif;
+  font-size: 16px; font-weight: 800; cursor: pointer; transition: background .2s;
+}
+.adm-login-btn:hover { background: #E85E00; }
+
+/* ── Main Layout ── */
+#adm-main { display: none; min-height: 100vh; }
+
+.adm-nav {
+  background: #1A1A1A; color: #fff;
+  padding: 0 28px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.adm-nav h1 { font-size: 18px; font-weight: 900; }
+.adm-nav-right { display: flex; align-items: center; gap: 14px; }
+.adm-nav span { font-size: 13px; color: rgba(255,255,255,0.6); }
+.adm-logout {
+  padding: 7px 16px; background: rgba(255,255,255,0.1); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+  cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px;
+  transition: background .2s;
+}
+.adm-logout:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Stats Bar ── */
+.adm-stats {
+  display: flex; gap: 16px; padding: 18px 28px; background: #fff;
+  border-bottom: 1px solid #E8E8E8; flex-wrap: wrap;
+}
+.adm-stat {
+  padding: 10px 20px; border-radius: 10px; text-align: center;
+  min-width: 120px;
+}
+.adm-stat-num { font-size: 26px; font-weight: 900; }
+.adm-stat-lbl { font-size: 12px; font-weight: 700; margin-top: 2px; }
+.adm-stat.pending  { background: #FEF3C7; }
+.adm-stat.pending  .adm-stat-num { color: #92400E; }
+.adm-stat.pending  .adm-stat-lbl { color: #B45309; }
+.adm-stat.approved { background: #DCFCE7; }
+.adm-stat.approved .adm-stat-num { color: #15803D; }
+.adm-stat.approved .adm-stat-lbl { color: #16A34A; }
+.adm-stat.rejected { background: #FEE2E2; }
+.adm-stat.rejected .adm-stat-num { color: #991B1B; }
+.adm-stat.rejected .adm-stat-lbl { color: #DC2626; }
+.adm-stat.expired  { background: #F3F4F6; }
+.adm-stat.expired  .adm-stat-num { color: #374151; }
+.adm-stat.expired  .adm-stat-lbl { color: #6B7280; }
+
+/* ── Toolbar ── */
+.adm-toolbar {
+  padding: 14px 28px; background: #fff; border-bottom: 1px solid #E8E8E8;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.adm-filter-btn {
+  padding: 8px 18px; border-radius: 8px; border: 2px solid #E8E8E8;
+  background: #fff; font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.adm-filter-btn:hover, .adm-filter-btn.on {
+  border-color: #FF6B00; background: #FF6B00; color: #fff;
+}
+.adm-search {
+  margin-right: auto; padding: 9px 14px; border: 1.5px solid #E8E8E8;
+  border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 13px;
+  outline: none; min-width: 220px; transition: border .2s;
+}
+.adm-search:focus { border-color: #FF6B00; }
+.adm-refresh {
+  padding: 9px 16px; background: #F7F7F7; border: 1.5px solid #E8E8E8;
+  border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif;
+  font-size: 13px; font-weight: 700; transition: background .2s;
+}
+.adm-refresh:hover { background: #E8E8E8; }
+
+/* ── Listings Table ── */
+.adm-content { padding: 24px 28px; }
+.adm-table-wrap { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid #E8E8E8; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: #F7F7F7; }
+th { padding: 12px 16px; font-size: 12px; font-weight: 800; color: #666; text-align: right; white-space: nowrap; }
+td { padding: 14px 16px; border-top: 1px solid #F0F0F0; vertical-align: middle; }
+tr:hover td { background: #FAFAFA; }
+
+.adm-listing-img {
+  width: 60px; height: 60px; object-fit: cover; border-radius: 8px;
+  border: 1px solid #E8E8E8; display: block;
+}
+.adm-listing-img-placeholder {
+  width: 60px; height: 60px; background: #F7F7F7; border-radius: 8px;
+  border: 1px solid #E8E8E8; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.adm-title-cell { max-width: 220px; }
+.adm-title-cell strong { display: block; font-size: 14px; font-weight: 800; color: #1A1A1A; margin-bottom: 3px; }
+.adm-title-cell span { font-size: 12px; color: #999; }
+
+/* ── Status Badge ── */
+.adm-status {
+  display: inline-block; padding: 4px 12px; border-radius: 50px;
+  font-size: 12px; font-weight: 800;
+}
+.adm-status-pending  { background: #FEF3C7; color: #92400E; }
+.adm-status-approved { background: #DCFCE7; color: #15803D; }
+.adm-status-rejected { background: #FEE2E2; color: #991B1B; }
+.adm-status-expired  { background: #F3F4F6; color: #374151; }
+.adm-status-deleted  { background: #F3F4F6; color: #9CA3AF; }
+
+/* ── Action Buttons ── */
+.adm-actions { display: flex; gap: 6px; white-space: nowrap; }
+.adm-btn {
+  padding: 7px 14px; border-radius: 8px; border: none;
+  font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 800;
+  cursor: pointer; transition: all .2s;
+}
+.adm-btn-approve { background: #DCFCE7; color: #15803D; }
+.adm-btn-approve:hover { background: #22C55E; color: #fff; }
+.adm-btn-reject  { background: #FEE2E2; color: #991B1B; }
+.adm-btn-reject:hover  { background: #EF4444; color: #fff; }
+.adm-btn-preview { background: #F3F4F6; color: #374151; }
+.adm-btn-preview:hover { background: #E5E7EB; }
+.adm-btn-delete  { background: #F3F4F6; color: #9CA3AF; }
+.adm-btn-delete:hover  { background: #EF4444; color: #fff; }
+
+/* ── Empty ── */
+.adm-empty { text-align: center; padding: 60px 20px; color: #999; font-size: 15px; }
+
+/* ── Loading ── */
+.adm-loading { text-align: center; padding: 60px 20px; color: #999; }
+.adm-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid #E8E8E8; border-top-color: #FF6B00;
+  animation: spin 0.9s linear infinite; margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modals ── */
+.adm-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px;
+}
+.adm-overlay.open { display: flex; }
+.adm-modal {
+  background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 480px;
+}
+.adm-modal h3 { font-size: 18px; font-weight: 900; margin-bottom: 14px; }
+.adm-modal textarea {
+  width: 100%; padding: 12px; border: 1.5px solid #E8E8E8; border-radius: 10px;
+  font-family: 'Cairo', sans-serif; font-size: 14px; resize: vertical; min-height: 100px;
+  outline: none; transition: border .2s;
+}
+.adm-modal textarea:focus { border-color: #FF6B00; }
+.adm-modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+
+/* ── Preview Modal ── */
+.adm-preview-modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 640px;
+  max-height: 88vh; overflow-y: auto; padding: 24px;
+}
+.adm-preview-imgs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.adm-preview-imgs img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #E8E8E8; cursor: pointer; }
+.adm-preview-imgs img:hover { transform: scale(1.04); }
+.adm-preview-row { display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px; border-bottom: 1px solid #F0F0F0; padding-bottom: 8px; }
+.adm-preview-row strong { color: #666; min-width: 130px; font-size: 13px; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .adm-nav, .adm-stats, .adm-toolbar, .adm-content { padding-left: 14px; padding-right: 14px; }
+  .adm-content { padding: 14px; }
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="adm-login" class="adm-login">
+  <div class="adm-login-box">
+    <div style="font-size:40px;margin-bottom:12px">🔐</div>
+    <h1>لوحة الإدارة</h1>
+    <p>أدخل كلمة المرور للدخول</p>
+    <div class="adm-login-err" id="adm-login-err">كلمة المرور غير صحيحة</div>
+    <input type="password" id="adm-pass" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')admLogin()">
+    <br>
+    <button class="adm-login-btn" onclick="admLogin()">دخول</button>
+  </div>
+</div>
+
+<!-- ── Main Dashboard ── -->
+<div id="adm-main">
+
+  <!-- Navbar -->
+  <nav class="adm-nav">
+    <h1>🛡️ لوحة مراجعة إعلانات سوق المعدات</h1>
+    <div class="adm-nav-right">
+      <span id="adm-last-update"></span>
+      <button class="adm-logout" onclick="admLogout()">خروج</button>
+    </div>
+  </nav>
+
+  <!-- Stats -->
+  <div class="adm-stats" id="adm-stats">
+    <div class="adm-stat pending">
+      <div class="adm-stat-num" id="stat-pending">—</div>
+      <div class="adm-stat-lbl">⏳ قيد المراجعة</div>
+    </div>
+    <div class="adm-stat approved">
+      <div class="adm-stat-num" id="stat-approved">—</div>
+      <div class="adm-stat-lbl">✅ منشور</div>
+    </div>
+    <div class="adm-stat rejected">
+      <div class="adm-stat-num" id="stat-rejected">—</div>
+      <div class="adm-stat-lbl">❌ مرفوض</div>
+    </div>
+    <div class="adm-stat expired">
+      <div class="adm-stat-num" id="stat-expired">—</div>
+      <div class="adm-stat-lbl">⌛ منتهي</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="adm-toolbar">
+    <button class="adm-filter-btn on" onclick="admSetFilter('pending',this)">⏳ قيد المراجعة</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('approved',this)">✅ منشور</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('rejected',this)">❌ مرفوض</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('expired',this)">⌛ منتهي</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('',this)">الكل</button>
+    <input class="adm-search" id="adm-search" type="text" placeholder="بحث في الإعلانات…" oninput="admFilterTable()">
+    <button class="adm-refresh" onclick="admLoad()">🔄 تحديث</button>
+  </div>
+
+  <!-- Table -->
+  <div class="adm-content">
+    <div class="adm-table-wrap">
+      <div id="adm-table-container">
+        <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #adm-main -->
+
+<!-- ── Reject Modal ── -->
+<div class="adm-overlay" id="adm-reject-modal">
+  <div class="adm-modal">
+    <h3>❌ رفض الإعلان</h3>
+    <input type="hidden" id="adm-reject-id">
+    <p style="font-size:13px;color:#666;margin-bottom:12px">اكتب سبب الرفض — سيُرسَل للمستخدم تلقائياً</p>
+    <textarea id="adm-reject-reason" placeholder="مثال: الصور غير واضحة — يرجى إعادة الرفع بجودة أفضل"></textarea>
+    <div class="adm-modal-btns">
+      <button class="adm-btn adm-btn-preview" onclick="admCloseReject()">إلغاء</button>
+      <button class="adm-btn adm-btn-reject" onclick="admConfirmReject()" style="padding:10px 20px">تأكيد الرفض</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Preview Modal ── -->
+<div class="adm-overlay" id="adm-preview-modal">
+  <div class="adm-preview-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:18px;font-weight:900">معاينة الإعلان</h3>
+      <button onclick="admClosePreview()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999">✕</button>
+    </div>
+    <div id="adm-preview-body"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:center" id="adm-preview-actions"></div>
+  </div>
+</div>
+
+<script>
+const ADM_SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const ADM_SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const ADM_PASSWORD = 'makani@admin2026';
+const ADM_TOKEN_KEY = 'makani_admin_token';
+
+const CAT_LABELS  = {partition:'بارتشن وأثاث','food-cart':'عربية أكل',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',pos:'كاشير وPOS',lighting:'إضاءة تجارية',other:'أخرى'};
+const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
+const CONTACT_LABELS = {both:'واتساب + اتصال',whatsapp:'واتساب فقط',call:'اتصال فقط'};
+
+let admSb       = null;
+let admAll      = [];
+let admFiltered = [];
+let admFilter   = 'pending';
+let admSearch   = '';
+
+/* ── Auth ── */
+function admLogin() {
+  const pass = document.getElementById('adm-pass').value;
+  if (pass === ADM_PASSWORD) {
+    localStorage.setItem(ADM_TOKEN_KEY, btoa(ADM_PASSWORD));
+    admShowDash();
+  } else {
+    document.getElementById('adm-login-err').style.display = 'block';
+    document.getElementById('adm-pass').value = '';
+  }
+}
+
+function admLogout() {
+  localStorage.removeItem(ADM_TOKEN_KEY);
+  location.reload();
+}
+
+function admCheckAuth() {
+  const token = localStorage.getItem(ADM_TOKEN_KEY);
+  return token === btoa(ADM_PASSWORD);
+}
+
+function admShowDash() {
+  document.getElementById('adm-login').style.display = 'none';
+  document.getElementById('adm-main').style.display = 'block';
+  admSb = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
+  admLoad();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (admCheckAuth()) admShowDash();
+});
+
+/* ── Load ── */
+async function admLoad() {
+  document.getElementById('adm-table-container').innerHTML =
+    '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+
+  const { data, error } = await admSb
+    .from('listings')
+    .select('*')
+    .neq('status', 'deleted')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('adm-table-container').innerHTML =
+      `<div class="adm-empty">⚠️ خطأ في التحميل: ${error.message}</div>`;
+    return;
+  }
+
+  admAll = data || [];
+  admUpdateStats();
+  admRender();
+
+  const now = new Date().toLocaleTimeString('ar-EG');
+  document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + now;
+}
+
+function admUpdateStats() {
+  const count = s => admAll.filter(l => l.status === s).length;
+  document.getElementById('stat-pending').textContent  = count('pending');
+  document.getElementById('stat-approved').textContent = count('approved');
+  document.getElementById('stat-rejected').textContent = count('rejected');
+  document.getElementById('stat-expired').textContent  = count('expired');
+}
+
+/* ── Filter ── */
+function admSetFilter(f, el) {
+  admFilter = f;
+  document.querySelectorAll('.adm-filter-btn').forEach(b => b.classList.remove('on'));
+  if (el) el.classList.add('on');
+  admRender();
+}
+
+function admFilterTable() {
+  admSearch = document.getElementById('adm-search').value.toLowerCase();
+  admRender();
+}
+
+function admRender() {
+  let list = admAll;
+  if (admFilter) list = list.filter(l => l.status === admFilter);
+  if (admSearch) list = list.filter(l =>
+    (l.title || '').toLowerCase().includes(admSearch) ||
+    (l.phone || '').includes(admSearch) ||
+    (l.governorate || '').toLowerCase().includes(admSearch)
+  );
+  admFiltered = list;
+  admBuildTable(list);
+}
+
+/* ── Table ── */
+function admBuildTable(list) {
+  const cont = document.getElementById('adm-table-container');
+
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="adm-empty">لا توجد إعلانات في هذه الحالة</div>';
+    return;
+  }
+
+  const rows = list.map(l => {
+    const img = l.cover_image || (l.images && l.images[0]) || '';
+    const imgHtml = img
+      ? `<img class="adm-listing-img" src="${img}" alt="" onclick="admShowPreview('${l.id}')" style="cursor:pointer">`
+      : `<div class="adm-listing-img-placeholder">📦</div>`;
+
+    const statusMap = {
+      pending:  'adm-status-pending',
+      approved: 'adm-status-approved',
+      rejected: 'adm-status-rejected',
+      expired:  'adm-status-expired',
+      deleted:  'adm-status-deleted',
+    };
+    const statusLabel = { pending:'قيد المراجعة', approved:'منشور', rejected:'مرفوض', expired:'منتهي', deleted:'محذوف' };
+    const date = new Date(l.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+    const cat  = CAT_LABELS[l.category] || l.category;
+
+    const approveBtn = l.status !== 'approved'
+      ? `<button class="adm-btn adm-btn-approve" onclick="admApprove('${l.id}')">✅ قبول</button>` : '';
+    const rejectBtn = l.status !== 'rejected'
+      ? `<button class="adm-btn adm-btn-reject" onclick="admOpenReject('${l.id}')">❌ رفض</button>` : '';
+
+    return `<tr>
+      <td>${imgHtml}</td>
+      <td class="adm-title-cell">
+        <strong>${l.title}</strong>
+        <span>${cat} — ${COND_LABELS[l.condition] || l.condition}</span>
+      </td>
+      <td style="font-weight:800;color:#FF6B00">${Number(l.price).toLocaleString('ar-EG')} ج</td>
+      <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || l.status}</span></td>
+      <td style="color:#666">${l.governorate || '—'}</td>
+      <td style="color:#999;font-size:12px">${date}</td>
+      <td>
+        <div class="adm-actions">
+          ${approveBtn}
+          ${rejectBtn}
+          <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${l.id}')">👁 معاينة</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>الصورة</th>
+          <th>الإعلان</th>
+          <th>السعر</th>
+          <th>الحالة</th>
+          <th>المحافظة</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+/* ── Approve ── */
+async function admApprove(id) {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 60);
+
+  const { error } = await admSb.from('listings').update({
+    status:           'approved',
+    rejection_reason: null,
+    expires_at:       expiresAt.toISOString(),
+  }).eq('id', id);
+
+  if (error) { alert('خطأ: ' + error.message); return; }
+
+  const listing = admAll.find(l => l.id === id);
+  if (listing) {
+    listing.status      = 'approved';
+    listing.expires_at  = expiresAt.toISOString();
+    listing.rejection_reason = null;
+  }
+  admUpdateStats();
+  admRender();
+}
+
+/* ── Reject ── */
+function admOpenReject(id) {
+  document.getElementById('adm-reject-id').value = id;
+  document.getElementById('adm-reject-reason').value = '';
+  document.getElementById('adm-reject-modal').classList.add('open');
+}
+
+function admCloseReject() {
+  document.getElementById('adm-reject-modal').classList.remove('open');
+}
+
+async function admConfirmReject() {
+  const id     = document.getElementById('adm-reject-id').value;
+  const reason = document.getElementById('adm-reject-reason').value.trim();
+  if (!reason) { alert('من فضلك اكتب سبب الرفض'); return; }
+
+  const { error } = await admSb.from('listings').update({
+    status:           'rejected',
+    rejection_reason: reason,
+  }).eq('id', id);
+
+  if (error) { alert('خطأ: ' + error.message); return; }
+
+  const listing = admAll.find(l => l.id === id);
+  if (listing) { listing.status = 'rejected'; listing.rejection_reason = reason; }
+  admCloseReject();
+  admUpdateStats();
+  admRender();
+}
+
+/* ── Preview ── */
+function admShowPreview(id) {
+  const l = admAll.find(x => x.id === id);
+  if (!l) return;
+
+  const imgs = [l.cover_image, ...(l.images || [])].filter(Boolean);
+  const imgsHtml = imgs.length > 0
+    ? `<div class="adm-preview-imgs">${imgs.map(u => `<img src="${u}" alt="" onclick="window.open('${u}','_blank')">`).join('')}</div>`
+    : '<div style="color:#999;margin-bottom:16px">لا توجد صور</div>';
+
+  const date   = new Date(l.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  const expiry = l.expires_at ? new Date(l.expires_at).toLocaleDateString('ar-EG') : '—';
+
+  document.getElementById('adm-preview-body').innerHTML = `
+    ${imgsHtml}
+    <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${l.title}</span></div>
+    <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || l.category}</span></div>
+    <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || l.condition}</span></div>
+    <div class="adm-preview-row"><strong>السعر</strong><span style="color:#FF6B00;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
+    <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${l.description || '—'}</span></div>
+    <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${l.governorate || '—'}${l.area ? ' — ' + l.area : ''}</span></div>
+    <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${l.phone || '—'}</span></div>
+    <div class="adm-preview-row"><strong>طريقة التواصل</strong><span>${CONTACT_LABELS[l.contact_method] || l.contact_method}</span></div>
+    <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${l.view_count||0} — 📞 ${l.contact_count||0}</span></div>
+    <div class="adm-preview-row"><strong>تاريخ النشر</strong><span>${date}</span></div>
+    <div class="adm-preview-row"><strong>تنتهي في</strong><span>${expiry}</span></div>
+    ${l.rejection_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${l.rejection_reason}</span></div>` : ''}
+  `;
+
+  const actionsEl = document.getElementById('adm-preview-actions');
+  const approveBtn = l.status !== 'approved'
+    ? `<button class="adm-btn adm-btn-approve" style="padding:10px 24px" onclick="admApprove('${l.id}');admClosePreview()">✅ قبول</button>` : '';
+  const rejectBtn = l.status !== 'rejected'
+    ? `<button class="adm-btn adm-btn-reject" style="padding:10px 24px" onclick="admClosePreview();admOpenReject('${l.id}')">❌ رفض</button>` : '';
+  actionsEl.innerHTML = approveBtn + rejectBtn +
+    `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview()">إغلاق</button>`;
+
+  document.getElementById('adm-preview-modal').classList.add('open');
+}
+
+function admClosePreview() {
+  document.getElementById('adm-preview-modal').classList.remove('open');
+}
+
+/* ── Close on backdrop ── */
+document.addEventListener('click', e => {
+  if (e.target.id === 'adm-reject-modal')  admCloseReject();
+  if (e.target.id === 'adm-preview-modal') admClosePreview();
+});
+
+/* ── Enter key login ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('adm-login').style.display !== 'none') admLogin();
+});
+</script>
+</body>
+</html>

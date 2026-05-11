@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>انشر إعلانك — سوق المعدات | مكاني Spot</title>
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="media-handler.js"></script>
+
+<style>
+/* ── Page Layout ── */
+body { background: var(--surface2); }
+.pa-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(255,255,255,0.97); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px; height: 68px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow);
+}
+.pa-nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.pa-nav-logo .logo-ar { font-size: 20px; font-weight: 900; color: var(--dark); }
+.pa-nav-logo .logo-en { font-size: 13px; font-weight: 700; color: var(--orange); }
+
+.pa-wrapper {
+  max-width: 680px; margin: 40px auto; padding: 0 20px 60px;
+}
+
+/* ── Progress Bar ── */
+.pa-progress { margin-bottom: 32px; }
+.pa-progress-steps {
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; margin-bottom: 10px;
+}
+.pa-progress-steps::before {
+  content: ''; position: absolute; top: 18px; right: 10%; left: 10%;
+  height: 3px; background: var(--border); z-index: 0; border-radius: 3px;
+}
+.pa-progress-fill {
+  position: absolute; top: 18px; right: 10%;
+  height: 3px; background: var(--orange); z-index: 1;
+  border-radius: 3px; transition: width .4s ease;
+}
+.pa-step {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  position: relative; z-index: 2;
+}
+.pa-step-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--ink3);
+  transition: all .3s;
+}
+.pa-step.done .pa-step-circle { background: var(--orange); border-color: var(--orange); color: #fff; }
+.pa-step.active .pa-step-circle { border-color: var(--orange); color: var(--orange); }
+.pa-step-label { font-size: 11px; font-weight: 700; color: var(--ink3); white-space: nowrap; }
+.pa-step.active .pa-step-label, .pa-step.done .pa-step-label { color: var(--orange); }
+
+/* ── Card ── */
+.pa-card {
+  background: var(--surface); border-radius: 18px;
+  border: 1px solid var(--border); padding: 28px 32px;
+  box-shadow: var(--shadow);
+}
+.pa-card-title { font-size: 20px; font-weight: 900; color: var(--dark); margin-bottom: 24px; }
+
+/* ── Form Fields ── */
+.pa-field { margin-bottom: 20px; }
+.pa-label { display: block; font-size: 13px; font-weight: 700; color: var(--ink2); margin-bottom: 7px; }
+.pa-label span { color: var(--red); }
+.pa-input, .pa-select, .pa-textarea {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: 'Cairo', sans-serif; font-size: 14px; color: var(--dark);
+  background: var(--surface); outline: none;
+  transition: border .2s;
+}
+.pa-input:focus, .pa-select:focus, .pa-textarea:focus { border-color: var(--orange); }
+.pa-textarea { min-height: 110px; resize: vertical; }
+.pa-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pa-hint { font-size: 11px; color: var(--ink3); margin-top: 5px; }
+.pa-error-msg { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
+
+/* ── Checkbox ── */
+.pa-check-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.pa-check-wrap input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--orange); cursor: pointer; }
+.pa-check-wrap span { font-size: 14px; font-weight: 600; color: var(--ink); }
+
+/* ── Image Upload ── */
+.pa-upload-area {
+  border: 2.5px dashed var(--border); border-radius: 14px;
+  padding: 32px; text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.pa-upload-area:hover, .pa-upload-area.drag-over {
+  border-color: var(--orange); background: var(--orange-ultra);
+}
+.pa-upload-icon { font-size: 40px; margin-bottom: 10px; }
+.pa-upload-text { font-size: 14px; font-weight: 700; color: var(--ink2); }
+.pa-upload-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+#pa-file-input { display: none; }
+
+/* ── Image Previews ── */
+.pa-previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); gap: 10px; margin-top: 14px; }
+.pa-preview-item {
+  position: relative; border-radius: 10px; overflow: hidden;
+  aspect-ratio: 1; border: 2px solid var(--border);
+}
+.pa-preview-item.cover-item { border-color: var(--orange); }
+.pa-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pa-preview-remove {
+  position: absolute; top: 4px; left: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); color: #fff; border: none;
+  cursor: pointer; font-size: 13px; line-height: 22px;
+  display: flex; align-items: center; justify-content: center;
+}
+.pa-cover-badge {
+  position: absolute; bottom: 0; right: 0; left: 0;
+  background: var(--orange); color: #fff;
+  font-size: 10px; font-weight: 800; text-align: center; padding: 3px;
+}
+.pa-set-cover {
+  position: absolute; bottom: 0; right: 0; left: 0;
+  background: rgba(0,0,0,0.5); color: #fff;
+  font-size: 10px; font-weight: 700; text-align: center;
+  padding: 3px; cursor: pointer; display: none;
+}
+.pa-preview-item:hover .pa-set-cover { display: block; }
+
+/* ── Upload Progress ── */
+.pa-upload-progress { margin-top: 14px; display: none; }
+.pa-progress-bar-wrap { height: 8px; background: var(--border); border-radius: 8px; overflow: hidden; }
+.pa-progress-bar { height: 100%; background: var(--orange); border-radius: 8px; transition: width .3s; width: 0%; }
+.pa-progress-text { font-size: 12px; color: var(--ink2); margin-top: 5px; text-align: center; }
+
+/* ── Review Section ── */
+.pa-review-row { display: flex; gap: 8px; margin-bottom: 10px; font-size: 14px; }
+.pa-review-row strong { color: var(--ink2); min-width: 110px; font-size: 13px; }
+.pa-review-images { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.pa-review-images img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+
+/* ── Nav Buttons ── */
+.pa-nav-btns { display: flex; gap: 10px; justify-content: space-between; margin-top: 28px; }
+.pa-btn {
+  padding: 13px 28px; border-radius: 12px; border: none;
+  font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 800;
+  cursor: pointer; transition: all .2s;
+}
+.pa-btn-primary { background: var(--orange); color: #fff; flex: 1; }
+.pa-btn-primary:hover { background: var(--orange-hover); }
+.pa-btn-primary:disabled { background: var(--border); color: var(--ink3); cursor: not-allowed; }
+.pa-btn-back { background: var(--surface2); color: var(--ink2); padding: 13px 22px; border: 1.5px solid var(--border); }
+.pa-btn-back:hover { background: var(--border); }
+
+/* ── Terms ── */
+.pa-terms { font-size: 13px; color: var(--ink2); line-height: 1.7; padding: 16px; background: var(--surface2); border-radius: 10px; margin-bottom: 18px; }
+.pa-terms a { color: var(--orange); }
+
+/* ── Login Guard ── */
+#pa-login-guard {
+  display: none; text-align: center; padding: 80px 20px;
+}
+#pa-login-guard .guard-icon { font-size: 56px; margin-bottom: 16px; }
+#pa-login-guard h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+#pa-login-guard p { font-size: 14px; color: var(--ink2); margin-bottom: 24px; }
+
+/* ── Success ── */
+#pa-success { display: none; text-align: center; padding: 60px 20px; }
+#pa-success .success-icon { font-size: 60px; margin-bottom: 16px; }
+#pa-success h2 { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+#pa-success p { font-size: 14px; color: var(--ink2); margin-bottom: 28px; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .pa-nav { padding: 0 16px; }
+  .pa-wrapper { padding: 0 12px 60px; margin-top: 20px; }
+  .pa-card { padding: 20px 16px; }
+  .pa-row { grid-template-columns: 1fr; }
+  .pa-step-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="pa-nav">
+  <a class="pa-nav-logo" href="equipment-market.html">
+    <div class="logo-text">
+      <span class="logo-ar">مكاني</span>
+      <span class="logo-en">Spot</span>
+    </div>
+  </a>
+  <span style="font-size:14px;font-weight:800;color:var(--dark)">نشر إعلان جديد</span>
+  <a href="equipment-market.html" style="font-size:13px;color:var(--ink2);text-decoration:none">← رجوع للسوق</a>
+</nav>
+
+<div class="pa-wrapper">
+
+  <!-- ── Login Guard ── -->
+  <div id="pa-login-guard">
+    <div class="guard-icon">🔐</div>
+    <h2>يجب تسجيل الدخول أولاً</h2>
+    <p>لنشر إعلان في سوق المعدات، سجّل دخولك من المنصة الرئيسية أولاً</p>
+    <a href="index.html" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
+  </div>
+
+  <!-- ── Success ── -->
+  <div id="pa-success">
+    <div class="success-icon">🎉</div>
+    <h2>تم إرسال إعلانك بنجاح!</h2>
+    <p>إعلانك قيد المراجعة الآن — سيتم نشره خلال 24 ساعة بعد مراجعة فريقنا</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="equipment-market.html" class="pa-btn pa-btn-primary" style="text-decoration:none;border-radius:12px">🛒 تصفّح السوق</a>
+      <button class="pa-btn pa-btn-back" onclick="paReset()">+ نشر إعلان آخر</button>
+    </div>
+  </div>
+
+  <!-- ── Wizard ── -->
+  <div id="pa-wizard">
+
+    <!-- Progress Bar -->
+    <div class="pa-progress">
+      <div class="pa-progress-steps">
+        <div class="pa-step active" id="step-indicator-1">
+          <div class="pa-step-circle">1</div>
+          <div class="pa-step-label">بيانات المعدة</div>
+        </div>
+        <div class="pa-step" id="step-indicator-2">
+          <div class="pa-step-circle">2</div>
+          <div class="pa-step-label">الصور</div>
+        </div>
+        <div class="pa-step" id="step-indicator-3">
+          <div class="pa-step-circle">3</div>
+          <div class="pa-step-label">التواصل</div>
+        </div>
+        <div class="pa-step" id="step-indicator-4">
+          <div class="pa-step-circle">4</div>
+          <div class="pa-step-label">مراجعة وإرسال</div>
+        </div>
+        <div class="pa-progress-fill" id="pa-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- ── Step 1: بيانات المعدة ── -->
+    <div class="pa-card" id="pa-step-1">
+      <div class="pa-card-title">📦 بيانات المعدة</div>
+
+      <div class="pa-field">
+        <label class="pa-label">التصنيف <span>*</span></label>
+        <select class="pa-select" id="pa-category">
+          <option value="">— اختر التصنيف —</option>
+          <option value="partition">بارتشن وأثاث</option>
+          <option value="food-cart">عربية أكل</option>
+          <option value="fridge">ثلاجات وتبريد</option>
+          <option value="display">ڤيترينات وعرض</option>
+          <option value="kitchen">معدات مطبخ</option>
+          <option value="pos">كاشير وPOS</option>
+          <option value="lighting">إضاءة تجارية</option>
+          <option value="other">أخرى</option>
+        </select>
+        <div class="pa-error-msg" id="err-category">من فضلك اختر التصنيف</div>
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-label">عنوان الإعلان <span>*</span></label>
+        <input class="pa-input" type="text" id="pa-title" placeholder="مثال: ثلاجة عرض Liebherr 4 أبواب نظيفة" maxlength="100">
+        <div class="pa-hint">وصف موجز ومحدد — يساعد المشترين في العثور على إعلانك</div>
+        <div class="pa-error-msg" id="err-title">من فضلك اكتب عنوان الإعلان (10 أحرف على الأقل)</div>
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-label">وصف المعدة <span>*</span></label>
+        <textarea class="pa-textarea" id="pa-description" placeholder="اذكر الحالة، العمر، المشكلات إن وجدت، سبب البيع…" maxlength="1000"></textarea>
+        <div class="pa-error-msg" id="err-description">من فضلك اكتب وصفاً (20 حرف على الأقل)</div>
+      </div>
+
+      <div class="pa-row">
+        <div class="pa-field">
+          <label class="pa-label">الحالة <span>*</span></label>
+          <select class="pa-select" id="pa-condition">
+            <option value="">— اختر الحالة —</option>
+            <option value="new">جديد</option>
+            <option value="like-new">كالجديد</option>
+            <option value="good">جيد</option>
+            <option value="fair">مقبول</option>
+          </select>
+          <div class="pa-error-msg" id="err-condition">من فضلك اختر الحالة</div>
+        </div>
+        <div class="pa-field">
+          <label class="pa-label">السعر المطلوب (ج) <span>*</span></label>
+          <input class="pa-input" type="number" id="pa-price" placeholder="0" min="0" max="9999999">
+          <div class="pa-error-msg" id="err-price">من فضلك أدخل سعراً صحيحاً</div>
+        </div>
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-check-wrap">
+          <input type="checkbox" id="pa-negotiable">
+          <span>السعر قابل للتفاوض</span>
+        </label>
+      </div>
+
+      <div class="pa-nav-btns">
+        <button class="pa-btn pa-btn-primary" onclick="paNextStep(1)">التالي ←</button>
+      </div>
+    </div>
+
+    <!-- ── Step 2: الصور ── -->
+    <div class="pa-card" id="pa-step-2" style="display:none">
+      <div class="pa-card-title">📸 صور المعدة</div>
+
+      <div class="pa-upload-area" id="pa-upload-area" onclick="document.getElementById('pa-file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="paHandleDrop(event)">
+        <div class="pa-upload-icon">📷</div>
+        <div class="pa-upload-text">اضغط لاختيار الصور أو اسحبها هنا</div>
+        <div class="pa-upload-hint">حتى 8 صور — JPG أو PNG — يُفضّل على الأقل صورة واحدة واضحة</div>
+      </div>
+      <input type="file" id="pa-file-input" accept="image/*" multiple onchange="paHandleFiles(this.files)">
+
+      <div class="pa-upload-progress" id="pa-upload-progress">
+        <div class="pa-progress-bar-wrap"><div class="pa-progress-bar" id="pa-upload-bar"></div></div>
+        <div class="pa-progress-text" id="pa-upload-text">جاري رفع الصور…</div>
+      </div>
+
+      <div class="pa-previews" id="pa-previews"></div>
+      <div class="pa-hint" style="margin-top:8px">اضغط على أي صورة لتعيينها غلافاً للإعلان — الأولى هي الغلاف تلقائياً</div>
+      <div class="pa-error-msg" id="err-images" style="display:none">يجب رفع صورة واحدة على الأقل</div>
+
+      <div class="pa-nav-btns">
+        <button class="pa-btn pa-btn-back" onclick="paGoStep(1)">→ السابق</button>
+        <button class="pa-btn pa-btn-primary" onclick="paNextStep(2)">التالي ←</button>
+      </div>
+    </div>
+
+    <!-- ── Step 3: بيانات التواصل ── -->
+    <div class="pa-card" id="pa-step-3" style="display:none">
+      <div class="pa-card-title">📞 بيانات التواصل</div>
+
+      <div class="pa-row">
+        <div class="pa-field">
+          <label class="pa-label">المحافظة <span>*</span></label>
+          <select class="pa-select" id="pa-governorate">
+            <option value="">— اختر —</option>
+          </select>
+          <div class="pa-error-msg" id="err-gov">من فضلك اختر المحافظة</div>
+        </div>
+        <div class="pa-field">
+          <label class="pa-label">المنطقة / الحي</label>
+          <input class="pa-input" type="text" id="pa-area" placeholder="مثال: مدينة نصر — شارع عباس العقاد">
+        </div>
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-label">رقم التليفون <span>*</span></label>
+        <input class="pa-input" type="tel" id="pa-phone" placeholder="01XXXXXXXXX" maxlength="11" dir="ltr" style="text-align:right">
+        <div class="pa-hint">رقم مصري يبدأ بـ 01 — للتواصل عبر واتساب أو الاتصال المباشر</div>
+        <div class="pa-error-msg" id="err-phone">يجب أن يبدأ الرقم بـ 01 ويتكون من 11 رقم</div>
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-label">طريقة التواصل المفضّلة <span>*</span></label>
+        <select class="pa-select" id="pa-contact-method">
+          <option value="both">واتساب + اتصال</option>
+          <option value="whatsapp">واتساب فقط</option>
+          <option value="call">اتصال فقط</option>
+        </select>
+      </div>
+
+      <div class="pa-nav-btns">
+        <button class="pa-btn pa-btn-back" onclick="paGoStep(2)">→ السابق</button>
+        <button class="pa-btn pa-btn-primary" onclick="paNextStep(3)">التالي ←</button>
+      </div>
+    </div>
+
+    <!-- ── Step 4: مراجعة وإرسال ── -->
+    <div class="pa-card" id="pa-step-4" style="display:none">
+      <div class="pa-card-title">✅ مراجعة الإعلان</div>
+
+      <div id="pa-review-content"></div>
+
+      <div class="pa-terms">
+        بإرسال الإعلان، أنت توافق على <a href="#">شروط الاستخدام</a>. إعلانك سيُراجَع خلال 24 ساعة قبل نشره.
+        مدة الإعلان 60 يوماً قابلة للتجديد حتى 5 مرات.
+      </div>
+
+      <div class="pa-field">
+        <label class="pa-check-wrap">
+          <input type="checkbox" id="pa-terms-agree">
+          <span>أوافق على الشروط والأحكام</span>
+        </label>
+        <div class="pa-error-msg" id="err-terms">يجب الموافقة على الشروط أولاً</div>
+      </div>
+
+      <div class="pa-nav-btns">
+        <button class="pa-btn pa-btn-back" onclick="paGoStep(3)">→ السابق</button>
+        <button class="pa-btn pa-btn-primary" id="pa-submit-btn" onclick="paSubmit()">🚀 إرسال الإعلان</button>
+      </div>
+    </div>
+
+  </div><!-- end #pa-wizard -->
+</div><!-- end .pa-wrapper -->
+
+<script>
+/* ── Config ── */
+const PA_SB_URL  = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const PA_SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const PA_GOVS = ['القاهرة','الجيزة','الإسكندرية','الشرقية','الدقهلية','المنوفية','القليوبية','البحيرة','كفر الشيخ','الغربية','سوهاج','المنيا','أسيوط','قنا','الأقصر','أسوان','بورسعيد','السويس','الإسماعيلية','دمياط','الفيوم','بني سويف','مطروح','شمال سيناء','جنوب سيناء','الوادي الجديد','البحر الأحمر'];
+const CAT_LABELS = {partition:'بارتشن وأثاث','food-cart':'عربية أكل',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',pos:'كاشير وPOS',lighting:'إضاءة تجارية',other:'أخرى'};
+const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
+
+let paSb   = null;
+let paUser = null;
+let paStep = 1;
+let paFiles = [];     // File[]
+let paUrls  = [];     // uploaded URLs
+let paCoverIndex = 0;
+
+/* ── Init ── */
+window.addEventListener('DOMContentLoaded', async () => {
+  paSb = supabase.createClient(PA_SB_URL, PA_SB_KEY);
+  const { data: { session } } = await paSb.auth.getSession();
+  paUser = session?.user || null;
+
+  if (!paUser) {
+    document.getElementById('pa-wizard').style.display = 'none';
+    document.getElementById('pa-login-guard').style.display = 'block';
+    return;
+  }
+
+  paFillGovs();
+  paUpdateProgress();
+});
+
+function paFillGovs() {
+  const sel = document.getElementById('pa-governorate');
+  sel.innerHTML = '<option value="">— اختر المحافظة —</option>' +
+    PA_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+}
+
+/* ── Step Navigation ── */
+function paGoStep(n) {
+  document.getElementById(`pa-step-${paStep}`).style.display = 'none';
+  paStep = n;
+  document.getElementById(`pa-step-${paStep}`).style.display = 'block';
+  paUpdateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function paUpdateProgress() {
+  const fills = { 1: '0%', 2: '33%', 3: '66%', 4: '100%' };
+  document.getElementById('pa-progress-fill').style.width = fills[paStep] || '0%';
+
+  for (let i = 1; i <= 4; i++) {
+    const ind = document.getElementById(`step-indicator-${i}`);
+    ind.classList.remove('active', 'done');
+    if (i < paStep) ind.classList.add('done');
+    else if (i === paStep) ind.classList.add('active');
+  }
+}
+
+/* ── Validation ── */
+function paShowErr(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = show ? 'block' : 'none';
+}
+
+function paValidateStep1() {
+  let ok = true;
+  const cat   = document.getElementById('pa-category').value;
+  const title = document.getElementById('pa-title').value.trim();
+  const desc  = document.getElementById('pa-description').value.trim();
+  const cond  = document.getElementById('pa-condition').value;
+  const price = parseFloat(document.getElementById('pa-price').value);
+
+  paShowErr('err-category',   !cat);
+  paShowErr('err-title',      title.length < 10);
+  paShowErr('err-description',desc.length < 20);
+  paShowErr('err-condition',  !cond);
+  paShowErr('err-price',      isNaN(price) || price < 0);
+
+  if (!cat || title.length < 10 || desc.length < 20 || !cond || isNaN(price) || price < 0) ok = false;
+  return ok;
+}
+
+function paValidateStep2() {
+  const hasImages = paFiles.length > 0 || paUrls.length > 0;
+  document.getElementById('err-images').style.display = hasImages ? 'none' : 'block';
+  return hasImages;
+}
+
+function paValidateStep3() {
+  let ok = true;
+  const gov   = document.getElementById('pa-governorate').value;
+  const phone = document.getElementById('pa-phone').value.trim();
+  const validPhone = /^01[0-9]{9}$/.test(phone);
+
+  paShowErr('err-gov',   !gov);
+  paShowErr('err-phone', !validPhone);
+
+  if (!gov || !validPhone) ok = false;
+  return ok;
+}
+
+async function paNextStep(from) {
+  if (from === 1 && !paValidateStep1()) return;
+  if (from === 2) {
+    if (!paValidateStep2()) return;
+    if (paFiles.length > 0 && paUrls.length === 0) {
+      await paUploadImages();
+    }
+    if (paUrls.length === 0) return;
+  }
+  if (from === 3 && !paValidateStep3()) return;
+
+  if (from === 3) paBuildReview();
+  paGoStep(from + 1);
+}
+
+/* ── Image Handling ── */
+function paHandleFiles(fileList) {
+  const newFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  const total = paFiles.length + newFiles.length;
+  if (total > 8) {
+    alert('الحد الأقصى 8 صور');
+    return;
+  }
+  paFiles.push(...newFiles);
+  paUrls = [];
+  paRenderPreviews();
+}
+
+function paHandleDrop(event) {
+  event.preventDefault();
+  document.getElementById('pa-upload-area').classList.remove('drag-over');
+  paHandleFiles(event.dataTransfer.files);
+}
+
+function paRenderPreviews() {
+  const cont = document.getElementById('pa-previews');
+  if (paFiles.length === 0) { cont.innerHTML = ''; return; }
+
+  cont.innerHTML = paFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `
+      <div class="pa-preview-item${i === paCoverIndex ? ' cover-item' : ''}" id="preview-item-${i}">
+        <img src="${url}" alt="صورة ${i+1}">
+        <button class="pa-preview-remove" onclick="paRemoveFile(${i})">✕</button>
+        ${i === paCoverIndex
+          ? '<div class="pa-cover-badge">الغلاف</div>'
+          : `<div class="pa-set-cover" onclick="paSetCover(${i})">تعيين غلافاً</div>`}
+      </div>`;
+  }).join('');
+}
+
+function paRemoveFile(i) {
+  paFiles.splice(i, 1);
+  paUrls = [];
+  if (paCoverIndex >= paFiles.length) paCoverIndex = Math.max(0, paFiles.length - 1);
+  paRenderPreviews();
+}
+
+function paSetCover(i) {
+  paCoverIndex = i;
+  paRenderPreviews();
+}
+
+async function paUploadImages() {
+  if (!paUser || paFiles.length === 0) return;
+  const prog = document.getElementById('pa-upload-progress');
+  const bar  = document.getElementById('pa-upload-bar');
+  const txt  = document.getElementById('pa-upload-text');
+  prog.style.display = 'block';
+
+  try {
+    const urls = await uploadImages(paFiles, paUser.id, (done, total) => {
+      const pct = Math.round((done / total) * 100);
+      bar.style.width = pct + '%';
+      txt.textContent = `جاري رفع ${done} من ${total} صور…`;
+    });
+    paUrls = urls;
+    txt.textContent = 'تم رفع الصور بنجاح ✅';
+  } catch (e) {
+    alert('خطأ في رفع الصور: ' + e.message);
+    prog.style.display = 'none';
+    throw e;
+  }
+}
+
+/* ── Review ── */
+function paBuildReview() {
+  const cat    = CAT_LABELS[document.getElementById('pa-category').value]    || '—';
+  const title  = document.getElementById('pa-title').value;
+  const desc   = document.getElementById('pa-description').value;
+  const cond   = COND_LABELS[document.getElementById('pa-condition').value]  || '—';
+  const price  = Number(document.getElementById('pa-price').value).toLocaleString('ar-EG');
+  const nego   = document.getElementById('pa-negotiable').checked ? 'نعم' : 'لا';
+  const gov    = document.getElementById('pa-governorate').value;
+  const area   = document.getElementById('pa-area').value;
+  const phone  = document.getElementById('pa-phone').value;
+  const method = { both:'واتساب + اتصال', whatsapp:'واتساب فقط', call:'اتصال فقط' }[document.getElementById('pa-contact-method').value];
+
+  const imgsHtml = paUrls.length > 0
+    ? `<div class="pa-review-images">${paUrls.map(u => `<img src="${u}" alt="">`).join('')}</div>`
+    : '<span style="color:var(--ink3)">لا توجد صور</span>';
+
+  document.getElementById('pa-review-content').innerHTML = `
+    <div class="pa-review-row"><strong>التصنيف</strong><span>${cat}</span></div>
+    <div class="pa-review-row"><strong>العنوان</strong><span>${title}</span></div>
+    <div class="pa-review-row"><strong>الوصف</strong><span style="color:var(--ink2)">${desc}</span></div>
+    <div class="pa-review-row"><strong>الحالة</strong><span>${cond}</span></div>
+    <div class="pa-review-row"><strong>السعر</strong><span style="color:var(--orange);font-weight:800">${price} ج</span></div>
+    <div class="pa-review-row"><strong>قابل للتفاوض</strong><span>${nego}</span></div>
+    <div class="pa-review-row"><strong>المحافظة</strong><span>${gov}</span></div>
+    <div class="pa-review-row"><strong>المنطقة</strong><span>${area || '—'}</span></div>
+    <div class="pa-review-row"><strong>التليفون</strong><span dir="ltr">${phone}</span></div>
+    <div class="pa-review-row"><strong>طريقة التواصل</strong><span>${method}</span></div>
+    <div class="pa-review-row"><strong>الصور (${paUrls.length})</strong>${imgsHtml}</div>
+  `;
+}
+
+/* ── Submit ── */
+async function paSubmit() {
+  const termsEl = document.getElementById('pa-terms-agree');
+  if (!termsEl.checked) {
+    paShowErr('err-terms', true);
+    return;
+  }
+  paShowErr('err-terms', false);
+
+  const btn = document.getElementById('pa-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإرسال…';
+
+  try {
+    const coverUrl = paUrls[paCoverIndex] || paUrls[0] || null;
+    const otherUrls = paUrls.filter((_, i) => i !== paCoverIndex);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 60);
+
+    const payload = {
+      user_id:        paUser.id,
+      category:       document.getElementById('pa-category').value,
+      title:          document.getElementById('pa-title').value.trim(),
+      description:    document.getElementById('pa-description').value.trim(),
+      condition:      document.getElementById('pa-condition').value,
+      price:          parseInt(document.getElementById('pa-price').value),
+      negotiable:     document.getElementById('pa-negotiable').checked,
+      governorate:    document.getElementById('pa-governorate').value,
+      area:           document.getElementById('pa-area').value.trim() || null,
+      phone:          document.getElementById('pa-phone').value.trim(),
+      contact_method: document.getElementById('pa-contact-method').value,
+      cover_image:    coverUrl,
+      images:         otherUrls,
+      status:         'pending',
+      is_featured:    false,
+      view_count:     0,
+      contact_count:  0,
+      renewal_count:  0,
+      expires_at:     expiresAt.toISOString(),
+    };
+
+    const { error } = await paSb.from('listings').insert(payload);
+    if (error) throw error;
+
+    document.getElementById('pa-wizard').style.display = 'none';
+    document.getElementById('pa-success').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (e) {
+    alert('حدث خطأ: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '🚀 إرسال الإعلان';
+  }
+}
+
+/* ── Reset ── */
+function paReset() {
+  paStep = 1;
+  paFiles = [];
+  paUrls  = [];
+  paCoverIndex = 0;
+  document.getElementById('pa-success').style.display = 'none';
+  document.getElementById('pa-wizard').style.display = 'block';
+  document.getElementById('pa-previews').innerHTML = '';
+  document.getElementById('pa-upload-progress').style.display = 'none';
+  document.getElementById('pa-category').value = '';
+  document.getElementById('pa-title').value = '';
+  document.getElementById('pa-description').value = '';
+  document.getElementById('pa-condition').value = '';
+  document.getElementById('pa-price').value = '';
+  document.getElementById('pa-negotiable').checked = false;
+  document.getElementById('pa-governorate').value = '';
+  document.getElementById('pa-area').value = '';
+  document.getElementById('pa-phone').value = '';
+  document.getElementById('pa-terms-agree').checked = false;
+  paGoStep(1);
+}
+</script>
+</body>
+</html>

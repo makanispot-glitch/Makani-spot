@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="سوق المعدات — مكاني Spot. شراء وبيع المعدات التجارية المستعملة في مصر.">
+<title>سوق المعدات — مكاني Spot</title>
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+<style>
+/* ── Variables (shared with style.css) ── */
+:root {
+  --eq-radius: 14px;
+}
+
+/* ── Layout ── */
+.eq-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Navbar ── */
+.eq-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 68px;
+  box-shadow: var(--shadow);
+}
+.eq-nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.eq-nav-logo .logo-ar { font-size: 20px; font-weight: 900; color: var(--dark); }
+.eq-nav-logo .logo-en { font-size: 13px; font-weight: 700; color: var(--orange); }
+.eq-nav-title { font-size: 14px; font-weight: 700; color: var(--ink2); padding: 4px 12px; background: var(--orange-ultra); border-radius: 20px; }
+.eq-nav-link { font-size: 14px; font-weight: 600; color: var(--ink2); text-decoration: none; transition: color .2s; }
+.eq-nav-link:hover { color: var(--orange); }
+#eq-nav-user { display: flex; align-items: center; gap: 10px; }
+
+/* ── Hero ── */
+.eq-hero {
+  background: linear-gradient(135deg, var(--dark) 0%, #2E2E2E 100%);
+  padding: 60px 32px 50px;
+  text-align: center;
+  color: #fff;
+}
+.eq-hero h1 { font-size: 32px; font-weight: 900; margin-bottom: 10px; }
+.eq-hero h1 span { color: var(--orange); }
+.eq-hero p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 32px; }
+
+/* ── Search Bar ── */
+.eq-search-wrap {
+  max-width: 560px; margin: 0 auto;
+  position: relative;
+}
+.eq-search-wrap input {
+  width: 100%; padding: 16px 52px 16px 20px;
+  border-radius: 50px; border: none;
+  font-family: 'Cairo', sans-serif; font-size: 15px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  outline: none;
+}
+.eq-search-wrap .eq-search-icon {
+  position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--ink3); pointer-events: none;
+}
+
+/* ── Filters Bar ── */
+.eq-filters-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  position: sticky; top: 68px; z-index: 150;
+  box-shadow: var(--shadow);
+}
+
+/* ── Category Tabs ── */
+.eq-tabs-wrap {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 14px 0 8px;
+  scrollbar-width: none;
+}
+.eq-tabs-wrap::-webkit-scrollbar { display: none; }
+.eq-tab {
+  padding: 7px 18px; border-radius: 50px;
+  border: 2px solid var(--border);
+  background: var(--surface); color: var(--ink2);
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: all .2s;
+}
+.eq-tab:hover, .eq-tab.on {
+  border-color: var(--orange); background: var(--orange); color: #fff;
+}
+
+/* ── Sub Filters ── */
+.eq-sub-filters {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0 14px; flex-wrap: wrap;
+}
+.eq-sub-filters select, .eq-sub-filters input[type=range] {
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  padding: 7px 12px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: var(--surface);
+  color: var(--ink); cursor: pointer; outline: none;
+  transition: border .2s;
+}
+.eq-sub-filters select:focus { border-color: var(--orange); }
+.eq-price-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); }
+.eq-price-wrap input[type=range] { width: 120px; accent-color: var(--orange); }
+
+/* ── Main Content ── */
+.eq-main { flex: 1; padding: 28px 32px; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+/* ── Count row ── */
+.eq-count-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.eq-count-row span { font-size: 14px; font-weight: 700; color: var(--ink2); }
+
+/* ── Grid ── */
+.eq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* ── Card ── */
+.eq-card {
+  background: var(--surface); border-radius: var(--eq-radius);
+  border: 1px solid var(--border); overflow: hidden;
+  cursor: pointer; transition: transform .2s, box-shadow .2s;
+}
+.eq-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.eq-card-img {
+  position: relative; height: 200px;
+  background: var(--surface2); overflow: hidden;
+}
+.eq-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eq-card-no-img {
+  height: 200px; display: flex; align-items: center; justify-content: center;
+  font-size: 48px; background: var(--surface2);
+}
+.eq-card-body { padding: 14px 16px 18px; }
+.eq-card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.eq-card-title { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 6px; line-height: 1.4; }
+.eq-card-price { font-size: 18px; font-weight: 900; color: var(--orange); margin-bottom: 5px; }
+.eq-card-loc { font-size: 12px; color: var(--ink3); }
+
+/* ── Badges ── */
+.eq-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 50px;
+  font-size: 11px; font-weight: 700;
+}
+.eq-badge-cat  { background: var(--orange-pale); color: var(--orange); }
+.eq-badge-cond { background: var(--surface2); color: var(--ink2); border: 1px solid var(--border); }
+.eq-badge-nego { background: var(--green-light); color: #15803d; }
+.eq-badge-feat { background: #FEF3C7; color: #92400E; position: absolute; top: 10px; right: 10px; z-index: 2; }
+
+/* ── Load More ── */
+.eq-load-more-wrap { display: flex; justify-content: center; margin-top: 36px; }
+#eq-load-more { padding: 13px 48px; }
+
+/* ── Empty / Error ── */
+.eq-empty {
+  grid-column: 1/-1; text-align: center; padding: 80px 20px;
+  color: var(--ink2); font-size: 15px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.eq-loading {
+  grid-column: 1/-1; text-align: center; padding: 80px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  color: var(--ink2);
+}
+.eq-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 4px solid var(--border);
+  border-top-color: var(--orange);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FAB ── */
+.eq-fab {
+  position: fixed; bottom: 28px; left: 28px; z-index: 500;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  border: none; cursor: pointer; font-size: 28px; font-weight: 700;
+  box-shadow: var(--shadow-orange);
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  transition: transform .2s, background .2s;
+}
+.eq-fab:hover { background: var(--orange-hover); transform: scale(1.08); }
+.eq-fab-tooltip {
+  position: fixed; bottom: 36px; left: 98px; z-index: 500;
+  background: var(--dark); color: #fff;
+  padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  pointer-events: none; opacity: 0; transition: opacity .2s;
+  white-space: nowrap;
+}
+.eq-fab:hover + .eq-fab-tooltip { opacity: 1; }
+
+/* ── Detail Modal ── */
+.eq-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.eq-modal-overlay.open { display: flex; }
+.eq-modal-box {
+  background: var(--surface); border-radius: 20px;
+  width: 100%; max-width: 860px; max-height: 90vh;
+  overflow-y: auto; position: relative;
+}
+.eq-modal-close {
+  position: sticky; top: 14px; float: left; z-index: 10;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface2); border: none;
+  cursor: pointer; font-size: 18px; color: var(--ink2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 14px 14px 0;
+  transition: background .2s;
+}
+.eq-modal-close:hover { background: var(--border); }
+
+/* ── Detail Gallery ── */
+.eq-detail-gallery { padding: 0 20px 10px; }
+.eq-detail-main-img { border-radius: 12px; overflow: hidden; height: 360px; background: var(--surface2); }
+.eq-detail-main-img img { width: 100%; height: 100%; object-fit: cover; }
+.eq-detail-no-img { height: 200px; display: flex; align-items: center; justify-content: center; font-size: 60px; }
+.eq-detail-thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
+.eq-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 2.5px solid var(--border); cursor: pointer; transition: border-color .2s; flex-shrink: 0; }
+.eq-thumb.active { border-color: var(--orange); }
+
+/* ── Detail Info ── */
+.eq-detail-info { padding: 16px 24px 28px; }
+.eq-detail-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.eq-detail-title { font-size: 22px; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
+.eq-detail-price { font-size: 28px; font-weight: 900; color: var(--orange); margin-bottom: 8px; }
+.eq-detail-loc, .eq-detail-date, .eq-detail-stats { font-size: 13px; color: var(--ink2); margin-bottom: 4px; }
+.eq-detail-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+
+/* ── Report Modal ── */
+.eq-report-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px;
+}
+.eq-report-overlay.open { display: flex; }
+.eq-report-box {
+  background: var(--surface); border-radius: 16px;
+  width: 100%; max-width: 440px; padding: 28px;
+}
+.eq-report-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
+.eq-report-box textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 12px; font-family: 'Cairo', sans-serif; font-size: 14px;
+  resize: vertical; min-height: 100px; outline: none;
+  transition: border .2s;
+}
+.eq-report-box textarea:focus { border-color: var(--orange); }
+.eq-report-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+
+/* ── Buttons ── */
+.eq-btn {
+  padding: 11px 22px; border-radius: 10px; border: none;
+  font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; text-decoration: none; display: inline-flex;
+  align-items: center; justify-content: center; gap: 6px;
+  transition: all .2s;
+}
+.eq-btn-primary { background: var(--orange); color: #fff; }
+.eq-btn-primary:hover { background: var(--orange-hover); }
+.eq-btn-outline { background: transparent; color: var(--orange); border: 2px solid var(--orange); }
+.eq-btn-outline:hover { background: var(--orange-ultra); }
+.eq-btn-ghost { background: var(--surface2); color: var(--ink2); border: 1.5px solid var(--border); }
+.eq-btn-ghost:hover { background: var(--border); }
+.eq-btn-danger { background: var(--red-light); color: var(--red); border: none; }
+.eq-btn-danger:hover { background: var(--red); color: #fff; }
+.eq-btn-full { width: 100%; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .eq-nav { padding: 0 16px; }
+  .eq-hero { padding: 40px 16px 36px; }
+  .eq-hero h1 { font-size: 24px; }
+  .eq-filters-bar { padding: 0 16px; top: 68px; }
+  .eq-main { padding: 20px 16px; }
+  .eq-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .eq-card-img, .eq-card-no-img { height: 150px; }
+  .eq-detail-main-img { height: 220px; }
+  .eq-fab { bottom: 20px; left: 20px; }
+}
+</style>
+</head>
+<body class="eq-page">
+
+<!-- ── Navbar ── -->
+<nav class="eq-nav">
+  <a class="eq-nav-logo" href="index.html">
+    <div class="logo-text">
+      <span class="logo-ar">مكاني</span>
+      <span class="logo-en">Spot</span>
+    </div>
+  </a>
+  <span class="eq-nav-title">🛒 سوق المعدات</span>
+  <div id="eq-nav-user"></div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="eq-hero">
+  <h1>سوق <span>المعدات التجارية</span></h1>
+  <p>شراء وبيع المعدات المستعملة بأفضل الأسعار — مجاناً وبدون عمولة</p>
+  <div class="eq-search-wrap">
+    <input type="text" id="eq-search" placeholder="ابحث عن معدة أو منطقة…">
+    <span class="eq-search-icon">🔍</span>
+  </div>
+</section>
+
+<!-- ── Filters ── -->
+<div class="eq-filters-bar">
+  <div class="eq-tabs-wrap" id="eq-tabs"></div>
+  <div class="eq-sub-filters">
+    <select id="eq-gov"></select>
+    <div class="eq-price-wrap">
+      <span>السعر حتى:</span>
+      <input type="range" id="eq-price-max" min="0" max="100000" step="500" value="0">
+      <span id="eq-price-label" style="min-width:70px;font-weight:700;">بلا حد</span>
+    </div>
+    <select id="eq-sort">
+      <option value="newest">الأحدث</option>
+      <option value="cheapest">الأرخص</option>
+      <option value="views">الأكثر مشاهدة</option>
+    </select>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<main class="eq-main">
+  <div class="eq-count-row">
+    <span id="eq-count">جاري التحميل…</span>
+    <a class="eq-btn eq-btn-primary" href="post-ad.html">+ انشر إعلانك</a>
+  </div>
+  <div class="eq-grid" id="eq-grid"></div>
+  <div class="eq-load-more-wrap">
+    <button class="eq-btn eq-btn-outline" id="eq-load-more" onclick="eqLoadMore()" style="display:none">تحميل المزيد</button>
+  </div>
+</main>
+
+<!-- ── Detail Modal ── -->
+<div class="eq-modal-overlay" id="eq-modal">
+  <div class="eq-modal-box">
+    <button class="eq-modal-close" onclick="eqCloseModal()">✕</button>
+    <div id="eq-modal-body"></div>
+  </div>
+</div>
+
+<!-- ── Report Modal ── -->
+<div class="eq-report-overlay" id="eq-report-modal">
+  <div class="eq-report-box">
+    <h3>🚩 إبلاغ عن إعلان</h3>
+    <input type="hidden" id="eq-report-id">
+    <textarea id="eq-report-reason" placeholder="اكتب سبب الإبلاغ…"></textarea>
+    <div class="eq-report-actions">
+      <button class="eq-btn eq-btn-ghost" onclick="eqCloseReport()">إلغاء</button>
+      <button class="eq-btn eq-btn-danger" onclick="eqSubmitReport()">إرسال البلاغ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FAB ── -->
+<a class="eq-fab" href="post-ad.html" title="انشر إعلان">+</a>
+<div class="eq-fab-tooltip">انشر إعلانك مجاناً</div>
+
+<script src="equipment-app.js" defer></script>
+</body>
+</html>
