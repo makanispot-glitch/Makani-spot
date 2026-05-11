@@ -1,16 +1,16 @@
 /* ================================================================
    📁 media-handler.js — معالج الصور
    ================================================================
-   ضغط الصور قبل الرفع + رفعها لـ Supabase Storage
+   ضغط الصور محلياً (Canvas API) ثم رفعها لـ Cloudflare R2
+   عبر Pages Function على /upload
    يُستدعى من post-ad.html
    ================================================================ */
 
-const SUPABASE_URL_MH = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY_MH = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-const STORAGE_BUCKET   = 'listing-images';
-const MAX_W = 1200;
-const MAX_H = 1200;
-const QUALITY = 0.82;
+const UPLOAD_ENDPOINT = '/upload';
+const R2_PUBLIC_BASE  = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
+const MAX_W    = 1200;
+const MAX_H    = 1200;
+const QUALITY  = 0.75;   // JPEG 75%
 
 /**
  * يضغط صورة واحدة عبر Canvas ويُرجع Blob
@@ -33,7 +33,11 @@ function compressImage(file) {
       canvas.width  = width;
       canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة')), 'image/jpeg', QUALITY);
+      canvas.toBlob(
+        blob => blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة')),
+        'image/jpeg',
+        QUALITY
+      );
     };
     img.onerror = () => reject(new Error('فشل قراءة الصورة'));
     img.src = url;
@@ -41,45 +45,42 @@ function compressImage(file) {
 }
 
 /**
- * يرفع ملف واحد لـ Supabase Storage
- * @param {Blob} blob
- * @param {string} path — المسار داخل الـ bucket
- * @returns {Promise<string>} — الـ URL العام للصورة
+ * يرفع blob واحد لـ R2 عبر Pages Function /upload
+ * @param {Blob}   blob
+ * @param {string} path       — مسار الملف داخل الـ bucket
+ * @param {string} authToken  — Supabase session access_token
+ * @returns {Promise<string>} — الـ URL العام
  */
-async function uploadToSupabase(blob, path, authToken) {
-  const endpoint = `${SUPABASE_URL_MH}/storage/v1/object/${STORAGE_BUCKET}/${path}`;
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${authToken || SUPABASE_KEY_MH}`,
-      'Content-Type': 'image/jpeg',
-      'x-upsert': 'true'
-    },
-    body: blob
+async function uploadToR2(blob, path, authToken) {
+  const form = new FormData();
+  form.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }));
+  form.append('path', path);
+
+  const res = await fetch(UPLOAD_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Authorization': `Bearer ${authToken}` },
+    body:    form,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'فشل رفع الصورة');
-  }
-  return `${SUPABASE_URL_MH}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'فشل رفع الصورة');
+  return data.url;
 }
 
 /**
  * يضغط ويرفع مصفوفة من الملفات
- * @param {File[]} files
- * @param {string} userId
- * @param {Function} onProgress — callback(done, total)
- * @returns {Promise<string[]>} — قائمة الـ URLs
+ * @param {File[]}   files
+ * @param {string}   userId
+ * @param {Function} onProgress  — callback(done, total)
+ * @param {string}   authToken   — Supabase session access_token
+ * @returns {Promise<string[]>}  — قائمة الـ URLs
  */
 async function uploadImages(files, userId, onProgress, authToken) {
   const urls = [];
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const blob = await compressImage(file);
-    const ext  = 'jpg';
-    const ts   = Date.now();
-    const path = `${userId}/${ts}_${i}.${ext}`;
-    const url  = await uploadToSupabase(blob, path, authToken);
+    const blob = await compressImage(files[i]);
+    const path = `${userId}/${Date.now()}_${i}.jpg`;
+    const url  = await uploadToR2(blob, path, authToken);
     urls.push(url);
     if (onProgress) onProgress(i + 1, files.length);
   }
