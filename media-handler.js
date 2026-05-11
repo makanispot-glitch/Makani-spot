@@ -46,12 +46,12 @@ function compressImage(file) {
  * @param {string} path — المسار داخل الـ bucket
  * @returns {Promise<string>} — الـ URL العام للصورة
  */
-async function uploadToSupabase(blob, path) {
+async function uploadToSupabase(blob, path, authToken) {
   const endpoint = `${SUPABASE_URL_MH}/storage/v1/object/${STORAGE_BUCKET}/${path}`;
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY_MH}`,
+      'Authorization': `Bearer ${authToken || SUPABASE_KEY_MH}`,
       'Content-Type': 'image/jpeg',
       'x-upsert': 'true'
     },
@@ -71,7 +71,7 @@ async function uploadToSupabase(blob, path) {
  * @param {Function} onProgress — callback(done, total)
  * @returns {Promise<string[]>} — قائمة الـ URLs
  */
-async function uploadImages(files, userId, onProgress) {
+async function uploadImages(files, userId, onProgress, authToken) {
   const urls = [];
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -79,7 +79,7 @@ async function uploadImages(files, userId, onProgress) {
     const ext  = 'jpg';
     const ts   = Date.now();
     const path = `${userId}/${ts}_${i}.${ext}`;
-    const url  = await uploadToSupabase(blob, path);
+    const url  = await uploadToSupabase(blob, path, authToken);
     urls.push(url);
     if (onProgress) onProgress(i + 1, files.length);
   }
