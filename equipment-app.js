@@ -93,6 +93,7 @@ function eqRenderNavUser() {
   if (!area) return;
   if (eqUser) {
     area.innerHTML = `
+      <button class="eq-btn eq-btn-ghost" onclick="eqOpenMyListings()" style="font-size:13px">📋 إعلاناتي</button>
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
       <button class="eq-btn eq-btn-outline" onclick="eqSignOut()">خروج</button>`;
   } else {
@@ -100,6 +101,17 @@ function eqRenderNavUser() {
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
       <a class="eq-btn eq-btn-outline" href="index.html">دخول / تسجيل</a>`;
   }
+}
+
+function eqOpenMyListings() {
+  document.getElementById('eq-my-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  eqLoadMyListings();
+}
+
+function eqCloseMyListings() {
+  document.getElementById('eq-my-modal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 async function eqSignOut() {
@@ -117,7 +129,7 @@ async function eqLoadListings() {
   try {
     let q = eqSb
       .from('listings')
-      .select(`id, title, category, condition, price, negotiable,
+      .select(`id, title, description, category, condition, price, negotiable,
                governorate, area, phone, contact_method,
                cover_image, images, is_featured,
                view_count, contact_count, status,
@@ -351,6 +363,7 @@ async function eqOpenDetail(id) {
       </div>
       <h2 class="eq-detail-title">${listing.title}</h2>
       <div class="eq-detail-price">${price} ج${nego}</div>
+      ${listing.description ? `<div class="eq-detail-desc">${listing.description}</div>` : ''}
       <div class="eq-detail-loc">📍 ${listing.governorate || ''}${listing.area ? ' — ' + listing.area : ''}</div>
       <div class="eq-detail-date">📅 نُشر ${date}</div>
       <div class="eq-detail-stats">👁 ${listing.view_count || 0} مشاهدة</div>
@@ -384,17 +397,17 @@ function eqSwitchImg(url, el) {
 async function eqIncrementView(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
-  const newCount = (listing.view_count || 0) + 1;
-  listing.view_count = newCount;
-  await eqSb.from('listings').update({ view_count: newCount }).eq('id', id);
+  listing.view_count = (listing.view_count || 0) + 1;
+  /* RPC يجاوز RLS — يتطلب دالة increment_view_count في Supabase */
+  await eqSb.rpc('increment_view_count', { listing_id: id }).catch(() => null);
 }
 
 async function eqIncrementContact(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
-  const newCount = (listing.contact_count || 0) + 1;
-  listing.contact_count = newCount;
-  await eqSb.from('listings').update({ contact_count: newCount }).eq('id', id);
+  listing.contact_count = (listing.contact_count || 0) + 1;
+  /* RPC يجاوز RLS — يتطلب دالة increment_contact_count في Supabase */
+  await eqSb.rpc('increment_contact_count', { listing_id: id }).catch(() => null);
 }
 
 
@@ -404,6 +417,7 @@ async function eqIncrementContact(id) {
 
 function eqOpenReport(id) {
   document.getElementById('eq-report-id').value = id;
+  document.getElementById('eq-report-reason').value = '';
   document.getElementById('eq-report-modal').classList.add('open');
 }
 
@@ -504,7 +518,9 @@ async function eqRenew(id) {
     return;
   }
 
-  const newExpiry = new Date(listing.expires_at);
+  const base = new Date(listing.expires_at);
+  const now  = new Date();
+  const newExpiry = base > now ? new Date(base) : new Date(now);
   newExpiry.setDate(newExpiry.getDate() + LISTING_DAYS);
 
   const { error } = await eqSb.from('listings').update({
@@ -539,12 +555,8 @@ async function eqDeleteListing(id) {
    ================================================================ */
 
 async function eqRunLifecycle() {
-  const now = new Date().toISOString();
-  await eqSb
-    .from('listings')
-    .update({ status: 'expired' })
-    .eq('status', 'approved')
-    .lt('expires_at', now);
+  /* RPC يجاوز RLS — يتطلب دالة expire_listings في Supabase */
+  await eqSb.rpc('expire_listings').catch(() => null);
 }
 
 
@@ -564,8 +576,9 @@ function eqCondLabel(id) {
   return EQ_CONDITIONS.find(c => c.id === id)?.label || id;
 }
 
-/* إغلاق المودال عند الضغط على الخلفية */
+/* إغلاق المودالات عند الضغط على الخلفية */
 document.addEventListener('click', e => {
-  if (e.target.id === 'eq-modal') eqCloseModal();
+  if (e.target.id === 'eq-modal')        eqCloseModal();
   if (e.target.id === 'eq-report-modal') eqCloseReport();
+  if (e.target.id === 'eq-my-modal')     eqCloseMyListings();
 });
