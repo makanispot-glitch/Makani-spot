@@ -581,11 +581,13 @@ async function paUploadImages() {
   prog.style.display = 'block';
 
   try {
+    const { data: { session } } = await paSb.auth.getSession();
+    const authToken = session?.access_token;
     const urls = await uploadImages(paFiles, paUser.id, (done, total) => {
       const pct = Math.round((done / total) * 100);
       bar.style.width = pct + '%';
       txt.textContent = `جاري رفع ${done} من ${total} صور…`;
-    });
+    }, authToken);
     paUrls = urls;
     txt.textContent = 'تم رفع الصور بنجاح ✅';
   } catch (e) {

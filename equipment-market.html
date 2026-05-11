@@ -239,6 +239,7 @@
 .eq-detail-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .eq-detail-title { font-size: 22px; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
 .eq-detail-price { font-size: 28px; font-weight: 900; color: var(--orange); margin-bottom: 8px; }
+.eq-detail-desc { font-size: 14px; color: var(--ink2); line-height: 1.7; margin-bottom: 12px; white-space: pre-wrap; }
 .eq-detail-loc, .eq-detail-date, .eq-detail-stats { font-size: 13px; color: var(--ink2); margin-bottom: 4px; }
 .eq-detail-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
 
@@ -279,6 +280,62 @@
 .eq-btn-danger { background: var(--red-light); color: var(--red); border: none; }
 .eq-btn-danger:hover { background: var(--red); color: #fff; }
 .eq-btn-full { width: 100%; }
+
+/* ── My Listings Modal ── */
+.eq-my-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  align-items: flex-start; justify-content: center; padding: 20px;
+  overflow-y: auto;
+}
+.eq-my-overlay.open { display: flex; }
+.eq-my-box {
+  background: var(--surface); border-radius: 20px;
+  width: 100%; max-width: 780px; margin: auto;
+  padding: 28px; position: relative;
+}
+.eq-my-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px;
+}
+.eq-my-header h2 { font-size: 20px; font-weight: 900; color: var(--dark); }
+.eq-my-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface2); border: none; cursor: pointer;
+  font-size: 18px; color: var(--ink2);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.eq-my-close:hover { background: var(--border); }
+
+/* ── My Listing Cards ── */
+.eq-my-list { display: flex; flex-direction: column; gap: 14px; }
+.eq-my-card {
+  display: flex; gap: 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+}
+.eq-my-card-img {
+  width: 90px; height: 90px; border-radius: 8px;
+  overflow: hidden; flex-shrink: 0; background: var(--border);
+}
+.eq-my-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eq-my-card-body { flex: 1; }
+.eq-my-card-title { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+.eq-status {
+  display: inline-block; padding: 3px 12px; border-radius: 50px;
+  font-size: 12px; font-weight: 700;
+}
+.eq-status-pending  { background: #FEF3C7; color: #92400E; }
+.eq-status-active   { background: #DCFCE7; color: #15803D; }
+.eq-status-rejected { background: #FEE2E2; color: #991B1B; }
+.eq-status-expired  { background: #F3F4F6; color: #374151; }
+.eq-rejection-reason {
+  font-size: 12px; color: var(--red); margin-top: 5px;
+  padding: 6px 10px; background: #FEE2E2; border-radius: 6px;
+}
+.eq-days-left { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+.eq-my-stats { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+.eq-my-actions { display: flex; gap: 8px; margin-top: 10px; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -365,6 +422,19 @@
     <div class="eq-report-actions">
       <button class="eq-btn eq-btn-ghost" onclick="eqCloseReport()">إلغاء</button>
       <button class="eq-btn eq-btn-danger" onclick="eqSubmitReport()">إرسال البلاغ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── My Listings Modal ── -->
+<div class="eq-my-overlay" id="eq-my-modal">
+  <div class="eq-my-box">
+    <div class="eq-my-header">
+      <h2>📋 إعلاناتي</h2>
+      <button class="eq-my-close" onclick="eqCloseMyListings()">✕</button>
+    </div>
+    <div class="eq-my-list" id="eq-my-listings">
+      <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
     </div>
   </div>
 </div>
