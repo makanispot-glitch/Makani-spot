@@ -738,7 +738,7 @@ async function eqLoadNotifications() {
   const { data } = await eqSb
     .from('notifications')
     .select('*')
-    .eq('user_id', eqUser.id)
+    .eq('user_id', eqUser.id.toString())
     .order('created_at', { ascending: false })
     .limit(30);
   eqNotifications = data || [];
