@@ -738,7 +738,7 @@ async function eqLoadNotifications() {
   const { data } = await eqSb
     .from('notifications')
     .select('*')
-    .eq('user_id', eqUser.id.toString())
+    .eq('owner_id', eqUser.id.toString())
     .order('created_at', { ascending: false })
     .limit(30);
   eqNotifications = data || [];
@@ -793,7 +793,8 @@ function eqRenderNotifications() {
 async function eqMarkNotifsRead() {
   const unreadIds = eqNotifications.filter(n => !n.is_read).map(n => n.id);
   if (unreadIds.length === 0) return;
-  await eqSb.from('notifications').update({ is_read: true }).in('id', unreadIds);
+  await eqSb.from('notifications').update({ is_read: true })
+    .in('id', unreadIds).eq('owner_id', eqUser.id.toString());
   eqNotifications.forEach(n => { n.is_read = true; });
   eqUpdateNotifBadge();
 }
