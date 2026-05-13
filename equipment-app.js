@@ -130,7 +130,7 @@ async function eqLoadListings() {
     const { data, error } = await eqSb
       .from('listings')
       .select(`id, title, description, category, condition, price, negotiable,
-               region, area, phone, contact_method,
+               region, area, phone, contact_pref,
                cover_image, images, is_featured,
                view_count, contact_count, status,
                expires_at, created_at, user_id`)
@@ -344,10 +344,10 @@ async function eqOpenDetail(id) {
       </div>`
     : `<div class="eq-detail-no-img">📦</div>`;
 
-  const waBtn = listing.contact_method !== 'call'
+  const waBtn = listing.contact_pref !== 'call'
     ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent('مرحبا، شايف إعلانك عن '+listing.title+' في مكاني Spot')}" target="_blank" onclick="eqIncrementContact('${id}')">💬 تواصل عبر واتساب</a>`
     : '';
-  const callBtn = listing.contact_method !== 'whatsapp'
+  const callBtn = listing.contact_pref !== 'whatsapp'
     ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">📞 اتصل بالبائع</a>`
     : '';
 
@@ -491,7 +491,7 @@ function eqBuildMyCard(l) {
   <div class="eq-my-card-body">
     <div class="eq-my-card-title">${l.title}</div>
     <span class="eq-status ${st.cls}">${st.label}</span>
-    ${l.status === 'rejected' && l.rejection_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.rejection_reason}</div>` : ''}
+    ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.reject_reason}</div>` : ''}
     ${l.status === 'approved' ? `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>` : ''}
     <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
     <div class="eq-my-actions">
