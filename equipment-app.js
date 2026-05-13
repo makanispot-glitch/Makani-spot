@@ -52,20 +52,23 @@ const LISTING_DAYS  = 60;
    🗄️ القسم 3: المتغيرات العامة + نقطة البداية
    ================================================================ */
 
-let eqSb          = null;
-let eqUser        = null;
-let eqListings    = [];
-let eqFiltered    = [];
-let eqPage        = 1;
+let eqSb            = null;
+let eqUser          = null;
+let eqListings      = [];
+let eqFiltered      = [];
+let eqPage          = 1;
 let eqActiveCategory = '';
-let eqSearch      = '';
-let eqSortBy      = 'newest';
-let eqGov         = '';
-let eqPriceMax    = 0;
+let eqSearch        = '';
+let eqSortBy        = 'newest';
+let eqGov           = '';
+let eqPriceMax      = 0;
+let eqFavorites     = new Set();
+let eqNotifications = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   eqSb = supabase.createClient(EQ_SUPABASE_URL, EQ_SUPABASE_KEY);
   await eqInitAuth();
+  await eqLoadFavorites();
   eqBuildCategoryTabs();
   await eqLoadListings();
   eqBindSearch();
@@ -85,6 +88,13 @@ async function eqInitAuth() {
   eqSb.auth.onAuthStateChange((_e, sess) => {
     eqUser = sess?.user || null;
     eqRenderNavUser();
+    if (eqUser) {
+      eqLoadFavorites();
+      eqLoadNotifications();
+    } else {
+      eqFavorites.clear();
+      eqNotifications = [];
+    }
   });
 }
 
@@ -96,6 +106,15 @@ function eqRenderNavUser() {
     const email   = eqUser.email || '';
     area.innerHTML = `
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
+      <div class="eq-notif-wrap" id="eq-notif-wrap">
+        <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
+          🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
+        </button>
+        <div class="eq-notif-panel" id="eq-notif-panel">
+          <div class="eq-notif-header">الإشعارات</div>
+          <div class="eq-notif-list" id="eq-notif-list"></div>
+        </div>
+      </div>
       <div class="eq-account-wrap" id="eq-account-wrap">
         <button class="eq-account-btn" onclick="eqToggleAccountMenu(event)">
           <div class="eq-account-avatar">${initial}</div>
@@ -107,12 +126,16 @@ function eqRenderNavUser() {
           <button class="eq-account-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
             📋 إعلاناتي
           </button>
+          <button class="eq-account-item" onclick="eqOpenFavorites()">
+            ⭐ المفضلة
+          </button>
           <div class="eq-account-divider"></div>
           <button class="eq-account-item danger" onclick="eqSignOut()">
             🚪 خروج
           </button>
         </div>
       </div>`;
+    eqLoadNotifications();
   } else {
     area.innerHTML = `
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
@@ -129,7 +152,7 @@ function eqCloseAccountMenu() {
   document.getElementById('eq-account-wrap')?.classList.remove('open');
 }
 
-document.addEventListener('click', () => eqCloseAccountMenu());
+document.addEventListener('click', () => { eqCloseAccountMenu(); eqCloseNotifPanel(); });
 
 function eqOpenMyListings() {
   document.getElementById('eq-my-modal').classList.add('open');
@@ -277,10 +300,14 @@ function eqBuildCard(listing) {
   const imgHtml = img
     ? `<img src="${img}" alt="${listing.title}" loading="lazy" onerror="this.style.display='none'">`
     : `<div class="eq-card-no-img">📦</div>`;
+  const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
 
   return `
 <div class="eq-card" onclick="eqOpenDetail('${listing.id}')">
-  <div class="eq-card-img">${imgHtml}${feat}</div>
+  <div class="eq-card-img" style="position:relative">
+    ${imgHtml}${feat}
+    <button class="eq-fav-btn" data-fav="${listing.id}" onclick="eqToggleFavorite(event,'${listing.id}')" title="المفضلة">${favIcon}</button>
+  </div>
   <div class="eq-card-body">
     <div class="eq-card-meta">
       <span class="eq-badge eq-badge-cat">${cat}</span>
@@ -372,12 +399,17 @@ async function eqOpenDetail(id) {
       </div>`
     : `<div class="eq-detail-no-img">📦</div>`;
 
-  const waBtn = listing.contact_pref !== 'call'
-    ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent('مرحبا، شايف إعلانك عن '+listing.title+' في مكاني Spot')}" target="_blank" onclick="eqIncrementContact('${id}')">💬 تواصل عبر واتساب</a>`
-    : '';
-  const callBtn = listing.contact_pref !== 'whatsapp'
-    ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">📞 اتصل بالبائع</a>`
-    : '';
+  const isFav   = eqFavorites.has(id);
+  const favBtn  = `<button class="eq-btn eq-btn-ghost" data-fav="${id}" onclick="eqToggleFavorite(event,'${id}')">${isFav ? '❤️ في المفضلة' : '🤍 أضف للمفضلة'}</button>`;
+
+  const contactHtml = eqUser
+    ? `${listing.contact_pref !== 'call'
+        ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent('مرحبا، شايف إعلانك عن '+listing.title+' في مكاني Spot')}" target="_blank" onclick="eqIncrementContact('${id}')">💬 تواصل عبر واتساب</a>`
+        : ''}
+       ${listing.contact_pref !== 'whatsapp'
+        ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">📞 اتصل بالبائع</a>`
+        : ''}`
+    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="index.html">🔒 سجّل الدخول لعرض معلومات التواصل</a>`;
 
   document.getElementById('eq-modal-body').innerHTML = `
     ${galleryHtml}
@@ -394,8 +426,8 @@ async function eqOpenDetail(id) {
       <div class="eq-detail-date">📅 نُشر ${date}</div>
       <div class="eq-detail-stats">👁 ${listing.view_count || 0} مشاهدة</div>
       <div class="eq-detail-actions">
-        ${waBtn}
-        ${callBtn}
+        ${contactHtml}
+        ${favBtn}
         <button class="eq-btn eq-btn-ghost" onclick="eqOpenReport('${id}')">🚩 إبلاغ عن إعلان</button>
       </div>
     </div>`;
@@ -607,4 +639,161 @@ document.addEventListener('click', e => {
   if (e.target.id === 'eq-modal')        eqCloseModal();
   if (e.target.id === 'eq-report-modal') eqCloseReport();
   if (e.target.id === 'eq-my-modal')     eqCloseMyListings();
+  if (e.target.id === 'eq-fav-modal')    eqCloseFavorites();
 });
+
+
+/* ================================================================
+   ⭐ القسم 21: المفضلة
+   ================================================================ */
+
+async function eqLoadFavorites() {
+  if (!eqUser) return;
+  const { data } = await eqSb
+    .from('favorites')
+    .select('listing_id')
+    .eq('user_id', eqUser.id);
+  eqFavorites = new Set((data || []).map(f => f.listing_id));
+}
+
+async function eqToggleFavorite(e, id) {
+  e.stopPropagation();
+  if (!eqUser) { window.location.href = 'index.html'; return; }
+
+  const isFav = eqFavorites.has(id);
+  const allBtns = document.querySelectorAll(`[data-fav="${id}"]`);
+
+  if (isFav) {
+    await eqSb.from('favorites').delete()
+      .eq('user_id', eqUser.id).eq('listing_id', id);
+    eqFavorites.delete(id);
+    allBtns.forEach(b => {
+      b.textContent = b.classList.contains('eq-fav-btn') ? '🤍' : '🤍 أضف للمفضلة';
+    });
+  } else {
+    await eqSb.from('favorites').insert({ user_id: eqUser.id, listing_id: id });
+    eqFavorites.add(id);
+    allBtns.forEach(b => {
+      b.textContent = b.classList.contains('eq-fav-btn') ? '❤️' : '❤️ في المفضلة';
+    });
+  }
+}
+
+async function eqOpenFavorites() {
+  eqCloseAccountMenu();
+  document.getElementById('eq-fav-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const cont = document.getElementById('eq-fav-body');
+  if (eqFavorites.size === 0) {
+    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p><a class="eq-btn eq-btn-primary" href="equipment-market.html">تصفح السوق</a></div>`;
+    return;
+  }
+
+  cont.innerHTML = `<div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>`;
+
+  const { data } = await eqSb
+    .from('listings')
+    .select('id, title, cover_image, price, region, status, category')
+    .in('id', [...eqFavorites]);
+
+  if (!data || data.length === 0) {
+    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p></div>`;
+    return;
+  }
+
+  cont.innerHTML = data.map(l => {
+    const img = l.cover_image
+      ? `<img src="${l.cover_image}" alt="${l.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`
+      : `<div style="width:60px;height:60px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📦</div>`;
+    const price = Number(l.price).toLocaleString('ar-EG');
+    return `
+    <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #F0F0F0">
+      <div style="cursor:pointer;display:flex;gap:12px;align-items:center;flex:1;min-width:0" onclick="eqCloseFavorites();eqOpenDetail('${l.id}')">
+        ${img}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
+          <div style="color:var(--orange);font-weight:800;font-size:14px">${price} ج</div>
+          <div style="font-size:12px;color:#999">📍 ${l.region || ''}</div>
+        </div>
+      </div>
+      <button data-fav="${l.id}" onclick="eqToggleFavorite(event,'${l.id}');this.closest('div[style]').remove()"
+        style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0" title="إزالة من المفضلة">❤️</button>
+    </div>`;
+  }).join('');
+}
+
+function eqCloseFavorites() {
+  document.getElementById('eq-fav-modal')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+
+/* ================================================================
+   🔔 القسم 22: الإشعارات
+   ================================================================ */
+
+async function eqLoadNotifications() {
+  if (!eqUser) return;
+  const { data } = await eqSb
+    .from('notifications')
+    .select('*')
+    .eq('user_id', eqUser.id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  eqNotifications = data || [];
+  eqUpdateNotifBadge();
+}
+
+function eqUpdateNotifBadge() {
+  const badge = document.getElementById('eq-notif-badge');
+  if (!badge) return;
+  const count = eqNotifications.filter(n => !n.is_read).length;
+  badge.textContent = count > 9 ? '9+' : count;
+  badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function eqToggleNotifPanel(e) {
+  e.stopPropagation();
+  eqCloseAccountMenu();
+  const panel = document.getElementById('eq-notif-panel');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) {
+    panel.classList.remove('open');
+  } else {
+    panel.classList.add('open');
+    eqRenderNotifications();
+    eqMarkNotifsRead();
+  }
+}
+
+function eqCloseNotifPanel() {
+  document.getElementById('eq-notif-panel')?.classList.remove('open');
+}
+
+function eqRenderNotifications() {
+  const cont = document.getElementById('eq-notif-list');
+  if (!cont) return;
+  if (eqNotifications.length === 0) {
+    cont.innerHTML = `<div style="text-align:center;padding:30px 20px;color:#999;font-size:14px">لا توجد إشعارات</div>`;
+    return;
+  }
+  cont.innerHTML = eqNotifications.map(n => {
+    const time = new Date(n.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+    const clickable = n.listing_id ? `onclick="eqCloseNotifPanel();eqOpenDetail('${n.listing_id}')" style="cursor:pointer"` : '';
+    return `
+    <div class="eq-notif-item${n.is_read ? '' : ' unread'}" ${clickable}>
+      <div class="eq-notif-title">${n.title}</div>
+      ${n.body ? `<div class="eq-notif-body">${n.body}</div>` : ''}
+      <div class="eq-notif-time">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+async function eqMarkNotifsRead() {
+  const unreadIds = eqNotifications.filter(n => !n.is_read).map(n => n.id);
+  if (unreadIds.length === 0) return;
+  await eqSb.from('notifications').update({ is_read: true }).in('id', unreadIds);
+  eqNotifications.forEach(n => { n.is_read = true; });
+  eqUpdateNotifBadge();
+}

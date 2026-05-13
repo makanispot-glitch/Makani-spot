@@ -394,6 +394,55 @@
   .eq-detail-main-img { height: 220px; }
   .eq-fab { bottom: 20px; left: 20px; }
 }
+
+/* ── Favorite Button on Card ── */
+.eq-fav-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  background: rgba(255,255,255,0.92); border: none; border-radius: 50%;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 15px; cursor: pointer; transition: transform .15s, background .15s;
+  backdrop-filter: blur(4px);
+}
+.eq-fav-btn:hover { transform: scale(1.18); background: #fff; }
+
+/* ── Notification Bell ── */
+.eq-notif-wrap { position: relative; }
+.eq-notif-btn {
+  position: relative; background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 50%; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; cursor: pointer; transition: all .2s;
+}
+.eq-notif-btn:hover { border-color: var(--orange); background: var(--orange-ultra); }
+.eq-notif-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: #EF4444; color: #fff; border-radius: 50%;
+  width: 18px; height: 18px; font-size: 10px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff; pointer-events: none;
+}
+.eq-notif-panel {
+  display: none; position: absolute; top: calc(100% + 10px); left: 50%;
+  transform: translateX(-50%); background: #fff; border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.13);
+  width: 320px; max-height: 440px; overflow: hidden;
+  flex-direction: column; z-index: 300;
+}
+.eq-notif-panel.open { display: flex; }
+.eq-notif-header {
+  padding: 14px 16px; font-size: 15px; font-weight: 800;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.eq-notif-list { overflow-y: auto; flex: 1; }
+.eq-notif-item {
+  padding: 12px 16px; border-bottom: 1px solid #F5F5F5; cursor: pointer; transition: background .15s;
+}
+.eq-notif-item:hover { background: var(--surface2); }
+.eq-notif-item.unread { background: #FFF7ED; }
+.eq-notif-item.unread:hover { background: #FFE8CC; }
+.eq-notif-title { font-size: 13px; font-weight: 700; color: var(--ink1); margin-bottom: 3px; }
+.eq-notif-body  { font-size: 12px; color: var(--ink2); margin-bottom: 4px; line-height: 1.5; }
+.eq-notif-time  { font-size: 11px; color: var(--ink3); }
 </style>
 </head>
 <body class="eq-page">
@@ -479,6 +528,19 @@
       <button class="eq-my-close" onclick="eqCloseMyListings()">✕</button>
     </div>
     <div class="eq-my-list" id="eq-my-listings">
+      <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Favorites Modal ── -->
+<div class="eq-my-overlay" id="eq-fav-modal">
+  <div class="eq-my-box">
+    <div class="eq-my-header">
+      <h2>⭐ المفضلة</h2>
+      <button class="eq-my-close" onclick="eqCloseFavorites()">✕</button>
+    </div>
+    <div class="eq-my-list" id="eq-fav-body">
       <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
     </div>
   </div>
