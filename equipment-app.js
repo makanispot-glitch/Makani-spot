@@ -130,7 +130,7 @@ async function eqLoadListings() {
     const { data, error } = await eqSb
       .from('listings')
       .select(`id, title, description, category, condition, price, negotiable,
-               governorate, phone, contact_method,
+               governorate, area, phone, contact_method,
                cover_image, images, is_featured,
                view_count, contact_count, status,
                expires_at, created_at, user_id`)
