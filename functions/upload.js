@@ -25,8 +25,9 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   /* 1. تأكد أن الـ R2 binding موجود */
-  if (!env.BUCKET) {
-    return fail(503, 'R2 bucket غير مضبوط — أضف BUCKET binding في Pages Dashboard');
+  const bucket = env.BUCKET || env['BUCKET-1'];
+  if (!bucket) {
+    return fail(503, 'R2 bucket غير مضبوط — أضف BUCKET binding في Pages Dashboard باسم BUCKET أو BUCKET-1');
   }
 
   /* 2. تحقق من وجود Authorization header (Supabase session token) */
@@ -58,7 +59,7 @@ export async function onRequestPost(context) {
   /* 5. ارفع لـ R2 */
   try {
     const buffer = await file.arrayBuffer();
-    await env.BUCKET.put(path, buffer, {
+    await bucket.put(path, buffer, {
       httpMetadata: { contentType: 'image/jpeg' },
     });
     const url = `${R2_PUBLIC_BASE}/${path}`;
