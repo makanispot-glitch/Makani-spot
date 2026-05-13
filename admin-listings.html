@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -305,47 +304,61 @@ tr:hover td { background: #FAFAFA; }
 </div>
 
 <script>
-const ADM_SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const ADM_SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjU2MTI0OCwiZXhwIjoyMDkyMTM3MjQ4fQ.BGWkOqXOAzPqcIJvjUxi5eJMeaJIZRSvh9AS610_sUk';
-const ADM_PASSWORD = 'makani@admin2026';
 const ADM_TOKEN_KEY = 'makani_admin_token';
 
 const CAT_LABELS  = {partition:'بارتشن وأثاث','food-cart':'عربية أكل',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',pos:'كاشير وPOS',lighting:'إضاءة تجارية',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 const CONTACT_LABELS = {both:'واتساب + اتصال',whatsapp:'واتساب فقط',call:'اتصال فقط'};
 
-let admSb       = null;
 let admAll      = [];
 let admFiltered = [];
 let admFilter   = 'pending';
 let admSearch   = '';
 
 /* ── Auth ── */
-function admLogin() {
-  const pass = document.getElementById('adm-pass').value;
-  if (pass === ADM_PASSWORD) {
-    localStorage.setItem(ADM_TOKEN_KEY, btoa(ADM_PASSWORD));
+async function admLogin() {
+  const pass  = document.getElementById('adm-pass').value;
+  const errEl = document.getElementById('adm-login-err');
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/admin/auth', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ password: pass }),
+    });
+
+    if (!res.ok) {
+      errEl.style.display = 'block';
+      document.getElementById('adm-pass').value = '';
+      return;
+    }
+
+    const { token } = await res.json();
+    sessionStorage.setItem(ADM_TOKEN_KEY, token);
     admShowDash();
-  } else {
-    document.getElementById('adm-login-err').style.display = 'block';
-    document.getElementById('adm-pass').value = '';
+  } catch {
+    errEl.textContent = 'خطأ في الاتصال — حاول مرة أخرى';
+    errEl.style.display = 'block';
   }
 }
 
 function admLogout() {
-  localStorage.removeItem(ADM_TOKEN_KEY);
+  sessionStorage.removeItem(ADM_TOKEN_KEY);
   location.reload();
 }
 
+function admGetToken() {
+  return sessionStorage.getItem(ADM_TOKEN_KEY) || '';
+}
+
 function admCheckAuth() {
-  const token = localStorage.getItem(ADM_TOKEN_KEY);
-  return token === btoa(ADM_PASSWORD);
+  return !!admGetToken();
 }
 
 function admShowDash() {
   document.getElementById('adm-login').style.display = 'none';
   document.getElementById('adm-main').style.display = 'block';
-  admSb = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
   admLoad();
 }
 
@@ -358,19 +371,24 @@ async function admLoad() {
   document.getElementById('adm-table-container').innerHTML =
     '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
 
-  const { data, error } = await admSb
-    .from('listings')
-    .select('*')
-    .neq('status', 'deleted')
-    .order('created_at', { ascending: false });
+  const res = await fetch('/admin/listings', {
+    headers: { 'Authorization': 'Bearer ' + admGetToken() },
+  });
 
-  if (error) {
-    document.getElementById('adm-table-container').innerHTML =
-      `<div class="adm-empty">⚠️ خطأ في التحميل: ${error.message}</div>`;
+  if (res.status === 401) {
+    sessionStorage.removeItem(ADM_TOKEN_KEY);
+    location.reload();
     return;
   }
 
-  admAll = data || [];
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    document.getElementById('adm-table-container').innerHTML =
+      `<div class="adm-empty">⚠️ خطأ في التحميل: ${err.error || res.statusText}</div>`;
+    return;
+  }
+
+  admAll = await res.json() || [];
   admUpdateStats();
   admRender();
 
@@ -405,7 +423,7 @@ function admRender() {
   if (admSearch) list = list.filter(l =>
     (l.title || '').toLowerCase().includes(admSearch) ||
     (l.phone || '').includes(admSearch) ||
-    (l.governorate || '').toLowerCase().includes(admSearch)
+    (l.region || '').toLowerCase().includes(admSearch)
   );
   admFiltered = list;
   admBuildTable(list);
@@ -450,7 +468,7 @@ function admBuildTable(list) {
       </td>
       <td style="font-weight:800;color:#FF6B00">${Number(l.price).toLocaleString('ar-EG')} ج</td>
       <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || l.status}</span></td>
-      <td style="color:#666">${l.governorate || '—'}</td>
+      <td style="color:#666">${l.region || '—'}</td>
       <td style="color:#999;font-size:12px">${date}</td>
       <td>
         <div class="adm-actions">
@@ -484,18 +502,18 @@ async function admApprove(id) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 60);
 
-  const { error } = await admSb.from('listings').update({
-    status:           'approved',
-    reject_reason: null,
-    expires_at:       expiresAt.toISOString(),
-  }).eq('id', id);
+  const res = await fetch('/admin/listings', {
+    method:  'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+    body:    JSON.stringify({ id, status: 'approved', reject_reason: null, expires_at: expiresAt.toISOString() }),
+  });
 
-  if (error) { alert('خطأ: ' + error.message); return; }
+  if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
 
   const listing = admAll.find(l => l.id === id);
   if (listing) {
-    listing.status      = 'approved';
-    listing.expires_at  = expiresAt.toISOString();
+    listing.status        = 'approved';
+    listing.expires_at    = expiresAt.toISOString();
     listing.reject_reason = null;
   }
   admUpdateStats();
@@ -518,12 +536,13 @@ async function admConfirmReject() {
   const reason = document.getElementById('adm-reject-reason').value.trim();
   if (!reason) { alert('من فضلك اكتب سبب الرفض'); return; }
 
-  const { error } = await admSb.from('listings').update({
-    status:           'rejected',
-    reject_reason: reason,
-  }).eq('id', id);
+  const res = await fetch('/admin/listings', {
+    method:  'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+    body:    JSON.stringify({ id, status: 'rejected', reject_reason: reason }),
+  });
 
-  if (error) { alert('خطأ: ' + error.message); return; }
+  if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
 
   const listing = admAll.find(l => l.id === id);
   if (listing) { listing.status = 'rejected'; listing.reject_reason = reason; }
@@ -552,9 +571,9 @@ function admShowPreview(id) {
     <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || l.condition}</span></div>
     <div class="adm-preview-row"><strong>السعر</strong><span style="color:#FF6B00;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
     <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${l.description || '—'}</span></div>
-    <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${l.governorate || '—'}${l.area ? ' — ' + l.area : ''}</span></div>
+    <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${l.region || '—'}${l.area ? ' — ' + l.area : ''}</span></div>
     <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${l.phone || '—'}</span></div>
-    <div class="adm-preview-row"><strong>طريقة التواصل</strong><span>${CONTACT_LABELS[l.contact_method] || l.contact_method}</span></div>
+    <div class="adm-preview-row"><strong>طريقة التواصل</strong><span>${CONTACT_LABELS[l.contact_pref] || l.contact_pref}</span></div>
     <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${l.view_count||0} — 📞 ${l.contact_count||0}</span></div>
     <div class="adm-preview-row"><strong>تاريخ النشر</strong><span>${date}</span></div>
     <div class="adm-preview-row"><strong>تنتهي في</strong><span>${expiry}</span></div>
