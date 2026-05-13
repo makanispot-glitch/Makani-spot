@@ -92,16 +92,44 @@ function eqRenderNavUser() {
   const area = document.getElementById('eq-nav-user');
   if (!area) return;
   if (eqUser) {
+    const initial = (eqUser.email || '?')[0].toUpperCase();
+    const email   = eqUser.email || '';
     area.innerHTML = `
-      <button class="eq-btn eq-btn-ghost" onclick="eqOpenMyListings()" style="font-size:13px">📋 إعلاناتي</button>
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
-      <button class="eq-btn eq-btn-outline" onclick="eqSignOut()">خروج</button>`;
+      <div class="eq-account-wrap" id="eq-account-wrap">
+        <button class="eq-account-btn" onclick="eqToggleAccountMenu(event)">
+          <div class="eq-account-avatar">${initial}</div>
+          <span>حسابي</span>
+          <span class="eq-account-chevron">▼</span>
+        </button>
+        <div class="eq-account-dropdown">
+          <div class="eq-account-email">${email}</div>
+          <button class="eq-account-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
+            📋 إعلاناتي
+          </button>
+          <div class="eq-account-divider"></div>
+          <button class="eq-account-item danger" onclick="eqSignOut()">
+            🚪 خروج
+          </button>
+        </div>
+      </div>`;
   } else {
     area.innerHTML = `
       <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
       <a class="eq-btn eq-btn-outline" href="index.html">دخول / تسجيل</a>`;
   }
 }
+
+function eqToggleAccountMenu(e) {
+  e.stopPropagation();
+  document.getElementById('eq-account-wrap')?.classList.toggle('open');
+}
+
+function eqCloseAccountMenu() {
+  document.getElementById('eq-account-wrap')?.classList.remove('open');
+}
+
+document.addEventListener('click', () => eqCloseAccountMenu());
 
 function eqOpenMyListings() {
   document.getElementById('eq-my-modal').classList.add('open');
