@@ -40,6 +40,51 @@
 .eq-nav-link:hover { color: var(--orange); }
 #eq-nav-user { display: flex; align-items: center; gap: 10px; }
 
+/* ── Account Dropdown ── */
+.eq-account-wrap { position: relative; }
+.eq-account-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px 7px 10px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 50px; cursor: pointer;
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--ink1); transition: all .2s;
+}
+.eq-account-btn:hover { border-color: var(--orange); background: var(--orange-ultra); }
+.eq-account-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; flex-shrink: 0;
+}
+.eq-account-chevron { font-size: 10px; color: var(--ink3); transition: transform .2s; }
+.eq-account-wrap.open .eq-account-chevron { transform: rotate(180deg); }
+.eq-account-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px); left: 0;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  min-width: 200px; overflow: hidden; z-index: 300;
+}
+.eq-account-wrap.open .eq-account-dropdown { display: block; }
+.eq-account-email {
+  padding: 12px 16px 8px;
+  font-size: 12px; color: var(--ink3); font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.eq-account-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 11px 16px;
+  background: none; border: none; font-family: 'Cairo', sans-serif;
+  font-size: 14px; font-weight: 600; color: var(--ink1);
+  text-decoration: none; cursor: pointer; transition: background .15s;
+  text-align: right;
+}
+.eq-account-item:hover { background: var(--surface2); }
+.eq-account-item.danger { color: #EF4444; }
+.eq-account-item.danger:hover { background: #FEF2F2; }
+.eq-account-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
 /* ── Hero ── */
 .eq-hero {
   background: linear-gradient(135deg, var(--dark) 0%, #2E2E2E 100%);
