@@ -486,7 +486,7 @@ async function admApprove(id) {
 
   const { error } = await admSb.from('listings').update({
     status:           'approved',
-    rejection_reason: null,
+    reject_reason: null,
     expires_at:       expiresAt.toISOString(),
   }).eq('id', id);
 
@@ -496,7 +496,7 @@ async function admApprove(id) {
   if (listing) {
     listing.status      = 'approved';
     listing.expires_at  = expiresAt.toISOString();
-    listing.rejection_reason = null;
+    listing.reject_reason = null;
   }
   admUpdateStats();
   admRender();
@@ -520,13 +520,13 @@ async function admConfirmReject() {
 
   const { error } = await admSb.from('listings').update({
     status:           'rejected',
-    rejection_reason: reason,
+    reject_reason: reason,
   }).eq('id', id);
 
   if (error) { alert('خطأ: ' + error.message); return; }
 
   const listing = admAll.find(l => l.id === id);
-  if (listing) { listing.status = 'rejected'; listing.rejection_reason = reason; }
+  if (listing) { listing.status = 'rejected'; listing.reject_reason = reason; }
   admCloseReject();
   admUpdateStats();
   admRender();
@@ -558,7 +558,7 @@ function admShowPreview(id) {
     <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${l.view_count||0} — 📞 ${l.contact_count||0}</span></div>
     <div class="adm-preview-row"><strong>تاريخ النشر</strong><span>${date}</span></div>
     <div class="adm-preview-row"><strong>تنتهي في</strong><span>${expiry}</span></div>
-    ${l.rejection_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${l.rejection_reason}</span></div>` : ''}
+    ${l.reject_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${l.reject_reason}</span></div>` : ''}
   `;
 
   const actionsEl = document.getElementById('adm-preview-actions');

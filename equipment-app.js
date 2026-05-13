@@ -491,7 +491,7 @@ function eqBuildMyCard(l) {
   <div class="eq-my-card-body">
     <div class="eq-my-card-title">${l.title}</div>
     <span class="eq-status ${st.cls}">${st.label}</span>
-    ${l.status === 'rejected' && l.rejection_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.rejection_reason}</div>` : ''}
+    ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.reject_reason}</div>` : ''}
     ${l.status === 'approved' ? `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>` : ''}
     <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
     <div class="eq-my-actions">
