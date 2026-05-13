@@ -127,19 +127,24 @@ async function eqSignOut() {
 async function eqLoadListings() {
   eqShowLoading();
   try {
-    let q = eqSb
-      .from('listings')
-      .select(`id, title, description, category, condition, price, negotiable,
-               governorate, area, phone, contact_method,
+    const baseSelect = `id, title, description, category, condition, price, negotiable,
+               governorate, phone, contact_method,
                cover_image, images, is_featured,
                view_count, contact_count, status,
-               expires_at, created_at, user_id`)
+               expires_at, created_at, user_id`;
+
+    const buildQuery = (selectCols) => eqSb
+      .from('listings')
+      .select(selectCols)
       .eq('status', 'approved')
       .gt('expires_at', new Date().toISOString())
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 
-    const { data, error } = await q;
+    let { data, error } = await buildQuery(baseSelect.replace('governorate,', 'governorate, area,'));
+    if (error && /area.*schema cache|area.*does not exist|column listings\.area/i.test(error.message || '')) {
+      ({ data, error } = await buildQuery(baseSelect));
+    }
     if (error) throw error;
     eqListings = data || [];
     eqApplyFilters();

@@ -671,7 +671,11 @@ async function paSubmit() {
       expires_at:     expiresAt.toISOString(),
     };
 
-    const { error } = await paSb.from('listings').insert(payload);
+    let { error } = await paSb.from('listings').insert(payload);
+    if (error && /area.*schema cache|area.*does not exist|column listings\.area/i.test(error.message || '')) {
+      const { area, ...payloadWithoutArea } = payload;
+      ({ error } = await paSb.from('listings').insert(payloadWithoutArea));
+    }
     if (error) throw error;
 
     document.getElementById('pa-wizard').style.display = 'none';
