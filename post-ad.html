@@ -658,6 +658,7 @@ async function paSubmit() {
       price:          parseInt(document.getElementById('pa-price').value),
       negotiable:     document.getElementById('pa-negotiable').checked,
       governorate:    document.getElementById('pa-governorate').value,
+      area:           document.getElementById('pa-area').value.trim() || null,
       phone:          document.getElementById('pa-phone').value.trim(),
       contact_method: document.getElementById('pa-contact-method').value,
       cover_image:    coverUrl,
