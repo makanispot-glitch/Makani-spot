@@ -130,7 +130,7 @@ async function eqLoadListings() {
     const { data, error } = await eqSb
       .from('listings')
       .select(`id, title, description, category, condition, price, negotiable,
-               governorate, area, phone, contact_method,
+               region, area, phone, contact_method,
                cover_image, images, is_featured,
                view_count, contact_count, status,
                expires_at, created_at, user_id`)
@@ -161,11 +161,11 @@ function eqApplyFilters() {
     const q = eqSearch.trim().toLowerCase();
     list = list.filter(l =>
       l.title.toLowerCase().includes(q) ||
-      (l.governorate || '').toLowerCase().includes(q)
+      (l.region || '').toLowerCase().includes(q)
     );
   }
   if (eqGov) {
-    list = list.filter(l => l.governorate === eqGov);
+    list = list.filter(l => l.region === eqGov);
   }
   if (eqPriceMax > 0) {
     list = list.filter(l => l.price <= eqPriceMax);
@@ -261,7 +261,7 @@ function eqBuildCard(listing) {
     </div>
     <div class="eq-card-title">${listing.title}</div>
     <div class="eq-card-price">${price} ج</div>
-    <div class="eq-card-loc">📍 ${listing.governorate || ''}${listing.area ? ' — ' + listing.area : ''}</div>
+    <div class="eq-card-loc">📍 ${listing.region || ''}${listing.area ? ' — ' + listing.area : ''}</div>
   </div>
 </div>`;
 }
@@ -362,7 +362,7 @@ async function eqOpenDetail(id) {
       <h2 class="eq-detail-title">${listing.title}</h2>
       <div class="eq-detail-price">${price} ج${nego}</div>
       ${listing.description ? `<div class="eq-detail-desc">${listing.description}</div>` : ''}
-      <div class="eq-detail-loc">📍 ${listing.governorate || ''}${listing.area ? ' — ' + listing.area : ''}</div>
+      <div class="eq-detail-loc">📍 ${listing.region || ''}${listing.area ? ' — ' + listing.area : ''}</div>
       <div class="eq-detail-date">📅 نُشر ${date}</div>
       <div class="eq-detail-stats">👁 ${listing.view_count || 0} مشاهدة</div>
       <div class="eq-detail-actions">
