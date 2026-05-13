@@ -658,7 +658,6 @@ async function paSubmit() {
       price:          parseInt(document.getElementById('pa-price').value),
       negotiable:     document.getElementById('pa-negotiable').checked,
       governorate:    document.getElementById('pa-governorate').value,
-      area:           document.getElementById('pa-area').value.trim() || null,
       phone:          document.getElementById('pa-phone').value.trim(),
       contact_method: document.getElementById('pa-contact-method').value,
       cover_image:    coverUrl,
@@ -671,11 +670,7 @@ async function paSubmit() {
       expires_at:     expiresAt.toISOString(),
     };
 
-    let { error } = await paSb.from('listings').insert(payload);
-    if (error && /area.*schema cache|area.*does not exist|column listings\.area/i.test(error.message || '')) {
-      const { area, ...payloadWithoutArea } = payload;
-      ({ error } = await paSb.from('listings').insert(payloadWithoutArea));
-    }
+    const { error } = await paSb.from('listings').insert(payload);
     if (error) throw error;
 
     document.getElementById('pa-wizard').style.display = 'none';
