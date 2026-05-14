@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>انشر إعلانك — سوق المعدات | مكاني Spot</title>
-<link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="media-handler.js"></script>
+<script src="../media-handler.js"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -191,14 +191,14 @@ body { background: var(--surface2); }
 
 <!-- ── Navbar ── -->
 <nav class="pa-nav">
-  <a class="pa-nav-logo" href="equipment-market.html">
+  <a class="pa-nav-logo" href="/market/">
     <div class="logo-text">
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
   </a>
   <span style="font-size:14px;font-weight:800;color:var(--dark)">نشر إعلان جديد</span>
-  <a href="equipment-market.html" style="font-size:13px;color:var(--ink2);text-decoration:none">← رجوع للسوق</a>
+  <a href="/market/" style="font-size:13px;color:var(--ink2);text-decoration:none">← رجوع للسوق</a>
 </nav>
 
 <div class="pa-wrapper">
@@ -208,7 +208,7 @@ body { background: var(--surface2); }
     <div class="guard-icon">🔐</div>
     <h2>يجب تسجيل الدخول أولاً</h2>
     <p>لنشر إعلان في سوق المعدات، سجّل دخولك من المنصة الرئيسية أولاً</p>
-    <a href="index.html" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
+    <a href="/" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
   </div>
 
   <!-- ── Success ── -->
@@ -217,7 +217,7 @@ body { background: var(--surface2); }
     <h2>تم إرسال إعلانك بنجاح!</h2>
     <p>إعلانك قيد المراجعة الآن — سيتم نشره خلال 24 ساعة بعد مراجعة فريقنا</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="equipment-market.html" class="pa-btn pa-btn-primary" style="text-decoration:none;border-radius:12px">🛒 تصفّح السوق</a>
+      <a href="/market/" class="pa-btn pa-btn-primary" style="text-decoration:none;border-radius:12px">🛒 تصفّح السوق</a>
       <button class="pa-btn pa-btn-back" onclick="paReset()">+ نشر إعلان آخر</button>
     </div>
   </div>

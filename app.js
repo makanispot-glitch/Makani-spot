@@ -2108,7 +2108,7 @@ function showDashAlert(type, msg) {
    ================================================================ */
 
 function goToOwnerDashboard() {
-  window.location.href = 'makani-dashboard.html';
+  window.location.href = '/dashboard/';
 }
 
 /* ──────────────────────────────────────────────────────────────

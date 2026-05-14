@@ -108,7 +108,7 @@ function eqRenderNavUser() {
     const initial = (eqUser.email || '?')[0].toUpperCase();
     const email   = eqUser.email || '';
     area.innerHTML = `
-      <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
+      <a class="eq-nav-link" href="/">رجوع للمنصة</a>
       <div class="eq-notif-wrap" id="eq-notif-wrap">
         <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
           🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
@@ -141,8 +141,8 @@ function eqRenderNavUser() {
     eqLoadNotifications();
   } else {
     area.innerHTML = `
-      <a class="eq-nav-link" href="index.html">رجوع للمنصة</a>
-      <a class="eq-btn eq-btn-outline" href="index.html">دخول / تسجيل</a>`;
+      <a class="eq-nav-link" href="/">رجوع للمنصة</a>
+      <a class="eq-btn eq-btn-outline" href="/">دخول / تسجيل</a>`;
   }
 }
 
@@ -412,7 +412,7 @@ async function eqOpenDetail(id) {
        ${listing.contact_pref !== 'whatsapp'
         ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">📞 اتصل بالبائع</a>`
         : ''}`
-    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="index.html">🔒 سجّل الدخول لعرض معلومات التواصل</a>`;
+    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="/">🔒 سجّل الدخول لعرض معلومات التواصل</a>`;
 
   document.getElementById('eq-modal-body').innerHTML = `
     ${galleryHtml}
@@ -508,7 +508,7 @@ async function eqSubmitReport() {
 async function eqLoadMyListings() {
   if (!eqUser) {
     document.getElementById('eq-my-listings').innerHTML =
-      `<div class="eq-empty"><p>يجب تسجيل الدخول أولاً</p><a class="eq-btn eq-btn-primary" href="index.html">تسجيل الدخول</a></div>`;
+      `<div class="eq-empty"><p>يجب تسجيل الدخول أولاً</p><a class="eq-btn eq-btn-primary" href="/">تسجيل الدخول</a></div>`;
     return;
   }
 
@@ -525,7 +525,7 @@ async function eqLoadMyListings() {
   if (!cont) return;
 
   if (!data || data.length === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>ما عندكش إعلانات لحد دلوقتي</p><a class="eq-btn eq-btn-primary" href="post-ad.html">انشر إعلانك الأول</a></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>ما عندكش إعلانات لحد دلوقتي</p><a class="eq-btn eq-btn-primary" href="/post-ad/">انشر إعلانك الأول</a></div>`;
     return;
   }
 
@@ -661,7 +661,7 @@ async function eqLoadFavorites() {
 
 async function eqToggleFavorite(e, id) {
   e.stopPropagation();
-  if (!eqUser) { window.location.href = 'index.html'; return; }
+  if (!eqUser) { window.location.href = '/'; return; }
 
   const isFav = eqFavorites.has(id);
   const allBtns = document.querySelectorAll(`[data-fav="${id}"]`);
@@ -689,7 +689,7 @@ async function eqOpenFavorites() {
 
   const cont = document.getElementById('eq-fav-body');
   if (eqFavorites.size === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p><a class="eq-btn eq-btn-primary" href="equipment-market.html">تصفح السوق</a></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p><a class="eq-btn eq-btn-primary" href="/market/">تصفح السوق</a></div>`;
     return;
   }
 
