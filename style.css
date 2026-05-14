@@ -1548,6 +1548,14 @@ footer {
   .how-card p { font-size: 12px; }
   .how-detail-card { grid-template-columns: 48px 1fr; gap: 12px; padding: 18px 16px; }
   .how-detail-ico { width: 48px; height: 48px; font-size: 22px; }
+  /* Path grid mobile */
+  .path-grid { grid-template-columns: 1fr; }
+  .path-sep { display: none; }
+  .path-card { padding: 22px 18px; }
+  .path-title { font-size: 15px; }
+  .path-icon-wrap { font-size: 26px; }
+  /* Quick paths mobile */
+  .qp-row { grid-template-columns: 1fr; gap: 8px; }
 
   /* النافبار الصغير */
   .nav #nav-guest .btn-primary { display: none; }
@@ -2793,6 +2801,137 @@ footer {
 .bz-home-see-all:hover {
   background: var(--orange-hover); border-color: var(--orange-hover); color: #fff;
   box-shadow: 0 4px 18px rgba(255,107,0,0.32);
+}
+
+/* ── قسم القسم البازارات: رأس جديد ── */
+.qp-bz-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 6px 0 12px; flex-wrap: wrap; gap: 10px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ⚡ المسارات السريعة الثلاثة (فوق الفلتر)
+   ══════════════════════════════════════════════════════════════ */
+.qp-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.qp-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer; text-decoration: none;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.18s; text-align: right;
+}
+.qp-card:hover {
+  border-color: var(--orange); background: var(--orange-ultra);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,107,0,0.10);
+}
+.qp-icon { font-size: 24px; flex-shrink: 0; line-height: 1; }
+.qp-info { flex: 1; min-width: 0; }
+.qp-info strong { display: block; font-size: 14px; font-weight: 800; color: var(--dark); margin-bottom: 3px; }
+.qp-info span { font-size: 11px; color: var(--ink3); line-height: 1.4; display: block; }
+.qp-info em { font-style: normal; color: var(--orange); font-weight: 700; }
+.qp-card:hover .qp-info strong { color: var(--orange); }
+.qp-arr { font-size: 16px; color: var(--ink3); flex-shrink: 0; transition: transform 0.18s; }
+.qp-card:hover .qp-arr { color: var(--orange); transform: translateX(-3px); }
+/* مشاريع للبيع */
+.qp-market { border-color: rgba(255,107,0,0.25); background: var(--orange-ultra); }
+.qp-market .qp-info strong { color: var(--orange); }
+.qp-market .qp-info span { color: rgba(255,107,0,0.65); }
+.qp-market .qp-arr { color: var(--orange); }
+.qp-market:hover { background: var(--orange-pale); border-color: var(--orange); }
+
+/* ══════════════════════════════════════════════════════════════
+   🗺️ قسم المسارات الثلاثة (how-section — المسارات)
+   ══════════════════════════════════════════════════════════════ */
+.path-grid {
+  display: grid;
+  grid-template-columns: 1fr 44px 1fr 44px 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* البطاقة */
+.path-card {
+  padding: 30px 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.03);
+  display: flex; flex-direction: column;
+  transition: border-color 0.22s, background 0.22s;
+  /* animation */
+  opacity: 0;
+  transform: translateY(28px);
+}
+.path-card.path-in { opacity: 1; transform: translateY(0); transition: opacity 0.55s ease var(--pd,0ms), transform 0.55s ease var(--pd,0ms), border-color 0.22s, background 0.22s; }
+.path-card:hover { border-color: rgba(255,107,0,0.28); background: rgba(255,107,0,0.05); }
+.path-card-hl { border-color: rgba(255,107,0,0.22); background: rgba(255,107,0,0.07); }
+
+/* الشارة */
+.path-pill {
+  display: inline-block; align-self: flex-start;
+  padding: 3px 12px; border-radius: 30px;
+  font-size: 11px; font-weight: 800;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 16px;
+}
+.path-pill-org { background: rgba(255,107,0,0.15); color: var(--orange); }
+
+/* الأيقونة الكبيرة */
+.path-icon-wrap { font-size: 34px; margin-bottom: 14px; line-height: 1; }
+
+/* العنوان */
+.path-title { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 16px; line-height: 1.35; }
+
+/* الخطوات */
+.path-steps {
+  list-style: none; padding: 0; margin: 0 0 22px; flex: 1;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.path-steps li {
+  font-size: 13px; color: rgba(255,255,255,0.52); line-height: 1.65;
+  padding-right: 22px; position: relative;
+}
+.path-steps li::before {
+  content: '✓'; position: absolute; right: 0;
+  color: var(--orange); font-weight: 900; font-size: 12px; top: 2px;
+}
+
+/* زر CTA */
+.path-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  align-self: flex-start;
+  background: rgba(255,255,255,0.09); color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px; padding: 10px 18px;
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800;
+  cursor: pointer; text-decoration: none;
+  transition: all 0.18s;
+}
+.path-btn:hover { background: var(--orange); border-color: var(--orange); transform: translateX(-4px); }
+.path-btn-org { background: var(--orange); border-color: var(--orange); }
+.path-btn-org:hover { background: var(--orange-hover); border-color: var(--orange-hover); }
+
+/* الفاصل "أو" */
+.path-sep {
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.5s ease var(--pd,0ms);
+}
+.path-sep.path-in { opacity: 1; }
+.path-sep-or {
+  font-size: 11px; font-weight: 800;
+  color: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 50%; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
 }
 
 /* شريط الأفقي للكروت */

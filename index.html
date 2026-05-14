@@ -201,23 +201,54 @@
 
 
   <!-- ============================================================
-       قسم البازار القادم — مختصر فوق فلتر المساحات
+       ثلاثة مسارات سريعة + بازارات — فوق الفلتر
        ============================================================ -->
   <section class="bz-home-section">
     <div class="bz-home-section-bg"></div>
     <div class="bz-home-section-inner">
-      <div class="bz-home-sec-head">
-        <div>
-          <div class="bz-home-pill">البازار القادم</div>
-          <div class="bz-home-sec-title">فرصة قريبة لعرض مشروعك</div>
-          <div class="bz-home-sec-sub">أقرب بازار متاح حسب التاريخ، مع الأماكن المتبقية والسعر في لمحة واحدة.</div>
-        </div>
+
+      <!-- ── ثلاثة مسارات سريعة ── -->
+      <div class="qp-row">
+
+        <button class="qp-card qp-spaces" onclick="scrollToSearch()">
+          <span class="qp-icon">◈</span>
+          <span class="qp-info">
+            <strong>ابدأ على طول</strong>
+            <span>اختار مساحتك من بين مئات المساحات المتاحة في المولات</span>
+          </span>
+          <span class="qp-arr">←</span>
+        </button>
+
+        <button class="qp-card qp-bazaar" onclick="showPage('bazaars')">
+          <span class="qp-icon">🏪</span>
+          <span class="qp-info">
+            <strong>اشترك في بازار مؤقت</strong>
+            <span>جرّب مشروعك أسبوع أو موسم — بدون التزام طويل</span>
+          </span>
+          <span class="qp-arr">←</span>
+        </button>
+
+        <a class="qp-card qp-market" href="/market/">
+          <span class="qp-icon">🛍️</span>
+          <span class="qp-info">
+            <strong>مشاريع كاملة للبيع</strong>
+            <span>ابحث عن مشروعك أو انشر مشروعك — <em>مجاناً بدون عمولة</em></span>
+          </span>
+          <span class="qp-arr">←</span>
+        </a>
+
+      </div>
+
+      <!-- ── قسم البازارات القادمة ── -->
+      <div class="qp-bz-head">
+        <div class="bz-home-pill">البازارات القادمة</div>
         <button class="bz-home-see-all" onclick="showPage('bazaars')">عرض جميع البزارات ←</button>
       </div>
 
       <div class="bz-home-scroll" id="bz-home-scroll">
         <div class="bz-home-empty">جاري تحميل البزارات...</div>
       </div>
+
     </div>
   </section>
 
@@ -345,30 +376,67 @@
 
   </div><!-- end section -->
 
-  <!-- قسم "إزاي بيشتغل" المختصر في الهوم -->
+  <!-- قسم "مكاني Spot — مهما كانت فكرتك" المسارات الثلاثة -->
   <div class="how-section">
     <div class="how-inner">
+
       <div class="how-head">
-        <div class="how-title">إزاي <span>مكاني Spot</span> بيشتغل؟</div>
-        <div class="how-sub">٣ خطوات بسيطة — من غير تسجيل أو دفع مسبق</div>
+        <div class="how-title">مهما كانت فكرتك — <span>عندنا الطريق</span></div>
+        <div class="how-sub">٣ مسارات لتحويل فكرتك لمشروع حقيقي — اختار اللي يناسبك</div>
       </div>
-      <div class="how-grid">
-        <div class="how-card">
-          <div class="how-num">١</div>
-          <h3>دوّر على مساحتك</h3>
-          <p>فلتر بالنشاط أو المنطقة أو السعر — كل مساحة مكتوب فيها الأنشطة المناسبة ليها بالظبط</p>
+
+      <div class="path-grid">
+
+        <!-- مسار ١: المساحات -->
+        <div class="path-card path-anim" style="--pd:0ms">
+          <div class="path-pill">عندك منتج أو مشروع صغير</div>
+          <div class="path-icon-wrap">◈</div>
+          <h3 class="path-title">ابحث عن مساحة ثابتة</h3>
+          <ul class="path-steps">
+            <li>فلتر بالنشاط والمنطقة والسعر</li>
+            <li>شوف كل مساحة بتفاصيلها الكاملة</li>
+            <li>احجز في ثواني — هنكلمك في ٢٤ ساعة</li>
+          </ul>
+          <button class="path-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)">ابدأ على طول ←</button>
         </div>
-        <div class="how-card">
-          <div class="how-num">٢</div>
-          <h3>احجز في ثواني</h3>
-          <p>اضغط "احجز دلوقتي" واملا نموذج بسيط — مش محتاج تسجيل ولا دفع مسبق خالص</p>
+
+        <!-- فاصل -->
+        <div class="path-sep path-anim" style="--pd:180ms">
+          <div class="path-sep-or">أو</div>
         </div>
-        <div class="how-card">
-          <div class="how-num">٣</div>
-          <h3>هنكلمك في ٢٤ ساعة</h3>
-          <p>فريقنا بيتواصل معاك يوم واحد بس عشان يكمل الترتيبات ويوقّع العقد بأحسن الشروط</p>
+
+        <!-- مسار ٢: البازارات -->
+        <div class="path-card path-anim" style="--pd:260ms">
+          <div class="path-pill">عايز تجرّب الفكرة الأول</div>
+          <div class="path-icon-wrap">🏪</div>
+          <h3 class="path-title">اشترك في بازار مؤقت</h3>
+          <ul class="path-steps">
+            <li>أسبوع أو موسم — بدون التزام طويل</li>
+            <li>اختبر المنتج وشوف الإقبال قبل ما تلتزم</li>
+            <li>اختار مكانك من الخريطة وابعت طلبك</li>
+          </ul>
+          <button class="path-btn" onclick="showPage('bazaars')">شوف البزارات ←</button>
         </div>
-      </div>
+
+        <!-- فاصل -->
+        <div class="path-sep path-anim" style="--pd:380ms">
+          <div class="path-sep-or">أو</div>
+        </div>
+
+        <!-- مسار ٣: مشاريع للبيع -->
+        <div class="path-card path-card-hl path-anim" style="--pd:460ms">
+          <div class="path-pill path-pill-org">عايز تبدأ بسرعة</div>
+          <div class="path-icon-wrap">🛍️</div>
+          <h3 class="path-title">ابحث عن مشروع جاهز</h3>
+          <ul class="path-steps">
+            <li>تصفح مشاريع كاملة — بارتيشن، كافيه، كيوسك وأكتر</li>
+            <li>أدوات بيع ذاتي أو مشاريع جاهزة بأسعار متنوعة</li>
+            <li>أو انشر مشروعك مجاناً بدون أي عمولة</li>
+          </ul>
+          <a class="path-btn path-btn-org" href="/market/">تصفح المشاريع ←</a>
+        </div>
+
+      </div><!-- end path-grid -->
     </div>
   </div>
 
