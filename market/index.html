@@ -487,6 +487,45 @@
 .eq-notif-title { font-size: 13px; font-weight: 700; color: var(--ink1); margin-bottom: 3px; }
 .eq-notif-body  { font-size: 12px; color: var(--ink2); margin-bottom: 4px; line-height: 1.5; }
 .eq-notif-time  { font-size: 11px; color: var(--ink3); }
+
+/* ── Edit Modal ── */
+.eq-edit-box { max-width: 560px; }
+.eq-edit-scroll { overflow-y: auto; max-height: calc(90vh - 70px); padding: 20px 24px 28px; }
+.eq-edit-note {
+  padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; margin-bottom: 18px; line-height: 1.5;
+}
+.eq-edit-note-info { background: rgba(59,130,246,0.09); color: #2563eb; }
+.eq-edit-note-warn { background: rgba(251,191,36,0.15); color: #92400e; }
+.eq-edit-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.eq-edit-field label { font-size: 13px; font-weight: 700; color: var(--ink1); }
+.eq-edit-field input,
+.eq-edit-field textarea,
+.eq-edit-field select {
+  padding: 10px 13px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-family: 'Cairo', sans-serif;
+  font-size: 14px; color: var(--dark); background: #fff;
+  transition: border-color .2s; outline: none;
+  width: 100%; box-sizing: border-box;
+}
+.eq-edit-field input:focus,
+.eq-edit-field textarea:focus,
+.eq-edit-field select:focus { border-color: var(--orange); }
+.eq-edit-field textarea { resize: vertical; min-height: 90px; }
+.eq-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.eq-edit-check { flex-direction: row; align-items: center; gap: 10px; }
+.eq-edit-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--orange); flex-shrink: 0; }
+.eq-edit-check label { margin: 0; font-size: 14px; }
+.eq-edit-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px;
+}
+/* حالة موقوف */
+.eq-status-paused { background: rgba(107,114,128,0.12); color: #6b7280; }
+@media (max-width: 520px) {
+  .eq-edit-row { grid-template-columns: 1fr; }
+  .eq-edit-scroll { padding: 16px 16px 24px; }
+}
 </style>
 </head>
 <body class="eq-page">
@@ -605,6 +644,75 @@
     </div>
     <div class="eq-my-list" id="eq-fav-body">
       <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Listing Modal ── -->
+<div class="eq-my-overlay" id="eq-edit-modal">
+  <div class="eq-my-box eq-edit-box">
+    <div class="eq-my-header">
+      <h2>✏️ تعديل الإعلان</h2>
+      <button class="eq-my-close" onclick="eqCloseEdit()">✕</button>
+    </div>
+    <div class="eq-edit-scroll">
+      <input type="hidden" id="eq-edit-id">
+      <input type="hidden" id="eq-edit-orig-status">
+      <div id="eq-edit-note" class="eq-edit-note eq-edit-note-info"></div>
+
+      <div class="eq-edit-field">
+        <label>التصنيف</label>
+        <select id="eq-edit-category"></select>
+      </div>
+      <div class="eq-edit-field">
+        <label>عنوان الإعلان</label>
+        <input type="text" id="eq-edit-title" maxlength="100" placeholder="مثال: كيوسك بارتشن كامل للبيع">
+      </div>
+      <div class="eq-edit-field">
+        <label>الوصف التفصيلي</label>
+        <textarea id="eq-edit-desc" rows="4" maxlength="1000" placeholder="اكتب تفاصيل المشروع أو القطعة…"></textarea>
+      </div>
+      <div class="eq-edit-row">
+        <div class="eq-edit-field">
+          <label>الحالة</label>
+          <select id="eq-edit-condition"></select>
+        </div>
+        <div class="eq-edit-field">
+          <label>السعر (جنيه)</label>
+          <input type="number" id="eq-edit-price" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="eq-edit-field eq-edit-check">
+        <input type="checkbox" id="eq-edit-negotiable">
+        <label for="eq-edit-negotiable">قابل للتفاوض</label>
+      </div>
+      <div class="eq-edit-row">
+        <div class="eq-edit-field">
+          <label>المحافظة</label>
+          <select id="eq-edit-region"></select>
+        </div>
+        <div class="eq-edit-field">
+          <label>المنطقة / الحي (اختياري)</label>
+          <input type="text" id="eq-edit-area" maxlength="80" placeholder="مثال: مدينة نصر">
+        </div>
+      </div>
+      <div class="eq-edit-field">
+        <label>رقم التليفون</label>
+        <input type="tel" id="eq-edit-phone" maxlength="20" dir="ltr" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="eq-edit-field">
+        <label>طريقة التواصل المفضلة</label>
+        <select id="eq-edit-contact">
+          <option value="both">واتساب + اتصال</option>
+          <option value="whatsapp">واتساب فقط</option>
+          <option value="call">اتصال فقط</option>
+        </select>
+      </div>
+
+      <div class="eq-edit-actions">
+        <button class="eq-btn eq-btn-ghost" onclick="eqCloseEdit()">إلغاء</button>
+        <button class="eq-btn eq-btn-primary" id="eq-edit-save-btn" onclick="eqSubmitEdit()">💾 حفظ التعديلات</button>
+      </div>
     </div>
   </div>
 </div>

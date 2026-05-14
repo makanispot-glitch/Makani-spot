@@ -67,6 +67,7 @@ let eqGov           = '';
 let eqPriceMax      = 0;
 let eqFavorites     = new Set();
 let eqNotifications = [];
+let eqMyListings    = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   eqShowLoading();
@@ -546,22 +547,26 @@ async function eqLoadMyListings() {
     return;
   }
 
+  eqMyListings = data;
   cont.innerHTML = data.map(l => eqBuildMyCard(l)).join('');
 }
 
 function eqBuildMyCard(l) {
   const statusMap = {
-    pending:  { label: 'قيد المراجعة', cls: 'eq-status-pending' },
-    approved: { label: 'نشط',          cls: 'eq-status-active'  },
+    pending:  { label: 'قيد المراجعة', cls: 'eq-status-pending'  },
+    approved: { label: 'نشط',          cls: 'eq-status-active'   },
     rejected: { label: 'مرفوض',        cls: 'eq-status-rejected' },
     expired:  { label: 'منتهي',        cls: 'eq-status-expired'  },
+    paused:   { label: 'موقوف مؤقتاً', cls: 'eq-status-paused'   },
   };
-  const st    = statusMap[l.status] || { label: l.status, cls: '' };
-  const exp   = l.expires_at ? new Date(l.expires_at) : null;
-  const now   = new Date();
-  const days  = exp ? Math.max(0, Math.ceil((exp - now) / 86400000)) : 0;
+  const st       = statusMap[l.status] || { label: l.status, cls: '' };
+  const exp      = l.expires_at ? new Date(l.expires_at) : null;
+  const now      = new Date();
+  const days     = exp ? Math.max(0, Math.ceil((exp - now) / 86400000)) : 0;
   const canRenew = l.status === 'approved' && days <= 15 && (l.renewal_count || 0) < MAX_RENEWALS;
-  const canDelete = ['pending','rejected','expired'].includes(l.status);
+  const canEdit  = ['pending','approved','paused','rejected'].includes(l.status);
+  const canPause = l.status === 'approved';
+  const canResume= l.status === 'paused';
 
   return `
 <div class="eq-my-card">
@@ -575,8 +580,11 @@ function eqBuildMyCard(l) {
     ${l.status === 'approved' ? `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>` : ''}
     <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
     <div class="eq-my-actions">
-      ${canRenew ? `<button class="eq-btn eq-btn-primary" onclick="eqRenew('${l.id}')">🔄 تجديد</button>` : ''}
-      ${canDelete ? `<button class="eq-btn eq-btn-danger" onclick="eqDeleteListing('${l.id}')">حذف</button>` : ''}
+      ${canEdit   ? `<button class="eq-btn eq-btn-outline" onclick="eqOpenEdit('${l.id}')">✏️ تعديل</button>` : ''}
+      ${canRenew  ? `<button class="eq-btn eq-btn-primary" onclick="eqRenew('${l.id}')">🔄 تجديد</button>` : ''}
+      ${canPause  ? `<button class="eq-btn eq-btn-ghost"  onclick="eqTogglePause('${l.id}','approved')">⏸ إيقاف</button>` : ''}
+      ${canResume ? `<button class="eq-btn eq-btn-primary" onclick="eqTogglePause('${l.id}','paused')">▶ تفعيل</button>` : ''}
+      <button class="eq-btn eq-btn-danger" onclick="eqDeleteListing('${l.id}','${l.status}')">🗑 حذف</button>
     </div>
   </div>
 </div>`;
@@ -619,11 +627,136 @@ async function eqRenew(id) {
    🗑️ القسم 17: حذف الإعلان (Soft Delete)
    ================================================================ */
 
-async function eqDeleteListing(id) {
-  if (!confirm('هل أنت متأكد من حذف الإعلان؟')) return;
-  const { error } = await eqSb.from('listings').update({ status: 'deleted' }).eq('id', id);
-  if (error) { alert('حدث خطأ في الحذف'); return; }
+async function eqDeleteListing(id, status) {
+  const msg = status === 'approved'
+    ? 'هل أنت متأكد من حذف الإعلان النشط؟ لن يظهر للمستخدمين ولا يمكن التراجع.'
+    : 'هل أنت متأكد من حذف الإعلان؟';
+  if (!confirm(msg)) return;
+  const { error } = await eqSb.from('listings')
+    .update({ status: 'deleted' })
+    .eq('id', id).eq('user_id', eqUser.id);
+  if (error) { alert('حدث خطأ في الحذف: ' + error.message); return; }
   alert('تم حذف الإعلان');
+  eqLoadMyListings();
+}
+
+
+/* ================================================================
+   ✏️ القسم 23: تعديل الإعلان
+   ================================================================ */
+
+function eqOpenEdit(id) {
+  const l = eqMyListings.find(x => x.id === id);
+  if (!l) return;
+
+  document.getElementById('eq-edit-id').value     = id;
+  document.getElementById('eq-edit-orig-status').value = l.status;
+
+  /* ملء قوائم الاختيار */
+  document.getElementById('eq-edit-category').innerHTML =
+    EQ_CATEGORIES.map(c => `<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('');
+
+  document.getElementById('eq-edit-condition').innerHTML =
+    EQ_CONDITIONS.map(c => `<option value="${c.id}"${l.condition===c.id?' selected':''}>${c.label}</option>`).join('');
+
+  document.getElementById('eq-edit-region').innerHTML =
+    EQ_GOVS.map(g => `<option value="${g}"${l.region===g?' selected':''}>${g}</option>`).join('');
+
+  /* ملء الحقول */
+  document.getElementById('eq-edit-title').value       = l.title        || '';
+  document.getElementById('eq-edit-desc').value        = l.description  || '';
+  document.getElementById('eq-edit-price').value       = l.price        || '';
+  document.getElementById('eq-edit-negotiable').checked= !!l.negotiable;
+  document.getElementById('eq-edit-area').value        = l.area         || '';
+  document.getElementById('eq-edit-phone').value       = l.phone        || '';
+  document.getElementById('eq-edit-contact').value     = l.contact_pref || 'both';
+
+  /* ملاحظة حسب الحالة */
+  const note = document.getElementById('eq-edit-note');
+  if (l.status === 'approved' || l.status === 'paused') {
+    note.className = 'eq-edit-note eq-edit-note-info';
+    note.textContent = 'التعديل لن يغيّر حالة الإعلان — سيظل كما هو بعد الحفظ.';
+  } else if (l.status === 'rejected') {
+    note.className = 'eq-edit-note eq-edit-note-warn';
+    note.textContent = 'بعد الحفظ سيُرسل الإعلان للمراجعة مجدداً.';
+  } else {
+    note.className = 'eq-edit-note eq-edit-note-info';
+    note.textContent = 'التعديلات ستُحفظ والإعلان سيبقى قيد المراجعة.';
+  }
+
+  document.getElementById('eq-edit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function eqCloseEdit() {
+  document.getElementById('eq-edit-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function eqSubmitEdit() {
+  const id         = document.getElementById('eq-edit-id').value;
+  const origStatus = document.getElementById('eq-edit-orig-status').value;
+  const title      = document.getElementById('eq-edit-title').value.trim();
+  const desc       = document.getElementById('eq-edit-desc').value.trim();
+  const price      = parseInt(document.getElementById('eq-edit-price').value) || 0;
+  const phone      = document.getElementById('eq-edit-phone').value.trim();
+
+  if (!title)         { alert('من فضلك أدخل عنوان الإعلان');  return; }
+  if (!phone)         { alert('من فضلك أدخل رقم التليفون');   return; }
+  if (!price || price <= 0) { alert('من فضلك أدخل سعراً صحيحاً'); return; }
+
+  /* الإعلانات المرفوضة تعود للمراجعة بعد التعديل */
+  const newStatus = origStatus === 'rejected' ? 'pending' : origStatus;
+
+  const btn = document.getElementById('eq-edit-save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الحفظ…';
+
+  const { error } = await eqSb.from('listings').update({
+    category:     document.getElementById('eq-edit-category').value,
+    title,
+    description:  desc,
+    condition:    document.getElementById('eq-edit-condition').value,
+    price,
+    negotiable:   document.getElementById('eq-edit-negotiable').checked,
+    region:       document.getElementById('eq-edit-region').value,
+    area:         document.getElementById('eq-edit-area').value.trim() || null,
+    phone,
+    contact_pref: document.getElementById('eq-edit-contact').value,
+    status:       newStatus,
+  }).eq('id', id).eq('user_id', eqUser.id);
+
+  btn.disabled = false;
+  btn.textContent = '💾 حفظ التعديلات';
+
+  if (error) { alert('خطأ في الحفظ: ' + error.message); return; }
+
+  eqCloseEdit();
+  alert(origStatus === 'rejected'
+    ? 'تم حفظ التعديلات ✅\nتم إرسال الإعلان للمراجعة مجدداً.'
+    : 'تم حفظ التعديلات بنجاح ✅');
+  eqLoadMyListings();
+}
+
+
+/* ================================================================
+   ⏸ القسم 24: إيقاف / تفعيل الإعلان
+   ================================================================ */
+
+async function eqTogglePause(id, currentStatus) {
+  const pausing  = currentStatus === 'approved';
+  const newStatus = pausing ? 'paused' : 'approved';
+  const msg = pausing
+    ? 'هل تريد إيقاف الإعلان مؤقتاً؟ لن يظهر للمستخدمين حتى تعيد تفعيله.'
+    : 'هل تريد إعادة تفعيل الإعلان؟ سيظهر للمستخدمين فوراً.';
+  if (!confirm(msg)) return;
+
+  const { error } = await eqSb.from('listings')
+    .update({ status: newStatus })
+    .eq('id', id).eq('user_id', eqUser.id);
+
+  if (error) { alert('حدث خطأ: ' + error.message); return; }
+  alert(pausing ? 'تم إيقاف الإعلان مؤقتاً ⏸' : 'تم تفعيل الإعلان بنجاح ✅');
   eqLoadMyListings();
 }
 
@@ -660,6 +793,7 @@ document.addEventListener('click', e => {
   if (e.target.id === 'eq-report-modal') eqCloseReport();
   if (e.target.id === 'eq-my-modal')     eqCloseMyListings();
   if (e.target.id === 'eq-fav-modal')    eqCloseFavorites();
+  if (e.target.id === 'eq-edit-modal')   eqCloseEdit();
 });
 
 
