@@ -75,15 +75,19 @@
     </button>
 
     <button class="nav-section-btn" id="nsb-bazaars" onclick="showPage('bazaars')">
-      <span class="nsb-icon">🏪</span>
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20"/><path d="M5 7 7 3h10l2 4"/><path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/><path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/><rect x="9" y="14" width="6" height="7"/></svg>
+      </span>
       <span class="nsb-text">
         <strong>البازارات</strong>
         <small>اشترك في بازار مؤقت</small>
       </span>
     </button>
 
-    <a class="nav-section-btn nav-section-orange" href="/market/">
-      <span class="nsb-icon">🛍️</span>
+    <a class="nav-section-btn" href="/market/">
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      </span>
       <span class="nsb-text">
         <strong>مشاريع للبيع</strong>
         <small>دور على مشروع تشتريه</small>
@@ -207,36 +211,15 @@
     <div class="bz-home-section-bg"></div>
     <div class="bz-home-section-inner">
 
-      <!-- ── ثلاثة مسارات سريعة ── -->
-      <div class="qp-row">
-
-        <button class="qp-card qp-spaces" onclick="scrollToSearch()">
-          <span class="qp-icon">◈</span>
-          <span class="qp-info">
-            <strong>ابدأ على طول</strong>
-            <span>اختار مساحتك من بين مئات المساحات المتاحة في المولات</span>
-          </span>
-          <span class="qp-arr">←</span>
-        </button>
-
-        <button class="qp-card qp-bazaar" onclick="showPage('bazaars')">
-          <span class="qp-icon">🏪</span>
-          <span class="qp-info">
-            <strong>اشترك في بازار مؤقت</strong>
-            <span>جرّب مشروعك أسبوع أو موسم — بدون التزام طويل</span>
-          </span>
-          <span class="qp-arr">←</span>
-        </button>
-
-        <a class="qp-card qp-market" href="/market/">
-          <span class="qp-icon">🛍️</span>
-          <span class="qp-info">
-            <strong>مشاريع كاملة للبيع</strong>
-            <span>ابحث عن مشروعك أو انشر مشروعك — <em>مجاناً بدون عمولة</em></span>
-          </span>
-          <span class="qp-arr">←</span>
-        </a>
-
+      <!-- ── شرح البازارات ── -->
+      <div class="bz-home-intro">
+        <div class="bz-home-intro-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20"/><path d="M5 7 7 3h10l2 4"/><path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/><path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/><rect x="9" y="14" width="6" height="7"/></svg>
+        </div>
+        <div class="bz-home-intro-text">
+          <strong>البازارات — جرّب مشروعك بدون التزام</strong>
+          <p>البازار هو حدث مؤقت منظّم داخل مول أو نادي — بيجمع تجار صغار لأسبوع أو موسم. اشترك في بازار، احجز مكانك من الخريطة، وابدأ البيع من أول يوم. مفيش إيجار شهري ولا التزام طويل.</p>
+        </div>
       </div>
 
       <!-- ── قسم البازارات القادمة ── -->
@@ -390,7 +373,7 @@
         <!-- مسار ١: المساحات -->
         <div class="path-card path-anim" style="--pd:0ms">
           <div class="path-pill">عندك منتج أو مشروع صغير</div>
-          <div class="path-icon-wrap">◈</div>
+          <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
           <h3 class="path-title">ابحث عن مساحة ثابتة</h3>
           <ul class="path-steps">
             <li>فلتر بالنشاط والمنطقة والسعر</li>
@@ -408,7 +391,7 @@
         <!-- مسار ٢: البازارات -->
         <div class="path-card path-anim" style="--pd:260ms">
           <div class="path-pill">عايز تجرّب الفكرة الأول</div>
-          <div class="path-icon-wrap">🏪</div>
+          <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20"/><path d="M5 7 7 3h10l2 4"/><path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/><path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/><rect x="9" y="14" width="6" height="7"/></svg></div>
           <h3 class="path-title">اشترك في بازار مؤقت</h3>
           <ul class="path-steps">
             <li>أسبوع أو موسم — بدون التزام طويل</li>
@@ -426,14 +409,14 @@
         <!-- مسار ٣: مشاريع للبيع -->
         <div class="path-card path-card-hl path-anim" style="--pd:460ms">
           <div class="path-pill path-pill-org">عايز تبدأ بسرعة</div>
-          <div class="path-icon-wrap">🛍️</div>
+          <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg></div>
           <h3 class="path-title">ابحث عن مشروع جاهز</h3>
           <ul class="path-steps">
             <li>تصفح مشاريع كاملة — بارتيشن، كافيه، كيوسك وأكتر</li>
             <li>أدوات بيع ذاتي أو مشاريع جاهزة بأسعار متنوعة</li>
             <li>أو انشر مشروعك مجاناً بدون أي عمولة</li>
           </ul>
-          <a class="path-btn path-btn-org" href="/market/">تصفح المشاريع ←</a>
+          <a class="path-btn" href="/market/">تصفح المشاريع ←</a>
         </div>
 
       </div><!-- end path-grid -->

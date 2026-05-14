@@ -120,7 +120,7 @@ function eqRenderNavUser() {
     const initial = (eqUser.email || '?')[0].toUpperCase();
     const email   = eqUser.email || '';
     area.innerHTML = `
-      <a class="eq-nav-link" href="/">رجوع للمنصة</a>
+      <a class="eq-back-btn" href="/">← رجوع للمنصة</a>
       <div class="eq-notif-wrap" id="eq-notif-wrap">
         <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
           🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
@@ -153,7 +153,7 @@ function eqRenderNavUser() {
     eqLoadNotifications();
   } else {
     area.innerHTML = `
-      <a class="eq-nav-link" href="/">رجوع للمنصة</a>
+      <a class="eq-back-btn" href="/">← رجوع للمنصة</a>
       <a class="eq-btn eq-btn-outline" href="/">دخول / تسجيل</a>`;
   }
 }
