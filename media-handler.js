@@ -6,11 +6,12 @@
    يُستدعى من post-ad.html
    ================================================================ */
 
-const UPLOAD_ENDPOINT = '/upload';
-const R2_PUBLIC_BASE  = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
-const MAX_W    = 1200;
-const MAX_H    = 1200;
-const QUALITY  = 0.75;   // JPEG 75%
+const UPLOAD_ENDPOINT  = '/upload';
+const R2_PUBLIC_BASE   = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
+const MAX_W            = 1280;
+const MAX_H            = 1280;
+const QUALITY          = 0.82;
+const MAX_FILE_BYTES   = 20 * 1024 * 1024; // 20MB — حد رفض قبل الضغط
 
 /**
  * يضغط صورة واحدة عبر Canvas ويُرجع Blob
@@ -18,6 +19,9 @@ const QUALITY  = 0.75;   // JPEG 75%
  * @returns {Promise<Blob>}
  */
 function compressImage(file) {
+  if (file.size > MAX_FILE_BYTES) {
+    return Promise.reject(new Error(`حجم الصورة كبير جداً (${(file.size/1024/1024).toFixed(1)} MB) — الحد الأقصى 20 MB`));
+  }
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -33,10 +37,12 @@ function compressImage(file) {
       canvas.width  = width;
       canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      // صور صغيرة أصلاً (< 300KB) نستخدم جودة أعلى
+      const q = file.size < 300 * 1024 ? 0.92 : QUALITY;
       canvas.toBlob(
         blob => blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة')),
         'image/jpeg',
-        QUALITY
+        q
       );
     };
     img.onerror = () => reject(new Error('فشل قراءة الصورة'));
