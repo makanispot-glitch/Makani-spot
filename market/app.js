@@ -301,7 +301,7 @@ function eqBuildCard(listing) {
   const nego   = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
   const feat   = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
   const imgHtml = img
-    ? `<img src="${img}" alt="${listing.title}" loading="lazy" onerror="this.style.display='none'">`
+    ? `<img src="${img}" alt="${listing.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'eq-card-no-img\\'>📦</div>'">`
     : `<div class="eq-card-no-img">📦</div>`;
   const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
 
@@ -384,7 +384,7 @@ async function eqOpenDetail(id) {
 
   eqIncrementView(id);
 
-  const imgs   = [listing.cover_image, ...(listing.images || [])].filter(Boolean);
+  const imgs   = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
   const cond   = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
   const cat    = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
   const price  = Number(listing.price).toLocaleString('ar-EG');
@@ -689,7 +689,7 @@ async function eqOpenFavorites() {
 
   const cont = document.getElementById('eq-fav-body');
   if (eqFavorites.size === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p><a class="eq-btn eq-btn-primary" href="/market/">تصفح السوق</a></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>لا توجد مشاريع مفضلة</p><a class="eq-btn eq-btn-primary" href="/market/">تصفح المشاريع</a></div>`;
     return;
   }
 
