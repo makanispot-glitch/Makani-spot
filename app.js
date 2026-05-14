@@ -123,7 +123,30 @@ document.addEventListener('DOMContentLoaded', function () {
   if (urlPage && ['home','bazaars','how','owner'].includes(urlPage)) {
     showPage(urlPage);
   }
+
+  // تشغيل animation المسارات عند الظهور في الشاشة
+  initPathAnimation();
 });
+
+/* ================================================================
+   ✨ Animation: ظهور بطاقات المسارات عند التمرير
+   ================================================================ */
+function initPathAnimation() {
+  if (!window.IntersectionObserver) {
+    /* fallback للمتصفحات القديمة: أظهر الكل فوراً */
+    document.querySelectorAll('.path-anim').forEach(el => el.classList.add('path-in'));
+    return;
+  }
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('path-in');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.path-anim').forEach(el => obs.observe(el));
+}
 
 
 /* ================================================================
