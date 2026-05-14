@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="سوق التجهيزات — مكاني Spot. شراء وبيع التجهيزات التجارية المستعملة في مصر بأفضل الأسعار.">
-<title>سوق التجهيزات — مكاني Spot</title>
+<meta name="description" content="مشاريع كاملة للبيع — مكاني Spot. تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار.">
+<title>مشاريع كاملة للبيع — مكاني Spot</title>
 <link rel="icon" type="image/jpeg" href="../favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,7 +60,7 @@
 .eq-account-chevron { font-size: 10px; color: var(--ink3); transition: transform .2s; }
 .eq-account-wrap.open .eq-account-chevron { transform: rotate(180deg); }
 .eq-account-dropdown {
-  display: none; position: absolute; top: calc(100% + 8px); left: 0;
+  display: none; position: absolute; top: calc(100% + 8px); right: 0;
   background: #fff; border: 1px solid var(--border);
   border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
   min-width: 200px; overflow: hidden; z-index: 300;
@@ -393,6 +393,17 @@
   .eq-card-img, .eq-card-no-img { height: 150px; }
   .eq-detail-main-img { height: 220px; }
   .eq-fab { bottom: 20px; left: 20px; }
+  /* إخفاء tooltip على الموبايل (لا يعمل hover على اللمس) */
+  .eq-fab-tooltip { display: none; }
+  /* لوحة الإشعارات: منع الخروج عن حدود الشاشة */
+  .eq-notif-panel { left: auto; right: 0; transform: none; width: 290px; }
+  /* تحسين فلاتر الموبايل */
+  .eq-sub-filters { gap: 8px; }
+  .eq-sub-filters select { flex: 1; min-width: 0; }
+  .eq-price-wrap { width: 100%; }
+  .eq-price-wrap input[type=range] { flex: 1; }
+  /* dropdown الحساب */
+  .eq-account-dropdown { right: 0; left: auto; max-width: calc(100vw - 32px); }
 }
 
 /* ── Quick Links Bar ── */
@@ -479,16 +490,16 @@
       <span class="logo-en">Spot</span>
     </div>
   </a>
-  <span class="eq-nav-title">سوق التجهيزات</span>
+  <span class="eq-nav-title">مشاريع كاملة للبيع</span>
   <div id="eq-nav-user"></div>
 </nav>
 
 <!-- ── Hero ── -->
 <section class="eq-hero">
-  <h1>سوق <span>التجهيزات التجارية</span></h1>
-  <p>شراء وبيع التجهيزات المستعملة بأفضل الأسعار — مجاناً وبدون عمولة</p>
+  <h1>مشاريع <span>كاملة للبيع</span></h1>
+  <p>تصفح وبيع المشاريع التجارية الجاهزة بأفضل الأسعار — مجاناً وبدون عمولة</p>
   <div class="eq-search-wrap">
-    <input type="text" id="eq-search" placeholder="ابحث عن تجهيزة أو منطقة…">
+    <input type="text" id="eq-search" placeholder="ابحث عن مشروع أو منطقة…">
     <span class="eq-search-icon">🔍</span>
   </div>
 </section>
