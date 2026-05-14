@@ -52,15 +52,21 @@ export async function onRequestPost(context) {
   }
 
   /* 4. حماية من Path Traversal */
-  if (path.includes('..') || path.startsWith('/') || !/^[\w\-/]+\.jpg$/.test(path)) {
+  if (path.includes('..') || path.startsWith('/') || !/^[\w\-/]+\.jpe?g$/.test(path)) {
     return fail(400, 'مسار غير مسموح به');
   }
 
-  /* 5. ارفع لـ R2 */
+  /* 5. حد أقصى للحجم بعد الضغط (5MB — حماية من تجاوز الـ R2 free tier) */
+  if (file.size > 5 * 1024 * 1024) {
+    return fail(413, 'حجم الصورة بعد الضغط كبير جداً — الحد الأقصى 5 MB');
+  }
+
+  /* 6. ارفع لـ R2 */
   try {
-    const buffer = await file.arrayBuffer();
+    const buffer      = await file.arrayBuffer();
+    const contentType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/jpeg';
     await bucket.put(path, buffer, {
-      httpMetadata: { contentType: 'image/jpeg' },
+      httpMetadata: { contentType },
     });
     const url = `${R2_PUBLIC_BASE}/${path}`;
     return ok({ url });

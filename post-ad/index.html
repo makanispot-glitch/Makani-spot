@@ -322,7 +322,7 @@ body { background: var(--surface2); }
            ondrop="paHandleDrop(event)">
         <div class="pa-upload-icon">📷</div>
         <div class="pa-upload-text">اضغط لاختيار الصور أو اسحبها هنا</div>
-        <div class="pa-upload-hint">حتى 8 صور — JPG أو PNG — يُفضّل على الأقل صورة واحدة واضحة</div>
+        <div class="pa-upload-hint">حتى 8 صور — JPG أو PNG — يُضغط تلقائياً · الحد الأقصى 20 MB للصورة</div>
       </div>
       <input type="file" id="pa-file-input" accept="image/*" multiple onchange="paHandleFiles(this.files)">
 
@@ -527,7 +527,16 @@ async function paNextStep(from) {
 
 /* ── Image Handling ── */
 function paHandleFiles(fileList) {
-  const newFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  const MAX_FILE_MB = 20;
+  const newFiles = Array.from(fileList).filter(f => {
+    if (!f.type.startsWith('image/')) return false;
+    if (f.size > MAX_FILE_MB * 1024 * 1024) {
+      alert(`الصورة "${f.name}" حجمها ${(f.size/1024/1024).toFixed(1)} MB — الحد الأقصى ${MAX_FILE_MB} MB`);
+      return false;
+    }
+    return true;
+  });
+  if (newFiles.length === 0) return;
   const total = paFiles.length + newFiles.length;
   if (total > 8) {
     alert('الحد الأقصى 8 صور');
