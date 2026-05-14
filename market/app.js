@@ -69,13 +69,25 @@ let eqFavorites     = new Set();
 let eqNotifications = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  eqSb = supabase.createClient(EQ_SUPABASE_URL, EQ_SUPABASE_KEY);
-  await eqInitAuth();
-  await eqLoadFavorites();
-  eqBuildCategoryTabs();
-  await eqLoadListings();
-  eqBindSearch();
-  eqRunLifecycle();
+  eqShowLoading();
+
+  /* بعض المتصفحات (Brave، Firefox+uBlock) تحجب CDN أو Supabase */
+  if (typeof supabase === 'undefined') {
+    eqShowError('يبدو أن المتصفح يحجب خدمات الموقع. جرّب تعطيل حاجب الإعلانات على هذه الصفحة ثم أعد التحميل.');
+    return;
+  }
+
+  try {
+    eqSb = supabase.createClient(EQ_SUPABASE_URL, EQ_SUPABASE_KEY);
+    await eqInitAuth();
+    await eqLoadFavorites();
+    eqBuildCategoryTabs();
+    await eqLoadListings();
+    eqBindSearch();
+    eqRunLifecycle();
+  } catch (e) {
+    eqShowError('حدث خطأ في تحميل الصفحة. حاول إعادة التحميل.');
+  }
 });
 
 
