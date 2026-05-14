@@ -119,7 +119,8 @@ body {
   border-color: var(--orange);
   background: var(--orange-ultra);
 }
-.nsb-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+.nsb-icon { font-size: 18px; flex-shrink: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.nsb-icon svg { width: 20px; height: 20px; display: block; }
 .nsb-text { display: flex; flex-direction: column; line-height: 1.25; text-align: right; }
 .nsb-text strong { font-size: 13px; font-weight: 800; color: var(--dark); white-space: nowrap; }
 .nsb-text small  { font-size: 10px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
@@ -2812,6 +2813,24 @@ footer {
 /* ══════════════════════════════════════════════════════════════
    ⚡ المسارات السريعة الثلاثة (فوق الفلتر)
    ══════════════════════════════════════════════════════════════ */
+/* بطاقة شرح البازارات */
+.bz-home-intro {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 16px 18px;
+  margin-bottom: 18px;
+}
+.bz-home-intro-icon {
+  flex-shrink: 0; width: 40px; height: 40px;
+  background: var(--orange-ultra); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--orange);
+}
+.bz-home-intro-icon svg { width: 22px; height: 22px; display: block; }
+.bz-home-intro-text { flex: 1; min-width: 0; }
+.bz-home-intro-text strong { display: block; font-size: 14px; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+.bz-home-intro-text p { font-size: 12.5px; color: var(--ink2); line-height: 1.65; margin: 0; }
+
 .qp-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2885,7 +2904,8 @@ footer {
 .path-pill-org { background: rgba(255,107,0,0.15); color: var(--orange); }
 
 /* الأيقونة الكبيرة */
-.path-icon-wrap { font-size: 34px; margin-bottom: 14px; line-height: 1; }
+.path-icon-wrap { font-size: 34px; margin-bottom: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.path-icon-wrap svg { width: 38px; height: 38px; display: block; }
 
 /* العنوان */
 .path-title { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 16px; line-height: 1.35; }
@@ -3765,6 +3785,8 @@ footer {
   .bz-bp-header { flex-wrap: wrap; gap: 10px; }
   .bz-home-section { margin-top: -34px; padding: 0 12px; }
   .bz-home-section-inner { padding: 14px; border-radius: var(--radius-lg); }
+  .bz-home-intro { flex-direction: column; gap: 10px; }
+  .bz-home-intro-icon { width: 36px; height: 36px; border-radius: 8px; }
   .bz-home-sec-title { font-size: 22px; }
   .bz-home-sec-head { flex-direction: column; align-items: flex-start; }
   .bz-home-see-all { align-self: flex-start; }
