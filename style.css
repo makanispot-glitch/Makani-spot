@@ -1445,6 +1445,15 @@ footer {
 
 /* ── 768px: Navbar + Bottom Nav ── */
 @media (max-width: 768px) {
+  /* Path grid — تابلت وموبايل */
+  .path-grid { grid-template-columns: 1fr; gap: 14px; }
+  .path-sep { display: none; }
+  .path-card { padding: 24px 20px; }
+  .path-icon-wrap svg { width: 32px; height: 32px; }
+  .how-section { padding: 40px 16px 52px; }
+  .how-head { margin-bottom: 28px; }
+  .how-title { font-size: 22px; }
+
   /* Navbar */
   .nav { padding: 0 16px; height: 60px; }
   .logo-ar { font-size: 16px; }
@@ -2890,7 +2899,7 @@ footer {
 }
 .path-card.path-in { opacity: 1; transform: translateY(0); transition: opacity 0.55s ease var(--pd,0ms), transform 0.55s ease var(--pd,0ms), border-color 0.22s, background 0.22s; }
 .path-card:hover { border-color: rgba(255,107,0,0.28); background: rgba(255,107,0,0.05); }
-.path-card-hl { border-color: rgba(255,107,0,0.22); background: rgba(255,107,0,0.07); }
+.path-card-hl:hover { border-color: rgba(255,107,0,0.35); background: rgba(255,107,0,0.08); }
 
 /* الشارة */
 .path-pill {
@@ -3143,7 +3152,7 @@ footer {
 .bz-page-body {
   max-width: 100%;
   padding: 28px 28px 60px;
-  background: var(--surface);
+  background: #111;
 }
 .bz-page-body-inner {
   max-width: 1200px;
