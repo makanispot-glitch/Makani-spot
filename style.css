@@ -95,7 +95,46 @@ body {
 .nav-links a:hover { background: var(--orange-ultra); color: var(--orange); }
 .nav-links a.active { background: var(--orange-ultra); color: var(--orange); font-weight: 700; }
 
-/* منطقة المستخدم */
+/* فاصل بين الروابط الثانوية والأقسام الرئيسية */
+.nav-divider { width: 1px; height: 32px; background: var(--border); margin: 0 8px; flex-shrink: 0; }
+
+/* أزرار الأقسام الثلاثة الرئيسية */
+.nav-section-btn {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 13px; border-radius: 12px;
+  text-decoration: none; cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.nav-section-btn:hover {
+  border-color: var(--orange);
+  background: var(--orange-ultra);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(255,107,0,0.12);
+}
+.nav-section-btn.active {
+  border-color: var(--orange);
+  background: var(--orange-ultra);
+}
+.nsb-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+.nsb-text { display: flex; flex-direction: column; line-height: 1.25; text-align: right; }
+.nsb-text strong { font-size: 13px; font-weight: 800; color: var(--dark); white-space: nowrap; }
+.nsb-text small  { font-size: 10px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
+.nav-section-btn:hover .nsb-text strong,
+.nav-section-btn.active .nsb-text strong { color: var(--orange); }
+.nav-section-btn:hover .nsb-text small,
+.nav-section-btn.active .nsb-text small  { color: var(--orange); opacity: 0.75; }
+
+/* مشاريع للبيع — برتقالي مميز دائماً */
+.nav-section-orange { border-color: rgba(255,107,0,0.3); background: var(--orange-ultra); }
+.nav-section-orange .nsb-text strong { color: var(--orange); }
+.nav-section-orange .nsb-text small  { color: rgba(255,107,0,0.7); }
+.nav-section-orange:hover { background: var(--orange-pale); border-color: var(--orange); }
+
+
 .nav-user-area {
   position: relative;
   display: flex; align-items: center; gap: 8px;

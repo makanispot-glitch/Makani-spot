@@ -57,12 +57,39 @@
 
   <!-- روابط التنقل (تختفي على الموبايل) -->
   <div class="nav-links">
-    <a class="active" onclick="showPage('home')">استكشف مكاني Spot</a>
+
+    <!-- روابط ثانوية -->
+    <a class="active" onclick="showPage('home')">الرئيسية</a>
     <a onclick="showPage('how')">إزاي بيشتغل؟</a>
-    <a onclick="showPage('owner')">عندك مساحة فاضية؟</a>
-    <a onclick="goToMarketplace()">كل المساحات</a>
-    <a onclick="showPage('bazaars')">البازارات</a>
-    <a href="/market/" style="color:var(--orange);font-weight:700;background:var(--orange-ultra);border-radius:var(--radius);padding:8px 14px;display:inline-flex;align-items:center;gap:6px">مشاريع كاملة للبيع</a>
+    <a onclick="showPage('owner')">عندك مساحة؟</a>
+
+    <div class="nav-divider"></div>
+
+    <!-- الأقسام الثلاثة الرئيسية -->
+    <button class="nav-section-btn" id="nsb-spaces" onclick="goToMarketplace()">
+      <span class="nsb-icon">◈</span>
+      <span class="nsb-text">
+        <strong>كل المساحات</strong>
+        <small>ابحث عن مساحة لمشروعك</small>
+      </span>
+    </button>
+
+    <button class="nav-section-btn" id="nsb-bazaars" onclick="showPage('bazaars')">
+      <span class="nsb-icon">🏪</span>
+      <span class="nsb-text">
+        <strong>البازارات</strong>
+        <small>اشترك في بازار مؤقت</small>
+      </span>
+    </button>
+
+    <a class="nav-section-btn nav-section-orange" href="/market/">
+      <span class="nsb-icon">🛍️</span>
+      <span class="nsb-text">
+        <strong>مشاريع للبيع</strong>
+        <small>دور على مشروع تشتريه</small>
+      </span>
+    </a>
+
   </div>
   
   <!-- منطقة المستخدم — تتغير حسب حالة تسجيل الدخول -->
@@ -1490,9 +1517,9 @@
     <span class="bn-icon">❓</span>
     <span class="bn-label">كيف؟</span>
   </button>
-  <a class="bn-item bn-item-market" href="/market/" style="text-decoration:none;flex-direction:row;gap:5px;padding:5px 10px;background:rgba(255,107,0,0.09);border:1px solid rgba(255,107,0,0.22);border-radius:12px;flex:none;min-height:auto;min-width:0;align-self:center">
-    <span style="font-size:16px;line-height:1;flex-shrink:0">🛒</span>
-    <span style="font-size:10px;font-weight:800;color:var(--orange);white-space:nowrap;line-height:1.25">سوق<br>مستعمل</span>
+  <a class="bn-item" href="/market/" style="text-decoration:none">
+    <span class="bn-icon">🛍️</span>
+    <span class="bn-label" style="color:var(--orange);font-weight:800">مشاريع</span>
   </a>
   <button class="bn-item" id="bn-user" onclick="handleBnUser()">
     <span class="bn-icon" id="bn-user-icon">👤</span>
