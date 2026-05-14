@@ -117,6 +117,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // تهيئة مؤشر السعر في الصفحة الرئيسية
   initPriceSlider();
+
+  // التنقل المباشر عبر URL parameter: /?p=bazaars أو /?p=home
+  const urlPage = new URLSearchParams(window.location.search).get('p');
+  if (urlPage && ['home','bazaars','how','owner'].includes(urlPage)) {
+    showPage(urlPage);
+  }
 });
 
 
