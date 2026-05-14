@@ -504,7 +504,7 @@ async function doLogout() {
   ownerTenants   = [];
   ownerContracts = [];
   document.getElementById('app').classList.remove('visible');
-  window.location.href = 'index.html';
+  window.location.href = '/';
 }
 
 /* ══════════════════════════════════════════
