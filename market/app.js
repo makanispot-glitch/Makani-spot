@@ -471,16 +471,16 @@ async function eqIncrementView(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
   listing.view_count = (listing.view_count || 0) + 1;
-  /* RPC يجاوز RLS — يتطلب دالة increment_view_count في Supabase */
-  await eqSb.rpc('increment_view_count', { listing_id: id }).catch(() => null);
+  const { error } = await eqSb.rpc('increment_view_count', { listing_id: id });
+  if (error) console.warn('[view_count RPC]', error.message);
 }
 
 async function eqIncrementContact(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
   listing.contact_count = (listing.contact_count || 0) + 1;
-  /* RPC يجاوز RLS — يتطلب دالة increment_contact_count في Supabase */
-  await eqSb.rpc('increment_contact_count', { listing_id: id }).catch(() => null);
+  const { error } = await eqSb.rpc('increment_contact_count', { listing_id: id });
+  if (error) console.warn('[contact_count RPC]', error.message);
 }
 
 
@@ -531,7 +531,12 @@ async function eqLoadMyListings() {
     .neq('status', 'deleted')
     .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error('[eqLoadMyListings]', error);
+    document.getElementById('eq-my-listings').innerHTML =
+      `<div class="eq-empty"><p>حدث خطأ في تحميل الإعلانات: ${error.message}</p></div>`;
+    return;
+  }
 
   const cont = document.getElementById('eq-my-listings');
   if (!cont) return;
