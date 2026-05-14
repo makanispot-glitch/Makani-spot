@@ -3152,7 +3152,7 @@ footer {
 .bz-page-body {
   max-width: 100%;
   padding: 28px 28px 60px;
-  background: #111;
+  background: var(--surface);
 }
 .bz-page-body-inner {
   max-width: 1200px;
