@@ -1372,12 +1372,13 @@ function showPage(p) {
 
   // تحديث الرابط النشط في الـ Nav
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
   const links = document.querySelectorAll('.nav-links a');
   if (p === 'home')    links[0]?.classList.add('active');
   if (p === 'how')     links[1]?.classList.add('active');
   if (p === 'owner')   links[2]?.classList.add('active');
-  if (p === 'market')  links[3]?.classList.add('active');
-  if (p === 'bazaars') links[4]?.classList.add('active');
+  if (p === 'market')  document.getElementById('nsb-spaces')?.classList.add('active');
+  if (p === 'bazaars') document.getElementById('nsb-bazaars')?.classList.add('active');
 
   // لو فتحنا الماركت بليس
   if (p === 'market') {
