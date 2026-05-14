@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="سوق المعدات — مكاني Spot. شراء وبيع المعدات التجارية المستعملة في مصر.">
-<title>سوق المعدات — مكاني Spot</title>
+<meta name="description" content="سوق التجهيزات — مكاني Spot. شراء وبيع التجهيزات التجارية المستعملة في مصر بأفضل الأسعار.">
+<title>سوق التجهيزات — مكاني Spot</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -395,6 +395,30 @@
   .eq-fab { bottom: 20px; left: 20px; }
 }
 
+/* ── Quick Links Bar ── */
+.eq-quick-links {
+  display: flex; gap: 12px; padding: 14px 32px;
+  background: #fff; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.eq-quick-link {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1; min-width: 240px; padding: 14px 18px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 12px; text-decoration: none; color: var(--ink1);
+  transition: all .2s;
+}
+.eq-quick-link:hover { border-color: var(--orange); background: var(--orange-ultra); }
+.eq-ql-icon { font-size: 22px; color: var(--orange); flex-shrink: 0; }
+.eq-ql-text { flex: 1; }
+.eq-ql-text strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+.eq-ql-text small { font-size: 12px; color: var(--ink3); }
+.eq-ql-arrow { font-size: 18px; color: var(--orange); font-weight: 900; }
+@media (max-width: 768px) {
+  .eq-quick-links { padding: 12px 16px; }
+  .eq-quick-link { min-width: 100%; }
+}
+
 /* ── Favorite Button on Card ── */
 .eq-fav-btn {
   position: absolute; top: 8px; right: 8px; z-index: 2;
@@ -455,19 +479,39 @@
       <span class="logo-en">Spot</span>
     </div>
   </a>
-  <span class="eq-nav-title">🛒 سوق المعدات</span>
+  <span class="eq-nav-title">سوق التجهيزات</span>
   <div id="eq-nav-user"></div>
 </nav>
 
 <!-- ── Hero ── -->
 <section class="eq-hero">
-  <h1>سوق <span>المعدات التجارية</span></h1>
-  <p>شراء وبيع المعدات المستعملة بأفضل الأسعار — مجاناً وبدون عمولة</p>
+  <h1>سوق <span>التجهيزات التجارية</span></h1>
+  <p>شراء وبيع التجهيزات المستعملة بأفضل الأسعار — مجاناً وبدون عمولة</p>
   <div class="eq-search-wrap">
-    <input type="text" id="eq-search" placeholder="ابحث عن معدة أو منطقة…">
+    <input type="text" id="eq-search" placeholder="ابحث عن تجهيزة أو منطقة…">
     <span class="eq-search-icon">🔍</span>
   </div>
 </section>
+
+<!-- ── Quick Links ── -->
+<div class="eq-quick-links">
+  <a class="eq-quick-link" href="catalog.html">
+    <span class="eq-ql-icon">◈</span>
+    <span class="eq-ql-text">
+      <strong>تصفح المساحات التجارية</strong>
+      <small>ابحث عن موقع مناسب لمشروعك</small>
+    </span>
+    <span class="eq-ql-arrow">←</span>
+  </a>
+  <a class="eq-quick-link" href="index.html#bazaars">
+    <span class="eq-ql-icon">◈</span>
+    <span class="eq-ql-text">
+      <strong>البازارات والمعارض المؤقتة</strong>
+      <small>اشترك في بازار قريب منك</small>
+    </span>
+    <span class="eq-ql-arrow">←</span>
+  </a>
+</div>
 
 <!-- ── Filters ── -->
 <div class="eq-filters-bar">
@@ -510,7 +554,7 @@
 <!-- ── Report Modal ── -->
 <div class="eq-report-overlay" id="eq-report-modal">
   <div class="eq-report-box">
-    <h3>🚩 إبلاغ عن إعلان</h3>
+    <h3>إبلاغ عن إعلان</h3>
     <input type="hidden" id="eq-report-id">
     <textarea id="eq-report-reason" placeholder="اكتب سبب الإبلاغ…"></textarea>
     <div class="eq-report-actions">
@@ -524,7 +568,7 @@
 <div class="eq-my-overlay" id="eq-my-modal">
   <div class="eq-my-box">
     <div class="eq-my-header">
-      <h2>📋 إعلاناتي</h2>
+      <h2>إعلاناتي</h2>
       <button class="eq-my-close" onclick="eqCloseMyListings()">✕</button>
     </div>
     <div class="eq-my-list" id="eq-my-listings">
@@ -537,7 +581,7 @@
 <div class="eq-my-overlay" id="eq-fav-modal">
   <div class="eq-my-box">
     <div class="eq-my-header">
-      <h2>⭐ المفضلة</h2>
+      <h2>المفضلة</h2>
       <button class="eq-my-close" onclick="eqCloseFavorites()">✕</button>
     </div>
     <div class="eq-my-list" id="eq-fav-body">

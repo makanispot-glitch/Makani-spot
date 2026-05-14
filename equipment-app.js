@@ -18,11 +18,14 @@ const R2_PUBLIC       = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
 
 const EQ_CATEGORIES = [
   { id: 'partition',   label: 'بارتشن وأثاث' },
-  { id: 'food-cart',   label: 'عربية أكل' },
+  { id: 'food-cart',   label: 'عربات طعام' },
   { id: 'fridge',      label: 'ثلاجات وتبريد' },
   { id: 'display',     label: 'ڤيترينات وعرض' },
   { id: 'kitchen',     label: 'معدات مطبخ' },
+  { id: 'coffee',      label: 'معدات كافيه' },
   { id: 'pos',         label: 'كاشير وPOS' },
+  { id: 'vending',     label: 'أجهزة بيع ذاتي' },
+  { id: 'storage',     label: 'رفوف وتخزين' },
   { id: 'lighting',    label: 'إضاءة تجارية' },
   { id: 'other',       label: 'أخرى' },
 ];
@@ -124,14 +127,14 @@ function eqRenderNavUser() {
         <div class="eq-account-dropdown">
           <div class="eq-account-email">${email}</div>
           <button class="eq-account-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
-            📋 إعلاناتي
+            إعلاناتي
           </button>
           <button class="eq-account-item" onclick="eqOpenFavorites()">
-            ⭐ المفضلة
+            المفضلة
           </button>
           <div class="eq-account-divider"></div>
           <button class="eq-account-item danger" onclick="eqSignOut()">
-            🚪 خروج
+            خروج
           </button>
         </div>
       </div>`;
@@ -738,7 +741,7 @@ async function eqLoadNotifications() {
   const { data } = await eqSb
     .from('notifications')
     .select('*')
-    .eq('user_id', eqUser.id)
+    .eq('owner_id', eqUser.id.toString())
     .order('created_at', { ascending: false })
     .limit(30);
   eqNotifications = data || [];
@@ -793,7 +796,8 @@ function eqRenderNotifications() {
 async function eqMarkNotifsRead() {
   const unreadIds = eqNotifications.filter(n => !n.is_read).map(n => n.id);
   if (unreadIds.length === 0) return;
-  await eqSb.from('notifications').update({ is_read: true }).in('id', unreadIds);
+  await eqSb.from('notifications').update({ is_read: true })
+    .in('id', unreadIds).eq('owner_id', eqUser.id.toString());
   eqNotifications.forEach(n => { n.is_read = true; });
   eqUpdateNotifBadge();
 }
