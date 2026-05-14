@@ -155,7 +155,7 @@ function eqRenderNavUser() {
   } else {
     area.innerHTML = `
       <a class="eq-back-btn" href="/">← رجوع للمنصة</a>
-      <a class="eq-btn eq-btn-outline" href="/">دخول / تسجيل</a>`;
+      <a class="eq-btn eq-btn-outline" href="/?p=login">دخول / تسجيل</a>`;
   }
 }
 

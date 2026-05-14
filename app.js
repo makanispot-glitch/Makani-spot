@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // التنقل المباشر عبر URL parameter: /?p=bazaars أو /?p=home
   const urlPage = new URLSearchParams(window.location.search).get('p');
-  if (urlPage && ['home','bazaars','how','owner'].includes(urlPage)) {
+  if (urlPage && ['home','bazaars','how','owner','login','signup'].includes(urlPage)) {
     showPage(urlPage);
   }
 
