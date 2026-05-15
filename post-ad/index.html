@@ -328,7 +328,10 @@ body { background: var(--surface2); }
 
       <div class="pa-upload-progress" id="pa-upload-progress">
         <div class="pa-progress-bar-wrap"><div class="pa-progress-bar" id="pa-upload-bar"></div></div>
-        <div class="pa-progress-text" id="pa-upload-text">جاري رفع الصور…</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
+          <div class="pa-progress-text" id="pa-upload-text">جاري رفع الصور…</div>
+          <button id="pa-cancel-upload" onclick="paCancelUpload()" style="font-size:11px;color:#EF4444;background:none;border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;padding:2px 6px;border-radius:6px;transition:background .15s" onmouseenter="this.style.background='#FEE2E2'" onmouseleave="this.style.background='none'">✕ إلغاء</button>
+        </div>
       </div>
 
       <div class="pa-previews" id="pa-previews"></div>
@@ -600,10 +603,17 @@ async function paUploadImages() {
     paUrls = urls;
     txt.textContent = 'تم رفع الصور بنجاح ✅';
   } catch (e) {
-    alert('خطأ في رفع الصور: ' + e.message);
     prog.style.display = 'none';
+    if (e.name === 'AbortError') return; // إلغاء بواسطة المستخدم
+    alert('خطأ في رفع الصور: ' + e.message);
     throw e;
   }
+}
+
+function paCancelUpload() {
+  cancelUpload();
+  const prog = document.getElementById('pa-upload-progress');
+  if (prog) prog.style.display = 'none';
 }
 
 /* ── Review ── */
