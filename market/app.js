@@ -299,6 +299,126 @@ function eqBuildCategoryTabs() {
     govSel.innerHTML = '<option value="">كل المحافظات</option>' +
       EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
   }
+
+  eqInitFilterFab();
+}
+
+
+/* ================================================================
+   📱 زر الفلتر الطائر — Mobile Filter FAB
+   ================================================================ */
+
+function eqInitFilterFab() {
+  if (window.innerWidth > 768) return;
+
+  const filtersBar = document.getElementById('eq-filters-bar');
+  const fab        = document.getElementById('eq-filter-fab');
+  if (!filtersBar || !fab) return;
+
+  /* بناء تابس الفئات داخل اللوحة */
+  const fabTabs = document.getElementById('eq-fab-panel-tabs');
+  if (fabTabs) {
+    const allBtn = `<button class="eq-tab on" id="eq-fab-all" onclick="eqFabSetCategory('',this)">الكل</button>`;
+    const catBtns = EQ_CATEGORIES.map(c =>
+      `<button class="eq-tab" onclick="eqFabSetCategory('${c.id}',this)">${c.label}</button>`
+    ).join('');
+    fabTabs.innerHTML = allBtn + catBtns;
+  }
+
+  /* بناء قائمة المحافظات */
+  const fabGov = document.getElementById('eq-fab-gov');
+  if (fabGov) {
+    fabGov.innerHTML = '<option value="">كل المحافظات</option>' +
+      EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+  }
+
+  /* إظهار / إخفاء FAB عند التمرير */
+  const observer = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) {
+      fab.classList.add('eq-fab-vis');
+    } else {
+      fab.classList.remove('eq-fab-vis');
+      eqCloseFabPanel();
+    }
+  }, { threshold: 0, rootMargin: '-68px 0px 0px 0px' });
+  observer.observe(filtersBar);
+
+  /* إغلاق اللوحة بالضغط خارجها */
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('eq-fab-panel');
+    if (fab && panel && !fab.contains(e.target) && !panel.contains(e.target)) {
+      eqCloseFabPanel();
+    }
+  });
+}
+
+function eqToggleFabPanel(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('eq-fab-panel');
+  const fab   = document.getElementById('eq-filter-fab');
+  if (!panel || !fab) return;
+  const isOpen = panel.classList.contains('eq-fab-open');
+  if (isOpen) {
+    eqCloseFabPanel();
+  } else {
+    panel.classList.add('eq-fab-open');
+    fab.classList.add('eq-fab-open');
+  }
+}
+
+function eqCloseFabPanel() {
+  document.getElementById('eq-fab-panel')?.classList.remove('eq-fab-open');
+  document.getElementById('eq-filter-fab')?.classList.remove('eq-fab-open');
+}
+
+function eqUpdateFabBadge() {
+  const badge = document.getElementById('eq-fab-badge');
+  if (!badge) return;
+  const count = (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) + (eqPriceMax > 0 ? 1 : 0);
+  badge.textContent = count;
+  badge.classList.toggle('show', count > 0);
+}
+
+function eqFabSetCategory(cat, el) {
+  eqActiveCategory = cat;
+  /* تحديث تابس اللوحة */
+  document.querySelectorAll('#eq-fab-panel-tabs .eq-tab').forEach(t => t.classList.remove('on'));
+  if (el) el.classList.add('on');
+  /* مزامنة شريط الفئات الرئيسي */
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
+    const isMatch = cat === '' ? t.textContent.trim() === 'الكل'
+      : t.getAttribute('onclick')?.includes(`'${cat}'`);
+    t.classList.toggle('on', isMatch);
+  });
+  eqApplyFilters();
+  eqUpdateFabBadge();
+}
+
+function eqFabGovChange(sel) {
+  eqGov = sel.value;
+  const main = document.getElementById('eq-gov');
+  if (main) main.value = sel.value;
+  eqApplyFilters();
+  eqUpdateFabBadge();
+}
+
+function eqFabSortChange(sel) {
+  eqSortBy = sel.value;
+  const main = document.getElementById('eq-sort');
+  if (main) main.value = sel.value;
+  eqApplyFilters();
+}
+
+function eqFabPriceChange(inp) {
+  eqPriceMax = parseInt(inp.value) || 0;
+  const val = document.getElementById('eq-fab-price-val');
+  if (val) val.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  const mainInp = document.getElementById('eq-price-max');
+  if (mainInp) mainInp.value = inp.value;
+  const mainLbl = document.getElementById('eq-price-label');
+  if (mainLbl) mainLbl.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  eqApplyFilters();
+  eqUpdateFabBadge();
 }
 
 

@@ -1774,11 +1774,13 @@ function setNavUser(user, profile) {
 
   if (bnUserIcon && bnUserLabel) {
     if (user) {
-      const initial = (profile?.full_name || user.email || 'م')[0];
-      bnUserIcon.textContent  = '👤';
-      bnUserLabel.textContent = initial + '..';
+      const initial = (profile?.full_name || user.email || 'م')[0].toUpperCase();
+      bnUserIcon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
+      bnUserLabel.textContent = 'حسابي';
+      const descEl = document.getElementById('bn-user-desc');
+      if (descEl) descEl.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
     } else {
-      bnUserIcon.textContent  = '👤';
+      bnUserIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
       bnUserLabel.textContent = 'دخول';
     }
   }
@@ -2575,15 +2577,18 @@ async function handleBnUser() {
 function updateBnUser(user, profile) {
   const icon  = document.getElementById('bn-user-icon');
   const label = document.getElementById('bn-user-label');
+  const desc  = document.getElementById('bn-user-desc');
   if (!icon || !label) return;
 
   if (user) {
-    const name = profile?.full_name || user.email?.split('@')[0] || '؟';
-    icon.textContent  = name.trim()[0] || '👤';
+    const initial = (profile?.full_name || user.email || '؟')[0].toUpperCase();
+    icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
     label.textContent = 'حسابي';
+    if (desc) desc.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
   } else {
-    icon.textContent  = '👤';
+    icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
     label.textContent = 'دخول';
+    if (desc) desc.textContent = 'سجّل أو ادخل';
   }
 }
 
