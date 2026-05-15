@@ -11,53 +11,123 @@ const R2_PUBLIC_BASE   = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
 const MAX_W            = 1280;
 const MAX_H            = 1280;
 const QUALITY          = 0.82;
-const MAX_FILE_BYTES   = 20 * 1024 * 1024; // 20MB — حد رفض قبل الضغط
+const MAX_FILE_BYTES   = 20 * 1024 * 1024; // 20MB
 
-/**
- * يضغط صورة واحدة عبر Canvas ويُرجع Blob
- * @param {File} file
- * @returns {Promise<Blob>}
- */
-function compressImage(file) {
+let _uploadAbortCtrl = null;
+
+/* ──────────────────────────────────────────────────────────────
+   قراءة EXIF Orientation من أول 64KB من الملف
+   يُرجع رقم 1-8 (1 = طبيعي)
+   ────────────────────────────────────────────────────────────── */
+function getExifOrientation(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ({ target: { result } }) => {
+      try {
+        const view = new DataView(result);
+        if (view.getUint16(0, false) !== 0xFFD8) { resolve(1); return; }
+        let offset = 2;
+        while (offset < view.byteLength - 2) {
+          const marker = view.getUint16(offset, false);
+          offset += 2;
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset + 2, false) !== 0x45786966) { resolve(1); return; }
+            const little = view.getUint16(offset + 8, false) === 0x4949;
+            const ifd    = offset + 8 + view.getUint32(offset + 12, little);
+            const nTags  = view.getUint16(ifd, little);
+            for (let n = 0; n < nTags; n++) {
+              if (view.getUint16(ifd + 2 + n * 12, little) === 0x0112) {
+                resolve(view.getUint16(ifd + 2 + n * 12 + 8, little));
+                return;
+              }
+            }
+            resolve(1); return;
+          }
+          if ((marker & 0xFF00) !== 0xFF00) break;
+          offset += view.getUint16(offset, false);
+        }
+        resolve(1);
+      } catch (_) { resolve(1); }
+    };
+    reader.onerror = () => resolve(1);
+    reader.readAsArrayBuffer(file.slice(0, 65536));
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ضغط صورة واحدة مع تصحيح EXIF Rotation
+   @param {File} file
+   @returns {Promise<Blob>}
+   ────────────────────────────────────────────────────────────── */
+async function compressImage(file) {
   if (file.size > MAX_FILE_BYTES) {
-    return Promise.reject(new Error(`حجم الصورة كبير جداً (${(file.size/1024/1024).toFixed(1)} MB) — الحد الأقصى 20 MB`));
+    return Promise.reject(
+      new Error(`حجم الصورة كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB) — الحد الأقصى 20 MB`)
+    );
   }
+
+  const orientation = await getExifOrientation(file);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
+
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (width > MAX_W || height > MAX_H) {
-        const ratio = Math.min(MAX_W / width, MAX_H / height);
-        width  = Math.round(width  * ratio);
-        height = Math.round(height * ratio);
+
+      const origW = img.naturalWidth;
+      const origH = img.naturalHeight;
+
+      // تطبيق الـ scaling على الأبعاد الأصلية (قبل الدوران)
+      let fw = origW, fh = origH;
+      if (fw > MAX_W || fh > MAX_H) {
+        const r = Math.min(MAX_W / fw, MAX_H / fh);
+        fw = Math.round(fw * r);
+        fh = Math.round(fh * r);
       }
-      const canvas = document.createElement('canvas');
-      canvas.width  = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      // صور صغيرة أصلاً (< 300KB) نستخدم جودة أعلى
+
+      // اتجاهات 5-8: يُبدَّل عرض وارتفاع الكانفاس
+      const swapDim = orientation >= 5 && orientation <= 8;
+      const canvas  = document.createElement('canvas');
+      canvas.width  = swapDim ? fh : fw;
+      canvas.height = swapDim ? fw : fh;
+
+      const ctx = canvas.getContext('2d');
+
+      /*
+        مصفوفة التحويل لكل اتجاه EXIF:
+        transform(a, b, c, d, e, f)  ←  x' = a·x + c·y + e  /  y' = b·x + d·y + f
+        تضمن أن الصورة تُعرض بشكل صحيح بعد الضغط
+      */
+      switch (orientation) {
+        case 2: ctx.transform(-1,  0,  0,  1, fw,  0); break; // flip أفقي
+        case 3: ctx.transform(-1,  0,  0, -1, fw, fh); break; // 180°
+        case 4: ctx.transform( 1,  0,  0, -1,  0, fh); break; // flip عمودي
+        case 5: ctx.transform( 0,  1,  1,  0,  0,  0); break; // transpose
+        case 6: ctx.transform( 0,  1, -1,  0, fh,  0); break; // 90° عكس عقارب الساعة (iPhone portrait)
+        case 7: ctx.transform( 0, -1, -1,  0, fh, fw); break; // transverse
+        case 8: ctx.transform( 0, -1,  1,  0,  0, fw); break; // 90° مع عقارب الساعة
+      }
+
+      ctx.drawImage(img, 0, 0, fw, fh);
+
       const q = file.size < 300 * 1024 ? 0.92 : QUALITY;
       canvas.toBlob(
-        blob => blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة')),
+        blob => (blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة'))),
         'image/jpeg',
         q
       );
     };
+
     img.onerror = () => reject(new Error('فشل قراءة الصورة'));
     img.src = url;
   });
 }
 
-/**
- * يرفع blob واحد لـ R2 عبر Pages Function /upload
- * @param {Blob}   blob
- * @param {string} path       — مسار الملف داخل الـ bucket
- * @param {string} authToken  — Supabase session access_token
- * @returns {Promise<string>} — الـ URL العام
- */
-async function uploadToR2(blob, path, authToken) {
+/* ──────────────────────────────────────────────────────────────
+   رفع blob واحد لـ R2 مع دعم إلغاء الرفع
+   ────────────────────────────────────────────────────────────── */
+async function uploadToR2(blob, path, authToken, signal) {
   const form = new FormData();
   form.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }));
   form.append('path', path);
@@ -66,6 +136,7 @@ async function uploadToR2(blob, path, authToken) {
     method:  'POST',
     headers: { 'Authorization': `Bearer ${authToken}` },
     body:    form,
+    signal,
   });
 
   const data = await res.json().catch(() => ({}));
@@ -73,22 +144,50 @@ async function uploadToR2(blob, path, authToken) {
   return data.url;
 }
 
-/**
- * يضغط ويرفع مصفوفة من الملفات
- * @param {File[]}   files
- * @param {string}   userId
- * @param {Function} onProgress  — callback(done, total)
- * @param {string}   authToken   — Supabase session access_token
- * @returns {Promise<string[]>}  — قائمة الـ URLs
- */
-async function uploadImages(files, userId, onProgress, authToken) {
-  const urls = [];
-  for (let i = 0; i < files.length; i++) {
-    const blob = await compressImage(files[i]);
-    const path = `${userId}/${Date.now()}_${i}.jpg`;
-    const url  = await uploadToR2(blob, path, authToken);
-    urls.push(url);
-    if (onProgress) onProgress(i + 1, files.length);
+/* محاولة الرفع مع retry تلقائي مرتين عند انقطاع الشبكة */
+async function uploadWithRetry(blob, path, authToken, signal, retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await uploadToR2(blob, path, authToken, signal);
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+      if (attempt === retries) throw e;
+      await new Promise(r => setTimeout(r, 900 * (attempt + 1))); // 0.9s ثم 1.8s
+    }
   }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   رفع مصفوفة الملفات بالتوازي (Promise.all) مع ضغط + retry
+   @param {File[]}   files
+   @param {string}   userId
+   @param {Function} onProgress  — callback(done, total)
+   @param {string}   authToken
+   @returns {Promise<string[]>}
+   ────────────────────────────────────────────────────────────── */
+async function uploadImages(files, userId, onProgress, authToken) {
+  _uploadAbortCtrl = new AbortController();
+  const signal = _uploadAbortCtrl.signal;
+
+  // ضغط كل الصور بالتوازي (خفيفة على الذاكرة لأنها تعمل محلياً)
+  const blobs = await Promise.all(files.map(f => compressImage(f)));
+
+  let done = 0;
+  const urls = await Promise.all(
+    blobs.map(async (blob, i) => {
+      // إضافة random suffix لتفادي تعارض الأسماء عند الرفع المتوازي
+      const rand = Math.random().toString(36).slice(2, 6);
+      const path = `${userId}/${Date.now()}_${i}_${rand}.jpg`;
+      const url  = await uploadWithRetry(blob, path, authToken, signal);
+      if (onProgress) onProgress(++done, files.length);
+      return url;
+    })
+  );
+
   return urls;
+}
+
+/* إلغاء الرفع الجاري */
+function cancelUpload() {
+  _uploadAbortCtrl?.abort();
 }

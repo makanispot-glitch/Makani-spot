@@ -427,21 +427,25 @@ function eqFabPriceChange(inp) {
    ================================================================ */
 
 function eqBuildCard(listing) {
-  const img    = listing.cover_image || (listing.images && listing.images[0]) || '';
-  const cond   = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
-  const cat    = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
-  const price  = Number(listing.price).toLocaleString('ar-EG');
-  const nego   = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
-  const feat   = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
-  const imgHtml = img
+  const img      = listing.cover_image || (listing.images && listing.images[0]) || '';
+  const allImgs  = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
+  const cond     = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
+  const cat      = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
+  const price    = Number(listing.price).toLocaleString('ar-EG');
+  const nego     = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
+  const feat     = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
+  const imgHtml  = img
     ? `<img src="${img}" alt="${listing.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'eq-card-no-img\\'>📦</div>'">`
     : `<div class="eq-card-no-img">📦</div>`;
-  const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
+  const favIcon  = eqFavorites.has(listing.id) ? '❤️' : '🤍';
+  const photoBadge = allImgs.length > 1
+    ? `<div class="eq-photo-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${allImgs.length}</div>`
+    : '';
 
   return `
 <div class="eq-card" onclick="eqOpenDetail('${listing.id}')">
   <div class="eq-card-img" style="position:relative">
-    ${imgHtml}${feat}
+    ${imgHtml}${feat}${photoBadge}
     <button class="eq-fav-btn" data-fav="${listing.id}" onclick="eqToggleFavorite(event,'${listing.id}')" title="المفضلة">${favIcon}</button>
   </div>
   <div class="eq-card-body">
@@ -524,14 +528,23 @@ async function eqOpenDetail(id) {
   const nego   = listing.negotiable ? ' (قابل للتفاوض)' : '';
   const date   = new Date(listing.created_at).toLocaleDateString('ar-EG');
 
+  const swiperId  = `eq-sw-${id}`;
   const galleryHtml = imgs.length > 0
     ? `<div class="eq-detail-gallery">
-        <div class="eq-detail-main-img">
-          <img id="eq-detail-img-main" src="${imgs[0]}" alt="${listing.title}">
+        <div class="eq-swiper-wrap">
+          <div class="eq-swiper" id="${swiperId}">
+            ${imgs.map(u => `<div class="eq-swiper-slide"><img src="${u}" alt="${listing.title}" loading="lazy"></div>`).join('')}
+          </div>
+          ${imgs.length > 1
+            ? `<div class="eq-swiper-dots" id="${swiperId}-dots">${imgs.map((_, i) => `<span class="eq-swiper-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
+            : ''}
+          <button class="eq-share-btn" onclick="eqShare('${id}')" title="مشاركة الإعلان">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
         </div>
-        ${imgs.length > 1 ? `<div class="eq-detail-thumbs">
-          ${imgs.map((u, i) => `<img src="${u}" class="eq-thumb${i===0?' active':''}" onclick="eqSwitchImg('${u}',this)">`).join('')}
-        </div>` : ''}
       </div>`
     : `<div class="eq-detail-no-img">📦</div>`;
 
@@ -570,6 +583,18 @@ async function eqOpenDetail(id) {
 
   document.getElementById('eq-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  /* Swiper scroll → تحديث الـ dots */
+  if (imgs.length > 1) {
+    const swiper = document.getElementById(swiperId);
+    const dots   = document.querySelectorAll(`#${swiperId}-dots .eq-swiper-dot`);
+    if (swiper && dots.length) {
+      swiper.addEventListener('scroll', () => {
+        const idx = Math.round(swiper.scrollLeft / swiper.clientWidth);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      }, { passive: true });
+    }
+  }
 }
 
 function eqCloseModal() {
@@ -577,10 +602,19 @@ function eqCloseModal() {
   document.body.style.overflow = '';
 }
 
-function eqSwitchImg(url, el) {
-  document.getElementById('eq-detail-img-main').src = url;
-  document.querySelectorAll('.eq-thumb').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+/* زر مشاركة الإعلان — Web Share API أو واتساب */
+function eqShare(id) {
+  const listing = eqListings.find(l => l.id === id);
+  if (!listing) return;
+  const price = Number(listing.price).toLocaleString('ar-EG');
+  const pageUrl = window.location.origin + window.location.pathname;
+  const text  = `🔖 *${listing.title}*\n💰 السعر: ${price} ج\n📍 ${listing.region || ''}\n\n🛒 تصفح المزيد: ${pageUrl}`;
+
+  if (navigator.share) {
+    navigator.share({ title: listing.title, text, url: pageUrl }).catch(() => {});
+    return;
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 }
 
 
@@ -697,7 +731,11 @@ function eqBuildMyCard(l) {
     <div class="eq-my-card-title">${l.title}</div>
     <span class="eq-status ${st.cls}">${st.label}</span>
     ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.reject_reason}</div>` : ''}
-    ${l.status === 'approved' ? `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>` : ''}
+    ${l.status === 'approved'
+      ? days <= 7
+        ? `<div class="eq-days-warning">⚠️ إعلانك ينتهي بعد <strong>${days}</strong> ${days === 1 ? 'يوم' : 'أيام'} — جدّد الآن</div>`
+        : `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>`
+      : ''}
     <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
     <div class="eq-my-actions">
       ${canEdit   ? `<button class="eq-btn eq-btn-outline" onclick="eqOpenEdit('${l.id}')">✏️ تعديل</button>` : ''}
