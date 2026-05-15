@@ -1549,32 +1549,71 @@
      ================================================================ -->
 <script src="app.js" defer></script>
 
-  <!-- Bottom Navigation للموبايل -->
+  <!-- Bottom Navigation للموبايل — محسّن -->
 <nav class="bottom-nav" id="bottom-nav">
+
+  <!-- الرئيسية -->
   <button class="bn-item active" id="bn-home" onclick="showPage('home');updateBottomNav('home')">
-    <span class="bn-icon">🏠</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </span>
     <span class="bn-label">الرئيسية</span>
+    <span class="bn-desc">الصفحة الرئيسية</span>
   </button>
+
+  <!-- المساحات التجارية -->
   <button class="bn-item" id="bn-market" onclick="goToMarketplace();updateBottomNav('market')">
-    <span class="bn-icon">🏪</span>
-    <span class="bn-label">المساحات</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    </span>
+    <span class="bn-label">مساحات</span>
+    <span class="bn-desc">ثابتة وتجارية</span>
   </button>
+
+  <!-- البازارات -->
   <button class="bn-item" id="bn-bazaars" onclick="showPage('bazaars');updateBottomNav('bazaars')">
-    <span class="bn-icon">🎪</span>
-    <span class="bn-label">البازارات</span>
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 7h20"/><path d="M5 7 7 3h10l2 4"/>
+        <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
+        <path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/>
+        <rect x="9" y="14" width="6" height="7"/>
+      </svg>
+    </span>
+    <span class="bn-label">بازارات</span>
+    <span class="bn-desc">معارض مؤقتة</span>
   </button>
-  <button class="bn-item" id="bn-how" onclick="showPage('how');updateBottomNav('how')">
-    <span class="bn-icon">❓</span>
-    <span class="bn-label">كيف؟</span>
-  </button>
-  <a class="bn-item" href="/market/" style="text-decoration:none">
-    <span class="bn-icon">🛍️</span>
+
+  <!-- مشاريع للبيع -->
+  <a class="bn-item" id="bn-projects" href="/market/">
+    <span class="bn-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+        <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
     <span class="bn-label" style="color:var(--orange);font-weight:800">مشاريع</span>
+    <span class="bn-desc" style="color:rgba(255,107,0,0.65)">كاملة للبيع</span>
   </a>
+
+  <!-- دخول / حساب -->
   <button class="bn-item" id="bn-user" onclick="handleBnUser()">
-    <span class="bn-icon" id="bn-user-icon">👤</span>
+    <span class="bn-icon" id="bn-user-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M20 21a8 8 0 0 0-16 0"/>
+      </svg>
+    </span>
     <span class="bn-label" id="bn-user-label">دخول</span>
+    <span class="bn-desc" id="bn-user-desc">سجّل أو ادخل</span>
   </button>
+
 </nav>
   
 </body>

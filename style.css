@@ -1375,30 +1375,55 @@ footer {
 
 
 /* ============================================================
-   📱 شريط التنقل السفلي (Bottom Navigation)
+   📱 شريط التنقل السفلي (Bottom Navigation) — محسّن
    ============================================================ */
 .bottom-nav {
-  display: none; /* يظهر فقط على الموبايل */
+  display: none;
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
-  padding: 6px 0;
-  padding-bottom: env(safe-area-inset-bottom, 6px);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0,0,0,0.07);
+  padding: 4px 6px;
+  padding-bottom: env(safe-area-inset-bottom, 4px);
+  box-shadow: 0 -2px 24px rgba(0,0,0,0.10);
+  gap: 2px;
 }
 .bn-item {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 6px 12px; cursor: pointer; border-radius: 10px;
-  transition: all 0.15s; border: none; background: none;
-  font-family: 'Cairo', sans-serif; flex: 1; min-height: 48px;
-  justify-content: center;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 4px 5px; cursor: pointer; border-radius: 12px;
+  transition: background 0.15s; border: none; background: none;
+  font-family: 'Cairo', sans-serif; flex: 1; min-height: 54px;
+  justify-content: center; position: relative; text-decoration: none;
 }
-.bn-icon { font-size: 20px; line-height: 1; transition: transform 0.15s; }
-.bn-label { font-size: 10px; font-weight: 600; color: var(--ink3); transition: color 0.15s; }
-.bn-item.active .bn-icon { transform: scale(1.1); }
+.bn-icon {
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  color: #9CA3AF; /* currentColor في SVG يرث من هنا */
+  transition: transform 0.2s, color 0.18s;
+}
+.bn-icon svg { width: 22px; height: 22px; display: block; }
+.bn-label {
+  font-size: 10px; font-weight: 700; color: #9CA3AF;
+  transition: color 0.15s; line-height: 1.1;
+}
+.bn-desc {
+  font-size: 8px; font-weight: 500; color: #C4C7D0;
+  line-height: 1; transition: color 0.15s;
+}
+/* مؤشر العنصر النشط */
+.bn-item::after {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 0; height: 3px;
+  background: var(--orange);
+  border-radius: 0 0 3px 3px;
+  transition: width 0.22s cubic-bezier(.34,1.56,.64,1);
+}
+.bn-item.active::after { width: 28px; }
+.bn-item.active .bn-icon { color: var(--orange); transform: translateY(-1px) scale(1.12); }
 .bn-item.active .bn-label { color: var(--orange); font-weight: 800; }
-.bn-item:active { background: var(--orange-ultra); }
+.bn-item.active .bn-desc { color: rgba(255,107,0,0.65); }
+.bn-item:active { background: rgba(255,107,0,0.07); }
 
 
 /* ============================================================
@@ -1446,11 +1471,12 @@ footer {
 /* ── 768px: Navbar + Bottom Nav ── */
 @media (max-width: 768px) {
   /* Path grid — تابلت وموبايل */
-  .path-grid { grid-template-columns: 1fr; gap: 14px; }
+  .path-grid { grid-template-columns: 1fr; gap: 14px; width: 100%; overflow: hidden; }
   .path-sep { display: none; }
-  .path-card { padding: 24px 20px; }
+  .path-card { padding: 24px 20px; width: 100%; box-sizing: border-box; min-width: 0; }
   .path-icon-wrap svg { width: 32px; height: 32px; }
-  .how-section { padding: 40px 16px 52px; }
+  .how-section { padding: 40px 16px 52px; overflow: hidden; }
+  .how-inner { overflow: hidden; }
   .how-head { margin-bottom: 28px; }
   .how-title { font-size: 22px; }
 
@@ -1559,9 +1585,9 @@ footer {
   .how-detail-card { grid-template-columns: 48px 1fr; gap: 12px; padding: 18px 16px; }
   .how-detail-ico { width: 48px; height: 48px; font-size: 22px; }
   /* Path grid mobile */
-  .path-grid { grid-template-columns: 1fr; }
+  .path-grid { grid-template-columns: 1fr; width: 100%; overflow: hidden; }
   .path-sep { display: none; }
-  .path-card { padding: 22px 18px; }
+  .path-card { padding: 22px 18px; width: 100%; box-sizing: border-box; min-width: 0; }
   .path-title { font-size: 15px; }
   .path-icon-wrap { font-size: 26px; }
   /* Quick paths mobile */
