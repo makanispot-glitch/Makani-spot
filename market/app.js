@@ -68,6 +68,7 @@ let eqPriceMax      = 0;
 let eqFavorites     = new Set();
 let eqNotifications = [];
 let eqMyListings    = [];
+let eqSwiper        = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   eqShowLoading();
@@ -318,11 +319,24 @@ function eqBuildCard(listing) {
     : `<div class="eq-card-no-img">📦</div>`;
   const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
 
+  // شارة عدد الصور
+  const allImgs    = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
+  const photoBadge = allImgs.length > 1
+    ? `<div class="eq-photo-count">📷 ${allImgs.length}</div>` : '';
+
+  // زر المشاركة
+  const shareBtn = `<button class="eq-share-btn" onclick="eqShareListing(event,'${listing.id}')" title="شارك">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="flex-shrink:0"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+    شارك
+  </button>`;
+
   return `
 <div class="eq-card" onclick="eqOpenDetail('${listing.id}')">
   <div class="eq-card-img" style="position:relative">
     ${imgHtml}${feat}
     <button class="eq-fav-btn" data-fav="${listing.id}" onclick="eqToggleFavorite(event,'${listing.id}')" title="المفضلة">${favIcon}</button>
+    ${photoBadge}
+    ${shareBtn}
   </div>
   <div class="eq-card-body">
     <div class="eq-card-meta">
@@ -404,14 +418,23 @@ async function eqOpenDetail(id) {
   const nego   = listing.negotiable ? ' (قابل للتفاوض)' : '';
   const date   = new Date(listing.created_at).toLocaleDateString('ar-EG');
 
+  // ── Swiper Gallery ──
   const galleryHtml = imgs.length > 0
     ? `<div class="eq-detail-gallery">
-        <div class="eq-detail-main-img">
-          <img id="eq-detail-img-main" src="${imgs[0]}" alt="${listing.title}">
+        <div class="eq-swiper" id="eq-swiper" dir="ltr">
+          <div class="eq-swiper-track" id="eq-swiper-track">
+            ${imgs.map((u, i) => `
+              <div class="eq-swiper-slide">
+                <img src="${u}" alt="${listing.title}" loading="${i === 0 ? 'eager' : 'lazy'}">
+              </div>`).join('')}
+          </div>
+          ${imgs.length > 1 ? `
+          <button class="eq-swiper-btn eq-swiper-prev" onclick="eqSwiperNav(-1)">&#8249;</button>
+          <button class="eq-swiper-btn eq-swiper-next" onclick="eqSwiperNav(1)">&#8250;</button>
+          <div class="eq-swiper-dots" id="eq-swiper-dots">
+            ${imgs.map((_, i) => `<button class="eq-swiper-dot${i===0?' active':''}" onclick="eqSwiperGo(${i})"></button>`).join('')}
+          </div>` : ''}
         </div>
-        ${imgs.length > 1 ? `<div class="eq-detail-thumbs">
-          ${imgs.map((u, i) => `<img src="${u}" class="eq-thumb${i===0?' active':''}" onclick="eqSwitchImg('${u}',this)">`).join('')}
-        </div>` : ''}
       </div>`
     : `<div class="eq-detail-no-img">📦</div>`;
 
@@ -450,17 +473,71 @@ async function eqOpenDetail(id) {
 
   document.getElementById('eq-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  eqInitSwiper(imgs.length);
 }
 
 function eqCloseModal() {
   document.getElementById('eq-modal').classList.remove('open');
   document.body.style.overflow = '';
+  eqSwiper = null;
 }
 
-function eqSwitchImg(url, el) {
-  document.getElementById('eq-detail-img-main').src = url;
-  document.querySelectorAll('.eq-thumb').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+/* ── Swiper Logic ── */
+function eqInitSwiper(totalImgs) {
+  const sw    = document.getElementById('eq-swiper');
+  const track = document.getElementById('eq-swiper-track');
+  if (!sw || !track || totalImgs <= 1) { eqSwiper = null; return; }
+
+  let cur    = 0;
+  let touchX = 0;
+
+  function go(n) {
+    cur = ((n % totalImgs) + totalImgs) % totalImgs;
+    track.style.transform = `translateX(-${cur * 100}%)`;
+    document.querySelectorAll('#eq-swiper-dots .eq-swiper-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === cur);
+    });
+  }
+
+  function onTouchStart(e) { touchX = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    const diff = touchX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) go(diff > 0 ? cur + 1 : cur - 1);
+  }
+
+  // إزالة listeners قديمة لو وُجدت
+  if (sw._ts) sw.removeEventListener('touchstart', sw._ts);
+  if (sw._te) sw.removeEventListener('touchend', sw._te);
+  sw._ts = onTouchStart;
+  sw._te = onTouchEnd;
+  sw.addEventListener('touchstart', onTouchStart, { passive: true });
+  sw.addEventListener('touchend', onTouchEnd);
+
+  go(0);
+  eqSwiper = { go, get cur() { return cur; }, total: totalImgs };
+}
+
+function eqSwiperNav(dir) {
+  if (eqSwiper) eqSwiper.go(eqSwiper.cur + dir);
+}
+
+function eqSwiperGo(n) {
+  if (eqSwiper) eqSwiper.go(n);
+}
+
+/* ── Share Listing ── */
+function eqShareListing(e, id) {
+  e.stopPropagation();
+  const l = eqListings.find(x => x.id === id);
+  if (!l) return;
+  const price = Number(l.price).toLocaleString('ar-EG');
+  const text  = `🛒 *${l.title}*\n💰 السعر: ${price} ج\n📍 ${l.region || ''}${l.area ? ' — ' + l.area : ''}\n\nشوفه على مكاني Spot:\nhttps://makanispot.pages.dev/market/`;
+  // استخدام Web Share API على الموبايل إن توفّرت، وإلا فتح واتساب
+  if (navigator.share) {
+    navigator.share({ title: l.title, text }).catch(() => {});
+  } else {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  }
 }
 
 
@@ -577,7 +654,13 @@ function eqBuildMyCard(l) {
     <div class="eq-my-card-title">${l.title}</div>
     <span class="eq-status ${st.cls}">${st.label}</span>
     ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.reject_reason}</div>` : ''}
-    ${l.status === 'approved' ? `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>` : ''}
+    ${l.status === 'approved'
+      ? days <= 0
+        ? `<div class="eq-expiry-warn urgent">⛔ انتهت صلاحية الإعلان اليوم — <button class="eq-warn-renew" onclick="eqRenew('${l.id}')">جدّد الآن</button></div>`
+        : days <= 7
+          ? `<div class="eq-expiry-warn">⚠️ ينتهي بعد <strong>${days}</strong> ${days === 1 ? 'يوم' : 'أيام'} — <button class="eq-warn-renew" onclick="eqRenew('${l.id}')">جدّد الآن</button></div>`
+          : `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>`
+      : ''}
     <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
     <div class="eq-my-actions">
       ${canEdit   ? `<button class="eq-btn eq-btn-outline" onclick="eqOpenEdit('${l.id}')">✏️ تعديل</button>` : ''}
