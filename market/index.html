@@ -2,10 +2,24 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="مشاريع كاملة للبيع — مكاني Spot. تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار.">
 <title>مشاريع كاملة للبيع — مكاني Spot</title>
-<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#FF6B00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مكاني Spot">
+<link rel="apple-touch-icon" href="/favicon.jpg">
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="مشاريع كاملة للبيع — مكاني Spot">
+<meta property="og:description" content="تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار">
+<meta property="og:image" content="/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -892,5 +906,6 @@
 <div class="eq-fab-tooltip">انشر إعلانك مجاناً</div>
 
 <script src="app.js" defer></script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
 </body>
 </html>

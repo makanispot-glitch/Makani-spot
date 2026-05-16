@@ -1,0 +1,58 @@
+{
+  "name": "مكاني Spot — منصة المساحات الصغيرة",
+  "short_name": "مكاني Spot",
+  "description": "المنصة الأولى لتأجير المساحات الصغيرة وإيجاد المشاريع في مصر",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0C0C0C",
+  "theme_color": "#FF6B00",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["business", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "مشاريع كاملة للبيع",
+      "short_name": "مشاريع",
+      "description": "تصفح المشاريع التجارية الجاهزة",
+      "url": "/market/",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "انشر إعلانك",
+      "short_name": "أعلن",
+      "description": "نشر إعلان مشروع للبيع مجاناً",
+      "url": "/post-ad/",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

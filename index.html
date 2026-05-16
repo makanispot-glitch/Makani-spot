@@ -2,10 +2,39 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
-<link rel="icon" type="image/jpeg" href="favicon.jpg">
-<link rel="shortcut icon" type="image/jpeg" href="favicon.jpg">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Theme & Brand Colors -->
+<meta name="theme-color" content="#FF6B00">
+<meta name="msapplication-TileColor" content="#FF6B00">
+<meta name="msapplication-navbutton-color" content="#FF6B00">
+
+<!-- Apple PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مكاني Spot">
+<link rel="apple-touch-icon" href="/favicon.jpg">
+
+<!-- Favicon -->
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="shortcut icon" type="image/jpeg" href="/favicon.jpg">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="مكاني Spot — منصة تأجير المساحات الصغيرة">
+<meta property="og:description" content="المنصة الأولى لتأجير المساحات الصغيرة وإيجاد المشاريع في مصر">
+<meta property="og:image" content="/favicon.jpg">
+<meta property="og:locale" content="ar_EG">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="مكاني Spot">
+<meta name="twitter:description" content="المنصة الأولى لتأجير المساحات الصغيرة في مصر">
+<meta name="twitter:image" content="/favicon.jpg">
 <!--
   ================================================================
   📁 index.html — الطبقة الأولى: الهيكل (HTML)
@@ -1615,6 +1644,28 @@
   </button>
 
 </nav>
-  
+
+<!-- ── Service Worker Registration ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        /* تحديث تلقائي عند وجود نسخة جديدة من الـ SW */
+        reg.addEventListener('updatefound', () => {
+          const worker = reg.installing;
+          worker?.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              worker.postMessage({ type: 'SKIP_WAITING' });
+              window.location.reload();
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+
 </body>
 </html>
