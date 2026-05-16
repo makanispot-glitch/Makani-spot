@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مكاني Spot — إدارة البازارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --or:#FF6B00; --or2:#E05A00; --org:rgba(255,107,0,.13);
+  --bg:#0c0c0e; --bg2:#131316; --bg3:#1a1a1f; --bg4:#222228; --bg5:#2a2a32;
+  --bd:rgba(255,255,255,.06); --bdo:rgba(255,107,0,.25);
+  --tx:#eeeef0; --mu:#7a7a8a; --mu2:#4a4a58;
+  --gr:#22C55E; --rd:#EF4444; --yw:#F59E0B; --bl:#60A5FA; --pu:#A78BFA; --tl:#2DD4BF;
+  --r:10px; --sh:0 8px 32px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+
+/* ═══ LAYOUT ═══ */
+#sb{position:fixed;top:0;right:0;width:220px;height:100vh;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;z-index:100}
+#main{margin-right:220px;min-height:100vh}
+
+/* ═══ SIDEBAR ═══ */
+.sb-brand{padding:20px 16px 14px;border-bottom:1px solid var(--bd)}
+.sb-logo{font-size:18px;font-weight:900;color:var(--or);letter-spacing:-.5px}
+.sb-sub{font-size:10px;color:var(--mu);margin-top:1px}
+.sb-conn{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;margin-top:5px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--mu)}
+.sb-conn.ok{color:var(--gr)} .sb-conn.err{color:var(--rd)}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nl{font-size:9px;font-weight:700;color:var(--mu2);text-transform:uppercase;letter-spacing:1.3px;padding:7px 8px 3px;margin-top:5px}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--mu);transition:all .18s;margin-bottom:1px;user-select:none}
+.ni:hover{background:var(--bg3);color:var(--tx)}
+.ni.active{background:var(--org);color:var(--or);font-weight:700}
+.ni .ic{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nb{margin-right:auto;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;background:var(--or);color:#fff}
+.nb.g{background:var(--gr)} .nb.y{background:var(--yw)} .nb.r{background:var(--rd)}
+.sb-api{padding:12px;border-top:1px solid var(--bd)}
+.sb-api label{font-size:10px;font-weight:700;color:var(--mu);display:block;margin-bottom:4px}
+.sb-api input{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:10px;color:var(--tx);font-family:'Cairo',sans-serif;direction:ltr}
+.sb-api input:focus{outline:none;border-color:var(--or)}
+.sb-btn{margin-top:6px;width:100%;padding:7px;background:var(--or);color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .2s}
+.sb-btn:hover{background:var(--or2)} .sb-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ═══ TOPBAR ═══ */
+.topbar{position:sticky;top:0;background:rgba(12,12,14,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.tb-title{font-size:16px;font-weight:700} .tb-title span{color:var(--or)}
+.tb-acts{display:flex;gap:7px}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .18s;white-space:nowrap}
+.btn-or{background:var(--or);color:#fff} .btn-or:hover{background:var(--or2);transform:translateY(-1px)}
+.btn-gh{background:var(--bg3);color:var(--tx);border:1px solid var(--bd)} .btn-gh:hover{border-color:var(--or);color:var(--or)}
+.btn-gr{background:var(--gr);color:#fff} .btn-gr:hover{opacity:.87}
+.btn-rd{background:var(--rd);color:#fff} .btn-rd:hover{opacity:.87}
+.btn-yw{background:var(--yw);color:#000} .btn-yw:hover{opacity:.87}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ═══ PAGES ═══ */
+.pg{display:none;padding:22px 24px;animation:fi .22s ease}
+.pg.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ STAT CARDS ═══ */
+.sg{display:grid;gap:12px;margin-bottom:22px}
+.sg-5{grid-template-columns:repeat(5,1fr)}
+.sg-4{grid-template-columns:repeat(4,1fr)}
+.sg-3{grid-template-columns:repeat(3,1fr)}
+.scard{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;transition:border-color .2s}
+.scard:hover{border-color:var(--bdo)}
+.scard::before{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:var(--or);border-radius:0 10px 10px 0}
+.sc-lbl{font-size:11px;color:var(--mu);font-weight:500;margin-bottom:5px}
+.sc-val{font-size:26px;font-weight:900;line-height:1}
+.sc-sub{font-size:10px;color:var(--mu);margin-top:3px}
+.sc-ico{position:absolute;top:12px;left:12px;font-size:22px;opacity:.09}
+
+/* ═══ SEC HDR ═══ */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.st{font-size:14px;font-weight:700} .st span{color:var(--or)}
+
+/* ═══ FILTERS ═══ */
+.fbar{display:flex;align-items:center;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+.sw{flex:1;min-width:160px;max-width:240px;position:relative}
+.sw input{width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:7px 9px 7px 28px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--tx);direction:rtl}
+.sw input:focus{outline:none;border-color:var(--or)}
+.sw .si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:11px;pointer-events:none}
+.fc-s{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:6px 9px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--tx);cursor:pointer}
+.fc-s:focus{outline:none;border-color:var(--or)}
+
+/* ═══ TABLE ═══ */
+.tw{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3);border-bottom:1px solid var(--bd)}
+thead th{padding:10px 12px;font-size:11px;font-weight:700;color:var(--mu);text-align:right;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bd);transition:background .14s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.017)}
+tbody td{padding:9px 12px;font-size:12px;vertical-align:middle}
+.pr{font-weight:700;color:var(--or)}
+
+/* ═══ BADGES ═══ */
+.ba{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700}
+.ba-pub{background:rgba(34,197,94,.12);color:var(--gr)}
+.ba-dra{background:rgba(245,158,11,.12);color:var(--yw)}
+.ba-av{background:rgba(34,197,94,.12);color:var(--gr)}
+.ba-bk{background:rgba(239,68,68,.12);color:var(--rd)}
+.ba-rs{background:rgba(245,158,11,.12);color:var(--yw)}
+.ba-pd{background:rgba(245,158,11,.12);color:var(--yw)}
+.ba-pa{background:rgba(34,197,94,.12);color:var(--gr)}
+.ba-ca{background:rgba(239,68,68,.12);color:var(--rd)}
+.ba-cf{background:rgba(96,165,250,.12);color:var(--bl)}
+
+/* ═══ INLINE EDIT ═══ */
+.ie-sel{background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:3px 6px;font-family:'Cairo',sans-serif;font-size:11.5px;color:var(--tx);cursor:pointer;transition:border-color .18s}
+.ie-sel:focus{outline:none;border-color:var(--or)}
+.ie-sel:hover{border-color:var(--bdo)}
+.ie-inp{background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:3px 6px;font-family:'Cairo',sans-serif;font-size:11.5px;color:var(--tx);width:100%;min-width:80px}
+.ie-inp:focus{outline:none;border-color:var(--or)}
+
+/* ═══ FORM ═══ */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px}
+.fg{margin-bottom:11px}
+.fg label{font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:4px;display:block}
+.fg label .rq{color:var(--or)}
+.fc{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:'Cairo',sans-serif;font-size:12.5px;color:var(--tx);transition:border-color .2s}
+.fc:focus{outline:none;border-color:var(--or)}
+textarea.fc{resize:vertical;min-height:60px}
+select.fc{cursor:pointer}
+.hint{font-size:9.5px;color:var(--mu);margin-top:2px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ═══ TAGS INPUT ═══ */
+.tags-wrap{border:1px solid var(--bd);border-radius:8px;padding:6px 8px;background:var(--bg3);display:flex;flex-wrap:wrap;gap:5px;min-height:36px;cursor:text;transition:border-color .2s}
+.tags-wrap:focus-within{border-color:var(--or)}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--org);border:1px solid var(--bdo);color:var(--or);font-size:11px;font-weight:600;padding:2px 7px;border-radius:15px}
+.tag-chip button{background:none;border:none;cursor:pointer;color:inherit;font-size:11px;padding:0;line-height:1}
+.tags-inp{background:none;border:none;outline:none;font-family:'Cairo',sans-serif;font-size:12px;color:var(--tx);min-width:80px;flex:1}
+.tag-suggestions{position:absolute;top:calc(100% + 3px);right:0;left:0;background:var(--bg3);border:1px solid var(--bdo);border-radius:8px;z-index:50;max-height:140px;overflow-y:auto;box-shadow:var(--sh);display:none}
+.tag-suggestions.open{display:block}
+.tag-sug-opt{padding:6px 10px;font-size:12px;cursor:pointer;transition:background .14s}
+.tag-sug-opt:hover{background:var(--bg4);color:var(--or)}
+
+/* ═══ SLOTS GRID ═══ */
+.slots-grid-wrap{overflow-x:auto}
+.slots-grid{display:grid;gap:6px;padding:4px}
+.slot-cell{width:52px;height:52px;border-radius:8px;border:1.5px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;font-size:10px;font-weight:700;position:relative}
+.slot-cell.av{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--gr)}
+.slot-cell.bk{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:var(--rd)}
+.slot-cell.rs{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:var(--yw)}
+.slot-cell:hover{transform:scale(1.06);z-index:2;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.slot-id{font-size:8.5px;font-weight:600;margin-bottom:2px;opacity:.75}
+.slot-st{font-size:8px;font-weight:700}
+
+/* ═══ PROGRESS BAR ═══ */
+.pb-wrap{background:var(--bg3);border-radius:10px;height:6px;overflow:hidden;margin-top:4px}
+.pb-fill{height:100%;border-radius:10px;transition:width .4s ease}
+.pb-or{background:var(--or)}
+.pb-gr{background:var(--gr)}
+.pb-rd{background:var(--rd)}
+
+/* ═══ MODAL ═══ */
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);z-index:200;align-items:center;justify-content:center;padding:20px}
+.mov.open{display:flex}
+.mod{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6);animation:fi .22s ease}
+.mod-lg{max-width:860px}
+.mhd{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1}
+.mtt{font-size:14px;font-weight:700}
+.mx{width:24px;height:24px;border-radius:5px;background:var(--bg3);border:none;color:var(--mu);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.mx:hover{color:var(--tx)}
+.mbd{padding:18px 20px}
+
+/* ═══ INLINE ACTIONS ═══ */
+.row-acts{display:flex;gap:4px;opacity:0;transition:opacity .2s}
+tbody tr:hover .row-acts{opacity:1}
+
+/* ═══ FINANCIAL CARD ═══ */
+.fin-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.fin-title{font-size:12px;font-weight:700;color:var(--mu);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.fin-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)}
+.fin-row:last-child{border-bottom:none}
+.fin-lbl{font-size:12px;color:var(--mu)}
+.fin-val{font-size:13px;font-weight:700}
+
+/* ═══ PAGI ═══ */
+.pag{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px}
+.pb2{width:28px;height:28px;border-radius:5px;background:var(--bg2);border:1px solid var(--bd);color:var(--mu);cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.pb2:hover,.pb2.active{background:var(--or);color:#fff;border-color:var(--or)}
+.pi{font-size:11px;color:var(--mu);padding:0 5px}
+
+/* ═══ EMPTY / LOADING ═══ */
+.empty{text-align:center;padding:40px;color:var(--mu);font-size:12.5px}
+.empty .ei{font-size:40px;margin-bottom:8px;opacity:.3}
+.ld{display:flex;align-items:center;justify-content:center;padding:40px;gap:9px;color:var(--mu);font-size:12.5px}
+.spin{width:16px;height:16px;border:2px solid var(--bd);border-top-color:var(--or);border-radius:50%;animation:sp .8s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ═══ TOAST ═══ */
+#toasts{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.toast{padding:9px 14px;border-radius:8px;font-size:12px;font-weight:600;box-shadow:var(--sh);animation:sli .25s ease;display:flex;align-items:center;gap:6px;max-width:320px}
+.ts{background:var(--bg2);border:1px solid var(--gr);color:var(--gr)}
+.te{background:var(--bg2);border:1px solid var(--rd);color:var(--rd)}
+.ti{background:var(--bg2);border:1px solid var(--or);color:var(--or)}
+@keyframes sli{from{transform:translateX(-12px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ═══ RESULT BOX ═══ */
+.rok{color:var(--gr);background:rgba(34,197,94,.07);border:1px solid var(--gr);padding:10px;border-radius:7px;font-size:12px;margin-top:8px}
+.rer{color:var(--rd);background:rgba(239,68,68,.07);border:1px solid var(--rd);padding:10px;border-radius:7px;font-size:12px;margin-top:8px}
+
+/* ═══ BAZAAR CARD ═══ */
+.bz-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:all .2s;cursor:pointer}
+.bz-card:hover{border-color:var(--bdo);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,0,.1)}
+.bz-img{height:100px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;position:relative}
+.bz-img img{width:100%;height:100%;object-fit:cover}
+.bz-img .bz-st{position:absolute;top:6px;right:6px}
+.bz-body{padding:11px}
+.bz-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.bz-meta{font-size:11px;color:var(--mu);line-height:1.6}
+.bz-ft{padding:9px 11px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.bz-pr{font-size:12px;font-weight:700;color:var(--or)}
+.bz-slots{font-size:11px;color:var(--mu)}
+
+@media(max-width:900px){#sb{width:190px}#main{margin-right:190px}.sg-5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){#sb{transform:translateX(100%)}#sb.open{transform:translateX(0)}#main{margin-right:0}}
+</style>
+</head>
+<body>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside id="sb">
+  <div class="sb-brand">
+    <div class="sb-logo">🛍️ مكاني Spot</div>
+    <div class="sb-sub">إدارة البازارات</div>
+    <div class="sb-conn" id="cpill"><div class="sb-dot"></div><span id="ctxt">غير متصل</span></div>
+  </div>
+  <nav>
+    <div class="nl">الرئيسية</div>
+    <div class="ni active" onclick="gp('ov')"><span class="ic">📊</span>نظرة عامة</div>
+
+    <div class="nl">البيانات</div>
+    <div class="ni" onclick="gp('bz')"><span class="ic">🛍️</span>البازارات<span class="nb" id="nb-bz">0</span></div>
+    <div class="ni" onclick="gp('sl')"><span class="ic">📦</span>الوحدات<span class="nb" id="nb-sl">0</span></div>
+    <div class="ni" onclick="gp('bk')"><span class="ic">🧾</span>الحجوزات<span class="nb" id="nb-bk">0</span></div>
+    <div class="ni" onclick="gp('cs')"><span class="ic">💰</span>التكاليف<span class="nb" id="nb-cs">0</span></div>
+
+    <div class="nl">الإدارة</div>
+    <div class="ni" onclick="gp('fin')"><span class="ic">📈</span>التقرير المالي</div>
+    <div class="ni" onclick="gp('add-bz')"><span class="ic">➕</span>إضافة بازار</div>
+    <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
+  </nav>
+  <div class="sb-api">
+    <label>🔗 رابط Apps Script</label>
+    <input type="text" id="surl" placeholder="https://script.google.com/...">
+    <button class="sb-btn" id="btnload" onclick="loadData()">⚡ تحميل</button>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main id="main">
+  <div class="topbar">
+    <div class="tb-title">البازارات — <span>لوحة التحكم</span></div>
+    <div class="tb-acts">
+      <button class="btn btn-gh btn-sm" onclick="loadData()" id="btnref">🔄 تحديث</button>
+      <button class="btn btn-or btn-sm" onclick="gp('add-bz')">➕ بازار جديد</button>
+    </div>
+  </div>
+
+  <!-- ═══ OVERVIEW ═══ -->
+  <div class="pg active" id="pg-ov">
+    <div class="sg sg-5">
+      <div class="scard"><div class="sc-ico">🛍️</div><div class="sc-lbl">إجمالي البازارات</div><div class="sc-val" id="ov-bz">—</div><div class="sc-sub">بازار مسجّل</div></div>
+      <div class="scard"><div class="sc-ico">📦</div><div class="sc-lbl">إجمالي الوحدات</div><div class="sc-val" id="ov-sl">—</div><div class="sc-sub">وحدة</div></div>
+      <div class="scard"><div class="sc-ico">✅</div><div class="sc-lbl">متاحة</div><div class="sc-val" id="ov-av" style="color:var(--gr)">—</div><div class="sc-sub">وحدة حرة</div></div>
+      <div class="scard"><div class="sc-ico">🔴</div><div class="sc-lbl">محجوزة</div><div class="sc-val" id="ov-bkd" style="color:var(--rd)">—</div><div class="sc-sub">وحدة محجوزة</div></div>
+      <div class="scard"><div class="sc-ico">🧾</div><div class="sc-lbl">الحجوزات</div><div class="sc-val" id="ov-bks">—</div><div class="sc-sub">حجز مسجّل</div></div>
+    </div>
+    <div class="sg sg-3">
+      <div class="scard" style="border-color:rgba(34,197,94,.3)">
+        <div class="sc-ico">💵</div>
+        <div class="sc-lbl">الإيراد المحصّل</div>
+        <div class="sc-val" id="ov-coll" style="color:var(--gr)">—</div>
+        <div class="sc-sub">جنيه (paid)</div>
+      </div>
+      <div class="scard" style="border-color:rgba(245,158,11,.3)">
+        <div class="sc-ico">⏳</div>
+        <div class="sc-lbl">معلّق</div>
+        <div class="sc-val" id="ov-pend" style="color:var(--yw)">—</div>
+        <div class="sc-sub">جنيه (pending)</div>
+      </div>
+      <div class="scard" style="border-color:rgba(239,68,68,.3)">
+        <div class="sc-ico">💸</div>
+        <div class="sc-lbl">إجمالي التكاليف</div>
+        <div class="sc-val" id="ov-cost" style="color:var(--rd)">—</div>
+        <div class="sc-sub">جنيه</div>
+      </div>
+    </div>
+    <div class="sh"><div class="st">البازارات <span>النشطة</span></div><button class="btn btn-gh btn-sm" onclick="gp('bz')">عرض الكل</button></div>
+    <div class="tw" id="ov-tbl"><div class="ld"><div class="spin"></div>أدخل رابط الـ API وابدأ</div></div>
+  </div>
+
+  <!-- ═══ BAZAARS ═══ -->
+  <div class="pg" id="pg-bz">
+    <div class="sh">
+      <div class="st">🛍️ البازارات <span>المسجّلة</span></div>
+      <button class="btn btn-or btn-sm" onclick="gp('add-bz')">➕ إضافة</button>
+    </div>
+    <div class="fbar">
+      <div class="sw"><span class="si">🔍</span><input type="text" id="bz-q" placeholder="ابحث..." oninput="renderBazaars()"></div>
+      <select class="fc-s" id="bz-fst" onchange="renderBazaars()">
+        <option value="">كل الحالات</option>
+        <option value="published">✅ منشور</option>
+        <option value="draft">📝 مسودة</option>
+        <option value="pending">⏳ بانتظار</option>
+      </select>
+      <select class="fc-s" id="bz-far" onchange="renderBazaars()"><option value="">كل المناطق</option></select>
+      <select class="fc-s" id="bz-fvt" onchange="renderBazaars()">
+        <option value="">كل الأنواع</option>
+        <option value="مول">مول</option>
+        <option value="نادي">نادي</option>
+        <option value="مدرسة">مدرسة</option>
+        <option value="شارع">شارع</option>
+      </select>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>البازار</th><th>المكان</th><th>التواريخ</th><th>الوحدات</th><th>السعر</th><th>الإيراد</th><th>الحالة</th><th></th></tr></thead>
+        <tbody id="bz-tb"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="bz-pg"></div>
+  </div>
+
+  <!-- ═══ SLOTS ═══ -->
+  <div class="pg" id="pg-sl">
+    <div class="sh">
+      <div class="st">📦 الوحدات <span>الفرعية</span></div>
+      <button class="btn btn-or btn-sm" onclick="gp('add-sl')">➕ إضافة وحدات</button>
+    </div>
+    <div class="fbar">
+      <div class="sw"><span class="si">🔍</span><input type="text" id="sl-q" placeholder="ابحث..." oninput="renderSlots()"></div>
+      <select class="fc-s" id="sl-fbz" onchange="renderSlots()"><option value="">كل البازارات</option></select>
+      <select class="fc-s" id="sl-fst" onchange="renderSlots()">
+        <option value="">كل الحالات</option>
+        <option value="available">✅ متاح</option>
+        <option value="booked">🔴 محجوز</option>
+        <option value="reserved">🟡 محجوز مبدئي</option>
+      </select>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>رقم الوحدة</th><th>البازار</th><th>الصف</th><th>السعر</th><th>الحالة</th><th>التاجر</th><th>النشاط</th><th>ملاحظات</th><th></th></tr></thead>
+        <tbody id="sl-tb"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="sl-pg"></div>
+  </div>
+
+  <!-- ═══ BOOKINGS ═══ -->
+  <div class="pg" id="pg-bk">
+    <div class="sh"><div class="st">🧾 الحجوزات <span>المسجّلة</span></div></div>
+    <div class="fbar">
+      <div class="sw"><span class="si">🔍</span><input type="text" id="bk-q" placeholder="ابحث بالاسم أو التليفون..." oninput="renderBookings()"></div>
+      <select class="fc-s" id="bk-fbz" onchange="renderBookings()"><option value="">كل البازارات</option></select>
+      <select class="fc-s" id="bk-fps" onchange="renderBookings()">
+        <option value="">حالة الدفع</option>
+        <option value="paid">✅ مدفوع</option>
+        <option value="pending">⏳ معلّق</option>
+        <option value="cancelled">❌ ملغي</option>
+      </select>
+      <select class="fc-s" id="bk-fbs" onchange="renderBookings()">
+        <option value="">حالة الحجز</option>
+        <option value="confirmed">✅ مؤكد</option>
+        <option value="cancelled">❌ ملغي</option>
+      </select>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>رقم الحجز</th><th>التاجر</th><th>التليفون</th><th>البازار</th><th>الوحدة</th><th>النشاط</th><th>المبلغ</th><th>حالة الدفع</th><th>حالة الحجز</th><th>التاريخ</th><th></th></tr></thead>
+        <tbody id="bk-tb"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="bk-pg"></div>
+  </div>
+
+  <!-- ═══ COSTS ═══ -->
+  <div class="pg" id="pg-cs">
+    <div class="sh">
+      <div class="st">💰 التكاليف <span>التشغيلية</span></div>
+      <button class="btn btn-or btn-sm" onclick="openAddCost()">➕ إضافة بند</button>
+    </div>
+    <div class="fbar">
+      <select class="fc-s" id="cs-fbz" onchange="renderCosts()"><option value="">كل البازارات</option></select>
+      <select class="fc-s" id="cs-fcat" onchange="renderCosts()">
+        <option value="">كل الفئات</option>
+        <option value="ثابت">🏗️ ثابت</option>
+        <option value="تسويق">📢 تسويق</option>
+        <option value="تشغيل">⚙️ تشغيل</option>
+        <option value="متنوع">📦 متنوع</option>
+      </select>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>البازار</th><th>البند</th><th>الفئة</th><th>التفصيل</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>مدفوع؟</th><th></th></tr></thead>
+        <tbody id="cs-tb"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:14px">
+      <div class="sh" style="margin-bottom:8px"><div class="st">إجمالي <span>التكاليف</span></div></div>
+      <div id="cs-summary"></div>
+    </div>
+  </div>
+
+  <!-- ═══ FINANCIAL REPORT ═══ -->
+  <div class="pg" id="pg-fin">
+    <div class="sh"><div class="st">📈 التقرير <span>المالي الشامل</span></div></div>
+    <div class="sg sg-4" id="fin-kpi">
+      <div class="scard"><div class="sc-ico">💵</div><div class="sc-lbl">الإيراد المتوقع</div><div class="sc-val" id="fin-exp" style="color:var(--bl)">—</div></div>
+      <div class="scard"><div class="sc-ico">✅</div><div class="sc-lbl">المحصّل فعلياً</div><div class="sc-val" id="fin-col" style="color:var(--gr)">—</div></div>
+      <div class="scard"><div class="sc-ico">💸</div><div class="sc-lbl">إجمالي التكاليف</div><div class="sc-val" id="fin-cst" style="color:var(--rd)">—</div></div>
+      <div class="scard"><div class="sc-ico">🏆</div><div class="sc-lbl">صافي الربح</div><div class="sc-val" id="fin-net">—</div></div>
+    </div>
+    <div class="sh"><div class="st">تفصيل <span>لكل بازار</span></div></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>البازار</th><th>الوحدات</th><th>نسبة الإشغال</th><th>الإيراد المتوقع</th><th>المحصّل</th><th>معلّق</th><th>التكاليف</th><th>صافي الربح</th></tr></thead>
+        <tbody id="fin-tb"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ ADD BAZAAR ═══ -->
+  <div class="pg" id="pg-add-bz">
+    <div class="sh">
+      <div class="st">➕ إضافة <span>بازار جديد</span></div>
+      <button class="btn btn-gh btn-sm" onclick="clearBzForm()">🗑️ مسح</button>
+    </div>
+    <div class="fgrid">
+      <div>
+        <div class="fg"><label>اسم البازار <span class="rq">*</span></label><input type="text" class="fc" id="nb-name" placeholder="مثال: بازار رمضان كريم"></div>
+        <div class="fg"><label>الوصف</label><textarea class="fc" id="nb-desc" placeholder="وصف مختصر..."></textarea></div>
+        <div class="fr2">
+          <div class="fg">
+            <label>نوع المكان</label>
+            <select class="fc" id="nb-vtype">
+              <option value="مول">🏬 مول</option>
+              <option value="نادي">⚽ نادي</option>
+              <option value="مدرسة">🏫 مدرسة</option>
+              <option value="شارع">🏘️ شارع</option>
+              <option value="فندق">🏨 فندق</option>
+            </select>
+          </div>
+          <div class="fg"><label>اسم المكان</label><input type="text" class="fc" id="nb-vname" placeholder="مثال: مول مصر"></div>
+        </div>
+        <div class="fr2">
+          <div class="fg">
+            <label>المنطقة</label>
+            <div style="position:relative">
+              <input type="text" class="fc" id="nb-area" placeholder="مثال: 6 أكتوبر" autocomplete="off" oninput="filterAreaSug()" onfocus="showAreaSug()" onblur="setTimeout(()=>hideAreaSug(),200)">
+              <div class="tag-suggestions" id="area-sug"></div>
+            </div>
+          </div>
+          <div class="fg"><label>العنوان التفصيلي</label><input type="text" class="fc" id="nb-addr" placeholder="مثال: طريق الواحات"></div>
+        </div>
+        <div class="fr2">
+          <div class="fg"><label>تاريخ البداية <span class="rq">*</span></label><input type="date" class="fc" id="nb-ds"></div>
+          <div class="fg"><label>تاريخ النهاية <span class="rq">*</span></label><input type="date" class="fc" id="nb-de" oninput="calcDays()"></div>
+        </div>
+        <div class="fr3">
+          <div class="fg"><label>عدد الأيام</label><input type="number" class="fc" id="nb-days" placeholder="تلقائي" readonly style="color:var(--mu)"></div>
+          <div class="fg"><label>سعر الوحدة (ج) <span class="rq">*</span></label><input type="number" class="fc" id="nb-price" placeholder="500" oninput="calcExpected()"></div>
+          <div class="fg"><label>إجمالي الوحدات</label><input type="number" class="fc" id="nb-slots" placeholder="20" oninput="calcExpected()"></div>
+        </div>
+        <div class="fg"><label>أدنى مساحة (م²)</label><input type="number" class="fc" id="nb-msp" value="2" min="1"></div>
+      </div>
+      <div>
+        <div class="fg">
+          <label>الإيراد المتوقع (تلقائي)</label>
+          <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:18px;font-weight:900;color:var(--or)" id="nb-exp-display">0 ج</div>
+        </div>
+        <div class="fg">
+          <label>رابط الصورة</label>
+          <input type="text" class="fc" id="nb-img" placeholder="https://i.postimg.cc/...">
+          <div class="hint">استخدم postimages.org للرابط المباشر</div>
+        </div>
+        <div class="fg">
+          <label>الأنشطة المناسبة</label>
+          <div style="position:relative">
+            <div class="tags-wrap" id="tags-wrap" onclick="document.getElementById('tags-inp').focus()">
+              <div id="tags-chips"></div>
+              <input type="text" class="tags-inp" id="tags-inp" placeholder="اكتب نشاط واضغط Enter..." oninput="filterTagSug()" onkeydown="handleTagKey(event)" onfocus="showTagSug()" onblur="setTimeout(()=>hideTagSug(),200)">
+            </div>
+            <div class="tag-suggestions" id="tag-sug"></div>
+          </div>
+          <div class="hint">أمثلة: ملابس، إكسسوارات، أكل، هدايا، عطور، كتب</div>
+        </div>
+        <div class="fg">
+          <label>الحالة</label>
+          <select class="fc" id="nb-st">
+            <option value="pending">⏳ بانتظار المراجعة</option>
+            <option value="published">✅ منشور مباشرة</option>
+            <option value="draft">📝 مسودة</option>
+          </select>
+        </div>
+        <!-- PREVIEW -->
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px;margin-top:4px">
+          <div style="font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:8px">معاينة الكارد</div>
+          <div id="bz-preview-card">
+            <div class="bz-body" style="padding:0">
+              <div class="bz-name" id="prev-name" style="color:var(--mu)">اسم البازار...</div>
+              <div class="bz-meta" id="prev-meta">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-or" id="btn-add-bz" onclick="submitBazaar()">✅ إضافة البازار</button>
+      <button class="btn btn-gh" onclick="gp('bz')">إلغاء</button>
+    </div>
+    <div id="add-bz-res"></div>
+  </div>
+
+  <!-- ═══ ADD SLOTS ═══ -->
+  <div class="pg" id="pg-add-sl">
+    <div class="sh"><div class="st">🔲 إنشاء <span>وحدات لبازار</span></div></div>
+    <div style="max-width:520px">
+      <div class="fg"><label>اختر البازار <span class="rq">*</span></label>
+        <select class="fc" id="asl-bz" onchange="updateSlotPreview()">
+          <option value="">— اختر بازار —</option>
+        </select>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label>عدد الوحدات <span class="rq">*</span></label><input type="number" class="fc" id="asl-count" value="20" min="1" max="50" oninput="updateSlotPreview()"></div>
+        <div class="fg"><label>سعر الوحدة (ج) <span class="rq">*</span></label><input type="number" class="fc" id="asl-price" placeholder="500" oninput="updateSlotPreview()"></div>
+      </div>
+      <!-- SLOT PREVIEW GRID -->
+      <div class="fg">
+        <label>معاينة الوحدات</label>
+        <div class="slots-grid-wrap">
+          <div id="slot-preview-grid" style="display:flex;flex-wrap:wrap;gap:5px;padding:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;min-height:60px"></div>
+        </div>
+        <div class="hint" id="slot-preview-info">اختر بازار وعدد وحدات لمعاينة التوزيع</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <button class="btn btn-or" id="btn-add-sl" onclick="submitSlots()">✅ إنشاء الوحدات</button>
+        <button class="btn btn-gh" onclick="gp('sl')">إلغاء</button>
+      </div>
+      <div id="add-sl-res"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ MODALS ═══ -->
+<!-- EDIT BAZAAR MODAL -->
+<div class="mov" id="modal-bz">
+  <div class="mod mod-lg">
+    <div class="mhd"><div class="mtt">✏️ تعديل البازار — <span id="mebz-name" style="color:var(--or)"></span></div><button class="mx" onclick="closeModal('modal-bz')">✕</button></div>
+    <div class="mbd">
+      <div class="fgrid">
+        <div>
+          <div class="fg"><label>الاسم</label><input type="text" class="fc" id="mebz-nm"></div>
+          <div class="fg"><label>الوصف</label><textarea class="fc" id="mebz-dc"></textarea></div>
+          <div class="fr2">
+            <div class="fg"><label>نوع المكان</label>
+              <select class="fc" id="mebz-vt">
+                <option>مول</option><option>نادي</option><option>مدرسة</option><option>شارع</option><option>فندق</option>
+              </select>
+            </div>
+            <div class="fg"><label>اسم المكان</label><input type="text" class="fc" id="mebz-vn"></div>
+          </div>
+          <div class="fr2">
+            <div class="fg"><label>المنطقة</label><input type="text" class="fc" id="mebz-ar"></div>
+            <div class="fg"><label>العنوان</label><input type="text" class="fc" id="mebz-ad"></div>
+          </div>
+          <div class="fr2">
+            <div class="fg"><label>تاريخ البداية</label><input type="date" class="fc" id="mebz-ds"></div>
+            <div class="fg"><label>تاريخ النهاية</label><input type="date" class="fc" id="mebz-de"></div>
+          </div>
+        </div>
+        <div>
+          <div class="fr2">
+            <div class="fg"><label>السعر (ج)</label><input type="number" class="fc" id="mebz-pr"></div>
+            <div class="fg"><label>الإجمالي الوحدات</label><input type="number" class="fc" id="mebz-ts"></div>
+          </div>
+          <div class="fg"><label>رابط الصورة</label><input type="text" class="fc" id="mebz-img"></div>
+          <div class="fg"><label>الأنشطة (مفصولة بفاصلة)</label><input type="text" class="fc" id="mebz-tg"></div>
+          <div class="fg"><label>أدنى مساحة (م²)</label><input type="number" class="fc" id="mebz-ms" value="2"></div>
+          <div class="fg"><label>الحالة</label>
+            <select class="fc" id="mebz-st">
+              <option value="published">✅ منشور</option>
+              <option value="draft">📝 مسودة</option>
+              <option value="pending">⏳ بانتظار</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;border-top:1px solid var(--bd);padding-top:12px">
+        <button class="btn btn-or" onclick="saveBazaarEdit()">💾 حفظ</button>
+        <button class="btn btn-gh" onclick="closeModal('modal-bz')">إلغاء</button>
+        <span id="mebz-status" style="font-size:11px;color:var(--mu);margin-right:auto"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLOTS MAP MODAL -->
+<div class="mov" id="modal-sl-map">
+  <div class="mod mod-lg">
+    <div class="mhd"><div class="mtt">🗺️ خريطة الوحدات — <span id="msm-name" style="color:var(--or)"></span></div><button class="mx" onclick="closeModal('modal-sl-map')">✕</button></div>
+    <div class="mbd">
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,.2);border:1px solid var(--gr);display:inline-block"></span>متاح</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,.2);border:1px solid var(--rd);display:inline-block"></span>محجوز</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,.2);border:1px solid var(--yw);display:inline-block"></span>محجوز مبدئي</span>
+      </div>
+      <div id="slots-map-container" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING DETAIL MODAL -->
+<div class="mov" id="modal-bk">
+  <div class="mod">
+    <div class="mhd"><div class="mtt">🧾 تفاصيل الحجز</div><button class="mx" onclick="closeModal('modal-bk')">✕</button></div>
+    <div class="mbd" id="modal-bk-body"></div>
+  </div>
+</div>
+
+<!-- ADD COST MODAL -->
+<div class="mov" id="modal-add-cost">
+  <div class="mod">
+    <div class="mhd"><div class="mtt">💰 إضافة بند تكلفة</div><button class="mx" onclick="closeModal('modal-add-cost')">✕</button></div>
+    <div class="mbd">
+      <div class="fg"><label>البازار <span class="rq">*</span></label><select class="fc" id="nc-bz"></select></div>
+      <div class="fr2">
+        <div class="fg"><label>بند التكلفة <span class="rq">*</span></label>
+          <div style="position:relative">
+            <input type="text" class="fc" id="nc-item" placeholder="مثال: إيجار المكان" list="cost-items-dl">
+            <datalist id="cost-items-dl">
+              <option value="إيجار المكان"><option value="تجهيز وديكور"><option value="تسويق إلكتروني">
+              <option value="طباعة مطبوعات"><option value="كهرباء وخدمات"><option value="أمن وحراسة">
+              <option value="نظافة"><option value="مستلزمات متنوعة"><option value="شحن ونقل">
+            </datalist>
+          </div>
+        </div>
+        <div class="fg"><label>الفئة</label>
+          <select class="fc" id="nc-cat">
+            <option value="ثابت">🏗️ ثابت</option>
+            <option value="تسويق">📢 تسويق</option>
+            <option value="تشغيل">⚙️ تشغيل</option>
+            <option value="متنوع">📦 متنوع</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>تفصيل</label><input type="text" class="fc" id="nc-det" placeholder="وصف إضافي..."></div>
+      <div class="fr3">
+        <div class="fg"><label>الكمية</label><input type="number" class="fc" id="nc-qty" value="1" min="1" oninput="calcCostTotal()"></div>
+        <div class="fg"><label>سعر الوحدة (ج)</label><input type="number" class="fc" id="nc-up" placeholder="0" oninput="calcCostTotal()"></div>
+        <div class="fg"><label>الإجمالي (ج)</label><input type="number" class="fc" id="nc-tot" readonly style="color:var(--or);font-weight:700"></div>
+      </div>
+      <div class="fg"><label>مدفوع؟</label>
+        <select class="fc" id="nc-paid">
+          <option value="no">❌ لا</option>
+          <option value="yes">✅ نعم</option>
+        </select>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-or" onclick="submitCost()">✅ إضافة</button>
+        <button class="btn btn-gh" onclick="closeModal('modal-add-cost')">إلغاء</button>
+      </div>
+      <div id="add-cost-res"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let API = '';
+let BAZAARS=[], SLOTS=[], BOOKINGS=[], COSTS=[];
+let bzTags = [];
+const PER = 20;
+let bzPg=1, slPg=1, bkPg=1;
+let fBz=[], fSl=[], fBk=[], fCs=[];
+
+/* ══════════════════════════════════════════
+   STATIC DATA
+══════════════════════════════════════════ */
+const AREAS = ['6 أكتوبر','الزمالك','الشيخ زايد','التجمع الخامس','مدينة نصر','المهندسين','الدقي','هليوبوليس','المعادي','وسط البلد'];
+const TAG_OPTS = ['ملابس','إكسسوارات','أكل','هدايا','عطور','كتب','موضة','حرف يدوية','إلكترونيات','مستلزمات منزلية','مجوهرات','ساعات','عناية شخصية','ألعاب أطفال','ديكور'];
+const ACTIVITIES = [...TAG_OPTS,'بيع بالجملة','خدمات','تقنية'];
+
+/* ══════════════════════════════════════════
+   LOAD DATA
+══════════════════════════════════════════ */
+async function loadData() {
+  const u = document.getElementById('surl').value.trim();
+  if (u) API = u;
+  if (!API) { toast('أدخل رابط الـ Apps Script أولاً', 'e'); return; }
+  setLoad(true); toast('جارٍ التحميل...', 'i');
+  try {
+    // طلب واحد يجيب كل البيانات
+    const r = await fetch(API + '?action=all');
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    BAZAARS  = d.bazaars  || [];
+    SLOTS    = d.slots    || [];
+    BOOKINGS = d.bookings || [];
+    COSTS    = d.costs    || [];
+    setConn('ok', BAZAARS.length + ' بازار');
+    updateAll();
+    toast('✅ ' + BAZAARS.length + ' بازار · ' + SLOTS.length + ' وحدة · ' + BOOKINGS.length + ' حجز', 's');
+  } catch(e) {
+    setConn('err');
+    toast('فشل التحميل: ' + e.message, 'e');
+    console.error('loadData error:', e);
+  }
+  setLoad(false);
+}
+
+/* ══════════════════════════════════════════
+   DEMO DATA — يعمل بدون API
+══════════════════════════════════════════ */
+function loadDemoData() {
+  BAZAARS = [
+    {id:'BZ-001',name:'بازار رمضان كريم',description:'موسمي رمضاني',venueType:'مول',venueName:'مول مصر',area:'6 أكتوبر',address:'طريق الواحات',dateStart:'2026-03-01',dateEnd:'2026-03-03',daysCount:3,totalSlots:20,availSlots:18,bookedSlots:2,price:500,image:'',tags:['ملابس','إكسسوارات','أكل'],status:'published'},
+    {id:'BZ-002',name:'بازار عيد الأم',description:'هدايا وإكسسوارات',venueType:'نادي',venueName:'نادي الجزيرة',area:'الزمالك',address:'شارع الجزيرة',dateStart:'2026-03-20',dateEnd:'2026-03-21',daysCount:2,totalSlots:15,availSlots:15,bookedSlots:0,price:600,image:'',tags:['هدايا','إكسسوارات'],status:'published'},
+    {id:'BZ-003',name:'ماركت الربيع',description:'ملابس وموضة',venueType:'مول',venueName:'أركان مول',area:'الشيخ زايد',address:'طريق 26 يوليو',dateStart:'2026-04-10',dateEnd:'2026-04-12',daysCount:3,totalSlots:25,availSlots:25,bookedSlots:0,price:450,image:'',tags:['ملابس','موضة','إكسسوارات'],status:'published'},
+    {id:'BZ-004',name:'بازار واحد',description:'',venueType:'مول',venueName:'',area:'',address:'',dateStart:'',dateEnd:'',daysCount:1,totalSlots:10,availSlots:8,bookedSlots:2,price:1000,image:'https://i.postimg.cc/wTVpMd5z/image.png',tags:[],status:'published'},
+  ];
+  SLOTS = [
+    {slotId:'BZ-001-A1',bazaarId:'BZ-001',rowLabel:'A',slotNumber:1,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-001-A2',bazaarId:'BZ-001',rowLabel:'A',slotNumber:2,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-001-A3',bazaarId:'BZ-001',rowLabel:'A',slotNumber:3,price:500,status:'booked',traderName:'خالد محمد',activity:'شاي',notes:''},
+    {slotId:'BZ-001-A4',bazaarId:'BZ-001',rowLabel:'A',slotNumber:4,price:500,status:'booked',traderName:'amr mohammed',activity:'ملابس',notes:''},
+    {slotId:'BZ-001-A5',bazaarId:'BZ-001',rowLabel:'A',slotNumber:5,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-001-B1',bazaarId:'BZ-001',rowLabel:'B',slotNumber:1,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-001-B2',bazaarId:'BZ-001',rowLabel:'B',slotNumber:2,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-001-B3',bazaarId:'BZ-001',rowLabel:'B',slotNumber:3,price:500,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-004-A1',bazaarId:'BZ-004',rowLabel:'A',slotNumber:1,price:1000,status:'booked',traderName:'خالد محمد',activity:'أكل',notes:''},
+    {slotId:'BZ-004-A2',bazaarId:'BZ-004',rowLabel:'A',slotNumber:2,price:1000,status:'booked',traderName:'Hossam Mohammed',activity:'عطور',notes:''},
+    {slotId:'BZ-004-A3',bazaarId:'BZ-004',rowLabel:'A',slotNumber:3,price:1000,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-004-A4',bazaarId:'BZ-004',rowLabel:'A',slotNumber:4,price:1000,status:'available',traderName:'',activity:'',notes:''},
+    {slotId:'BZ-004-A5',bazaarId:'BZ-004',rowLabel:'A',slotNumber:5,price:1000,status:'available',traderName:'',activity:'',notes:''},
+  ];
+  BOOKINGS = [
+    {bookingId:'BK-0001',bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',slotId:'BZ-001-A3',vendorName:'خالد محمد',phone:'01027486918',email:'khmh3456@gmail.com',activity:'شاي',amount:500,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-05'},
+    {bookingId:'BK-0002',bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',slotId:'BZ-001-A4',vendorName:'amr mohammed',phone:'01027486918',email:'amrmhamd62@gmail.com',activity:'ملابس',amount:500,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-06'},
+    {bookingId:'BK-0003',bazaarId:'BZ-004',bazaarName:'بازار واحد',slotId:'BZ-004-A1',vendorName:'خالد محمد',phone:'01027486918',email:'khmh3456@gmail.com',activity:'أكل',amount:1000,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-10'},
+    {bookingId:'BK-0004',bazaarId:'BZ-004',bazaarName:'بازار واحد',slotId:'BZ-004-A2',vendorName:'Hossam Mohammed',phone:'01222516188',email:'hoo01016930623@gmail.com',activity:'عطور',amount:1000,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-11'},
+    {bookingId:'BK-0005',bazaarId:'BZ-003',bazaarName:'ماركت الربيع',slotId:'BZ-003-A2',vendorName:'محمد علي',phone:'01155554444',email:'mo@email.com',activity:'أكل',amount:450,payStatus:'paid',bookStatus:'confirmed',bookDate:'2026-03-01'},
+  ];
+  COSTS = [
+    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
+    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'تجهيز وديكور',category:'ثابت',detail:'طاولات وستائر',qty:1,unitPrice:800,total:800,paid:'yes'},
+    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'تسويق إلكتروني',category:'تسويق',detail:'إعلانات سوشيال',qty:1,unitPrice:500,total:500,paid:'yes'},
+    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'كهرباء وخدمات',category:'تشغيل',detail:'استهلاك كهرباء',qty:1,unitPrice:150,total:150,paid:'no'},
+    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'أمن وحراسة',category:'تشغيل',detail:'طوال الأيام',qty:1,unitPrice:300,total:300,paid:'no'},
+    {bazaarId:'BZ-002',bazaarName:'بازار عيد الأم',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
+    {bazaarId:'BZ-002',bazaarName:'بازار عيد الأم',item:'تسويق إلكتروني',category:'تسويق',detail:'إعلانات سوشيال',qty:1,unitPrice:500,total:500,paid:'yes'},
+    {bazaarId:'BZ-003',bazaarName:'ماركت الربيع',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
+    {bazaarId:'BZ-003',bazaarName:'ماركت الربيع',item:'تجهيز وديكور',category:'ثابت',detail:'طاولات وستائر',qty:1,unitPrice:800,total:800,paid:'yes'},
+  ];
+  setConn('ok', '(بيانات تجريبية)');
+  updateAll();
+  toast('✅ تم تحميل البيانات التجريبية', 's');
+}
+
+/* ══════════════════════════════════════════
+   UPDATE ALL
+══════════════════════════════════════════ */
+function updateAll() {
+  const av  = SLOTS.filter(s=>s.status==='available').length;
+  const bkd = SLOTS.filter(s=>s.status==='booked').length;
+  const coll= BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const pend= BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
+  const cost= COSTS.reduce((s,c)=>s+Number(c.total||0),0);
+
+  document.getElementById('nb-bz').textContent=BAZAARS.length;
+  document.getElementById('nb-sl').textContent=SLOTS.length;
+  document.getElementById('nb-bk').textContent=BOOKINGS.length;
+  document.getElementById('nb-cs').textContent=COSTS.length;
+  document.getElementById('ov-bz').textContent=BAZAARS.length;
+  document.getElementById('ov-sl').textContent=SLOTS.length;
+  document.getElementById('ov-av').textContent=av;
+  document.getElementById('ov-bkd').textContent=bkd;
+  document.getElementById('ov-bks').textContent=BOOKINGS.length;
+  document.getElementById('ov-coll').textContent=fmt(coll);
+  document.getElementById('ov-pend').textContent=fmt(pend);
+  document.getElementById('ov-cost').textContent=fmt(cost);
+
+  // Populate filter dropdowns
+  const areas=[...new Set(BAZAARS.map(b=>b.area).filter(Boolean))];
+  document.getElementById('bz-far').innerHTML='<option value="">كل المناطق</option>'+areas.map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('sl-fbz').innerHTML='<option value="">كل البازارات</option>'+BAZAARS.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('bk-fbz').innerHTML='<option value="">كل البازارات</option>'+BAZAARS.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('cs-fbz').innerHTML='<option value="">كل البازارات</option>'+BAZAARS.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('nc-bz').innerHTML=BAZAARS.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('asl-bz').innerHTML='<option value="">— اختر بازار —</option>'+BAZAARS.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+
+  fBz=[...BAZAARS]; fSl=[...SLOTS]; fBk=[...BOOKINGS]; fCs=[...COSTS];
+  renderOv(); renderBazaars(); renderSlots(); renderBookings(); renderCosts(); renderFinancial();
+}
+
+/* ══════════════════════════════════════════
+   OVERVIEW TABLE
+══════════════════════════════════════════ */
+function renderOv() {
+  const tb = document.getElementById('ov-tbl');
+  if (!BAZAARS.length) { tb.innerHTML='<div class="ld">لا توجد بيانات — أدخل رابط API أو حمّل البيانات التجريبية</div>'; return; }
+  tb.innerHTML=`<table><thead><tr><th>البازار</th><th>المكان</th><th>الوحدات</th><th>الإشغال</th><th>الإيراد</th><th>الحالة</th></tr></thead><tbody>${
+    BAZAARS.slice(0,6).map(bz=>{
+      const slBz=SLOTS.filter(s=>s.bazaarId===bz.id);
+      const bkBz=BOOKINGS.filter(b=>b.bazaarId===bz.id&&b.bookStatus!=='cancelled');
+      const rev=bkBz.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+      const occ=slBz.length?Math.round(bz.bookedSlots/slBz.length*100):0;
+      return `<tr style="cursor:pointer" onclick="openBzEdit('${bz.id}')">
+        <td><div style="font-weight:600;font-size:12.5px">${bz.name}</div><div style="font-size:10.5px;color:var(--mu)">${bz.id}</div></td>
+        <td style="font-size:11.5px">${bz.venueType||'—'} · ${bz.venueName||'—'}<br><span style="color:var(--mu);font-size:10.5px">${bz.area||'—'}</span></td>
+        <td><span style="color:var(--or);font-weight:700">${bz.bookedSlots||0}</span><span style="color:var(--mu)">/${bz.totalSlots||0}</span></td>
+        <td><div style="width:80px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mu);margin-bottom:2px"><span>${occ}%</span></div><div class="pb-wrap"><div class="pb-fill ${occ>70?'pb-rd':occ>40?'pb-or':'pb-gr'}" style="width:${occ}%"></div></div></div></td>
+        <td><span class="pr">${fmt(rev)} ج</span></td>
+        <td><span class="ba ${bz.status==='published'?'ba-pub':'ba-dra'}">${bz.status==='published'?'✅ منشور':'📝 مسودة'}</span></td>
+      </tr>`;
+    }).join('')
+  }</tbody></table>`;
+}
+
+/* ══════════════════════════════════════════
+   BAZAARS
+══════════════════════════════════════════ */
+function renderBazaars() {
+  const q=document.getElementById('bz-q').value.toLowerCase();
+  const st=document.getElementById('bz-fst').value;
+  const ar=document.getElementById('bz-far').value;
+  const vt=document.getElementById('bz-fvt').value;
+  fBz=BAZAARS.filter(b=>
+    (!q||b.name.toLowerCase().includes(q)||(b.venueName||'').toLowerCase().includes(q))&&
+    (!st||b.status===st)&&(!ar||b.area===ar)&&(!vt||b.venueType===vt)
+  );
+  bzPg=1;
+  const pg=fBz.slice(0,PER);
+  document.getElementById('bz-tb').innerHTML=pg.length?pg.map(bz=>{
+    const slBz=SLOTS.filter(s=>s.bazaarId===bz.id);
+    const bkBz=BOOKINGS.filter(b=>b.bazaarId===bz.id&&b.bookStatus!=='cancelled');
+    const rev=bkBz.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+    const occ=slBz.length?Math.round((bz.bookedSlots||0)/slBz.length*100):0;
+    return `<tr>
+      <td style="cursor:pointer" onclick="openBzEdit('${bz.id}')">
+        <div style="font-weight:700;font-size:13px">${bz.name}</div>
+        <div style="font-size:10px;color:var(--mu)">${bz.id} · ${(bz.tags||[]).slice(0,3).join(', ')}</div>
+      </td>
+      <td style="font-size:11.5px">${bz.venueName||'—'}<br><span style="color:var(--mu);font-size:10px">${bz.venueType||''} · ${bz.area||''}</span></td>
+      <td style="font-size:11.5px">${bz.dateStart||'—'}<br><span style="color:var(--mu);font-size:10px">→ ${bz.dateEnd||''}</span></td>
+      <td>
+        <div style="font-size:12.5px"><span style="color:var(--or);font-weight:700">${bz.bookedSlots||0}</span>/${bz.totalSlots||0}</div>
+        <div class="pb-wrap" style="width:70px"><div class="pb-fill ${occ>70?'pb-rd':occ>40?'pb-or':'pb-gr'}" style="width:${occ}%"></div></div>
+      </td>
+      <td><span class="pr">${fmt(bz.price||0)} ج</span></td>
+      <td><span class="pr">${fmt(rev)} ج</span><div style="font-size:10px;color:var(--mu)">من ${fmt((bz.price||0)*(bz.totalSlots||0))} متوقع</div></td>
+      <td>
+        <select class="ie-sel" onchange="changeBzStatus('${bz.id}',this.value)" onclick="event.stopPropagation()">
+          <option value="published" ${bz.status==='published'?'selected':''}>✅ منشور</option>
+          <option value="draft" ${bz.status==='draft'?'selected':''}>📝 مسودة</option>
+          <option value="pending" ${bz.status==='pending'?'selected':''}>⏳ بانتظار</option>
+        </select>
+      </td>
+      <td>
+        <div class="row-acts">
+          <button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openBzEdit('${bz.id}')">✏️</button>
+          <button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openSlotMap('${bz.id}')">🗺️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8"><div class="empty"><div class="ei">🛍️</div>لا نتائج</div></td></tr>';
+  renderPag('bz-pg',fBz.length,bzPg,p=>{bzPg=p;renderBazaars();});
+}
+
+/* ══════════════════════════════════════════
+   SLOTS
+══════════════════════════════════════════ */
+function renderSlots() {
+  const q=document.getElementById('sl-q').value.toLowerCase();
+  const bz=document.getElementById('sl-fbz').value;
+  const st=document.getElementById('sl-fst').value;
+  fSl=SLOTS.filter(s=>
+    (!q||s.slotId.toLowerCase().includes(q)||(s.traderName||'').toLowerCase().includes(q))&&
+    (!bz||s.bazaarId===bz)&&(!st||s.status===st)
+  );
+  slPg=1;
+  const pg=fSl.slice(0,PER);
+  const bzMap=Object.fromEntries(BAZAARS.map(b=>[b.id,b.name]));
+  document.getElementById('sl-tb').innerHTML=pg.length?pg.map(s=>{
+    const scls={available:'ba-av',booked:'ba-bk',reserved:'ba-rs'};
+    const slbl={available:'متاح',booked:'محجوز',reserved:'محجوز مبدئي'};
+    return `<tr>
+      <td><code style="color:var(--or);font-size:11px">${s.slotId}</code></td>
+      <td style="font-size:11.5px;color:var(--mu)">${bzMap[s.bazaarId]||s.bazaarId}</td>
+      <td style="font-weight:700;color:var(--bl)">${s.rowLabel}${s.slotNumber}</td>
+      <td><span class="pr">${fmt(s.price||0)} ج</span></td>
+      <td>
+        <select class="ie-sel" onchange="changeSlotStatus('${s.slotId}',this.value)">
+          <option value="available" ${s.status==='available'?'selected':''}>✅ متاح</option>
+          <option value="booked" ${s.status==='booked'?'selected':''}>🔴 محجوز</option>
+          <option value="reserved" ${s.status==='reserved'?'selected':''}>🟡 محجوز مبدئي</option>
+        </select>
+      </td>
+      <td><input class="ie-inp" value="${s.traderName||''}" placeholder="اسم التاجر" onchange="changeSlotTrader('${s.slotId}','traderName',this.value)" style="width:110px"></td>
+      <td>
+        <select class="ie-sel" onchange="changeSlotTrader('${s.slotId}','activity',this.value)">
+          <option value="">— اختر —</option>
+          ${ACTIVITIES.map(a=>`<option value="${a}" ${s.activity===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="ie-inp" value="${s.notes||''}" placeholder="ملاحظة" onchange="changeSlotTrader('${s.slotId}','notes',this.value)" style="width:90px"></td>
+      <td><div class="row-acts"><button class="btn btn-gh btn-sm" onclick="openSlotMap('${s.bazaarId}')">🗺️</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">📦</div>لا نتائج</div></td></tr>';
+  renderPag('sl-pg',fSl.length,slPg,p=>{slPg=p;renderSlots();});
+}
+
+/* ══════════════════════════════════════════
+   BOOKINGS
+══════════════════════════════════════════ */
+function renderBookings() {
+  const q=document.getElementById('bk-q').value.toLowerCase();
+  const bz=document.getElementById('bk-fbz').value;
+  const ps=document.getElementById('bk-fps').value;
+  const bs=document.getElementById('bk-fbs').value;
+  fBk=BOOKINGS.filter(b=>
+    (!q||b.vendorName.toLowerCase().includes(q)||(b.phone||'').includes(q)||(b.bookingId||'').toLowerCase().includes(q))&&
+    (!bz||b.bazaarId===bz)&&(!ps||b.payStatus===ps)&&(!bs||b.bookStatus===bs)
+  );
+  bkPg=1;
+  const pg=fBk.slice(0,PER);
+  document.getElementById('bk-tb').innerHTML=pg.length?pg.map(b=>{
+    const psl={paid:'ba-pa',pending:'ba-pd',cancelled:'ba-ca'};
+    const bsl={confirmed:'ba-cf',cancelled:'ba-ca'};
+    return `<tr style="cursor:pointer" onclick="openBkDetail('${b.bookingId}')">
+      <td><code style="color:var(--mu);font-size:10px">${b.bookingId}</code></td>
+      <td style="font-weight:600;font-size:12.5px">${b.vendorName}</td>
+      <td style="font-size:11.5px;direction:ltr;text-align:right">${formatPhone(b.phone)}</td>
+      <td style="font-size:11.5px;color:var(--mu)">${b.bazaarName||b.bazaarId}</td>
+      <td><code style="color:var(--or);font-size:11px">${b.slotId}</code></td>
+      <td style="font-size:11.5px">${b.activity||'—'}</td>
+      <td><span class="pr">${fmt(b.amount||0)} ج</span></td>
+      <td>
+        <select class="ie-sel" onchange="changeBkStatus('${b.bookingId}','payStatus',this.value)" onclick="event.stopPropagation()">
+          <option value="paid" ${b.payStatus==='paid'?'selected':''}>✅ مدفوع</option>
+          <option value="pending" ${b.payStatus==='pending'?'selected':''}>⏳ معلّق</option>
+          <option value="cancelled" ${b.payStatus==='cancelled'?'selected':''}>❌ ملغي</option>
+        </select>
+      </td>
+      <td>
+        <select class="ie-sel" onchange="changeBkStatus('${b.bookingId}','bookStatus',this.value)" onclick="event.stopPropagation()">
+          <option value="confirmed" ${b.bookStatus==='confirmed'?'selected':''}>✅ مؤكد</option>
+          <option value="cancelled" ${b.bookStatus==='cancelled'?'selected':''}>❌ ملغي</option>
+        </select>
+      </td>
+      <td style="font-size:10.5px;color:var(--mu)">${b.bookDate||'—'}</td>
+      <td><div class="row-acts"><button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openBkDetail('${b.bookingId}')">👁</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="11"><div class="empty"><div class="ei">🧾</div>لا نتائج</div></td></tr>';
+  renderPag('bk-pg',fBk.length,bkPg,p=>{bkPg=p;renderBookings();});
+}
+
+/* ══════════════════════════════════════════
+   COSTS
+══════════════════════════════════════════ */
+function renderCosts() {
+  const bz=document.getElementById('cs-fbz').value;
+  const cat=document.getElementById('cs-fcat').value;
+  fCs=COSTS.filter(c=>(!bz||c.bazaarId===bz)&&(!cat||c.category===cat));
+  document.getElementById('cs-tb').innerHTML=fCs.length?fCs.map((c,i)=>`<tr>
+    <td style="font-size:11.5px;color:var(--mu)">${c.bazaarName||c.bazaarId}</td>
+    <td style="font-weight:600;font-size:12.5px">${c.item}</td>
+    <td><span class="ba" style="background:var(--bg3);color:var(--mu)">${c.category}</span></td>
+    <td style="font-size:11.5px;color:var(--mu)">${c.detail||'—'}</td>
+    <td>${c.qty||1}</td>
+    <td><span class="pr">${fmt(c.unitPrice||0)} ج</span></td>
+    <td><span class="pr">${fmt(c.total||0)} ج</span></td>
+    <td>
+      <select class="ie-sel" onchange="changeCostPaid(${i},this.value)">
+        <option value="yes" ${c.paid==='yes'?'selected':''}>✅ نعم</option>
+        <option value="no" ${c.paid==='no'?'selected':''}>❌ لا</option>
+      </select>
+    </td>
+    <td><div class="row-acts"><button class="btn btn-rd btn-sm" onclick="deleteCost(${COSTS.indexOf(c)})">🗑️</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💰</div>لا تكاليف مسجّلة</div></td></tr>';
+
+  // Summary by bazaar
+  const sumByBz={};
+  COSTS.forEach(c=>{
+    if(!sumByBz[c.bazaarId]) sumByBz[c.bazaarId]={name:c.bazaarName||c.bazaarId,total:0,paid:0};
+    sumByBz[c.bazaarId].total+=Number(c.total||0);
+    if(c.paid==='yes') sumByBz[c.bazaarId].paid+=Number(c.total||0);
+  });
+  const totalAll=Object.values(sumByBz).reduce((s,v)=>s+v.total,0);
+  document.getElementById('cs-summary').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${Object.entries(sumByBz).map(([id,v])=>`
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--mu);margin-bottom:4px">${v.name}</div>
+          <div style="font-size:15px;font-weight:900;color:var(--rd)">${fmt(v.total)} ج</div>
+          <div style="font-size:10.5px;color:var(--gr)">مدفوع: ${fmt(v.paid)} ج</div>
+          <div class="pb-wrap"><div class="pb-fill pb-gr" style="width:${v.total?Math.round(v.paid/v.total*100):0}%"></div></div>
+        </div>`).join('')}
+      <div style="background:var(--org);border:1px solid var(--bdo);border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;color:var(--or);margin-bottom:4px">الإجمالي الكلي</div>
+        <div style="font-size:18px;font-weight:900;color:var(--or)">${fmt(totalAll)} ج</div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   FINANCIAL REPORT
+══════════════════════════════════════════ */
+function renderFinancial() {
+  const exp=BAZAARS.reduce((s,b)=>s+((b.price||0)*(b.totalSlots||0)),0);
+  const coll=BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const totalCost=COSTS.reduce((s,c)=>s+Number(c.total||0),0);
+  const net=coll-totalCost;
+  document.getElementById('fin-exp').textContent=fmt(exp)+' ج';
+  document.getElementById('fin-col').textContent=fmt(coll)+' ج';
+  document.getElementById('fin-cst').textContent=fmt(totalCost)+' ج';
+  const nel=document.getElementById('fin-net');
+  nel.textContent=fmt(net)+' ج';
+  nel.style.color=net>=0?'var(--gr)':'var(--rd)';
+
+  document.getElementById('fin-tb').innerHTML=BAZAARS.map(bz=>{
+    const slBz=SLOTS.filter(s=>s.bazaarId===bz.id);
+    const bkBz=BOOKINGS.filter(b=>b.bazaarId===bz.id&&b.bookStatus!=='cancelled');
+    const bkPaid=bkBz.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+    const bkPend=bkBz.filter(b=>b.payStatus==='pending').reduce((s,b)=>s+Number(b.amount),0);
+    const cBz=COSTS.filter(c=>c.bazaarId===bz.id).reduce((s,c)=>s+Number(c.total||0),0);
+    const expBz=(bz.price||0)*(bz.totalSlots||0);
+    const netBz=bkPaid-cBz;
+    const occ=slBz.length?Math.round((bz.bookedSlots||0)/slBz.length*100):0;
+    return `<tr>
+      <td><div style="font-weight:700;font-size:12.5px">${bz.name}</div><div style="font-size:10px;color:var(--mu)">${bz.id}</div></td>
+      <td><span style="color:var(--or);font-weight:700">${bz.bookedSlots||0}</span>/${bz.totalSlots||0}</td>
+      <td><div style="width:80px"><div style="font-size:10px;color:var(--mu);margin-bottom:2px">${occ}%</div><div class="pb-wrap"><div class="pb-fill ${occ>70?'pb-gr':'pb-or'}" style="width:${occ}%"></div></div></div></td>
+      <td><span style="color:var(--bl);font-weight:700">${fmt(expBz)} ج</span></td>
+      <td><span style="color:var(--gr);font-weight:700">${fmt(bkPaid)} ج</span></td>
+      <td><span style="color:var(--yw);font-weight:700">${fmt(bkPend)} ج</span></td>
+      <td><span style="color:var(--rd);font-weight:700">${fmt(cBz)} ج</span></td>
+      <td><span style="color:${netBz>=0?'var(--gr)':'var(--rd)'};font-weight:900;font-size:13px">${fmt(netBz)} ج</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   INLINE EDITS
+══════════════════════════════════════════ */
+function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;syncToApi('editBazaarStatus',{id,status:val});renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
+function changeSlotStatus(id,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s.status=val;syncToApi('editSlotStatus',{slotId:id,status:val});renderSlots();updateAll();toast('تم تحديث الوحدة','s');}}
+function changeSlotTrader(id,field,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s[field]=val;syncToApi('editSlot',{slotId:id,[field]:val});}}
+function changeBkStatus(id,field,val){const b=BOOKINGS.find(x=>x.bookingId===id);if(b){b[field]=val;syncToApi('editBooking',{bookingId:id,[field]:val});renderBookings();renderFinancial();updateStats();toast('تم تحديث الحجز','s');}}
+function changeCostPaid(localIdx,val){const c=fCs[localIdx];if(c){const ri=COSTS.indexOf(c);if(ri>=0){COSTS[ri].paid=val;renderCosts();}}}
+function deleteCost(i){if(confirm('حذف هذا البند؟')){COSTS.splice(i,1);renderCosts();toast('تم حذف البند','i');}}
+function updateStats(){
+  const coll=BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const pend=BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
+  document.getElementById('ov-coll').textContent=fmt(coll);
+  document.getElementById('ov-pend').textContent=fmt(pend);
+}
+
+async function syncToApi(action,data){
+  if(!API){
+    // بدون API — التغييرات محفوظة محلياً فقط
+    return;
+  }
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...data})});
+    const d=await r.json();
+    if(d.error) console.warn('syncToApi error:',action,d.error);
+  }catch(e){
+    console.warn('syncToApi failed:',action,e.message);
+    // لا نوقف التطبيق — التغيير حُفظ محلياً
+  }
+}
+
+/* ══════════════════════════════════════════
+   BAZAAR EDIT MODAL
+══════════════════════════════════════════ */
+function openBzEdit(id){
+  const bz=BAZAARS.find(x=>x.id===id); if(!bz) return;
+  document.getElementById('mebz-name').textContent=bz.name;
+  document.getElementById('mebz-nm').value=bz.name||'';
+  document.getElementById('mebz-dc').value=bz.description||'';
+  document.getElementById('mebz-vt').value=bz.venueType||'مول';
+  document.getElementById('mebz-vn').value=bz.venueName||'';
+  document.getElementById('mebz-ar').value=bz.area||'';
+  document.getElementById('mebz-ad').value=bz.address||'';
+  document.getElementById('mebz-ds').value=bz.dateStart||'';
+  document.getElementById('mebz-de').value=bz.dateEnd||'';
+  document.getElementById('mebz-pr').value=bz.price||'';
+  document.getElementById('mebz-ts').value=bz.totalSlots||'';
+  document.getElementById('mebz-img').value=bz.image||'';
+  document.getElementById('mebz-tg').value=(bz.tags||[]).join(',');
+  document.getElementById('mebz-ms').value=bz.minSpace||2;
+  document.getElementById('mebz-st').value=bz.status||'draft';
+  document.getElementById('mebz-status').textContent='';
+  document.getElementById('modal-bz').dataset.editId=id;
+  openModal('modal-bz');
+}
+
+async function saveBazaarEdit(){
+  const id=document.getElementById('modal-bz').dataset.editId;
+  const bz=BAZAARS.find(x=>x.id===id); if(!bz) return;
+  bz.name=document.getElementById('mebz-nm').value.trim();
+  bz.description=document.getElementById('mebz-dc').value.trim();
+  bz.venueType=document.getElementById('mebz-vt').value;
+  bz.venueName=document.getElementById('mebz-vn').value.trim();
+  bz.area=document.getElementById('mebz-ar').value.trim();
+  bz.address=document.getElementById('mebz-ad').value.trim();
+  bz.dateStart=document.getElementById('mebz-ds').value;
+  bz.dateEnd=document.getElementById('mebz-de').value;
+  bz.price=Number(document.getElementById('mebz-pr').value)||0;
+  bz.totalSlots=Number(document.getElementById('mebz-ts').value)||0;
+  bz.image=document.getElementById('mebz-img').value.trim();
+  bz.tags=document.getElementById('mebz-tg').value.split(',').map(t=>t.trim()).filter(Boolean);
+  bz.minSpace=Number(document.getElementById('mebz-ms').value)||2;
+  bz.status=document.getElementById('mebz-st').value;
+  document.getElementById('mebz-status').textContent='✅ تم الحفظ';
+  document.getElementById('mebz-status').style.color='var(--gr)';
+  renderBazaars(); renderOv(); renderFinancial();
+  toast('✅ تم حفظ بيانات البازار','s');
+  await syncToApi('editBazaar',{id,...bz});
+  setTimeout(()=>closeModal('modal-bz'),800);
+}
+
+/* ══════════════════════════════════════════
+   SLOT MAP MODAL
+══════════════════════════════════════════ */
+function openSlotMap(bzId){
+  const bz=BAZAARS.find(x=>x.id===bzId); if(!bz) return;
+  document.getElementById('msm-name').textContent=bz.name;
+  const slBz=SLOTS.filter(s=>s.bazaarId===bzId);
+  const rows=[...new Set(slBz.map(s=>s.rowLabel))].sort();
+  const cont=document.getElementById('slots-map-container');
+  cont.innerHTML=rows.map(r=>{
+    const rowSlots=slBz.filter(s=>s.rowLabel===r).sort((a,b)=>a.slotNumber-b.slotNumber);
+    return `<div>
+      <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px">صف ${r}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${rowSlots.map(s=>`
+          <div class="slot-cell ${s.status==='available'?'av':s.status==='booked'?'bk':'rs'}"
+               onclick="quickEditSlot('${s.slotId}')"
+               title="${s.traderName?'التاجر: '+s.traderName+'\n':''}${s.activity?'النشاط: '+s.activity:''}">
+            <div class="slot-id">${s.slotId.split('-').pop()}</div>
+            <div class="slot-st">${s.status==='available'?'✓':s.status==='booked'?'●':'◐'}</div>
+            ${s.traderName?`<div style="font-size:7px;color:inherit;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${s.traderName.split(' ')[0]}</div>`:''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  openModal('modal-sl-map');
+}
+
+function quickEditSlot(slotId){
+  const s=SLOTS.find(x=>x.slotId===slotId); if(!s) return;
+  const opts=['available','booked','reserved'];
+  const cur=opts.indexOf(s.status);
+  const nxt=opts[(cur+1)%opts.length];
+  s.status=nxt;
+  syncToApi('editSlotStatus',{slotId,status:nxt});
+  openSlotMap(s.bazaarId);
+  renderSlots();
+  toast(`${slotId} → ${nxt}`,'i');
+}
+
+/* ══════════════════════════════════════════
+   BOOKING DETAIL
+══════════════════════════════════════════ */
+function openBkDetail(id){
+  const b=BOOKINGS.find(x=>x.bookingId===id); if(!b) return;
+  const psl={paid:'ba-pa',pending:'ba-pd',cancelled:'ba-ca'};
+  const bsl={confirmed:'ba-cf',cancelled:'ba-ca'};
+  document.getElementById('modal-bk-body').innerHTML=`
+    <div style="display:grid;gap:9px">
+      ${[['رقم الحجز',`<code style="color:var(--or)">${b.bookingId}</code>`],
+         ['البازار',b.bazaarName||b.bazaarId],
+         ['الوحدة',`<code style="color:var(--or)">${b.slotId}</code>`],
+         ['التاجر',`<strong>${b.vendorName}</strong>`],
+         ['التليفون',formatPhone(b.phone)],
+         ['البريد',b.email||'—'],
+         ['النشاط',b.activity||'—'],
+         ['المبلغ',`<span class="pr">${fmt(b.amount)} ج</span>`],
+         ['حالة الدفع',`<span class="ba ${psl[b.payStatus]}">${b.payStatus}</span>`],
+         ['حالة الحجز',`<span class="ba ${bsl[b.bookStatus]}">${b.bookStatus}</span>`],
+         ['تاريخ الحجز',b.bookDate||'—'],
+      ].map(([l,v])=>`<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)"><div style="width:100px;font-size:11px;color:var(--mu);flex-shrink:0">${l}</div><div style="font-size:12.5px">${v}</div></div>`).join('')}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <select class="fc" onchange="changeBkStatus('${b.bookingId}','payStatus',this.value)" style="flex:1">
+        <option value="paid" ${b.payStatus==='paid'?'selected':''}>✅ مدفوع</option>
+        <option value="pending" ${b.payStatus==='pending'?'selected':''}>⏳ معلّق</option>
+        <option value="cancelled" ${b.payStatus==='cancelled'?'selected':''}>❌ ملغي</option>
+      </select>
+      <select class="fc" onchange="changeBkStatus('${b.bookingId}','bookStatus',this.value)" style="flex:1">
+        <option value="confirmed" ${b.bookStatus==='confirmed'?'selected':''}>✅ مؤكد</option>
+        <option value="cancelled" ${b.bookStatus==='cancelled'?'selected':''}>❌ ملغي</option>
+      </select>
+    </div>`;
+  openModal('modal-bk');
+}
+
+/* ══════════════════════════════════════════
+   ADD BAZAAR FORM
+══════════════════════════════════════════ */
+function calcDays(){
+  const ds=document.getElementById('nb-ds').value;
+  const de=document.getElementById('nb-de').value;
+  if(ds&&de){const d=Math.round((new Date(de)-new Date(ds))/(86400000))+1;document.getElementById('nb-days').value=d>0?d:'';}
+  updatePreview();
+}
+function calcExpected(){
+  const p=Number(document.getElementById('nb-price').value)||0;
+  const s=Number(document.getElementById('nb-slots').value)||0;
+  document.getElementById('nb-exp-display').textContent=fmt(p*s)+' ج';
+  updatePreview();
+}
+function updatePreview(){
+  document.getElementById('prev-name').textContent=document.getElementById('nb-name').value||'اسم البازار...';
+  const ds=document.getElementById('nb-ds').value;
+  const de=document.getElementById('nb-de').value;
+  const ar=document.getElementById('nb-area').value;
+  const vn=document.getElementById('nb-vname').value;
+  document.getElementById('prev-meta').textContent=[ar,vn,ds&&de?ds+' → '+de:''].filter(Boolean).join(' · ')||'—';
+}
+
+// Tags
+let selectedTags=[];
+function addTag(t){t=t.trim();if(t&&!selectedTags.includes(t)){selectedTags.push(t);renderTags();}}
+function removeTag(t){selectedTags=selectedTags.filter(x=>x!==t);renderTags();}
+function renderTags(){
+  document.getElementById('tags-chips').innerHTML=selectedTags.map(t=>`<span class="tag-chip">${t}<button onclick="removeTag('${t}')">✕</button></span>`).join('');
+}
+function handleTagKey(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.replace(',','').trim();if(v){addTag(v);e.target.value='';}}}
+function filterTagSug(){
+  const q=document.getElementById('tags-inp').value.toLowerCase();
+  const opts=TAG_OPTS.filter(t=>t.includes(q)&&!selectedTags.includes(t));
+  const el=document.getElementById('tag-sug');
+  el.innerHTML=opts.map(t=>`<div class="tag-sug-opt" onclick="addTag('${t}');document.getElementById('tags-inp').value='';hideTagSug()">${t}</div>`).join('');
+  if(opts.length)el.classList.add('open');
+}
+function showTagSug(){filterTagSug();}
+function hideTagSug(){document.getElementById('tag-sug').classList.remove('open');}
+
+// Area combo
+function filterAreaSug(){
+  const q=document.getElementById('nb-area').value.toLowerCase();
+  const opts=AREAS.filter(a=>a.includes(q));
+  const el=document.getElementById('area-sug');
+  el.innerHTML=opts.map(a=>`<div class="tag-sug-opt" onclick="document.getElementById('nb-area').value='${a}';hideAreaSug()">${a}</div>`).join('');
+  if(opts.length)el.classList.add('open');
+}
+function showAreaSug(){filterAreaSug();}
+function hideAreaSug(){document.getElementById('area-sug').classList.remove('open');}
+
+async function submitBazaar(){
+  const name=document.getElementById('nb-name').value.trim();
+  if(!name){toast('اسم البازار مطلوب','e');return;}
+  if(!API){toast('لا يوجد API — البيانات ستُضاف محلياً فقط','i');}
+  const newId='BZ-'+String(BAZAARS.length+1).padStart(3,'0');
+  const bz={
+    id:newId,name,
+    description:document.getElementById('nb-desc').value.trim(),
+    venueType:document.getElementById('nb-vtype').value,
+    venueName:document.getElementById('nb-vname').value.trim(),
+    area:document.getElementById('nb-area').value.trim(),
+    address:document.getElementById('nb-addr').value.trim(),
+    dateStart:document.getElementById('nb-ds').value,
+    dateEnd:document.getElementById('nb-de').value,
+    daysCount:Number(document.getElementById('nb-days').value)||1,
+    totalSlots:Number(document.getElementById('nb-slots').value)||0,
+    availSlots:Number(document.getElementById('nb-slots').value)||0,
+    bookedSlots:0,
+    price:Number(document.getElementById('nb-price').value)||0,
+    minSpace:Number(document.getElementById('nb-msp').value)||2,
+    image:document.getElementById('nb-img').value.trim(),
+    tags:[...selectedTags],
+    status:document.getElementById('nb-st').value,
+  };
+  const btn=document.getElementById('btn-add-bz');
+  btn.disabled=true; btn.textContent='⏳ جارٍ الإرسال...';
+  try{
+    if(API){
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'addBazaar',...bz})});
+      const d=await r.json();
+      if(d.id)bz.id=d.id;
+    }
+    BAZAARS.push(bz);
+    updateAll();
+    document.getElementById('add-bz-res').innerHTML=`<div class="rok">✅ تمت إضافة البازار: <strong>${bz.id} — ${bz.name}</strong></div>`;
+    clearBzForm(); toast('✅ تمت إضافة البازار','s');
+  }catch(e){toast('خطأ: '+e.message,'e');document.getElementById('add-bz-res').innerHTML=`<div class="rer">❌ ${e.message}</div>`;}
+  btn.disabled=false;btn.textContent='✅ إضافة البازار';
+}
+function clearBzForm(){['nb-name','nb-desc','nb-vname','nb-addr','nb-ds','nb-de','nb-slots','nb-price','nb-img'].forEach(id=>document.getElementById(id).value='');selectedTags=[];renderTags();document.getElementById('add-bz-res').innerHTML='';document.getElementById('nb-exp-display').textContent='0 ج';document.getElementById('nb-days').value='';}
+
+/* ══════════════════════════════════════════
+   ADD SLOTS
+══════════════════════════════════════════ */
+function updateSlotPreview(){
+  const bzId=document.getElementById('asl-bz').value;
+  const count=Number(document.getElementById('asl-count').value)||0;
+  const price=Number(document.getElementById('asl-price').value)||0;
+  const bz=BAZAARS.find(x=>x.id===bzId);
+  const cont=document.getElementById('slot-preview-grid');
+  const info=document.getElementById('slot-preview-info');
+  if(!bzId||!count){cont.innerHTML='';info.textContent='اختر بازار وعدد وحدات';return;}
+  const rows='ABCDEFGHIJ'.split('');
+  let cells=[];let c=0;
+  for(const r of rows){for(let n=1;n<=5;n++){if(c>=count)break;cells.push(`<div style="width:40px;height:40px;border-radius:7px;background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--gr)">${r}${n}</div>`);c++;}if(c>=count)break;}
+  cont.innerHTML=cells.join('');
+  info.innerHTML=`<span style="color:var(--or);font-weight:700">${count}</span> وحدة · سعر الوحدة: <span style="color:var(--or);font-weight:700">${fmt(price)}</span> ج · إجمالي: <span style="color:var(--or);font-weight:700">${fmt(price*count)}</span> ج`;
+}
+
+function submitSlots(){
+  const bzId=document.getElementById('asl-bz').value;
+  const count=Number(document.getElementById('asl-count').value)||0;
+  const price=Number(document.getElementById('asl-price').value)||0;
+  if(!bzId){toast('اختر بازار','e');return;}
+  if(!count||!price){toast('أدخل عدد الوحدات والسعر','e');return;}
+  const rows='ABCDEFGHIJ'.split('');
+  let c=0;
+  for(const r of rows){for(let n=1;n<=5;n++){if(c>=count)break;
+    const slotId=`${bzId}-${r}${n}`;
+    if(!SLOTS.find(s=>s.slotId===slotId)){SLOTS.push({slotId,bazaarId:bzId,rowLabel:r,slotNumber:n,price,status:'available',traderName:'',activity:'',notes:''});}
+    c++;
+  }if(c>=count)break;}
+  const bz=BAZAARS.find(x=>x.id===bzId);if(bz){bz.totalSlots=count;bz.availSlots=count;}
+  updateAll();
+  document.getElementById('add-sl-res').innerHTML=`<div class="rok">✅ تم إنشاء ${count} وحدة للبازار ${bzId}</div>`;
+  toast('✅ تم إنشاء الوحدات','s');
+  if(API) syncToApi('createSlots',{bazaarId:bzId,count,price});
+}
+
+/* ══════════════════════════════════════════
+   ADD COST
+══════════════════════════════════════════ */
+function openAddCost(){openModal('modal-add-cost');}
+function calcCostTotal(){const q=Number(document.getElementById('nc-qty').value)||1;const u=Number(document.getElementById('nc-up').value)||0;document.getElementById('nc-tot').value=q*u;}
+function submitCost(){
+  const bzId=document.getElementById('nc-bz').value;
+  const item=document.getElementById('nc-item').value.trim();
+  if(!bzId||!item){toast('البازار والبند مطلوبان','e');return;}
+  const bz=BAZAARS.find(x=>x.id===bzId);
+  const qty=Number(document.getElementById('nc-qty').value)||1;
+  const up=Number(document.getElementById('nc-up').value)||0;
+  const cost={bazaarId:bzId,bazaarName:bz?.name||bzId,item,category:document.getElementById('nc-cat').value,detail:document.getElementById('nc-det').value.trim(),qty,unitPrice:up,total:qty*up,paid:document.getElementById('nc-paid').value};
+  COSTS.push(cost);
+  renderCosts();renderFinancial();
+  document.getElementById('add-cost-res').innerHTML=`<div class="rok">✅ تمت الإضافة: ${item}</div>`;
+  toast('✅ تم إضافة البند','s');
+  setTimeout(()=>{closeModal('modal-add-cost');document.getElementById('add-cost-res').innerHTML='';},800);
+}
+
+/* ══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+function gp(tab){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pg-'+tab).classList.add('active');
+  const ni=document.querySelector(`.ni[onclick*="'${tab}'"]`);
+  if(ni)ni.classList.add('active');
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function fmt(n){return Number(n||0).toLocaleString('ar-EG');}
+function formatPhone(p){if(!p)return '—';const s=String(p).replace(/\..*$/,'').replace(/[^\d]/g,'');return s.length>=10?s.replace(/^(01\d)(\d{4})(\d{4})$/,'$1-$2-$3'):s;}
+function setLoad(on){['btnload','btnref'].forEach(id=>{const b=document.getElementById(id);b.disabled=on;});document.getElementById('btnload').innerHTML=on?'<div class="spin"></div> جارٍ...':'⚡ تحميل';}
+function setConn(s,t=''){const p=document.getElementById('cpill');p.className='sb-conn '+(s==='ok'?'ok':s==='err'?'err':'');document.getElementById('ctxt').textContent=s==='ok'?'متصل — '+t:s==='err'?'خطأ':'جارٍ التحميل...';}
+function renderPag(cid,tot,cur,cb){const pages=Math.ceil(tot/PER);const c=document.getElementById(cid);if(!c||pages<=1){if(c)c.innerHTML='';return;}let h='';if(cur>1)h+=`<button class="pb2" onclick="(${cb})(${cur-1})">‹</button>`;for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-cur)<=1)h+=`<button class="pb2 ${i===cur?'active':''}" onclick="(${cb})(${i})">${i}</button>`;else if(Math.abs(i-cur)===2)h+=`<span class="pi">…</span>`;}if(cur<pages)h+=`<button class="pb2" onclick="(${cb})(${cur+1})">›</button>`;h+=`<span class="pi">${tot} عنصر</span>`;c.innerHTML=h;}
+function toast(msg,t='i'){const c=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast t${t}`;el.textContent=msg;c.appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+// Load demo data immediately
+loadDemoData();
+
+// Update preview on name input
+document.getElementById('nb-name').addEventListener('input',updatePreview);
+document.getElementById('nb-area').addEventListener('input',updatePreview);
+document.getElementById('nb-vname').addEventListener('input',updatePreview);
+document.getElementById('nb-ds').addEventListener('change',()=>{calcDays();updatePreview();});
+</script>
+</body>
+</html>
