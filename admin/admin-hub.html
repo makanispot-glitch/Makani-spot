@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>مكاني Spot — لوحة التحكم المركزية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════ */
+:root {
+  --bg:    #080810;
+  --bg2:   #0d0d1a;
+  --bg3:   #12121f;
+  --bg4:   #1a1a2e;
+  --bg5:   #222238;
+  --or:    #FF6B00;
+  --or2:   #ff8c3a;
+  --org:   rgba(255,107,0,.12);
+  --bdo:   rgba(255,107,0,.3);
+  --tx:    #e8e8f0;
+  --mu:    #6b6b8a;
+  --mu2:   #3a3a55;
+  --bd:    rgba(255,255,255,.06);
+  --gr:    #22C55E;
+  --rd:    #EF4444;
+  --yw:    #F59E0B;
+  --bl:    #60A5FA;
+  --pu:    #A78BFA;
+  --tl:    #2DD4BF;
+  --r:     10px;
+  --sh:    0 8px 40px rgba(0,0,0,.6);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════
+   ANIMATED BACKGROUND
+══════════════════════════════════════ */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,107,0,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,107,0,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-glow {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255,107,0,.06) 0%, transparent 70%);
+  border-radius: 50%;
+  top: -200px;
+  left: -200px;
+  pointer-events: none;
+  z-index: 0;
+  animation: driftGlow 20s ease-in-out infinite alternate;
+}
+@keyframes driftGlow {
+  0%   { transform: translate(0,0); }
+  100% { transform: translate(300px, 200px); }
+}
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+.login-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  padding: 40px 44px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--sh), 0 0 80px rgba(255,107,0,.05);
+  animation: loginIn .4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--or), transparent);
+}
+@keyframes loginIn { from { opacity:0; transform: translateY(20px); } }
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo .brand {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--or);
+  letter-spacing: -1px;
+}
+.login-logo .sub {
+  font-size: 12px;
+  color: var(--mu);
+  margin-top: 4px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.login-logo .lock-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(255,107,0,.4));
+}
+
+.login-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+  margin-bottom: 6px;
+  display: block;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.login-input-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+.login-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--tx);
+  letter-spacing: 3px;
+  transition: border-color .2s, box-shadow .2s;
+  direction: ltr;
+  text-align: center;
+}
+.login-input:focus {
+  outline: none;
+  border-color: var(--or);
+  box-shadow: 0 0 0 3px rgba(255,107,0,.1);
+}
+.login-input.shake {
+  animation: shake .4s ease;
+  border-color: var(--rd);
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px); }
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--or);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.login-btn:hover { background: var(--or2); transform: translateY(-1px); }
+.login-btn:active { transform: translateY(0); }
+.login-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.login-err {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--rd);
+  text-align: center;
+  display: none;
+}
+.login-attempts {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--mu);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   MAIN DASHBOARD
+══════════════════════════════════════ */
+#dashboard {
+  display: none;
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--bd);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topbar-brand .logo-text { font-size: 22px; font-weight: 900; color: var(--or); }
+.topbar-brand .badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 3px 8px;
+  background: var(--org);
+  border: 1px solid var(--bdo);
+  border-radius: 4px;
+  color: var(--or);
+  letter-spacing: 1px;
+}
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--mu);
+}
+.logout-btn {
+  padding: 6px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  color: var(--mu);
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all .18s;
+}
+.logout-btn:hover { border-color: var(--rd); color: var(--rd); }
+
+/* SECTION TITLE */
+.sec-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-title::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: var(--or);
+  border-radius: 2px;
+}
+
+/* ══════════════════════════════════════
+   STATUS GRID
+══════════════════════════════════════ */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.status-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color .2s;
+}
+.status-card:hover { border-color: var(--bdo); }
+.status-dot-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.dot-ok  { background: rgba(34,197,94,.12); }
+.dot-warn{ background: rgba(245,158,11,.12); }
+.dot-err { background: rgba(239,68,68,.12); }
+.dot-idle{ background: rgba(107,107,138,.12); }
+.status-info { flex: 1; }
+.status-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.status-sub  { font-size: 11px; color: var(--mu); }
+.status-pill {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.pill-ok  { background: rgba(34,197,94,.12);  color: var(--gr); border: 1px solid rgba(34,197,94,.2); }
+.pill-warn{ background: rgba(245,158,11,.12); color: var(--yw); border: 1px solid rgba(245,158,11,.2); }
+.pill-err { background: rgba(239,68,68,.12);  color: var(--rd); border: 1px solid rgba(239,68,68,.2); }
+.pill-idle{ background: rgba(107,107,138,.12);color: var(--mu); border: 1px solid var(--bd); }
+
+/* ══════════════════════════════════════
+   QUICK ACCESS
+══════════════════════════════════════ */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.quick-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 24px;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.quick-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--or);
+  transform: scaleX(0);
+  transition: transform .2s;
+}
+.quick-card:hover {
+  border-color: var(--bdo);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255,107,0,.1);
+}
+.quick-card:hover::before { transform: scaleX(1); }
+.quick-icon { font-size: 36px; margin-bottom: 14px; }
+.quick-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.quick-desc  { font-size: 12px; color: var(--mu); line-height: 1.6; }
+.quick-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+}
+.qb-live { background: rgba(34,197,94,.12);  color: var(--gr); border: 1px solid rgba(34,197,94,.2); }
+.qb-new  { background: rgba(255,107,0,.12);  color: var(--or); border: 1px solid var(--bdo); }
+.quick-arrow {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--or);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.quick-card:hover .quick-arrow { opacity: 1; }
+
+/* ══════════════════════════════════════
+   SYSTEM INFO CARDS
+══════════════════════════════════════ */
+.systems-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.sys-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.sys-card-head {
+  padding: 16px 20px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--bd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sys-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sys-card-body { padding: 18px 20px; }
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bd);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label {
+  width: 130px;
+  font-size: 11px;
+  color: var(--mu);
+  flex-shrink: 0;
+  padding-top: 2px;
+  line-height: 1.4;
+}
+.info-value {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.copy-btn {
+  background: none;
+  border: 1px solid var(--bd);
+  border-radius: 5px;
+  color: var(--mu);
+  cursor: pointer;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-family: 'Cairo', sans-serif;
+  transition: all .18s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.copy-btn:hover { border-color: var(--or); color: var(--or); }
+.copy-btn.copied { border-color: var(--gr); color: var(--gr); }
+
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  color: var(--bl);
+  text-decoration: none;
+  transition: all .18s;
+  direction: ltr;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-chip:hover { border-color: var(--bl); background: rgba(96,165,250,.06); }
+
+/* ══════════════════════════════════════
+   STRUCTURE DIAGRAM
+══════════════════════════════════════ */
+.arch-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.arch-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  row-gap: 12px;
+}
+.arch-node {
+  background: var(--bg3);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 110px;
+  transition: border-color .2s;
+}
+.arch-node:hover { border-color: var(--bdo); }
+.arch-node .node-icon { font-size: 18px; margin-bottom: 4px; }
+.arch-node .node-label { font-size: 11px; color: var(--mu); }
+.arch-arrow {
+  font-size: 18px;
+  color: var(--or);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   DOCS SECTION
+══════════════════════════════════════ */
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.doc-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.doc-head {
+  padding: 14px 18px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--bd);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-body {
+  padding: 16px 18px;
+  font-size: 12px;
+  color: var(--tx);
+  line-height: 1.85;
+}
+.doc-step {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.doc-step:last-child { margin-bottom: 0; }
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--org);
+  border: 1px solid var(--bdo);
+  color: var(--or);
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-text { font-size: 12px; color: var(--tx); line-height: 1.6; flex: 1; }
+.step-text code {
+  background: var(--bg3);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--or);
+}
+
+.warn-box {
+  background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: var(--yw);
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+.info-box {
+  background: rgba(96,165,250,.06);
+  border: 1px solid rgba(96,165,250,.2);
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: var(--bl);
+  margin-top: 10px;
+}
+
+/* ══════════════════════════════════════
+   QUICK LINKS FOOTER
+══════════════════════════════════════ */
+.ext-links {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.ext-link {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ext-link:hover {
+  border-color: var(--bdo);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,107,0,.08);
+}
+.ext-link .ext-icon { font-size: 20px; flex-shrink: 0; }
+.ext-link .ext-name { font-size: 12px; font-weight: 700; }
+.ext-link .ext-desc { font-size: 10.5px; color: var(--mu); margin-top: 1px; }
+
+/* ══════════════════════════════════════
+   TABLE
+══════════════════════════════════════ */
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.schema-table th {
+  padding: 8px 12px;
+  background: var(--bg3);
+  color: var(--mu);
+  font-weight: 700;
+  text-align: right;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  border-bottom: 1px solid var(--bd);
+}
+.schema-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bd);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.schema-table tr:last-child td { border-bottom: none; }
+.schema-table .col-id {
+  font-family: 'Space Mono', monospace;
+  font-size: 10.5px;
+  color: var(--or);
+}
+.schema-table .col-type {
+  font-size: 10.5px;
+  color: var(--pu);
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+#toasts {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.toast {
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: var(--sh);
+  animation: sli .25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toast-s { background: var(--bg2); border: 1px solid var(--gr); color: var(--gr); }
+.toast-e { background: var(--bg2); border: 1px solid var(--rd); color: var(--rd); }
+.toast-i { background: var(--bg2); border: 1px solid var(--or); color: var(--or); }
+@keyframes sli { from { transform: translateX(-14px); opacity: 0; } }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .quick-grid { grid-template-columns: 1fr 1fr; }
+  .status-grid { grid-template-columns: 1fr; }
+  .systems-grid { grid-template-columns: 1fr; }
+  .docs-grid { grid-template-columns: 1fr; }
+  .ext-links { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px) {
+  .quick-grid { grid-template-columns: 1fr; }
+  .ext-links { grid-template-columns: 1fr 1fr; }
+  #dashboard { padding: 16px 14px 40px; }
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ═══════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="lock-icon">🔐</div>
+      <div class="brand">مكاني Spot</div>
+      <div class="sub">Admin Control Hub</div>
+    </div>
+    <label class="login-label" for="pw-input">كلمة الدخول</label>
+    <div class="login-input-wrap">
+      <input
+        type="password"
+        id="pw-input"
+        class="login-input"
+        placeholder="••••••••••••"
+        onkeydown="if(event.key==='Enter')tryLogin()"
+        autocomplete="off"
+        autofocus
+      >
+    </div>
+    <button class="login-btn" id="login-btn" onclick="tryLogin()">
+      <span>🚀</span> دخول
+    </button>
+    <div class="login-err" id="login-err">كلمة السر غير صحيحة — حاول مرة أخرى</div>
+    <div class="login-attempts" id="login-attempts"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     MAIN DASHBOARD
+═══════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="logo-text">مكاني Spot</div>
+      <div class="badge">ADMIN HUB v1.0</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-time" id="clock">—</div>
+      <button class="logout-btn" onclick="doLogout()">🚪 خروج</button>
+    </div>
+  </div>
+
+  <!-- ─── STATUS ─── -->
+  <div class="sec-title">حالة الأنظمة</div>
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="status-dot-wrap dot-ok">📡</div>
+      <div class="status-info">
+        <div class="status-name">Apps Script — المساحات</div>
+        <div class="status-sub">Google Sheets API</div>
+      </div>
+      <span class="status-pill pill-ok" id="st-spaces">LIVE</span>
+    </div>
+    <div class="status-card">
+      <div class="status-dot-wrap dot-ok">🛍️</div>
+      <div class="status-info">
+        <div class="status-name">Apps Script — البازارات</div>
+        <div class="status-sub">Google Sheets API</div>
+      </div>
+      <span class="status-pill pill-ok" id="st-bazaars">LIVE</span>
+    </div>
+    <div class="status-card">
+      <div class="status-dot-wrap dot-idle">🌐</div>
+      <div class="status-info">
+        <div class="status-name">Cloudflare Pages</div>
+        <div class="status-sub">makani-spot.pages.dev</div>
+      </div>
+      <span class="status-pill pill-ok">ONLINE</span>
+    </div>
+  </div>
+
+  <!-- ─── QUICK ACCESS ─── -->
+  <div class="sec-title">الوصول السريع</div>
+  <div class="quick-grid">
+
+    <a href="./makani-admin-v3-fixed.html" target="_blank" class="quick-card">
+      <span class="quick-badge qb-live">LIVE</span>
+      <div class="quick-icon">🏢</div>
+      <div class="quick-title">داشبورد المساحات</div>
+      <div class="quick-desc">إدارة المساحات، الوحدات الفرعية، الحجوزات، والموافقة على المساحات الجديدة المضافة من أصحاب الأماكن.</div>
+      <div class="quick-arrow">فتح الداشبورد ←</div>
+    </a>
+
+    <a href="./bazaar-dashboard.html" target="_blank" class="quick-card">
+      <span class="quick-badge qb-live">LIVE</span>
+      <div class="quick-icon">🛍️</div>
+      <div class="quick-title">داشبورد البازارات</div>
+      <div class="quick-desc">إدارة البازارات، الوحدات، الحجوزات، التكاليف التشغيلية، والتقارير المالية الشاملة لكل بازار.</div>
+      <div class="quick-arrow">فتح الداشبورد ←</div>
+    </a>
+
+    <a href="../admin-listings" target="_blank" class="quick-card">
+      <span class="quick-badge qb-new">LISTINGS</span>
+      <div class="quick-icon">🏪</div>
+      <div class="quick-title">مشاريع كاملة للبيع</div>
+      <div class="quick-desc">قبول أو رفض إعلانات المشاريع المعروضة للبيع على المنصة — مراجعة الصور والتفاصيل والتحقق من المحتوى.</div>
+      <div class="quick-arrow">فتح صفحة المراجعة ←</div>
+    </a>
+
+  </div>
+
+  <!-- ─── SYSTEM DETAILS ─── -->
+  <div class="sec-title">تفاصيل الأنظمة والروابط</div>
+  <div class="systems-grid">
+
+    <!-- SPACES SYSTEM -->
+    <div class="sys-card">
+      <div class="sys-card-head">
+        <div class="sys-card-title">🏢 نظام المساحات</div>
+        <span class="status-pill pill-ok">ACTIVE</span>
+      </div>
+      <div class="sys-card-body">
+
+        <div class="info-row">
+          <div class="info-label">Apps Script URL</div>
+          <div class="info-value">
+            <a class="link-chip" href="https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec" target="_blank">
+              🔗 script.google.com/.../exec
+            </a>
+          </div>
+          <button class="copy-btn" onclick="copyText('https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec',this)">نسخ</button>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Google Sheet</div>
+          <div class="info-value">
+            <a class="link-chip" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
+              📊 makani_spaces_sheet
+            </a>
+          </div>
+          <button class="copy-btn" onclick="copyText('https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit',this)">نسخ</button>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الشيتات الرئيسية</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏢 المساحات</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 الوحدات الفرعية</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏷️ الأنشطة</span>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الـ Actions</div>
+          <div class="info-value" style="font-size:11px;line-height:2">
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">doGet</code> ← جلب المساحات والأنشطة للموقع<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">addSpace</code> ← إضافة مساحة جديدة<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">editSpace</code> ← تعديل مساحة موجودة<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">approveSpace</code> ← قبول / رفض مساحة
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الـ CONST في app.js</div>
+          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mu);direction:ltr;line-height:1.8">
+            SHEET_URL = "...exec"
+          </div>
+        </div>
+
+        <div class="warn-box">
+          <span>⚠️</span>
+          <span>بعد أي تعديل في كود الـ Script — لازم تعمل <strong>New Deployment</strong> (مش Update) وتحدّث الرابط في app.js</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BAZAARS SYSTEM -->
+    <div class="sys-card">
+      <div class="sys-card-head">
+        <div class="sys-card-title">🛍️ نظام البازارات</div>
+        <span class="status-pill pill-ok">ACTIVE</span>
+      </div>
+      <div class="sys-card-body">
+
+        <div class="info-row">
+          <div class="info-label">Apps Script URL</div>
+          <div class="info-value">
+            <a class="link-chip" href="https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec" target="_blank">
+              🔗 script.google.com/.../exec
+            </a>
+          </div>
+          <button class="copy-btn" onclick="copyText('https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec',this)">نسخ</button>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Google Sheet</div>
+          <div class="info-value">
+            <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit" target="_blank">
+              📊 makani_bazaar_sheet
+            </a>
+          </div>
+          <button class="copy-btn" onclick="copyText('https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit',this)">نسخ</button>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الشيتات الرئيسية</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🛍️ Bazaars</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 BazaarSlots</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🧾 Bookings</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">💰 Costs</span>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الـ Actions</div>
+          <div class="info-value" style="font-size:11px;line-height:2">
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">?action=all</code> ← كل البيانات دفعة واحدة<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">?action=bazaars</code> ← للموقع الرئيسي<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">addBazaar</code> ← إضافة بازار<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">createSlots</code> ← إنشاء وحدات<br>
+            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">editSlotStatus</code> ← تغيير حالة وحدة
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">الـ CONST في app.js</div>
+          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mu);direction:ltr">
+            BAZAAR_SHEET_URL = "...exec"
+          </div>
+        </div>
+
+        <div class="info-box">
+          💡 <strong>id البازار</strong> بصيغة BZ-001 — يتولّد تلقائياً عند الإضافة. الـ <code style="font-size:10px">status=published</code> هي اللي بتخلي البازار يظهر على الموقع.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ARCHITECTURE ─── -->
+  <div class="sec-title">مخطط النظام الكامل</div>
+  <div class="arch-card">
+    <div style="font-size:12px;color:var(--mu);margin-bottom:6px">كيف تتدفق البيانات — من المصدر للمستخدم</div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--or);margin-bottom:8px">📡 نظام المساحات</div>
+      <div class="arch-flow">
+        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">الداشبورد</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doPost</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">📊</div>Google Sheet<div class="node-label">المساحات</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doGet</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">SHEET_URL</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">👥</div>الموقع<div class="node-label">المستخدمين</div></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--bl);margin-bottom:8px">🛍️ نظام البازارات</div>
+      <div class="arch-flow">
+        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">الداشبورد</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doPost</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">📊</div>Google Sheet<div class="node-label">Bazaars+Slots</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">?action=all</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">BAZAAR_URL</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">👥</div>الموقع<div class="node-label">المستخدمين</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--gr);margin-bottom:8px">🏪 نظام المشاريع للبيع</div>
+      <div class="arch-flow">
+        <div class="arch-node"><div class="node-icon">👤</div>User<div class="node-label">المستخدم</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">listings table</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">القبول/الرفض</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🌐</div>admin-listings<div class="node-label">Makani Pages</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">👥</div>السوق<div class="node-label">/market/</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HOW-TO DOCS ─── -->
+  <div class="sec-title">دليل الاستخدام والتعديل</div>
+  <div class="docs-grid">
+
+    <div class="doc-card">
+      <div class="doc-head">🔧 إزاي تعدّل مساحة موجودة</div>
+      <div class="doc-body">
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text">افتح <strong>داشبورد المساحات</strong> وادخل رابط الـ Apps Script في الـ Sidebar</div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">اضغط <strong>تحميل</strong> — هتظهر كل المساحات</div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">اضغط زرار <code>✏️</code> بجانب المساحة اللي عايز تعدّلها</div></div>
+        <div class="doc-step"><div class="step-num">4</div><div class="step-text">عدّل البيانات واضغط <code>💾 حفظ</code> — بيُحفظ في الشيت مباشرةً</div></div>
+        <div class="warn-box"><span>⚠️</span><span>لو ما اشتغلتش — افتح Apps Script وتأكد إن الـ Deployment على <strong>Anyone</strong></span></div>
+      </div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-head">➕ إزاي تضيف بازار جديد</div>
+      <div class="doc-body">
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text">افتح <strong>داشبورد البازارات</strong> واضغط <strong>بازار جديد</strong></div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">املأ الاسم، المكان، التواريخ، السعر — الـ ID بيتولّد تلقائياً</div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">اضغط <strong>إضافة وحدات</strong> وحدد عدد الأماكن والسعر</div></div>
+        <div class="doc-step"><div class="step-num">4</div><div class="step-text">غيّر الحالة لـ <code>published</code> عشان يظهر على الموقع</div></div>
+      </div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-head">🔄 إزاي تحدّث الـ Apps Script</div>
+      <div class="doc-body">
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text">افتح الشيت ← <code>Extensions</code> ← <code>Apps Script</code></div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">عدّل الكود واضغط <code>Ctrl+S</code></div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">اضغط <code>Deploy</code> ← <strong>New Deployment</strong> (مش Update!)</div></div>
+        <div class="doc-step"><div class="step-num">4</div><div class="step-text">انسخ الرابط الجديد وحدّثه في <code>app.js</code></div></div>
+        <div class="warn-box"><span>🚨</span><span>كل تعديل = Deployment جديد — لو عملت Update بس هيشتغل الكود القديم!</span></div>
+      </div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-head">📸 إزاي ترفع صورة صح</div>
+      <div class="doc-body">
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text">افتح <a href="https://postimages.org" target="_blank" style="color:var(--or)">postimages.org</a></div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">ارفع الصورة واضغط عليها</div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">انسخ <strong>Direct Link</strong> — يبدأ بـ <code>https://i.postimg.cc/</code></div></div>
+        <div class="doc-step"><div class="step-num">4</div><div class="step-text">حطه في حقل رابط الصورة في الداشبورد</div></div>
+        <div class="info-box">✅ Google Drive أحياناً مش بيظهر في بعض المتصفحات — postimages أموثق وأسرع</div>
+      </div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-head">🐛 مشاكل شائعة وحلها</div>
+      <div class="doc-body">
+        <table class="schema-table" style="font-size:11.5px">
+          <thead><tr><th>المشكلة</th><th>السبب</th><th>الحل</th></tr></thead>
+          <tbody>
+            <tr><td>الداشبورد مش بيحمّل بيانات</td><td>رابط Apps Script خطأ أو قديم</td><td>أعد الـ Deployment وانسخ الرابط الجديد</td></tr>
+            <tr><td>الزرار مش بيحفظ</td><td>CORS — مفيش <code>Content-Type</code></td><td>تأكد من الـ header في الـ fetch</td></tr>
+            <tr><td>الصور مش بتظهر</td><td>رابط Google Drive خاطئ</td><td>استخدم postimages.org</td></tr>
+            <tr><td>Error 522</td><td>Cloudflare Orange Cloud</td><td>حوّله لـ Grey Cloud (DNS Only)</td></tr>
+            <tr><td>مساحة مش ظاهرة على الموقع</td><td>عمود "ظاهر؟" = لا</td><td>غيّره لـ نعم من الداشبورد أو الشيت</td></tr>
+            <tr><td>البازار مش ظاهر</td><td>status ≠ published</td><td>غيّر الحالة لـ published</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-head">🗂️ بنية الشيتات — المساحات</div>
+      <div class="doc-body">
+        <table class="schema-table">
+          <thead><tr><th>العمود</th><th>الحقل</th><th>الوصف</th></tr></thead>
+          <tbody>
+            <tr><td class="col-id">A</td><td>id</td><td>رقم فريد تلقائي</td></tr>
+            <tr><td class="col-id">B</td><td>name</td><td>اسم المساحة</td></tr>
+            <tr><td class="col-id">C</td><td>type</td><td>mall / club / school</td></tr>
+            <tr><td class="col-id">S</td><td>ظاهر؟</td><td>نعم = يظهر على الموقع</td></tr>
+            <tr><td class="col-id">T</td><td>order</td><td>ترتيب العرض (رقم أصغر = أول)</td></tr>
+            <tr><td class="col-id">AB</td><td>status</td><td>pending = بانتظار الموافقة</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── EXTERNAL LINKS ─── -->
+  <div class="sec-title">الروابط الخارجية</div>
+  <div class="ext-links">
+    <a class="ext-link" href="https://github.com/makanispot-glitch/Makani-spot" target="_blank">
+      <div class="ext-icon">🐙</div>
+      <div><div class="ext-name">GitHub Repository</div><div class="ext-desc">makanispot-glitch/Makani-spot</div></div>
+    </a>
+    <a class="ext-link" href="https://dash.cloudflare.com" target="_blank">
+      <div class="ext-icon">☁️</div>
+      <div><div class="ext-name">Cloudflare Dashboard</div><div class="ext-desc">Pages & DNS Settings</div></div>
+    </a>
+    <a class="ext-link" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
+      <div class="ext-icon">📊</div>
+      <div><div class="ext-name">شيت المساحات</div><div class="ext-desc">Google Sheets — Spaces</div></div>
+    </a>
+    <a class="ext-link" href="https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit" target="_blank">
+      <div class="ext-icon">📊</div>
+      <div><div class="ext-name">شيت البازارات</div><div class="ext-desc">Google Sheets — Bazaars</div></div>
+    </a>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="text-align:center;font-size:11px;color:var(--mu2);padding-top:20px;border-top:1px solid var(--bd)">
+    مكاني Spot Admin Hub · نسخة 1.0 · <span id="build-date"></span>
+  </div>
+
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ══════════════════════════════════════
+   PASSWORD — SHA-256 HASHED
+   الكلمة الأصلية محفوظة في SHA-256
+   لا يمكن معرفتها من الكود
+══════════════════════════════════════ */
+// Hash = SHA-256("MkSpot_2026_Salt" + "Mk@2026!Spot#9")
+const PW_HASH   = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
+const PW_SALT   = "MkSpot_2026_Salt";
+const MAX_TRIES = 5;
+
+let attempts = 0;
+let locked   = false;
+
+/* ══════════════════════════════════════
+   SHA-256 implementation (pure JS)
+══════════════════════════════════════ */
+async function sha256(message) {
+  const msgBuffer  = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray  = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+async function tryLogin() {
+  if (locked) return;
+  const pw  = document.getElementById('pw-input').value;
+  const btn = document.getElementById('login-btn');
+  if (!pw) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;display:inline-block"></div>';
+
+  const hashed = await sha256(PW_SALT + pw);
+
+  if (hashed === PW_HASH) {
+    // ✅ صح
+    document.getElementById('login-screen').style.animation = 'fadeOut .4s ease forwards';
+    setTimeout(() => {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      startClock();
+      document.getElementById('build-date').textContent = new Date().toLocaleDateString('ar-EG');
+      toast('أهلاً بك في لوحة التحكم 👋', 's');
+      checkSystemStatus();
+    }, 400);
+    sessionStorage.setItem('mkadmin', hashed.slice(0,16));
+  } else {
+    // ❌ خطأ
+    attempts++;
+    const input = document.getElementById('pw-input');
+    input.classList.add('shake');
+    setTimeout(() => input.classList.remove('shake'), 500);
+    input.value = '';
+
+    const errEl  = document.getElementById('login-err');
+    const tryEl  = document.getElementById('login-attempts');
+    errEl.style.display = 'block';
+
+    const remaining = MAX_TRIES - attempts;
+    if (remaining <= 0) {
+      locked = true;
+      errEl.textContent = '🔒 تم قفل الوصول مؤقتاً — أعد تحميل الصفحة بعد دقيقة';
+      document.getElementById('pw-input').disabled = true;
+      setTimeout(() => {
+        locked = false;
+        attempts = 0;
+        document.getElementById('pw-input').disabled = false;
+        errEl.style.display = 'none';
+        tryEl.textContent = '';
+      }, 60000);
+    } else {
+      tryEl.textContent = `محاولات متبقية: ${remaining}`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀</span> دخول';
+  }
+}
+
+/* ══════════════════════════════════════
+   AUTO-LOGIN (session)
+══════════════════════════════════════ */
+(async function() {
+  const sess = sessionStorage.getItem('mkadmin');
+  if (sess && sess === PW_HASH.slice(0,16)) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    startClock();
+    document.getElementById('build-date').textContent = new Date().toLocaleDateString('ar-EG');
+    checkSystemStatus();
+  }
+})();
+
+/* ══════════════════════════════════════
+   LOGOUT
+══════════════════════════════════════ */
+function doLogout() {
+  sessionStorage.removeItem('mkadmin');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-err').style.display = 'none';
+  document.getElementById('login-attempts').textContent = '';
+}
+
+/* ══════════════════════════════════════
+   CLOCK
+══════════════════════════════════════ */
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ══════════════════════════════════════
+   SYSTEM STATUS CHECK
+══════════════════════════════════════ */
+async function checkSystemStatus() {
+  const apis = [
+    {
+      id: 'st-spaces',
+      url: 'https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec'
+    },
+    {
+      id: 'st-bazaars',
+      url: 'https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec'
+    },
+  ];
+
+  for (const api of apis) {
+    const el = document.getElementById(api.id);
+    el.textContent = 'CHECKING...';
+    el.className   = 'status-pill pill-idle';
+    try {
+      const controller = new AbortController();
+      const timeout    = setTimeout(() => controller.abort(), 5000);
+      const r = await fetch(api.url, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (r.ok) {
+        el.textContent = 'LIVE ✓';
+        el.className   = 'status-pill pill-ok';
+      } else {
+        el.textContent = 'ERROR ' + r.status;
+        el.className   = 'status-pill pill-err';
+      }
+    } catch(e) {
+      el.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
+      el.className   = 'status-pill pill-err';
+    }
+  }
+}
+
+/* ══════════════════════════════════════
+   COPY BUTTON
+══════════════════════════════════════ */
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ تم';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'نسخ';
+      btn.classList.remove('copied');
+    }, 2000);
+    toast('تم النسخ ✅', 's');
+  });
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg, t='i') {
+  const c  = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast toast-${t}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* CSS for spinner in login btn */
+const style = document.createElement('style');
+style.textContent = '@keyframes sp{to{transform:rotate(360deg)}} @keyframes fadeOut{to{opacity:0}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
