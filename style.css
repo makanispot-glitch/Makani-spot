@@ -3071,8 +3071,6 @@ footer {
 .qp-market .qp-arr { color: var(--orange); }
 .qp-market:hover { background: var(--orange-pale); border-color: var(--orange); }
 
-  display: flex; align-items: center; justify-content: center;
-}
 
 /* شريط الأفقي للكروت */
 .bz-home-scroll {
@@ -4081,3 +4079,26 @@ footer {
   font-size: 13px; color: rgba(255,255,255,0.65);
 }
 .owner-dash-feat-ico { font-size: 18px; flex-shrink: 0; }
+
+/* =================================
+   🚀 EXTRA FORCEFUL MOBILE FIXES (Path Grid)
+   ================================= */
+@media (max-width: 768px) {
+  .path-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  .path-sep {
+    display: none !important;
+  }
+  .path-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
