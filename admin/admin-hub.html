@@ -293,7 +293,7 @@ body {
 ══════════════════════════════════════ */
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 32px;
 }
@@ -625,6 +625,9 @@ body {
   gap: 10px;
   margin-bottom: 32px;
 }
+@media (max-width: 900px) {
+  .ext-links { grid-template-columns: repeat(2, 1fr); }
+}
 .ext-link {
   background: var(--bg2);
   border: 1px solid var(--bd);
@@ -715,13 +718,14 @@ body {
 ══════════════════════════════════════ */
 @media (max-width: 900px) {
   .quick-grid { grid-template-columns: 1fr 1fr; }
-  .status-grid { grid-template-columns: 1fr; }
+  .status-grid { grid-template-columns: 1fr 1fr; }
   .systems-grid { grid-template-columns: 1fr; }
   .docs-grid { grid-template-columns: 1fr; }
   .ext-links { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 600px) {
   .quick-grid { grid-template-columns: 1fr; }
+  .status-grid { grid-template-columns: 1fr 1fr; }
   .ext-links { grid-template-columns: 1fr 1fr; }
   #dashboard { padding: 16px 14px 40px; }
 }
@@ -805,6 +809,14 @@ body {
       </div>
       <span class="status-pill pill-ok">ONLINE</span>
     </div>
+    <div class="status-card">
+      <div class="status-dot-wrap dot-idle">🗄️</div>
+      <div class="status-info">
+        <div class="status-name">Supabase — الإعلانات</div>
+        <div class="status-sub">listings / auth API</div>
+      </div>
+      <span class="status-pill pill-idle" id="st-supabase">CHECK</span>
+    </div>
   </div>
 
   <!-- ─── QUICK ACCESS ─── -->
@@ -827,7 +839,7 @@ body {
       <div class="quick-arrow">فتح الداشبورد ←</div>
     </a>
 
-    <a href="../admin-listings" target="_blank" class="quick-card">
+    <a href="./index.html" target="_blank" class="quick-card">
       <span class="quick-badge qb-new">LISTINGS</span>
       <div class="quick-icon">🏪</div>
       <div class="quick-title">مشاريع كاملة للبيع</div>
@@ -965,6 +977,58 @@ body {
     </div>
   </div>
 
+  <!-- LISTINGS SYSTEM — full width -->
+  <div class="sys-card" style="margin-bottom:32px">
+    <div class="sys-card-head">
+      <div class="sys-card-title">🏪 نظام المشاريع للبيع</div>
+      <span class="status-pill pill-ok">ACTIVE</span>
+    </div>
+    <div class="sys-card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+      <div style="padding-left:20px;border-left:1px solid var(--bd)">
+        <div class="info-row">
+          <div class="info-label">Backend</div>
+          <div class="info-value"><span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:3px 10px;font-size:11px">🗄️ Supabase — listings table</span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Auth Endpoint</div>
+          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--or);direction:ltr">POST /admin/auth</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Data Endpoint</div>
+          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;direction:ltr">
+            <span style="color:var(--tl)">GET</span> /admin/listings — جلب الإعلانات<br>
+            <span style="color:var(--or)">PATCH</span> /admin/listings — تحديث الحالة
+          </div>
+        </div>
+      </div>
+      <div style="padding-right:20px">
+        <div class="info-row">
+          <div class="info-label">حقول الحالة</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--yw)">⏳ pending</span>
+            <span style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--gr)">✅ approved</span>
+            <span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--rd)">❌ rejected</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">⌛ expired</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">المميزات</div>
+          <div class="info-value" style="font-size:11px;line-height:1.8">
+            رفض مع سبب ← يُحفظ في <code style="font-size:10px;background:var(--bg3);padding:1px 5px;border-radius:4px">reject_reason</code><br>
+            الموافقة ← تضيف <code style="font-size:10px;background:var(--bg3);padding:1px 5px;border-radius:4px">expires_at</code> بعد 60 يوم<br>
+            معاينة كاملة للصور والتفاصيل قبل القرار
+          </div>
+        </div>
+        <div class="info-row" style="border-bottom:none">
+          <div class="info-label">صفحة المراجعة</div>
+          <div class="info-value">
+            <a class="link-chip" href="./index.html" target="_blank">🛡️ /admin/index.html</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── ARCHITECTURE ─── -->
   <div class="sec-title">مخطط النظام الكامل</div>
   <div class="arch-card">
@@ -1007,15 +1071,20 @@ body {
     <div>
       <div style="font-size:11px;font-weight:700;color:var(--gr);margin-bottom:8px">🏪 نظام المشاريع للبيع</div>
       <div class="arch-flow">
-        <div class="arch-node"><div class="node-icon">👤</div>User<div class="node-label">المستخدم</div></div>
+        <div class="arch-node"><div class="node-icon">👤</div>User<div class="node-label">رفع إعلان</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">listings table</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=pending</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">القبول/الرفض</div></div>
+        <div class="arch-node"><div class="node-icon">🛡️</div>/admin/<div class="node-label">مراجعة الإعلان</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">🌐</div>admin-listings<div class="node-label">Makani Pages</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=approved</div></div>
         <div class="arch-arrow">⟶</div>
         <div class="arch-node"><div class="node-icon">👥</div>السوق<div class="node-label">/market/</div></div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--mu);display:flex;gap:16px;flex-wrap:wrap">
+        <span>🔑 Auth: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:'Space Mono',monospace;font-size:10px;color:var(--or)">POST /admin/auth</code> → Bearer Token</span>
+        <span>📋 Data: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:'Space Mono',monospace;font-size:10px;color:var(--tl)">GET /admin/listings</code> → جلب الإعلانات</span>
+        <span>✅ Action: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:'Space Mono',monospace;font-size:10px;color:var(--gr)">PATCH /admin/listings</code> → تحديث الحالة</span>
       </div>
     </div>
   </div>
@@ -1085,6 +1154,17 @@ body {
     </div>
 
     <div class="doc-card">
+      <div class="doc-head">🔒 أمان صفحات الإدارة</div>
+      <div class="doc-body">
+        <div class="doc-step"><div class="step-num">!</div><div class="step-text"><strong>الوضع الحالي:</strong> كلمة المرور تُتحقق منها في المتصفح (client-side). أي شخص يعرف رابط الصفحة يمكنه رؤية الكود.</div></div>
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text"><strong>الحل الأقوى — Cloudflare Access:</strong> افتح Cloudflare Dashboard ← <code>Zero Trust</code> ← <code>Access</code> ← أضف Application لـ <code>/admin/*</code></div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">اختر <strong>One-time PIN</strong> أو <strong>GitHub</strong> كطريقة تسجيل — بيطلب تسجيل قبل ما يفتح الصفحة أصلاً</div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">صفحة <code>/admin/index.html</code> (المشاريع للبيع) محمية بـ <strong>Bearer Token من السيرفر</strong> — أكثر أماناً بالفعل</div></div>
+        <div class="warn-box"><span>⚠️</span><span>لا تشارك رابط <code>/admin/admin-hub.html</code> مع أحد — الحماية الحالية بكلمة السر فقط</span></div>
+      </div>
+    </div>
+
+    <div class="doc-card">
       <div class="doc-head">🗂️ بنية الشيتات — المساحات</div>
       <div class="doc-body">
         <table class="schema-table">
@@ -1106,13 +1186,21 @@ body {
   <!-- ─── EXTERNAL LINKS ─── -->
   <div class="sec-title">الروابط الخارجية</div>
   <div class="ext-links">
+    <a class="ext-link" href="https://makani-spot.pages.dev" target="_blank">
+      <div class="ext-icon">🌍</div>
+      <div><div class="ext-name">الموقع الرئيسي</div><div class="ext-desc">makani-spot.pages.dev</div></div>
+    </a>
     <a class="ext-link" href="https://github.com/makanispot-glitch/Makani-spot" target="_blank">
       <div class="ext-icon">🐙</div>
       <div><div class="ext-name">GitHub Repository</div><div class="ext-desc">makanispot-glitch/Makani-spot</div></div>
     </a>
     <a class="ext-link" href="https://dash.cloudflare.com" target="_blank">
       <div class="ext-icon">☁️</div>
-      <div><div class="ext-name">Cloudflare Dashboard</div><div class="ext-desc">Pages & DNS Settings</div></div>
+      <div><div class="ext-name">Cloudflare Dashboard</div><div class="ext-desc">Pages & DNS & Workers</div></div>
+    </a>
+    <a class="ext-link" href="https://supabase.com/dashboard" target="_blank">
+      <div class="ext-icon">🗄️</div>
+      <div><div class="ext-name">Supabase Dashboard</div><div class="ext-desc">listings table & Auth</div></div>
     </a>
     <a class="ext-link" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
       <div class="ext-icon">📊</div>
@@ -1121,6 +1209,14 @@ body {
     <a class="ext-link" href="https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit" target="_blank">
       <div class="ext-icon">📊</div>
       <div><div class="ext-name">شيت البازارات</div><div class="ext-desc">Google Sheets — Bazaars</div></div>
+    </a>
+    <a class="ext-link" href="https://script.google.com/home" target="_blank">
+      <div class="ext-icon">⚙️</div>
+      <div><div class="ext-name">Apps Script Editor</div><div class="ext-desc">إدارة الـ Scripts والـ Deployments</div></div>
+    </a>
+    <a class="ext-link" href="https://postimages.org" target="_blank">
+      <div class="ext-icon">🖼️</div>
+      <div><div class="ext-name">PostImages</div><div class="ext-desc">رفع صور المساحات والبازارات</div></div>
     </a>
   </div>
 
@@ -1134,12 +1230,6 @@ body {
 <div id="toasts"></div>
 
 <script>
-/* ══════════════════════════════════════
-   PASSWORD — SHA-256 HASHED
-   الكلمة الأصلية محفوظة في SHA-256
-   لا يمكن معرفتها من الكود
-══════════════════════════════════════ */
-// Hash = SHA-256("MkSpot_2026_Salt" + "Mk@2026!Spot#9")
 const PW_HASH   = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
 const PW_SALT   = "MkSpot_2026_Salt";
 const MAX_TRIES = 5;
@@ -1290,6 +1380,33 @@ async function checkSystemStatus() {
       el.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
       el.className   = 'status-pill pill-err';
     }
+  }
+
+  // فحص Supabase API عبر /admin/auth endpoint
+  const sbEl = document.getElementById('st-supabase');
+  sbEl.textContent = 'CHECKING...';
+  sbEl.className   = 'status-pill pill-idle';
+  try {
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), 5000);
+    const r = await fetch('/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: '__ping__' }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    // 401 يعني الـ endpoint شغّال — الـ Worker رد وقال كلمة السر غلط
+    if (r.status === 401 || r.ok) {
+      sbEl.textContent = 'LIVE ✓';
+      sbEl.className   = 'status-pill pill-ok';
+    } else {
+      sbEl.textContent = 'ERROR ' + r.status;
+      sbEl.className   = 'status-pill pill-err';
+    }
+  } catch(e) {
+    sbEl.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
+    sbEl.className   = 'status-pill pill-err';
   }
 }
 
