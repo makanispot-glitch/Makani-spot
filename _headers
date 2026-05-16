@@ -2,6 +2,43 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
 
-/admin-listings.html
+/admin/*
   X-Robots-Tag: noindex, nofollow
+
+/dashboard/*
+  X-Robots-Tag: noindex, nofollow
+
+/offline.html
+  X-Robots-Tag: noindex, nofollow
+
+# Service Worker — must never be cached by CDN
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Web App Manifest — short cache
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+# Icons — long cache (content-addressed effectively)
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts from Google served by CF will be handled by SW;
+# local static assets — long cache
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML pages — short cache so SW update propagates fast
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate

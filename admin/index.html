@@ -2,9 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>لوحة مراجعة الإعلانات — مكاني Spot Admin</title>
-<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FF6B00">
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="apple-touch-icon" href="/favicon.jpg">
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -606,5 +610,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('adm-login').style.display !== 'none') admLogin();
 });
 </script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
 </body>
 </html>
