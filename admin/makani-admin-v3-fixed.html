@@ -3062,47 +3062,6 @@
     }
   }
 
-  document.getElementById('edit-modal').addEventListener('click', e => {
-    if (e.target.id === 'edit-modal') closeEdit();
-  });
-
-/* ── Admin Login ── */
-const MK_HASH = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
-const MK_SALT = "MkSpot_2026_Salt";
-let mkTries = 0, mkLocked = false;
-async function mkSha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-async function mkLogin() {
-  if (mkLocked) return;
-  const pw = document.getElementById('mk-pw').value;
-  if (!pw) return;
-  document.getElementById('mk-btn').disabled = true;
-  const h = await mkSha256(MK_SALT + pw);
-  if (h === MK_HASH) {
-    sessionStorage.setItem('mkadmin', MK_HASH.slice(0,16));
-    document.getElementById('mk-login').style.display = 'none';
-  } else {
-    mkTries++;
-    document.getElementById('mk-pw').value = '';
-    document.getElementById('mk-err').style.display = 'block';
-    const left = 5 - mkTries;
-    if (left <= 0) {
-      mkLocked = true;
-      document.getElementById('mk-err').textContent = '🔒 تم القفل — انتظر دقيقة';
-      document.getElementById('mk-pw').disabled = true;
-      setTimeout(() => { mkLocked = false; mkTries = 0; document.getElementById('mk-pw').disabled = false; document.getElementById('mk-err').style.display = 'none'; document.getElementById('mk-tries').textContent = ''; }, 60000);
-    } else {
-      document.getElementById('mk-tries').textContent = `محاولات متبقية: ${left}`;
-    }
-    document.getElementById('mk-btn').disabled = false;
-  }
-}
-(function() {
-  const s = sessionStorage.getItem('mkadmin');
-  if (s && s === MK_HASH.slice(0,16)) document.getElementById('mk-login').style.display = 'none';
-})();
 </script>
 
 <!-- EDIT MODAL -->
@@ -3172,6 +3131,56 @@ async function mkLogin() {
     </div>
   </div>
 </div>
+
+<script>
+/* ── Admin Login (runs after full DOM) ── */
+const MK_HASH = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
+const MK_SALT = "MkSpot_2026_Salt";
+let mkTries = 0, mkLocked = false;
+async function mkSha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function mkLogin() {
+  if (mkLocked) return;
+  const pw = document.getElementById('mk-pw').value;
+  if (!pw) return;
+  document.getElementById('mk-btn').disabled = true;
+  const h = await mkSha256(MK_SALT + pw);
+  if (h === MK_HASH) {
+    sessionStorage.setItem('mkadmin', MK_HASH.slice(0,16));
+    document.getElementById('mk-login').style.display = 'none';
+  } else {
+    mkTries++;
+    document.getElementById('mk-pw').value = '';
+    document.getElementById('mk-err').style.display = 'block';
+    const left = 5 - mkTries;
+    if (left <= 0) {
+      mkLocked = true;
+      document.getElementById('mk-err').textContent = '🔒 تم القفل — انتظر دقيقة';
+      document.getElementById('mk-pw').disabled = true;
+      setTimeout(() => {
+        mkLocked = false; mkTries = 0;
+        document.getElementById('mk-pw').disabled = false;
+        document.getElementById('mk-err').style.display = 'none';
+        document.getElementById('mk-tries').textContent = '';
+      }, 60000);
+    } else {
+      document.getElementById('mk-tries').textContent = 'محاولات متبقية: ' + left;
+    }
+    document.getElementById('mk-btn').disabled = false;
+  }
+}
+(function() {
+  const s = sessionStorage.getItem('mkadmin');
+  if (s && s === MK_HASH.slice(0,16)) document.getElementById('mk-login').style.display = 'none';
+})();
+
+// Edit modal close on backdrop (moved here so edit-modal div is in DOM)
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target.id === 'edit-modal') closeEdit();
+});
+</script>
 
 </body>
 </html>
