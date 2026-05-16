@@ -58,6 +58,13 @@ body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-
   transition: background .2s;
 }
 .adm-logout:hover { background: rgba(255,255,255,0.2); }
+.adm-hub-btn {
+  padding: 7px 16px; background: rgba(255,107,0,0.2); color: #FF6B00;
+  border: 1px solid rgba(255,107,0,0.4); border-radius: 8px;
+  text-decoration: none; font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 700; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+}
+.adm-hub-btn:hover { background: #FF6B00; color: #fff; }
 
 /* ── Stats Bar ── */
 .adm-stats {
@@ -228,9 +235,10 @@ tr:hover td { background: #FAFAFA; }
 
   <!-- Navbar -->
   <nav class="adm-nav">
-    <h1>🛡️ لوحة مراجعة إعلانات سوق المعدات</h1>
+    <h1>🛡️ لوحة مراجعة إعلانات المشاريع للبيع</h1>
     <div class="adm-nav-right">
       <span id="adm-last-update"></span>
+      <a href="./admin-hub.html" class="adm-hub-btn">🏠 لوحة التحكم</a>
       <button class="adm-logout" onclick="admLogout()">خروج</button>
     </div>
   </nav>
@@ -309,6 +317,16 @@ const ADM_TOKEN_KEY = 'makani_admin_token';
 const CAT_LABELS  = {partition:'بارتشن وأثاث','food-cart':'عربات طعام',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',coffee:'معدات كافيه',pos:'كاشير وPOS',vending:'أجهزة بيع ذاتي',storage:'رفوف وتخزين',lighting:'إضاءة تجارية',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 const CONTACT_LABELS = {both:'واتساب + اتصال',whatsapp:'واتساب فقط',call:'اتصال فقط'};
+
+/* ── XSS Protection ── */
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function safeUrl(u) {
+  if (!u) return '';
+  const s = String(u).trim();
+  return (s.startsWith('http://') || s.startsWith('https://')) ? s : '';
+}
 
 let admAll      = [];
 let admFiltered = [];
@@ -439,9 +457,10 @@ function admBuildTable(list) {
   }
 
   const rows = list.map(l => {
-    const img = l.cover_image || (l.images && l.images[0]) || '';
-    const imgHtml = img
-      ? `<img class="adm-listing-img" src="${img}" alt="" onclick="admShowPreview('${l.id}')" style="cursor:pointer">`
+    const imgSrc = safeUrl(l.cover_image || (l.images && l.images[0]) || '');
+    const safeId = escHtml(l.id);
+    const imgHtml = imgSrc
+      ? `<img class="adm-listing-img" src="${escHtml(imgSrc)}" alt="" onclick="admShowPreview('${safeId}')" style="cursor:pointer" onerror="this.style.display='none'">`
       : `<div class="adm-listing-img-placeholder">📦</div>`;
 
     const statusMap = {
@@ -453,28 +472,28 @@ function admBuildTable(list) {
     };
     const statusLabel = { pending:'قيد المراجعة', approved:'منشور', rejected:'مرفوض', expired:'منتهي', deleted:'محذوف' };
     const date = new Date(l.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
-    const cat  = CAT_LABELS[l.category] || l.category;
+    const cat  = CAT_LABELS[l.category] || escHtml(l.category);
 
     const approveBtn = l.status !== 'approved'
-      ? `<button class="adm-btn adm-btn-approve" onclick="admApprove('${l.id}')">✅ قبول</button>` : '';
+      ? `<button class="adm-btn adm-btn-approve" onclick="admApprove('${safeId}')">✅ قبول</button>` : '';
     const rejectBtn = l.status !== 'rejected'
-      ? `<button class="adm-btn adm-btn-reject" onclick="admOpenReject('${l.id}')">❌ رفض</button>` : '';
+      ? `<button class="adm-btn adm-btn-reject" onclick="admOpenReject('${safeId}')">❌ رفض</button>` : '';
 
     return `<tr>
       <td>${imgHtml}</td>
       <td class="adm-title-cell">
-        <strong>${l.title}</strong>
-        <span>${cat} — ${COND_LABELS[l.condition] || l.condition}</span>
+        <strong>${escHtml(l.title)}</strong>
+        <span>${cat} — ${COND_LABELS[l.condition] || escHtml(l.condition)}</span>
       </td>
       <td style="font-weight:800;color:#FF6B00">${Number(l.price).toLocaleString('ar-EG')} ج</td>
-      <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || l.status}</span></td>
-      <td style="color:#666">${l.region || '—'}</td>
+      <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || escHtml(l.status)}</span></td>
+      <td style="color:#666">${escHtml(l.region) || '—'}</td>
       <td style="color:#999;font-size:12px">${date}</td>
       <td>
         <div class="adm-actions">
           ${approveBtn}
           ${rejectBtn}
-          <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${l.id}')">👁 معاينة</button>
+          <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${safeId}')">👁 معاينة</button>
         </div>
       </td>
     </tr>`;
@@ -556,35 +575,36 @@ function admShowPreview(id) {
   const l = admAll.find(x => x.id === id);
   if (!l) return;
 
-  const imgs = [l.cover_image, ...(l.images || [])].filter(Boolean);
+  const imgs = [l.cover_image, ...(l.images || [])].filter(u => safeUrl(u));
   const imgsHtml = imgs.length > 0
-    ? `<div class="adm-preview-imgs">${imgs.map(u => `<img src="${u}" alt="" onclick="window.open('${u}','_blank')">`).join('')}</div>`
+    ? `<div class="adm-preview-imgs">${imgs.map(u => { const su = escHtml(u); return `<img src="${su}" alt="" onclick="window.open('${su}','_blank')" onerror="this.style.display='none'">`; }).join('')}</div>`
     : '<div style="color:#999;margin-bottom:16px">لا توجد صور</div>';
 
   const date   = new Date(l.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
   const expiry = l.expires_at ? new Date(l.expires_at).toLocaleDateString('ar-EG') : '—';
+  const safeId = escHtml(l.id);
 
   document.getElementById('adm-preview-body').innerHTML = `
     ${imgsHtml}
-    <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${l.title}</span></div>
-    <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || l.category}</span></div>
-    <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || l.condition}</span></div>
+    <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${escHtml(l.title)}</span></div>
+    <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || escHtml(l.category)}</span></div>
+    <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || escHtml(l.condition)}</span></div>
     <div class="adm-preview-row"><strong>السعر</strong><span style="color:#FF6B00;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
-    <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${l.description || '—'}</span></div>
-    <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${l.region || '—'}${l.area ? ' — ' + l.area : ''}</span></div>
-    <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${l.phone || '—'}</span></div>
-    <div class="adm-preview-row"><strong>طريقة التواصل</strong><span>${CONTACT_LABELS[l.contact_pref] || l.contact_pref}</span></div>
-    <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${l.view_count||0} — 📞 ${l.contact_count||0}</span></div>
+    <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${escHtml(l.description) || '—'}</span></div>
+    <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${escHtml(l.region) || '—'}${l.area ? ' — ' + escHtml(l.area) : ''}</span></div>
+    <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${escHtml(l.phone) || '—'}</span></div>
+    <div class="adm-preview-row"><strong>طريقة التواصل</strong><span>${CONTACT_LABELS[l.contact_pref] || escHtml(l.contact_pref)}</span></div>
+    <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${Number(l.view_count)||0} — 📞 ${Number(l.contact_count)||0}</span></div>
     <div class="adm-preview-row"><strong>تاريخ النشر</strong><span>${date}</span></div>
     <div class="adm-preview-row"><strong>تنتهي في</strong><span>${expiry}</span></div>
-    ${l.reject_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${l.reject_reason}</span></div>` : ''}
+    ${l.reject_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${escHtml(l.reject_reason)}</span></div>` : ''}
   `;
 
   const actionsEl = document.getElementById('adm-preview-actions');
   const approveBtn = l.status !== 'approved'
-    ? `<button class="adm-btn adm-btn-approve" style="padding:10px 24px" onclick="admApprove('${l.id}');admClosePreview()">✅ قبول</button>` : '';
+    ? `<button class="adm-btn adm-btn-approve" style="padding:10px 24px" onclick="admApprove('${safeId}');admClosePreview()">✅ قبول</button>` : '';
   const rejectBtn = l.status !== 'rejected'
-    ? `<button class="adm-btn adm-btn-reject" style="padding:10px 24px" onclick="admClosePreview();admOpenReject('${l.id}')">❌ رفض</button>` : '';
+    ? `<button class="adm-btn adm-btn-reject" style="padding:10px 24px" onclick="admClosePreview();admOpenReject('${safeId}')">❌ رفض</button>` : '';
   actionsEl.innerHTML = approveBtn + rejectBtn +
     `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview()">إغلاق</button>`;
 
