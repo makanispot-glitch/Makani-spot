@@ -1384,7 +1384,7 @@ footer {
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(0,0,0,0.07);
   padding: 4px 6px;
-  padding-bottom: env(safe-area-inset-bottom, 4px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   box-shadow: 0 -2px 24px rgba(0,0,0,0.10);
   gap: 2px;
 }
@@ -1529,11 +1529,12 @@ footer {
   /* Hero */
   .hero { padding: 40px 16px 80px; }
   .hero h1 { font-size: 26px; letter-spacing: -0.3px; line-height: 1.3; }
-  .hero-desc { font-size: 13px; margin-bottom: 28px; }
+  .hero-desc { font-size: 13px; margin-bottom: 28px; max-width: 100%; }
   .hero-btns { flex-direction: column; gap: 10px; }
   .btn-hero { width: 100%; justify-content: center; padding: 14px 20px !important; font-size: 14px !important; min-height: 48px; }
   .hero-pill { font-size: 11px; padding: 6px 12px; margin-bottom: 20px; }
-  .hero-stats { padding: 14px 16px; }
+  .hero-stats { padding: 14px 16px; max-width: 100%; flex-direction: column; gap: 10px; }
+  .hero-stat + .hero-stat { border-right: none; border-top: 1px solid rgba(255,255,255,0.10); padding-top: 10px; }
   .hero-stat-num { font-size: 20px; }
   .hero-stat-lbl { font-size: 10px; }
 
@@ -1611,6 +1612,49 @@ footer {
 
 /* ── 480px: تحسينات إضافية ── */
 @media (max-width: 480px) {
+  /* Hero */
+  .hero { padding: 32px 14px 72px; }
+  .hero h1 { font-size: 23px; }
+  .hero-desc { font-size: 12.5px; margin-bottom: 22px; }
+  .hero-pill { font-size: 10.5px; padding: 5px 11px; margin-bottom: 16px; }
+  .hero-btns { gap: 8px; }
+  .btn-hero { font-size: 13.5px !important; padding: 13px 18px !important; }
+  .hero-stats { padding: 12px 14px; }
+  .hero-stat-num { font-size: 18px; }
+  .hero-stat-lbl { font-size: 9.5px; }
+
+  /* Search */
+  .search-wrap { margin-top: -28px; padding: 0 8px; }
+  .search-box { padding: 14px 14px 12px; }
+  .search-title { font-size: 9.5px; margin-bottom: 12px; padding-bottom: 10px; }
+  .filter-row { grid-template-columns: 1fr; gap: 8px; }
+  .filter-row > .fg:last-child { grid-column: 1; }
+  .fg select, .fg input { min-height: 44px; font-size: 13.5px; }
+  .filter-row .fg:last-child .btn { min-height: 46px; font-size: 14px; }
+
+  /* Path cards */
+  .path-card { padding: 16px 14px; }
+  .path-icon-wrap { margin-bottom: 6px; }
+  .path-icon-wrap svg { width: 26px; height: 26px; }
+  .path-pill { font-size: 9.5px; padding: 2px 8px; margin-bottom: 6px; }
+  .path-title { font-size: 13px; margin-bottom: 6px; }
+  .path-steps { gap: 5px; margin-bottom: 12px; }
+  .path-steps li { font-size: 11px; line-height: 1.4; padding-right: 14px; }
+  .path-btn { font-size: 11.5px; padding: 8px 13px; }
+
+  /* Sections */
+  .section { padding: 20px 12px; }
+  .section-title { font-size: 17px; }
+  .how-section { padding: 28px 12px 36px; }
+  .how-title { font-size: 20px; }
+
+  /* Bottom nav */
+  .bn-label { font-size: 9.5px; }
+  .bn-desc { font-size: 7.5px; }
+  .bn-icon { width: 20px; height: 20px; }
+  .bn-icon svg { width: 20px; height: 20px; }
+  .bn-item { min-height: 52px; padding: 5px 3px 4px; }
+
   /* Auth */
   .auth-panel-right { padding: 24px 16px; padding-top: 40px; }
   .auth-form-title { font-size: 20px; }
@@ -1646,11 +1690,36 @@ footer {
   .logo-ar { font-size: 15px; }
   .logo-en { font-size: 9px; }
   .btn-login-nav { padding: 7px 12px; font-size: 12px; }
-  .hero h1 { font-size: 22px; }
-  .hero-stats { flex-direction: column; gap: 10px; }
-  .hero-stat + .hero-stat { border-right: none; border-top: 1px solid rgba(255,255,255,0.10); padding-top: 10px; }
+
+  /* Hero */
+  .hero { padding: 28px 12px 64px; }
+  .hero h1 { font-size: 20px; }
+  .hero-pill { font-size: 10px; padding: 4px 10px; margin-bottom: 14px; }
+  .hero-desc { font-size: 12px; margin-bottom: 18px; }
+  .btn-hero { font-size: 13px !important; padding: 12px 16px !important; }
+  .hero-stats { padding: 10px 12px; gap: 8px; }
+  .hero-stat-num { font-size: 16px; }
+  .hero-stat-lbl { font-size: 9px; }
+
+  /* Search */
+  .search-wrap { margin-top: -24px; padding: 0 6px; }
+  .search-box { padding: 12px 12px 10px; border-radius: 14px; }
+
+  /* Path cards */
+  .path-card { padding: 14px 12px; }
+  .path-title { font-size: 12.5px; }
+  .path-steps li { font-size: 10.5px; padding-right: 12px; }
+  .path-btn { font-size: 11px; padding: 7px 11px; }
+
+  /* Bottom nav */
   .bn-label { font-size: 9px; }
-  .bn-icon { font-size: 18px; }
+  .bn-desc { display: none; }
+  .bn-item { min-height: 50px; }
+  .bn-icon { width: 20px; height: 20px; }
+
+  /* Sections */
+  .section { padding: 18px 10px; }
+  .section-title { font-size: 16px; }
 }
 /* =================================
    🔥 FINAL MOBILE & RESPONSIVE FIXES
@@ -2980,7 +3049,7 @@ footer {
   border-radius: 10px; padding: 10px 18px;
   font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800;
   cursor: pointer; text-decoration: none;
-  transition: all 0.18s;
+  transition: all 0.18s; min-height: 44px;
 }
 .path-btn:hover { background: var(--orange); border-color: var(--orange); transform: translateX(-4px); }
 .path-btn-org { background: var(--orange); border-color: var(--orange); }
