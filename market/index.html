@@ -1301,6 +1301,119 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 </div>
 
 <script src="app.js" defer></script>
+<script>
+(function () {
+  function installMarketFilterFallback() {
+    const tab     = document.getElementById('eq-sidebar-tab');
+    const drawer  = document.getElementById('eq-filter-drawer');
+    const overlay = document.getElementById('eq-sidebar-overlay');
+    const panel   = drawer ? drawer.querySelector('.eq-drawer-panel') : null;
+    const close   = document.getElementById('eq-drawer-close-btn');
+    const reset   = document.getElementById('eq-drawer-reset-btn');
+    const apply   = document.getElementById('eq-drawer-apply-btn');
+
+    if (!tab || !drawer) return;
+
+    const appOpen  = window.eqOpenSidebar;
+    const appClose = window.eqCloseSidebar;
+    const appReset = window.eqResetDrawer;
+    const appApply = window.eqApplyDrawerFilters;
+    const appSync  = window.eqSyncDrawerFromActive;
+
+    function forceOpen() {
+      try { if (typeof appSync === 'function') appSync(); } catch (_) {}
+      document.body.classList.add('filter-open');
+      drawer.style.transform = 'translateX(0)';
+      drawer.style.pointerEvents = 'auto';
+      drawer.style.visibility = 'visible';
+      drawer.style.display = 'block';
+      if (overlay) overlay.style.display = 'block';
+      tab.setAttribute('aria-expanded', 'true');
+    }
+
+    function forceClose() {
+      document.body.classList.remove('filter-open');
+      drawer.style.transform = '';
+      drawer.style.pointerEvents = '';
+      drawer.style.visibility = '';
+      drawer.style.display = '';
+      if (overlay) overlay.style.display = '';
+      tab.setAttribute('aria-expanded', 'false');
+    }
+
+    window.eqOpenSidebar = function () {
+      try { if (typeof appOpen === 'function' && appOpen !== window.eqOpenSidebar) appOpen(); } catch (_) {}
+      forceOpen();
+    };
+
+    window.eqCloseSidebar = function () {
+      try { if (typeof appClose === 'function' && appClose !== window.eqCloseSidebar) appClose(); } catch (_) {}
+      forceClose();
+    };
+
+    window.eqResetDrawer = function () {
+      if (typeof appReset === 'function' && appReset !== window.eqResetDrawer) {
+        try { appReset(); } catch (_) {}
+        return;
+      }
+      const gov = document.getElementById('eq-drawer-gov');
+      const sort = document.getElementById('eq-drawer-sort');
+      const price = document.getElementById('eq-drawer-price');
+      const priceVal = document.getElementById('eq-drawer-price-val');
+      if (gov) gov.value = '';
+      if (sort) sort.value = 'newest';
+      if (price) price.value = 0;
+      if (priceVal) priceVal.textContent = 'بلا حد';
+      document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach((btn, i) => btn.classList.toggle('on', i === 0));
+    };
+
+    window.eqApplyDrawerFilters = function () {
+      if (typeof appApply === 'function' && appApply !== window.eqApplyDrawerFilters) {
+        try { appApply(); } catch (_) {}
+      }
+      forceClose();
+    };
+
+    function bindOpen(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      window.eqOpenSidebar();
+    }
+
+    ['pointerdown', 'pointerup', 'touchstart', 'click'].forEach(type => {
+      tab.addEventListener(type, bindOpen, true);
+    });
+    if (overlay) overlay.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.eqCloseSidebar();
+    }, true);
+    if (panel) panel.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+    }, true);
+    if (close) close.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.eqCloseSidebar();
+    }, true);
+    if (reset) reset.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.eqResetDrawer();
+    }, true);
+    if (apply) apply.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.eqApplyDrawerFilters();
+    }, true);
+  }
+
+  window.addEventListener('DOMContentLoaded', installMarketFilterFallback);
+  window.addEventListener('load', installMarketFilterFallback);
+  setTimeout(installMarketFilterFallback, 1000);
+})();
+</script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
 </body>
 </html>
