@@ -589,7 +589,7 @@
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
-.eq-sidebar-overlay.open { display: block; }
+body.filter-open .eq-sidebar-overlay { display: block; }
 
 /* Drawer wrapper — slides in from the left */
 .eq-filter-drawer {
@@ -599,8 +599,15 @@
   z-index: 195;
   transform: translateX(-290px);
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  /* pointer-events: none stops the off-screen drawer from intercepting taps
+     on the tab button — mobile browsers hit-test pre-transform bounds */
+  pointer-events: none;
 }
-.eq-filter-drawer.open { transform: translateX(0); }
+body.filter-open .eq-filter-drawer {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+body.filter-open { overflow: hidden; }
 
 /* Scrollable inner panel */
 .eq-drawer-panel {
@@ -688,7 +695,7 @@
   left: 0; top: 50%;
   transform: translateY(-50%);
   width: 44px;
-  z-index: 197;
+  z-index: 9999;
   background: var(--orange); color: #fff; border: none;
   border-radius: 0 12px 12px 0;
   padding: 20px 0 16px;
@@ -705,7 +712,7 @@
 }
 .eq-sidebar-tab:hover { box-shadow: 7px 0 22px rgba(255,107,0,0.62); }
 .eq-sidebar-tab:active { opacity: 0.85; }
-.eq-sidebar-tab.open  { left: 290px; }
+body.filter-open .eq-sidebar-tab { left: 290px; }
 
 /* Active filter count badge */
 .eq-sidebar-tab-badge {
@@ -733,7 +740,7 @@
   font-size: 16px; font-weight: 900; line-height: 1;
   transition: transform 0.32s;
 }
-.eq-sidebar-tab.open .eq-sidebar-tab-arrow { transform: rotate(180deg); }
+body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180deg); }
 
 /* Hide drawer + tab on desktop */
 @media (min-width: 769px) {
