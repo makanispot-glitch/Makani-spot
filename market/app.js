@@ -68,6 +68,12 @@ let eqPriceMax      = 0;
 let eqFavorites     = new Set();
 let eqNotifications = [];
 let eqMyListings    = [];
+let eqDrawerDraft   = {
+  category: '',
+  gov: '',
+  sortBy: 'newest',
+  priceMax: 0,
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -77,11 +83,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const _drawerCloseBtn = document.getElementById('eq-drawer-close-btn');
   const _drawerResetBtn = document.getElementById('eq-drawer-reset-btn');
   const _drawerApplyBtn = document.getElementById('eq-drawer-apply-btn');
-  if (_sidebarTab)     _sidebarTab.addEventListener('click', eqToggleSidebar);
+  const _lightbox       = document.getElementById('eq-lightbox');
+  if (_sidebarTab) {
+    _sidebarTab.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      eqToggleSidebar();
+    });
+  }
   if (_sidebarOverlay) _sidebarOverlay.addEventListener('click', eqCloseSidebar);
-  if (_drawerCloseBtn) _drawerCloseBtn.addEventListener('click', eqCloseSidebar);
-  if (_drawerResetBtn) _drawerResetBtn.addEventListener('click', eqResetDrawer);
-  if (_drawerApplyBtn) _drawerApplyBtn.addEventListener('click', eqCloseSidebar);
+  if (_drawerCloseBtn) {
+    _drawerCloseBtn.addEventListener('click', e => {
+      e.preventDefault();
+      eqCloseSidebar();
+    });
+  }
+  if (_drawerResetBtn) {
+    _drawerResetBtn.addEventListener('click', e => {
+      e.preventDefault();
+      eqResetDrawer();
+    });
+  }
+  if (_drawerApplyBtn) {
+    _drawerApplyBtn.addEventListener('click', e => {
+      e.preventDefault();
+      eqApplyDrawerFilters();
+    });
+  }
 
   /* ── Lightbox keyboard + swipe ── */
   document.addEventListener('keydown', e => {
@@ -98,6 +126,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const dx = e.changedTouches[0].clientX - _lbTX;
       if (Math.abs(dx) > 40) eqLightboxNav(dx < 0 ? 1 : -1);
     });
+  }
+  if (_lightbox) {
+    _lightbox.addEventListener('wheel', e => {
+      if (!_lightbox.classList.contains('open')) return;
+      e.preventDefault();
+      eqLightboxZoom(e.deltaY < 0 ? 0.15 : -0.15);
+    }, { passive: false });
   }
 
   eqShowLoading();
@@ -294,25 +329,38 @@ function eqBindSearch() {
   });
 
   const govSel = document.getElementById('eq-gov');
-  if (govSel) govSel.addEventListener('change', () => { eqGov = govSel.value; eqApplyFilters(); });
+  if (govSel) govSel.addEventListener('change', () => {
+    eqGov = govSel.value;
+    eqSyncDrawerFromActive();
+    eqApplyFilters();
+    eqUpdateDrawerBadge();
+  });
 
   const sortSel = document.getElementById('eq-sort');
-  if (sortSel) sortSel.addEventListener('change', () => { eqSortBy = sortSel.value; eqApplyFilters(); });
+  if (sortSel) sortSel.addEventListener('change', () => {
+    eqSortBy = sortSel.value;
+    eqSyncDrawerFromActive();
+    eqApplyFilters();
+  });
 
   const priceInp = document.getElementById('eq-price-max');
   if (priceInp) priceInp.addEventListener('input', () => {
     eqPriceMax = parseInt(priceInp.value) || 0;
     const lbl = document.getElementById('eq-price-label');
     if (lbl) lbl.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+    eqSyncDrawerFromActive();
     eqApplyFilters();
+    eqUpdateDrawerBadge();
   });
 }
 
 function eqSetCategory(cat, el) {
   eqActiveCategory = cat;
-  document.querySelectorAll('.eq-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => t.classList.remove('on'));
   if (el) el.classList.add('on');
+  eqSyncDrawerFromActive();
   eqApplyFilters();
+  eqUpdateDrawerBadge();
 }
 
 function eqBuildCategoryTabs() {
@@ -472,7 +520,16 @@ function eqFabPriceChange(inp) {
    ================================================================ */
 
 function eqToggleSidebar() {
-  document.body.classList.toggle('filter-open');
+  if (document.body.classList.contains('filter-open')) {
+    eqCloseSidebar();
+  } else {
+    eqOpenSidebar();
+  }
+}
+
+function eqOpenSidebar() {
+  eqSyncDrawerFromActive();
+  document.body.classList.add('filter-open');
 }
 
 function eqCloseSidebar() {
@@ -495,6 +552,7 @@ function eqCardNav(carouselId, dir) {
 /* ── Image Lightbox ── */
 let eqLbImages = [];
 let eqLbIndex  = 0;
+let eqLbZoom   = 1;
 
 function eqOpenLightbox(listingId, startIdx) {
   const listing = eqListings.find(l => l.id === listingId);
@@ -502,6 +560,7 @@ function eqOpenLightbox(listingId, startIdx) {
   eqLbImages = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
   if (!eqLbImages.length) return;
   eqLbIndex = startIdx ?? 0;
+  eqLbZoom = 1;
   eqLightboxRender();
 }
 
@@ -511,12 +570,15 @@ function eqLightboxRender() {
   const counter = document.getElementById('eq-lb-counter');
   const prev    = document.getElementById('eq-lb-prev');
   const next    = document.getElementById('eq-lb-next');
+  const zoomLbl = document.getElementById('eq-lb-zoom-label');
   if (!lb || !img) return;
   img.src = eqLbImages[eqLbIndex];
+  img.style.transform = `scale(${eqLbZoom})`;
   const multi = eqLbImages.length > 1;
   if (counter) { counter.textContent = `${eqLbIndex + 1} / ${eqLbImages.length}`; counter.style.display = multi ? '' : 'none'; }
   if (prev) prev.style.display = multi ? 'flex' : 'none';
   if (next) next.style.display = multi ? 'flex' : 'none';
+  if (zoomLbl) zoomLbl.textContent = Math.round(eqLbZoom * 100) + '%';
   lb.classList.add('open');
   document.body.classList.add('lightbox-open');
 }
@@ -524,52 +586,48 @@ function eqLightboxRender() {
 function eqLightboxNav(dir) {
   if (!eqLbImages.length) return;
   eqLbIndex = (eqLbIndex + dir + eqLbImages.length) % eqLbImages.length;
+  eqLbZoom = 1;
+  eqLightboxRender();
+}
+
+function eqLightboxZoom(delta) {
+  if (!eqLbImages.length) return;
+  eqLbZoom = Math.max(0.5, Math.min(3, Math.round((eqLbZoom + delta) * 100) / 100));
+  eqLightboxRender();
+}
+
+function eqLightboxResetZoom() {
+  eqLbZoom = 1;
   eqLightboxRender();
 }
 
 function eqLightboxClose() {
   document.getElementById('eq-lightbox')?.classList.remove('open');
   document.body.classList.remove('lightbox-open');
+  eqLbZoom = 1;
 }
 
 function eqDrawerSetCategory(cat, el) {
-  eqActiveCategory = cat;
+  eqDrawerDraft.category = cat;
   document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => t.classList.remove('on'));
   if (el) el.classList.add('on');
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
-    const match = cat === '' ? t.textContent.trim() === 'الكل'
-      : t.getAttribute('onclick')?.includes(`'${cat}'`);
-    t.classList.toggle('on', !!match);
-  });
-  eqApplyFilters();
   eqUpdateDrawerBadge();
 }
 
 function eqDrawerGovChange(sel) {
-  eqGov = sel.value;
-  const main = document.getElementById('eq-gov');
-  if (main) main.value = sel.value;
-  eqApplyFilters();
+  eqDrawerDraft.gov = sel.value;
   eqUpdateDrawerBadge();
 }
 
 function eqDrawerSortChange(sel) {
-  eqSortBy = sel.value;
-  const main = document.getElementById('eq-sort');
-  if (main) main.value = sel.value;
-  eqApplyFilters();
+  eqDrawerDraft.sortBy = sel.value;
 }
 
 function eqDrawerPriceChange(inp) {
-  eqPriceMax = parseInt(inp.value) || 0;
-  const label = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  eqDrawerDraft.priceMax = parseInt(inp.value) || 0;
+  const label = eqDrawerDraft.priceMax > 0 ? eqDrawerDraft.priceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
   const drawerVal = document.getElementById('eq-drawer-price-val');
   if (drawerVal) drawerVal.textContent = label;
-  const mainInp = document.getElementById('eq-price-max');
-  if (mainInp) mainInp.value = inp.value;
-  const mainLbl = document.getElementById('eq-price-label');
-  if (mainLbl) mainLbl.textContent = label;
-  eqApplyFilters();
   eqUpdateDrawerBadge();
 }
 
@@ -582,35 +640,75 @@ function eqUpdateDrawerBadge() {
 }
 
 function eqResetDrawer() {
-  eqActiveCategory = '';
-  eqGov = '';
-  eqPriceMax = 0;
-  eqSortBy = 'newest';
+  eqDrawerDraft = {
+    category: '',
+    gov: '',
+    priceMax: 0,
+    sortBy: 'newest',
+  };
+  eqRenderDrawerDraft();
+}
 
+function eqApplyDrawerFilters() {
+  eqActiveCategory = eqDrawerDraft.category;
+  eqGov = eqDrawerDraft.gov;
+  eqPriceMax = eqDrawerDraft.priceMax;
+  eqSortBy = eqDrawerDraft.sortBy;
+
+  eqSyncMainFiltersFromActive();
+  eqApplyFilters();
+  eqUpdateDrawerBadge();
+  eqCloseSidebar();
+}
+
+function eqSyncDrawerFromActive() {
+  eqDrawerDraft = {
+    category: eqActiveCategory,
+    gov: eqGov,
+    priceMax: eqPriceMax,
+    sortBy: eqSortBy,
+  };
+  eqRenderDrawerDraft();
+}
+
+function eqRenderDrawerDraft() {
   const drawerGov   = document.getElementById('eq-drawer-gov');
   const drawerSort  = document.getElementById('eq-drawer-sort');
   const drawerPrice = document.getElementById('eq-drawer-price');
   const drawerVal   = document.getElementById('eq-drawer-price-val');
-  if (drawerGov)   drawerGov.value   = '';
-  if (drawerSort)  drawerSort.value  = 'newest';
-  if (drawerPrice) drawerPrice.value = 0;
-  if (drawerVal)   drawerVal.textContent = 'بلا حد';
+  const label = eqDrawerDraft.priceMax > 0 ? eqDrawerDraft.priceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
 
-  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
+  if (drawerGov)   drawerGov.value   = eqDrawerDraft.gov;
+  if (drawerSort)  drawerSort.value  = eqDrawerDraft.sortBy;
+  if (drawerPrice) drawerPrice.value = eqDrawerDraft.priceMax;
+  if (drawerVal)   drawerVal.textContent = label;
 
+  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => {
+    const onclick = t.getAttribute('onclick') || '';
+    const isAll = eqDrawerDraft.category === '' && onclick.includes("eqDrawerSetCategory('',");
+    const isCat = eqDrawerDraft.category && onclick.includes(`'${eqDrawerDraft.category}'`);
+    t.classList.toggle('on', !!(isAll || isCat));
+  });
+}
+
+function eqSyncMainFiltersFromActive() {
   const mainGov   = document.getElementById('eq-gov');
   const mainSort  = document.getElementById('eq-sort');
   const mainPrice = document.getElementById('eq-price-max');
   const mainLbl   = document.getElementById('eq-price-label');
-  if (mainGov)   mainGov.value   = '';
-  if (mainSort)  mainSort.value  = 'newest';
-  if (mainPrice) mainPrice.value = 0;
-  if (mainLbl)   mainLbl.textContent = 'بلا حد';
+  const label = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
 
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
+  if (mainGov)   mainGov.value   = eqGov;
+  if (mainSort)  mainSort.value  = eqSortBy;
+  if (mainPrice) mainPrice.value = eqPriceMax;
+  if (mainLbl)   mainLbl.textContent = label;
 
-  eqApplyFilters();
-  eqUpdateDrawerBadge();
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
+    const onclick = t.getAttribute('onclick') || '';
+    const isAll = eqActiveCategory === '' && onclick.includes("eqSetCategory('',");
+    const isCat = eqActiveCategory && onclick.includes(`'${eqActiveCategory}'`);
+    t.classList.toggle('on', !!(isAll || isCat));
+  });
 }
 
 
@@ -642,7 +740,7 @@ function eqBuildCard(listing) {
       <button class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.stopPropagation()" aria-label="التالية">›</button>
       <div class="eq-cn-dots">${allImgs.map((_,i) => `<span class="eq-cn-dot${i===0?' active':''}"></span>`).join('')}</div>` : '';
     imgAreaHtml = `
-      <div class="eq-card-carousel" id="eqc-${lid}" data-idx="0">
+      <div class="eq-card-carousel${allImgs.length > 1 ? ' has-many' : ''}" id="eqc-${lid}" data-idx="0">
         <div class="eq-card-slides">${slides}</div>
         ${navHtml}
       </div>

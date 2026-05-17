@@ -203,9 +203,13 @@
 .eq-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .eq-card-img {
   position: relative; height: 200px;
-  background: var(--surface2); overflow: hidden;
+  background: #F6F7F9; overflow: hidden;
 }
-.eq-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eq-card-img img {
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: center center;
+  display: block;
+}
 .eq-card-no-img {
   height: 200px; display: flex; align-items: center; justify-content: center;
   font-size: 48px; background: var(--surface2);
@@ -362,37 +366,47 @@
 /* ── Card Image Carousel ── */
 .eq-card-carousel {
   position: absolute; inset: 0; overflow: hidden;
+  direction: ltr;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.92), rgba(243,244,246,0.92));
 }
 .eq-card-slides {
   display: flex; height: 100%;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+  direction: ltr;
 }
 .eq-card-slide {
   flex: 0 0 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
+  direction: ltr;
 }
 .eq-card-slide img {
   width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
+  object-fit: contain; object-position: center center;
   display: block; cursor: zoom-in;
   user-select: none; -webkit-user-drag: none;
 }
 /* Carousel nav arrows */
 .eq-cn-btn {
   position: absolute; top: 50%; transform: translateY(-50%);
-  z-index: 5; background: rgba(0,0,0,0.45); color: #fff;
-  border: none; width: 28px; height: 28px; border-radius: 50%;
-  font-size: 18px; cursor: pointer;
+  z-index: 8; background: rgba(17,24,39,0.72); color: #fff;
+  border: 1px solid rgba(255,255,255,0.55);
+  width: 34px; height: 34px; border-radius: 50%;
+  font-size: 24px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity .2s;
+  opacity: 0.92; transition: background .2s, transform .2s, opacity .2s;
   padding: 0; line-height: 1;
   touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.28);
 }
-.eq-card-img:hover .eq-cn-btn { opacity: 1; }
-@media (max-width: 768px) { .eq-cn-btn { opacity: 0.75 !important; width: 26px; height: 26px; font-size: 16px; } }
-.eq-cn-prev { left: 6px; }
-.eq-cn-next { right: 6px; }
+.eq-cn-btn:hover {
+  background: rgba(255,107,0,0.94);
+  transform: translateY(-50%) scale(1.05);
+}
+@media (max-width: 768px) { .eq-cn-btn { width: 32px; height: 32px; font-size: 22px; } }
+.eq-cn-prev { left: 8px; }
+.eq-cn-next { right: 8px; }
 /* Carousel dots */
 .eq-cn-dots {
   position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
@@ -412,10 +426,19 @@
   align-items: center; justify-content: center;
 }
 .eq-lightbox.open { display: flex; }
+.eq-lb-stage {
+  position: relative;
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  padding: 68px 76px 66px;
+}
 .eq-lb-img {
-  max-width: 90vw; max-height: 88vh;
+  max-width: 100%; max-height: 100%;
   object-fit: contain; border-radius: 6px;
   user-select: none; -webkit-user-drag: none; display: block;
+  transition: transform .18s ease;
+  transform-origin: center center;
 }
 .eq-lb-close {
   position: fixed; top: 16px; right: 16px;
@@ -426,6 +449,29 @@
   transition: background .2s; touch-action: manipulation;
 }
 .eq-lb-close:hover { background: rgba(255,255,255,0.32); }
+.eq-lb-tools {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px; padding: 6px;
+  backdrop-filter: blur(10px);
+  z-index: 10002;
+}
+.eq-lb-tool {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.14); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: 900; cursor: pointer;
+  touch-action: manipulation;
+}
+.eq-lb-tool:hover { background: rgba(255,255,255,0.28); }
+.eq-lb-zoom-label {
+  color: #fff; min-width: 48px; text-align: center;
+  font-size: 12px; font-weight: 800;
+  font-family: 'Cairo', sans-serif;
+}
 .eq-lb-nav {
   position: fixed; top: 50%; transform: translateY(-50%);
   width: 50px; height: 50px; border-radius: 50%;
@@ -446,6 +492,10 @@
 }
 body.lightbox-open { overflow: hidden; }
 @media (max-width: 768px) {
+  .eq-lb-stage { padding: 72px 12px 72px; }
+  .eq-lb-close { top: 12px; right: 12px; width: 40px; height: 40px; }
+  .eq-lb-tools { top: 12px; }
+  .eq-lb-tool { width: 34px; height: 34px; }
   .eq-lb-nav { width: 42px; height: 42px; font-size: 24px; }
   .eq-lb-prev { left: 8px; }
   .eq-lb-next { right: 8px; }
@@ -1236,8 +1286,16 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Image Lightbox ── -->
 <div class="eq-lightbox" id="eq-lightbox" onclick="eqLightboxClose()">
   <button class="eq-lb-close" onclick="eqLightboxClose();event.stopPropagation()" aria-label="إغلاق">✕</button>
+  <div class="eq-lb-tools" onclick="event.stopPropagation()">
+    <button class="eq-lb-tool" onclick="eqLightboxZoom(-0.25)" aria-label="تصغير">−</button>
+    <span class="eq-lb-zoom-label" id="eq-lb-zoom-label">100%</span>
+    <button class="eq-lb-tool" onclick="eqLightboxZoom(0.25)" aria-label="تكبير">+</button>
+    <button class="eq-lb-tool" onclick="eqLightboxResetZoom()" aria-label="إعادة الحجم">1:1</button>
+  </div>
   <button class="eq-lb-nav eq-lb-prev" id="eq-lb-prev" onclick="eqLightboxNav(-1);event.stopPropagation()" aria-label="السابقة">‹</button>
-  <img class="eq-lb-img" id="eq-lb-img" src="" alt="" onclick="event.stopPropagation()" draggable="false">
+  <div class="eq-lb-stage" onclick="event.stopPropagation()">
+    <img class="eq-lb-img" id="eq-lb-img" src="" alt="" onclick="event.stopPropagation()" ondblclick="eqLightboxZoom(0.5);event.stopPropagation()" draggable="false">
+  </div>
   <button class="eq-lb-nav eq-lb-next" id="eq-lb-next" onclick="eqLightboxNav(1);event.stopPropagation()" aria-label="التالية">›</button>
   <div class="eq-lb-counter" id="eq-lb-counter"></div>
 </div>
