@@ -70,6 +70,19 @@ let eqNotifications = [];
 let eqMyListings    = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  /* ── Sidebar events — attached first, before any early return ── */
+  const _sidebarTab     = document.getElementById('eq-sidebar-tab');
+  const _sidebarOverlay = document.getElementById('eq-sidebar-overlay');
+  const _drawerCloseBtn = document.getElementById('eq-drawer-close-btn');
+  const _drawerResetBtn = document.getElementById('eq-drawer-reset-btn');
+  const _drawerApplyBtn = document.getElementById('eq-drawer-apply-btn');
+  if (_sidebarTab)     _sidebarTab.addEventListener('click', eqToggleSidebar);
+  if (_sidebarOverlay) _sidebarOverlay.addEventListener('click', eqCloseSidebar);
+  if (_drawerCloseBtn) _drawerCloseBtn.addEventListener('click', eqCloseSidebar);
+  if (_drawerResetBtn) _drawerResetBtn.addEventListener('click', eqResetDrawer);
+  if (_drawerApplyBtn) _drawerApplyBtn.addEventListener('click', eqCloseSidebar);
+
   eqShowLoading();
 
   /* بعض المتصفحات (Brave، Firefox+uBlock) تحجب CDN أو Supabase */
