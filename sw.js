@@ -9,7 +9,7 @@
    • Offline                       → صفحة بديلة /offline.html
    ================================================================ */
 
-const CACHE_VER    = 'v7';                      // ← غيّر هذا عند كل نشر جديد
+const CACHE_VER    = 'v8';                      // ← غيّر هذا عند كل نشر جديد
 const SHELL_CACHE  = `makani-shell-${CACHE_VER}`;
 const FONT_CACHE   = `makani-fonts-${CACHE_VER}`;
 const CDN_CACHE    = `makani-cdn-${CACHE_VER}`;
