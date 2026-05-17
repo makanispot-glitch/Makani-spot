@@ -755,7 +755,7 @@ function eqBuildCard(listing) {
   }
 
   return `
-<div class="eq-card" onclick="eqOpenDetail('${lid}')">
+<div class="eq-card" data-category="${listing.category || ''}" data-region="${listing.region || ''}" data-price="${Number(listing.price) || 0}" onclick="eqOpenDetail('${lid}')">
   <div class="eq-card-img" style="position:relative">
     ${imgAreaHtml}
     <button class="eq-fav-btn" data-fav="${lid}" onclick="eqToggleFavorite(event,'${lid}')" title="المفضلة">${favIcon}</button>
