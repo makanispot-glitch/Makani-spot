@@ -455,25 +455,11 @@ function eqFabPriceChange(inp) {
    ================================================================ */
 
 function eqToggleSidebar() {
-  const drawer  = document.getElementById('eq-filter-drawer');
-  const tab     = document.getElementById('eq-sidebar-tab');
-  const overlay = document.getElementById('eq-sidebar-overlay');
-  if (!drawer) return;
-  if (drawer.classList.contains('open')) {
-    eqCloseSidebar();
-  } else {
-    drawer.classList.add('open');
-    tab?.classList.add('open');
-    overlay?.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
+  document.body.classList.toggle('filter-open');
 }
 
 function eqCloseSidebar() {
-  document.getElementById('eq-filter-drawer')?.classList.remove('open');
-  document.getElementById('eq-sidebar-tab')?.classList.remove('open');
-  document.getElementById('eq-sidebar-overlay')?.classList.remove('open');
-  document.body.style.overflow = '';
+  document.body.classList.remove('filter-open');
 }
 
 function eqDrawerSetCategory(cat, el) {
