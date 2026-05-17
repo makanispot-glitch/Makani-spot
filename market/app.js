@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ── Sidebar events — attached first, before any early return ── */
   const _sidebarTab     = document.getElementById('eq-sidebar-tab');
+  const _mobileFilterBtn = document.getElementById('eq-mobile-filter-btn');
   const _sidebarOverlay = document.getElementById('eq-sidebar-overlay');
   const _drawerCloseBtn = document.getElementById('eq-drawer-close-btn');
   const _drawerResetBtn = document.getElementById('eq-drawer-reset-btn');
@@ -91,6 +92,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       eqOpenSidebar();
     });
     _sidebarTab.addEventListener('pointerup', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      eqOpenSidebar();
+    });
+  }
+  if (_mobileFilterBtn) {
+    _mobileFilterBtn.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       eqOpenSidebar();
@@ -388,7 +396,7 @@ function eqBuildCategoryTabs() {
   if (drawerTabs) {
     const drawerAll  = `<button class="eq-tab on" onclick="eqDrawerSetCategory('',this)">الكل</button>`;
     const drawerCats = EQ_CATEGORIES.map(c =>
-      `<button class="eq-tab" onclick="eqDrawerSetCategory('${c.id}',this)">${c.label}</button>`
+      `<button class="eq-tab" data-cat="${c.id}" onclick="eqDrawerSetCategory('${c.id}',this)">${c.label}</button>`
     ).join('');
     drawerTabs.innerHTML = drawerAll + drawerCats;
   }
@@ -534,13 +542,31 @@ function eqToggleSidebar() {
 
 function eqOpenSidebar() {
   eqSyncDrawerFromActive();
+  const drawer = document.getElementById('eq-filter-drawer');
+  const overlay = document.getElementById('eq-sidebar-overlay');
   document.body.classList.add('filter-open');
+  if (drawer) {
+    drawer.classList.add('is-open');
+    drawer.style.transform = 'translateX(0)';
+    drawer.style.pointerEvents = 'auto';
+  }
+  if (overlay) overlay.style.display = 'block';
   document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'true');
+  document.getElementById('eq-mobile-filter-btn')?.setAttribute('aria-expanded', 'true');
 }
 
 function eqCloseSidebar() {
+  const drawer = document.getElementById('eq-filter-drawer');
+  const overlay = document.getElementById('eq-sidebar-overlay');
   document.body.classList.remove('filter-open');
+  if (drawer) {
+    drawer.classList.remove('is-open');
+    drawer.style.transform = '';
+    drawer.style.pointerEvents = '';
+  }
+  if (overlay) overlay.style.display = '';
   document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'false');
+  document.getElementById('eq-mobile-filter-btn')?.setAttribute('aria-expanded', 'false');
 }
 
 /* ── Card Carousel ── */
@@ -617,7 +643,10 @@ function eqLightboxClose() {
 function eqDrawerSetCategory(cat, el) {
   eqDrawerDraft.category = cat;
   document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => t.classList.remove('on'));
-  if (el) el.classList.add('on');
+  if (el) {
+    el.dataset.cat = cat || '';
+    el.classList.add('on');
+  }
   eqUpdateDrawerBadge();
 }
 
@@ -639,11 +668,13 @@ function eqDrawerPriceChange(inp) {
 }
 
 function eqUpdateDrawerBadge() {
-  const badge = document.getElementById('eq-drawer-badge');
-  if (!badge) return;
   const count = (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) + (eqPriceMax > 0 ? 1 : 0);
-  badge.textContent = count;
-  badge.classList.toggle('show', count > 0);
+  ['eq-drawer-badge', 'eq-mobile-filter-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = count;
+    badge.classList.toggle('show', count > 0);
+  });
 }
 
 function eqResetDrawer() {
@@ -691,10 +722,8 @@ function eqRenderDrawerDraft() {
   if (drawerVal)   drawerVal.textContent = label;
 
   document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => {
-    const onclick = t.getAttribute('onclick') || '';
-    const isAll = eqDrawerDraft.category === '' && onclick.includes("eqDrawerSetCategory('',");
-    const isCat = eqDrawerDraft.category && onclick.includes(`'${eqDrawerDraft.category}'`);
-    t.classList.toggle('on', !!(isAll || isCat));
+    const cat = t.dataset.cat ?? '';
+    t.classList.toggle('on', cat === eqDrawerDraft.category);
   });
 }
 
@@ -717,6 +746,122 @@ function eqSyncMainFiltersFromActive() {
     t.classList.toggle('on', !!(isAll || isCat));
   });
 }
+
+function eqStopFilterEvent(e) {
+  if (!e) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+}
+
+function eqInstallMobileFilterControls() {
+  const drawer = document.getElementById('eq-filter-drawer');
+  if (!drawer) return;
+
+  const openers = [
+    document.getElementById('eq-sidebar-tab'),
+    document.getElementById('eq-mobile-filter-btn'),
+  ].filter(Boolean);
+  const overlay = document.getElementById('eq-sidebar-overlay');
+  const closeBtn = document.getElementById('eq-drawer-close-btn');
+  const resetBtn = document.getElementById('eq-drawer-reset-btn');
+  const applyBtn = document.getElementById('eq-drawer-apply-btn');
+  const tabs = document.getElementById('eq-drawer-tabs');
+
+  window.__forceMarketFilterOpen = function (e) {
+    eqStopFilterEvent(e);
+    eqOpenSidebar();
+    return false;
+  };
+  window.__forceMarketFilterClose = function (e) {
+    eqStopFilterEvent(e);
+    eqCloseSidebar();
+    return false;
+  };
+  window.__forceMarketFilterReset = function (e) {
+    eqStopFilterEvent(e);
+    eqResetDrawer();
+    return false;
+  };
+  window.__forceMarketFilterApply = function (e) {
+    eqStopFilterEvent(e);
+    eqApplyDrawerFilters();
+    return false;
+  };
+
+  openers.forEach(btn => {
+    if (btn.dataset.eqAppFilterBound === '1') return;
+    btn.dataset.eqAppFilterBound = '1';
+    btn.addEventListener('click', window.__forceMarketFilterOpen, true);
+  });
+
+  if (overlay && overlay.dataset.eqAppFilterBound !== '1') {
+    overlay.dataset.eqAppFilterBound = '1';
+    overlay.addEventListener('click', window.__forceMarketFilterClose, true);
+  }
+  if (closeBtn && closeBtn.dataset.eqAppFilterBound !== '1') {
+    closeBtn.dataset.eqAppFilterBound = '1';
+    closeBtn.addEventListener('click', window.__forceMarketFilterClose, true);
+  }
+  if (resetBtn && resetBtn.dataset.eqAppFilterBound !== '1') {
+    resetBtn.dataset.eqAppFilterBound = '1';
+    resetBtn.addEventListener('click', window.__forceMarketFilterReset, true);
+  }
+  if (applyBtn && applyBtn.dataset.eqAppFilterBound !== '1') {
+    applyBtn.dataset.eqAppFilterBound = '1';
+    applyBtn.addEventListener('click', window.__forceMarketFilterApply, true);
+  }
+
+  if (tabs && tabs.dataset.eqAppFilterBound !== '1') {
+    tabs.dataset.eqAppFilterBound = '1';
+    tabs.addEventListener('click', e => {
+      const btn = e.target.closest('.eq-tab');
+      if (!btn) return;
+      eqStopFilterEvent(e);
+      eqDrawerSetCategory(btn.dataset.cat || '', btn);
+    }, true);
+  }
+
+  if (document.body.dataset.eqMobileFilterDelegated !== '1') {
+    document.body.dataset.eqMobileFilterDelegated = '1';
+    const delegatedFilterClick = e => {
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      const pathHas = selector => path.find(node => node?.matches?.(selector));
+      const rawTarget = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
+      const target = rawTarget || path.find(node => node?.nodeType === 1);
+      if (!target) return;
+      const openBtn = pathHas('#eq-mobile-filter-btn, #eq-sidebar-tab') || target.closest?.('#eq-mobile-filter-btn, #eq-sidebar-tab');
+      const closeTarget = pathHas('#eq-drawer-close-btn, #eq-sidebar-overlay') || target.closest?.('#eq-drawer-close-btn, #eq-sidebar-overlay');
+      const resetTarget = pathHas('#eq-drawer-reset-btn') || target.closest?.('#eq-drawer-reset-btn');
+      const applyTarget = pathHas('#eq-drawer-apply-btn') || target.closest?.('#eq-drawer-apply-btn');
+      const tabTarget = pathHas('#eq-drawer-tabs .eq-tab') || target.closest?.('#eq-drawer-tabs .eq-tab');
+
+      if (openBtn) {
+        eqStopFilterEvent(e);
+        eqOpenSidebar();
+      } else if (closeTarget) {
+        eqStopFilterEvent(e);
+        eqCloseSidebar();
+      } else if (resetTarget) {
+        eqStopFilterEvent(e);
+        eqResetDrawer();
+      } else if (applyTarget) {
+        eqStopFilterEvent(e);
+        eqApplyDrawerFilters();
+      } else if (tabTarget) {
+        eqStopFilterEvent(e);
+        eqDrawerSetCategory(tabTarget.dataset.cat || '', tabTarget);
+      }
+    };
+    window.addEventListener('pointerdown', delegatedFilterClick, true);
+    window.addEventListener('click', delegatedFilterClick, true);
+  }
+}
+
+eqInstallMobileFilterControls();
+document.addEventListener('DOMContentLoaded', eqInstallMobileFilterControls);
+window.addEventListener('load', eqInstallMobileFilterControls);
+setTimeout(eqInstallMobileFilterControls, 300);
 
 
 /* ================================================================
@@ -1237,7 +1382,11 @@ async function eqTogglePause(id, currentStatus) {
 
 async function eqRunLifecycle() {
   /* RPC يجاوز RLS — يتطلب دالة expire_listings في Supabase */
-  await eqSb.rpc('expire_listings').catch(() => null);
+  try {
+    await eqSb.rpc('expire_listings');
+  } catch (_) {
+    /* Lifecycle is best-effort and must not block the market page. */
+  }
 }
 
 

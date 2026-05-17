@@ -186,6 +186,17 @@
 /* ── Count row ── */
 .eq-count-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .eq-count-row span { font-size: 14px; font-weight: 700; color: var(--ink2); }
+.eq-mobile-filter-btn {
+  display: none;
+  align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-bottom: 14px;
+  border: none; border-radius: 12px;
+  background: var(--orange); color: #fff;
+  font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 900;
+  padding: 13px 16px; cursor: pointer;
+  box-shadow: 0 10px 24px rgba(255,107,0,0.22);
+  touch-action: manipulation;
+}
 
 /* ── Grid ── */
 .eq-grid {
@@ -621,6 +632,7 @@ body.lightbox-open { overflow: hidden; }
   .eq-hero h1 { font-size: 24px; }
   .eq-filters-bar { padding: 0 16px; top: 68px; }
   .eq-main { padding: 20px 16px; }
+  .eq-mobile-filter-btn { display: flex; }
   .eq-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .eq-card-img, .eq-card-no-img { height: 150px; }
   .eq-detail-main-img { height: 220px; }
@@ -748,6 +760,12 @@ body.filter-open .eq-sidebar-overlay { display: block; }
 body.filter-open .eq-filter-drawer {
   transform: translateX(0);
   pointer-events: auto;
+}
+.eq-filter-drawer.is-open {
+  transform: translateX(0) !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  display: block !important;
 }
 body.filter-open { overflow: hidden; }
 
@@ -1087,7 +1105,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 </div>
 
 <!-- ── Sidebar Overlay ── -->
-<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" onclick="eqCloseSidebar()"></div>
+<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" onclick="__forceMarketFilterClose(event)"></div>
 
 <!-- ── Filter Sidebar Drawer (mobile only) ── -->
 <div class="eq-filter-drawer" id="eq-filter-drawer">
@@ -1102,7 +1120,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         </svg>
         فلتر البحث
       </h3>
-      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" onclick="eqCloseSidebar();event.stopPropagation()">✕</button>
+      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" onclick="__forceMarketFilterClose(event)">✕</button>
     </div>
 
     <div class="eq-drawer-body">
@@ -1131,14 +1149,14 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     </div>
 
     <div class="eq-drawer-actions">
-      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer();event.stopPropagation()" style="flex:1">إعادة تعيين</button>
-      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters();event.stopPropagation()" style="flex:2">عرض النتائج</button>
+      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="__forceMarketFilterReset(event)" style="flex:1">إعادة تعيين</button>
+      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="__forceMarketFilterApply(event)" style="flex:2">عرض النتائج</button>
     </div>
   </div>
 </div>
 
 <!-- ── Filter Toggle Tab (standalone fixed, events attached via JS) ── -->
-<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar();event.stopPropagation()" aria-label="فتح فلاتر البحث">
+<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="__forceMarketFilterOpen(event)" aria-label="فتح فلاتر البحث">
   <span>
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="4" y1="6" x2="20" y2="6"/>
@@ -1153,6 +1171,10 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 <!-- ── Main ── -->
 <main class="eq-main">
+  <button class="eq-mobile-filter-btn" id="eq-mobile-filter-btn" type="button" onclick="__forceMarketFilterOpen(event)">
+    فلتر البحث
+    <span class="eq-sidebar-tab-badge" id="eq-mobile-filter-badge">0</span>
+  </button>
   <div class="eq-count-row">
     <span id="eq-count">جاري التحميل…</span>
     <a class="eq-btn eq-btn-primary" href="/post-ad/">+ انشر إعلانك</a>
@@ -1300,7 +1322,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <div class="eq-lb-counter" id="eq-lb-counter"></div>
 </div>
 
-<script src="app.js" defer></script>
+<script src="app.js?v=20" defer></script>
 <script>
 (function () {
   const FALLBACK_CATEGORIES = [
@@ -1325,8 +1347,117 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     'الوادي الجديد','البحر الأحمر'
   ];
 
+  function stopFilterEvent(ev) {
+    if (!ev) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+  }
+
+  function currentFilterState() {
+    const activeTab = document.querySelector('#eq-drawer-tabs .eq-tab.on');
+    const gov = document.getElementById('eq-drawer-gov');
+    const sort = document.getElementById('eq-drawer-sort');
+    const price = document.getElementById('eq-drawer-price');
+    return {
+      category: activeTab ? (activeTab.dataset.cat || '') : '',
+      gov: gov ? gov.value : '',
+      sort: sort ? sort.value : 'newest',
+      price: price ? (parseInt(price.value, 10) || 0) : 0
+    };
+  }
+
+  function forceFilterBadge(state) {
+    const count = (state.category ? 1 : 0) + (state.gov ? 1 : 0) + (state.price > 0 ? 1 : 0);
+    ['eq-drawer-badge', 'eq-mobile-filter-badge'].forEach(id => {
+      const badge = document.getElementById(id);
+      if (!badge) return;
+      badge.textContent = count;
+      badge.classList.toggle('show', count > 0);
+    });
+  }
+
+  window.__forceMarketFilterOpen = function (ev) {
+    stopFilterEvent(ev);
+    const drawer = document.getElementById('eq-filter-drawer');
+    const overlay = document.getElementById('eq-sidebar-overlay');
+    const tab = document.getElementById('eq-sidebar-tab');
+    const mobileBtn = document.getElementById('eq-mobile-filter-btn');
+    if (!drawer) return false;
+    document.body.classList.add('filter-open');
+    drawer.classList.add('is-open');
+    drawer.style.transform = 'translateX(0)';
+    drawer.style.pointerEvents = 'auto';
+    drawer.style.visibility = 'visible';
+    drawer.style.display = 'block';
+    drawer.style.zIndex = '10001';
+    if (overlay) overlay.style.display = 'block';
+    if (tab) tab.setAttribute('aria-expanded', 'true');
+    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
+    return false;
+  };
+
+  window.__forceMarketFilterClose = function (ev) {
+    stopFilterEvent(ev);
+    const drawer = document.getElementById('eq-filter-drawer');
+    const overlay = document.getElementById('eq-sidebar-overlay');
+    const tab = document.getElementById('eq-sidebar-tab');
+    const mobileBtn = document.getElementById('eq-mobile-filter-btn');
+    document.body.classList.remove('filter-open');
+    if (drawer) {
+      drawer.classList.remove('is-open');
+      drawer.style.transform = '';
+      drawer.style.pointerEvents = '';
+      drawer.style.visibility = '';
+      drawer.style.display = '';
+      drawer.style.zIndex = '';
+    }
+    if (overlay) overlay.style.display = '';
+    if (tab) tab.setAttribute('aria-expanded', 'false');
+    if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
+    return false;
+  };
+
+  window.__forceMarketFilterReset = function (ev) {
+    stopFilterEvent(ev);
+    const gov = document.getElementById('eq-drawer-gov');
+    const sort = document.getElementById('eq-drawer-sort');
+    const price = document.getElementById('eq-drawer-price');
+    const priceVal = document.getElementById('eq-drawer-price-val');
+    if (gov) gov.value = '';
+    if (sort) sort.value = 'newest';
+    if (price) price.value = 0;
+    if (priceVal) priceVal.textContent = 'بلا حد';
+    document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach((btn, i) => btn.classList.toggle('on', i === 0));
+    forceFilterBadge({ category: '', gov: '', price: 0 });
+    return false;
+  };
+
+  window.__forceMarketFilterApply = function (ev) {
+    stopFilterEvent(ev);
+    const state = currentFilterState();
+    const cards = Array.from(document.querySelectorAll('#eq-grid .eq-card'));
+    let shown = 0;
+    cards.forEach(card => {
+      const category = card.dataset.category || '';
+      const region = card.dataset.region || '';
+      const price = Number(card.dataset.price || 0);
+      const visible = (!state.category || category === state.category)
+        && (!state.gov || region === state.gov)
+        && (!state.price || price <= state.price);
+      card.style.display = visible ? '' : 'none';
+      if (visible) shown++;
+    });
+    const count = document.getElementById('eq-count');
+    if (count && cards.length) count.textContent = shown + ' إعلان';
+    forceFilterBadge(state);
+    window.__forceMarketFilterClose(ev);
+    return false;
+  };
+
   function installMarketFilterFallback() {
     const tab     = document.getElementById('eq-sidebar-tab');
+    const mobileBtn = document.getElementById('eq-mobile-filter-btn');
     const drawer  = document.getElementById('eq-filter-drawer');
     const overlay = document.getElementById('eq-sidebar-overlay');
     const panel   = drawer ? drawer.querySelector('.eq-drawer-panel') : null;
@@ -1334,16 +1465,22 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     const reset   = document.getElementById('eq-drawer-reset-btn');
     const apply   = document.getElementById('eq-drawer-apply-btn');
 
-    if (!tab || !drawer) return;
+    if ((!tab && !mobileBtn) || !drawer) return;
+    const installTarget = mobileBtn || tab;
+    let fallbackState = window.__eqFallbackState || { category: '', gov: '', sort: 'newest', price: 0 };
+    window.__eqFallbackState = fallbackState;
+
+    if (installTarget.dataset.filterFallbackInstalled === '1' && typeof window.eqOpenSidebar === 'function') {
+      ensureDrawerOptions();
+      return;
+    }
+    installTarget.dataset.filterFallbackInstalled = '';
 
     if (typeof window.eqOpenSidebar === 'function' && !window.eqOpenSidebar._fallback) window.__eqAppOpen = window.eqOpenSidebar;
     if (typeof window.eqCloseSidebar === 'function' && !window.eqCloseSidebar._fallback) window.__eqAppClose = window.eqCloseSidebar;
     if (typeof window.eqResetDrawer === 'function' && !window.eqResetDrawer._fallback) window.__eqAppReset = window.eqResetDrawer;
     if (typeof window.eqApplyDrawerFilters === 'function' && !window.eqApplyDrawerFilters._fallback) window.__eqAppApply = window.eqApplyDrawerFilters;
     if (typeof window.eqSyncDrawerFromActive === 'function' && !window.eqSyncDrawerFromActive._fallback) window.__eqAppSync = window.eqSyncDrawerFromActive;
-
-    let fallbackState = window.__eqFallbackState || { category: '', gov: '', sort: 'newest', price: 0 };
-    window.__eqFallbackState = fallbackState;
 
     function priceLabel(value) {
       return value > 0 ? Number(value).toLocaleString('ar-EG') + ' ج' : 'بلا حد';
@@ -1362,7 +1499,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       }
       if (tabs && tabs.children.length) {
         tabs.querySelectorAll('.eq-tab').forEach(btn => {
-          if (btn.dataset.cat != null && btn.dataset.cat !== undefined && btn.dataset.cat !== '') return;
+          if (btn.hasAttribute('data-cat')) return;
           const onclick = btn.getAttribute('onclick') || '';
           const match = onclick.match(/eqDrawerSetCategory\('([^']*)'/);
           if (match) btn.dataset.cat = match[1];
@@ -1388,10 +1525,15 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         });
       }
       const badge = document.getElementById('eq-drawer-badge');
+      const mobileBadge = document.getElementById('eq-mobile-filter-badge');
       if (badge) {
         const count = (fallbackState.category ? 1 : 0) + (fallbackState.gov ? 1 : 0) + ((fallbackState.price || 0) > 0 ? 1 : 0);
         badge.textContent = count;
         badge.classList.toggle('show', count > 0);
+        if (mobileBadge) {
+          mobileBadge.textContent = count;
+          mobileBadge.classList.toggle('show', count > 0);
+        }
       }
     }
 
@@ -1417,6 +1559,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       ensureDrawerOptions();
       try { if (typeof window.__eqAppSync === 'function') window.__eqAppSync(); } catch (_) {}
       document.body.classList.add('filter-open');
+      drawer.classList.add('is-open');
       drawer.style.transform = 'translateX(0)';
       drawer.style.pointerEvents = 'auto';
       drawer.style.visibility = 'visible';
@@ -1424,11 +1567,13 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       drawer.style.zIndex = '10001';
       if (panel) panel.style.pointerEvents = 'auto';
       if (overlay) overlay.style.display = 'block';
-      tab.setAttribute('aria-expanded', 'true');
+      if (tab) tab.setAttribute('aria-expanded', 'true');
+      if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
     }
 
     function forceClose() {
       document.body.classList.remove('filter-open');
+      drawer.classList.remove('is-open');
       drawer.style.transform = '';
       drawer.style.pointerEvents = '';
       drawer.style.visibility = '';
@@ -1436,7 +1581,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       drawer.style.zIndex = '';
       if (panel) panel.style.pointerEvents = '';
       if (overlay) overlay.style.display = '';
-      tab.setAttribute('aria-expanded', 'false');
+      if (tab) tab.setAttribute('aria-expanded', 'false');
+      if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
     }
 
     window.eqOpenSidebar = function () {
@@ -1519,9 +1665,21 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       window.eqOpenSidebar();
     }
 
-    ['pointerdown', 'pointerup', 'touchstart', 'click'].forEach(type => {
-      tab.addEventListener(type, bindOpen, true);
-    });
+    if (tab) {
+      ['pointerdown', 'touchstart'].forEach(type => {
+        tab.addEventListener(type, bindOpen, true);
+      });
+      tab.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      }, true);
+    }
+    if (mobileBtn) {
+      ['pointerdown', 'click'].forEach(type => {
+        mobileBtn.addEventListener(type, bindOpen, true);
+      });
+    }
     const tabs = document.getElementById('eq-drawer-tabs');
     if (tabs && !tabs.dataset.fallbackBound) {
       tabs.dataset.fallbackBound = '1';
@@ -1530,6 +1688,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         if (!btn) return;
         ev.preventDefault();
         ev.stopPropagation();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
         fallbackState.category = btn.dataset.cat || '';
         syncDrawerUi();
       }, true);
@@ -1541,23 +1700,27 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     }, true);
     if (panel) panel.addEventListener('click', function (ev) {
       ev.stopPropagation();
-    }, true);
+    }, false);
     if (close) close.addEventListener('click', function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
       window.eqCloseSidebar();
     }, true);
     if (reset) reset.addEventListener('click', function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
       window.eqResetDrawer();
     }, true);
     if (apply) apply.addEventListener('click', function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
       window.eqApplyDrawerFilters();
     }, true);
 
+    installTarget.dataset.filterFallbackInstalled = '1';
     ensureDrawerOptions();
   }
 
@@ -1565,6 +1728,88 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   window.addEventListener('load', installMarketFilterFallback);
   setTimeout(installMarketFilterFallback, 1000);
 })();
+</script>
+<script>
+window.__forceMarketFilterOpen = function(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  var drawer=document.getElementById('eq-filter-drawer');
+  var overlay=document.getElementById('eq-sidebar-overlay');
+  if(!drawer)return false;
+  document.body.classList.add('filter-open');
+  drawer.classList.add('is-open');
+  drawer.style.transform='translateX(0)';
+  drawer.style.pointerEvents='auto';
+  drawer.style.visibility='visible';
+  drawer.style.display='block';
+  drawer.style.zIndex='10001';
+  if(overlay)overlay.style.display='block';
+  return false;
+};
+window.__forceMarketFilterClose = function(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  var drawer=document.getElementById('eq-filter-drawer');
+  var overlay=document.getElementById('eq-sidebar-overlay');
+  document.body.classList.remove('filter-open');
+  if(drawer){
+    drawer.classList.remove('is-open');
+    drawer.style.transform='';
+    drawer.style.pointerEvents='';
+    drawer.style.visibility='';
+    drawer.style.display='';
+    drawer.style.zIndex='';
+  }
+  if(overlay)overlay.style.display='';
+  return false;
+};
+window.__forceMarketFilterReset = function(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  var gov=document.getElementById('eq-drawer-gov');
+  var sort=document.getElementById('eq-drawer-sort');
+  var price=document.getElementById('eq-drawer-price');
+  var priceVal=document.getElementById('eq-drawer-price-val');
+  if(gov)gov.value='';
+  if(sort)sort.value='newest';
+  if(price)price.value=0;
+  if(priceVal)priceVal.textContent='بلا حد';
+  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(function(btn,i){btn.classList.toggle('on',i===0);});
+  return false;
+};
+window.__forceMarketFilterApply = function(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  var active=document.querySelector('#eq-drawer-tabs .eq-tab.on');
+  var category=active?(active.dataset.cat||''):'';
+  var govEl=document.getElementById('eq-drawer-gov');
+  var priceEl=document.getElementById('eq-drawer-price');
+  var gov=govEl?govEl.value:'';
+  var max=priceEl?(parseInt(priceEl.value,10)||0):0;
+  var cards=Array.from(document.querySelectorAll('#eq-grid .eq-card'));
+  var shown=0;
+  cards.forEach(function(card){
+    var ok=(!category||card.dataset.category===category)&&(!gov||card.dataset.region===gov)&&(!max||Number(card.dataset.price||0)<=max);
+    card.style.display=ok?'':'none';
+    if(ok)shown++;
+  });
+  var count=document.getElementById('eq-count');
+  if(count&&cards.length)count.textContent=shown+' إعلان';
+  return window.__forceMarketFilterClose(ev);
+};
+document.addEventListener('click',function(ev){
+  var catBtn=ev.target.closest&&ev.target.closest('#eq-drawer-tabs .eq-tab');
+  if(!catBtn)return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(function(btn){btn.classList.remove('on');});
+  catBtn.classList.add('on');
+},true);
+document.addEventListener('DOMContentLoaded',function(){
+  var btn=document.getElementById('eq-mobile-filter-btn');
+  var side=document.getElementById('eq-sidebar-tab');
+  [btn,side].forEach(function(el){
+    if(!el)return;
+    el.addEventListener('click',window.__forceMarketFilterOpen,true);
+    el.addEventListener('pointerdown',window.__forceMarketFilterOpen,true);
+  });
+});
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'});</script>
 </body>
