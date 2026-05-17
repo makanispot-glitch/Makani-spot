@@ -83,6 +83,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (_drawerResetBtn) _drawerResetBtn.addEventListener('click', eqResetDrawer);
   if (_drawerApplyBtn) _drawerApplyBtn.addEventListener('click', eqCloseSidebar);
 
+  /* ── Lightbox keyboard + swipe ── */
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('eq-lightbox')?.classList.contains('open')) return;
+    if (e.key === 'ArrowLeft')  eqLightboxNav(-1);
+    if (e.key === 'ArrowRight') eqLightboxNav(1);
+    if (e.key === 'Escape')     eqLightboxClose();
+  });
+  let _lbTX = 0;
+  const _lbEl = document.getElementById('eq-lb-img');
+  if (_lbEl) {
+    _lbEl.addEventListener('touchstart', e => { _lbTX = e.touches[0].clientX; }, { passive: true });
+    _lbEl.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - _lbTX;
+      if (Math.abs(dx) > 40) eqLightboxNav(dx < 0 ? 1 : -1);
+    });
+  }
+
   eqShowLoading();
 
   /* بعض المتصفحات (Brave، Firefox+uBlock) تحجب CDN أو Supabase */
@@ -462,6 +479,59 @@ function eqCloseSidebar() {
   document.body.classList.remove('filter-open');
 }
 
+/* ── Card Carousel ── */
+function eqCardNav(carouselId, dir) {
+  const wrap = document.getElementById(carouselId);
+  if (!wrap) return;
+  const slides = wrap.querySelector('.eq-card-slides');
+  const dots   = wrap.querySelectorAll('.eq-cn-dot');
+  const total  = wrap.querySelectorAll('.eq-card-slide').length;
+  const idx    = (parseInt(wrap.dataset.idx || '0') + dir + total) % total;
+  wrap.dataset.idx = idx;
+  slides.style.transform = `translateX(${-idx * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+}
+
+/* ── Image Lightbox ── */
+let eqLbImages = [];
+let eqLbIndex  = 0;
+
+function eqOpenLightbox(listingId, startIdx) {
+  const listing = eqListings.find(l => l.id === listingId);
+  if (!listing) return;
+  eqLbImages = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
+  if (!eqLbImages.length) return;
+  eqLbIndex = startIdx ?? 0;
+  eqLightboxRender();
+}
+
+function eqLightboxRender() {
+  const lb      = document.getElementById('eq-lightbox');
+  const img     = document.getElementById('eq-lb-img');
+  const counter = document.getElementById('eq-lb-counter');
+  const prev    = document.getElementById('eq-lb-prev');
+  const next    = document.getElementById('eq-lb-next');
+  if (!lb || !img) return;
+  img.src = eqLbImages[eqLbIndex];
+  const multi = eqLbImages.length > 1;
+  if (counter) { counter.textContent = `${eqLbIndex + 1} / ${eqLbImages.length}`; counter.style.display = multi ? '' : 'none'; }
+  if (prev) prev.style.display = multi ? 'flex' : 'none';
+  if (next) next.style.display = multi ? 'flex' : 'none';
+  lb.classList.add('open');
+  document.body.classList.add('lightbox-open');
+}
+
+function eqLightboxNav(dir) {
+  if (!eqLbImages.length) return;
+  eqLbIndex = (eqLbIndex + dir + eqLbImages.length) % eqLbImages.length;
+  eqLightboxRender();
+}
+
+function eqLightboxClose() {
+  document.getElementById('eq-lightbox')?.classList.remove('open');
+  document.body.classList.remove('lightbox-open');
+}
+
 function eqDrawerSetCategory(cat, el) {
   eqActiveCategory = cat;
   document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => t.classList.remove('on'));
@@ -549,26 +619,41 @@ function eqResetDrawer() {
    ================================================================ */
 
 function eqBuildCard(listing) {
-  const img      = listing.cover_image || (listing.images && listing.images[0]) || '';
-  const allImgs  = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
-  const cond     = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
-  const cat      = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
-  const price    = Number(listing.price).toLocaleString('ar-EG');
-  const nego     = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
-  const feat     = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
-  const imgHtml  = img
-    ? `<img src="${img}" alt="${listing.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'eq-card-no-img\\'>📦</div>'">`
-    : `<div class="eq-card-no-img">📦</div>`;
-  const favIcon  = eqFavorites.has(listing.id) ? '❤️' : '🤍';
-  const photoBadge = allImgs.length > 1
-    ? `<div class="eq-photo-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${allImgs.length}</div>`
-    : '';
+  const allImgs = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
+  const cond    = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
+  const cat     = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
+  const price   = Number(listing.price).toLocaleString('ar-EG');
+  const nego    = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
+  const feat    = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
+  const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
+  const lid     = listing.id;
+
+  let imgAreaHtml;
+  if (allImgs.length === 0) {
+    imgAreaHtml = `<div class="eq-card-no-img">📦</div>${feat}`;
+  } else {
+    const slides = allImgs.map((u, i) =>
+      `<div class="eq-card-slide"><img src="${u}" alt="${listing.title}" loading="lazy"
+        onclick="eqOpenLightbox('${lid}',${i});event.stopPropagation()"
+        onerror="this.parentNode.style.display='none'"></div>`
+    ).join('');
+    const navHtml = allImgs.length > 1 ? `
+      <button class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.stopPropagation()" aria-label="السابقة">‹</button>
+      <button class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.stopPropagation()" aria-label="التالية">›</button>
+      <div class="eq-cn-dots">${allImgs.map((_,i) => `<span class="eq-cn-dot${i===0?' active':''}"></span>`).join('')}</div>` : '';
+    imgAreaHtml = `
+      <div class="eq-card-carousel" id="eqc-${lid}" data-idx="0">
+        <div class="eq-card-slides">${slides}</div>
+        ${navHtml}
+      </div>
+      ${feat}`;
+  }
 
   return `
-<div class="eq-card" onclick="eqOpenDetail('${listing.id}')">
+<div class="eq-card" onclick="eqOpenDetail('${lid}')">
   <div class="eq-card-img" style="position:relative">
-    ${imgHtml}${feat}${photoBadge}
-    <button class="eq-fav-btn" data-fav="${listing.id}" onclick="eqToggleFavorite(event,'${listing.id}')" title="المفضلة">${favIcon}</button>
+    ${imgAreaHtml}
+    <button class="eq-fav-btn" data-fav="${lid}" onclick="eqToggleFavorite(event,'${lid}')" title="المفضلة">${favIcon}</button>
   </div>
   <div class="eq-card-body">
     <div class="eq-card-meta">
