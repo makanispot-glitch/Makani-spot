@@ -300,6 +300,21 @@ function eqBuildCategoryTabs() {
       EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
   }
 
+  /* Build mobile drawer tabs + gov */
+  const drawerTabs = document.getElementById('eq-drawer-tabs');
+  if (drawerTabs) {
+    const drawerAll  = `<button class="eq-tab on" onclick="eqDrawerSetCategory('',this)">الكل</button>`;
+    const drawerCats = EQ_CATEGORIES.map(c =>
+      `<button class="eq-tab" onclick="eqDrawerSetCategory('${c.id}',this)">${c.label}</button>`
+    ).join('');
+    drawerTabs.innerHTML = drawerAll + drawerCats;
+  }
+  const drawerGov = document.getElementById('eq-drawer-gov');
+  if (drawerGov) {
+    drawerGov.innerHTML = '<option value="">كل المحافظات</option>' +
+      EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+  }
+
   eqInitFilterFab();
 }
 
@@ -419,6 +434,111 @@ function eqFabPriceChange(inp) {
   if (mainLbl) mainLbl.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
   eqApplyFilters();
   eqUpdateFabBadge();
+}
+
+
+/* ================================================================
+   📱 Mobile Filter Sidebar Drawer
+   ================================================================ */
+
+function eqToggleSidebar() {
+  const drawer  = document.getElementById('eq-filter-drawer');
+  const overlay = document.getElementById('eq-sidebar-overlay');
+  if (!drawer) return;
+  if (drawer.classList.contains('open')) {
+    eqCloseSidebar();
+  } else {
+    drawer.classList.add('open');
+    overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function eqCloseSidebar() {
+  document.getElementById('eq-filter-drawer')?.classList.remove('open');
+  document.getElementById('eq-sidebar-overlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function eqDrawerSetCategory(cat, el) {
+  eqActiveCategory = cat;
+  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => t.classList.remove('on'));
+  if (el) el.classList.add('on');
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
+    const match = cat === '' ? t.textContent.trim() === 'الكل'
+      : t.getAttribute('onclick')?.includes(`'${cat}'`);
+    t.classList.toggle('on', !!match);
+  });
+  eqApplyFilters();
+  eqUpdateDrawerBadge();
+}
+
+function eqDrawerGovChange(sel) {
+  eqGov = sel.value;
+  const main = document.getElementById('eq-gov');
+  if (main) main.value = sel.value;
+  eqApplyFilters();
+  eqUpdateDrawerBadge();
+}
+
+function eqDrawerSortChange(sel) {
+  eqSortBy = sel.value;
+  const main = document.getElementById('eq-sort');
+  if (main) main.value = sel.value;
+  eqApplyFilters();
+}
+
+function eqDrawerPriceChange(inp) {
+  eqPriceMax = parseInt(inp.value) || 0;
+  const label = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  const drawerVal = document.getElementById('eq-drawer-price-val');
+  if (drawerVal) drawerVal.textContent = label;
+  const mainInp = document.getElementById('eq-price-max');
+  if (mainInp) mainInp.value = inp.value;
+  const mainLbl = document.getElementById('eq-price-label');
+  if (mainLbl) mainLbl.textContent = label;
+  eqApplyFilters();
+  eqUpdateDrawerBadge();
+}
+
+function eqUpdateDrawerBadge() {
+  const badge = document.getElementById('eq-drawer-badge');
+  if (!badge) return;
+  const count = (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) + (eqPriceMax > 0 ? 1 : 0);
+  badge.textContent = count;
+  badge.classList.toggle('show', count > 0);
+}
+
+function eqResetDrawer() {
+  eqActiveCategory = '';
+  eqGov = '';
+  eqPriceMax = 0;
+  eqSortBy = 'newest';
+
+  const drawerGov   = document.getElementById('eq-drawer-gov');
+  const drawerSort  = document.getElementById('eq-drawer-sort');
+  const drawerPrice = document.getElementById('eq-drawer-price');
+  const drawerVal   = document.getElementById('eq-drawer-price-val');
+  if (drawerGov)   drawerGov.value   = '';
+  if (drawerSort)  drawerSort.value  = 'newest';
+  if (drawerPrice) drawerPrice.value = 0;
+  if (drawerVal)   drawerVal.textContent = 'بلا حد';
+
+  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
+
+  const mainGov   = document.getElementById('eq-gov');
+  const mainSort  = document.getElementById('eq-sort');
+  const mainPrice = document.getElementById('eq-price-max');
+  const mainLbl   = document.getElementById('eq-price-label');
+  if (mainGov)   mainGov.value   = '';
+  if (mainSort)  mainSort.value  = 'newest';
+  if (mainPrice) mainPrice.value = 0;
+  if (mainLbl)   mainLbl.textContent = 'بلا حد';
+
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach((t, i) => t.classList.toggle('on', i === 0));
+
+  eqApplyFilters();
+  eqUpdateDrawerBadge();
 }
 
 
