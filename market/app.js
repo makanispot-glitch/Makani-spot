@@ -121,7 +121,7 @@ function eqRenderNavUser() {
     const initial = (eqUser.email || '?')[0].toUpperCase();
     const email   = eqUser.email || '';
     area.innerHTML = `
-      <a class="eq-back-btn" href="/">← رجوع للمنصة</a>
+      <a class="eq-back-btn" href="/">← <span class="eq-back-label">رجوع للمنصة</span></a>
       <div class="eq-notif-wrap" id="eq-notif-wrap">
         <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
           🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
@@ -154,7 +154,7 @@ function eqRenderNavUser() {
     eqLoadNotifications();
   } else {
     area.innerHTML = `
-      <a class="eq-back-btn" href="/">← رجوع للمنصة</a>
+      <a class="eq-back-btn" href="/">← <span class="eq-back-label">رجوع للمنصة</span></a>
       <a class="eq-btn eq-btn-outline" href="/?p=login">دخول / تسجيل</a>`;
   }
 }
@@ -443,12 +443,14 @@ function eqFabPriceChange(inp) {
 
 function eqToggleSidebar() {
   const drawer  = document.getElementById('eq-filter-drawer');
+  const tab     = document.getElementById('eq-sidebar-tab');
   const overlay = document.getElementById('eq-sidebar-overlay');
   if (!drawer) return;
   if (drawer.classList.contains('open')) {
     eqCloseSidebar();
   } else {
     drawer.classList.add('open');
+    tab?.classList.add('open');
     overlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -456,6 +458,7 @@ function eqToggleSidebar() {
 
 function eqCloseSidebar() {
   document.getElementById('eq-filter-drawer')?.classList.remove('open');
+  document.getElementById('eq-sidebar-tab')?.classList.remove('open');
   document.getElementById('eq-sidebar-overlay')?.classList.remove('open');
   document.body.style.overflow = '';
 }
