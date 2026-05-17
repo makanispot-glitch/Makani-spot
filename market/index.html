@@ -434,6 +434,7 @@
 .eq-lightbox {
   display: none; position: fixed; inset: 0; z-index: 10000;
   background: rgba(0,0,0,0.93);
+  background: rgba(0,0,0,0.93);
   align-items: center; justify-content: center;
 }
 .eq-lightbox.open { display: flex; }
@@ -458,6 +459,7 @@
   border: none; font-size: 22px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .2s; touch-action: manipulation;
+  z-index: 10005;
 }
 .eq-lb-close:hover { background: rgba(255,255,255,0.32); }
 .eq-lb-tools {
@@ -484,9 +486,10 @@
   font-family: 'Cairo', sans-serif;
 }
 .eq-lb-nav {
+  background: rgba(255,255,255,0.18); color: #fff;
+  z-index: 10005;
   position: fixed; top: 50%; transform: translateY(-50%);
   width: 50px; height: 50px; border-radius: 50%;
-  background: rgba(255,255,255,0.18); color: #fff;
   border: none; font-size: 30px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .2s; touch-action: manipulation;
