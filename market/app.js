@@ -88,7 +88,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     _sidebarTab.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      eqToggleSidebar();
+      eqOpenSidebar();
+    });
+    _sidebarTab.addEventListener('pointerup', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      eqOpenSidebar();
     });
   }
   if (_sidebarOverlay) _sidebarOverlay.addEventListener('click', eqCloseSidebar);
@@ -530,10 +535,12 @@ function eqToggleSidebar() {
 function eqOpenSidebar() {
   eqSyncDrawerFromActive();
   document.body.classList.add('filter-open');
+  document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'true');
 }
 
 function eqCloseSidebar() {
   document.body.classList.remove('filter-open');
+  document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'false');
 }
 
 /* ── Card Carousel ── */

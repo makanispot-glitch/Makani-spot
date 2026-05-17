@@ -1087,7 +1087,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 </div>
 
 <!-- ── Sidebar Overlay ── -->
-<div class="eq-sidebar-overlay" id="eq-sidebar-overlay"></div>
+<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" onclick="eqCloseSidebar()"></div>
 
 <!-- ── Filter Sidebar Drawer (mobile only) ── -->
 <div class="eq-filter-drawer" id="eq-filter-drawer">
@@ -1102,7 +1102,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         </svg>
         فلتر البحث
       </h3>
-      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button">✕</button>
+      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" onclick="eqCloseSidebar();event.stopPropagation()">✕</button>
     </div>
 
     <div class="eq-drawer-body">
@@ -1131,14 +1131,14 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     </div>
 
     <div class="eq-drawer-actions">
-      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" style="flex:1">إعادة تعيين</button>
-      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" style="flex:2">عرض النتائج</button>
+      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer();event.stopPropagation()" style="flex:1">إعادة تعيين</button>
+      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters();event.stopPropagation()" style="flex:2">عرض النتائج</button>
     </div>
   </div>
 </div>
 
 <!-- ── Filter Toggle Tab (standalone fixed, events attached via JS) ── -->
-<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" aria-label="فتح فلاتر البحث">
+<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar();event.stopPropagation()" aria-label="فتح فلاتر البحث">
   <span>
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="4" y1="6" x2="20" y2="6"/>
