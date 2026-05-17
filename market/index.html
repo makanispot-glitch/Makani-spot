@@ -567,6 +567,175 @@
   .eq-filter-fab, .eq-fab-panel { display: none !important; }
 }
 
+/* ── Old FAB fully disabled (replaced by drawer) ── */
+.eq-filter-fab, .eq-fab-panel { display: none !important; }
+
+/* ── Mobile: fix nav + hide static filter bar ── */
+@media (max-width: 768px) {
+  .eq-nav    { position: fixed; left: 0; right: 0; }
+  .eq-page   { padding-top: 68px; }
+  .eq-filters-bar { display: none !important; }
+}
+
+/* ══════════════════════════════════
+   MOBILE FILTER SIDEBAR DRAWER
+══════════════════════════════════ */
+
+/* Overlay behind the drawer */
+.eq-sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 190;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.eq-sidebar-overlay.open { display: block; }
+
+/* Drawer wrapper — slides in from the left */
+.eq-filter-drawer {
+  position: fixed;
+  top: 68px; left: 0; bottom: 0;
+  width: 290px;
+  z-index: 195;
+  transform: translateX(-290px);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.eq-filter-drawer.open { transform: translateX(0); }
+
+/* Scrollable inner panel */
+.eq-drawer-panel {
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: #fff;
+  display: flex; flex-direction: column;
+  box-shadow: 6px 0 28px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* Drawer header (sticky inside panel) */
+.eq-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 16px 13px;
+  border-bottom: 1px solid var(--border);
+  background: #fff; flex-shrink: 0;
+}
+.eq-drawer-header h3 {
+  font-size: 15px; font-weight: 800; color: var(--dark);
+  display: flex; align-items: center; gap: 8px; margin: 0;
+}
+.eq-drawer-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface2); border: none; cursor: pointer;
+  font-size: 16px; color: var(--ink2);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s; font-family: sans-serif;
+}
+.eq-drawer-close:hover { background: var(--border); }
+
+/* Scrollable body */
+.eq-drawer-body { flex: 1; overflow-y: auto; }
+
+/* Each filter section */
+.eq-drawer-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F3F4F6;
+}
+.eq-drawer-label {
+  font-size: 10px; font-weight: 700; color: var(--ink3);
+  letter-spacing: .07em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Category tabs inside drawer */
+.eq-drawer-tabs {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.eq-drawer-tabs .eq-tab {
+  font-size: 12px; padding: 5px 12px;
+}
+
+/* Selects inside drawer */
+.eq-drawer-section select {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px; background: #FAFAFA;
+  font-family: 'Cairo', sans-serif; font-size: 14px;
+  color: var(--ink); outline: none; cursor: pointer;
+  transition: border .2s;
+}
+.eq-drawer-section select:focus { border-color: var(--orange); }
+
+/* Price range row */
+.eq-drawer-price-label {
+  font-size: 13px; color: var(--ink2); margin-bottom: 10px;
+}
+.eq-drawer-price-label strong { color: var(--orange); }
+.eq-drawer-section input[type=range] {
+  width: 100%; accent-color: var(--orange); cursor: pointer;
+}
+
+/* Footer actions */
+.eq-drawer-actions {
+  padding: 13px 16px;
+  border-top: 1px solid #F0F0F0;
+  display: flex; gap: 8px; flex-shrink: 0;
+  background: #fff;
+}
+
+/* ── Always-visible sidebar toggle tab ── */
+.eq-sidebar-tab {
+  position: absolute;
+  top: 50%; right: -44px;
+  transform: translateY(-50%);
+  width: 44px;
+  background: var(--orange); color: #fff; border: none;
+  border-radius: 0 12px 12px 0;
+  padding: 20px 0 16px;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  box-shadow: 5px 0 18px rgba(255,107,0,0.45);
+  transition: box-shadow .2s;
+  font-family: 'Cairo', sans-serif;
+  z-index: 1;
+}
+.eq-sidebar-tab:hover { box-shadow: 7px 0 22px rgba(255,107,0,0.62); }
+
+/* Active filter count badge */
+.eq-sidebar-tab-badge {
+  background: rgba(255,255,255,0.25);
+  border: 1.5px solid rgba(255,255,255,0.55);
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  font-size: 10px; font-weight: 900;
+  display: none; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.eq-sidebar-tab-badge.show { display: flex; }
+
+/* Rotated label text */
+.eq-sidebar-tab-text {
+  font-size: 11px; font-weight: 800;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  letter-spacing: .07em;
+}
+
+/* Chevron arrow */
+.eq-sidebar-tab-arrow {
+  font-size: 16px; font-weight: 900; line-height: 1;
+  transition: transform 0.32s;
+}
+.eq-filter-drawer.open .eq-sidebar-tab-arrow {
+  transform: rotate(180deg);
+}
+
+/* Hide drawer on desktop */
+@media (min-width: 769px) {
+  .eq-filter-drawer, .eq-sidebar-overlay { display: none !important; }
+}
+
 /* ── Quick Links Bar ── */
 .eq-quick-links {
   display: flex; gap: 12px; padding: 14px 32px;
@@ -741,36 +910,69 @@
   </div>
 </div>
 
-<!-- ── زر الفلتر الطائر (موبايل — يظهر عند التمرير) ── -->
-<button class="eq-filter-fab" id="eq-filter-fab" onclick="eqToggleFabPanel(event)" aria-label="فتح فلاتر البحث">
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-  </svg>
-  <span>فلتر البحث</span>
-  <span class="eq-filter-fab-badge" id="eq-fab-badge">0</span>
-  <svg class="eq-fab-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="6 9 12 15 18 9"/>
-  </svg>
-</button>
+<!-- ── Sidebar Overlay ── -->
+<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" onclick="eqCloseSidebar()"></div>
 
-<!-- ── لوحة الفلتر المنسدلة ── -->
-<div class="eq-fab-panel" id="eq-fab-panel">
-  <div class="eq-fab-panel-tabs" id="eq-fab-panel-tabs"></div>
-  <div class="eq-fab-panel-row">
-    <select id="eq-fab-gov" onchange="eqFabGovChange(this)">
-      <option value="">كل المحافظات</option>
-    </select>
-    <select id="eq-fab-sort" onchange="eqFabSortChange(this)">
-      <option value="newest">الأحدث</option>
-      <option value="cheapest">الأرخص</option>
-      <option value="views">الأكثر مشاهدة</option>
-    </select>
+<!-- ── Filter Sidebar Drawer (mobile only) ── -->
+<div class="eq-filter-drawer" id="eq-filter-drawer">
+  <div class="eq-drawer-panel">
+
+    <div class="eq-drawer-header">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="6" x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        فلتر البحث
+      </h3>
+      <button class="eq-drawer-close" onclick="eqCloseSidebar()">✕</button>
+    </div>
+
+    <div class="eq-drawer-body">
+      <div class="eq-drawer-section">
+        <div class="eq-drawer-label">التصنيف</div>
+        <div class="eq-drawer-tabs" id="eq-drawer-tabs"></div>
+      </div>
+      <div class="eq-drawer-section">
+        <div class="eq-drawer-label">المحافظة</div>
+        <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)">
+          <option value="">كل المحافظات</option>
+        </select>
+      </div>
+      <div class="eq-drawer-section">
+        <div class="eq-drawer-label">الترتيب</div>
+        <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)">
+          <option value="newest">الأحدث</option>
+          <option value="cheapest">الأرخص</option>
+          <option value="views">الأكثر مشاهدة</option>
+        </select>
+      </div>
+      <div class="eq-drawer-section">
+        <div class="eq-drawer-price-label">السعر الأقصى: <strong id="eq-drawer-price-val">بلا حد</strong></div>
+        <input type="range" id="eq-drawer-price" min="0" max="100000" step="500" value="0" oninput="eqDrawerPriceChange(this)">
+      </div>
+    </div>
+
+    <div class="eq-drawer-actions">
+      <button class="eq-btn eq-btn-ghost" onclick="eqResetDrawer()" style="flex:1">إعادة تعيين</button>
+      <button class="eq-btn eq-btn-primary" onclick="eqCloseSidebar()" style="flex:2">عرض النتائج</button>
+    </div>
   </div>
-  <div class="eq-fab-price-row">
-    <span>السعر حتى:</span>
-    <input type="range" id="eq-fab-price" min="0" max="100000" step="500" value="0" oninput="eqFabPriceChange(this)">
-    <span class="eq-fab-price-val" id="eq-fab-price-val">بلا حد</span>
-  </div>
+
+  <!-- Always-visible toggle tab (sticks out from right edge of drawer) -->
+  <button class="eq-sidebar-tab" id="eq-sidebar-tab" onclick="eqToggleSidebar()" aria-label="فتح فلاتر البحث">
+    <span>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="6" x2="20" y2="6"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+        <line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+    </span>
+    <span class="eq-sidebar-tab-badge" id="eq-drawer-badge">0</span>
+    <span class="eq-sidebar-tab-text">فلتر</span>
+    <span class="eq-sidebar-tab-arrow">›</span>
+  </button>
 </div>
 
 <!-- ── Main ── -->
