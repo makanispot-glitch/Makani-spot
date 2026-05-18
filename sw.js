@@ -60,6 +60,12 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
 
+  /* 0. تجاوز كاش الـ Service Worker بالكامل على الـ Localhost لتسهيل التطوير */
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname.startsWith('192.168.')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   /* 1. Supabase API + R2 images → Network-Only (بيانات حية دائماً) */
   if (url.hostname.endsWith('supabase.co') ||
       url.hostname.endsWith('r2.dev') ||

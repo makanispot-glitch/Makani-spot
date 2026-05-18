@@ -95,12 +95,14 @@ async function bzInitAuth() {
 async function _loadBzProfile() {
   if (!sbClient || !currentUser) return;
   try {
-    const { data } = await sbClient
-      .from('profiles')
-      .select('full_name, phone')
-      .eq('id', currentUser.id)
-      .single();
-    currentProfile = data || null;
+    const [profRes, orgRes] = await Promise.all([
+      sbClient.from('profiles').select('full_name, phone').eq('id', currentUser.id).single(),
+      sbClient.from('organizer_profiles').select('avatar_url, logo, image').eq('user_id', currentUser.id).single()
+    ]);
+    currentProfile = {
+      ...(profRes.data || {}),
+      avatar_url: orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || ''
+    };
   } catch (_) {}
 }
 
@@ -109,18 +111,25 @@ function bzRenderNavUser() {
   if (!area) return;
 
   if (currentUser) {
-    const initial = (currentUser.email || '?')[0].toUpperCase();
+    const name    = currentProfile?.full_name || currentUser.email || '';
+    const initial = name[0].toUpperCase();
     const email   = currentUser.email || '';
+    const avatarUrl = currentProfile?.avatar_url || '';
+    const avatarHtml = avatarUrl
+      ? `<img src="${_toDirectImgUrl(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : initial;
     area.innerHTML = `
       <a class="bz-nav-back" href="/">← رجوع للمنصة</a>
       <div class="bz-account-wrap" id="bz-account-wrap">
         <button class="bz-account-btn" onclick="bzToggleAccountMenu(event)">
-          <div class="bz-account-avatar">${initial}</div>
+          <div class="bz-account-avatar">${avatarHtml}</div>
           <span>حسابي</span>
           <span class="bz-account-chevron">▼</span>
         </button>
         <div class="bz-account-dropdown">
           <div class="bz-account-email">${email}</div>
+          <a class="bz-account-item" href="/bazaars/profile.html">👤 الملف الشخصي</a>
+          <a class="bz-account-item" href="/bazaars/verification.html">🎪 نظّم بازار</a>
           <a class="bz-account-item" href="/?p=dashboard">🏠 حجوزاتي</a>
           <div class="bz-account-divider"></div>
           <button class="bz-account-item danger" onclick="bzSignOut()">🚪 خروج</button>
@@ -851,9 +860,6 @@ function closeBazaarDetail() {
   showBzPage('bazaars');
 }
 
-function closeToBazaarDetail() {
-  showBzPage('bazaar-detail');
-}
 
 function _renderSlotMapFallback() {
   return `
@@ -1327,324 +1333,15 @@ function _showShareToast(msg) {
 
 
 /* ================================================================
-   ✅ القسم 16: طلب توثيق المنظم
+   🔗 القسم 16: روابط الصفحات المستقلة
    ================================================================ */
 
 function openVerificationRequest() {
-  showBzPage('verification-request');
+  window.location.href = '/bazaars/verification.html';
 }
 
-function setVrExperience(hasExp) {
-  const yesBtn  = document.getElementById('vr-exp-yes-btn');
-  const noBtn   = document.getElementById('vr-exp-no-btn');
-  const details = document.getElementById('vr-exp-details');
-  if (!yesBtn || !noBtn || !details) return;
-
-  yesBtn.classList.toggle('active', hasExp);
-  noBtn.classList.toggle('active', !hasExp);
-  details.style.display = hasExp ? 'block' : 'none';
-
-  yesBtn.dataset.selected = hasExp  ? '1' : '';
-  noBtn.dataset.selected  = !hasExp ? '1' : '';
-}
-
-function handleIdUpload(type, inputEl) {
-  const file = inputEl?.files?.[0];
-  if (!file) return;
-
-  const previewEl = document.getElementById(`vr-${type}-preview`);
-  const boxEl     = document.getElementById(`vr-${type}-box`);
-  if (!previewEl || !boxEl) return;
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    previewEl.src           = e.target.result;
-    previewEl.style.display = 'block';
-    boxEl.classList.add('has-img');
-    const ico = boxEl.querySelector('.vr-upload-ico');
-    const lbl = boxEl.querySelector('.vr-upload-lbl');
-    if (ico) ico.style.display = 'none';
-    if (lbl) lbl.textContent   = '✅ تم الرفع — اضغط للتغيير';
-  };
-  reader.readAsDataURL(file);
-}
-
-async function uploadIdImage(file, type) {
-  if (!sbClient || !currentUser) throw new Error('يجب تسجيل الدخول أولاً');
-  const ext  = file.name.split('.').pop() || 'jpg';
-  const path = `${currentUser.id}/${type}-${Date.now()}.${ext}`;
-
-  const { error } = await sbClient.storage
-    .from('organizer-docs')
-    .upload(path, file, { upsert: true, contentType: file.type });
-
-  if (error) throw new Error('تعذّر رفع الصورة: ' + error.message);
-  return path;
-}
-
-async function submitVerificationRequest() {
-  const errorEl  = document.getElementById('vr-error');
-  const submitBtn = document.getElementById('vr-submit-btn');
-  const showErr  = msg => {
-    if (!errorEl) return;
-    errorEl.textContent   = '⚠ ' + msg;
-    errorEl.style.display = 'block';
-    errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  };
-  if (errorEl) errorEl.style.display = 'none';
-
-  // Collect values
-  const name      = document.getElementById('vr-name')?.value.trim()   || '';
-  const phone     = document.getElementById('vr-phone')?.value.trim()  || '';
-  const region    = document.getElementById('vr-region')?.value.trim() || '';
-  const frontFile = document.getElementById('vr-front-input')?.files?.[0];
-  const backFile  = document.getElementById('vr-back-input')?.files?.[0];
-  const tradeReg  = document.getElementById('vr-trade-reg')?.value.trim() || '';
-  const hasExp    = document.getElementById('vr-exp-yes-btn')?.dataset.selected === '1';
-  const expCount  = document.getElementById('vr-exp-count')?.value.trim()     || '';
-  const expLoc    = document.getElementById('vr-exp-locations')?.value.trim() || '';
-  const expDesc   = document.getElementById('vr-latest-desc')?.value.trim()   || '';
-  const termsCk   = document.getElementById('vr-terms')?.checked;
-  const escrowCk  = document.getElementById('vr-escrow')?.checked;
-
-  // Validation
-  if (!name)                           { showErr('ادخل اسمك الكريم');             return; }
-  if (!phone || phone.replace(/\D/g,'').length < 10) { showErr('ادخل رقم موبايل صحيح'); return; }
-  if (!region)                         { showErr('اختار المنطقة');                return; }
-  if (!frontFile)                      { showErr('ارفع صورة الوجه الأمامي للبطاقة'); return; }
-  if (!backFile)                       { showErr('ارفع صورة الوجه الخلفي للبطاقة'); return; }
-  if (!termsCk)                        { showErr('يجب الموافقة على شروط الاستخدام'); return; }
-  if (!escrowCk)                       { showErr('يجب الموافقة على نظام الضمان');  return; }
-
-  if (!currentUser) {
-    window.location.href = '/?p=login';
-    return;
-  }
-
-  if (submitBtn) {
-    submitBtn.textContent = '⏳ جاري الإرسال…';
-    submitBtn.disabled    = true;
-  }
-
-  try {
-    const [frontPath, backPath] = await Promise.all([
-      uploadIdImage(frontFile, 'front'),
-      uploadIdImage(backFile,  'back'),
-    ]);
-
-    const { error } = await sbClient.from('organizer_requests').insert({
-      user_id:         currentUser.id,
-      full_name:       name,
-      phone,
-      region,
-      id_front_path:   frontPath,
-      id_back_path:    backPath,
-      trade_reg:       tradeReg || null,
-      has_experience:  hasExp,
-      exp_count:       hasExp ? expCount : null,
-      exp_locations:   hasExp ? expLoc   : null,
-      latest_exp_desc: hasExp ? expDesc  : null,
-      status:          'pending',
-    });
-
-    if (error) throw new Error(error.message);
-
-    // Show success
-    document.getElementById('vr-form-body').style.display = 'none';
-    document.getElementById('vr-success').style.display   = 'block';
-
-  } catch (err) {
-    showErr('حصل خطأ: ' + err.message);
-    if (submitBtn) {
-      submitBtn.textContent = 'إرسال طلب التوثيق ←';
-      submitBtn.disabled    = false;
-    }
-  }
-}
-
-
-/* ================================================================
-   👤 القسم 17: بروفايل المنظم العام
-   ================================================================ */
-
-async function openOrganizerProfile(organizerId) {
+function openOrganizerProfile(organizerId) {
   if (!organizerId) return;
-
-  const contentEl = document.getElementById('op-content');
-  if (contentEl) {
-    contentEl.innerHTML = `
-      <div style="text-align:center;padding:80px 20px;color:var(--ink3)">
-        <div style="font-size:36px;margin-bottom:12px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-        <div style="font-size:14px">جاري تحميل البروفايل…</div>
-      </div>`;
-  }
-
-  showBzPage('organizer-profile');
-
-  const backBtn = document.getElementById('op-back-btn');
-  if (backBtn) backBtn.onclick = closeToBazaarDetail;
-
-  try {
-    let organizer = null;
-    let orgBazaars = [];
-    let reviews   = [];
-
-    if (sbClient) {
-      const [profileRes, bazaarsRes, reviewsRes] = await Promise.all([
-        sbClient.from('organizer_profiles').select('*').eq('user_id', organizerId).single(),
-        sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,status')
-                .eq('organizer_id', organizerId).order('date_start', { ascending: false }),
-        sbClient.from('organizer_reviews').select('*')
-                .eq('organizer_id', organizerId).order('created_at', { ascending: false }),
-      ]);
-
-      organizer  = profileRes.data  || null;
-      orgBazaars = bazaarsRes.data  || [];
-      reviews    = reviewsRes.data  || [];
-    }
-
-    if (!organizer) {
-      // Fallback: build minimal profile from BAZAARS list
-      const bz = BAZAARS.find(b => String(b.organizer_id) === String(organizerId));
-      if (bz) {
-        organizer = {
-          user_id:    organizerId,
-          full_name:  bz.organizer || 'منظم',
-          region:     bz.region    || '',
-          is_verified: bz.is_organizer_verified || false,
-          joined_at:  null,
-          whatsapp:   null,
-          avatar_url: null,
-        };
-      }
-    }
-
-    _renderOrganizerProfile(organizer, orgBazaars, reviews);
-
-  } catch (err) {
-    if (contentEl) {
-      contentEl.innerHTML = `
-        <div style="text-align:center;padding:60px 20px">
-          <div style="font-size:40px;margin-bottom:12px">⚠️</div>
-          <div style="font-size:14px;color:var(--ink3)">تعذّر تحميل البروفايل — حاول تاني</div>
-        </div>`;
-    }
-  }
+  window.location.href = `/bazaars/profile.html?organizer=${organizerId}`;
 }
 
-function _renderOrganizerProfile(organizer, bazaars, reviews) {
-  const contentEl = document.getElementById('op-content');
-  if (!contentEl) return;
-
-  if (!organizer) {
-    contentEl.innerHTML = `
-      <div style="text-align:center;padding:60px 20px">
-        <div style="font-size:40px;margin-bottom:12px">🔍</div>
-        <div style="font-size:14px;color:var(--ink3)">لم يتم العثور على البروفايل</div>
-      </div>`;
-    return;
-  }
-
-  const initial     = (organizer.full_name || '?')[0];
-  const joinDate    = organizer.joined_at
-    ? new Date(organizer.joined_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
-    : '—';
-  const verifiedBadge = organizer.is_verified
-    ? `<span class="bz-verified-badge" style="font-size:12px;padding:4px 10px">✓ منظم موثّق</span>`
-    : '';
-
-  const avgRating = reviews.length
-    ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1)
-    : '—';
-  const pastCount = bazaars.filter(b => b.date_start && b.date_start < new Date().toISOString().split('T')[0]).length;
-  const totalVendors = bazaars.reduce((s, b) => s + (b.total_slots || 0), 0);
-
-  // Bazaars list HTML
-  const bazaarsHtml = bazaars.length
-    ? bazaars.map(b => {
-        const ds = b.date_start
-          ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
-          : '—';
-        const imgHtml = b.image
-          ? `<img src="${_toDirectImgUrl(b.image)}" alt="${b.name}"
-                  style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0"
-                  onerror="this.style.display='none'">`
-          : `<div style="width:52px;height:52px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px">🎪</div>`;
-        return `
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer"
-               onclick="openBazaarDetail('${b.id}')" class="op-bazaar-item">
-            ${imgHtml}
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:14px;margin-bottom:3px">${b.name}</div>
-              <div style="font-size:12px;color:var(--ink3)">📅 ${ds} · 📍 ${b.location || '—'}</div>
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2"
-                 width="16" height="16"><path d="M15 18l-6-6 6-6"/></svg>
-          </div>`;
-      }).join('')
-    : `<div style="text-align:center;padding:30px 0;color:var(--ink3);font-size:13px">لا توجد بازارات مسجّلة بعد</div>`;
-
-  // Reviews HTML
-  const reviewsHtml = reviews.length
-    ? reviews.map(r => {
-        const stars = '⭐'.repeat(Math.round(r.rating || 0));
-        const rd    = r.created_at
-          ? new Date(r.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
-          : '';
-        return `
-          <div style="padding:16px 0;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <span style="font-size:14px">${stars || '—'}</span>
-              <span style="font-size:11px;color:var(--ink3)">${rd}</span>
-            </div>
-            ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${r.comment}</p>` : ''}
-          </div>`;
-      }).join('')
-    : `<div style="text-align:center;padding:30px 0;color:var(--ink3);font-size:13px">لا توجد تقييمات بعد</div>`;
-
-  const waBtn = organizer.whatsapp
-    ? `<a href="https://wa.me/${organizer.whatsapp.replace(/\D/g,'')}" target="_blank" rel="noopener"
-          class="op-wa-btn">واتساب 📲</a>`
-    : '';
-
-  contentEl.innerHTML = `
-    <div class="op-identity-card">
-      <div class="op-avatar">${initial}</div>
-      <div class="op-identity-info">
-        <div class="op-name">
-          ${organizer.full_name}
-          ${verifiedBadge}
-        </div>
-        <div class="op-meta">
-          ${organizer.region ? `<span>📍 ${organizer.region}</span>` : ''}
-          <span>🗓 عضو منذ ${joinDate}</span>
-        </div>
-        ${waBtn}
-      </div>
-    </div>
-
-    <div class="op-stats-grid">
-      <div class="op-stat-card">
-        <div class="op-stat-num">${pastCount}</div>
-        <div class="op-stat-lbl">بازار سابق</div>
-      </div>
-      <div class="op-stat-card">
-        <div class="op-stat-num">${avgRating === '—' ? '—' : avgRating + ' ⭐'}</div>
-        <div class="op-stat-lbl">متوسط التقييم</div>
-      </div>
-      <div class="op-stat-card">
-        <div class="op-stat-num">${totalVendors}</div>
-        <div class="op-stat-lbl">عارض خدمهم</div>
-      </div>
-    </div>
-
-    <div class="op-section-card">
-      <div class="op-section-title">🎪 البازارات</div>
-      <div>${bazaarsHtml}</div>
-    </div>
-
-    <div class="op-section-card">
-      <div class="op-section-title">⭐ التقييمات (${reviews.length})</div>
-      <div>${reviewsHtml}</div>
-    </div>`;
-}
