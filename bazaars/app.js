@@ -405,74 +405,96 @@ function _renderBazaarsEmpty(hint) {
    ================================================================ */
 
 function buildBazaarCard(b) {
-  let dayNum = '', monthStr = '';
+  /* ── التاريخ ── */
+  let dayNum = '', monthStr = '', dateLabel = '—', endLabel = '';
   if (b.date_start) {
     const d  = new Date(b.date_start);
     dayNum   = d.getDate();
     monthStr = d.toLocaleDateString('ar-EG', { month: 'short' });
+    dateLabel = d.toLocaleDateString('ar-EG', { weekday:'short', month:'long', day:'numeric' });
+  }
+  if (b.date_end && b.date_end !== b.date_start) {
+    endLabel = ' ← ' + new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric' });
   }
 
-  const dateLabel = b.date_start
-    ? new Date(b.date_start).toLocaleDateString('ar-EG', { weekday:'short', month:'long', day:'numeric' })
-    : '—';
-  const endLabel = b.date_end && b.date_end !== b.date_start
-    ? ' ← ' + new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
-    : '';
-
+  /* ── الأماكن ── */
   const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
   const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
 
+  /* ── الصورة ── */
   const imgHtml = b.image
     ? `<img src="${b.image}" alt="${b.name}" loading="lazy"
-             onerror="this.parentElement.innerHTML='<div class=\\'bz-img-placeholder\\'>🎪</div>'">`
+           onerror="this.parentElement.innerHTML='<div class=\\'bz-img-placeholder\\'>🎪</div>'">`
     : `<div class="bz-img-placeholder">🎪</div>`;
 
-  const timeHtml = b.time_start
-    ? `<div class="bz-card-time">🕐 ${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</div>`
-    : '';
+  /* ── المنظّم ── */
+  const orgName     = b.organizer || '';
+  const orgInitial  = orgName ? orgName[0].toUpperCase() : '🎪';
+  const orgVerified = b.is_organizer_verified;
+  const orgSubText  = orgVerified ? '⭐ منظّم موثّق' : 'منظّم البازار';
 
-  const catHtml = b.category
-    ? `<span class="bz-category-badge">${b.category}</span>`
-    : '';
+  const orgHtml = orgName ? `
+  <div class="bz-card-organizer">
+    <div class="bz-org-avatar">${orgInitial}</div>
+    <div class="bz-org-info">
+      <div class="bz-org-name">🎪 ${orgName}</div>
+      <div class="bz-org-sub">${orgSubText}</div>
+    </div>
+    ${orgVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
+  </div>` : '';
 
-  const verifiedBadge = b.is_organizer_verified
-    ? `<span class="bz-verified-badge">✓ موثّق</span>`
-    : '';
-
+  /* ── HTML ── */
   return `
-  <div class="bz-card" onclick="openBazaarDetail('${b.id}')">
+  <div class="bz-card${isSoldOut ? ' soldout-card' : ''}" onclick="openBazaarDetail('${b.id}')">
+
+    ${orgVerified ? '<div class="bz-verified-org-bar"></div>' : ''}
+
+    <!-- صورة البازار (يمين) -->
     <div class="bz-card-img">
       ${imgHtml}
-      <div class="bz-card-overlay">
-        <div class="bz-card-overlay-name">${b.name}</div>
-        <div class="bz-card-overlay-loc">📍 ${b.location || '—'}</div>
-      </div>
       ${dayNum ? `
       <div class="bz-date-box">
-        <span class="bz-date-box-month">${monthStr}</span>
         <span class="bz-date-box-day">${dayNum}</span>
+        <span class="bz-date-box-month">${monthStr}</span>
+      </div>` : ''}
+      ${b.category ? `
+      <div class="bz-card-cat-pill">
+        <span>${b.category}</span>
       </div>` : ''}
       ${isSoldOut ? '<div class="bz-soldout-badge">مكتمل</div>' : ''}
     </div>
-    <div class="bz-card-body">
-      <div class="bz-card-meta-row">
-        <span class="bz-card-date-txt">📅 ${dateLabel}${endLabel}</span>
-        ${catHtml}
-      </div>
-      ${timeHtml}
-      ${b.description
-        ? `<div class="bz-card-desc">${b.description.substring(0,80)}${b.description.length > 80 ? '…' : ''}</div>`
-        : ''}
-      ${b.organizer ? `
-      <div style="font-size:11px;color:var(--ink3);margin:4px 0;display:flex;align-items:center;gap:5px">
-        <span>🧑‍💼 ${b.organizer}</span>${verifiedBadge}
+
+    <!-- المحتوى (يسار) -->
+    <div class="bz-card-content">
+
+      <!-- الاسم والموقع -->
+      <div class="bz-card-name" title="${b.name}">${b.name}</div>
+      ${(b.location || b.region) ? `
+      <div class="bz-card-location">
+        <span>📍</span> ${[b.location, b.region].filter(Boolean).join(' — ')}
       </div>` : ''}
+
+      <!-- التاريخ والوقت -->
+      <div class="bz-card-datetime">
+        <span>📅 ${dateLabel}${endLabel}</span>
+        ${b.time_start ? `<span>🕐 ${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</span>` : ''}
+      </div>
+
+      <!-- الوصف -->
+      ${b.description
+        ? `<div class="bz-card-desc">${b.description}</div>`
+        : '<div class="bz-card-desc" style="color:var(--ink3);font-style:italic">لا يوجد وصف</div>'}
+
+      <!-- المنظّم -->
+      ${orgHtml}
+
+      <!-- الذيل: السعر + الأماكن + زر -->
       <div class="bz-card-footer">
-        <div style="display:flex;flex-direction:column;gap:3px">
-          <span class="bz-price-tag">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج / مكان</span>
-          <span class="bz-slots-tag${isSoldOut ? ' sold-out' : ''}">
+        <div>
+          <div class="bz-price-tag">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج / مكان</div>
+          <div class="bz-slots-tag${isSoldOut ? ' sold-out' : ''}">
             ${isSoldOut ? '🔴 لا أماكن متاحة' : `🟢 ${availSlots} مكان متاح`}
-          </span>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <button class="share-btn-inline"
@@ -486,12 +508,13 @@ function buildBazaarCard(b) {
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
           </button>
-          <button class="btn btn-primary" style="font-size:12px;padding:8px 14px;white-space:nowrap"
+          <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;white-space:nowrap"
                   onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
             التفاصيل ←
           </button>
         </div>
       </div>
+
     </div>
   </div>`;
 }
@@ -849,10 +872,6 @@ function _renderBazaarInfo(b) {
               ${b.is_organizer_verified
                 ? `<span class="bz-verified-badge">✓ موثّق</span>`
                 : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">لم يتم التحقق بعد</span>`}
-              ${b.organizer_id
-                ? `<button class="btn" style="font-size:11px;padding:4px 10px;border-radius:8px"
-                           onclick="openOrganizerProfile('${b.organizer_id}')">عرض البروفايل</button>`
-                : ''}
             </div>
           </div>` : ''}
         </div>
@@ -893,7 +912,17 @@ function _renderBazaarInfo(b) {
         </div>
       </div>` : ''}
 
-    </div>`;
+    </div>
+
+    <!-- ═══ مربع المنظّم ═══ -->
+    <div id="bzd-organizer-card" style="margin-top:16px"></div>`;
+
+  /* تحميل بيانات المنظّم من Supabase */
+  if (b.organizer_id && sbClient) {
+    _loadOrganizerCard(b.organizer_id, b.organizer);
+  } else if (b.organizer) {
+    _renderOrganizerCardBasic(b.organizer, b.is_organizer_verified);
+  }
 }
 
 function closeBazaarDetail() {
@@ -901,6 +930,164 @@ function closeBazaarDetail() {
   selectedSlotId = null;
   selectedSlotSource = 'supabase';
   showBzPage('bazaars');
+}
+
+
+/* ================================================================
+   👤 مربع المنظّم في صفحة التفاصيل
+   ================================================================ */
+
+async function _loadOrganizerCard(userId, fallbackName) {
+  const el = document.getElementById('bzd-organizer-card');
+  if (!el) return;
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">⏳ جاري تحميل بيانات المنظّم…</div>`;
+
+  try {
+    const [orgRes, reviewsRes, bazaarsRes] = await Promise.all([
+      sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
+      sbClient.from('organizer_reviews').select('rating, comment, reviewer_name, created_at').eq('organizer_id', userId).order('created_at', { ascending: false }).limit(3),
+      sbClient.from('bazaars').select('id, status').eq('organizer_id', userId),
+    ]);
+
+    const org      = orgRes.data;
+    const reviews  = reviewsRes.data || [];
+    const bazaars  = bazaarsRes.data || [];
+    const name     = org?.name || fallbackName || 'منظّم البازار';
+
+    if (!org) { _renderOrganizerCardBasic(fallbackName, false); return; }
+
+    /* إحصائيات */
+    const totalBazaars    = bazaars.length;
+    const activeBazaars   = bazaars.filter(bz => ['published','approved','active'].includes(String(bz.status||'').toLowerCase())).length;
+    const avgRating       = reviews.length
+      ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1)
+      : null;
+    const joinDate = org.created_at
+      ? new Date(org.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+      : null;
+
+    /* الصورة */
+    const avatarUrl  = org.avatar_url || org.logo || org.image || '';
+    const avatarHtml = avatarUrl
+      ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${name[0]||'م'}';">`
+      : (name[0] || 'م').toUpperCase();
+
+    /* التقييمات */
+    const starsHtml = avgRating
+      ? `${'★'.repeat(Math.round(Number(avgRating)))}${'☆'.repeat(5 - Math.round(Number(avgRating)))}`
+      : '';
+
+    const reviewsHtml = reviews.length ? `
+      <div style="margin-top:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">آراء العملاء (${reviews.length})</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${reviews.map(r => `
+          <div style="background:var(--surface2);border-radius:10px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:700">${r.reviewer_name || 'مجهول'}</span>
+              <span style="color:var(--orange);font-size:12px">${'★'.repeat(Number(r.rating)||0)}</span>
+            </div>
+            ${r.comment ? `<div style="font-size:12px;color:var(--ink2);line-height:1.6">${r.comment}</div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>` : '';
+
+    el.innerHTML = `
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;overflow:hidden">
+      <!-- رأس المربع -->
+      <div style="background:linear-gradient(135deg,rgba(255,107,0,.12),rgba(255,107,0,.04));
+                  padding:16px 20px;border-bottom:1px solid var(--border);
+                  display:flex;align-items:center;gap:14px">
+        <div style="width:56px;height:56px;border-radius:50%;
+                    background:linear-gradient(135deg,var(--orange),#ff8c3a);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:22px;font-weight:900;color:#fff;
+                    flex-shrink:0;overflow:hidden;
+                    border:2px solid rgba(255,107,0,.3)">
+          ${avatarHtml}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="font-size:16px;font-weight:900;color:var(--dark)">${name}</div>
+            ${org.is_verified ? `<span class="bz-verified-badge">✓ منظّم موثّق</span>` : ''}
+          </div>
+          ${avgRating ? `
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span style="color:var(--orange);font-size:14px">${starsHtml}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--orange)">${avgRating}</span>
+            <span style="font-size:11px;color:var(--ink3)">(${reviews.length} تقييم)</span>
+          </div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;
+                    background:var(--surface2);border-radius:12px;padding:10px 16px;flex-shrink:0">
+          <div style="font-size:22px;font-weight:900;color:var(--orange);font-family:'Cairo',sans-serif">${totalBazaars}</div>
+          <div style="font-size:10px;color:var(--ink3);font-weight:600">بازار منظّم</div>
+        </div>
+      </div>
+      <!-- تفاصيل -->
+      <div style="padding:14px 20px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
+          ${activeBazaars ? `
+          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);
+                      border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:900;color:#22C55E">${activeBazaars}</div>
+            <div style="font-size:10px;color:var(--ink3)">بازار نشط</div>
+          </div>` : ''}
+          ${avgRating ? `
+          <div style="background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);
+                      border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:900;color:var(--orange)">${avgRating}⭐</div>
+            <div style="font-size:10px;color:var(--ink3)">متوسط التقييم</div>
+          </div>` : ''}
+          ${joinDate ? `
+          <div style="background:var(--surface2);border:1px solid var(--border);
+                      border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:12px;font-weight:800;color:var(--ink2)">${joinDate}</div>
+            <div style="font-size:10px;color:var(--ink3)">تاريخ الانضمام</div>
+          </div>` : ''}
+        </div>
+        ${org.whatsapp || org.phone ? `
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;
+                    border-top:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--ink3)">للتواصل مع المنظّم:</span>
+          ${org.whatsapp ? `
+          <a href="https://wa.me/${org.whatsapp.replace(/\D/g,'')}" target="_blank"
+             style="display:inline-flex;align-items:center;gap:5px;
+                    background:rgba(34,197,94,.12);color:#22C55E;
+                    border:1px solid rgba(34,197,94,.3);border-radius:8px;
+                    padding:5px 12px;font-size:12px;font-weight:700;text-decoration:none"
+             onclick="event.stopPropagation()">
+            💬 واتساب
+          </a>` : ''}
+        </div>` : ''}
+        ${reviewsHtml}
+      </div>
+    </div>`;
+
+  } catch (err) {
+    console.warn('تعذّر تحميل بيانات المنظّم:', err.message);
+    _renderOrganizerCardBasic(fallbackName, false);
+  }
+}
+
+function _renderOrganizerCardBasic(name, isVerified) {
+  const el = document.getElementById('bzd-organizer-card');
+  if (!el || !name) return;
+  el.innerHTML = `
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;
+              padding:14px 18px;display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;
+                background:linear-gradient(135deg,var(--orange),#ff8c3a);
+                display:flex;align-items:center;justify-content:center;
+                font-size:18px;font-weight:900;color:#fff">
+      ${name[0].toUpperCase()}
+    </div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:800;color:var(--dark)">${name}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">منظّم البازار</div>
+    </div>
+    ${isVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
+  </div>`;
 }
 
 
