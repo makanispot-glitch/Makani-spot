@@ -111,44 +111,73 @@ function bzRenderNavUser() {
   if (!area) return;
 
   if (currentUser) {
-    const name    = currentProfile?.full_name || currentUser.email || '';
-    const initial = name[0].toUpperCase();
-    const email   = currentUser.email || '';
+    const name      = currentProfile?.full_name || currentUser.email || '';
+    const initial   = (name[0] || '?').toUpperCase();
+    const email     = currentUser.email || '';
     const avatarUrl = currentProfile?.avatar_url || '';
     const avatarHtml = avatarUrl
       ? `<img src="${_toDirectImgUrl(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : initial;
+
     area.innerHTML = `
-      <a class="bz-nav-back" href="/">← رجوع للمنصة</a>
-      <div class="bz-account-wrap" id="bz-account-wrap">
-        <button class="bz-account-btn" onclick="bzToggleAccountMenu(event)">
-          <div class="bz-account-avatar">${avatarHtml}</div>
-          <span>حسابي</span>
-          <span class="bz-account-chevron">▼</span>
-        </button>
-        <div class="bz-account-dropdown">
-          <div class="bz-account-email">${email}</div>
-          <a class="bz-account-item" href="/bazaars/profile.html">👤 الملف الشخصي</a>
-          <a class="bz-account-item" href="/bazaars/verification.html">🎪 نظّم بازار</a>
-          <a class="bz-account-item" href="/?p=dashboard">🏠 حجوزاتي</a>
-          <div class="bz-account-divider"></div>
-          <button class="bz-account-item danger" onclick="bzSignOut()">🚪 خروج</button>
+      <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
+        <div class="nav-avatar-circle">${avatarHtml}</div>
+        <div class="nav-avatar-info">
+          <div class="nav-avatar-name">${name || 'حسابي'}</div>
+          <div class="nav-avatar-email">${email}</div>
+        </div>
+        <div class="nav-avatar-caret">▼</div>
+
+        <div class="nav-dropdown" id="bz-dropdown">
+          <div class="nav-dropdown-header">
+            <div class="nav-dropdown-name">${name || 'حسابي'}</div>
+            <div class="nav-dropdown-email">${email}</div>
+            <div class="nav-dropdown-role">🎪 مستخدم البازارات</div>
+          </div>
+          <a class="nav-dropdown-item" href="/?p=dashboard">🏠 لوحة التحكم</a>
+          <a class="nav-dropdown-item" href="/bazaars/profile.html">👤 الملف الشخصي</a>
+          <a class="nav-dropdown-item" href="/bazaars/verification.html">🎪 نظّم بازار</a>
+          <a class="nav-dropdown-item" href="/market/">📋 إعلاناتي</a>
+          <a class="nav-dropdown-item" href="/">🔍 دوّر على مساحة</a>
+          <div class="nav-dropdown-sep"></div>
+          <button class="nav-dropdown-item danger" onclick="bzSignOut()">🚪 تسجيل الخروج</button>
         </div>
       </div>`;
   } else {
     area.innerHTML = `
-      <a class="bz-nav-back" href="/">← رجوع للمنصة</a>
-      <a class="bz-nav-user-btn" href="/?p=login">دخول / تسجيل</a>`;
+      <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
+        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+        </svg>
+        <span>دخول</span>
+        <span class="btn-login-sep">|</span>
+        <span>سجّل</span>
+      </button>`;
   }
 }
 
 function bzToggleAccountMenu(e) {
   e.stopPropagation();
-  document.getElementById('bz-account-wrap')?.classList.toggle('open');
+  const btn = document.getElementById('bz-avatar-btn');
+  const dd  = document.getElementById('bz-dropdown');
+  if (!btn || !dd) return;
+  if (dd.classList.contains('open')) {
+    btn.classList.remove('open');
+    dd.classList.remove('open');
+  } else {
+    btn.classList.add('open');
+    dd.classList.add('open');
+  }
 }
 
-document.addEventListener('click', () => {
-  document.getElementById('bz-account-wrap')?.classList.remove('open');
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('bz-avatar-btn');
+  if (btn && !btn.contains(e.target)) {
+    btn.classList.remove('open');
+    document.getElementById('bz-dropdown')?.classList.remove('open');
+  }
 });
 
 async function bzSignOut() {

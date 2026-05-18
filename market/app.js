@@ -198,8 +198,9 @@ function eqRenderNavUser() {
   if (eqUser) {
     const initial = (eqUser.email || '?')[0].toUpperCase();
     const email   = eqUser.email || '';
+    const name    = eqUser.user_metadata?.full_name || eqUser.email || '';
+
     area.innerHTML = `
-      <a class="eq-back-btn" href="/">← <span class="eq-back-label">رجوع للمنصة</span></a>
       <div class="eq-notif-wrap" id="eq-notif-wrap">
         <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
           🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
@@ -209,44 +210,70 @@ function eqRenderNavUser() {
           <div class="eq-notif-list" id="eq-notif-list"></div>
         </div>
       </div>
-      <div class="eq-account-wrap" id="eq-account-wrap">
-        <button class="eq-account-btn" onclick="eqToggleAccountMenu(event)">
-          <div class="eq-account-avatar">${initial}</div>
-          <span>حسابي</span>
-          <span class="eq-account-chevron">▼</span>
-        </button>
-        <div class="eq-account-dropdown">
-          <div class="eq-account-email">${email}</div>
-          <button class="eq-account-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
-            إعلاناتي
-          </button>
-          <button class="eq-account-item" onclick="eqOpenFavorites()">
-            المفضلة
-          </button>
-          <div class="eq-account-divider"></div>
-          <button class="eq-account-item danger" onclick="eqSignOut()">
-            خروج
-          </button>
+      <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
+        <div class="nav-avatar-circle">${initial}</div>
+        <div class="nav-avatar-info">
+          <div class="nav-avatar-name">${name || 'حسابي'}</div>
+          <div class="nav-avatar-email">${email}</div>
+        </div>
+        <div class="nav-avatar-caret">▼</div>
+
+        <div class="nav-dropdown" id="eq-dropdown">
+          <div class="nav-dropdown-header">
+            <div class="nav-dropdown-name">${name || 'حسابي'}</div>
+            <div class="nav-dropdown-email">${email}</div>
+            <div class="nav-dropdown-role">📋 مشاريع للبيع</div>
+          </div>
+          <a class="nav-dropdown-item" href="/?p=dashboard">🏠 لوحة التحكم</a>
+          <a class="nav-dropdown-item" href="/bazaars/profile.html">👤 الملف الشخصي</a>
+          <button class="nav-dropdown-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">📋 إعلاناتي</button>
+          <button class="nav-dropdown-item" onclick="eqOpenFavorites();eqCloseAccountMenu()">❤️ المفضلة</button>
+          <a class="nav-dropdown-item" href="/bazaars/verification.html">🎪 نظّم بازار</a>
+          <a class="nav-dropdown-item" href="/">🔍 دوّر على مساحة</a>
+          <div class="nav-dropdown-sep"></div>
+          <button class="nav-dropdown-item danger" onclick="eqSignOut()">🚪 تسجيل الخروج</button>
         </div>
       </div>`;
     eqLoadNotifications();
   } else {
     area.innerHTML = `
-      <a class="eq-back-btn" href="/">← <span class="eq-back-label">رجوع للمنصة</span></a>
-      <a class="eq-btn eq-btn-outline" href="/?p=login">دخول / تسجيل</a>`;
+      <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
+        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+        </svg>
+        <span>دخول</span>
+        <span class="btn-login-sep">|</span>
+        <span>سجّل</span>
+      </button>`;
   }
 }
 
 function eqToggleAccountMenu(e) {
   e.stopPropagation();
-  document.getElementById('eq-account-wrap')?.classList.toggle('open');
+  const btn = document.getElementById('eq-avatar-btn');
+  const dd  = document.getElementById('eq-dropdown');
+  if (!btn || !dd) return;
+  if (dd.classList.contains('open')) {
+    btn.classList.remove('open');
+    dd.classList.remove('open');
+  } else {
+    btn.classList.add('open');
+    dd.classList.add('open');
+  }
 }
 
 function eqCloseAccountMenu() {
-  document.getElementById('eq-account-wrap')?.classList.remove('open');
+  document.getElementById('eq-avatar-btn')?.classList.remove('open');
+  document.getElementById('eq-dropdown')?.classList.remove('open');
 }
 
-document.addEventListener('click', () => { eqCloseAccountMenu(); eqCloseNotifPanel(); });
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('eq-avatar-btn');
+  if (btn && !btn.contains(e.target)) eqCloseAccountMenu();
+  eqCloseNotifPanel();
+});
 
 function eqOpenMyListings() {
   document.getElementById('eq-my-modal').classList.add('open');

@@ -63,6 +63,15 @@
 .eq-back-btn:hover { background: var(--orange-hover, #e05500); transform: translateX(3px); }
 #eq-nav-user { display: flex; align-items: center; gap: 10px; }
 
+/* أزرار الأقسام في ناف المشاريع */
+.eq-nav-sections {
+  display: flex; align-items: center; gap: 4px;
+  flex: 1; justify-content: center;
+}
+@media (max-width: 768px) {
+  .eq-nav-sections { display: none; }
+}
+
 /* ── Account Dropdown ── */
 .eq-account-wrap { position: relative; }
 .eq-account-btn {
@@ -1050,13 +1059,58 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 <!-- ── Navbar ── -->
 <nav class="eq-nav">
+
+  <!-- اللوجو -->
   <a class="eq-nav-logo" href="/">
     <div class="logo-text">
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
   </a>
-  <div id="eq-nav-user"></div>
+
+  <!-- أزرار الأقسام الثلاثة (تختفي على الموبايل) -->
+  <div class="eq-nav-sections">
+    <button class="nav-section-btn" onclick="window.location.href='/'">
+      <span class="nsb-icon">◈</span>
+      <span class="nsb-text">
+        <strong>كل المساحات</strong>
+        <small>ابحث عن مساحة لمشروعك</small>
+      </span>
+    </button>
+    <button class="nav-section-btn" onclick="window.location.href='/bazaars/'">
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 7h20"/>
+          <path d="M5 7 7 3h10l2 4"/>
+          <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
+          <path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/>
+          <rect x="9" y="14" width="6" height="7"/>
+        </svg>
+      </span>
+      <span class="nsb-text">
+        <strong>البازارات</strong>
+        <small>اشترك في بازار مؤقت</small>
+      </span>
+    </button>
+    <a class="nav-section-btn nav-section-orange active" href="/market/">
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+          <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="nsb-text">
+        <strong>مشاريع للبيع</strong>
+        <small>دور على مشروع تشتريه</small>
+      </span>
+    </a>
+  </div>
+
+  <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
+  <div id="eq-nav-user" class="nav-user-area"></div>
+
 </nav>
 
 <!-- ── Hero ── -->

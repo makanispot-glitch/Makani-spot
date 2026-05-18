@@ -200,17 +200,19 @@ body {
 .nav-dropdown {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;           /* دايماً على اليمين — مش left */
+  left: 0;            /* يفتح باتجاه اليمين (داخل الشاشة) في الواجهة العربية */
+  right: auto;
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
-  min-width: 220px;
-  max-width: calc(100vw - 24px); /* لا تتجاوز عرض الشاشة */
+  min-width: 260px;
+  max-width: min(300px, calc(100vw - 32px));
   box-shadow: 0 12px 40px rgba(0,0,0,0.13);
   z-index: 300; overflow: hidden;
   opacity: 0; transform: translateY(-8px) scale(0.97);
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
+  transform-origin: top left;
 }
 .nav-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 
@@ -1585,9 +1587,10 @@ footer {
 
   /* القائمة المنسدلة على الموبايل */
   .nav-dropdown {
-    right: 0;
-    min-width: 200px;
-    max-width: calc(100vw - 24px);
+    left: 0;
+    right: auto;
+    min-width: min(270px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
   }
 
   /* إظهار Bottom Nav */

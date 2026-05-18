@@ -30,105 +30,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <style>
-/* ── Bazaars Standalone Nav ── */
-.bz-standalone-nav {
-  position: sticky; top: 0; z-index: 200;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px;
-  box-shadow: var(--shadow);
-}
-.bz-nav-logo {
-  display: flex; align-items: center; gap: 10px;
-  text-decoration: none;
-}
-.bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; color: var(--dark); }
-.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; color: var(--orange); }
-.bz-nav-title {
-  font-size: 13px; font-weight: 700; color: var(--ink2);
-  padding: 4px 12px; background: var(--orange-ultra);
-  border-radius: 20px; white-space: nowrap;
-}
-.bz-nav-right {
-  display: flex; align-items: center; gap: 12px;
-}
-.bz-nav-back {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 16px; border-radius: 50px;
-  background: var(--surface2); color: var(--ink2);
-  border: 1.5px solid var(--border);
-  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-  text-decoration: none; transition: all .2s; white-space: nowrap;
-}
-.bz-nav-back:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-ultra); }
-.bz-nav-user-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 16px; border-radius: 50px;
-  background: var(--orange); color: #fff;
-  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-  text-decoration: none; border: none; cursor: pointer; transition: background .2s;
-}
-.bz-nav-user-btn:hover { background: var(--orange-hover, #e05500); }
-
-/* ── Account Dropdown (نفس ستايل market) ── */
-.bz-account-wrap { position: relative; }
-.bz-account-btn {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 14px 7px 10px;
-  background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: 50px; cursor: pointer;
-  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-  color: var(--ink1); transition: all .2s;
-}
-.bz-account-btn:hover { border-color: var(--orange); background: var(--orange-ultra); }
-.bz-account-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--orange); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 900; flex-shrink: 0;
-}
-.bz-account-chevron { font-size: 10px; color: var(--ink3); transition: transform .2s; }
-.bz-account-wrap.open .bz-account-chevron { transform: rotate(180deg); }
-.bz-account-dropdown {
-  display: none; position: absolute; top: calc(100% + 8px); right: 0;
-  background: #fff; border: 1px solid var(--border);
-  border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-  min-width: 200px; overflow: hidden; z-index: 300;
-}
-.bz-account-wrap.open .bz-account-dropdown { display: block; }
-.bz-account-email {
-  padding: 12px 16px 8px;
-  font-size: 12px; color: var(--ink3); font-weight: 600;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.bz-account-item {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 11px 16px;
-  background: none; border: none; font-family: 'Cairo', sans-serif;
-  font-size: 14px; font-weight: 600; color: var(--ink1);
-  text-decoration: none; cursor: pointer; transition: background .15s;
-  text-align: right;
-}
-.bz-account-item:hover { background: var(--surface2); }
-.bz-account-item.danger { color: #EF4444; }
-.bz-account-item.danger:hover { background: #FEF2F2; }
-.bz-account-divider { height: 1px; background: var(--border); margin: 4px 0; }
-
 /* ── Page wrapper ── */
 .bz-app { min-height: 100vh; display: flex; flex-direction: column; }
 .page { display: none; }
 .page.active { display: block; }
-
-/* ── Responsive Nav ── */
-@media (max-width: 640px) {
-  .bz-standalone-nav { padding: 0 16px; height: 58px; }
-  .bz-nav-title { display: none; }
-  .bz-nav-logo .logo-ar { font-size: 18px; }
-}
 
 /* ================================================================
    🏷️ بادج التوثيق
@@ -203,24 +108,70 @@
 <body>
 
 <!-- ================================================================
-     🧭 شريط التنقل العلوي — مستقل لصفحة البازارات
+     🧭 شريط التنقل العلوي — صفحة البازارات
      ================================================================ -->
-<nav class="bz-standalone-nav">
+<nav class="nav">
 
   <!-- اللوجو -->
-  <a class="bz-nav-logo" href="/">
+  <a class="logo" href="/">
     <div class="logo-text">
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
-    <span class="bz-nav-title">🎪 البازارات</span>
   </a>
 
-  <!-- منطقة المستخدم -->
-  <div class="bz-nav-right" id="bz-nav-user">
-    <!-- يُملأ تلقائياً من app.js -->
-    <a class="bz-nav-back" href="/">← رجوع للمنصة</a>
-    <a class="bz-nav-user-btn" href="/?p=login">دخول / تسجيل</a>
+  <!-- أزرار الأقسام الثلاثة (تختفي على الموبايل) -->
+  <div class="nav-links">
+    <button class="nav-section-btn" onclick="window.location.href='/'">
+      <span class="nsb-icon">◈</span>
+      <span class="nsb-text">
+        <strong>كل المساحات</strong>
+        <small>ابحث عن مساحة لمشروعك</small>
+      </span>
+    </button>
+    <button class="nav-section-btn active" onclick="window.location.href='/bazaars/'">
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 7h20"/>
+          <path d="M5 7 7 3h10l2 4"/>
+          <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
+          <path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/>
+          <rect x="9" y="14" width="6" height="7"/>
+        </svg>
+      </span>
+      <span class="nsb-text">
+        <strong>البازارات</strong>
+        <small>اشترك في بازار مؤقت</small>
+      </span>
+    </button>
+    <a class="nav-section-btn nav-section-orange" href="/market/">
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+          <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="nsb-text">
+        <strong>مشاريع للبيع</strong>
+        <small>دور على مشروع تشتريه</small>
+      </span>
+    </a>
+  </div>
+
+  <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
+  <div class="nav-user-area" id="bz-nav-user">
+    <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
+      <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+      </svg>
+      <span>دخول</span>
+      <span class="btn-login-sep">|</span>
+      <span>سجّل</span>
+    </button>
   </div>
 
 </nav>
