@@ -1161,6 +1161,7 @@ body {
 .btn-submit-rating:hover { background: var(--orange-hover); transform: translateY(-1px); }
 .btn-submit-rating:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* أزرار الإجراءات القديمة (محتفظ بها للتوافق) */
 .dash-actions-row { display: flex; gap: 11px; flex-wrap: wrap; }
 .dash-act-btn {
   flex: 1; min-width: 130px; padding: 13px 18px; border-radius: var(--radius);
@@ -1173,6 +1174,48 @@ body {
 .dash-act-primary:hover { background: var(--orange-hover); transform: translateY(-1px); }
 .dash-act-ghost { background: var(--surface2); color: var(--ink); border-color: var(--border); }
 .dash-act-ghost:hover { border-color: var(--ink3); background: var(--surface); }
+
+/* ── بطاقات تنقل الداشبورد ── */
+.dash-nav-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.dash-nav-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  padding: 14px 14px 13px; border-radius: 14px; cursor: pointer;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  transition: all .2s; text-align: right; color: var(--ink);
+  font-family: 'Cairo', sans-serif; text-decoration: none;
+}
+.dash-nav-card:hover {
+  border-color: var(--orange); background: var(--orange-ultra);
+  transform: translateY(-2px); box-shadow: var(--shadow);
+}
+.dash-nav-card .dnc-ico  { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+.dash-nav-card .dnc-ttl  { font-size: 13px; font-weight: 800; color: var(--dark); }
+.dash-nav-card .dnc-sub  { font-size: 11px; color: var(--ink3); font-weight: 500; }
+.dash-nav-card-orange {
+  background: var(--orange-ultra); border-color: var(--orange-pale);
+}
+.dash-nav-card-orange .dnc-ttl { color: var(--orange); }
+.dash-nav-card-orange:hover { background: var(--orange); border-color: var(--orange); }
+.dash-nav-card-orange:hover .dnc-ttl { color: #fff; }
+.dash-nav-card-orange:hover .dnc-sub  { color: rgba(255,255,255,.75); }
+.dash-nav-card-wide { grid-column: span 2; flex-direction: row; align-items: center; gap: 14px; }
+.dash-nav-card-wide .dnc-ico { margin-bottom: 0; font-size: 26px; flex-shrink: 0; }
+.dash-nav-logout {
+  width: 100%; margin-top: 10px; padding: 11px 16px; border-radius: 12px;
+  font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid rgba(239,68,68,.3);
+  background: transparent; color: var(--red); transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.dash-nav-logout:hover { background: #FEF2F2; border-color: var(--red); }
+@media (max-width: 768px) {
+  .dash-nav-grid { gap: 8px; }
+  .dash-nav-card { padding: 12px; }
+  .dash-nav-card .dnc-ico { font-size: 20px; }
+  .dash-nav-card .dnc-ttl { font-size: 12px; }
+}
 
 
 /* ============================================================
@@ -1764,7 +1807,7 @@ footer {
   .afg-row { grid-template-columns: 1fr; gap: 0; }
 
   /* Dashboard */
-  .dash-content-wrap { padding: 16px 12px; }
+  .dash-content-wrap { padding: 16px 12px 100px; }
   .dash-welcome-bar { padding: 20px 16px; border-radius: 14px; }
   .dash-hello { font-size: 20px; }
   .dash-section-card { padding: 16px 14px; border-radius: 14px; }

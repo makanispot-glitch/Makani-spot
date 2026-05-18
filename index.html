@@ -65,7 +65,7 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=24">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -179,27 +179,24 @@
               <div class="nav-dropdown-email" id="dd-email">—</div>
               <div class="nav-dropdown-role" id="dd-role">مستخدم</div>
             </div>
-            <button class="nav-dropdown-item" onclick="goToDashboard()">
-              🏠 لوحة التحكم
-            </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               👤 الملف الشخصي
             </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/verification.html'">
-              🎪 نظّم بازار
+            <button class="nav-dropdown-item" onclick="goToDashboard()">
+              🏠 لوحة التحكم
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
               📋 إعلاناتي
             </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
-              ❤️ المفضلة
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
+              🎟 اشترك في بزار
             </button>
-            <button class="nav-dropdown-item" onclick="scrollToSearch();closeUserDropdown()">
-              🔍 دوّر على مساحة
+            <button class="nav-dropdown-item" onclick="goToMarketplace();closeUserDropdown()">
+              🔍 دور على مساحة
             </button>
             <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()"
               style="display:none;color:#16a34a;font-weight:700">
-              🏬 لوحة تحكم أصحاب المساحات
+              🏬 لوحة أصحاب المساحات
             </button>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item danger" onclick="doLogout()">
@@ -1264,20 +1261,20 @@
         <!-- تنبيهات -->
         <div id="dash-alert"></div>
 
-        <!-- بانر الترحيب -->
+        <!-- ══ بانر الترحيب ══ -->
         <div class="dash-welcome-bar">
           <div class="dash-welcome-inner">
             <div class="dash-pill">
-              <span
-                style="width:7px;height:7px;border-radius:50%;background:var(--orange);animation:blink 2s ease infinite;display:inline-block"></span>
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--orange);
+                           animation:blink 2s ease infinite;display:inline-block"></span>
               مرحباً بيك في مكاني Spot
             </div>
             <div class="dash-hello">أهلاً، <span id="dash-firstname">—</span>! 👋</div>
-            <div class="dash-hello-sub">من لوحة التحكم تقدر تشوف حجوزاتك وتعدّل بياناتك وتضيف تقييماتك.</div>
+            <div class="dash-hello-sub">من لوحة التحكم تقدر تشوف حجوزاتك وبزاراتك وتتنقل بين أقسام المنصة.</div>
           </div>
         </div>
 
-        <!-- إحصائيات -->
+        <!-- ══ إحصائيات ══ -->
         <div class="dash-grid-2">
           <div class="dash-stat-card">
             <div class="dash-stat-ico">📍</div>
@@ -1293,122 +1290,29 @@
           </div>
         </div>
 
-        <!-- ======================== البيانات الشخصية ======================== -->
-        <div class="dash-section-card">
-          <div class="dash-section-head">
-            <div>
-              <div class="dash-section-title">👤 بياناتك الشخصية</div>
-              <!-- نوع الحساب أسفل العنوان مباشرة -->
-              <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-                <span style="font-size:11px;color:var(--ink3);font-weight:600">نوع الحساب:</span>
-                <span id="dash-role-badge" style="display:inline-flex;align-items:center;gap:5px;
-                           padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;
-                           background:var(--orange-ultra);color:var(--orange);
-                           border:1px solid var(--orange-pale)">
-                  🏠 مستأجر
-                </span>
-              </div>
-            </div>
-            <button class="edit-profile-btn" onclick="toggleEditProfile()" title="تعديل البيانات">
-              ✏️ تعديل
-            </button>
-          </div>
-
-          <!-- قسم طلب الترقية / الانتقال إلى لوحة أصحاب المساحات -->
-          <div id="upgrade-action-section"></div>
-
-          <!-- عرض البيانات -->
-          <div id="profile-view" class="dash-profile-grid">
-            <div>
-              <div class="dpf-label">الاسم الكامل</div>
-              <div class="dpf-value" id="dpf-name">—</div>
-            </div>
-            <div>
-              <div class="dpf-label">البريد الإلكتروني</div>
-              <div class="dpf-value" id="dpf-email" dir="ltr" style="text-align:right">—</div>
-            </div>
-            <div>
-              <div class="dpf-label">رقم الموبايل</div>
-              <div class="dpf-value" id="dpf-phone" dir="ltr" style="text-align:right">—</div>
-            </div>
-            <div>
-              <div class="dpf-label">المدينة</div>
-              <div class="dpf-value" id="dpf-city">—</div>
-            </div>
-
-            <div>
-              <div class="dpf-label">تاريخ الانضمام</div>
-              <div class="dpf-value" id="dpf-date">—</div>
-            </div>
-            <div>
-              <div class="dpf-label">كلمة المرور</div>
-              <div class="dpf-value" id="dpf-password" style="letter-spacing:2px">••••••••</div>
-            </div>
-          </div>
-
-          <!-- فورم التعديل (مخفي) -->
-          <div id="profile-edit" style="display:none">
-            <div class="edit-profile-form">
-              <div class="afg"><label>الاسم الكامل</label><input type="text" id="ef-name" placeholder="اسمك الكريم">
-              </div>
-              <div class="afg"><label>رقم الموبايل</label><input type="tel" id="ef-phone" placeholder="01xxxxxxxxx"
-                  dir="ltr"></div>
-              <div class="afg">
-                <label>المدينة</label>
-                <select id="ef-city">
-                  <option value="">اختر مدينتك</option>
-                  <option>القاهرة</option>
-                  <option>الجيزة</option>
-                  <option>الإسكندرية</option>
-                  <option>المنصورة</option>
-                  <option>أسيوط</option>
-                  <option>أخرى</option>
-                </select>
-              </div>
-              <div class="afg">
-                <label>كلمة المرور الجديدة <span style="font-size:11px;opacity:0.55;font-weight:400">(اتركها فارغة إذا
-                    لم تريد التغيير)</span></label>
-                <input type="password" id="ef-password" placeholder="٨ أحرف على الأقل" dir="ltr"
-                  autocomplete="new-password">
-              </div>
-              <div class="afg">
-                <label>تأكيد كلمة المرور</label>
-                <input type="password" id="ef-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr"
-                  autocomplete="new-password">
-              </div>
-              <div style="display:flex;gap:10px;margin-top:4px">
-                <button class="btn-auth-submit" id="btn-save-profile" onclick="saveProfile()"
-                  style="margin-top:0;flex:1">💾 حفظ التعديلات</button>
-                <button class="btn" onclick="toggleEditProfile()" style="padding:12px 20px">إلغاء</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ======================== الحجوزات ======================== -->
+        <!-- ══════════════════ الحجوزات ══════════════════ -->
         <div class="dash-section-card">
           <div class="dash-section-head">
             <div class="dash-section-title">📋 حجوزاتك</div>
             <button class="btn btn-primary" style="font-size:13px;padding:8px 18px"
-              onclick="showPage('home');setTimeout(scrollToSearch,150)">+ حجز جديد</button>
+              onclick="goToMarketplace()">+ حجز جديد</button>
           </div>
           <div id="dash-bookings">
             <div class="no-bookings">جاري التحميل…</div>
           </div>
         </div>
 
-        <!-- ======================== التقييمات ======================== -->
+        <!-- ══════════════════ التقييمات ══════════════════ -->
         <div class="dash-section-card">
           <div class="dash-section-head">
             <div class="dash-section-title">⭐ تقييماتك</div>
             <button class="edit-profile-btn" onclick="toggleRatingForm()">+ إضافة تقييم</button>
           </div>
-
-          <!-- فورم التقييم -->
           <div id="rating-form-wrap" style="display:none;margin-bottom:22px">
             <div class="rating-form-box">
-              <div class="afg"><label>اسم المساحة التي استأجرتها *</label><input type="text" id="rating-space-name"
-                  placeholder="مثال: مول مدينة نصر — كشك A3"></div>
+              <div class="afg"><label>اسم المساحة التي استأجرتها *</label>
+                <input type="text" id="rating-space-name" placeholder="مثال: مول مدينة نصر — كشك A3">
+              </div>
               <div class="afg">
                 <label>تقييمك *</label>
                 <div class="stars-row">
@@ -1419,27 +1323,92 @@
                   <button class="star-btn" data-val="5" onclick="selectStar(5,this)">★</button>
                 </div>
               </div>
-              <div class="afg"><label>تعليقك (اختياري)</label><textarea id="rating-comment"
-                  placeholder="شاركنا تجربتك مع المساحة…" style="min-height:70px;resize:vertical"></textarea></div>
-              <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()" style="margin-top:0">⭐
-                إرسال التقييم</button>
+              <div class="afg"><label>تعليقك (اختياري)</label>
+                <textarea id="rating-comment" placeholder="شاركنا تجربتك مع المساحة…"
+                          style="min-height:70px;resize:vertical"></textarea>
+              </div>
+              <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()"
+                      style="margin-top:0">⭐ إرسال التقييم</button>
             </div>
           </div>
-
           <div id="dash-ratings">
             <div class="no-bookings">جاري التحميل…</div>
           </div>
         </div>
 
-        <!-- أزرار الإجراءات -->
-        <div class="dash-actions-row">
-          <button class="dash-act-btn dash-act-primary" onclick="showPage('home');setTimeout(scrollToSearch,150)">🔍
-            دوّر على مساحة</button>
-          <button class="dash-act-btn dash-act-ghost" onclick="goToMarketplace()">🏪 كل المساحات</button>
-          <button class="dash-act-btn dash-act-ghost" onclick="showPage('owner')">🏬 عندك مساحة؟</button>
-          <button class="dash-act-btn dash-act-ghost" onclick="doLogout()"
-            style="color:var(--red);border-color:rgba(239,68,68,0.3)">🚪 تسجيل الخروج</button>
+        <!-- ══════════════════ بزاراتي ══════════════════ -->
+        <div class="dash-section-card">
+          <div class="dash-section-head">
+            <div class="dash-section-title">🎪 بزاراتي</div>
+            <a href="/bazaars/profile.html" class="btn btn-primary"
+               style="font-size:13px;padding:8px 18px;text-decoration:none">إدارة البازارات ←</a>
+          </div>
+          <!-- وصف مختصر -->
+          <p style="font-size:13px;color:var(--ink3);line-height:1.75;margin:0 0 16px;
+                    padding-bottom:14px;border-bottom:1px solid var(--border)">
+            هنا بتلاقي كل البازارات اللي بتنظّمها على مكاني Spot —
+            سواء كانت قادمة أو منتهية. لو لسه ما نظّمتش بزار،
+            ابدأ بالتوثيق كمنظّم من خلال قسم "نظّم بزار" أسفل الصفحة.
+          </p>
+          <div id="dash-my-bazaars">
+            <div class="no-bookings">جاري التحميل…</div>
+          </div>
         </div>
+
+        <!-- ══════════════════ 🧭 استكشف المنصة ══════════════════ -->
+        <div class="dash-section-card">
+          <div class="dash-section-title" style="margin-bottom:16px">🧭 استكشف المنصة</div>
+          <div class="dash-nav-grid">
+
+            <!-- المساحات -->
+            <button class="dash-nav-card" onclick="goToMarketplace()">
+              <span class="dnc-ico">🏪</span>
+              <span class="dnc-ttl">جميع المساحات</span>
+              <span class="dnc-sub">استأجر مساحة لمشروعك</span>
+            </button>
+
+            <!-- البازارات القادمة -->
+            <a class="dash-nav-card" href="/bazaars/">
+              <span class="dnc-ico">🗓</span>
+              <span class="dnc-ttl">البازارات القادمة</span>
+              <span class="dnc-sub">اعرف البازارات الجايّة</span>
+            </a>
+
+            <!-- اشترك في بزار -->
+            <a class="dash-nav-card" href="/bazaars/">
+              <span class="dnc-ico">🎟</span>
+              <span class="dnc-ttl">اشترك في بزار</span>
+              <span class="dnc-sub">احجز مكانك كعارض</span>
+            </a>
+
+            <!-- نظّم بزار -->
+            <a class="dash-nav-card dash-nav-card-orange" href="/bazaars/verification.html">
+              <span class="dnc-ico">🎪</span>
+              <span class="dnc-ttl">نظّم بزار</span>
+              <span class="dnc-sub">وثّق حسابك كمنظّم</span>
+            </a>
+
+            <!-- المشاريع للبيع — عرض كامل العرض -->
+            <a class="dash-nav-card dash-nav-card-wide" href="/market/">
+              <span class="dnc-ico">💼</span>
+              <div>
+                <div class="dnc-ttl">ادور على مشاريع تشتريها</div>
+                <div class="dnc-sub">إكسسوارات ومشاريع جاهزة للبيع</div>
+              </div>
+            </a>
+
+          </div>
+
+          <!-- تسجيل الخروج -->
+          <button class="dash-nav-logout" onclick="doLogout()">🚪 تسجيل الخروج</button>
+        </div>
+
+        <!-- ══ ترقية إلى صاحب مساحة ══ -->
+        <div id="upgrade-action-section"></div>
+
+        <!-- ══ CTA تنظيم بزار (يظهر للمستخدمين غير الموثّقين) ══ -->
+        <div id="dash-bazaar-cta-wrap"></div>
+
 
       </div>
     </div>
@@ -1625,7 +1594,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="app.js?v=21" defer></script>
+  <script src="app.js?v=24" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">

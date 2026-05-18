@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=21">
+<link rel="stylesheet" href="../style.css?v=24">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <style>
@@ -1100,7 +1100,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
   <!-- أزرار الأقسام الثلاثة (تختفي على الموبايل) -->
   <div class="eq-nav-sections">
-    <button class="nav-section-btn" onclick="window.location.href='/'">
+    <button class="nav-section-btn" onclick="window.location.href='/?p=market'">
       <span class="nsb-icon">◈</span>
       <span class="nsb-text">
         <strong>كل المساحات</strong>
@@ -1425,7 +1425,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   </button>
 
   <!-- المساحات التجارية -->
-  <button class="bn-item" id="bn-market" onclick="window.location.href='/'">
+  <button class="bn-item" id="bn-market" onclick="window.location.href='/?p=market'">
     <span class="bn-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/>
@@ -1479,7 +1479,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="app.js?v=21" defer></script>
+<script src="app.js?v=24" defer></script>
 <script>
 (function () {
   const FALLBACK_CATEGORIES = [

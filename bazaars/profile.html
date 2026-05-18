@@ -191,6 +191,7 @@
   outline: none; transition: border-color .2s; width: 100%; box-sizing: border-box;
 }
 .vr-fg input:focus { border-color: var(--orange); }
+.vr-fg select:focus { border-color: var(--orange); outline: none; }
 
 </style>
 </head>
@@ -229,17 +230,53 @@
       <button class="op-modal-close" onclick="closeEditModal()">×</button>
     </div>
     <div class="op-modal-body">
+      <!-- ── البيانات الشخصية ── -->
+      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:4px">
+        البيانات الشخصية
+      </div>
       <div class="vr-fg">
         <label>الاسم الكامل *</label>
         <input type="text" id="edit-name" placeholder="اسمك الكريم">
       </div>
       <div class="vr-fg">
-        <label>رقم الواتساب *</label>
+        <label>رقم الموبايل</label>
+        <input type="tel" id="edit-phone" placeholder="01xxxxxxxxx" dir="ltr">
+      </div>
+      <div class="vr-fg">
+        <label>المدينة</label>
+        <select id="edit-city" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--ink);background:var(--surface2);outline:none;width:100%;box-sizing:border-box">
+          <option value="">اختر مدينتك</option>
+          <option>القاهرة</option>
+          <option>الجيزة</option>
+          <option>الإسكندرية</option>
+          <option>المنصورة</option>
+          <option>أسيوط</option>
+          <option>أخرى</option>
+        </select>
+      </div>
+      <!-- ── بيانات المنظّم ── -->
+      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:8px;margin-bottom:4px">
+        بيانات المنظّم
+      </div>
+      <div class="vr-fg">
+        <label>رقم الواتساب</label>
         <input type="tel" id="edit-whatsapp" placeholder="01xxxxxxxxx" dir="ltr">
       </div>
       <div class="vr-fg">
-        <label>المنطقة / المحافظة *</label>
+        <label>المنطقة / المحافظة</label>
         <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة">
+      </div>
+      <!-- ── كلمة المرور ── -->
+      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:8px;margin-bottom:4px">
+        كلمة المرور (اختياري)
+      </div>
+      <div class="vr-fg">
+        <label>كلمة المرور الجديدة <span style="font-size:11px;opacity:.55;font-weight:400">(اتركها فارغة إن لم تريد التغيير)</span></label>
+        <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
+      </div>
+      <div class="vr-fg">
+        <label>تأكيد كلمة المرور</label>
+        <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
       </div>
       <div id="edit-error" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
     </div>

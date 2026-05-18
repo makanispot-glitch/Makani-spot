@@ -110,10 +110,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // تهيئة مؤشر السعر في الصفحة الرئيسية
   initPriceSlider();
 
-  // التنقل المباشر عبر URL parameter: /?p=bazaars أو /?p=home
+  // التنقل المباشر عبر URL parameter: /?p=market أو /?p=dashboard إلخ
   const urlPage = new URLSearchParams(window.location.search).get('p');
-  if (urlPage && ['home','bazaars','how','owner','login','signup'].includes(urlPage)) {
-    showPage(urlPage);
+  if (urlPage) {
+    if (['home','how','owner','login','signup'].includes(urlPage)) {
+      showPage(urlPage);
+    } else if (urlPage === 'market') {
+      goToMarketplace();
+    }
+    // dashboard يُعالَج في initAuth بعد التحقق من الجلسة
   }
 
   // تشغيل animation المسارات عند الظهور في الشاشة
@@ -1665,20 +1670,27 @@ async function initAuth() {
       currentProfile = profile;
       setNavUser(session.user, profile);
 
-      const lastPage = localStorage.getItem('lastPage');
-      if (lastPage && lastPage !== 'home') {
-        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-        const target = document.getElementById('pg-' + lastPage);
-        if (target) target.classList.add('active');
+      // URL param له أولوية على lastPage
+      const urlPage = new URLSearchParams(window.location.search).get('p');
+      if (urlPage === 'dashboard') {
+        await loadDashboardData(session.user);
+        showPage('dashboard');
+      } else {
+        const lastPage = localStorage.getItem('lastPage');
+        if (lastPage && lastPage !== 'home') {
+          document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+          const target = document.getElementById('pg-' + lastPage);
+          if (target) target.classList.add('active');
 
-        if (lastPage === 'dashboard') {
-          await loadDashboardData(session.user);
-        }
-        if (lastPage === 'market') {
-          setTimeout(initMpSlider, 120);
-          if (SPACES.length && !mpFiltered.length) {
-            mpFiltered = [...SPACES];
-            renderMarketplace();
+          if (lastPage === 'dashboard') {
+            await loadDashboardData(session.user);
+          }
+          if (lastPage === 'market') {
+            setTimeout(initMpSlider, 120);
+            if (SPACES.length && !mpFiltered.length) {
+              mpFiltered = [...SPACES];
+              renderMarketplace();
+            }
           }
         }
       }
@@ -1939,171 +1951,145 @@ async function doLogout() {
 async function loadDashboardData(user) {
   if (!sbClient) return;
 
-  const { data: profile } = await sbClient
-    .from('profiles').select('*').eq('id', user.id).single();
+  const [profileRes, orgProfileRes, reqRes] = await Promise.all([
+    sbClient.from('profiles').select('*').eq('id', user.id).single(),
+    sbClient.from('organizer_profiles').select('is_verified').eq('user_id', user.id).single(),
+    sbClient.from('organizer_requests').select('status').eq('user_id', user.id)
+            .order('created_at', { ascending: false }).limit(1).single(),
+  ]);
 
   currentUser    = user;
-  currentProfile = profile;
+  currentProfile = profileRes.data;
 
+  const profile   = profileRes.data;
   const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
   const firstName = name.split(' ')[0];
-  const roleLabel = { tenant: 'مستأجر — صاحب مشروع', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
-  const dateStr   = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
-    : '—';
 
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set('dash-firstname', firstName);
-  set('dpf-name',       name);
-  set('dpf-email',      user.email || '—');
-  set('dpf-phone',      profile?.phone || '—');
-  set('dpf-city',       profile?.city  || '—');
-  set('dpf-role',       roleLabel);
-  set('dpf-date',       dateStr);
-
-  const efName  = document.getElementById('ef-name');
-  const efPhone = document.getElementById('ef-phone');
-  const efCity  = document.getElementById('ef-city');
-  if (efName)  efName.value  = name;
-  if (efPhone) efPhone.value = profile?.phone || '';
-  if (efCity)  efCity.value  = profile?.city  || '';
-
-  const badge = document.getElementById('dash-role-badge');
-  if (badge) {
-    if (profile?.role === 'owner') {
-      badge.innerHTML          = '🏬 صاحب مساحة';
-      badge.style.background   = 'var(--green-light)';
-      badge.style.color        = '#16a34a';
-      badge.style.borderColor  = 'rgba(34,197,94,0.25)';
-    } else {
-      badge.innerHTML          = '🏠 مستأجر';
-      badge.style.background   = 'var(--orange-ultra)';
-      badge.style.color        = 'var(--orange)';
-      badge.style.borderColor  = 'var(--orange-pale)';
-    }
-  }
-
-  const roleBox = document.getElementById('dpf-role-box');
-  if (roleBox) {
-    if (profile?.role === 'owner') {
-      roleBox.textContent      = '🏬 صاحب مساحة';
-      roleBox.style.background = 'var(--green-light)';
-      roleBox.style.color      = '#16a34a';
-      roleBox.style.borderColor = 'rgba(34,197,94,0.25)';
-    } else {
-      roleBox.textContent      = '🏠 مستأجر';
-      roleBox.style.background = 'var(--orange-ultra)';
-      roleBox.style.color      = 'var(--orange)';
-      roleBox.style.borderColor = 'var(--orange-pale)';
-    }
-  }
+  const el = document.getElementById('dash-firstname');
+  if (el) el.textContent = firstName;
 
   setNavUser(user, profile);
 
   // عرض قسم الترقية / الانتقال لأصحاب المساحات
   renderUpgradeSection(profile);
 
-  // عرض حالة كلمة المرور
-  const pwdEl = document.getElementById('dpf-password');
-  if (pwdEl) {
-    const hasEmailAuth = (user.identities || []).some(i => i.provider === 'email');
-    pwdEl.textContent     = hasEmailAuth ? '••••••••' : '— (دخول عبر جوجل — يمكنك إنشاء كلمة مرور من التعديل)';
-    pwdEl.style.letterSpacing = hasEmailAuth ? '2px' : 'normal';
-    pwdEl.style.fontSize      = hasEmailAuth ? '' : '11px';
-  }
+  // عرض CTA تنظيم البازار
+  const isVerified = orgProfileRes.data?.is_verified === true;
+  const reqStatus  = reqRes.data?.status || null;
+  renderBazaarCTA(isVerified, reqStatus);
 
   await loadUserBookings(user.id);
   await loadUserRatings(user.id);
+  await loadMyBazaars(user.id);
 
   // ✅ Realtime — يراقب أي تغيير في حالة الحجوزات ويحدّث الداشبورد تلقائياً
   _subscribeBookings(user.id);
 }
 
-function toggleEditProfile() {
-  const viewEl = document.getElementById('profile-view');
-  const editEl = document.getElementById('profile-edit');
-  if (!viewEl || !editEl) return;
+/* ── renderBazaarCTA — CTA تنظيم البازار في أسفل الداشبورد ── */
+function renderBazaarCTA(isVerified, reqStatus) {
+  const wrap = document.getElementById('dash-bazaar-cta-wrap');
+  if (!wrap) return;
 
-  const isEditing = editEl.style.display === 'block';
-
-  if (isEditing) {
-    viewEl.style.display = 'block';
-    editEl.style.display = 'none';
-  } else {
-    const efName  = document.getElementById('ef-name');
-    const efPhone = document.getElementById('ef-phone');
-    const efCity  = document.getElementById('ef-city');
-    const name    = document.getElementById('dpf-name')?.textContent;
-    const phone   = document.getElementById('dpf-phone')?.textContent;
-    const city    = currentProfile?.city || '';
-
-    if (efName  && name  !== '—') efName.value  = name;
-    if (efPhone && phone !== '—') efPhone.value = phone;
-    if (efCity)                   efCity.value  = city;
-
-    // مسح حقلي كلمة المرور دائماً عند فتح التعديل
-    const efPwd        = document.getElementById('ef-password');
-    const efPwdConfirm = document.getElementById('ef-password-confirm');
-    if (efPwd)        efPwd.value        = '';
-    if (efPwdConfirm) efPwdConfirm.value = '';
-
-    viewEl.style.display = 'none';
-    editEl.style.display = 'block';
-  }
-}
-
-async function saveProfile() {
-  if (!sbClient || !currentUser) return;
-
-  const name       = document.getElementById('ef-name')?.value.trim();
-  const phone      = document.getElementById('ef-phone')?.value.trim();
-  const city       = document.getElementById('ef-city')?.value;
-  const newPwd     = document.getElementById('ef-password')?.value;
-  const confirmPwd = document.getElementById('ef-password-confirm')?.value;
-
-  if (!name) { showDashAlert('error', 'من فضلك ادخل اسمك'); return; }
-
-  if (newPwd) {
-    if (newPwd.length < 8) {
-      showDashAlert('error', 'كلمة المرور يجب أن تكون ٨ أحرف على الأقل');
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      showDashAlert('error', 'كلمة المرور وتأكيدها غير متطابقتين');
-      return;
-    }
-  }
-
-  setBtnLoading('btn-save-profile', true);
-  const { error } = await sbClient
-    .from('profiles')
-    .upsert(
-      { id: currentUser.id, full_name: name, phone: phone, city: city },
-      { onConflict: 'id' }
-    );
-
-  if (error) {
-    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
-    showDashAlert('error', 'في مشكلة في الحفظ');
+  if (isVerified) {
+    // موثّق — لا نظهر CTA، بس رسالة ترحيبية صغيرة
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:14px 20px;color:var(--ink3);font-size:12px">
+        ✓ أنت منظّم موثّق —
+        <a href="/bazaars/profile.html" style="color:var(--orange);font-weight:700;text-decoration:none">
+          شوف ملفك كمنظّم ←
+        </a>
+      </div>`;
     return;
   }
 
-  // تحديث كلمة المرور إذا أدخل المستخدم قيمة
-  if (newPwd) {
-    const { error: pwdErr } = await sbClient.auth.updateUser({ password: newPwd });
-    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
-    if (pwdErr) {
-      showDashAlert('error', 'تم حفظ البيانات لكن فشل تغيير كلمة المرور: ' + pwdErr.message);
-    } else {
-      showDashAlert('success', '✅ تم حفظ البيانات وكلمة المرور بنجاح!');
-    }
-  } else {
-    setBtnLoading('btn-save-profile', false, '💾 حفظ التعديلات');
-    showDashAlert('success', 'اتحفظت بياناتك بنجاح ✅');
+  if (reqStatus === 'pending') {
+    wrap.innerHTML = `
+      <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:16px;
+                  padding:16px 20px;display:flex;align-items:center;gap:14px">
+        <span style="font-size:26px">⏳</span>
+        <div>
+          <div style="font-weight:800;color:#d97706;font-size:13px">طلب التوثيق كمنظّم بزار قيد المراجعة</div>
+          <div style="font-size:12px;color:#d97706;opacity:.8;margin-top:3px">سنُبلّغك فور الموافقة</div>
+        </div>
+      </div>`;
+    return;
   }
 
-  await loadDashboardData(currentUser);
-  toggleEditProfile();
+  // مستخدم عادي — عرض CTA كامل
+  wrap.innerHTML = `
+    <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);
+                border:2px solid var(--orange);border-radius:18px;
+                padding:28px 24px;text-align:center">
+      <div style="font-size:42px;margin-bottom:12px">🎪</div>
+      <h3 style="font-size:17px;font-weight:900;color:var(--dark);margin:0 0 10px">
+        هل تريد تنظيم بازار؟
+      </h3>
+      <p style="font-size:13px;color:var(--ink2);margin:0 0 20px;line-height:1.8;max-width:420px;margin-inline:auto">
+        وثّق حسابك كمنظّم وابدأ في نشر بازاراتك على مكاني Spot —
+        شارة ✓ بتظهر عندك وبتكسب ثقة العارضين.
+      </p>
+      <a href="/bazaars/verification.html" class="btn btn-primary"
+         style="padding:12px 32px;display:inline-block;font-size:14px;
+                text-decoration:none;border-radius:50px">
+        🎪 اطلب التوثيق الآن ←
+      </a>
+    </div>`;
+}
+
+/* ── loadMyBazaars — يحمّل بازارات المستخدم في الداشبورد ── */
+async function loadMyBazaars(userId) {
+  const wrap = document.getElementById('dash-my-bazaars');
+  if (!wrap || !sbClient) return;
+
+  try {
+    const { data: bazaars } = await sbClient
+      .from('bazaars')
+      .select('id,name,date_start,location,image,status')
+      .eq('organizer_id', userId)
+      .order('date_start', { ascending: false });
+
+    if (!bazaars || bazaars.length === 0) {
+      wrap.innerHTML = `
+        <div style="text-align:center;padding:28px 16px;color:var(--ink3)">
+          <div style="font-size:32px;margin-bottom:8px">🎪</div>
+          <div style="font-size:13px;font-weight:600">لم تنظّم أي بازار بعد</div>
+          <div style="font-size:12px;margin-top:4px">ابدأ من قسم تنظيم البازار أعلاه</div>
+        </div>`;
+      return;
+    }
+
+    wrap.innerHTML = bazaars.map(b => {
+      const ds = b.date_start
+        ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+        : '—';
+      const imgHtml = b.image
+        ? `<img src="${b.image}" alt="${b.name}"
+                style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
+                onerror="this.style.display='none'">`
+        : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);
+                       display:flex;align-items:center;justify-content:center;font-size:18px">🎪</div>`;
+      const statusBadge = b.status === 'published'
+        ? `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#16a34a;font-weight:700">منشور</span>`
+        : `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--ink3);font-weight:700">${b.status || 'مسودة'}</span>`;
+      return `
+        <div onclick="window.location.href='/bazaars/?bazaar=${b.id}'"
+             style="display:flex;align-items:center;gap:12px;padding:12px 0;
+                    border-bottom:1px solid var(--border);cursor:pointer;
+                    transition:background .15s;border-radius:8px"
+             onmouseover="this.style.background='var(--surface2)';this.style.padding='12px 8px'"
+             onmouseout="this.style.background='';this.style.padding='12px 0'">
+          ${imgHtml}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:2px">📅 ${ds} · 📍 ${b.location || '—'}</div>
+          </div>
+          ${statusBadge}
+        </div>`;
+    }).join('');
+  } catch (err) {
+    wrap.innerHTML = `<div class="no-bookings" style="color:var(--red)">تعذّر تحميل البازارات</div>`;
+  }
 }
 
 function showDashAlert(type, msg) {
@@ -2134,45 +2120,47 @@ function renderUpgradeSection(profile) {
   if (!el) return;
 
   if (profile?.role === 'owner') {
+    // صاحب مساحة — زر الانتقال للوحة التحكم الخاصة به
     el.innerHTML = `
-      <div style="margin:12px 0 8px;padding:14px 18px;
-                  background:var(--green-light,rgba(34,197,94,0.08));
-                  border:1px solid rgba(34,197,94,0.28);border-radius:14px;
-                  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:22px">🏬</span>
+      <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
+                  border:1.5px solid #81c784;border-radius:16px;padding:18px 20px;
+                  display:flex;align-items:center;justify-content:space-between;
+                  flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:28px">🏬</span>
           <div>
-            <div style="font-weight:800;color:#16a34a;font-size:13px">أنت صاحب مساحة!</div>
-            <div style="font-size:11px;color:#16a34a;opacity:0.75;margin-top:2px">
+            <div style="font-weight:800;color:#2e7d32;font-size:14px">أنت صاحب مساحة!</div>
+            <div style="font-size:12px;color:#2e7d32;opacity:.75;margin-top:3px">
               انتقل إلى لوحة تحكم أصحاب المساحات الخاصة بك
             </div>
           </div>
         </div>
         <button onclick="goToOwnerDashboard()"
-          style="background:#16a34a;color:#fff;border:none;padding:9px 20px;
-                 border-radius:10px;font-family:'Cairo',sans-serif;font-weight:800;
+          style="background:#16a34a;color:#fff;border:none;padding:10px 20px;
+                 border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
-          🏬 الانتقال إلى لوحة أصحاب المساحات ←
+          🏬 لوحة أصحاب المساحات ←
         </button>
       </div>`;
   } else {
+    // مستأجر — عرض خيار الترقية
     el.innerHTML = `
-      <div style="margin:12px 0 8px;padding:14px 18px;
-                  background:var(--orange-ultra,rgba(249,115,22,0.08));
-                  border:1px solid var(--orange-pale,rgba(249,115,22,0.25));border-radius:14px;
-                  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:22px">🚀</span>
+      <div style="background:var(--surface2);border:1.5px dashed var(--border);
+                  border-radius:16px;padding:18px 20px;
+                  display:flex;align-items:center;justify-content:space-between;
+                  flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:26px">🚀</span>
           <div>
             <div style="font-weight:800;color:var(--orange);font-size:13px">عندك مساحة للتأجير؟</div>
-            <div style="font-size:11px;color:var(--ink3,#888);margin-top:2px">
-              اطلب تحويل حسابك إلى صاحب مساحة ويصلك رد خلال 24 ساعة
+            <div style="font-size:12px;color:var(--ink3);margin-top:3px">
+              اطلب ترقية حسابك وابدأ في عرض مساحاتك على المنصة
             </div>
           </div>
         </div>
         <button id="btn-upgrade-request" onclick="requestOwnerUpgrade()"
-          style="background:var(--orange);color:#fff;border:none;padding:9px 20px;
-                 border-radius:10px;font-family:'Cairo',sans-serif;font-weight:800;
+          style="background:var(--orange);color:#fff;border:none;padding:10px 20px;
+                 border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
           🚀 طلب ترقية الحساب
         </button>

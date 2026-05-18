@@ -134,11 +134,11 @@ function bzRenderNavUser() {
             <div class="nav-dropdown-email">${email}</div>
             <div class="nav-dropdown-role">🎪 مستخدم البازارات</div>
           </div>
-          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
           <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/verification.html'">🎪 نظّم بازار</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
           <button class="nav-dropdown-item" onclick="window.location.href='/market/'">📋 إعلاناتي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/'">🔍 دوّر على مساحة</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">🎟 اشترك في بزار</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">🔍 دور على مساحة</button>
           <div class="nav-dropdown-sep"></div>
           <button class="nav-dropdown-item danger" onclick="bzSignOut()">🚪 تسجيل الخروج</button>
         </div>
