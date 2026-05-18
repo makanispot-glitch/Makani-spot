@@ -279,9 +279,12 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
   </nav>
   <div class="sb-api">
-    <label>🔗 رابط Apps Script</label>
+    <label>🔗 رابط Apps Script <span id="api-saved-badge" style="display:none;font-size:9px;background:rgba(34,197,94,.2);color:#22C55E;border-radius:4px;padding:1px 5px;margin-right:4px">✓ محفوظ</span></label>
     <input type="text" id="surl" placeholder="https://script.google.com/...">
-    <button class="sb-btn" id="btnload" onclick="loadData()">⚡ تحميل</button>
+    <div style="display:flex;gap:4px;margin-top:4px">
+      <button class="sb-btn" id="btnload" onclick="saveAndLoad()" style="flex:1">⚡ تحميل</button>
+      <button class="sb-btn" onclick="clearApiUrl()" style="background:rgba(239,68,68,.15);color:#EF4444;border-color:rgba(239,68,68,.3);padding:0 8px" title="مسح الرابط المحفوظ">🗑</button>
+    </div>
   </div>
 </aside>
 
@@ -1454,6 +1457,38 @@ async function mkLogin(){
   }
 }
 (function(){const s=sessionStorage.getItem('mkadmin');if(s&&s===MK_HASH.slice(0,16))document.getElementById('mk-login').style.display='none';})();
+
+/* ══ حفظ واسترجاع رابط الـ Apps Script ══ */
+function saveAndLoad(){
+  const v = document.getElementById('surl').value.trim();
+  if (v) {
+    localStorage.setItem('bz_api_url', v);
+    API = v;
+    showSavedBadge();
+  }
+  loadData();
+}
+function clearApiUrl(){
+  if (!confirm('مسح الرابط المحفوظ؟')) return;
+  localStorage.removeItem('bz_api_url');
+  document.getElementById('surl').value = '';
+  API = '';
+  document.getElementById('api-saved-badge').style.display = 'none';
+  toast('تم مسح الرابط المحفوظ', 'i');
+}
+function showSavedBadge(){
+  const b = document.getElementById('api-saved-badge');
+  if (b) b.style.display = 'inline';
+}
+(function initApiUrl(){
+  const saved = localStorage.getItem('bz_api_url');
+  if (saved) {
+    document.getElementById('surl').value = saved;
+    API = saved;
+    showSavedBadge();
+    loadData(); // تحميل تلقائي عند فتح الصفحة
+  }
+})();
 </script>
 </body>
 </html>

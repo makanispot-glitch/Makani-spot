@@ -297,14 +297,20 @@ async function _loadBazaarSlotsFromSheet(bazaarId) {
 
 async function loadBazaars() {
   try {
-    const res  = await fetch(BAZAAR_SHEET_URL);
-    const text = await res.text();
-
+    // نجرّب أولاً مع ?action=all (الصيغة التي يعرفها الـ Apps Script)
+    // ثم بدون بارامتر كـ fallback
     let json;
-    try {
-      json = JSON.parse(text);
-    } catch (parseErr) {
-      console.error('❌ الشيت مش بيرجع JSON:', text.substring(0, 300));
+    for (const url of [BAZAAR_SHEET_URL + '?action=all', BAZAAR_SHEET_URL]) {
+      try {
+        const res  = await fetch(url);
+        const text = await res.text();
+        json = JSON.parse(text);
+        if (json && (Array.isArray(json) || json.bazaars || json.data || json.rows)) break;
+      } catch (_) { json = null; }
+    }
+
+    if (!json) {
+      console.error('❌ الشيت مش بيرجع JSON صحيح');
       _renderBazaarsEmpty('تأكد أن الـ Apps Script منشور كـ "Anyone can access"');
       return;
     }
@@ -312,9 +318,9 @@ async function loadBazaars() {
     console.log('📊 استجابة الشيت:', json);
 
     let rows = Array.isArray(json)              ? json
+             : Array.isArray(json.bazaars)      ? json.bazaars
              : Array.isArray(json.data)         ? json.data
              : Array.isArray(json.rows)         ? json.rows
-             : Array.isArray(json.bazaars)      ? json.bazaars
              : Array.isArray(json.result)       ? json.result
              : Array.isArray(json.items)        ? json.items
              : Array.isArray(json.values)       ? json.values
