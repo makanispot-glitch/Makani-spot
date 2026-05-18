@@ -37,7 +37,7 @@ const BZ_PER_PAGE  = 9;        // عدد البازارات في كل صفحة
 let selectedSlotId = null;     // id المكان المختار في الخريطة
 let selectedSlotSource = 'supabase'; // مصدر المكان: supabase | sheet
 let bzActiveChip   = '';       // الـ chip المفعّل
-let bzTimeNav      = 'upcoming'; // التنقل الزمني: 'today' | 'upcoming'
+let bzTimeNav      = 'all'; // التنقل الزمني: 'all' | 'today' | 'upcoming'
 let bzVerifiedOnly = false;    // فلتر "منظمين موثّقين فقط"
 
 
@@ -339,7 +339,13 @@ async function loadBazaars() {
         return b;
       })
       .filter(b => b.name && b.name !== '—')
-      .filter(b => !b.status || ['published','approved','active','مقبول','موافق','منشور','تمت الموافقة'].includes(String(b.status).trim().toLowerCase()))
+      .filter(b => {
+        // لو ما فيش status أو فارغ → اعرضه
+        if (!b.status || String(b.status).trim() === '') return true;
+        const s = String(b.status).trim().toLowerCase();
+        // استثن المرفوض والمحذوف فقط
+        return !['rejected','deleted','hidden','مرفوض','محذوف','مخفي','draft','مسودة'].includes(s);
+      })
       .sort((a, b) => new Date(a.date_start || 0) - new Date(b.date_start || 0));
 
     console.log(`✅ تم تحميل ${rows.length} بازار:`, rows);
@@ -575,6 +581,7 @@ function applyBzFilters() {
     const today = new Date().toISOString().split('T')[0];
     data = data.filter(b => !b.date_start || b.date_start >= today);
   }
+  // bzTimeNav === 'all' → لا فلتر زمني، اعرض كل شيء
 
   if (bzVerifiedOnly) {
     data = data.filter(b => b.is_organizer_verified === true);
@@ -619,10 +626,10 @@ function clearBzFilters() {
 
   bzActiveChip   = '';
   bzVerifiedOnly = false;
-  bzTimeNav      = 'upcoming';
+  bzTimeNav      = 'all';
   document.querySelectorAll('.bz-chip').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.bz-time-btn').forEach(btn => {
-    btn.classList.toggle('bz-time-active', btn.dataset.nav === 'upcoming');
+    btn.classList.toggle('bz-time-active', btn.dataset.nav === 'all');
   });
 
   applyBzFilters();
