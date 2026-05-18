@@ -2,14 +2,15 @@
    🔧 sw.js — Service Worker | مكاني Spot PWA
    ================================================================
    الاستراتيجية:
-   • Static assets (CSS/JS/icons)  → Cache-First
+   • CSS / JS files                → Network-First (آخر نسخة دايماً)
    • HTML pages                    → Network-First + Cache Fallback
+   • Static assets (images/icons)  → Cache-First (نادراً تتغير)
    • Google Fonts / CDN            → Stale-While-Revalidate
    • Supabase API / R2 images      → Network-Only (بيانات حية)
    • Offline                       → صفحة بديلة /offline.html
    ================================================================ */
 
-const CACHE_VER    = 'v20';                     // ← غيّر هذا عند كل نشر جديد
+const CACHE_VER    = 'v21';                     // ← غيّر هذا عند كل نشر جديد
 const SHELL_CACHE  = `makani-shell-${CACHE_VER}`;
 const FONT_CACHE   = `makani-fonts-${CACHE_VER}`;
 const CDN_CACHE    = `makani-cdn-${CACHE_VER}`;
@@ -93,7 +94,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* 5. باقي الأصول (CSS، JS، صور، أيقونات) → Cache-First */
+  /* 5. CSS و JS → Network-First (نضمن دايماً آخر نسخة بعد كل نشر) */
+  if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js') ||
+      url.pathname.includes('.css?') || url.pathname.includes('.js?')) {
+    event.respondWith(networkFirstHtml(request));
+    return;
+  }
+
+  /* 6. الأصول الثابتة (صور، أيقونات، خطوط محلية) → Cache-First */
   event.respondWith(cacheFirst(request));
 });
 
