@@ -13,32 +13,53 @@
 /offline.html
   X-Robots-Tag: noindex, nofollow
 
-# Service Worker — must never be cached by CDN
+# ══════════════════════════════════════════
+# Service Worker — يجب أن يُجلب دائماً من الشبكة
+# Cloudflare لا يكاش هذا الملف أبداً
+# ══════════════════════════════════════════
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
-# Web App Manifest — short cache
-/manifest.json
-  Cache-Control: public, max-age=86400
+# ══════════════════════════════════════════
+# HTML — لا كاش أبداً (يُجلب من الشبكة دائماً)
+# هذا يضمن أن المتصفح يرى ?v= الجديدة في روابط CSS/JS
+# ══════════════════════════════════════════
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
-# Icons — long cache (content-addressed effectively)
-/icons/*
-  Cache-Control: public, max-age=31536000, immutable
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
-/favicon.jpg
-  Cache-Control: public, max-age=31536000, immutable
+/bazaars/
+  Cache-Control: no-cache, no-store, must-revalidate
 
-# Fonts from Google served by CF will be handled by SW;
-# local static assets — long cache
+/market/
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/admin/
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# ══════════════════════════════════════════
+# CSS و JS — كاش طويل لأن الـ ?v= بيتغير عند كل تحديث
+# الـ immutable يقول للمتصفح "مش محتاج تتحقق من الشبكة"
+# ══════════════════════════════════════════
 /*.css
   Cache-Control: public, max-age=31536000, immutable
 
 /*.js
   Cache-Control: public, max-age=31536000, immutable
 
-# HTML pages — short cache so SW update propagates fast
-/*.html
-  Cache-Control: public, max-age=0, must-revalidate
+# ══════════════════════════════════════════
+# Manifest و Icons — كاش متوسط
+# ══════════════════════════════════════════
+/manifest.json
+  Cache-Control: public, max-age=86400, must-revalidate
 
-/
-  Cache-Control: public, max-age=0, must-revalidate
+/icons/*
+  Cache-Control: public, max-age=604800, immutable
+
+/favicon.jpg
+  Cache-Control: public, max-age=604800, immutable
