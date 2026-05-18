@@ -9,7 +9,7 @@ let myUserProfile  = null;   // profiles row (email/phone/city)
 
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-const BAZAAR_SHEET_URL = 'https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec';
+const BAZAAR_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec';
 
 let sbClient    = null;
 let currentUser = null;

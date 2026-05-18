@@ -38,7 +38,7 @@ const BOOKING_URL = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcr
  * 🎪 رابط Google Apps Script لبيانات البازارات من Google Sheets
  * كل مرة تحدّث الشيت وترفعه، بيانات البازارات بتظهر تلقائياً على الموقع
  */
-const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycby3adz7kud__ds_rVxZHyzEr6DS5SfdcdT7hUblmKwl1yvbEtlL7NpnpaWrrh7PLpjQPQ/exec";
+const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec";
 
 /**
  * 🔐 إعدادات Supabase — قاعدة بيانات المستخدمين
