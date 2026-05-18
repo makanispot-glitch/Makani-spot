@@ -276,9 +276,9 @@
 /* ── FAB ── */
 .eq-fab {
   position: fixed; bottom: 28px; left: 28px; z-index: 500;
-  width: 58px; height: 58px; border-radius: 50%;
+  width: 54px; height: 54px; border-radius: 50%;
   background: var(--orange); color: #fff;
-  border: none; cursor: pointer; font-size: 28px; font-weight: 700;
+  border: none; cursor: pointer; font-size: 26px; font-weight: 700;
   box-shadow: var(--shadow-orange);
   display: flex; align-items: center; justify-content: center;
   text-decoration: none;
@@ -286,7 +286,7 @@
 }
 .eq-fab:hover { background: var(--orange-hover); transform: scale(1.08); }
 .eq-fab-tooltip {
-  position: fixed; bottom: 36px; left: 98px; z-index: 500;
+  position: fixed; bottom: 36px; left: 94px; z-index: 500;
   background: var(--dark); color: #fff;
   padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
   pointer-events: none; opacity: 0; transition: opacity .2s;
@@ -648,7 +648,12 @@ body.lightbox-open { overflow: hidden; }
   .eq-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .eq-card-img, .eq-card-no-img { height: 150px; }
   .eq-detail-main-img { height: 220px; }
-  .eq-fab { bottom: 20px; left: 20px; }
+  .eq-fab {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px);
+    left: 16px;
+    width: 46px; height: 46px;
+    font-size: 22px;
+  }
   .eq-fab-tooltip { display: none; }
   .eq-notif-panel { left: auto; right: 0; transform: none; width: 290px; }
   .eq-sub-filters { gap: 8px; }
@@ -975,6 +980,17 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   backdrop-filter: blur(4px);
 }
 .eq-fav-btn:hover { transform: scale(1.18); background: #fff; }
+
+/* ── Favorites Nav Button ── */
+.eq-fav-nav-btn {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 50%; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; cursor: pointer; transition: all .2s;
+  flex-shrink: 0;
+}
+.eq-fav-nav-btn:hover { border-color: #EF4444; background: #FEF2F2; }
+.eq-fav-nav-btn.has-favs { border-color: #EF4444; background: #FEF2F2; }
 
 /* ── Notification Bell ── */
 .eq-notif-wrap { position: relative; }

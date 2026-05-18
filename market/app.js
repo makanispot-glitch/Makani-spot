@@ -201,6 +201,7 @@ function eqRenderNavUser() {
     const name    = eqUser.user_metadata?.full_name || eqUser.email || '';
 
     area.innerHTML = `
+      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">❤️</button>
       <div class="eq-notif-wrap" id="eq-notif-wrap">
         <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
           🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
@@ -227,7 +228,6 @@ function eqRenderNavUser() {
           <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
           <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
           <button class="nav-dropdown-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">📋 إعلاناتي</button>
-          <button class="nav-dropdown-item" onclick="eqOpenFavorites();eqCloseAccountMenu()">❤️ المفضلة</button>
           <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/verification.html'">🎪 نظّم بازار</button>
           <button class="nav-dropdown-item" onclick="window.location.href='/'">🔍 دوّر على مساحة</button>
           <div class="nav-dropdown-sep"></div>
@@ -1475,6 +1475,18 @@ document.addEventListener('click', e => {
    ⭐ القسم 21: المفضلة
    ================================================================ */
 
+function eqUpdateFavBtn() {
+  const btn = document.getElementById('eq-fav-nav-btn');
+  if (!btn) return;
+  if (eqFavorites.size > 0) {
+    btn.classList.add('has-favs');
+    btn.title = `المفضلة (${eqFavorites.size})`;
+  } else {
+    btn.classList.remove('has-favs');
+    btn.title = 'المفضلة';
+  }
+}
+
 async function eqLoadFavorites() {
   if (!eqUser) return;
   const { data } = await eqSb
@@ -1482,6 +1494,7 @@ async function eqLoadFavorites() {
     .select('listing_id')
     .eq('user_id', eqUser.id);
   eqFavorites = new Set((data || []).map(f => f.listing_id));
+  eqUpdateFavBtn();
 }
 
 async function eqToggleFavorite(e, id) {
@@ -1505,6 +1518,7 @@ async function eqToggleFavorite(e, id) {
       b.textContent = b.classList.contains('eq-fav-btn') ? '❤️' : '❤️ في المفضلة';
     });
   }
+  eqUpdateFavBtn();
 }
 
 async function eqOpenFavorites() {
