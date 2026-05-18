@@ -232,6 +232,9 @@ body {
   font-size: 13px; font-weight: 500; color: var(--ink2);
   transition: all 0.12s; border: none; background: none;
   width: 100%; font-family: 'Cairo', sans-serif; text-align: right;
+  text-decoration: none;           /* يمنع الخطوط التسطيرية في <a> */
+  direction: rtl;                  /* يضمن اتجاه النص الصحيح دائماً */
+  box-sizing: border-box;
 }
 .nav-dropdown-item:hover        { background: var(--surface2); color: var(--ink); }
 .nav-dropdown-item.danger:hover { background: var(--red-light); color: var(--red); }
@@ -1381,7 +1384,7 @@ footer {
    ============================================================ */
 .bottom-nav {
   display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 250;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
   background: rgba(255,255,255,0.98);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(0,0,0,0.07);
@@ -1595,9 +1598,14 @@ footer {
 
   /* إظهار Bottom Nav */
   .bottom-nav {
-    display: flex;
+    display: flex !important;
     justify-content: space-around;
     align-items: center;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 500 !important;
   }
 
   /* إخفاء قسم المسارات الثلاثة على الموبايل */

@@ -134,11 +134,11 @@ function bzRenderNavUser() {
             <div class="nav-dropdown-email">${email}</div>
             <div class="nav-dropdown-role">🎪 مستخدم البازارات</div>
           </div>
-          <a class="nav-dropdown-item" href="/?p=dashboard">🏠 لوحة التحكم</a>
-          <a class="nav-dropdown-item" href="/bazaars/profile.html">👤 الملف الشخصي</a>
-          <a class="nav-dropdown-item" href="/bazaars/verification.html">🎪 نظّم بازار</a>
-          <a class="nav-dropdown-item" href="/market/">📋 إعلاناتي</a>
-          <a class="nav-dropdown-item" href="/">🔍 دوّر على مساحة</a>
+          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/verification.html'">🎪 نظّم بازار</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/market/'">📋 إعلاناتي</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/'">🔍 دوّر على مساحة</button>
           <div class="nav-dropdown-sep"></div>
           <button class="nav-dropdown-item danger" onclick="bzSignOut()">🚪 تسجيل الخروج</button>
         </div>
@@ -156,6 +156,7 @@ function bzRenderNavUser() {
         <span>سجّل</span>
       </button>`;
   }
+  bzUpdateBnUser();
 }
 
 function bzToggleAccountMenu(e) {
@@ -1372,5 +1373,31 @@ function openVerificationRequest() {
 function openOrganizerProfile(organizerId) {
   if (!organizerId) return;
   window.location.href = `/bazaars/profile.html?organizer=${organizerId}`;
+}
+
+function bzHandleBnUser() {
+  if (currentUser) {
+    window.location.href = '/?p=dashboard';
+  } else {
+    window.location.href = '/?p=login';
+  }
+}
+
+function bzUpdateBnUser() {
+  const icon  = document.getElementById('bn-user-icon');
+  const label = document.getElementById('bn-user-label');
+  const desc  = document.getElementById('bn-user-desc');
+  if (!icon || !label) return;
+
+  if (currentUser) {
+    const initial = (currentProfile?.full_name || currentUser.email || '؟')[0].toUpperCase();
+    icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
+    label.textContent = 'حسابي';
+    if (desc) desc.textContent = currentProfile?.full_name?.split(' ')[0] || 'مرحباً';
+  } else {
+    icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
+    label.textContent = 'دخول';
+    if (desc) desc.textContent = 'سجّل أو ادخل';
+  }
 }
 
