@@ -8,11 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../style.css?v=25">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <style>
-/* ── Standalone Nav ── */
+/* ══════════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════════ */
 .bz-standalone-nav {
   position: sticky; top: 0; z-index: 200;
   background: rgba(255,255,255,0.97); backdrop-filter: blur(14px);
@@ -41,165 +43,322 @@
   .bz-nav-title { display: none; }
 }
 
-/* ── بروفايل ── */
+/* ══════════════════════════════════════════════════
+   PAGE LAYOUT
+══════════════════════════════════════════════════ */
 .op-page { min-height: 100vh; background: var(--bg, #F9FAFB); padding-bottom: 80px; }
-.op-content { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+.op-content { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
 
-/* بطاقة الهوية */
-.op-identity-card {
-  background: var(--surface); border-radius: 20px;
-  border: 1px solid var(--border); padding: 28px;
-  display: flex; align-items: flex-start; gap: 20px;
-  margin-bottom: 20px; box-shadow: var(--shadow);
+/* ══════════════════════════════════════════════════
+   HERO CARD
+══════════════════════════════════════════════════ */
+.op-hero {
+  background: linear-gradient(135deg, #fff 0%, #fffbf5 100%);
+  border-radius: 22px; border: 1px solid var(--border);
+  padding: 26px 28px 20px; margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
+.op-hero-top { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
+.op-avatar-wrap { position: relative; flex-shrink: 0; }
 .op-avatar {
-  width: 80px; height: 80px; border-radius: 50%;
+  width: 88px; height: 88px; border-radius: 50%;
   background: var(--orange); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 900; flex-shrink: 0; overflow: hidden;
+  font-size: 34px; font-weight: 900; overflow: hidden;
+  border: 3px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  cursor: pointer;
 }
 .op-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.op-identity-info { flex: 1; min-width: 0; }
-.op-name {
-  font-size: 22px; font-weight: 900; color: var(--dark);
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+.avatar-edit-btn {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
 }
-.op-meta { font-size: 13px; color: var(--ink2); display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-.op-meta span { display: flex; align-items: center; gap: 4px; }
+.op-hero-info { flex: 1; min-width: 0; }
+.op-name {
+  font-size: 21px; font-weight: 900; color: var(--dark);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.op-hero-meta {
+  font-size: 12px; color: var(--ink3); display: flex; flex-wrap: wrap;
+  gap: 10px; margin-bottom: 12px; margin-top: 4px;
+}
+.op-hero-meta span { display: flex; align-items: center; gap: 4px; }
+.op-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Quick nav strip */
+.op-quick-nav {
+  display: flex; gap: 8px; margin-top: 14px; padding-top: 14px;
+  border-top: 1.5px solid var(--border); flex-wrap: wrap;
+}
+.op-qn-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 50px;
+  font-size: 12px; font-weight: 700; text-decoration: none;
+  background: var(--surface2); color: var(--ink2);
+  border: 1.5px solid var(--border); transition: all .2s;
+  font-family: 'Cairo', sans-serif; cursor: pointer;
+}
+.op-qn-btn:hover { background: var(--orange-ultra); border-color: var(--orange); color: var(--orange); }
+.op-qn-btn.primary { background: var(--orange); color: #fff; border-color: var(--orange); }
+.op-qn-btn.primary:hover { opacity: .9; }
+
+/* ══════════════════════════════════════════════════
+   PRIMARY BADGES  (منظم / صاحب مساحة) — بارزة
+══════════════════════════════════════════════════ */
+.op-primary-badges {
+  display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 6px;
+}
+.op-badge-primary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 14px; cursor: default;
+}
+.op-badge-primary.organizer {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1.5px solid rgba(255,107,0,0.35);
+}
+.op-badge-primary.space-owner {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1.5px solid rgba(59,130,246,0.35);
+}
+.op-badge-icon { font-size: 24px; flex-shrink: 0; }
+.op-badge-label { font-size: 13px; font-weight: 900; color: var(--dark); }
+.op-badge-desc  { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+
+/* Secondary Badges */
+.op-sec-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.op-sec-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  background: var(--surface2); color: var(--ink2);
+  border: 1px solid var(--border);
+}
+.op-sec-badge.gold { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+
+/* ══════════════════════════════════════════════════
+   CTA CARDS  (تقدّم كمنظم / صاحب مساحة)
+══════════════════════════════════════════════════ */
+.op-cta-wrap {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-top: 14px; padding-top: 14px; border-top: 1.5px solid var(--border);
+}
+.op-cta-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px; border-radius: 12px; text-decoration: none;
+  background: var(--orange-ultra); border: 1.5px solid rgba(255,107,0,.2);
+  transition: all .2s;
+}
+.op-cta-card.blue { background: #eff6ff; border-color: rgba(59,130,246,.25); }
+.op-cta-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.op-cta-emoji { font-size: 22px; flex-shrink: 0; }
+.op-cta-body  { flex: 1; min-width: 0; }
+.op-cta-title { font-size: 12px; font-weight: 900; color: var(--dark); }
+.op-cta-desc  { font-size: 11px; color: var(--ink3); line-height: 1.4; margin-top: 2px; }
+.op-cta-arrow { font-size: 13px; font-weight: 900; color: var(--orange); flex-shrink: 0; }
+.op-cta-card.blue .op-cta-arrow { color: #3b82f6; }
+
+/* ══════════════════════════════════════════════════
+   STATS GRID
+══════════════════════════════════════════════════ */
+.op-stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 16px;
+}
+.op-stat-card {
+  background: var(--surface); border-radius: 14px;
+  border: 1px solid var(--border); padding: 16px 12px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.03);
+}
+.op-stat-num { font-size: 24px; font-weight: 900; color: var(--orange); line-height: 1.1; }
+.op-stat-lbl { font-size: 11px; color: var(--ink3); margin-top: 5px; font-weight: 600; line-height: 1.4; }
+.op-stat-note { font-size: 9px; color: var(--ink3); opacity: .7; margin-top: 3px; }
+
+/* ══════════════════════════════════════════════════
+   TWO-COLUMN LAYOUT
+══════════════════════════════════════════════════ */
+.op-two-col {
+  display: grid; grid-template-columns: 300px 1fr;
+  gap: 16px; align-items: start;
+}
+
+/* ══════════════════════════════════════════════════
+   SECTION CARDS
+══════════════════════════════════════════════════ */
+.op-section-card {
+  background: var(--surface); border-radius: 16px;
+  border: 1px solid var(--border); padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.03);
+}
+.op-section-title {
+  font-size: 14px; font-weight: 900; color: var(--dark);
+  margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 10px; border-bottom: 1.5px solid var(--border);
+}
+.op-section-title a {
+  font-size: 12px; font-weight: 700; color: var(--orange); text-decoration: none;
+}
+.op-section-title a:hover { text-decoration: underline; }
+
+/* Personal data rows */
+.op-data-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.op-data-row:last-child { border-bottom: none; }
+.op-data-lbl { font-size: 10px; color: var(--ink3); font-weight: 700; text-transform: uppercase; letter-spacing:.3px; }
+.op-data-val { font-size: 13px; color: var(--dark); font-weight: 700; }
+.op-data-synced { font-size: 9px; color: var(--orange); font-weight: 600; opacity: .7; }
+
+/* ══════════════════════════════════════════════════
+   LISTINGS GRID
+══════════════════════════════════════════════════ */
+.op-listing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.op-listing-card {
+  border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+  background: var(--surface2); cursor: pointer; transition: box-shadow .2s;
+}
+.op-listing-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
+.op-listing-img {
+  width: 100%; height: 78px;
+  background: var(--surface2); overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+.op-listing-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.op-listing-info { padding: 8px 10px; }
+.op-listing-title {
+  font-size: 12px; font-weight: 800; color: var(--dark); line-height: 1.3;
+  margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.op-listing-meta { display: flex; align-items: center; justify-content: space-between; }
+.op-listing-price { font-size: 12px; font-weight: 900; color: var(--orange); }
+.op-listing-status {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  background: #e8f5e9; color: #2e7d32;
+}
+.op-listing-status.expired { background: #fef2f2; color: #dc2626; }
+.op-listing-status.sold    { background: #fffbeb; color: #d97706; }
+.op-listing-status.pending { background: #f0f9ff; color: #0369a1; }
+
+/* ══════════════════════════════════════════════════
+   BADGE STYLES (في الاسم)
+══════════════════════════════════════════════════ */
+.op-verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg,#e8f5e9,#f1f8e9);
+  color: #2e7d32; border: 1.5px solid #81c784;
+  font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 50px;
+}
+.op-pending-badge {
+  background: #fffbeb; color: #d97706; border: 1.5px solid #fcd34d;
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 50px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.op-unverified-badge {
+  background: var(--surface2); color: var(--ink3);
+  border: 1.5px solid var(--border);
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 50px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* WhatsApp */
 .op-wa-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 50px;
   background: #25D366; color: #fff; text-decoration: none;
   font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-  margin-top: 12px; transition: opacity .2s;
+  transition: opacity .2s;
 }
 .op-wa-btn:hover { opacity: .9; }
 
-/* شارة التوثيق */
-.op-verified-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
-  color: #2e7d32; border: 1.5px solid #81c784;
-  font-size: 13px; font-weight: 800; padding: 5px 12px; border-radius: 50px;
-}
-.op-pending-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: #fffbeb; color: #d97706;
-  border: 1.5px solid #fcd34d;
-  font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 50px;
-}
-.op-unverified-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: var(--surface2); color: var(--ink3);
-  border: 1.5px solid var(--border);
-  font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 50px;
-}
-
-/* CTA: تنظيم بازار */
-.op-organize-cta {
-  background: linear-gradient(135deg, #fff7ed, #ffedd5);
-  border: 2px solid var(--orange); border-radius: 16px;
-  padding: 28px; margin-bottom: 20px; text-align: center;
-}
-.op-organize-cta h3 { font-size: 18px; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
-.op-organize-cta p { font-size: 14px; color: var(--ink2); margin-bottom: 20px; line-height: 1.7; }
-
-/* إحصائيات */
-.op-stats-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px;
-}
-.op-stat-card {
-  background: var(--surface); border-radius: 14px;
-  border: 1px solid var(--border); padding: 20px; text-align: center;
-}
-.op-stat-num { font-size: 28px; font-weight: 900; color: var(--orange); }
-.op-stat-lbl { font-size: 12px; color: var(--ink3); margin-top: 4px; font-weight: 600; }
-
-/* بطاقات الأقسام */
-.op-section-card {
-  background: var(--surface); border-radius: 16px;
-  border: 1px solid var(--border); padding: 22px; margin-bottom: 20px;
-}
-.op-section-title {
-  font-size: 16px; font-weight: 900; color: var(--dark);
-  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-  padding-bottom: 12px; border-bottom: 1.5px solid var(--border);
-}
+/* Bazaar items */
 .op-bazaar-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
   transition: background .15s;
 }
 .op-bazaar-item:last-child { border-bottom: none; }
-.op-bazaar-item:hover { background: var(--surface2); margin: 0 -12px; padding: 12px 12px; border-radius: 8px; }
-.op-empty { text-align: center; padding: 40px 20px; color: var(--ink3); font-size: 14px; }
+.op-bazaar-item:hover { background: var(--surface2); margin: 0 -10px; padding: 10px 10px; border-radius: 8px; }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .op-identity-card { flex-direction: column; }
-  .op-stats-grid { grid-template-columns: 1fr 1fr; }
-  .op-content { padding: 20px 14px; }
-}
+/* Empty / Loading */
+.op-empty { text-align: center; padding: 28px 16px; color: var(--ink3); font-size: 13px; }
+.op-loading { text-align: center; padding: 80px 20px; color: var(--ink3); }
 
-/* Loading */
-.op-loading {
-  text-align: center; padding: 80px 20px; color: var(--ink3);
-}
+/* Reviews */
+.op-review-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.op-review-item:last-child { border-bottom: none; }
 
-/* ── Premium Edit Modal & Avatar Hover ── */
-.op-avatar { position: relative; cursor: pointer; }
-.avatar-edit-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,0.6); color: #fff;
-  font-size: 10px; font-weight: 700; padding: 4px;
-  text-align: center; opacity: 0; transition: opacity .2s;
-  pointer-events: none;
-}
-.op-avatar:hover .avatar-edit-overlay { opacity: 1; }
-
+/* ══════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════ */
 .op-modal {
   position: fixed; inset: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none; transition: opacity .3s;
-  background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
   padding: 20px;
 }
 .op-modal.open { opacity: 1; pointer-events: auto; }
 .op-modal-card {
   background: #fff; border-radius: 20px; border: 1px solid var(--border);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.15); width: 100%; max-width: 480px;
-  transform: scale(0.95); transition: transform .3s; overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,.15); width: 100%; max-width: 480px;
+  transform: scale(0.95); transition: transform .3s;
+  max-height: 90vh; display: flex; flex-direction: column;
 }
 .op-modal.open .op-modal-card { transform: scale(1); }
 .op-modal-header {
-  padding: 18px 24px; border-bottom: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
 }
 .op-modal-title { font-size: 16px; font-weight: 900; color: var(--dark); }
 .op-modal-close { font-size: 22px; cursor: pointer; color: var(--ink3); background: none; border: none; font-family: Cairo; }
-.op-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.op-modal-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; }
 .op-modal-footer {
-  padding: 16px 24px; border-top: 1.5px solid var(--border); background: var(--surface2);
-  display: flex; justify-content: flex-end; gap: 12px;
+  padding: 14px 24px; border-top: 1.5px solid var(--border); background: var(--surface2);
+  display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;
 }
-.vr-fg { display: flex; flex-direction: column; gap: 6px; }
-.vr-fg label { font-size: 13px; font-weight: 700; color: var(--ink2); }
-.vr-fg input {
-  padding: 10px 12px; border: 1.5px solid var(--border);
+.op-modal-section-label {
+  font-size: 10px; font-weight: 800; color: var(--ink3); text-transform: uppercase;
+  letter-spacing: .5px; border-bottom: 1px solid var(--border);
+  padding-bottom: 5px; margin-top: 4px;
+}
+.vr-fg { display: flex; flex-direction: column; gap: 5px; }
+.vr-fg label { font-size: 12px; font-weight: 700; color: var(--ink2); }
+.vr-fg input, .vr-fg select {
+  padding: 9px 12px; border: 1.5px solid var(--border);
   border-radius: 8px; font-family: 'Cairo', sans-serif;
   font-size: 14px; color: var(--ink); background: var(--surface2);
   outline: none; transition: border-color .2s; width: 100%; box-sizing: border-box;
 }
-.vr-fg input:focus { border-color: var(--orange); }
-.vr-fg select:focus { border-color: var(--orange); outline: none; }
+.vr-fg input:focus, .vr-fg select:focus { border-color: var(--orange); }
 
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .op-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .op-two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 500px) {
+  .op-hero { padding: 18px 16px 14px; }
+  .op-hero-top { gap: 12px; }
+  .op-avatar { width: 72px; height: 72px; font-size: 26px; }
+  .op-name { font-size: 17px; }
+  .op-listing-grid { grid-template-columns: 1fr; }
+  .op-cta-wrap { grid-template-columns: 1fr; }
+  .op-primary-badges { flex-direction: column; }
+  .op-content { padding: 14px 12px; }
+}
 </style>
 </head>
 <body>
 
 <!-- ── Nav ── -->
 <nav class="bz-standalone-nav">
-  <a class="bz-nav-logo" href="/bazaars/">
+  <a class="bz-nav-logo" href="/">
     <div class="logo-text">
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
@@ -207,7 +366,7 @@
     <span class="bz-nav-title">👤 الملف الشخصي</span>
   </a>
   <div class="bz-nav-right">
-    <a class="bz-nav-back" href="/bazaars/">← البازارات</a>
+    <a class="bz-nav-back" href="/">← الرئيسية</a>
   </div>
 </nav>
 
@@ -216,11 +375,10 @@
   <div class="op-content" id="op-content">
     <div class="op-loading">
       <div style="font-size:36px;margin-bottom:12px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-      <div style="font-size:14px">جاري تحميل البروفايل…</div>
+      <div style="font-size:14px">جاري تحميل الملف الشخصي…</div>
     </div>
   </div>
 </div>
-
 
 <!-- ── Edit Modal ── -->
 <div class="op-modal" id="edit-profile-modal">
@@ -230,10 +388,8 @@
       <button class="op-modal-close" onclick="closeEditModal()">×</button>
     </div>
     <div class="op-modal-body">
-      <!-- ── البيانات الشخصية ── -->
-      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:4px">
-        البيانات الشخصية
-      </div>
+
+      <div class="op-modal-section-label">البيانات الشخصية</div>
       <div class="vr-fg">
         <label>الاسم الكامل *</label>
         <input type="text" id="edit-name" placeholder="اسمك الكريم">
@@ -244,20 +400,21 @@
       </div>
       <div class="vr-fg">
         <label>المدينة</label>
-        <select id="edit-city" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--ink);background:var(--surface2);outline:none;width:100%;box-sizing:border-box">
+        <select id="edit-city">
           <option value="">اختر مدينتك</option>
           <option>القاهرة</option>
           <option>الجيزة</option>
           <option>الإسكندرية</option>
           <option>المنصورة</option>
           <option>أسيوط</option>
+          <option>طنطا</option>
+          <option>الشرقية</option>
+          <option>بورسعيد</option>
           <option>أخرى</option>
         </select>
       </div>
-      <!-- ── بيانات المنظّم ── -->
-      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:8px;margin-bottom:4px">
-        بيانات المنظّم
-      </div>
+
+      <div class="op-modal-section-label" style="margin-top:6px">بيانات المنظّم (إن وُجدت)</div>
       <div class="vr-fg">
         <label>رقم الواتساب</label>
         <input type="tel" id="edit-whatsapp" placeholder="01xxxxxxxxx" dir="ltr">
@@ -266,27 +423,29 @@
         <label>المنطقة / المحافظة</label>
         <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة">
       </div>
-      <!-- ── كلمة المرور ── -->
-      <div style="font-size:12px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:8px;margin-bottom:4px">
-        كلمة المرور (اختياري)
-      </div>
+
+      <div class="op-modal-section-label" style="margin-top:6px">تغيير كلمة المرور</div>
       <div class="vr-fg">
-        <label>كلمة المرور الجديدة <span style="font-size:11px;opacity:.55;font-weight:400">(اتركها فارغة إن لم تريد التغيير)</span></label>
+        <label>كلمة المرور الجديدة <span style="font-size:10px;opacity:.5;font-weight:400">(اتركها فارغة إن لم تريد التغيير)</span></label>
         <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
       </div>
       <div class="vr-fg">
         <label>تأكيد كلمة المرور</label>
         <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
       </div>
+
       <div id="edit-error" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
     </div>
     <div class="op-modal-footer">
-      <button class="btn" style="padding:8px 20px;border-radius:50px" onclick="closeEditModal()">إلغاء</button>
-      <button class="btn btn-primary" style="padding:8px 24px;border-radius:50px" id="edit-save-btn" onclick="saveProfileDetails()">حفظ التعديلات</button>
+      <button class="btn" style="padding:8px 18px;border-radius:50px;font-size:13px" onclick="closeEditModal()">إلغاء</button>
+      <button class="btn btn-primary" style="padding:8px 22px;border-radius:50px;font-size:13px" id="edit-save-btn" onclick="saveProfileDetails()">حفظ التعديلات</button>
     </div>
   </div>
 </div>
 
-<script src="profile.js" defer></script>
+<!-- hidden file input -->
+<input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
+
+<script src="profile.js?v=25" defer></script>
 </body>
 </html>

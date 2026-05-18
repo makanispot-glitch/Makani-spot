@@ -1374,6 +1374,16 @@ async function eqSubmitEdit() {
 
   if (error) { alert('خطأ في الحفظ: ' + error.message); return; }
 
+  /* ── مزامنة الهاتف والمنطقة إلى جدول profiles (تلقائياً) ── */
+  if (eqUser && phone) {
+    const region = document.getElementById('eq-edit-region')?.value || null;
+    const syncData = { id: eqUser.id, phone };
+    if (region) syncData.city = region;
+    eqSb.from('profiles')
+        .upsert(syncData, { onConflict: 'id' })
+        .then(() => {}).catch(() => {});
+  }
+
   eqCloseEdit();
   alert(origStatus === 'rejected'
     ? 'تم حفظ التعديلات ✅\nتم إرسال الإعلان للمراجعة مجدداً.'

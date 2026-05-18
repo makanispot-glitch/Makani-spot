@@ -1,36 +1,51 @@
-let myProfileData  = null;   // organizer_profiles row
-let myUserProfile  = null;   // profiles row (email/phone/city)
 /* ================================================================
-   📁 bazaars/profile.js — صفحة الملف الشخصي للمنظم
+   📁 bazaars/profile.js — الملف الشخصي الشامل للمنصة
    ================================================================
-   - بدون URL param  → الملف الشخصي للمستخدم الحالي (أنا)
-   - ?organizer=UUID  → البروفايل العام لمنظم آخر
+   الوضعان:
+   • بدون URL param        → ملفي الشخصي (مسجّل دخوله)
+   • ?user=UUID            → بروفايل عام لأي مستخدم آخر
+   • ?organizer=UUID       → بروفايل عام (backward-compat)
+
+   ربط البيانات:
+   • profiles              → الاسم، الإيميل، الهاتف، المدينة، الدور
+   • organizer_profiles    → بيانات المنظّم، صورة الأفاتار
+   • organizer_reviews     → التقييمات
+   • organizer_requests    → حالة طلب التوثيق
+   • bazaars               → بازارات المستخدم
+   • listings              → إعلانات السوق + مزامنة الهاتف
+   • upgrade_requests      → حالة طلب صاحب المساحة
    ================================================================ */
 
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-const BAZAAR_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec';
 
 let sbClient    = null;
 let currentUser = null;
 
+/* حفظ البيانات المحملة (يستخدمها modal التعديل) */
+let myProfileData  = null;   // organizer_profiles row
+let myUserProfile  = null;   // profiles row
+let myMergedPhone  = null;   // هاتف مدمج من مصادر متعددة
+let myMergedCity   = null;   // مدينة مدمجة من مصادر متعددة
+
+/* ================================================================
+   🚀 بدء التشغيل
+   ================================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const { data: { session } } = await sbClient.auth.getSession();
     currentUser = session?.user || null;
   } catch (e) {
-    console.warn('Supabase init:', e.message);
+    console.warn('[profile] Supabase init:', e.message);
   }
 
-  const urlParams    = new URLSearchParams(window.location.search);
-  const organizerId  = urlParams.get('organizer');
+  const params  = new URLSearchParams(window.location.search);
+  const userId  = params.get('user') || params.get('organizer');
 
-  if (organizerId) {
-    // عرض بروفايل منظم آخر (عام)
-    await _loadPublicProfile(organizerId);
+  if (userId) {
+    await _loadPublicProfile(userId);
   } else {
-    // عرض ملفي الشخصي
     if (!currentUser) {
       _renderLoginWall();
     } else {
@@ -41,14 +56,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 /* ================================================================
-   🔐 حالة: غير مسجّل
+   🔐 جدار تسجيل الدخول
    ================================================================ */
 function _renderLoginWall() {
   document.getElementById('op-content').innerHTML = `
-    <div style="text-align:center;padding:80px 24px;max-width:480px;margin:0 auto">
+    <div style="text-align:center;padding:80px 24px;max-width:460px;margin:0 auto">
       <div style="font-size:52px;margin-bottom:16px">🔐</div>
       <h2 style="font-size:22px;font-weight:900;margin-bottom:10px">سجّل دخولك أولاً</h2>
-      <p style="font-size:14px;color:var(--ink3);margin-bottom:24px">
+      <p style="font-size:14px;color:var(--ink3);margin-bottom:24px;line-height:1.7">
         لازم يكون عندك حساب على مكاني Spot عشان تشوف ملفك الشخصي.
       </p>
       <a href="/?p=login" class="btn btn-primary" style="padding:12px 32px;display:inline-block">
@@ -59,263 +74,554 @@ function _renderLoginWall() {
 
 
 /* ================================================================
-   👤 ملفي الشخصي (أنا كمنظم)
+   👤 ملفي الشخصي — تحميل البيانات
    ================================================================ */
 async function _loadMyProfile() {
-  let profile     = null;   // organizer_profiles
-  let userProfile = null;   // profiles (بيانات شخصية)
-  let reviews     = [];
-  let reqStatus   = null;
+  let profile      = null;
+  let userProfile  = null;
+  let reviews      = [];
+  let reqStatus    = null;
+  let bazaars      = [];
+  let listings     = [];
+  let isSpaceOwner = false;
 
   try {
-    const [orgProfileRes, userProfileRes, reviewsRes, reqRes] = await Promise.all([
-      sbClient.from('organizer_profiles').select('*').eq('user_id', currentUser.id).single(),
-      sbClient.from('profiles').select('*').eq('id', currentUser.id).single(),
+    const [
+      orgProfileRes, userProfileRes, reviewsRes,
+      reqRes, bazaarsRes, listingsRes, upgradeRes
+    ] = await Promise.all([
+      sbClient.from('organizer_profiles').select('*')
+              .eq('user_id', currentUser.id).single(),
+      sbClient.from('profiles').select('*')
+              .eq('id', currentUser.id).single(),
       sbClient.from('organizer_reviews').select('*')
-              .eq('organizer_id', currentUser.id).order('created_at', { ascending: false }),
+              .eq('organizer_id', currentUser.id)
+              .order('created_at', { ascending: false }),
       sbClient.from('organizer_requests').select('status')
-              .eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).single(),
+              .eq('user_id', currentUser.id)
+              .order('created_at', { ascending: false }).limit(1).single(),
+      sbClient.from('bazaars').select('id,name,date_start,date_end,status')
+              .eq('organizer_id', currentUser.id),
+      sbClient.from('listings')
+              .select('id,title,category,price,cover_image,status,expires_at,created_at,phone,region')
+              .eq('user_id', currentUser.id)
+              .neq('status', 'deleted')
+              .order('created_at', { ascending: false })
+              .limit(6),
+      sbClient.from('upgrade_requests').select('status')
+              .eq('user_id', currentUser.id)
+              .order('created_at', { ascending: false }).limit(1).single(),
     ]);
 
     profile     = orgProfileRes.data  || null;
-    myProfileData  = profile;
     userProfile = userProfileRes.data || null;
-    myUserProfile  = userProfile;
     reviews     = reviewsRes.data     || [];
     reqStatus   = reqRes.data?.status || null;
+    bazaars     = bazaarsRes.data     || [];
+    listings    = listingsRes.data    || [];
+
+    /* ── تحقق من صاحب المساحة عبر upgrade_requests أو role ── */
+    const upgradeStatus = upgradeRes.data?.status || null;
+    isSpaceOwner = upgradeStatus === 'approved'
+                || userProfile?.role === 'owner';
+
   } catch (_) {}
 
-  _renderMyProfile(profile, userProfile, reviews, reqStatus);
-}
+  /* ── حفظ للاستخدام في modal التعديل ── */
+  myProfileData = profile;
+  myUserProfile = userProfile;
 
-function _renderMyProfile(profile, userProfile, reviews, reqStatus) {
+  /* ── مزامنة ذكية: الهاتف والمدينة من مصادر متعددة ── */
+  myMergedPhone = userProfile?.phone || null;
+  myMergedCity  = userProfile?.city  || null;
 
-  const content    = document.getElementById('op-content');
-  const isVerified = profile?.is_verified === true;
-  const displayName = profile?.full_name || userProfile?.full_name || currentUser.email || '?';
-  const initial    = displayName[0].toUpperCase();
-  const joinDate   = (userProfile?.created_at || profile?.joined_at)
-    ? new Date(userProfile?.created_at || profile?.joined_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
-    : new Date().toLocaleDateString('ar-EG', { year:'numeric', month:'long' });
-
-  const avatarUrl  = profile?.avatar_url || profile?.logo || profile?.image || '';
-  const avatarHtml = avatarUrl
-    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
-    : initial;
-
-  // شارة التوثيق
-  let badgeHtml = '';
-  if (isVerified) {
-    badgeHtml = `<span class="op-verified-badge">✓ منظم موثّق</span>`;
-  } else if (reqStatus === 'pending') {
-    badgeHtml = `<span class="op-pending-badge">⏳ طلبك قيد المراجعة</span>`;
-  } else {
-    badgeHtml = `<span class="op-unverified-badge">◌ غير موثّق بعد</span>`;
+  /* إذا الهاتف مش في profiles، جرّب listing */
+  if (!myMergedPhone && listings.length) {
+    const lWithPhone = listings.find(l => l.phone);
+    if (lWithPhone) myMergedPhone = lWithPhone.phone;
+  }
+  /* إذا المدينة مش في profiles، جرّب region من listing أو organizer_profiles */
+  if (!myMergedCity && listings.length) {
+    const lWithRegion = listings.find(l => l.region);
+    if (lWithRegion) myMergedCity = lWithRegion.region;
+  }
+  if (!myMergedCity && profile?.region) {
+    myMergedCity = profile.region;
   }
 
-  // متوسط التقييم
-  const avgRating = reviews.length
-    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
-    : null;
+  /* ── مزامنة تلقائية إلى profiles إن وجد بيانات ناقصة ── */
+  const syncPayload = {};
+  if (myMergedPhone && !userProfile?.phone) syncPayload.phone = myMergedPhone;
+  if (myMergedCity  && !userProfile?.city)  syncPayload.city  = myMergedCity;
+  if (Object.keys(syncPayload).length > 0) {
+    sbClient.from('profiles')
+            .upsert({ id: currentUser.id, ...syncPayload }, { onConflict: 'id' })
+            .then(() => {}).catch(() => {});
+    /* حدّث النسخة المحلية أيضاً */
+    myUserProfile = { ...(myUserProfile || {}), ...syncPayload };
+  }
 
-  content.innerHTML = `
-    <!-- بطاقة الهوية -->
-    <div class="op-identity-card">
-      <div class="op-avatar" style="position:relative;cursor:pointer" onclick="triggerAvatarUpload()" title="اضغط لتغيير الصورة الشخصية">
-        <div id="avatar-container-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${avatarHtml}</div>
-        <div class="avatar-edit-overlay">تعديل</div>
-      </div>
-      <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
-      <div class="op-identity-info">
-        <div class="op-name">
-          ${displayName}
-          ${badgeHtml}
-        </div>
-        <div class="op-meta">
-          ${profile?.region ? `<span>📍 ${profile.region}</span>` : ''}
-          <span>🗓 عضو منذ ${joinDate}</span>
-          ${avgRating ? `<span>⭐ ${avgRating}</span>` : ''}
-        </div>
-        ${profile?.whatsapp
-          ? `<a href="https://wa.me/${profile.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">واتساب 📲</a>`
-          : ''}
-        <div style="margin-top:12px">
-          <button class="btn" onclick="openEditModal()"
-                  style="padding:7px 18px;font-size:13px;border-radius:50px;
-                         background:var(--surface2);border:1.5px solid var(--border);
-                         font-family:Cairo;font-weight:700;cursor:pointer">
-            ✍️ تعديل البيانات
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================== البيانات الشخصية ======================== -->
-    <div class="op-section-card">
-      <div class="op-section-title">👤 بياناتك الشخصية</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">الاسم الكامل</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark)">${displayName}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">البريد الإلكتروني</div>
-          <div style="font-size:13px;font-weight:600;color:var(--ink);direction:ltr;text-align:right">${currentUser.email || '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">رقم الموبايل</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark);direction:ltr;text-align:right">${userProfile?.phone || '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">المدينة</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark)">${userProfile?.city || '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">تاريخ الانضمام</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark)">${joinDate}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">كلمة المرور</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark);letter-spacing:2px">••••••••</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================== بيانات المنظّم ======================== -->
-    ${(profile?.whatsapp || profile?.region || isVerified || reqStatus === 'pending') ? `
-    <div class="op-section-card">
-      <div class="op-section-title">🎪 بيانات المنظّم</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">حالة التوثيق</div>
-          <div>${badgeHtml}</div>
-        </div>
-        ${profile?.whatsapp ? `
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">الواتساب</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark);direction:ltr;text-align:right">${profile.whatsapp}</div>
-        </div>` : ''}
-        ${profile?.region ? `
-        <div>
-          <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:4px">المنطقة</div>
-          <div style="font-size:14px;font-weight:700;color:var(--dark)">${profile.region}</div>
-        </div>` : ''}
-      </div>
-    </div>` : ''}
-
-    <!-- ======================== التقييمات ======================== -->
-    ${reviews.length ? `
-    <div class="op-section-card">
-      <div class="op-section-title">⭐ التقييمات (${reviews.length})</div>
-      ${reviews.map(r => {
-        const stars = '⭐'.repeat(Math.round(r.rating || 0));
-        const rd    = r.created_at
-          ? new Date(r.created_at).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
-          : '';
-        return `
-          <div style="padding:14px 0;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span>${stars || '—'}</span>
-              <span style="font-size:11px;color:var(--ink3)">${rd}</span>
-            </div>
-            ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${r.comment}</p>` : ''}
-          </div>`;
-      }).join('')}
-    </div>` : ''}`;
+  _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner);
 }
 
 
 /* ================================================================
-   🌐 بروفايل عام لمنظم آخر
+   🎨 عرض ملفي الشخصي
    ================================================================ */
-async function _loadPublicProfile(organizerId) {
-  let organizer  = null;
-  let orgBazaars = [];
-  let reviews    = [];
-
-  try {
-    const [profileRes, bazaarsRes, reviewsRes] = await Promise.all([
-      sbClient.from('organizer_profiles').select('*').eq('user_id', organizerId).single(),
-      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots')
-              .eq('organizer_id', organizerId).order('date_start', { ascending: false }),
-      sbClient.from('organizer_reviews').select('*')
-              .eq('organizer_id', organizerId).order('created_at', { ascending: false }),
-    ]);
-    organizer  = profileRes.data  || null;
-    orgBazaars = bazaarsRes.data  || [];
-    reviews    = reviewsRes.data  || [];
-  } catch (e) {
-    console.warn('profile load error:', e.message);
-  }
-
-  _renderPublicProfile(organizer, orgBazaars, reviews);
-}
-
-function _renderPublicProfile(organizer, bazaars, reviews) {
-
-  const avatarUrl  = organizer?.avatar_url || organizer?.logo || organizer?.image || '';
-  const avatarHtml = avatarUrl
-    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='${initial}'">`
-    : initial;
-
+function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner) {
   const content = document.getElementById('op-content');
 
-  if (!organizer) {
+  const isVerified  = profile?.is_verified === true;
+  const displayName = profile?.full_name || userProfile?.full_name
+                   || currentUser.email?.split('@')[0] || '?';
+  const initial     = displayName[0]?.toUpperCase() || '؟';
+  const joinDate    = (userProfile?.created_at || profile?.joined_at)
+    ? new Date(userProfile?.created_at || profile?.joined_at)
+        .toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+    : '—';
+
+  const avatarUrl  = profile?.avatar_url || profile?.logo || profile?.image || '';
+  const avatarHtml = avatarUrl
+    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
+    : `<span>${initial}</span>`;
+
+  /* ── إحصائيات ── */
+  const today          = new Date().toISOString().split('T')[0];
+  const totalBaz       = bazaars.length;
+  const endedBaz       = bazaars.filter(b => b.date_end && b.date_end < today).length;
+  const now            = new Date().toISOString();
+  const activeListings = listings.filter(l =>
+    l.status !== 'sold' && l.status !== 'expired' &&
+    !(l.expires_at && l.expires_at < now)
+  ).length;
+  const avgRating = reviews.length
+    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
+    : null;
+
+  /* ── أوسمة ── */
+  const { primary: primaryBadges, secondary: secBadges } = _computeBadges({
+    isVerified, isSpaceOwner,
+    hasBazaars: totalBaz > 0,
+    listings, avgRating: avgRating ? parseFloat(avgRating) : 0,
+    reviewsCount: reviews.length,
+  });
+
+  /* ── شارة التوثيق (صغيرة في الاسم) ── */
+  let nameBadge = '';
+  if (isVerified)               nameBadge = `<span class="op-verified-badge">✓ منظم موثّق</span>`;
+  else if (reqStatus==='pending') nameBadge = `<span class="op-pending-badge">⏳ قيد المراجعة</span>`;
+
+  /* ── هل نعرض CTA للمنظم وصاحب المساحة؟ ── */
+  const showOrgCta   = !isVerified && reqStatus !== 'pending' && !primaryBadges.find(b=>b.id==='organizer');
+  const showSpaceCta = !isSpaceOwner;
+
+  content.innerHTML = `
+
+  <!-- ═══════ HERO ═══════ -->
+  <div class="op-hero">
+    <div class="op-hero-top">
+
+      <!-- أفاتار -->
+      <div class="op-avatar-wrap">
+        <div class="op-avatar" onclick="triggerAvatarUpload()" title="اضغط لتغيير الصورة">
+          <div id="avatar-container-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${avatarHtml}</div>
+        </div>
+        <div class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="تغيير الصورة">✏️</div>
+      </div>
+
+      <!-- معلومات -->
+      <div class="op-hero-info">
+        <div class="op-name">
+          ${displayName}
+          ${nameBadge}
+        </div>
+        <div class="op-hero-meta">
+          <span>🗓 عضو منذ ${joinDate}</span>
+          ${myMergedCity  ? `<span>📍 ${myMergedCity}</span>` : ''}
+          ${currentUser.email ? `<span style="direction:ltr;unicode-bidi:embed">✉️ ${currentUser.email}</span>` : ''}
+        </div>
+        <div class="op-hero-actions">
+          <button class="op-qn-btn primary" onclick="openEditModal()">✍️ تعديل البيانات</button>
+          ${profile?.whatsapp
+            ? `<a href="https://wa.me/${profile.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">واتساب 📲</a>`
+            : ''}
+        </div>
+
+        <!-- الأوسمة الرئيسية -->
+        ${primaryBadges.length ? `
+        <div class="op-primary-badges">
+          ${primaryBadges.map(b => `
+            <div class="op-badge-primary ${b.id}">
+              <span class="op-badge-icon">${b.emoji}</span>
+              <div>
+                <div class="op-badge-label">${b.label}</div>
+                <div class="op-badge-desc">${b.desc}</div>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+
+        <!-- الأوسمة الثانوية -->
+        ${secBadges.length ? `
+        <div class="op-sec-badges">
+          ${secBadges.map(b => `<span class="op-sec-badge ${b.tier==='gold'?'gold':''}">${b.emoji} ${b.label}</span>`).join('')}
+        </div>` : ''}
+
+        <!-- CTA cards للتقديم -->
+        ${(showOrgCta || showSpaceCta) ? `
+        <div class="op-cta-wrap">
+
+          ${showOrgCta ? `
+          <a href="/?p=dashboard" class="op-cta-card">
+            <span class="op-cta-emoji">🎪</span>
+            <div class="op-cta-body">
+              <div class="op-cta-title">أصبح منظم بازارات</div>
+              <div class="op-cta-desc">نظّم بازاراتك واستضف عارضين — انضم من لوحة التحكم</div>
+            </div>
+            <span class="op-cta-arrow">←</span>
+          </a>` : ''}
+
+          ${showSpaceCta ? `
+          <a href="/?p=owner" class="op-cta-card blue">
+            <span class="op-cta-emoji">🏪</span>
+            <div class="op-cta-body">
+              <div class="op-cta-title">أصبح صاحب مساحة</div>
+              <div class="op-cta-desc">اعرض مساحتك للإيجار وابدأ في استقبال الحجوزات</div>
+            </div>
+            <span class="op-cta-arrow" style="color:#3b82f6">←</span>
+          </a>` : ''}
+
+        </div>` : ''}
+      </div>
+    </div>
+
+    <!-- روابط سريعة -->
+    <div class="op-quick-nav">
+      <a class="op-qn-btn" href="/bazaars/">🎪 البازارات</a>
+      <a class="op-qn-btn" href="/market/">🛍️ السوق</a>
+      <a class="op-qn-btn" href="/?p=dashboard">📊 لوحة التحكم</a>
+    </div>
+  </div>
+
+  <!-- ═══════ الإحصائيات ═══════ -->
+  <div class="op-stats-grid">
+    <div class="op-stat-card">
+      <div class="op-stat-num">${totalBaz}</div>
+      <div class="op-stat-lbl">بازار نظّمته</div>
+    </div>
+    <div class="op-stat-card">
+      <div class="op-stat-num">${endedBaz}</div>
+      <div class="op-stat-lbl">بازار منتهي</div>
+    </div>
+    <div class="op-stat-card">
+      <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
+      <div class="op-stat-lbl">متوسط التقييم</div>
+      ${reviews.length > 0 ? `<div class="op-stat-note">بناءً على ${reviews.length} تقييم</div>` : ''}
+    </div>
+    <div class="op-stat-card">
+      <div class="op-stat-num">${activeListings}</div>
+      <div class="op-stat-lbl">إعلان نشط في السوق</div>
+    </div>
+  </div>
+
+  <!-- ═══════ عمودان: البيانات الشخصية + الإعلانات ═══════ -->
+  <div class="op-two-col">
+
+    <!-- البيانات الشخصية -->
+    <div class="op-section-card">
+      <div class="op-section-title">
+        <span>👤 بياناتك الشخصية</span>
+        <a href="#" onclick="openEditModal();return false">تعديل</a>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">الاسم الكامل</div>
+        <div class="op-data-val">${displayName}</div>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">البريد الإلكتروني</div>
+        <div class="op-data-val" style="direction:ltr;text-align:right;font-size:12px">${currentUser.email || '—'}</div>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">رقم الموبايل</div>
+        <div class="op-data-val" style="direction:ltr;text-align:right">
+          ${myMergedPhone || '—'}
+          ${(myMergedPhone && !userProfile?.phone) ? `<div class="op-data-synced">✦ من إعلاناتك</div>` : ''}
+        </div>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">المدينة</div>
+        <div class="op-data-val">
+          ${myMergedCity || '—'}
+          ${(myMergedCity && !userProfile?.city) ? `<div class="op-data-synced">✦ من إعلاناتك</div>` : ''}
+        </div>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">تاريخ الانضمام</div>
+        <div class="op-data-val">${joinDate}</div>
+      </div>
+      <div class="op-data-row">
+        <div class="op-data-lbl">كلمة المرور</div>
+        <div class="op-data-val" style="letter-spacing:3px">••••••••</div>
+      </div>
+
+      ${(profile?.whatsapp || profile?.region || isVerified || reqStatus || isSpaceOwner) ? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1.5px solid var(--border)">
+        <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">🎪 بيانات المنظّم</div>
+        <div class="op-data-row">
+          <div class="op-data-lbl">التوثيق كمنظم</div>
+          <div class="op-data-val">${
+            isVerified
+              ? `<span class="op-verified-badge" style="font-size:10px;padding:3px 8px">✓ موثّق</span>`
+              : reqStatus==='pending'
+                ? `<span class="op-pending-badge" style="font-size:10px;padding:3px 8px">⏳ قيد المراجعة</span>`
+                : `<span class="op-unverified-badge" style="font-size:10px;padding:3px 8px">◌ غير موثّق</span>`
+          }</div>
+        </div>
+        ${profile?.whatsapp ? `
+        <div class="op-data-row">
+          <div class="op-data-lbl">واتساب</div>
+          <div class="op-data-val" style="direction:ltr;text-align:right">${profile.whatsapp}</div>
+        </div>` : ''}
+        ${profile?.region ? `
+        <div class="op-data-row">
+          <div class="op-data-lbl">المنطقة</div>
+          <div class="op-data-val">${profile.region}</div>
+        </div>` : ''}
+        ${isSpaceOwner ? `
+        <div class="op-data-row">
+          <div class="op-data-lbl">صاحب مساحة</div>
+          <div class="op-data-val"><span class="op-badge-primary space-owner" style="padding:4px 10px;border-radius:10px;display:inline-flex;gap:6px;align-items:center"><span>🏪</span> موثّق</span></div>
+        </div>` : ''}
+      </div>` : ''}
+    </div>
+
+    <!-- إعلاناتي -->
+    <div class="op-section-card">
+      <div class="op-section-title">
+        <span>🛍️ إعلاناتي في السوق</span>
+        <a href="/market/" target="_blank">الكل ←</a>
+      </div>
+      ${_renderListingsGrid(listings)}
+    </div>
+
+  </div>
+
+  <!-- ═══════ التقييمات ═══════ -->
+  ${reviews.length ? `
+  <div class="op-section-card" style="margin-top:16px">
+    <div class="op-section-title">
+      <span>⭐ تقييماتي كمنظم (${reviews.length})</span>
+    </div>
+    ${reviews.map(r => {
+      const stars = '⭐'.repeat(Math.min(5, Math.round(r.rating || 0)));
+      const rd = r.created_at
+        ? new Date(r.created_at).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
+        : '';
+      return `
+        <div class="op-review-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:14px">${stars || '—'}</span>
+            <span style="font-size:11px;color:var(--ink3)">${rd}</span>
+          </div>
+          ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${r.comment}</p>` : ''}
+        </div>`;
+    }).join('')}
+  </div>` : ''}`;
+}
+
+
+/* ================================================================
+   🎖️ حساب الأوسمة (Badges)
+   ================================================================ */
+function _computeBadges({ isVerified, isSpaceOwner, hasBazaars, listings, avgRating, reviewsCount }) {
+  const primary   = [];
+  const secondary = [];
+
+  /* الأوسمة الرئيسية — بارزة */
+  if (isVerified || hasBazaars) {
+    primary.push({
+      id: 'organizer', emoji: '🎪',
+      label: 'منظم بازارات',
+      desc:  isVerified ? 'منظم موثّق على مكاني Spot' : 'نظّم بازاراً على المنصة',
+    });
+  }
+  if (isSpaceOwner) {
+    primary.push({
+      id: 'space-owner', emoji: '🏪',
+      label: 'صاحب مساحة',
+      desc:  'يعرض مساحاته للإيجار على المنصة',
+    });
+  }
+
+  /* الأوسمة الثانوية */
+  const activeCnt = listings.filter(l => l.status !== 'sold' && l.status !== 'expired').length;
+  if (activeCnt >= 2) {
+    secondary.push({ id: 'active-seller', emoji: '🛍️', label: 'بائع نشط', tier: 'silver' });
+  }
+  if (avgRating >= 4.5 && reviewsCount >= 3) {
+    secondary.push({ id: 'top-rated', emoji: '⭐', label: 'تقييم مميز', tier: 'gold' });
+  }
+  if (listings.length >= 5) {
+    secondary.push({ id: 'prolific', emoji: '📦', label: 'بائع متميز', tier: 'gold' });
+  }
+
+  return { primary, secondary };
+}
+
+
+/* ================================================================
+   🛍️ عرض شبكة الإعلانات
+   ================================================================ */
+function _renderListingsGrid(listings) {
+  if (!listings || !listings.length) {
+    return `<div class="op-empty">
+      <div style="font-size:26px;margin-bottom:8px">🛍️</div>
+      <div>لا توجد إعلانات بعد</div>
+      <a href="/market/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">أضف إعلاناً الآن ←</a>
+    </div>`;
+  }
+
+  const now = new Date().toISOString();
+  return `<div class="op-listing-grid">` +
+    listings.map(l => {
+      const isExpired = l.expires_at && l.expires_at < now;
+      const isSold    = l.status === 'sold';
+      const isPending = l.status === 'pending';
+      let sc = '', sl = 'نشط';
+      if (isSold)    { sc = 'sold';    sl = 'مُباع'; }
+      if (isExpired) { sc = 'expired'; sl = 'منتهي'; }
+      if (isPending) { sc = 'pending'; sl = 'قيد المراجعة'; }
+
+      const imgHtml = l.cover_image
+        ? `<img src="${_toDirectImgUrl(l.cover_image)}" alt="${l.title}" onerror="this.parentElement.innerHTML='🛍️'">`
+        : `<span>🛍️</span>`;
+
+      return `
+        <div class="op-listing-card" onclick="window.open('/market/','_blank')" title="${l.title}">
+          <div class="op-listing-img">${imgHtml}</div>
+          <div class="op-listing-info">
+            <div class="op-listing-title">${l.title || 'إعلان'}</div>
+            <div class="op-listing-meta">
+              <span class="op-listing-price">${l.price ? Number(l.price).toLocaleString('ar-EG') + ' ج.م' : '—'}</span>
+              <span class="op-listing-status ${sc}">${sl}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('') +
+    `</div>`;
+}
+
+
+/* ================================================================
+   🌐 بروفايل عام — تحميل البيانات
+   ================================================================ */
+async function _loadPublicProfile(userId) {
+  let publicUser = null;   // profiles
+  let organizer  = null;   // organizer_profiles
+  let reviews    = [];
+  let bazaars    = [];
+
+  try {
+    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes] = await Promise.all([
+      sbClient.from('profiles').select('full_name,created_at,role').eq('id', userId).single(),
+      sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
+      sbClient.from('organizer_reviews').select('*')
+              .eq('organizer_id', userId).order('created_at', { ascending: false }),
+      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots')
+              .eq('organizer_id', userId).order('date_start', { ascending: false }),
+    ]);
+
+    publicUser = profileRes.data  || null;
+    organizer  = orgProfileRes.data || null;
+    reviews    = reviewsRes.data   || [];
+    bazaars    = bazaarsRes.data   || [];
+  } catch (e) {
+    console.warn('[profile] public load error:', e.message);
+  }
+
+  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars);
+}
+
+function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars) {
+  const content = document.getElementById('op-content');
+
+  /* اسم المستخدم — من profiles أو organizer_profiles */
+  const displayName = organizer?.full_name || publicUser?.full_name || 'مستخدم مجهول';
+
+  if (!publicUser && !organizer) {
     content.innerHTML = `
       <div style="text-align:center;padding:80px 24px">
         <div style="font-size:40px;margin-bottom:12px">🔍</div>
-        <div style="font-size:15px;color:var(--ink3)">لم يتم العثور على هذا البروفايل</div>
-        <a href="/bazaars/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">← البازارات</a>
+        <div style="font-size:15px;color:var(--ink3)">لم يتم العثور على هذا الملف الشخصي</div>
+        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">← الرئيسية</a>
       </div>`;
     return;
   }
 
-  const initial   = (organizer.full_name || '?')[0];
-  const joinDate  = organizer.joined_at
-    ? new Date(organizer.joined_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+  const initial    = displayName[0]?.toUpperCase() || '؟';
+  const avatarUrl  = organizer?.avatar_url || organizer?.logo || organizer?.image || '';
+  const avatarHtml = avatarUrl
+    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
+    : `<span>${initial}</span>`;
+
+  /* تاريخ الانضمام */
+  const joinDate = (publicUser?.created_at || organizer?.joined_at)
+    ? new Date(publicUser?.created_at || organizer?.joined_at)
+        .toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
     : '—';
-  const avgRating = reviews.length
-    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
-    : '—';
-  const pastCount   = bazaars.filter(b => b.date_start && b.date_start < new Date().toISOString().split('T')[0]).length;
+
+  /* إحصائيات */
+  const today        = new Date().toISOString().split('T')[0];
+  const pastCount    = bazaars.filter(b => b.date_end && b.date_end < today).length;
   const totalVendors = bazaars.reduce((s,b) => s + (b.total_slots||0), 0);
+  const avgRating    = reviews.length
+    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
+    : null;
 
-  const badgeHtml = organizer.is_verified
-    ? `<span class="op-verified-badge">✓ منظم موثّق</span>`
-    : `<span class="op-unverified-badge">◌ غير موثّق</span>`;
+  /* أوسمة عامة */
+  const isVerified    = organizer?.is_verified === true;
+  const isSpaceOwner  = publicUser?.role === 'owner';
+  const { primary: primaryBadges, secondary: secBadges } = _computeBadges({
+    isVerified, isSpaceOwner,
+    hasBazaars: bazaars.length > 0,
+    listings: [], avgRating: avgRating ? parseFloat(avgRating) : 0,
+    reviewsCount: reviews.length,
+  });
 
+  /* شارة الاسم */
+  const nameBadge = isVerified ? `<span class="op-verified-badge">✓ منظم موثّق</span>` : '';
+
+  /* قائمة البازارات */
   const bazaarsHtml = bazaars.length
     ? bazaars.map(b => {
         const ds = b.date_start
-          ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+          ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
           : '—';
         const imgHtml = b.image
           ? `<img src="${_toDirectImgUrl(b.image)}" alt="${b.name}"
-                  style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0"
-                  onerror="this.style.display='none'">`
-          : `<div style="width:48px;height:48px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px">🎪</div>`;
+               style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
+               onerror="this.style.display='none'">`
+          : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎪</div>`;
         return `
           <div class="op-bazaar-item" onclick="window.location.href='/bazaars/?bazaar=${b.id}'">
             ${imgHtml}
-            <div style="flex:1;min-width:0;margin:0 12px">
-              <div style="font-weight:700;font-size:14px">${b.name}</div>
-              <div style="font-size:12px;color:var(--ink3)">📅 ${ds} · 📍 ${b.location||'—'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+              <div style="font-size:11px;color:var(--ink3)">📅 ${ds} · 📍 ${b.location||'—'}</div>
             </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="16" height="16">
-              <path d="M15 18l-6-6 6-6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
           </div>`;
       }).join('')
     : `<div class="op-empty">لا توجد بازارات مسجّلة</div>`;
 
   const reviewsHtml = reviews.length
     ? reviews.map(r => {
-        const stars = '⭐'.repeat(Math.round(r.rating||0));
+        const stars = '⭐'.repeat(Math.min(5, Math.round(r.rating||0)));
         const rd = r.created_at
           ? new Date(r.created_at).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
           : '';
         return `
-          <div style="padding:14px 0;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="op-review-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <span>${stars || '—'}</span>
               <span style="font-size:11px;color:var(--ink3)">${rd}</span>
             </div>
@@ -325,48 +631,84 @@ function _renderPublicProfile(organizer, bazaars, reviews) {
     : `<div class="op-empty">لا توجد تقييمات بعد</div>`;
 
   content.innerHTML = `
-    <div class="op-identity-card">
-      <div class="op-avatar">${avatarHtml}</div>
-      <div class="op-identity-info">
-        <div class="op-name">${organizer.full_name} ${badgeHtml}</div>
-        <div class="op-meta">
-          ${organizer.region ? `<span>📍 ${organizer.region}</span>` : ''}
+
+  <!-- ═══════ HERO ═══════ -->
+  <div class="op-hero">
+    <div class="op-hero-top">
+      <div class="op-avatar-wrap">
+        <div class="op-avatar">${avatarHtml}</div>
+      </div>
+      <div class="op-hero-info">
+        <div class="op-name">${displayName} ${nameBadge}</div>
+        <div class="op-hero-meta">
           <span>🗓 عضو منذ ${joinDate}</span>
+          ${organizer?.region ? `<span>📍 ${organizer.region}</span>` : ''}
         </div>
-        ${organizer.whatsapp
-          ? `<a href="https://wa.me/${organizer.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">واتساب 📲</a>`
-          : ''}
+        <div class="op-hero-actions">
+          ${organizer?.whatsapp
+            ? `<a href="https://wa.me/${organizer.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">تواصل واتساب 📲</a>`
+            : ''}
+        </div>
+
+        <!-- الأوسمة الرئيسية -->
+        ${primaryBadges.length ? `
+        <div class="op-primary-badges">
+          ${primaryBadges.map(b => `
+            <div class="op-badge-primary ${b.id}">
+              <span class="op-badge-icon">${b.emoji}</span>
+              <div>
+                <div class="op-badge-label">${b.label}</div>
+                <div class="op-badge-desc">${b.desc}</div>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+
+        ${secBadges.length ? `
+        <div class="op-sec-badges">
+          ${secBadges.map(b => `<span class="op-sec-badge ${b.tier==='gold'?'gold':''}">${b.emoji} ${b.label}</span>`).join('')}
+        </div>` : ''}
       </div>
     </div>
+  </div>
 
-    <div class="op-stats-grid">
-      <div class="op-stat-card">
-        <div class="op-stat-num">${pastCount}</div>
-        <div class="op-stat-lbl">بازار سابق</div>
-      </div>
-      <div class="op-stat-card">
-        <div class="op-stat-num">${avgRating === '—' ? '—' : avgRating + ' ⭐'}</div>
-        <div class="op-stat-lbl">متوسط التقييم</div>
-      </div>
-      <div class="op-stat-card">
-        <div class="op-stat-num">${totalVendors}</div>
-        <div class="op-stat-lbl">عارض خدمهم</div>
-      </div>
+  <!-- ═══════ الإحصائيات (عامة فقط) ═══════ -->
+  <div class="op-stats-grid">
+    <div class="op-stat-card">
+      <div class="op-stat-num">${bazaars.length}</div>
+      <div class="op-stat-lbl">إجمالي البازارات</div>
     </div>
-
-    <div class="op-section-card">
-      <div class="op-section-title">🎪 البازارات (${bazaars.length})</div>
-      ${bazaarsHtml}
+    <div class="op-stat-card">
+      <div class="op-stat-num">${pastCount}</div>
+      <div class="op-stat-lbl">بازار منتهي</div>
     </div>
+    <div class="op-stat-card">
+      <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
+      <div class="op-stat-lbl">متوسط التقييم</div>
+    </div>
+    <div class="op-stat-card">
+      <div class="op-stat-num">${totalVendors}</div>
+      <div class="op-stat-lbl">عارض إجمالي</div>
+    </div>
+  </div>
 
-    <div class="op-section-card">
-      <div class="op-section-title">⭐ التقييمات (${reviews.length})</div>
-      ${reviewsHtml}
-    </div>`;
+  <!-- ═══════ بازاراته ═══════ -->
+  ${bazaars.length ? `
+  <div class="op-section-card" style="margin-bottom:16px">
+    <div class="op-section-title"><span>🎪 البازارات (${bazaars.length})</span></div>
+    ${bazaarsHtml}
+  </div>` : ''}
+
+  <!-- ═══════ تقييماته ═══════ -->
+  <div class="op-section-card">
+    <div class="op-section-title"><span>⭐ التقييمات (${reviews.length})</span></div>
+    ${reviewsHtml}
+  </div>`;
 }
 
 
-/* ── دالة مساعدة: تحويل رابط Drive ── */
+/* ================================================================
+   ── دوال مساعدة
+   ================================================================ */
 function _toDirectImgUrl(url) {
   if (!url || typeof url !== 'string') return '';
   url = url.trim();
@@ -379,32 +721,26 @@ function _toDirectImgUrl(url) {
 
 
 /* ================================================================
-   ✍️ دوال التعديل والصورة الشخصية (إضافات مكاني Spot)
+   ✍️ نافذة التعديل
    ================================================================ */
-
 function openEditModal() {
   const modal = document.getElementById('edit-profile-modal');
   if (!modal) return;
 
-  // البيانات الشخصية (profiles table)
-  const nameVal = myProfileData?.full_name || myUserProfile?.full_name || '';
-  document.getElementById('edit-name').value      = nameVal;
-  document.getElementById('edit-phone').value     = myUserProfile?.phone    || '';
+  document.getElementById('edit-name').value     = myProfileData?.full_name || myUserProfile?.full_name || '';
+  document.getElementById('edit-phone').value    = myMergedPhone || '';
+  document.getElementById('edit-whatsapp').value = myProfileData?.whatsapp || '';
+  document.getElementById('edit-region').value   = myProfileData?.region   || '';
+
   const cityEl = document.getElementById('edit-city');
   if (cityEl) {
-    const cityVal = myUserProfile?.city || '';
-    // حاول تحديد الـ option الصحيح
+    const cityVal = myMergedCity || '';
     const opt = [...cityEl.options].find(o => o.value === cityVal || o.text === cityVal);
     cityEl.value = opt ? opt.value : '';
   }
 
-  // بيانات المنظّم (organizer_profiles table)
-  document.getElementById('edit-whatsapp').value  = myProfileData?.whatsapp || '';
-  document.getElementById('edit-region').value    = myProfileData?.region   || '';
-
-  // كلمة المرور — دائماً فارغة عند الفتح
-  const pwdEl   = document.getElementById('edit-password');
-  const cfmEl   = document.getElementById('edit-password-confirm');
+  const pwdEl = document.getElementById('edit-password');
+  const cfmEl = document.getElementById('edit-password-confirm');
   if (pwdEl) pwdEl.value = '';
   if (cfmEl) cfmEl.value = '';
 
@@ -418,15 +754,15 @@ function closeEditModal() {
 }
 
 async function saveProfileDetails() {
-  const name     = document.getElementById('edit-name').value.trim();
-  const phone    = document.getElementById('edit-phone')?.value.trim() || '';
-  const city     = document.getElementById('edit-city')?.value         || '';
-  const whatsapp = document.getElementById('edit-whatsapp').value.trim();
-  const region   = document.getElementById('edit-region').value.trim();
-  const newPwd   = document.getElementById('edit-password')?.value      || '';
-  const cfmPwd   = document.getElementById('edit-password-confirm')?.value || '';
-  const errorEl  = document.getElementById('edit-error');
-  const saveBtn  = document.getElementById('edit-save-btn');
+  const name      = document.getElementById('edit-name').value.trim();
+  const phone     = document.getElementById('edit-phone')?.value.trim()     || '';
+  const city      = document.getElementById('edit-city')?.value             || '';
+  const whatsapp  = document.getElementById('edit-whatsapp').value.trim();
+  const region    = document.getElementById('edit-region').value.trim();
+  const newPwd    = document.getElementById('edit-password')?.value         || '';
+  const cfmPwd    = document.getElementById('edit-password-confirm')?.value || '';
+  const errorEl   = document.getElementById('edit-error');
+  const saveBtn   = document.getElementById('edit-save-btn');
 
   const showErr = (msg) => {
     if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
@@ -442,28 +778,26 @@ async function saveProfileDetails() {
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ جاري الحفظ...'; }
 
   try {
-    // 1. حفظ البيانات الشخصية في جدول profiles
-    const profilesPayload = { id: currentUser.id, full_name: name, phone: phone || null, city: city || null };
+    /* 1. حفظ في profiles (المصدر الرئيسي) */
     const { error: profilesErr } = await sbClient
       .from('profiles')
-      .upsert(profilesPayload, { onConflict: 'id' });
+      .upsert(
+        { id: currentUser.id, full_name: name, phone: phone||null, city: city||null },
+        { onConflict: 'id' }
+      );
     if (profilesErr) throw new Error('خطأ في حفظ البيانات الشخصية: ' + profilesErr.message);
 
-    // 2. حفظ بيانات المنظّم في جدول organizer_profiles
+    /* 2. حفظ/تحديث organizer_profiles (مزامنة الاسم دائماً) */
     const orgPayload = { user_id: currentUser.id, full_name: name };
-    if (myProfileData) {
-      if ('whatsapp' in myProfileData || whatsapp) orgPayload.whatsapp = whatsapp || null;
-      if ('region'   in myProfileData || region)   orgPayload.region   = region   || null;
-    } else {
-      if (whatsapp) orgPayload.whatsapp = whatsapp;
-      if (region)   orgPayload.region   = region;
-    }
-    const { error: orgErr } = await sbClient
-      .from('organizer_profiles')
-      .upsert(orgPayload);
+    if (whatsapp) orgPayload.whatsapp = whatsapp;
+    else if (myProfileData && 'whatsapp' in myProfileData) orgPayload.whatsapp = null;
+    if (region)   orgPayload.region = region;
+    else if (myProfileData && 'region' in myProfileData)   orgPayload.region = null;
+
+    const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload);
     if (orgErr) throw new Error('خطأ في حفظ بيانات المنظّم: ' + orgErr.message);
 
-    // 3. تغيير كلمة المرور إن وُجدت
+    /* 3. تغيير كلمة المرور إن وُجدت */
     if (newPwd) {
       const { error: pwdErr } = await sbClient.auth.updateUser({ password: newPwd });
       if (pwdErr) throw new Error('تم حفظ البيانات لكن فشل تغيير كلمة المرور: ' + pwdErr.message);
@@ -478,7 +812,12 @@ async function saveProfileDetails() {
   }
 }
 
+
+/* ================================================================
+   📸 رفع الصورة الشخصية
+   ================================================================ */
 function triggerAvatarUpload() {
+  if (!currentUser) return;
   const fileInput = document.getElementById('avatar-file-input');
   if (fileInput) fileInput.click();
 }
@@ -486,48 +825,35 @@ function triggerAvatarUpload() {
 async function uploadAvatarImage(inputEl) {
   const file = inputEl?.files?.[0];
   if (!file) return;
-  
-  const innerContainer = document.getElementById('avatar-container-inner');
-  if (innerContainer) {
-    innerContainer.innerHTML = `<span style="font-size:12px;color:#fff;animation:spin 1s linear infinite">⏳</span>`;
-  }
-  
+
+  const inner = document.getElementById('avatar-container-inner');
+  if (inner) inner.innerHTML = `<span style="font-size:12px;animation:spin 1s linear infinite">⏳</span>`;
+
   try {
-    const ext = file.name.split('.').pop() || 'jpg';
+    const ext  = file.name.split('.').pop() || 'jpg';
     const path = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
-    
-    // الرفع لـ Supabase docs storage
+
     const { error: uploadErr } = await sbClient.storage
       .from('organizer-docs')
       .upload(path, file, { upsert: true, contentType: file.type });
-      
     if (uploadErr) throw new Error(uploadErr.message);
-    
+
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/organizer-docs/${path}`;
-    
+
     const updateData = {
-      user_id: currentUser.id,
-      full_name: myProfileData?.full_name || currentUser.email.split('@')[0],
+      user_id:    currentUser.id,
+      full_name:  myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
       avatar_url: publicUrl,
-      logo: publicUrl,
-      image: publicUrl
     };
-    
-    if (myProfileData) {
-      if (!('avatar_url' in myProfileData)) delete updateData.avatar_url;
-      if (!('logo' in myProfileData)) delete updateData.logo;
-      if (!('image' in myProfileData)) delete updateData.image;
-    }
-    
-    const { error: dbErr } = await sbClient
-      .from('organizer_profiles')
-      .upsert(updateData);
-      
+    if (myProfileData && 'logo'   in myProfileData) updateData.logo  = publicUrl;
+    if (myProfileData && 'image'  in myProfileData) updateData.image = publicUrl;
+
+    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData);
     if (dbErr) throw new Error(dbErr.message);
-    
+
     await _loadMyProfile();
   } catch (err) {
-    alert('تعذر رفع الصورة الشخصية: ' + err.message);
+    alert('تعذر رفع الصورة: ' + err.message);
     await _loadMyProfile();
   }
 }
