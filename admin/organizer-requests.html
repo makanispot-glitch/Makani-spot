@@ -519,7 +519,7 @@ body {
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
-const ADMIN_PASS  = 'makani2025admin';
+const ADMIN_HASH  = '7946ba5ddac6a2408e731da8f10427a40c739f4b49fac631db84741c7584e861';
 const SB_URL      = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
@@ -533,9 +533,15 @@ let currentFilter = 'all';
 /* ══════════════════════════════════════
    AUTH
 ══════════════════════════════════════ */
-function tryLogin() {
+async function hashText(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function tryLogin() {
   const pw = document.getElementById('pw-input').value;
-  if (pw === ADMIN_PASS) {
+  const hashed = await hashText(pw);
+  if (hashed === ADMIN_HASH) {
     sessionStorage.setItem('admin_auth', '1');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
@@ -602,8 +608,8 @@ async function sbPatchWhere(table, column, value, data) {
   return res.json();
 }
 
-async function sbUpsert(table, data) {
-  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+async function sbUpsert(table, conflictCol, data) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${conflictCol}`, {
     method: 'POST',
     headers: {
       'apikey': SB_KEY,
@@ -872,7 +878,7 @@ async function approveRequest(reqId, userId) {
     await sbPatch('organizer_requests', reqId, { status: 'approved' });
 
     // 2. Upsert organizer_profiles to set is_verified = true
-    await sbUpsert('organizer_profiles', { user_id: userId, is_verified: true });
+    await sbUpsert('organizer_profiles', 'user_id', { user_id: userId, is_verified: true });
 
     // Update local data
     const req = allRequests.find(r => r.id === reqId);
