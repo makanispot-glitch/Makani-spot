@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>تنظيم بازار — مكاني Spot</title>
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css?v=25">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+<style>
+/* ── Standalone Nav ── */
+.bz-standalone-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(255,255,255,0.97); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; box-shadow: var(--shadow);
+}
+.bz-nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; color: var(--dark); }
+.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; color: var(--orange); }
+.bz-nav-title {
+  font-size: 13px; font-weight: 700; color: var(--ink2);
+  padding: 4px 12px; background: var(--orange-ultra); border-radius: 20px; white-space: nowrap;
+}
+.bz-nav-right { display: flex; align-items: center; gap: 12px; }
+.bz-nav-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 50px;
+  font-size: 13px; font-weight: 700; color: var(--ink2); text-decoration: none;
+  transition: color .2s;
+}
+.bz-nav-back:hover { color: var(--orange); }
+@media (max-width: 640px) {
+  .bz-standalone-nav { padding: 0 16px; height: 58px; }
+  .bz-nav-title { display: none; }
+}
+
+/* ── صفحة التنظيم ── */
+.org-page { min-height: 100vh; background: var(--surface2); padding-bottom: 80px; }
+
+/* Hero */
+.org-hero {
+  background: linear-gradient(135deg, var(--dark) 0%, #1e1e2e 100%);
+  padding: 44px 32px 36px; text-align: center; color: #fff;
+}
+.org-hero h1 { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+.org-hero h1 span { color: var(--orange); }
+.org-hero p { font-size: 14px; color: rgba(255,255,255,0.65); max-width: 520px; margin: 0 auto; }
+
+/* Step indicator */
+.org-steps {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 28px 20px 0; max-width: 480px; margin: 0 auto;
+}
+.org-step {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex: 1; position: relative;
+}
+.org-step:not(:last-child)::after {
+  content: ''; position: absolute;
+  top: 18px; left: 50%; width: 100%;
+  height: 2px; background: var(--border); z-index: 0;
+}
+.org-step.done::after  { background: var(--orange); }
+.org-step-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--border); color: var(--ink3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; position: relative; z-index: 1;
+  transition: all .3s;
+}
+.org-step.active .org-step-dot  { background: var(--orange); color: #fff; box-shadow: 0 0 0 4px rgba(255,107,0,.2); }
+.org-step.done .org-step-dot    { background: var(--orange); color: #fff; }
+.org-step-lbl { font-size: 11px; font-weight: 700; color: var(--ink3); text-align: center; }
+.org-step.active .org-step-lbl,
+.org-step.done .org-step-lbl   { color: var(--orange); }
+
+/* Form wrap */
+.org-form-wrap { max-width: 680px; margin: 28px auto; padding: 0 20px; }
+
+/* Access guard */
+#org-guard {
+  text-align: center; padding: 80px 24px;
+  background: #fff; border-radius: 18px;
+  border: 1px solid var(--border);
+}
+#org-guard .guard-ico { font-size: 52px; margin-bottom: 16px; }
+#org-guard h2 { font-size: 20px; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
+#org-guard p  { font-size: 14px; color: var(--ink3); max-width: 380px; margin: 0 auto 20px; line-height: 1.7; }
+
+/* Step panels */
+.org-panel {
+  background: #fff; border-radius: 18px; border: 1px solid var(--border);
+  padding: 28px; box-shadow: var(--shadow); display: none;
+}
+.org-panel.active { display: block; }
+.org-panel-title {
+  font-size: 17px; font-weight: 900; color: var(--dark);
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 16px; border-bottom: 1.5px solid var(--border); margin-bottom: 22px;
+}
+
+/* Form fields */
+.org-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 560px) { .org-grid { grid-template-columns: 1fr; } }
+.org-fg { display: flex; flex-direction: column; gap: 6px; }
+.org-fg.full { grid-column: 1 / -1; }
+.org-fg label {
+  font-size: 13px; font-weight: 700; color: var(--ink2);
+  display: flex; align-items: center; gap: 5px;
+}
+.org-fg label .req { color: var(--orange); }
+.org-fg input, .org-fg select, .org-fg textarea {
+  padding: 10px 13px; border: 1.5px solid var(--border);
+  border-radius: 9px; font-family: 'Cairo', sans-serif;
+  font-size: 14px; color: var(--ink); background: var(--surface2);
+  outline: none; transition: border-color .2s; width: 100%; box-sizing: border-box;
+}
+.org-fg input:focus, .org-fg select:focus, .org-fg textarea:focus { border-color: var(--orange); background: #fff; }
+.org-fg textarea { resize: vertical; min-height: 80px; }
+.org-hint { font-size: 11px; color: var(--ink3); }
+
+/* Price summary box */
+.org-price-box {
+  background: var(--orange-ultra); border: 1.5px solid var(--orange-pale);
+  border-radius: 12px; padding: 16px 18px; margin-top: 18px;
+}
+.org-price-box-title { font-size: 13px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
+.org-price-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px; }
+.org-price-row:last-child { margin-bottom: 0; padding-top: 8px; border-top: 1px solid var(--orange-pale); font-weight: 900; }
+.org-price-row span:first-child { color: var(--ink2); }
+.org-price-row span:last-child  { color: var(--orange); font-weight: 700; }
+
+/* Consent checkbox */
+.org-consent {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; background: var(--surface2);
+  border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer;
+  margin-top: 16px; user-select: none;
+}
+.org-consent input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--orange); flex-shrink: 0; margin-top: 2px; }
+.org-consent-text { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.org-consent-text strong { color: var(--dark); }
+
+/* Summary card (step 3) */
+.org-summary {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 18px;
+}
+.org-summary-title { font-size: 13px; font-weight: 900; color: var(--ink2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.org-sum-row { display: flex; gap: 10px; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.org-sum-row:last-child { border-bottom: none; }
+.org-sum-lbl { color: var(--ink3); flex-shrink: 0; width: 120px; }
+.org-sum-val { color: var(--dark); font-weight: 700; flex: 1; }
+
+/* Navigation buttons */
+.org-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 24px; gap: 12px;
+}
+.org-nav-back {
+  padding: 11px 22px; border-radius: 50px;
+  font-size: 14px; font-weight: 700; font-family: 'Cairo', sans-serif;
+  border: 1.5px solid var(--border); background: #fff; color: var(--ink2);
+  cursor: pointer; transition: all .2s;
+}
+.org-nav-back:hover { border-color: var(--ink); color: var(--dark); }
+.org-nav-next {
+  padding: 11px 28px; border-radius: 50px;
+  font-size: 14px; font-weight: 900; font-family: 'Cairo', sans-serif;
+  background: var(--orange); color: #fff; border: none;
+  cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(255,107,0,.35);
+}
+.org-nav-next:hover { background: var(--orange-hover); }
+.org-nav-next:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Result messages */
+#org-result { margin-top: 18px; }
+.org-ok {
+  background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px;
+  padding: 20px 24px; text-align: center;
+}
+.org-ok-ico  { font-size: 40px; margin-bottom: 10px; }
+.org-ok-title { font-size: 18px; font-weight: 900; color: #15803d; margin-bottom: 6px; }
+.org-ok-desc  { font-size: 13px; color: #166534; line-height: 1.7; }
+.org-err {
+  background: var(--red-light); border: 1.5px solid #fca5a5; border-radius: 12px;
+  padding: 14px 18px; font-size: 13px; color: var(--red);
+}
+</style>
+</head>
+<body class="org-page">
+
+<!-- ── NAV ── -->
+<nav class="bz-standalone-nav">
+  <a class="bz-nav-logo" href="/bazaars/">
+    <span class="logo-ar">مكاني</span>
+    <span class="logo-en">Spot</span>
+  </a>
+  <div class="bz-nav-title">🎪 تنظيم بازار</div>
+  <div class="bz-nav-right">
+    <a class="bz-nav-back" href="/bazaars/">← البازارات</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="org-hero">
+  <h1>نظّم <span>بازارك</span> معنا</h1>
+  <p>أرسل طلب تنظيم البازار وسيراجعه فريق مكاني Spot خلال 48 ساعة — منظمون موثّقون فقط</p>
+</div>
+
+<!-- ── FORM AREA ── -->
+<div class="org-form-wrap">
+
+  <!-- حراسة الوصول: تظهر إذا لم يكن المستخدم موثّقاً -->
+  <div id="org-guard" style="display:none">
+    <div class="guard-ico" id="guard-ico">🔒</div>
+    <h2 id="guard-title">التحقق من صلاحيات الوصول…</h2>
+    <p id="guard-desc">جارٍ التحقق من حسابك</p>
+    <div id="guard-actions"></div>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="org-steps" id="org-steps" style="display:none">
+    <div class="org-step active" id="step-dot-1">
+      <div class="org-step-dot">1</div>
+      <div class="org-step-lbl">الفعالية</div>
+    </div>
+    <div class="org-step" id="step-dot-2">
+      <div class="org-step-dot">2</div>
+      <div class="org-step-lbl">التسعير</div>
+    </div>
+    <div class="org-step" id="step-dot-3">
+      <div class="org-step-dot">3</div>
+      <div class="org-step-lbl">التأكيد</div>
+    </div>
+  </div>
+
+  <!-- ── Step 1: معلومات الفعالية ── -->
+  <div class="org-panel" id="org-panel-1" style="margin-top:22px">
+    <div class="org-panel-title">🗓 معلومات الفعالية</div>
+    <div class="org-grid">
+
+      <div class="org-fg full">
+        <label>اسم البازار <span class="req">*</span></label>
+        <input type="text" id="o-name" placeholder="مثال: بازار الربيع 2025" maxlength="100">
+      </div>
+
+      <div class="org-fg full">
+        <label>اسم المكان / القاعة <span class="req">*</span></label>
+        <input type="text" id="o-venue" placeholder="مثال: قاعة الأهرام للمؤتمرات" maxlength="120">
+      </div>
+
+      <div class="org-fg full">
+        <label>عنوان المكان</label>
+        <input type="text" id="o-addr" placeholder="مثال: 15 شارع النيل، المعادي، القاهرة" maxlength="200">
+      </div>
+
+      <div class="org-fg">
+        <label>تاريخ البداية <span class="req">*</span></label>
+        <input type="date" id="o-ds">
+      </div>
+
+      <div class="org-fg">
+        <label>تاريخ النهاية <span class="req">*</span></label>
+        <input type="date" id="o-de">
+      </div>
+
+      <div class="org-fg full">
+        <label>رابط الموقع على خرائط Google</label>
+        <input type="url" id="o-maps" placeholder="https://maps.google.com/..." dir="ltr">
+        <div class="org-hint">أرسل رابط Pin المكان لمساعدة العارضين في الوصول</div>
+      </div>
+
+      <div class="org-fg full">
+        <label>وصف البازار</label>
+        <textarea id="o-desc" placeholder="اكتب وصفاً مختصراً عن الفعالية وما يميّزها…" rows="3"></textarea>
+      </div>
+
+    </div>
+    <div class="org-nav">
+      <span></span>
+      <button class="org-nav-next" onclick="orgNext(1)">التالي — التسعير →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 2: التسعير والوحدات ── -->
+  <div class="org-panel" id="org-panel-2" style="margin-top:22px">
+    <div class="org-panel-title">💰 التسعير والوحدات</div>
+    <div class="org-grid">
+
+      <div class="org-fg">
+        <label>عدد الوحدات المتاحة <span class="req">*</span></label>
+        <input type="number" id="o-slots" placeholder="مثال: 30" min="1" max="500" oninput="orgUpdatePrice()">
+      </div>
+
+      <div class="org-fg">
+        <label>سعر الوحدة الواحدة (جنيه) <span class="req">*</span></label>
+        <input type="number" id="o-price" placeholder="مثال: 800" min="0" oninput="orgUpdatePrice()">
+      </div>
+
+      <div class="org-fg">
+        <label>العربون الأولي (جنيه)</label>
+        <input type="number" id="o-dep1" placeholder="مثال: 200" min="0">
+        <div class="org-hint">المبلغ المطلوب لتأكيد الحجز</div>
+      </div>
+
+      <div class="org-fg">
+        <label>العربون النهائي (جنيه)</label>
+        <input type="number" id="o-dep2" placeholder="مثال: 600" min="0">
+        <div class="org-hint">باقي المبلغ قبل الفعالية</div>
+      </div>
+
+      <div class="org-fg full">
+        <label>إجمالي قيمة العقد (جنيه)</label>
+        <input type="number" id="o-contract" placeholder="القيمة الإجمالية لعقد تأجير المكان" min="0">
+        <div class="org-hint">للاستخدام الداخلي فقط — لن يُعرض للعارضين</div>
+      </div>
+
+    </div>
+
+    <!-- ملخص تسعير تلقائي -->
+    <div class="org-price-box" id="org-price-preview" style="display:none">
+      <div class="org-price-box-title">📊 ملخص الإيراد المتوقع</div>
+      <div class="org-price-row"><span>عدد الوحدات</span><span id="pp-slots">—</span></div>
+      <div class="org-price-row"><span>سعر الوحدة</span><span id="pp-price">—</span></div>
+      <div class="org-price-row"><span>الإيراد الإجمالي المتوقع</span><span id="pp-total">—</span></div>
+    </div>
+
+    <div class="org-nav">
+      <button class="org-nav-back" onclick="orgBack(2)">← الفعالية</button>
+      <button class="org-nav-next" onclick="orgNext(2)">التالي — التواصل →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 3: التواصل والتأكيد ── -->
+  <div class="org-panel" id="org-panel-3" style="margin-top:22px">
+    <div class="org-panel-title">📋 مراجعة وتأكيد الطلب</div>
+
+    <!-- ملخص البيانات -->
+    <div class="org-summary" id="org-summary-box"></div>
+
+    <div class="org-grid">
+      <div class="org-fg full">
+        <label>رقم تليفون التواصل <span class="req">*</span></label>
+        <input type="tel" id="o-phone" placeholder="01xxxxxxxxx" maxlength="15">
+        <div class="org-hint">يُستخدم للتواصل بينك وبين فريق مكاني — لن يُعرض علناً</div>
+      </div>
+
+      <div class="org-fg full">
+        <label>ملاحظات إضافية للفريق</label>
+        <textarea id="o-notes" placeholder="أي تفاصيل تريد إضافتها للفريق…" rows="3"></textarea>
+      </div>
+    </div>
+
+    <label class="org-consent">
+      <input type="checkbox" id="o-consent">
+      <div class="org-consent-text">
+        أوافق على <strong>عرض إحصائيات ملفي الشخصي</strong> (عدد البازارات، التقييمات) للعارضين
+        المهتمين بالمشاركة في هذا البازار، وأؤكد أن جميع البيانات المُدخلة صحيحة.
+      </div>
+    </label>
+
+    <div id="org-result"></div>
+
+    <div class="org-nav">
+      <button class="org-nav-back" onclick="orgBack(3)">← التسعير</button>
+      <button class="org-nav-next" id="org-submit-btn" onclick="orgSubmit()">إرسال الطلب ✓</button>
+    </div>
+  </div>
+
+</div><!-- /org-form-wrap -->
+
+<script src="organize.js?v=1" defer></script>
+</body>
+</html>

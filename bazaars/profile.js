@@ -299,6 +299,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <a class="op-qn-btn" href="/bazaars/">🎪 البازارات</a>
       <a class="op-qn-btn" href="/market/">🛍️ السوق</a>
       <a class="op-qn-btn" href="/?p=dashboard">📊 لوحة التحكم</a>
+      ${isVerified ? `<a class="op-qn-btn primary" href="/bazaars/organize.html">✦ نظّم بازار جديد</a>` : ''}
     </div>
   </div>
 
@@ -403,6 +404,26 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       ${_renderListingsGrid(listings)}
     </div>
 
+  </div>
+
+  <!-- ═══════ بازاراتي ═══════ -->
+  <div class="op-section-card" style="margin-top:16px">
+    <div class="op-section-title">
+      <span>🎪 بازاراتي كمنظم (${totalBaz})</span>
+      ${isVerified ? `<a href="/bazaars/organize.html" style="color:var(--orange);font-weight:900;font-size:13px;text-decoration:none">+ نظّم بازار جديد</a>` : ''}
+    </div>
+    ${totalBaz ? bazaars.map(b => {
+      const ds = b.date_start ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' }) : '—';
+      const statusMap = { active:'🟢 نشط', upcoming:'🔵 قادم', closed:'⚫ منتهي', cancelled:'🔴 ملغي', pending_review:'⏳ قيد المراجعة' };
+      const st = statusMap[b.status] || b.status;
+      return `<div class="op-data-row">
+        <div class="op-data-lbl" style="font-size:12px">${ds}</div>
+        <div class="op-data-val" style="font-size:13px">${b.name} <span style="font-size:11px;color:var(--ink3);margin-right:6px">${st}</span></div>
+      </div>`;
+    }).join('') : `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">
+      لم تنظّم أي بازار بعد
+      ${isVerified ? `<br><a href="/bazaars/organize.html" style="color:var(--orange);font-weight:700">ابدأ تنظيم أول بازار →</a>` : ''}
+    </div>`}
   </div>
 
   <!-- ═══════ التقييمات ═══════ -->

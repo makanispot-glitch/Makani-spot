@@ -172,6 +172,40 @@ body {
 }
 .btn-login-nav:hover .btn-login-sep { opacity: 0.6; }
 
+/* زر تنظيم البازار — يظهر بجانب أيقونة الحساب للمنظمين الموثّقين */
+.bz-org-pill {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 5px 14px 5px 10px; border-radius: 40px;
+  border: 1.5px solid rgba(255,107,0,0.35);
+  background: var(--orange-ultra);
+  text-decoration: none; cursor: pointer;
+  transition: all 0.18s; flex-shrink: 0;
+}
+.bz-org-pill:hover {
+  background: var(--orange); border-color: var(--orange);
+  box-shadow: 0 4px 14px rgba(255,107,0,0.30);
+  transform: translateY(-1px);
+}
+.bz-org-pill:hover .bz-org-ico,
+.bz-org-pill:hover .bz-org-title,
+.bz-org-pill:hover .bz-org-sub { color: #fff; }
+.bz-org-ico {
+  font-size: 18px; line-height: 1; flex-shrink: 0;
+}
+.bz-org-texts { display: flex; flex-direction: column; gap: 1px; }
+.bz-org-title {
+  font-size: 12px; font-weight: 900; color: var(--orange);
+  line-height: 1.2; white-space: nowrap;
+}
+.bz-org-sub {
+  font-size: 10px; color: var(--ink3); line-height: 1.2; white-space: nowrap;
+}
+.bz-nav-user-wrap { display: flex; align-items: center; gap: 10px; }
+@media (max-width: 640px) {
+  .bz-org-texts { display: none; }
+  .bz-org-pill { padding: 6px 10px; }
+}
+
 /* الأفاتار */
 .nav-avatar-btn {
   display: flex; align-items: center; gap: 9px;

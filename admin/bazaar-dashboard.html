@@ -278,6 +278,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('fin')"><span class="ic">📈</span>التقرير المالي</div>
     <div class="ni" onclick="gp('add-bz')"><span class="ic">➕</span>إضافة بازار</div>
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
+    <div class="ni" onclick="gp('req')" id="ni-req"><span class="ic">📬</span>طلبات التنظيم<span class="nb" id="nb-req" style="display:none">0</span></div>
   </nav>
   <div class="sb-api" style="display:none"></div>
 </aside>
@@ -603,6 +604,16 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+  <!-- ═══ ORGANIZE REQUESTS ═══ -->
+  <div class="pg" id="pg-req">
+    <div class="sh">
+      <div class="st">📬 طلبات <span>تنظيم البازارات</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadOrgRequests()">🔄 تحديث</button>
+    </div>
+    <div class="hint" style="margin-bottom:12px">طلبات مقدّمة من منظمين موثّقين — راجع البيانات ثم اقبل أو ارفض</div>
+    <div id="req-list"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
+  </div>
+
 </main>
 
 <!-- ═══ MODALS ═══ -->
@@ -849,6 +860,10 @@ async function loadData() {
     setConn('ok', BAZAARS.length + ' بازار');
     updateAll();
     toast('✅ ' + BAZAARS.length + ' بازار · ' + SLOTS.length + ' وحدة · ' + BOOKINGS.length + ' حجز', 's');
+    /* تحديث شارة طلبات التنظيم */
+    const pendingCount = bzRes.data.filter(b => b.status === 'pending_review').length;
+    const nbReq = document.getElementById('nb-req');
+    if (nbReq) { nbReq.textContent = pendingCount; nbReq.style.display = pendingCount ? '' : 'none'; }
   } catch(e) {
     setConn('err');
     toast('فشل التحميل: ' + e.message, 'e');
@@ -1591,6 +1606,95 @@ function submitCost(){
 }
 
 /* ══════════════════════════════════════════
+   ORGANIZE REQUESTS
+══════════════════════════════════════════ */
+async function loadOrgRequests() {
+  const list = document.getElementById('req-list');
+  if (!list) return;
+  list.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل...</div>';
+  try {
+    const { data, error } = await db
+      .from('bazaars')
+      .select('*')
+      .eq('status', 'pending_review')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    const badge = document.getElementById('nb-req');
+    if (badge) {
+      badge.textContent = data.length;
+      badge.style.display = data.length ? '' : 'none';
+    }
+
+    if (!data.length) {
+      list.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--mu)">لا توجد طلبات معلّقة حالياً ✓</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(b => {
+      const created = b.created_at
+        ? new Date(b.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+        : '—';
+      const ds = b.date_start ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' }) : '—';
+      const de = b.date_end   ? new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })   : '—';
+      return `
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:var(--tx)">${b.name}</div>
+            <div style="font-size:12px;color:var(--mu);margin-top:3px">قُدِّم في ${created} · المنظّم: <span style="color:var(--or)">${b.organizer || '—'}</span></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-or btn-sm" onclick="approveOrgRequest('${b.id}', '${(b.name||'').replace(/'/g,"\\'")}')">✅ قبول</button>
+            <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3)" onclick="rejectOrgRequest('${b.id}', '${(b.name||'').replace(/'/g,"\\'")}')">✕ رفض</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:12px">
+          <div><span style="color:var(--mu)">المكان:</span> ${b.venue_name || b.venue_address || '—'}</div>
+          <div><span style="color:var(--mu)">التاريخ:</span> ${ds} → ${de}</div>
+          <div><span style="color:var(--mu)">الوحدات:</span> ${b.total_slots || '—'}</div>
+          <div><span style="color:var(--mu)">سعر الوحدة:</span> ${b.price_per_slot ? fmt(b.price_per_slot) + ' ج' : '—'}</div>
+          ${b.deposit_initial  ? `<div><span style="color:var(--mu)">العربون الأولي:</span> ${fmt(b.deposit_initial)} ج</div>` : ''}
+          ${b.deposit_final    ? `<div><span style="color:var(--mu)">العربون النهائي:</span> ${fmt(b.deposit_final)} ج</div>` : ''}
+          ${b.contact_phone    ? `<div><span style="color:var(--mu)">تليفون:</span> <span style="direction:ltr;unicode-bidi:embed">${b.contact_phone}</span></div>` : ''}
+          ${b.maps_link        ? `<div><a href="${b.maps_link}" target="_blank" style="color:var(--bl)">📍 خريطة</a></div>` : ''}
+        </div>
+        ${b.description     ? `<div style="margin-top:10px;font-size:12px;color:var(--mu)">${b.description}</div>` : ''}
+        ${b.organizer_notes ? `<div style="margin-top:6px;font-size:12px;background:var(--bg3);padding:8px 10px;border-radius:6px;color:var(--mu)">💬 ${b.organizer_notes}</div>` : ''}
+        ${b.total_contract_price ? `<div style="margin-top:8px;font-size:11px;color:var(--mu);background:var(--bg4);padding:6px 10px;border-radius:6px">🔒 قيمة العقد الإجمالية: ${fmt(b.total_contract_price)} ج (داخلي فقط)</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--rd);padding:16px">❌ فشل التحميل: ${e.message}</div>`;
+  }
+}
+
+async function approveOrgRequest(id, name) {
+  if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار بحالة "قادم" وسيظهر للمستخدمين.`)) return;
+  try {
+    const { error } = await db.from('bazaars').update({ status: 'upcoming' }).eq('id', id);
+    if (error) throw error;
+    toast('✅ تم قبول الطلب — البازار أصبح قادماً', 's');
+    loadOrgRequests();
+    loadData();
+  } catch(e) { toast('❌ ' + e.message, 'e'); }
+}
+
+async function rejectOrgRequest(id, name) {
+  const reason = prompt(`رفض طلب "${name}".\nأدخل سبب الرفض (اختياري):`);
+  if (reason === null) return; // ألغى
+  try {
+    const upd = { status: 'cancelled' };
+    if (reason.trim()) upd.organizer_notes = (upd.organizer_notes || '') + '\n[مرفوض] ' + reason.trim();
+    const { error } = await db.from('bazaars').update(upd).eq('id', id);
+    if (error) throw error;
+    toast('تم رفض الطلب', 'i');
+    loadOrgRequests();
+    loadData();
+  } catch(e) { toast('❌ ' + e.message, 'e'); }
+}
+
+/* ══════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════ */
 function gp(tab){
@@ -1599,6 +1703,7 @@ function gp(tab){
   document.getElementById('pg-'+tab).classList.add('active');
   const ni=document.querySelector(`.ni[onclick*="'${tab}'"]`);
   if(ni)ni.classList.add('active');
+  if(tab==='req') loadOrgRequests();
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}

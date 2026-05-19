@@ -94,11 +94,12 @@ async function _loadBzProfile() {
   try {
     const [profRes, orgRes] = await Promise.all([
       sbClient.from('profiles').select('full_name, phone').eq('id', currentUser.id).single(),
-      sbClient.from('organizer_profiles').select('avatar_url, logo, image').eq('user_id', currentUser.id).single()
+      sbClient.from('organizer_profiles').select('avatar_url, logo, image, is_verified').eq('user_id', currentUser.id).single()
     ]);
     currentProfile = {
       ...(profRes.data || {}),
-      avatar_url: orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || ''
+      avatar_url:  orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
+      is_verified: orgRes.data?.is_verified === true,
     };
   } catch (_) {}
 }
@@ -117,28 +118,41 @@ function bzRenderNavUser() {
       : initial;
 
     area.innerHTML = `
-      <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
-        <div class="nav-avatar-circle">${avatarHtml}</div>
-        <div class="nav-avatar-info">
-          <div class="nav-avatar-name">${name || 'حسابي'}</div>
-          <div class="nav-avatar-email">${email}</div>
-        </div>
-        <div class="nav-avatar-caret">▼</div>
+      <div class="bz-nav-user-wrap">
 
-        <div class="nav-dropdown" id="bz-dropdown">
-          <div class="nav-dropdown-header">
-            <div class="nav-dropdown-name">${name || 'حسابي'}</div>
-            <div class="nav-dropdown-email">${email}</div>
-            <div class="nav-dropdown-role">🎪 مستخدم البازارات</div>
+        ${currentProfile?.is_verified ? `
+        <a class="bz-org-pill" href="/bazaars/organize.html">
+          <span class="bz-org-ico">🎪</span>
+          <span class="bz-org-texts">
+            <span class="bz-org-title">نظّم بازار</span>
+            <span class="bz-org-sub">زوّد دخلك الآن</span>
+          </span>
+        </a>` : ''}
+
+        <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
+          <div class="nav-avatar-circle">${avatarHtml}</div>
+          <div class="nav-avatar-info">
+            <div class="nav-avatar-name">${name || 'حسابي'}</div>
+            <div class="nav-avatar-email">${email}</div>
           </div>
-          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/market/'">📋 إعلاناتي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">🎟 اشترك في بزار</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">🔍 دور على مساحة</button>
-          <div class="nav-dropdown-sep"></div>
-          <button class="nav-dropdown-item danger" onclick="bzSignOut()">🚪 تسجيل الخروج</button>
+          <div class="nav-avatar-caret">▼</div>
+
+          <div class="nav-dropdown" id="bz-dropdown">
+            <div class="nav-dropdown-header">
+              <div class="nav-dropdown-name">${name || 'حسابي'}</div>
+              <div class="nav-dropdown-email">${email}</div>
+              <div class="nav-dropdown-role">🎪 مستخدم البازارات</div>
+            </div>
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/market/'">📋 إعلاناتي</button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">🎟 اشترك في بزار</button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">🔍 دور على مساحة</button>
+            <div class="nav-dropdown-sep"></div>
+            <button class="nav-dropdown-item danger" onclick="bzSignOut()">🚪 تسجيل الخروج</button>
+          </div>
         </div>
+
       </div>`;
   } else {
     area.innerHTML = `
