@@ -52,7 +52,7 @@ export async function onRequestPost(context) {
   }
 
   /* 4. حماية من Path Traversal */
-  if (path.includes('..') || path.startsWith('/') || !/^[\w\-/]+\.jpe?g$/.test(path)) {
+  if (path.includes('..') || path.startsWith('/') || !/^[\w\-/]+\.(jpe?g|webp)$/.test(path)) {
     return fail(400, 'مسار غير مسموح به');
   }
 

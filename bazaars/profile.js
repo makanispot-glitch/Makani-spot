@@ -830,23 +830,21 @@ async function uploadAvatarImage(inputEl) {
   if (inner) inner.innerHTML = `<span style="font-size:12px;animation:spin 1s linear infinite">⏳</span>`;
 
   try {
-    const ext  = file.name.split('.').pop() || 'jpg';
-    const path = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
+    /* جلب الـ token لتمريره لـ /upload */
+    const { data: { session } } = await sbClient.auth.getSession();
+    const authToken = session?.access_token;
+    if (!authToken) throw new Error('يجب تسجيل الدخول أولاً');
 
-    const { error: uploadErr } = await sbClient.storage
-      .from('organizer-docs')
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (uploadErr) throw new Error(uploadErr.message);
+    /* ضغط → WebP → R2 في مجلد avatars/ */
+    const r2Path   = `avatars/${currentUser.id}/avatar-${Date.now()}.webp`;
+    const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
 
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/organizer-docs/${path}`;
-
+    /* حفظ الرابط في organizer_profiles */
     const updateData = {
       user_id:    currentUser.id,
       full_name:  myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
       avatar_url: publicUrl,
     };
-    if (myProfileData && 'logo'   in myProfileData) updateData.logo  = publicUrl;
-    if (myProfileData && 'image'  in myProfileData) updateData.image = publicUrl;
 
     const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData);
     if (dbErr) throw new Error(dbErr.message);

@@ -5,6 +5,9 @@
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
+/* رابط Apps Script لرفع صور البطاقة على Google Drive */
+const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyDiMb5OO8Klhd6c1SkxbV_v6UOIN8p159nVrYwEq_Str3b7p2XSQMYKpZMFAL-JVT_Jg/exec';
+
 let sbClient  = null;
 let currentUser = null;
 
@@ -117,18 +120,39 @@ function handleIdUpload(type, inputEl) {
 }
 
 
-/* ── رفع صورة على Supabase Storage ── */
-async function uploadIdImage(file, type) {
-  if (!sbClient || !currentUser) throw new Error('يجب تسجيل الدخول أولاً');
-  const ext  = file.name.split('.').pop() || 'jpg';
-  const path = `${currentUser.id}/${type}-${Date.now()}.${ext}`;
+/* ── رفع صورة على Google Drive عبر Apps Script ── */
+async function uploadIdImage(file, side) {
+  if (!currentUser) throw new Error('يجب تسجيل الدخول أولاً');
 
-  const { error } = await sbClient.storage
-    .from('organizer-docs')
-    .upload(path, file, { upsert: true, contentType: file.type });
+  // تحويل الملف إلى base64
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
-  if (error) throw new Error('تعذّر رفع الصورة: ' + error.message);
-  return path;
+  const userName = document.getElementById('vr-name')?.value?.trim() || '';
+
+  const res = await fetch(DRIVE_UPLOAD_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      file:     base64,
+      mimeType: file.type || 'image/jpeg',
+      userId:   currentUser.id,
+      side,
+      userName,
+    }),
+  });
+
+  if (!res.ok) throw new Error('تعذّر الاتصال بخدمة الرفع');
+
+  const data = await res.json();
+  if (!data.success) throw new Error('فشل رفع الصورة: ' + (data.error || 'خطأ غير معروف'));
+
+  // ترجع { fileId, viewUrl }
+  return { fileId: data.fileId, viewUrl: data.viewUrl };
 }
 
 
@@ -170,7 +194,7 @@ async function submitVerificationRequest() {
   if (submitBtn) { submitBtn.textContent = '⏳ جاري الإرسال…'; submitBtn.disabled = true; }
 
   try {
-    const [frontPath, backPath] = await Promise.all([
+    const [frontResult, backResult] = await Promise.all([
       uploadIdImage(frontFile, 'front'),
       uploadIdImage(backFile,  'back'),
     ]);
@@ -180,8 +204,8 @@ async function submitVerificationRequest() {
       full_name:       name,
       phone,
       region,
-      id_front_path:   frontPath,
-      id_back_path:    backPath,
+      id_front_path:   frontResult.fileId,
+      id_back_path:    backResult.fileId,
       trade_reg:       tradeReg || null,
       has_experience:  hasExp,
       exp_count:       hasExp ? expCount : null,

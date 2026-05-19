@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مكاني Spot — إدارة البازارات</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --or:#FF6B00; --or2:#E05A00; --org:rgba(255,107,0,.13);
@@ -278,14 +279,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('add-bz')"><span class="ic">➕</span>إضافة بازار</div>
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
   </nav>
-  <div class="sb-api">
-    <label>🔗 رابط Apps Script <span id="api-saved-badge" style="display:none;font-size:9px;background:rgba(34,197,94,.2);color:#22C55E;border-radius:4px;padding:1px 5px;margin-right:4px">✓ محفوظ</span></label>
-    <input type="text" id="surl" placeholder="https://script.google.com/...">
-    <div style="display:flex;gap:4px;margin-top:4px">
-      <button class="sb-btn" id="btnload" onclick="saveAndLoad()" style="flex:1">⚡ تحميل</button>
-      <button class="sb-btn" onclick="clearApiUrl()" style="background:rgba(239,68,68,.15);color:#EF4444;border-color:rgba(239,68,68,.3);padding:0 8px" title="مسح الرابط المحفوظ">🗑</button>
-    </div>
-  </div>
+  <div class="sb-api" style="display:none"></div>
 </aside>
 
 <!-- ═══════ MAIN ═══════ -->
@@ -329,7 +323,7 @@ tbody tr:hover .row-acts{opacity:1}
       </div>
     </div>
     <div class="sh"><div class="st">البازارات <span>النشطة</span></div><button class="btn btn-gh btn-sm" onclick="gp('bz')">عرض الكل</button></div>
-    <div class="tw" id="ov-tbl"><div class="ld"><div class="spin"></div>أدخل رابط الـ API وابدأ</div></div>
+    <div class="tw" id="ov-tbl"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
   </div>
 
   <!-- ═══ BAZAARS ═══ -->
@@ -505,6 +499,15 @@ tbody tr:hover .row-acts{opacity:1}
           <div class="fg"><label>إجمالي الوحدات</label><input type="number" class="fc" id="nb-slots" placeholder="20" oninput="calcExpected()"></div>
         </div>
         <div class="fg"><label>أدنى مساحة (م²)</label><input type="number" class="fc" id="nb-msp" value="2" min="1"></div>
+        <div class="fg">
+          <label>اسم المنظّم</label>
+          <input type="text" class="fc" id="nb-organizer" placeholder="اسم المنظّم (كما سيظهر للزوار)">
+        </div>
+        <div class="fg">
+          <label>معرّف المنظّم (User ID)</label>
+          <input type="text" class="fc" id="nb-organizer-id" placeholder="UUID من جدول profiles (اختياري)">
+          <div class="hint">أضفه عشان يظهر مربع المنظّم على الكارت وتنشط صفحة البروفايل</div>
+        </div>
       </div>
       <div>
         <div class="fg">
@@ -512,9 +515,21 @@ tbody tr:hover .row-acts{opacity:1}
           <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:18px;font-weight:900;color:var(--or)" id="nb-exp-display">0 ج</div>
         </div>
         <div class="fg">
-          <label>رابط الصورة</label>
-          <input type="text" class="fc" id="nb-img" placeholder="https://i.postimg.cc/...">
-          <div class="hint">استخدم postimages.org للرابط المباشر</div>
+          <label>صورة البازار</label>
+          <!-- منطقة الرفع بالضغط -->
+          <div id="nb-img-box"
+               style="border:2px dashed var(--bd);border-radius:10px;padding:14px 10px;cursor:pointer;text-align:center;background:var(--bg3);transition:border-color .2s"
+               onclick="document.getElementById('nb-img-input').click()"
+               onmouseenter="this.style.borderColor='var(--or)'"
+               onmouseleave="this.style.borderColor='var(--bd)'">
+            <div id="nb-img-ico" style="font-size:28px;margin-bottom:4px">🖼️</div>
+            <div id="nb-img-lbl" style="font-size:11.5px;color:var(--mu)">اضغط لرفع صورة — يُضغط إلى WebP تلقائياً</div>
+            <img id="nb-img-prev" src="" alt="" style="display:none;width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-top:8px">
+          </div>
+          <input type="file" id="nb-img-input" accept="image/*" style="display:none" onchange="handleNbImgUpload(this)">
+          <!-- أو الصق رابط مباشرة -->
+          <input type="text" class="fc" id="nb-img" placeholder="أو الصق رابط مباشر…" style="margin-top:6px;font-size:11.5px">
+          <div id="nb-img-status" class="hint" style="min-height:16px"></div>
         </div>
         <div class="fg">
           <label>الأنشطة المناسبة</label>
@@ -712,14 +727,92 @@ tbody tr:hover .row-acts{opacity:1}
 
 <script>
 /* ══════════════════════════════════════════
+   SUPABASE CONFIG
+══════════════════════════════════════════ */
+const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ══════════════════════════════════════════
    STATE
 ══════════════════════════════════════════ */
-let API = '';
 let BAZAARS=[], SLOTS=[], BOOKINGS=[], COSTS=[];
 let bzTags = [];
 const PER = 20;
 let bzPg=1, slPg=1, bkPg=1;
 let fBz=[], fSl=[], fBk=[], fCs=[];
+let _nbImgUrl = '';   /* رابط صورة البازار بعد الرفع على R2 */
+
+/* ══════════════════════════════════════════
+   🖼️  BAZAAR IMAGE — ضغط WebP + رفع R2
+══════════════════════════════════════════ */
+async function _compressToWebP(file, maxW = 1200, maxH = 800, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxW || h > maxH) {
+        const r = Math.min(maxW / w, maxH / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        blob => (blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة'))),
+        'image/webp', quality
+      );
+    };
+    img.onerror = () => reject(new Error('فشل قراءة الصورة'));
+    img.src = url;
+  });
+}
+
+async function handleNbImgUpload(inputEl) {
+  const file      = inputEl?.files?.[0];
+  if (!file) return;
+  const statusEl  = document.getElementById('nb-img-status');
+  const lbl       = document.getElementById('nb-img-lbl');
+  const prev      = document.getElementById('nb-img-prev');
+  const ico       = document.getElementById('nb-img-ico');
+
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--or)">⏳ ضغط ورفع الصورة…</span>';
+  if (lbl)      lbl.style.display  = 'none';
+  if (ico)      ico.style.display  = 'none';
+
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error('يجب تسجيل الدخول أولاً');
+
+    const blob   = await _compressToWebP(file);
+    const rand   = Math.random().toString(36).slice(2, 6);
+    const r2Path = `bazaars/${Date.now()}_${rand}.webp`;
+    const form   = new FormData();
+    form.append('file', new File([blob], 'image.webp', { type: 'image/webp' }));
+    form.append('path', r2Path);
+
+    const res  = await fetch('/upload', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body:    form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'فشل الرفع');
+
+    _nbImgUrl = data.url;
+    document.getElementById('nb-img').value = data.url;
+    if (prev) { prev.src = data.url; prev.style.display = 'block'; }
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--gr)">✅ تم الرفع — WebP مضغوط</span>`;
+  } catch (err) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:red">❌ ${err.message}</span>`;
+    if (lbl) lbl.style.display = '';
+    if (ico) ico.style.display = '';
+    _nbImgUrl = '';
+  }
+}
 
 /* ══════════════════════════════════════════
    STATIC DATA
@@ -729,22 +822,26 @@ const TAG_OPTS = ['ملابس','إكسسوارات','أكل','هدايا','عط�
 const ACTIVITIES = [...TAG_OPTS,'بيع بالجملة','خدمات','تقنية'];
 
 /* ══════════════════════════════════════════
-   LOAD DATA
+   LOAD DATA — Supabase
 ══════════════════════════════════════════ */
 async function loadData() {
-  const u = document.getElementById('surl').value.trim();
-  if (u) API = u;
-  if (!API) { toast('أدخل رابط الـ Apps Script أولاً', 'e'); return; }
-  setLoad(true); toast('جارٍ التحميل...', 'i');
+  setLoad(true);
+  toast('جارٍ التحميل...', 'i');
   try {
-    // طلب واحد يجيب كل البيانات
-    const r = await fetch(API + '?action=all');
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    BAZAARS  = d.bazaars  || [];
-    SLOTS    = d.slots    || [];
-    BOOKINGS = d.bookings || [];
-    COSTS    = d.costs    || [];
+    const [bzRes, slRes, bkRes] = await Promise.all([
+      db.from('bazaars').select('*').order('created_at', { ascending: false }),
+      db.from('bazaar_slots').select('*'),
+      db.from('bazaar_bookings').select('*').order('created_at', { ascending: false })
+    ]);
+    if (bzRes.error) throw bzRes.error;
+    if (slRes.error) throw slRes.error;
+    if (bkRes.error) throw bkRes.error;
+
+    BAZAARS  = bzRes.data.map(mapBazaar);
+    SLOTS    = slRes.data.map(mapSlot);
+    BOOKINGS = bkRes.data.map(mapBooking);
+    COSTS    = [];
+
     setConn('ok', BAZAARS.length + ' بازار');
     updateAll();
     toast('✅ ' + BAZAARS.length + ' بازار · ' + SLOTS.length + ' وحدة · ' + BOOKINGS.length + ' حجز', 's');
@@ -757,51 +854,69 @@ async function loadData() {
 }
 
 /* ══════════════════════════════════════════
-   DEMO DATA — يعمل بدون API
+   MAPPERS
 ══════════════════════════════════════════ */
-function loadDemoData() {
-  BAZAARS = [
-    {id:'BZ-001',name:'بازار رمضان كريم',description:'موسمي رمضاني',venueType:'مول',venueName:'مول مصر',area:'6 أكتوبر',address:'طريق الواحات',dateStart:'2026-03-01',dateEnd:'2026-03-03',daysCount:3,totalSlots:20,availSlots:18,bookedSlots:2,price:500,image:'',tags:['ملابس','إكسسوارات','أكل'],status:'published'},
-    {id:'BZ-002',name:'بازار عيد الأم',description:'هدايا وإكسسوارات',venueType:'نادي',venueName:'نادي الجزيرة',area:'الزمالك',address:'شارع الجزيرة',dateStart:'2026-03-20',dateEnd:'2026-03-21',daysCount:2,totalSlots:15,availSlots:15,bookedSlots:0,price:600,image:'',tags:['هدايا','إكسسوارات'],status:'published'},
-    {id:'BZ-003',name:'ماركت الربيع',description:'ملابس وموضة',venueType:'مول',venueName:'أركان مول',area:'الشيخ زايد',address:'طريق 26 يوليو',dateStart:'2026-04-10',dateEnd:'2026-04-12',daysCount:3,totalSlots:25,availSlots:25,bookedSlots:0,price:450,image:'',tags:['ملابس','موضة','إكسسوارات'],status:'published'},
-    {id:'BZ-004',name:'بازار واحد',description:'',venueType:'مول',venueName:'',area:'',address:'',dateStart:'',dateEnd:'',daysCount:1,totalSlots:10,availSlots:8,bookedSlots:2,price:1000,image:'https://i.postimg.cc/wTVpMd5z/image.png',tags:[],status:'published'},
-  ];
-  SLOTS = [
-    {slotId:'BZ-001-A1',bazaarId:'BZ-001',rowLabel:'A',slotNumber:1,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-001-A2',bazaarId:'BZ-001',rowLabel:'A',slotNumber:2,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-001-A3',bazaarId:'BZ-001',rowLabel:'A',slotNumber:3,price:500,status:'booked',traderName:'خالد محمد',activity:'شاي',notes:''},
-    {slotId:'BZ-001-A4',bazaarId:'BZ-001',rowLabel:'A',slotNumber:4,price:500,status:'booked',traderName:'amr mohammed',activity:'ملابس',notes:''},
-    {slotId:'BZ-001-A5',bazaarId:'BZ-001',rowLabel:'A',slotNumber:5,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-001-B1',bazaarId:'BZ-001',rowLabel:'B',slotNumber:1,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-001-B2',bazaarId:'BZ-001',rowLabel:'B',slotNumber:2,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-001-B3',bazaarId:'BZ-001',rowLabel:'B',slotNumber:3,price:500,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-004-A1',bazaarId:'BZ-004',rowLabel:'A',slotNumber:1,price:1000,status:'booked',traderName:'خالد محمد',activity:'أكل',notes:''},
-    {slotId:'BZ-004-A2',bazaarId:'BZ-004',rowLabel:'A',slotNumber:2,price:1000,status:'booked',traderName:'Hossam Mohammed',activity:'عطور',notes:''},
-    {slotId:'BZ-004-A3',bazaarId:'BZ-004',rowLabel:'A',slotNumber:3,price:1000,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-004-A4',bazaarId:'BZ-004',rowLabel:'A',slotNumber:4,price:1000,status:'available',traderName:'',activity:'',notes:''},
-    {slotId:'BZ-004-A5',bazaarId:'BZ-004',rowLabel:'A',slotNumber:5,price:1000,status:'available',traderName:'',activity:'',notes:''},
-  ];
-  BOOKINGS = [
-    {bookingId:'BK-0001',bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',slotId:'BZ-001-A3',vendorName:'خالد محمد',phone:'01027486918',email:'khmh3456@gmail.com',activity:'شاي',amount:500,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-05'},
-    {bookingId:'BK-0002',bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',slotId:'BZ-001-A4',vendorName:'amr mohammed',phone:'01027486918',email:'amrmhamd62@gmail.com',activity:'ملابس',amount:500,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-06'},
-    {bookingId:'BK-0003',bazaarId:'BZ-004',bazaarName:'بازار واحد',slotId:'BZ-004-A1',vendorName:'خالد محمد',phone:'01027486918',email:'khmh3456@gmail.com',activity:'أكل',amount:1000,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-10'},
-    {bookingId:'BK-0004',bazaarId:'BZ-004',bazaarName:'بازار واحد',slotId:'BZ-004-A2',vendorName:'Hossam Mohammed',phone:'01222516188',email:'hoo01016930623@gmail.com',activity:'عطور',amount:1000,payStatus:'pending',bookStatus:'confirmed',bookDate:'2026-03-11'},
-    {bookingId:'BK-0005',bazaarId:'BZ-003',bazaarName:'ماركت الربيع',slotId:'BZ-003-A2',vendorName:'محمد علي',phone:'01155554444',email:'mo@email.com',activity:'أكل',amount:450,payStatus:'paid',bookStatus:'confirmed',bookDate:'2026-03-01'},
-  ];
-  COSTS = [
-    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
-    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'تجهيز وديكور',category:'ثابت',detail:'طاولات وستائر',qty:1,unitPrice:800,total:800,paid:'yes'},
-    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'تسويق إلكتروني',category:'تسويق',detail:'إعلانات سوشيال',qty:1,unitPrice:500,total:500,paid:'yes'},
-    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'كهرباء وخدمات',category:'تشغيل',detail:'استهلاك كهرباء',qty:1,unitPrice:150,total:150,paid:'no'},
-    {bazaarId:'BZ-001',bazaarName:'بازار رمضان كريم',item:'أمن وحراسة',category:'تشغيل',detail:'طوال الأيام',qty:1,unitPrice:300,total:300,paid:'no'},
-    {bazaarId:'BZ-002',bazaarName:'بازار عيد الأم',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
-    {bazaarId:'BZ-002',bazaarName:'بازار عيد الأم',item:'تسويق إلكتروني',category:'تسويق',detail:'إعلانات سوشيال',qty:1,unitPrice:500,total:500,paid:'yes'},
-    {bazaarId:'BZ-003',bazaarName:'ماركت الربيع',item:'إيجار المكان',category:'ثابت',detail:'دفع مقدم',qty:1,unitPrice:3000,total:3000,paid:'yes'},
-    {bazaarId:'BZ-003',bazaarName:'ماركت الربيع',item:'تجهيز وديكور',category:'ثابت',detail:'طاولات وستائر',qty:1,unitPrice:800,total:800,paid:'yes'},
-  ];
-  setConn('ok', '(بيانات تجريبية)');
-  updateAll();
-  toast('✅ تم تحميل البيانات التجريبية', 's');
+function mapBazaar(b) {
+  return {
+    id:           b.id,
+    _dbId:        b.id,
+    name:         b.name,
+    description:  b.description || '',
+    venueType:    b.venue_type || '',
+    venueName:    b.venue_name || '',
+    area:         b.region || '',
+    address:      b.address || '',
+    venue_address:b.venue_address || '',
+    dateStart:    b.date_start || '',
+    dateEnd:      b.date_end || '',
+    daysCount:    b.days_count || 1,
+    totalSlots:   b.total_slots || 0,
+    availSlots:   b.available_slots || 0,
+    bookedSlots:  (b.total_slots || 0) - (b.available_slots || 0),
+    price:        Number(b.price_per_slot) || 0,
+    minSpace:     b.min_space || 2,
+    image:        b.image || '',
+    tags:         b.tags || [],
+    status:       b.status || 'draft',
+    organizer:    b.organizer || '',
+    organizer_id: b.organizer_id || '',
+    is_organizer_verified: b.is_organizer_verified || false,
+    time_start:   b.time_start || '',
+    time_end:     b.time_end || '',
+  };
+}
+function mapSlot(s) {
+  return {
+    slotId:      s.id,
+    _dbId:       s.id,
+    bazaarId:    s.bazaar_id,
+    rowLabel:    s.row_label || 'A',
+    slotNumber:  s.slot_number || 1,
+    col:         s.col || 1,
+    price:       Number(s.price) || 0,
+    status:      s.status || 'available',
+    is_featured: s.is_featured || false,
+    traderName:  s.trader_name || s.booked_by || '',
+    activity:    s.activity || '',
+    notes:       s.notes || '',
+  };
+}
+function mapBooking(b) {
+  return {
+    bookingId:  b.id,
+    _dbId:      b.id,
+    bazaarId:   b.bazaar_id,
+    bazaarName: BAZAARS.find(x => x.id === b.bazaar_id)?.name || '',
+    slotId:     b.slot_id,
+    vendorName: b.user_name || '',
+    phone:      b.user_phone || '',
+    email:      b.user_email || '',
+    activity:   b.activity || '',
+    amount:     Number(b.amount) || 0,
+    payStatus:  b.pay_status || 'pending',
+    bookStatus: b.status || 'pending',
+    bookDate:   b.created_at?.split('T')[0] || '',
+  };
 }
 
 /* ══════════════════════════════════════════
@@ -845,7 +960,7 @@ function updateAll() {
 ══════════════════════════════════════════ */
 function renderOv() {
   const tb = document.getElementById('ov-tbl');
-  if (!BAZAARS.length) { tb.innerHTML='<div class="ld">لا توجد بيانات — أدخل رابط API أو حمّل البيانات التجريبية</div>'; return; }
+  if (!BAZAARS.length) { tb.innerHTML='<div class="ld">لا توجد بيانات في Supabase بعد</div>'; return; }
   tb.innerHTML=`<table><thead><tr><th>البازار</th><th>المكان</th><th>الوحدات</th><th>الإشغال</th><th>الإيراد</th><th>الحالة</th></tr></thead><tbody>${
     BAZAARS.slice(0,6).map(bz=>{
       const slBz=SLOTS.filter(s=>s.bazaarId===bz.id);
@@ -1088,12 +1203,36 @@ function renderFinancial() {
 }
 
 /* ══════════════════════════════════════════
+   DB UPDATE HELPERS — Supabase
+══════════════════════════════════════════ */
+async function dbUpdateBazaarStatus(dbId, status) {
+  const { error } = await db.from('bazaars').update({ status }).eq('id', dbId);
+  if (error) toast('خطأ: ' + error.message, 'e');
+}
+async function dbUpdateSlotStatus(dbId, status) {
+  const { error } = await db.from('bazaar_slots').update({ status }).eq('id', dbId);
+  if (error) toast('خطأ: ' + error.message, 'e');
+}
+async function dbUpdateSlotField(dbId, field, value) {
+  const fieldMap = { traderName:'trader_name', activity:'activity', notes:'notes', is_featured:'is_featured' };
+  const dbField = fieldMap[field] || field;
+  const { error } = await db.from('bazaar_slots').update({ [dbField]: value }).eq('id', dbId);
+  if (error) toast('خطأ: ' + error.message, 'e');
+}
+async function dbUpdateBookingStatus(dbId, field, value) {
+  const fieldMap = { payStatus:'pay_status', bookStatus:'status' };
+  const dbField = fieldMap[field] || field;
+  const { error } = await db.from('bazaar_bookings').update({ [dbField]: value }).eq('id', dbId);
+  if (error) toast('خطأ: ' + error.message, 'e');
+}
+
+/* ══════════════════════════════════════════
    INLINE EDITS
 ══════════════════════════════════════════ */
-function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;syncToApi('editBazaarStatus',{id,status:val});renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
-function changeSlotStatus(id,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s.status=val;syncToApi('editSlotStatus',{slotId:id,status:val});renderSlots();updateAll();toast('تم تحديث الوحدة','s');}}
-function changeSlotTrader(id,field,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s[field]=val;syncToApi('editSlot',{slotId:id,[field]:val});}}
-function changeBkStatus(id,field,val){const b=BOOKINGS.find(x=>x.bookingId===id);if(b){b[field]=val;syncToApi('editBooking',{bookingId:id,[field]:val});renderBookings();renderFinancial();updateStats();toast('تم تحديث الحجز','s');}}
+function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;dbUpdateBazaarStatus(b._dbId,val);renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
+function changeSlotStatus(id,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s.status=val;dbUpdateSlotStatus(s._dbId,val);renderSlots();updateAll();toast('تم تحديث الوحدة','s');}}
+function changeSlotTrader(id,field,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s[field]=val;dbUpdateSlotField(s._dbId,field,val);}}
+function changeBkStatus(id,field,val){const b=BOOKINGS.find(x=>x.bookingId===id);if(b){b[field]=val;dbUpdateBookingStatus(b._dbId,field,val);renderBookings();renderFinancial();updateStats();toast('تم تحديث الحجز','s');}}
 function changeCostPaid(localIdx,val){const c=fCs[localIdx];if(c){const ri=COSTS.indexOf(c);if(ri>=0){COSTS[ri].paid=val;renderCosts();}}}
 function deleteCost(i){if(confirm('حذف هذا البند؟')){COSTS.splice(i,1);renderCosts();toast('تم حذف البند','i');}}
 function updateStats(){
@@ -1101,21 +1240,6 @@ function updateStats(){
   const pend=BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
   document.getElementById('ov-coll').textContent=fmt(coll);
   document.getElementById('ov-pend').textContent=fmt(pend);
-}
-
-async function syncToApi(action,data){
-  if(!API){
-    // بدون API — التغييرات محفوظة محلياً فقط
-    return;
-  }
-  try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...data})});
-    const d=await r.json();
-    if(d.error) console.warn('syncToApi error:',action,d.error);
-  }catch(e){
-    console.warn('syncToApi failed:',action,e.message);
-    // لا نوقف التطبيق — التغيير حُفظ محلياً
-  }
 }
 
 /* ══════════════════════════════════════════
@@ -1146,25 +1270,46 @@ function openBzEdit(id){
 async function saveBazaarEdit(){
   const id=document.getElementById('modal-bz').dataset.editId;
   const bz=BAZAARS.find(x=>x.id===id); if(!bz) return;
-  bz.name=document.getElementById('mebz-nm').value.trim();
+  bz.name=       document.getElementById('mebz-nm').value.trim();
   bz.description=document.getElementById('mebz-dc').value.trim();
-  bz.venueType=document.getElementById('mebz-vt').value;
-  bz.venueName=document.getElementById('mebz-vn').value.trim();
-  bz.area=document.getElementById('mebz-ar').value.trim();
-  bz.address=document.getElementById('mebz-ad').value.trim();
-  bz.dateStart=document.getElementById('mebz-ds').value;
-  bz.dateEnd=document.getElementById('mebz-de').value;
-  bz.price=Number(document.getElementById('mebz-pr').value)||0;
-  bz.totalSlots=Number(document.getElementById('mebz-ts').value)||0;
-  bz.image=document.getElementById('mebz-img').value.trim();
-  bz.tags=document.getElementById('mebz-tg').value.split(',').map(t=>t.trim()).filter(Boolean);
-  bz.minSpace=Number(document.getElementById('mebz-ms').value)||2;
-  bz.status=document.getElementById('mebz-st').value;
-  document.getElementById('mebz-status').textContent='✅ تم الحفظ';
+  bz.venueType=  document.getElementById('mebz-vt').value;
+  bz.venueName=  document.getElementById('mebz-vn').value.trim();
+  bz.area=       document.getElementById('mebz-ar').value.trim();
+  bz.address=    document.getElementById('mebz-ad').value.trim();
+  bz.dateStart=  document.getElementById('mebz-ds').value;
+  bz.dateEnd=    document.getElementById('mebz-de').value;
+  bz.price=      Number(document.getElementById('mebz-pr').value)||0;
+  bz.totalSlots= Number(document.getElementById('mebz-ts').value)||0;
+  bz.image=      document.getElementById('mebz-img').value.trim();
+  bz.tags=       document.getElementById('mebz-tg').value.split(',').map(t=>t.trim()).filter(Boolean);
+  bz.minSpace=   Number(document.getElementById('mebz-ms').value)||2;
+  bz.status=     document.getElementById('mebz-st').value;
+
+  const { error } = await db.from('bazaars').update({
+    name:          bz.name,
+    description:   bz.description,
+    venue_type:    bz.venueType,
+    venue_name:    bz.venueName,
+    region:        bz.area,
+    address:       bz.address,
+    date_start:    bz.dateStart || null,
+    date_end:      bz.dateEnd || null,
+    price_per_slot:bz.price,
+    total_slots:   bz.totalSlots,
+    image:         bz.image,
+    tags:          bz.tags,
+    min_space:     bz.minSpace,
+    status:        bz.status,
+  }).eq('id', bz._dbId);
+
+  if (error) {
+    toast('خطأ في الحفظ: ' + error.message, 'e');
+    return;
+  }
+  document.getElementById('mebz-status').textContent='✅ تم الحفظ في Supabase';
   document.getElementById('mebz-status').style.color='var(--gr)';
   renderBazaars(); renderOv(); renderFinancial();
-  toast('✅ تم حفظ بيانات البازار','s');
-  await syncToApi('editBazaar',{id,...bz});
+  toast('✅ تم حفظ البيانات في Supabase','s');
   setTimeout(()=>closeModal('modal-bz'),800);
 }
 
@@ -1202,7 +1347,7 @@ function quickEditSlot(slotId){
   const cur=opts.indexOf(s.status);
   const nxt=opts[(cur+1)%opts.length];
   s.status=nxt;
-  syncToApi('editSlotStatus',{slotId,status:nxt});
+  dbUpdateSlotStatus(s._dbId,nxt);
   openSlotMap(s.bazaarId);
   renderSlots();
   toast(`${slotId} → ${nxt}`,'i');
@@ -1300,43 +1445,65 @@ function hideAreaSug(){document.getElementById('area-sug').classList.remove('ope
 async function submitBazaar(){
   const name=document.getElementById('nb-name').value.trim();
   if(!name){toast('اسم البازار مطلوب','e');return;}
-  if(!API){toast('لا يوجد API — البيانات ستُضاف محلياً فقط','i');}
-  const newId='BZ-'+String(BAZAARS.length+1).padStart(3,'0');
-  const bz={
-    id:newId,name,
-    description:document.getElementById('nb-desc').value.trim(),
-    venueType:document.getElementById('nb-vtype').value,
-    venueName:document.getElementById('nb-vname').value.trim(),
-    area:document.getElementById('nb-area').value.trim(),
-    address:document.getElementById('nb-addr').value.trim(),
-    dateStart:document.getElementById('nb-ds').value,
-    dateEnd:document.getElementById('nb-de').value,
-    daysCount:Number(document.getElementById('nb-days').value)||1,
-    totalSlots:Number(document.getElementById('nb-slots').value)||0,
-    availSlots:Number(document.getElementById('nb-slots').value)||0,
-    bookedSlots:0,
-    price:Number(document.getElementById('nb-price').value)||0,
-    minSpace:Number(document.getElementById('nb-msp').value)||2,
-    image:document.getElementById('nb-img').value.trim(),
-    tags:[...selectedTags],
-    status:document.getElementById('nb-st').value,
+  const totalSlots=Number(document.getElementById('nb-slots').value)||0;
+  const dbObj={
+    name,
+    description:     document.getElementById('nb-desc').value.trim(),
+    venue_type:      document.getElementById('nb-vtype').value,
+    venue_name:      document.getElementById('nb-vname').value.trim(),
+    region:          document.getElementById('nb-area').value.trim(),
+    address:         document.getElementById('nb-addr').value.trim(),
+    venue_address:   document.getElementById('nb-addr').value.trim(),
+    date_start:      document.getElementById('nb-ds').value || null,
+    date_end:        document.getElementById('nb-de').value || null,
+    days_count:      Number(document.getElementById('nb-days').value)||1,
+    total_slots:     totalSlots,
+    available_slots: totalSlots,
+    price_per_slot:  Number(document.getElementById('nb-price').value)||0,
+    min_space:       Number(document.getElementById('nb-msp').value)||2,
+    image:           document.getElementById('nb-img').value.trim(),
+    tags:            [...selectedTags],
+    status:          document.getElementById('nb-st').value,
+    organizer:       document.getElementById('nb-organizer').value.trim() || null,
+    organizer_id:    document.getElementById('nb-organizer-id').value.trim() || null,
   };
   const btn=document.getElementById('btn-add-bz');
-  btn.disabled=true; btn.textContent='⏳ جارٍ الإرسال...';
-  try{
-    if(API){
-      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'addBazaar',...bz})});
-      const d=await r.json();
-      if(d.id)bz.id=d.id;
-    }
-    BAZAARS.push(bz);
+  btn.disabled=true; btn.textContent='⏳ جارٍ الحفظ...';
+
+  const { data, error } = await db.from('bazaars').insert(dbObj).select().single();
+
+  if(error){
+    toast('خطأ: '+error.message,'e');
+    document.getElementById('add-bz-res').innerHTML=`<div class="rer">❌ ${error.message}</div>`;
+  }else{
+    BAZAARS.unshift(mapBazaar(data));
     updateAll();
-    document.getElementById('add-bz-res').innerHTML=`<div class="rok">✅ تمت إضافة البازار: <strong>${bz.id} — ${bz.name}</strong></div>`;
-    clearBzForm(); toast('✅ تمت إضافة البازار','s');
-  }catch(e){toast('خطأ: '+e.message,'e');document.getElementById('add-bz-res').innerHTML=`<div class="rer">❌ ${e.message}</div>`;}
-  btn.disabled=false;btn.textContent='✅ إضافة البازار';
+    document.getElementById('add-bz-res').innerHTML=`<div class="rok">✅ تمت الإضافة: ${data.id} — ${data.name}</div>`;
+    clearBzForm();
+    toast('✅ تمت إضافة البازار في Supabase','s');
+  }
+  btn.disabled=false; btn.textContent='✅ إضافة البازار';
 }
-function clearBzForm(){['nb-name','nb-desc','nb-vname','nb-addr','nb-ds','nb-de','nb-slots','nb-price','nb-img'].forEach(id=>document.getElementById(id).value='');selectedTags=[];renderTags();document.getElementById('add-bz-res').innerHTML='';document.getElementById('nb-exp-display').textContent='0 ج';document.getElementById('nb-days').value='';}
+function clearBzForm(){
+  ['nb-name','nb-desc','nb-vname','nb-addr','nb-ds','nb-de','nb-slots','nb-price','nb-img','nb-organizer','nb-organizer-id']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  selectedTags=[];renderTags();
+  document.getElementById('add-bz-res').innerHTML='';
+  document.getElementById('nb-exp-display').textContent='0 ج';
+  document.getElementById('nb-days').value='';
+  /* إعادة ضبط مجال الصورة */
+  _nbImgUrl='';
+  const prev=document.getElementById('nb-img-prev');
+  const lbl=document.getElementById('nb-img-lbl');
+  const ico=document.getElementById('nb-img-ico');
+  const st=document.getElementById('nb-img-status');
+  const inp=document.getElementById('nb-img-input');
+  if(prev){prev.style.display='none';prev.src='';}
+  if(lbl) lbl.style.display='';
+  if(ico) ico.style.display='';
+  if(st)  st.innerHTML='';
+  if(inp) inp.value='';
+}
 
 /* ══════════════════════════════════════════
    ADD SLOTS
@@ -1356,24 +1523,42 @@ function updateSlotPreview(){
   info.innerHTML=`<span style="color:var(--or);font-weight:700">${count}</span> وحدة · سعر الوحدة: <span style="color:var(--or);font-weight:700">${fmt(price)}</span> ج · إجمالي: <span style="color:var(--or);font-weight:700">${fmt(price*count)}</span> ج`;
 }
 
-function submitSlots(){
-  const bzId=document.getElementById('asl-bz').value;
+async function submitSlots(){
+  const bzId= document.getElementById('asl-bz').value;
   const count=Number(document.getElementById('asl-count').value)||0;
   const price=Number(document.getElementById('asl-price').value)||0;
   if(!bzId){toast('اختر بازار','e');return;}
   if(!count||!price){toast('أدخل عدد الوحدات والسعر','e');return;}
+
   const rows='ABCDEFGHIJ'.split('');
+  const slotsToInsert=[];
   let c=0;
-  for(const r of rows){for(let n=1;n<=5;n++){if(c>=count)break;
-    const slotId=`${bzId}-${r}${n}`;
-    if(!SLOTS.find(s=>s.slotId===slotId)){SLOTS.push({slotId,bazaarId:bzId,rowLabel:r,slotNumber:n,price,status:'available',traderName:'',activity:'',notes:''});}
-    c++;
-  }if(c>=count)break;}
-  const bz=BAZAARS.find(x=>x.id===bzId);if(bz){bz.totalSlots=count;bz.availSlots=count;}
-  updateAll();
-  document.getElementById('add-sl-res').innerHTML=`<div class="rok">✅ تم إنشاء ${count} وحدة للبازار ${bzId}</div>`;
-  toast('✅ تم إنشاء الوحدات','s');
-  if(API) syncToApi('createSlots',{bazaarId:bzId,count,price});
+  for(const r of rows){
+    for(let n=1;n<=5;n++){
+      if(c>=count)break;
+      slotsToInsert.push({bazaar_id:bzId,row_label:r,slot_number:n,col:n,price,status:'available',is_featured:false});
+      c++;
+    }
+    if(c>=count)break;
+  }
+
+  const btn=document.getElementById('btn-add-sl');
+  btn.disabled=true; btn.textContent='⏳ جارٍ الإنشاء...';
+
+  const { data, error } = await db.from('bazaar_slots').insert(slotsToInsert).select();
+
+  if(error){
+    toast('خطأ: '+error.message,'e');
+  }else{
+    await db.from('bazaars').update({available_slots:count,total_slots:count}).eq('id',bzId);
+    data.forEach(s=>SLOTS.push(mapSlot(s)));
+    const bz=BAZAARS.find(x=>x.id===bzId);
+    if(bz){bz.totalSlots=count;bz.availSlots=count;}
+    updateAll();
+    document.getElementById('add-sl-res').innerHTML=`<div class="rok">✅ تم إنشاء ${count} وحدة في Supabase</div>`;
+    toast('✅ تم إنشاء الوحدات','s');
+  }
+  btn.disabled=false; btn.textContent='✅ إنشاء الوحدات';
 }
 
 /* ══════════════════════════════════════════
@@ -1415,7 +1600,7 @@ document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',e=>{if(e
 ══════════════════════════════════════════ */
 function fmt(n){return Number(n||0).toLocaleString('ar-EG');}
 function formatPhone(p){if(!p)return '—';const s=String(p).replace(/\..*$/,'').replace(/[^\d]/g,'');return s.length>=10?s.replace(/^(01\d)(\d{4})(\d{4})$/,'$1-$2-$3'):s;}
-function setLoad(on){['btnload','btnref'].forEach(id=>{const b=document.getElementById(id);b.disabled=on;});document.getElementById('btnload').innerHTML=on?'<div class="spin"></div> جارٍ...':'⚡ تحميل';}
+function setLoad(on){const b=document.getElementById('btnref');if(b)b.disabled=on;}
 function setConn(s,t=''){const p=document.getElementById('cpill');p.className='sb-conn '+(s==='ok'?'ok':s==='err'?'err':'');document.getElementById('ctxt').textContent=s==='ok'?'متصل — '+t:s==='err'?'خطأ':'جارٍ التحميل...';}
 function renderPag(cid,tot,cur,cb){const pages=Math.ceil(tot/PER);const c=document.getElementById(cid);if(!c||pages<=1){if(c)c.innerHTML='';return;}let h='';if(cur>1)h+=`<button class="pb2" onclick="(${cb})(${cur-1})">‹</button>`;for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-cur)<=1)h+=`<button class="pb2 ${i===cur?'active':''}" onclick="(${cb})(${i})">${i}</button>`;else if(Math.abs(i-cur)===2)h+=`<span class="pi">…</span>`;}if(cur<pages)h+=`<button class="pb2" onclick="(${cb})(${cur+1})">›</button>`;h+=`<span class="pi">${tot} عنصر</span>`;c.innerHTML=h;}
 function toast(msg,t='i'){const c=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast t${t}`;el.textContent=msg;c.appendChild(el);setTimeout(()=>el.remove(),3200);}
@@ -1423,10 +1608,10 @@ function toast(msg,t='i'){const c=document.getElementById('toasts');const el=doc
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-// Load demo data immediately
-loadDemoData();
+// تحميل البيانات من Supabase مباشرة عند فتح الداشبورد
+loadData();
 
-// Update preview on name input
+// تحديث المعاينة عند الكتابة
 document.getElementById('nb-name').addEventListener('input',updatePreview);
 document.getElementById('nb-area').addEventListener('input',updatePreview);
 document.getElementById('nb-vname').addEventListener('input',updatePreview);
@@ -1457,38 +1642,6 @@ async function mkLogin(){
   }
 }
 (function(){const s=sessionStorage.getItem('mkadmin');if(s&&s===MK_HASH.slice(0,16))document.getElementById('mk-login').style.display='none';})();
-
-/* ══ حفظ واسترجاع رابط الـ Apps Script ══ */
-function saveAndLoad(){
-  const v = document.getElementById('surl').value.trim();
-  if (v) {
-    localStorage.setItem('bz_api_url', v);
-    API = v;
-    showSavedBadge();
-  }
-  loadData();
-}
-function clearApiUrl(){
-  if (!confirm('مسح الرابط المحفوظ؟')) return;
-  localStorage.removeItem('bz_api_url');
-  document.getElementById('surl').value = '';
-  API = '';
-  document.getElementById('api-saved-badge').style.display = 'none';
-  toast('تم مسح الرابط المحفوظ', 'i');
-}
-function showSavedBadge(){
-  const b = document.getElementById('api-saved-badge');
-  if (b) b.style.display = 'inline';
-}
-(function initApiUrl(){
-  const saved = localStorage.getItem('bz_api_url');
-  if (saved) {
-    document.getElementById('surl').value = saved;
-    API = saved;
-    showSavedBadge();
-    loadData(); // تحميل تلقائي عند فتح الصفحة
-  }
-})();
 </script>
 </body>
 </html>

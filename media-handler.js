@@ -191,3 +191,87 @@ async function uploadImages(files, userId, onProgress, authToken) {
 function cancelUpload() {
   _uploadAbortCtrl?.abort();
 }
+
+/* ──────────────────────────────────────────────────────────────
+   ضغط صورة واحدة وتحويلها إلى WebP (مع EXIF orientation)
+   @param {File}   file
+   @param {number} maxW     — أقصى عرض (px)  افتراضي 1280
+   @param {number} maxH     — أقصى ارتفاع (px) افتراضي 1280
+   @param {number} quality  — جودة WebP 0-1   افتراضي 0.85
+   @returns {Promise<Blob>}
+   ────────────────────────────────────────────────────────────── */
+async function compressToWebP(file, maxW = 1280, maxH = 1280, quality = 0.85) {
+  if (file.size > MAX_FILE_BYTES) {
+    return Promise.reject(
+      new Error(`حجم الصورة كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB) — الحد الأقصى 20 MB`)
+    );
+  }
+
+  const orientation = await getExifOrientation(file);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let fw = img.naturalWidth, fh = img.naturalHeight;
+      if (fw > maxW || fh > maxH) {
+        const r = Math.min(maxW / fw, maxH / fh);
+        fw = Math.round(fw * r);
+        fh = Math.round(fh * r);
+      }
+
+      const swapDim = orientation >= 5 && orientation <= 8;
+      const canvas  = document.createElement('canvas');
+      canvas.width  = swapDim ? fh : fw;
+      canvas.height = swapDim ? fw : fh;
+
+      const ctx = canvas.getContext('2d');
+      switch (orientation) {
+        case 2: ctx.transform(-1,  0,  0,  1, fw,  0); break;
+        case 3: ctx.transform(-1,  0,  0, -1, fw, fh); break;
+        case 4: ctx.transform( 1,  0,  0, -1,  0, fh); break;
+        case 5: ctx.transform( 0,  1,  1,  0,  0,  0); break;
+        case 6: ctx.transform( 0,  1, -1,  0, fh,  0); break;
+        case 7: ctx.transform( 0, -1, -1,  0, fh, fw); break;
+        case 8: ctx.transform( 0, -1,  1,  0,  0, fw); break;
+      }
+      ctx.drawImage(img, 0, 0, fw, fh);
+
+      canvas.toBlob(
+        blob => (blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة'))),
+        'image/webp',
+        quality
+      );
+    };
+
+    img.onerror = () => reject(new Error('فشل قراءة الصورة'));
+    img.src = url;
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   رفع صورة واحدة → ضغط WebP → R2
+   @param {File}   file       الملف الأصلي
+   @param {string} r2Path     المسار داخل الباكيت  مثال: bazaars/123.webp
+   @param {string} authToken  Supabase access token
+   @returns {Promise<string>} الـ URL العام
+   ────────────────────────────────────────────────────────────── */
+async function uploadSingleImageToR2(file, r2Path, authToken) {
+  const blob = await compressToWebP(file);
+  const form = new FormData();
+  form.append('file', new File([blob], 'image.webp', { type: 'image/webp' }));
+  form.append('path', r2Path);
+
+  const res = await fetch(UPLOAD_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Authorization': `Bearer ${authToken}` },
+    body:    form,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'فشل رفع الصورة');
+  return data.url;
+}

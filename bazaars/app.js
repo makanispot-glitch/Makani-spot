@@ -2,7 +2,7 @@
    📁 bazaars/app.js — منطق صفحة البازارات المستقلة
    ================================================================
    هذا الملف مسؤول عن:
-     - تحميل البازارات من Google Sheets / Supabase
+     - تحميل البازارات من Supabase
      - الفلترة والبحث والترتيب
      - بناء كروت البازارات وعرضها
      - صفحة تفاصيل البازار + خريطة الأماكن البصرية
@@ -14,8 +14,6 @@
 /* ================================================================
    ⚙️ القسم 1: الإعدادات والثوابت
    ================================================================ */
-
-const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbyNpA_RzQ55SftsLHo-FpI9cgidyJXR-_0yMV3crIXG_7qes_0HcO-6L0o4Xs_mXtwc6w/exec";
 
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
@@ -35,7 +33,6 @@ let currentBazaar  = null;     // البازار المعروض في صفحة ا
 let bzPage         = 1;        // رقم الصفحة الحالية
 const BZ_PER_PAGE  = 9;        // عدد البازارات في كل صفحة
 let selectedSlotId = null;     // id المكان المختار في الخريطة
-let selectedSlotSource = 'supabase'; // مصدر المكان: supabase | sheet
 let bzActiveChip   = '';       // الـ chip المفعّل
 let bzTimeNav      = 'all'; // التنقل الزمني: 'all' | 'today' | 'upcoming'
 let bzVerifiedOnly = false;    // فلتر "منظمين موثّقين فقط"
@@ -203,46 +200,6 @@ function showBzPage(p) {
    🛠️ القسم 6: دوال مساعدة للبيانات
    ================================================================ */
 
-function _normalizeBazaarRow(row) {
-  const get = (...keys) => {
-    for (const k of keys) {
-      if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
-    }
-    return null;
-  };
-  const idVal = get('id','ID','رقم','No') || (Math.random() * 1e9 | 0).toString(36);
-  const tagsVal = get('tags','Tags','وسوم','تاجات') || '';
-  const firstTag = Array.isArray(tagsVal)
-    ? tagsVal[0]
-    : String(tagsVal || '').split(',').map(t => t.trim()).filter(Boolean)[0];
-
-  return {
-    id:             String(idVal),
-    name:           get('name','اسم البازار','البازار','الاسم','Name')             || '—',
-    location:       get('location','venueName','venue_name','اسم المكان','الموقع','المكان','Location') || '',
-    region:         get('region','area','Area','المنطقة','Region')                               || '',
-    date_start:     get('date_start','dateStart','date_start','تاريخ البداية','تاريخ البدء','من تاريخ','Start Date') || '',
-    date_end:       get('date_end','dateEnd','date_end','تاريخ النهاية','تاريخ الانتهاء','حتى تاريخ','End Date') || '',
-    time_start:     get('time_start','وقت البداية','وقت البدء','Start Time')       || '',
-    time_end:       get('time_end','وقت النهاية','وقت الانتهاء','End Time')        || '',
-    price_per_slot: Number(get('price_per_slot','price','Price','السعر','سعر المكان') || 0),
-    available_slots:Number(get('available_slots','availSlots','avail_slots','أماكن متاحة','Available Slots') || get('total_slots','totalSlots','total_slots','إجمالي الأماكن','Total Slots') || 0),
-    total_slots:    Number(get('total_slots','totalSlots','total_slots','إجمالي الأماكن','عدد الأماكن','Total Slots') || 0),
-    image:          get('image','صورة','رابط الصورة','Image','img')                || '',
-    description:    get('description','الوصف','تفاصيل','Description')             || '',
-    category:       get('category','venueType','venue_type','الفئة','النوع','التصنيف','Category') || firstTag || '',
-    organizer:            get('organizer','المنظم','جهة التنظيم','Organizer')                  || '',
-    organizer_id:         get('organizer_id','organizerId','organizer_user_id','معرف المنظم')  || null,
-    is_organizer_verified:
-      (() => {
-        const v = get('is_organizer_verified','organizerVerified','organizer_verified','منظم موثّق');
-        return v === true || v === 'true' || v === 1 || v === '1' || v === 'yes';
-      })(),
-    venue_address:        get('venue_address','address','Address','عنوان المكان','العنوان','Venue') || '',
-    status:               get('status','الحالة','Status')                                || 'published',
-  };
-}
-
 function _toDirectImgUrl(url) {
   if (!url || typeof url !== 'string') return '';
   url = url.trim();
@@ -255,130 +212,60 @@ function _toDirectImgUrl(url) {
   return url;
 }
 
-function _bazaarApiUrl(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return qs ? `${BAZAAR_SHEET_URL}?${qs}` : BAZAAR_SHEET_URL;
-}
-
-function _normalizeBazaarSlot(row) {
-  return {
-    id: String(row.id || row.slotId || row.slot_id || ''),
-    bazaar_id: row.bazaar_id || row.bazaarId || row.bazaarID || '',
-    row: row.row || row.rowIndex || null,
-    col: row.col || row.colIndex || null,
-    row_label: row.rowLabel || row.row_label || '',
-    slot_number: row.slot_number || row.slotNumber || row.number || row.id || row.slotId || '',
-    price: Number(row.price || 0),
-    status: row.status || 'available',
-    source: 'sheet',
-  };
-}
-
-async function _loadBazaarSlotsFromSheet(bazaarId) {
-  const res = await fetch(_bazaarApiUrl({ action: 'slots', bazaarId }));
-  const json = await res.json();
-  const rows = Array.isArray(json)
-    ? json
-    : Array.isArray(json.slots)
-      ? json.slots
-      : Array.isArray(json.data)
-        ? json.data
-        : [];
-
-  return rows
-    .map(_normalizeBazaarSlot)
-    .filter(s => s.id && String(s.bazaar_id) === String(bazaarId));
-}
-
 
 /* ================================================================
-   📥 القسم 7: تحميل البازارات من Google Sheets
+   📥 القسم 7: تحميل البازارات من Supabase
    ================================================================ */
 
 async function loadBazaars() {
   try {
-    // نجرّب أولاً مع ?action=all (الصيغة التي يعرفها الـ Apps Script)
-    // ثم بدون بارامتر كـ fallback
-    let json;
-    for (const url of [BAZAAR_SHEET_URL + '?action=all', BAZAAR_SHEET_URL]) {
-      try {
-        const res  = await fetch(url);
-        const text = await res.text();
-        json = JSON.parse(text);
-        if (json && (Array.isArray(json) || json.bazaars || json.data || json.rows)) break;
-      } catch (_) { json = null; }
-    }
-
-    if (!json) {
-      console.error('❌ الشيت مش بيرجع JSON صحيح');
-      _renderBazaarsEmpty('تأكد أن الـ Apps Script منشور كـ "Anyone can access"');
+    if (!sbClient) {
+      _renderBazaarsEmpty('تعذّر الاتصال بقاعدة البيانات');
       return;
     }
 
-    console.log('📊 استجابة الشيت:', json);
+    const { data, error } = await sbClient
+      .from('bazaars')
+      .select('*')
+      .eq('status', 'published')
+      .order('date_start', { ascending: true });
 
-    let rows = Array.isArray(json)              ? json
-             : Array.isArray(json.bazaars)      ? json.bazaars
-             : Array.isArray(json.data)         ? json.data
-             : Array.isArray(json.rows)         ? json.rows
-             : Array.isArray(json.result)       ? json.result
-             : Array.isArray(json.items)        ? json.items
-             : Array.isArray(json.values)       ? json.values
-             : (json.status === 'ok' && Array.isArray(json.data)) ? json.data
-             : [];
+    if (error) throw new Error(error.message);
 
-    rows = rows.filter(r =>
-      r && typeof r === 'object' &&
-      Object.values(r).some(v => v !== '' && v !== null && v !== undefined)
-    );
-
-    if (!rows.length) {
-      console.warn('⚠️ الشيت فارغ أو البيانات مش مكتشفة:', json);
+    if (!data || !data.length) {
       _renderBazaarsEmpty();
       return;
     }
 
-    rows = rows
-      .map(r => {
-        const b = _normalizeBazaarRow(r);
-        b.image = _toDirectImgUrl(b.image);
-        return b;
-      })
-      .filter(b => b.name && b.name !== '—')
-      .filter(b => {
-        // لو ما فيش status أو فارغ → اعرضه
-        if (!b.status || String(b.status).trim() === '') return true;
-        const s = String(b.status).trim().toLowerCase();
-        // استثن المرفوض والمحذوف فقط
-        return !['rejected','deleted','hidden','مرفوض','محذوف','مخفي','draft','مسودة'].includes(s);
-      })
-      .sort((a, b) => new Date(a.date_start || 0) - new Date(b.date_start || 0));
+    BAZAARS = data.map(b => ({
+      id:                   String(b.id),
+      name:                 b.name || '—',
+      location:             b.venue_name || b.location || '',
+      region:               b.region || '',
+      date_start:           b.date_start || '',
+      date_end:             b.date_end || '',
+      time_start:           b.time_start || '',
+      time_end:             b.time_end || '',
+      price_per_slot:       Number(b.price_per_slot) || 0,
+      available_slots:      Number(b.available_slots) || 0,
+      total_slots:          Number(b.total_slots) || 0,
+      image:                _toDirectImgUrl(b.image || ''),
+      description:          b.description || '',
+      category:             b.category || b.venue_type || '',
+      organizer:            b.organizer || '',
+      organizer_id:         b.organizer_id || null,
+      is_organizer_verified: b.is_organizer_verified || false,
+      venue_address:        b.venue_address || b.address || '',
+      status:               b.status || 'published',
+    }));
 
-    console.log(`✅ تم تحميل ${rows.length} بازار:`, rows);
-
-    BAZAARS = rows;
+    console.log(`✅ تم تحميل ${BAZAARS.length} بازار من Supabase`);
     applyBzFilters();
 
   } catch (err) {
     console.error('❌ خطأ في تحميل البازارات:', err.message);
-    _loadBazaarsFromSupabase();
+    _renderBazaarsEmpty('تعذّر تحميل البازارات — حاول مرة أخرى');
   }
-}
-
-async function _loadBazaarsFromSupabase() {
-  if (!sbClient) { _renderBazaarsEmpty(); return; }
-  try {
-    const { data, error } = await sbClient
-      .from('bazaars').select('*')
-      .eq('status', 'published')
-      .order('date_start', { ascending: true });
-    if (!error && data?.length) {
-      BAZAARS = data;
-      applyBzFilters();
-    } else {
-      _renderBazaarsEmpty();
-    }
-  } catch (e) { _renderBazaarsEmpty(); }
 }
 
 function _renderBazaarsEmpty(hint) {
@@ -433,14 +320,21 @@ function buildBazaarCard(b) {
   const orgVerified = b.is_organizer_verified;
   const orgSubText  = orgVerified ? '⭐ منظّم موثّق' : 'منظّم البازار';
 
+  const orgProfileHref = b.organizer_id
+    ? `/bazaars/profile.html?organizer=${b.organizer_id}`
+    : null;
+
   const orgHtml = orgName ? `
-  <div class="bz-card-organizer">
+  <div class="bz-card-organizer" ${orgProfileHref ? `style="cursor:pointer" onclick="event.stopPropagation();window.location.href='${orgProfileHref}'"` : ''}>
     <div class="bz-org-avatar">${orgInitial}</div>
     <div class="bz-org-info">
       <div class="bz-org-name">🎪 ${orgName}</div>
       <div class="bz-org-sub">${orgSubText}</div>
     </div>
-    ${orgVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
+    <div style="display:flex;align-items:center;gap:6px;margin-right:auto">
+      ${orgVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
+      ${orgProfileHref ? `<span style="font-size:10px;color:var(--orange);opacity:.8">←</span>` : ''}
+    </div>
   </div>` : '';
 
   /* ── HTML ── */
@@ -786,20 +680,9 @@ async function openBazaarDetail(bazaarId) {
 
   const panel = document.getElementById('bzd-booking-panel');
   if (panel) panel.style.display = 'none';
-  selectedSlotSource = 'supabase';
 
   showBzPage('bazaar-detail');
   window.scrollTo({ top: 0, behavior: 'instant' });
-
-  try {
-    const sheetSlots = await _loadBazaarSlotsFromSheet(bazaarId);
-    if (sheetSlots.length) {
-      renderSlotMap(sheetSlots);
-      return;
-    }
-  } catch (err) {
-    console.warn('تعذر تحميل أماكن البازار من الشيت:', err);
-  }
 
   if (!sbClient) {
     if (slotmapEl) slotmapEl.innerHTML = _renderSlotMapFallback();
@@ -811,7 +694,7 @@ async function openBazaarDetail(bazaarId) {
       .from('bazaar_slots')
       .select('*')
       .eq('bazaar_id', bazaarId)
-      .order('slot_number', { ascending: true });
+      .order('row_label', { ascending: true });
 
     if (error || !slots?.length) {
       if (slotmapEl) slotmapEl.innerHTML = _renderSlotMapFallback();
@@ -865,13 +748,14 @@ function _renderBazaarInfo(b) {
           ${b.time_start ? `<div class="sd-extra-row"><span>⏰ الوقت</span><span>${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</span></div>` : ''}
           ${b.category   ? `<div class="sd-extra-row"><span>🏷 الفئة</span><span class="bz-detail-cat-badge" style="font-size:11px">${b.category}</span></div>` : ''}
           ${b.organizer  ? `
-          <div class="sd-extra-row">
+          <div class="sd-extra-row" ${b.organizer_id ? `style="cursor:pointer" onclick="openOrganizerProfile('${b.organizer_id}')"` : ''}>
             <span>🧑‍💼 المنظم</span>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <span style="font-weight:700">${b.organizer}</span>
               ${b.is_organizer_verified
                 ? `<span class="bz-verified-badge">✓ موثّق</span>`
                 : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">لم يتم التحقق بعد</span>`}
+              ${b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">← عرض الصفحة</span>` : ''}
             </div>
           </div>` : ''}
         </div>
@@ -928,7 +812,6 @@ function _renderBazaarInfo(b) {
 function closeBazaarDetail() {
   currentBazaar  = null;
   selectedSlotId = null;
-  selectedSlotSource = 'supabase';
   showBzPage('bazaars');
 }
 
@@ -1046,20 +929,25 @@ async function _loadOrganizerCard(userId, fallbackName) {
             <div style="font-size:10px;color:var(--ink3)">تاريخ الانضمام</div>
           </div>` : ''}
         </div>
-        ${org.whatsapp || org.phone ? `
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;
-                    border-top:1px solid var(--border)">
-          <span style="font-size:12px;color:var(--ink3)">للتواصل مع المنظّم:</span>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border);flex-wrap:wrap">
           ${org.whatsapp ? `
           <a href="https://wa.me/${org.whatsapp.replace(/\D/g,'')}" target="_blank"
              style="display:inline-flex;align-items:center;gap:5px;
                     background:rgba(34,197,94,.12);color:#22C55E;
                     border:1px solid rgba(34,197,94,.3);border-radius:8px;
-                    padding:5px 12px;font-size:12px;font-weight:700;text-decoration:none"
+                    padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none"
              onclick="event.stopPropagation()">
             💬 واتساب
           </a>` : ''}
-        </div>` : ''}
+          <a href="/bazaars/profile.html?organizer=${userId}"
+             style="display:inline-flex;align-items:center;gap:5px;
+                    background:rgba(255,107,0,.1);color:var(--orange);
+                    border:1px solid rgba(255,107,0,.3);border-radius:8px;
+                    padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none"
+             onclick="event.stopPropagation()">
+            👤 صفحة المنظّم ←
+          </a>
+        </div>
         ${reviewsHtml}
       </div>
     </div>`;
@@ -1198,16 +1086,17 @@ function _buildSlotHtml(slot, index = 0) {
   let cls = isBooked ? 'booked' : 'available';
   if (isFeatured) cls += ' featured';
 
-  const source    = slot.source || 'supabase';
+  const displayLabel = (slot.row_label || '') + (slot.slot_number || '');
+
   const clickAttr = isAvailable
-    ? `onclick="selectSlot('${slot.id}','${slot.slot_number || slot.id}','${source}')"`
+    ? `onclick="selectSlot('${slot.id}','${displayLabel || slot.id}')"`
     : '';
 
   const bookedLabel = isFeatured ? `محجوز (مميز ⭐)` : `محجوز`;
   const availLabel  = isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`;
   const titleAttr   = isBooked
-    ? `title="مكان ${slot.slot_number || ''} — ${bookedLabel}"`
-    : `title="مكان ${slot.slot_number || ''} — ${availLabel}"`;
+    ? `title="مكان ${displayLabel} — ${bookedLabel}"`
+    : `title="مكان ${displayLabel} — ${availLabel}"`;
 
   const delay       = Math.min(index * 0.028, 0.55).toFixed(3);
   const featuredTip = isFeatured
@@ -1219,12 +1108,12 @@ function _buildSlotHtml(slot, index = 0) {
               data-featured="${isFeatured}"
               style="animation-delay:${delay}s"
               ${clickAttr} ${titleAttr}>
-    ${slot.slot_number || ''}
+    ${displayLabel}
     ${featuredTip}
   </div>`;
 }
 
-function selectSlot(slotId, slotLabel, source = 'supabase') {
+function selectSlot(slotId, slotLabel) {
   document.querySelectorAll('.bz-slot.selected').forEach(el => {
     el.classList.remove('selected');
     el.classList.add('available');
@@ -1241,8 +1130,7 @@ function selectSlot(slotId, slotLabel, source = 'supabase') {
     });
   }
 
-  selectedSlotId     = slotId;
-  selectedSlotSource = source;
+  selectedSlotId = slotId;
 
   const slotInfoEl = document.getElementById('bzd-slot-info');
   if (slotInfoEl && currentBazaar) {
@@ -1272,8 +1160,7 @@ function clearSlotSelection() {
     el.classList.remove('selected');
     el.classList.add('available');
   });
-  selectedSlotId     = null;
-  selectedSlotSource = 'supabase';
+  selectedSlotId = null;
 
   const panel = document.getElementById('bzd-booking-panel');
   if (panel) panel.style.display = 'none';
@@ -1281,25 +1168,8 @@ function clearSlotSelection() {
 
 
 /* ================================================================
-   📬 القسم 13: إرسال حجز البازار
+   📬 القسم 13: إرسال حجز البازار — Supabase فقط
    ================================================================ */
-
-async function _bookBazaarSlotViaSheet({ name, phone, email, business, notes }) {
-  const res = await fetch(_bazaarApiUrl({
-    action:   'book',
-    slotId:   selectedSlotId,
-    bazaarId: currentBazaar.id,
-    name,
-    phone,
-    email:    email || '',
-    activity: business,
-    userId:   currentUser?.id || '',
-    notes:    notes || '',
-  }));
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'تعذر حفظ الحجز في الشيت');
-  return json;
-}
 
 async function submitBazaarBooking() {
   if (!selectedSlotId || !currentBazaar) return;
@@ -1329,7 +1199,7 @@ async function submitBazaarBooking() {
     showBzbError('ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
   if (!business) { showBzbError('من فضلك اكتب اسم نشاطك أو مشروعك'); return; }
-  if (selectedSlotSource !== 'sheet' && !sbClient) {
+  if (!sbClient) {
     showBzbError('في مشكلة في الاتصال — حاول تاني'); return;
   }
 
@@ -1340,107 +1210,50 @@ async function submitBazaarBooking() {
     submitBtn.style.opacity = '0.7';
   }
 
-  const _sendToSheet = async (source) => {
-    try {
-      await fetch(BAZAAR_SHEET_URL, {
-        method:  'POST',
-        mode:    'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:      'book',
-          bookingId,
-          bazaarId:    currentBazaar.id,
-          bazaarName:  currentBazaar.name,
-          slotId:      selectedSlotId,
-          name, phone,
-          email:       email || '',
-          business,
-          notes:       notes || '',
-          userId:      currentUser.id.toString(),
-          status:      'confirmed',
-          source,
-        }),
-      });
-    } catch (_) {
-      console.warn('تعذر إرسال الحجز للشيت');
-    }
-  };
-
   try {
-    const bookingId = crypto.randomUUID();
-    const now       = new Date().toISOString();
+    const now = new Date().toISOString();
+
+    /* قفل الوحدة — نقرأ الصفوف المُحدَّثة للتحقق من عدم سبق الحجز */
+    const { data: lockedRows, error: lockErr } = await sbClient
+      .from('bazaar_slots')
+      .update({ status: 'booked' })
+      .eq('id', selectedSlotId)
+      .eq('status', 'available')
+      .select('id');
+
+    if (lockErr) throw new Error('تعذّر حجز المكان: ' + lockErr.message);
+    if (!lockedRows || lockedRows.length === 0) throw new Error('تعذّر حجز المكان');
+
+    // حفظ الحجز
+    const { error: bookingErr } = await sbClient
+      .from('bazaar_bookings')
+      .insert({
+        bazaar_id:     String(currentBazaar.id),
+        slot_id:       selectedSlotId,
+        user_id:       currentUser.id.toString(),
+        user_name:     name,
+        user_phone:    phone,
+        user_email:    email || null,
+        business_name: business,
+        notes:         notes || null,
+        status:        'pending',
+        created_at:    now,
+      });
+
+    if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
+
+    // تحديث available_slots في البازار
+    await sbClient
+      .from('bazaars')
+      .update({ available_slots: Math.max(0, (currentBazaar.available_slots || 1) - 1) })
+      .eq('id', String(currentBazaar.id));
 
     const bazaarBookingRecord = {
-      id:            bookingId,
-      bazaar_id:     String(currentBazaar.id),
-      bazaar_name:   currentBazaar.name,
-      slot_id:       selectedSlotId,
-      user_id:       currentUser.id.toString(),
-      user_name:     name,
-      user_phone:    phone,
-      user_email:    email || null,
-      business_name: business,
-      notes:         notes || null,
-      status:        'confirmed',
-      created_at:    now,
+      bazaar_id: String(currentBazaar.id), slot_id: selectedSlotId,
+      user_id: currentUser.id.toString(), user_name: name, user_phone: phone,
+      user_email: email || null, business_name: business, notes: notes || null,
+      status: 'pending', created_at: now,
     };
-
-    if (selectedSlotSource === 'sheet') {
-
-      await _bookBazaarSlotViaSheet({ name, phone, email, business, notes });
-
-      if (sbClient && currentUser) {
-        const { error: sheetMirrorErr } = await sbClient
-          .from('bazaar_bookings')
-          .insert({
-            id:            bazaarBookingRecord.id,
-            bazaar_id:     bazaarBookingRecord.bazaar_id,
-            slot_id:       bazaarBookingRecord.slot_id,
-            user_id:       bazaarBookingRecord.user_id,
-            user_name:     bazaarBookingRecord.user_name,
-            user_phone:    bazaarBookingRecord.user_phone,
-            user_email:    bazaarBookingRecord.user_email,
-            business_name: bazaarBookingRecord.business_name,
-            notes:         bazaarBookingRecord.notes,
-            status:        bazaarBookingRecord.status,
-            created_at:    bazaarBookingRecord.created_at,
-          });
-        if (sheetMirrorErr) {
-          console.warn('تعذر حفظ نسخة في Supabase:', sheetMirrorErr.message);
-        }
-      }
-
-    } else {
-
-      const { error: lockErr } = await sbClient
-        .from('bazaar_slots')
-        .update({ status: 'booked', booked_by: currentUser.id.toString(), updated_at: now })
-        .eq('id', selectedSlotId)
-        .eq('status', 'available');
-
-      if (lockErr) throw new Error('تعذّر حجز المكان: ' + lockErr.message);
-
-      const { error: bookingErr } = await sbClient
-        .from('bazaar_bookings')
-        .insert({
-          id:            bazaarBookingRecord.id,
-          bazaar_id:     bazaarBookingRecord.bazaar_id,
-          slot_id:       bazaarBookingRecord.slot_id,
-          user_id:       bazaarBookingRecord.user_id,
-          user_name:     bazaarBookingRecord.user_name,
-          user_phone:    bazaarBookingRecord.user_phone,
-          user_email:    bazaarBookingRecord.user_email,
-          business_name: bazaarBookingRecord.business_name,
-          notes:         bazaarBookingRecord.notes,
-          status:        bazaarBookingRecord.status,
-          created_at:    bazaarBookingRecord.created_at,
-        });
-
-      if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
-
-      await _sendToSheet('supabase');
-    }
-
     _saveLocalBazaarBooking(currentUser.id, bazaarBookingRecord);
 
     const slotEl = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`);
