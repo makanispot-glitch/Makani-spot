@@ -15,7 +15,7 @@
    ⚙️ القسم 1: الإعدادات والثوابت
    ================================================================ */
 
-const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec";
+const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbyNpA_RzQ55SftsLHo-FpI9cgidyJXR-_0yMV3crIXG_7qes_0HcO-6L0o4Xs_mXtwc6w/exec";
 
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
