@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (['home','how','owner','login','signup'].includes(urlPage)) {
       showPage(urlPage);
     } else if (urlPage === 'market') {
-      goToMarketplace();
+      window.location.replace('/spaces/');
     }
     // dashboard يُعالَج في initAuth بعد التحقق من الجلسة
   }
@@ -448,10 +448,10 @@ function renderCards(data, gridId, showViewAll, fromPage) {
 
   const viewAllHtml = showViewAll ? `
     <div style="grid-column:1/-1;text-align:center;padding:14px 0 4px">
-      <button class="btn-view-all" onclick="goToMarketplace()">
+      <a class="btn-view-all" href="/spaces/">
         <span>عرض جميع المساحات المتاحة (${SPACES.length})</span>
         <span class="view-all-arrow">←</span>
-      </button>
+      </a>
     </div>` : '';
 
   grid.innerHTML = data.map(s => buildCardHtml(s, fromPage)).join('') + viewAllHtml;
@@ -488,7 +488,7 @@ function openSpaceDetail(spaceId, fromPage) {
           <div class="sd-breadcrumb">
             <span onclick="showPage('home')" style="cursor:pointer">الرئيسية</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="goToMarketplace()" style="cursor:pointer">المساحات</span>
+            <span onclick="window.location.href='/spaces/'" style="cursor:pointer">المساحات</span>
             <span class="sd-bc-sep">·</span>
             <span style="color:var(--orange)">${s.name}</span>
           </div>
@@ -1088,28 +1088,10 @@ function openBookingForUnit(spaceId, unitId) {
    ================================================================ */
 
 /**
- * يفتح صفحة الماركت بليس ويصفّرها
+ * يوجّه المستخدم لصفحة المساحات المستقلة
  */
 function goToMarketplace() {
-  showPage('market');
-  mpPage        = 1;
-  mpActiveTypes = [];
-  mpActiveActs  = [];
-  mpFiltered    = [...SPACES];
-
-  const s2 = document.getElementById('mp-slider-max');
-  if (s2) s2.value = parseInt(s2?.max || 50000);
-  updateMpSlider();
-
-  const mpRegion = document.getElementById('mp-region');
-  if (mpRegion) mpRegion.value = '';
-  const mpSort = document.getElementById('mp-sort');
-  if (mpSort) mpSort.value = 'default';
-
-  document.querySelectorAll('.mp-type-btn').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.mp-act-btn').forEach(b => b.classList.remove('on'));
-
-  renderMarketplace();
+  window.location.href = '/spaces/';
 }
 
 function toggleMpType(type, el) {

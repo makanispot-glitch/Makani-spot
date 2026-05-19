@@ -99,13 +99,13 @@
       <div class="nav-divider"></div>
 
       <!-- الأقسام الثلاثة الرئيسية -->
-      <button class="nav-section-btn" id="nsb-spaces" onclick="goToMarketplace()">
+      <a class="nav-section-btn" id="nsb-spaces" href="/spaces/">
         <span class="nsb-icon">◈</span>
         <span class="nsb-text">
           <strong>كل المساحات</strong>
           <small>ابحث عن مساحة لمشروعك</small>
         </span>
-      </button>
+      </a>
 
       <button class="nav-section-btn" id="nsb-bazaars" onclick="window.location.href='/bazaars/'"
         <span class="nsb-icon">
@@ -191,7 +191,7 @@
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
               🎟 اشترك في بزار
             </button>
-            <button class="nav-dropdown-item" onclick="goToMarketplace();closeUserDropdown()">
+            <button class="nav-dropdown-item" onclick="window.location.href='/spaces/';closeUserDropdown()">
               🔍 دور على مساحة
             </button>
             <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()"
@@ -1295,7 +1295,7 @@
           <div class="dash-section-head">
             <div class="dash-section-title">📋 حجوزاتك</div>
             <button class="btn btn-primary" style="font-size:13px;padding:8px 18px"
-              onclick="goToMarketplace()">+ حجز جديد</button>
+              onclick="window.location.href='/spaces/'">+ حجز جديد</button>
           </div>
           <div id="dash-bookings">
             <div class="no-bookings">جاري التحميل…</div>
@@ -1361,11 +1361,11 @@
           <div class="dash-nav-grid">
 
             <!-- المساحات -->
-            <button class="dash-nav-card" onclick="goToMarketplace()">
+            <a class="dash-nav-card" href="/spaces/">
               <span class="dnc-ico">🏪</span>
               <span class="dnc-ttl">جميع المساحات</span>
               <span class="dnc-sub">استأجر مساحة لمشروعك</span>
-            </button>
+            </a>
 
             <!-- البازارات القادمة -->
             <a class="dash-nav-card" href="/bazaars/">
@@ -1613,7 +1613,7 @@
     </button>
 
     <!-- المساحات التجارية -->
-    <button class="bn-item" id="bn-market" onclick="goToMarketplace();updateBottomNav('market')">
+    <a class="bn-item" id="bn-market" href="/spaces/">
       <span class="bn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
@@ -1623,7 +1623,7 @@
       </span>
       <span class="bn-label">مساحات</span>
       <span class="bn-desc">ثابتة وتجارية</span>
-    </button>
+    </a>
 
     <!-- البازارات -->
     <button class="bn-item" id="bn-bazaars" onclick="window.location.href='/bazaars/'">
