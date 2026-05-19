@@ -256,6 +256,7 @@ async function loadBazaars() {
       organizer_id:         b.organizer_id || null,
       is_organizer_verified: b.is_organizer_verified || false,
       venue_address:        b.venue_address || b.address || '',
+      maps_link:            b.maps_link || '',
       status:               b.status || 'published',
     }));
 
@@ -726,9 +727,10 @@ function _renderBazaarInfo(b) {
            onerror="this.parentElement.innerHTML='<div style=height:180px;display:flex;align-items:center;justify-content:center;font-size:72px;background:var(--surface2)>🎪</div>'">
     </div>` : '';
 
-  const mapsHref = b.venue_address || b.location
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue_address || b.location)}`
-    : '';
+  const mapsHref = b.maps_link
+    || ((b.venue_address || b.location)
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue_address || b.location)}`
+        : '');
 
   infoEl.innerHTML = `
     ${imgHtml}

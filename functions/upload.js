@@ -30,10 +30,10 @@ export async function onRequestPost(context) {
     return fail(503, 'R2 bucket غير مضبوط — أضف BUCKET binding في Pages Dashboard باسم BUCKET أو BUCKET-1');
   }
 
-  /* 2. تحقق من وجود Authorization header (Supabase session token) */
+  /* 2. تحقق من وجود Authorization header (session token أو anon key) */
   const auth = request.headers.get('Authorization') || '';
-  if (!auth.startsWith('Bearer ')) {
-    return fail(401, 'غير مصرّح — يجب تسجيل الدخول أولاً');
+  if (!auth.startsWith('Bearer ') || auth.length < 20) {
+    return fail(401, 'غير مصرّح');
   }
 
   /* 3. اقرأ الـ FormData */

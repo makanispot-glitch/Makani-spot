@@ -490,8 +490,8 @@ tbody tr:hover .row-acts{opacity:1}
           <div class="fg"><label>العنوان التفصيلي</label><input type="text" class="fc" id="nb-addr" placeholder="مثال: طريق الواحات"></div>
         </div>
         <div class="fr2">
-          <div class="fg"><label>تاريخ البداية <span class="rq">*</span></label><input type="date" class="fc" id="nb-ds"></div>
-          <div class="fg"><label>تاريخ النهاية <span class="rq">*</span></label><input type="date" class="fc" id="nb-de" oninput="calcDays()"></div>
+          <div class="fg"><label>تاريخ البداية <span class="rq">*</span></label><input type="date" class="fc" id="nb-ds" oninput="calcDays();updatePreview()"></div>
+          <div class="fg"><label>تاريخ النهاية <span class="rq">*</span></label><input type="date" class="fc" id="nb-de" oninput="calcDays();updatePreview()"></div>
         </div>
         <div class="fr3">
           <div class="fg"><label>عدد الأيام</label><input type="number" class="fc" id="nb-days" placeholder="تلقائي" readonly style="color:var(--mu)"></div>
@@ -500,13 +500,18 @@ tbody tr:hover .row-acts{opacity:1}
         </div>
         <div class="fg"><label>أدنى مساحة (م²)</label><input type="number" class="fc" id="nb-msp" value="2" min="1"></div>
         <div class="fg">
+          <label>رابط Google Maps <span style="font-size:10px;color:var(--mu)">(اختياري)</span></label>
+          <input type="url" class="fc" id="nb-maps-link" placeholder="https://maps.google.com/...">
+          <div class="hint">من Google Maps: مشاركة → نسخ الرابط</div>
+        </div>
+        <div class="fg">
           <label>اسم المنظّم</label>
-          <input type="text" class="fc" id="nb-organizer" placeholder="اسم المنظّم (كما سيظهر للزوار)">
+          <input type="text" class="fc" id="nb-organizer" value="مكاني Spot" placeholder="اسم المنظّم">
+          <div class="hint">افتراضي: مكاني Spot ← يظهر للزوار مع شارة ✓ موثّق</div>
         </div>
         <div class="fg">
           <label>معرّف المنظّم (User ID)</label>
-          <input type="text" class="fc" id="nb-organizer-id" placeholder="UUID من جدول profiles (اختياري)">
-          <div class="hint">أضفه عشان يظهر مربع المنظّم على الكارت وتنشط صفحة البروفايل</div>
+          <input type="text" class="fc" id="nb-organizer-id" placeholder="UUID من profiles (اختياري)">
         </div>
       </div>
       <div>
@@ -783,9 +788,8 @@ async function handleNbImgUpload(inputEl) {
   if (ico)      ico.style.display  = 'none';
 
   try {
-    const { data: { session } } = await db.auth.getSession();
-    const token = session?.access_token;
-    if (!token) throw new Error('يجب تسجيل الدخول أولاً');
+    /* الأدمن يستخدم الـ anon key مباشرة — لا حاجة لـ session */
+    const token = SUPABASE_KEY;
 
     const blob   = await _compressToWebP(file);
     const rand   = Math.random().toString(36).slice(2, 6);
@@ -1464,8 +1468,10 @@ async function submitBazaar(){
     image:           document.getElementById('nb-img').value.trim(),
     tags:            [...selectedTags],
     status:          document.getElementById('nb-st').value,
-    organizer:       document.getElementById('nb-organizer').value.trim() || null,
-    organizer_id:    document.getElementById('nb-organizer-id').value.trim() || null,
+    organizer:            document.getElementById('nb-organizer').value.trim() || null,
+    organizer_id:         document.getElementById('nb-organizer-id').value.trim() || null,
+    is_organizer_verified: (document.getElementById('nb-organizer').value.trim() === 'مكاني Spot') ? true : false,
+    maps_link:            document.getElementById('nb-maps-link').value.trim() || null,
   };
   const btn=document.getElementById('btn-add-bz');
   btn.disabled=true; btn.textContent='⏳ جارٍ الحفظ...';
@@ -1485,8 +1491,11 @@ async function submitBazaar(){
   btn.disabled=false; btn.textContent='✅ إضافة البازار';
 }
 function clearBzForm(){
-  ['nb-name','nb-desc','nb-vname','nb-addr','nb-ds','nb-de','nb-slots','nb-price','nb-img','nb-organizer','nb-organizer-id']
+  ['nb-name','nb-desc','nb-vname','nb-addr','nb-ds','nb-de','nb-slots','nb-price','nb-img','nb-maps-link','nb-organizer-id']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  /* إعادة القيمة الافتراضية للمنظّم */
+  const orgEl=document.getElementById('nb-organizer');
+  if(orgEl) orgEl.value='مكاني Spot';
   selectedTags=[];renderTags();
   document.getElementById('add-bz-res').innerHTML='';
   document.getElementById('nb-exp-display').textContent='0 ج';
