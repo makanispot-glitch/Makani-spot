@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="السياسات الرسمية لمنصة مكاني Spot — سياسة الخصوصية والشروط والأحكام وحقوق الملكية الفكرية. شركة كيوسك سبوت هب (Kiosq SpotHub).">
+
+  <!-- Brand Colors -->
+  <meta name="theme-color" content="#F36418">
+  <meta name="msapplication-TileColor" content="#F36418">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="/favicon.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="/favicon.jpg">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="السياسات الرسمية — مكاني Spot">
+  <meta property="og:description" content="سياسة الخصوصية والشروط والأحكام وحقوق الملكية الفكرية لمنصة مكاني Spot">
+  <meta property="og:locale" content="ar_EG">
+
+  <title>السياسات الرسمية — مكاني Spot</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Design System Tokens (mirrored from style.css) ── */
+    :root {
+      --orange-50:  #FFF4ED;
+      --orange-100: #FFE3D0;
+      --orange-200: #FFC3A0;
+      --orange-400: #FA7A37;
+      --orange-500: #F36418;
+      --orange-600: #D9510A;
+      --orange-700: #B33F05;
+
+      --navy-50:  #F2F4F7;
+      --navy-100: #E4E7ED;
+      --navy-400: #5E6878;
+      --navy-500: #3A4554;
+      --navy-600: #2A323F;
+      --navy-700: #212833;
+      --navy-800: #181D26;
+      --navy-900: #0E1218;
+
+      --warm-50:  #FAFAF7;
+      --warm-100: #F4F3EE;
+      --warm-200: #E8E6DF;
+      --warm-300: #D5D2C8;
+      --warm-400: #A6A29A;
+      --warm-500: #767369;
+
+      --success-500: #12B76A;
+      --success-50:  #ECFDF3;
+
+      --font-display: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+      --font-body:    'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif;
+      --font-latin:   'Inter', system-ui, sans-serif;
+
+      --radius-xs:  4px;
+      --radius-sm:  8px;
+      --radius:     12px;
+      --radius-lg:  16px;
+      --radius-xl:  20px;
+      --radius-pill:999px;
+
+      --shadow-xs: 0 1px 2px rgba(14,18,24,0.05);
+      --shadow-sm: 0 1px 3px rgba(14,18,24,0.08), 0 1px 2px rgba(14,18,24,0.05);
+      --shadow:    0 4px 12px rgba(14,18,24,0.07), 0 2px 4px rgba(14,18,24,0.04);
+      --shadow-lg: 0 12px 28px rgba(14,18,24,0.09), 0 4px 10px rgba(14,18,24,0.05);
+
+      --dur-fast: 160ms;
+      --dur-base: 240ms;
+      --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+      --border: var(--warm-200);
+      --bg-app: var(--warm-50);
+      --fg:     var(--navy-900);
+      --fg-2:   var(--navy-500);
+      --fg-3:   var(--navy-400);
+      --accent: var(--orange-500);
+      --ring-focus: 0 0 0 3px rgba(243,100,24,0.30);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-app);
+      color: var(--fg);
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ── Navbar ── */
+    .nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(250,250,247,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; text-decoration: none; flex-shrink: 0;
+    }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .logo-ar { font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--orange-500); }
+    .logo-en { font-family: var(--font-latin); font-size: 10px; font-weight: 700; color: var(--fg-2); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 14px; font-weight: 500;
+      color: var(--fg-2); text-decoration: none;
+      border: 1px solid var(--border);
+      background: white;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .nav-back:hover { background: var(--orange-50); color: var(--orange-500); border-color: var(--orange-200); }
+
+    /* ── Hero ── */
+    .hero {
+      background: var(--navy-700);
+      background-image: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(243,100,24,0.18) 0%, transparent 65%);
+      padding: 64px 24px 48px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(243,100,24,0.15); border: 1px solid rgba(243,100,24,0.30);
+      color: var(--orange-400); font-size: 13px; font-weight: 600;
+      padding: 6px 16px; border-radius: var(--radius-pill);
+      font-family: var(--font-display);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 900; color: #fff;
+      line-height: 1.25; margin-bottom: 16px;
+    }
+    .hero h1 em { color: var(--orange-400); font-style: normal; }
+    .hero-sub {
+      color: rgba(255,255,255,0.50); font-size: 15px;
+      max-width: 560px; margin: 0 auto 10px;
+    }
+    .hero-legal {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.40); font-size: 12px;
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      margin-top: 14px; font-family: var(--font-latin);
+    }
+
+    /* ── Tab Navigation ── */
+    .tabs-wrap {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 68px; z-index: 100;
+      box-shadow: var(--shadow-xs);
+    }
+    .tabs {
+      max-width: 900px; margin: 0 auto;
+      display: flex; gap: 0;
+      padding: 0 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 16px 22px;
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      color: var(--fg-2); background: none; border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer; white-space: nowrap;
+      transition: all var(--dur-fast) var(--ease-out);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--orange-500); }
+    .tab-btn.active { color: var(--orange-500); border-bottom-color: var(--orange-500); }
+    .tab-icon { font-size: 16px; }
+
+    /* ── Main Content ── */
+    .main {
+      max-width: 900px; margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Policy Panel ── */
+    .policy-panel { display: none; }
+    .policy-panel.active { display: block; }
+
+    /* ── Section Card ── */
+    .section-card {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 40px 44px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-header {
+      display: flex; align-items: flex-start; gap: 16px;
+      margin-bottom: 28px; padding-bottom: 24px;
+      border-bottom: 2px solid var(--warm-100);
+    }
+    .section-icon {
+      width: 48px; height: 48px; border-radius: var(--radius);
+      background: var(--orange-50); border: 1px solid var(--orange-100);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .section-header-text h2 {
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      color: var(--fg); margin-bottom: 6px;
+    }
+    .section-header-text p {
+      font-size: 13px; color: var(--fg-2); line-height: 1.5;
+    }
+
+    /* ── Meta Pill ── */
+    .meta-strip {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 28px;
+    }
+    .meta-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--warm-100); border: 1px solid var(--warm-200);
+      border-radius: var(--radius-pill);
+      padding: 5px 14px; font-size: 12px; color: var(--fg-2);
+    }
+    .meta-pill strong { color: var(--navy-600); }
+
+    /* ── Article Typography ── */
+    .article h3 {
+      font-family: var(--font-display); font-size: 16px; font-weight: 800;
+      color: var(--navy-700);
+      margin-top: 30px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .article h3::before {
+      content: ''; display: block;
+      width: 4px; height: 18px; border-radius: 2px;
+      background: var(--orange-500); flex-shrink: 0;
+    }
+    .article h4 {
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      color: var(--navy-600); margin-top: 18px; margin-bottom: 8px;
+    }
+    .article p {
+      font-size: 15px; color: var(--fg-2); line-height: 1.85;
+      margin-bottom: 14px; text-align: justify;
+    }
+    .article ul {
+      margin-bottom: 16px; padding-right: 0; list-style: none;
+    }
+    .article ul li {
+      font-size: 15px; color: var(--fg-2); line-height: 1.75;
+      margin-bottom: 8px; padding-right: 20px; position: relative;
+    }
+    .article ul li::before {
+      content: ''; position: absolute; right: 0; top: 10px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange-400);
+    }
+    .article a {
+      color: var(--orange-500); text-decoration: none; font-weight: 600;
+    }
+    .article a:hover { text-decoration: underline; }
+
+    /* ── Info Box ── */
+    .info-box {
+      background: var(--orange-50); border: 1px solid var(--orange-100);
+      border-radius: var(--radius-lg); padding: 18px 20px;
+      margin-bottom: 24px; font-size: 14px; color: var(--navy-600);
+      border-right: 4px solid var(--orange-500);
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .info-box-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Highlight Box ── */
+    .highlight-box {
+      background: var(--warm-100); border: 1px solid var(--warm-200);
+      border-radius: var(--radius-lg); padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .highlight-box h4 {
+      font-family: var(--font-display); font-size: 14px; font-weight: 800;
+      color: var(--navy-700); margin-bottom: 12px;
+    }
+
+    /* ── Data Grid ── */
+    .data-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin: 16px 0;
+    }
+    .data-item {
+      background: var(--warm-50); border: 1px solid var(--warm-200);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .data-item-label {
+      font-size: 11px; font-weight: 700; color: var(--warm-500);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 6px; font-family: var(--font-display);
+    }
+    .data-item-value { font-size: 14px; color: var(--navy-600); font-weight: 600; }
+
+    /* ── Contact Strip ── */
+    .contact-strip {
+      background: var(--navy-700);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .contact-strip p {
+      color: rgba(255,255,255,0.65); font-size: 14px; margin: 0;
+    }
+    .contact-strip strong { color: #fff; }
+    .contact-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--orange-500); color: #fff;
+      padding: 10px 20px; border-radius: var(--radius);
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      text-decoration: none; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(243,100,24,0.40);
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .contact-btn:hover { background: var(--orange-600); transform: translateY(-1px); }
+
+    /* ── Rights Grid ── */
+    .rights-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin: 16px 0;
+    }
+    .right-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--success-50); border: 1px solid rgba(18,183,106,0.15);
+      border-radius: var(--radius); padding: 12px 14px;
+    }
+    .right-item-icon { font-size: 16px; flex-shrink: 0; }
+    .right-item-text { font-size: 13px; color: var(--navy-600); font-weight: 500; line-height: 1.4; }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--navy-700); border-top: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.45); text-align: center;
+      padding: 44px 24px 32px; font-size: 13px;
+    }
+    .footer-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .footer-brand-name { color: #fff; font-size: 20px; font-weight: 900; font-family: var(--font-display); }
+    .footer-brand-name span { color: var(--orange-500); }
+    .footer-tagline { font-size: 13px; color: rgba(255,255,255,0.40); margin-bottom: 8px; }
+    .footer-legal-name { font-size: 12px; color: rgba(255,255,255,0.25); margin-bottom: 28px; font-family: var(--font-latin); }
+    .footer-social { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .footer-social a {
+      display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px;
+      border-radius: var(--radius); font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: all var(--dur-fast) var(--ease-out);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .footer-social a:hover { transform: translateY(-2px); }
+    .footer-wa  { background: rgba(37,211,102,0.12); color: #25D366; }
+    .footer-wa:hover  { background: #25D366 !important; color: #fff !important; border-color: #25D366 !important; }
+    .footer-fb  { background: rgba(24,119,242,0.12); color: #1877F2; }
+    .footer-fb:hover  { background: #1877F2 !important; color: #fff !important; border-color: #1877F2 !important; }
+    .footer-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 auto 20px; max-width: 400px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.20); }
+
+    /* ── Scroll Progress ── */
+    .scroll-progress {
+      position: fixed; top: 68px; left: 0; right: 0;
+      height: 3px; background: transparent; z-index: 150;
+    }
+    .scroll-progress-bar {
+      height: 100%; background: var(--orange-500); width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav { padding: 0 16px; }
+      .section-card { padding: 24px 20px; }
+      .hero { padding: 40px 16px 32px; }
+      .main { padding: 24px 16px 64px; }
+      .tabs { padding: 0 8px; }
+      .tab-btn { padding: 14px 14px; font-size: 13px; }
+      .data-grid { grid-template-columns: 1fr; }
+      .rights-grid { grid-template-columns: 1fr; }
+      .contact-strip { flex-direction: column; text-align: center; }
+      .section-header { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Scroll Progress Bar ── -->
+  <div class="scroll-progress">
+    <div class="scroll-progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- ── Navbar ── -->
+  <nav class="nav">
+    <a class="logo" href="/">
+      <div class="logo-text">
+        <span class="logo-ar">مكاني</span>
+        <span class="logo-en">Spot</span>
+      </div>
+    </a>
+    <a class="nav-back" href="/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+      العودة للرئيسية
+    </a>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <div class="hero">
+    <div class="hero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      وثائق قانونية رسمية — الإصدار ١.٠
+    </div>
+    <h1>السياسات الرسمية لـ<em> مكاني Spot</em></h1>
+    <p class="hero-sub">
+      سياسة الخصوصية · الشروط والأحكام · حقوق الملكية الفكرية
+      <br>آخر تحديث: ٢٠ مايو ٢٠٢٦
+    </p>
+    <div class="hero-legal">Kiosq SpotHub · شركة كيوسك سبوت هب ©</div>
+  </div>
+
+  <!-- ── Tab Navigation ── -->
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showPolicy('privacy', this)">
+        <span class="tab-icon">🔒</span> سياسة الخصوصية
+      </button>
+      <button class="tab-btn" onclick="showPolicy('terms', this)">
+        <span class="tab-icon">📜</span> الشروط والأحكام
+      </button>
+      <button class="tab-btn" onclick="showPolicy('ip', this)">
+        <span class="tab-icon">⚖️</span> الملكية الفكرية
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+
+    <!-- ============================================================
+         سياسة الخصوصية
+    ============================================================ -->
+    <div id="policy-privacy" class="policy-panel active">
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">🔒</div>
+          <div class="section-header-text">
+            <h2>سياسة الخصوصية</h2>
+            <p>كيف نجمع بياناتك ونحميها ونستخدمها داخل منصة مكاني Spot</p>
+          </div>
+        </div>
+
+        <div class="meta-strip">
+          <span class="meta-pill"><strong>الشركة:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)</span>
+          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+          <span class="meta-pill"><strong>التشريع:</strong> قانون ١٥١ لسنة ٢٠٢٠</span>
+        </div>
+
+        <div class="info-box">
+          <span class="info-box-icon">ℹ️</span>
+          <div>
+            <strong>منصة مكاني Spot</strong> هي المنصة الرقمية المُشغَّلة من قِبَل <strong>شركة كيوسك سبوت هب (Kiosq SpotHub)</strong>، المتخصصة في إدارة وتأجير المساحات التجارية الصغيرة ربطًا بين أصحاب المساحات وأصحاب المشاريع الصغيرة والبازارات في مصر. باستخدامك للمنصة فإنك توافق على سياسة الخصوصية هذه.
+          </div>
+        </div>
+
+        <div class="article">
+          <h3>١ — نطاق السياسة والجهة المُشغِّلة</h3>
+          <p>تسري هذه السياسة على جميع الخدمات والمنصات والتطبيقات التابعة لشركة كيوسك سبوت هب، وتشمل:</p>
+          <ul>
+            <li>منصة عرض وتأجير المساحات التجارية الصغيرة (مكاني Spot)</li>
+            <li>خدمات البازارات والفعاليات المؤقتة</li>
+            <li>التطبيقات الحالية والمستقبلية للشركة</li>
+            <li>خدمات إدارة الربط بين أصحاب المساحات والمستأجرين وأصحاب المشاريع</li>
+            <li>تعاملات جميع فئات المستخدمين: أصحاب المساحات، المستأجرون، منظمو البازارات، مزودو الخدمات</li>
+          </ul>
+
+          <h3>٢ — البيانات التي نجمعها</h3>
+
+          <div class="data-grid">
+            <div class="data-item">
+              <div class="data-item-label">المعلومات الشخصية</div>
+              <div class="data-item-value">الاسم · الهاتف · البريد الإلكتروني · الرقم القومي (عند الحاجة)</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">المعلومات التجارية</div>
+              <div class="data-item-value">اسم النشاط · السجل التجاري · البطاقة الضريبية · التراخيص</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">البيانات التقنية</div>
+              <div class="data-item-value">نوع الجهاز · IP · المتصفح · ملفات الارتباط (Cookies)</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">الموقع الجغرافي</div>
+              <div class="data-item-value">موقع تقريبي أو دقيق لعرض المساحات القريبة منك</div>
+            </div>
+          </div>
+
+          <p>كما نجمع <strong>المحتوى الذي ترفعه</strong>: الصور، الشعارات، تصميمات الأكشاك أو المساحات، الأوصاف التجارية، والرسائل والتفاعلات داخل المنصة.</p>
+
+          <h3>٣ — كيف نجمع بياناتك</h3>
+          <ul>
+            <li><strong>بشكل مباشر:</strong> عند إنشاء حساب، رفع محتوى، حجز مساحة، أو التواصل معنا.</li>
+            <li><strong>بشكل تلقائي:</strong> من خلال ملفات الارتباط، أدوات التحليل، وسجلات الأداء والأمان.</li>
+            <li><strong>من أطراف ثالثة:</strong> مزودو خدمات الدفع الإلكتروني، مزودو التحقق من الهوية، وشركاء الخدمات المعتمدون.</li>
+          </ul>
+
+          <h3>٤ — الأغراض التي نستخدم بياناتك من أجلها</h3>
+          <ul>
+            <li>إنشاء الحسابات والتحقق من هوية المستخدمين</li>
+            <li>تسهيل عمليات الحجز والتأجير والتواصل بين الأطراف</li>
+            <li>عرض المساحات والأنشطة المناسبة لاحتياجاتك</li>
+            <li>تشغيل المنصة وتحسين جودة الخدمات</li>
+            <li>الكشف عن الاحتيال والحفاظ على أمن المنصة</li>
+            <li>الامتثال للمتطلبات القانونية والتنظيمية المصرية</li>
+            <li>تسوية النزاعات وتنفيذ الشروط والأحكام</li>
+          </ul>
+
+          <h3>٥ — الأساس القانوني للمعالجة</h3>
+          <p>تتم معالجة بياناتك استنادًا إلى: <strong>موافقتك الصريحة</strong>، أو <strong>تنفيذ التزامات تعاقدية</strong> بيننا، أو <strong>الامتثال للقوانين</strong> المصرية، أو <strong>المصالح المشروعة</strong> للشركة بما لا يتعارض مع حقوقك. وذلك وفقًا لقانون حماية البيانات الشخصية المصري رقم ١٥١ لسنة ٢٠٢٠.</p>
+
+          <h3>٦ — مشاركة بياناتك مع أطراف ثالثة</h3>
+          <p>لا نبيع بياناتك. قد نشاركها فقط في الحالات التالية:</p>
+          <ul>
+            <li>مع <strong>أصحاب المساحات أو المستأجرين</strong> لتسهيل الحجوزات المتفق عليها</li>
+            <li>مع <strong>الجهات الحكومية أو القضائية</strong> إذا طُلب ذلك قانونيًا</li>
+            <li>مع <strong>مزودي الخدمات</strong> (استضافة سحابية، بوابات الدفع) وفق اتفاقيات سرية صارمة</li>
+          </ul>
+
+          <h3>٧ — حماية وأمن البيانات</h3>
+          <p>تلتزم شركة كيوسك سبوت هب بتطبيق تدابير أمنية تشمل التشفير في النقل والتخزين، وأنظمة التحكم في الوصول، ومراقبة الأنظمة بصفة مستمرة. رغم ذلك، لا يمكن ضمان الحماية المطلقة ضد جميع الاختراقات الخارجة عن السيطرة المعقولة للشركة.</p>
+
+          <h3>٨ — حقوق المستخدمين</h3>
+
+          <div class="rights-grid">
+            <div class="right-item">
+              <span class="right-item-icon">👁️</span>
+              <span class="right-item-text">الاطلاع على بياناتك التي نجمعها</span>
+            </div>
+            <div class="right-item">
+              <span class="right-item-icon">✏️</span>
+              <span class="right-item-text">طلب تصحيح أو تحديث بياناتك</span>
+            </div>
+            <div class="right-item">
+              <span class="right-item-icon">🗑️</span>
+              <span class="right-item-text">طلب حذف بياناتك في بعض الحالات</span>
+            </div>
+            <div class="right-item">
+              <span class="right-item-icon">🚫</span>
+              <span class="right-item-text">الاعتراض على بعض أنواع المعالجة</span>
+            </div>
+            <div class="right-item">
+              <span class="right-item-icon">↩️</span>
+              <span class="right-item-text">سحب موافقتك في أي وقت</span>
+            </div>
+            <div class="right-item">
+              <span class="right-item-icon">📋</span>
+              <span class="right-item-text">نقل بياناتك إلى جهة أخرى</span>
+            </div>
+          </div>
+
+          <h3>٩ — ملفات الارتباط (Cookies)</h3>
+          <p>تستخدم المنصة ملفات الارتباط لتحسين الأداء، حفظ تفضيلاتك، تخصيص المحتوى، وقياس الأداء. يمكنك تعطيلها من إعدادات متصفحك، مع ملاحظة أن ذلك قد يؤثر على بعض وظائف المنصة.</p>
+
+          <h3>١٠ — التعديلات على هذه السياسة</h3>
+          <p>قد تُحدَّث هذه السياسة دوريًا. سنُخطرك بالتغييرات الجوهرية عبر البريد الإلكتروني أو إشعار واضح داخل المنصة. استمرارك في الاستخدام بعد نشر التحديث يُعدّ موافقة على السياسة المُحدَّثة.</p>
+        </div>
+
+        <div class="contact-strip">
+          <div>
+            <p><strong>للاستفسار عن بياناتك الشخصية:</strong></p>
+            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+          </div>
+          <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
+            ✉️ legal@kiosqspothub.com
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         الشروط والأحكام
+    ============================================================ -->
+    <div id="policy-terms" class="policy-panel">
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">📜</div>
+          <div class="section-header-text">
+            <h2>الشروط والأحكام</h2>
+            <p>القواعد المنظِّمة لاستخدام منصة مكاني Spot وحقوق وواجبات جميع الأطراف</p>
+          </div>
+        </div>
+
+        <div class="meta-strip">
+          <span class="meta-pill"><strong>المنصة:</strong> مكاني Spot (Kiosq SpotHub)</span>
+          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+          <span class="meta-pill"><strong>النطاق:</strong> جمهورية مصر العربية</span>
+        </div>
+
+        <div class="info-box">
+          <span class="info-box-icon">📌</span>
+          <div>
+            <strong>مكاني Spot</strong> هي منصة رقمية تُشغِّلها <strong>شركة كيوسك سبوت هب (Kiosq SpotHub)</strong> وتعمل بموجب القوانين المصرية. المنصة متخصصة في إدارة وتنظيم وتأجير المساحات التجارية الصغيرة والأكشاك والبازارات والفعاليات المؤقتة. باستخدامك للمنصة فإنك توافق صراحةً على جميع الشروط والأحكام الواردة هنا.
+          </div>
+        </div>
+
+        <div class="article">
+          <h3>١ — تعريف الأطراف والمفاهيم الأساسية</h3>
+          <ul>
+            <li><strong>«الشركة» أو «المنصة»:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)، المُشغِّلة لمنصة مكاني Spot.</li>
+            <li><strong>«المستخدم»:</strong> أي شخص طبيعي أو اعتباري يستخدم المنصة بأي صفة.</li>
+            <li><strong>«صاحب المساحة»:</strong> الشخص أو الجهة المالكة أو المُديرة لمساحة تجارية معروضة على المنصة.</li>
+            <li><strong>«المستأجر» أو «صاحب المشروع»:</strong> من يبحث عن مساحة لنشاطه التجاري أو مشروعه.</li>
+            <li><strong>«الخدمة»:</strong> جميع الوظائف والمميزات المتاحة داخل المنصة.</li>
+          </ul>
+
+          <h3>٢ — الأحكام العامة</h3>
+          <ul>
+            <li>تخضع هذه الشروط للقوانين والتشريعات المصرية السارية.</li>
+            <li>يحق للمنصة تعديل أو تطوير خدماتها أو سياساتها في أي وقت، مع إخطار المستخدمين بالتغييرات الجوهرية.</li>
+            <li>تعمل المنصة بوصفها وسيطًا ومنظِّمًا يربط الأطراف، ولا تُعدّ طرفًا مباشرًا في أي عقد يُبرم بين المستخدمين ما لم يُنص على خلاف ذلك.</li>
+            <li>يجب أن يكون المستخدم قد بلغ من العمر ١٨ عامًا على الأقل، أو يحمل صفة قانونية معترفًا بها.</li>
+          </ul>
+
+          <h3>٣ — التزامات المستخدم</h3>
+          <ul>
+            <li>تقديم معلومات صحيحة ودقيقة وتحديثها باستمرار.</li>
+            <li>الحفاظ على سرية بيانات الدخول وعدم مشاركتها مع أطراف أخرى.</li>
+            <li>تحمّل المسؤولية القانونية الكاملة عن جميع أنشطته داخل المنصة.</li>
+            <li>الامتثال لجميع القوانين والتشريعات المصرية المتعلقة بنشاطه التجاري.</li>
+            <li>سداد الرسوم أو العمولات المستحقة في المواعيد المحددة.</li>
+          </ul>
+
+          <h3>٤ — المحظورات (ما يُمنع منعًا باتًا)</h3>
+
+          <div class="highlight-box">
+            <h4>الأفعال المحظورة على المنصة:</h4>
+            <ul>
+              <li>نشر معلومات مضللة أو بيانات مزورة عن الأنشطة أو المساحات</li>
+              <li>رفع محتوى مخالف للقوانين المصرية أو الآداب العامة</li>
+              <li>القيام بأي أعمال احتيال أو نصب أو تدليس</li>
+              <li>محاولة اختراق أنظمة المنصة أو التلاعب في البيانات</li>
+              <li>استخدام أدوات تحايل (VPN، بروكسي) للتحايل على سياسات المنصة</li>
+              <li>انتهاك خصوصية المستخدمين الآخرين أو إساءة استخدام بياناتهم</li>
+              <li>إنشاء حسابات وهمية أو متعددة بقصد التلاعب</li>
+            </ul>
+          </div>
+
+          <h3>٥ — الرسوم والمدفوعات والاسترداد</h3>
+          <ul>
+            <li>تحتفظ المنصة بحقها في فرض رسوم خدمات، عمولات وساطة، أو رسوم إدراج وترويج.</li>
+            <li>تخضع جميع الرسوم للضرائب والرسوم المقررة وفق القانون المصري.</li>
+            <li>لا يتم استرداد الرسوم المدفوعة إلا وفق سياسة الاسترداد المعتمدة من الشركة والمعلنة بشكل واضح.</li>
+            <li>تلتزم المنصة بالشفافية في عرض جميع الأسعار والرسوم قبل إتمام أي معاملة.</li>
+          </ul>
+
+          <h3>٦ — تحديد المسؤولية</h3>
+          <p>لا تضمن المنصة دقة المحتوى الذي ينشره المستخدمون بشكل كامل، ولا تتحمل مسؤولية أي خسائر أو أضرار تنجم عن:</p>
+          <ul>
+            <li>معلومات غير صحيحة قدَّمها مستخدمون آخرون</li>
+            <li>أعطال تقنية مؤقتة أو انقطاع في الخدمة خارج إرادة الشركة</li>
+            <li>قرارات تجارية يتخذها المستخدمون بناءً على معلومات المنصة</li>
+            <li>نزاعات تنشأ مباشرة بين أصحاب المساحات والمستأجرين</li>
+          </ul>
+
+          <h3>٧ — تعليق الحسابات وإنهاء الخدمة</h3>
+          <p>تحتفظ الشركة بالحق في تعليق أو إنهاء حساب أي مستخدم في الحالات التالية:</p>
+          <ul>
+            <li>ثبوت انتهاك هذه الشروط والأحكام</li>
+            <li>وجود نشاط مشبوه أو احتيالي موثَّق</li>
+            <li>شكاوى متكررة وموثقة من مستخدمين آخرين</li>
+            <li>طلب من الجهات القضائية أو التنظيمية المختصة</li>
+          </ul>
+
+          <h3>٨ — حل النزاعات</h3>
+          <p>في حال نشوء أي نزاع، تلتزم الشركة بمحاولة الحل الودي أولًا. وعند تعذّر ذلك، يُحسم النزاع أمام المحاكم المصرية المختصة وفق القانون المصري، دون إخلال بحق الطرفين في اللجوء إلى التحكيم وفق قواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي.</p>
+        </div>
+
+        <div class="contact-strip">
+          <div>
+            <p><strong>للاستفسار عن الشروط والأحكام:</strong></p>
+            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+          </div>
+          <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
+            ✉️ legal@kiosqspothub.com
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         سياسة حقوق الملكية الفكرية
+    ============================================================ -->
+    <div id="policy-ip" class="policy-panel">
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">⚖️</div>
+          <div class="section-header-text">
+            <h2>سياسة حقوق الملكية الفكرية</h2>
+            <p>حماية حقوق الشركة والمستخدمين وفق القانون المصري رقم ٨٢ لسنة ٢٠٠٢</p>
+          </div>
+        </div>
+
+        <div class="meta-strip">
+          <span class="meta-pill"><strong>التشريع:</strong> قانون ٨٢ لسنة ٢٠٠٢ (حماية الملكية الفكرية)</span>
+          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+        </div>
+
+        <div class="article">
+          <h3>١ — ملكية المنصة الفكرية</h3>
+          <p>تُعدّ جميع المواد والعناصر التالية ملكية حصرية لشركة كيوسك سبوت هب (Kiosq SpotHub) محمية بموجب القانون المصري والاتفاقيات الدولية لحقوق الملكية الفكرية:</p>
+
+          <div class="data-grid">
+            <div class="data-item">
+              <div class="data-item-label">المحتوى الرقمي</div>
+              <div class="data-item-value">الشيفرة البرمجية · قواعد البيانات · الخوارزميات</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">الهوية البصرية</div>
+              <div class="data-item-value">الشعارات · الألوان · التصاميم · واجهات المستخدم</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">العلامات التجارية</div>
+              <div class="data-item-value">«مكاني Spot» · «Kiosq SpotHub» · أسماء النطاقات</div>
+            </div>
+            <div class="data-item">
+              <div class="data-item-label">المحتوى التحريري</div>
+              <div class="data-item-value">النصوص · الدليل التجاري · الدراسات والتقارير</div>
+            </div>
+          </div>
+
+          <p>يُمنع منعًا باتًا نسخ أو توزيع أو هندسة عكسية أو إعادة استخدام أي جزء من المنصة دون موافقة كتابية مسبقة ومحددة من الشركة.</p>
+
+          <h3>٢ — المحتوى الذي يُنشئه المستخدم</h3>
+          <p>عند رفع أي محتوى على المنصة (صور، شعارات، تصميمات، نصوص)، يُقرّ المستخدم ويضمن ما يلي:</p>
+          <ul>
+            <li>امتلاكه كامل الحقوق والتراخيص على المحتوى المرفوع.</li>
+            <li>عدم انتهاك المحتوى لأي حقوق ملكية فكرية لأطراف ثالثة.</li>
+            <li>تحمّله المسؤولية القانونية الكاملة عن أي ادعاءات تنشأ بسبب محتواه.</li>
+          </ul>
+
+          <h3>٣ — الترخيص الممنوح للمنصة</h3>
+          <p>بنشر محتواك على المنصة، تمنح شركة كيوسك سبوت هب <strong>ترخيصًا غير حصري، وغير قابل للتحويل، ومجانيًا</strong> لغرض:</p>
+          <ul>
+            <li>عرض المحتوى وتشغيله داخل المنصة لتقديم الخدمة.</li>
+            <li>تضمينه في مواد التسويق والترويج للمنصة.</li>
+            <li>أرشفته بصورة آمنة لأغراض النسخ الاحتياطي والامتثال القانوني.</li>
+          </ul>
+          <p>لا تنتقل ملكية المحتوى إلى الشركة بموجب هذا الترخيص، ويظل المستخدم المالك الحصري لمحتواه.</p>
+
+          <h3>٤ — الإبلاغ عن انتهاكات الملكية الفكرية</h3>
+          <p>إذا كنت تعتقد بوجود انتهاك لحقوقك الفكرية على المنصة، يُرجى إرسال بلاغ رسمي يتضمن:</p>
+          <ul>
+            <li>وصفًا تفصيليًا للمحتوى المنتهَك وموقعه على المنصة.</li>
+            <li>إثبات ملكيتك للمحتوى الأصلي (وثيقة، ترخيص، إيصال تسجيل).</li>
+            <li>بيانات التواصل الكاملة (الاسم، الهاتف، البريد الإلكتروني).</li>
+            <li>تصريحًا بصحة المعلومات الواردة في البلاغ.</li>
+          </ul>
+
+          <div class="highlight-box">
+            <h4>مسار معالجة البلاغات:</h4>
+            <ul>
+              <li>استلام البلاغ والرد بالتأكيد خلال ٧٢ ساعة عمل.</li>
+              <li>مراجعة البلاغ والمحتوى المُشار إليه خلال ٧ أيام عمل.</li>
+              <li>اتخاذ الإجراء المناسب: الإزالة، التعطيل، أو إعادة المراجعة.</li>
+              <li>إخطار جميع الأطراف بنتيجة المراجعة.</li>
+            </ul>
+          </div>
+
+          <h3>٥ — العقوبات والإجراءات القانونية</h3>
+          <p>تحتفظ الشركة بحقها في اتخاذ الإجراءات القانونية الكاملة وفق أحكام قانون حماية الملكية الفكرية المصري رقم ٨٢ لسنة ٢٠٠٢ ضد أي انتهاك موثَّق، بما يشمل المطالبة بالتعويضات عن الأضرار المادية والمعنوية.</p>
+        </div>
+
+        <div class="contact-strip">
+          <div>
+            <p><strong>للإبلاغ عن انتهاكات الملكية الفكرية:</strong></p>
+            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+          </div>
+          <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
+            ✉️ legal@kiosqspothub.com
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="footer-brand">
+      <div class="footer-brand-name">مكاني <span>Spot</span></div>
+    </div>
+    <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
+    <div class="footer-legal-name">Kiosq SpotHub · شركة كيوسك سبوت هب</div>
+    <div class="footer-social">
+      <a class="footer-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+        </svg>
+        011 0346 7711
+      </a>
+      <a class="footer-fb" href="https://www.facebook.com/profile.php?id=100069918048151" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.93-1.956 1.886v2.286h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+        </svg>
+        Makani Spot
+      </a>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-copy">© ٢٠٢٦ Makani Spot · شركة كيوسك سبوت هب · جميع الحقوق محفوظة</div>
+  </footer>
+
+  <script>
+    function showPolicy(id, btn) {
+      document.querySelectorAll('.policy-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('policy-' + id).classList.add('active');
+      btn.classList.add('active');
+      window.scrollTo({ top: document.querySelector('.tabs-wrap').offsetTop - 70, behavior: 'smooth' });
+    }
+
+    window.addEventListener('scroll', () => {
+      const scrollTop = document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const progress = (scrollTop / docHeight) * 100;
+      document.getElementById('progressBar').style.width = progress + '%';
+    });
+  </script>
+
+</body>
+</html>

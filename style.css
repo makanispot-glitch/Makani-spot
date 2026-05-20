@@ -1592,30 +1592,159 @@ body {
 
 
 /* ============================================================
-   🦶 القسم الخامس عشر: الفوتر
+   🦶 القسم الخامس عشر: الفوتر المحسّن (site-footer)
    ============================================================ */
-footer {
-  background: var(--navy-700); border-top: 1px solid rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.45); text-align: center;
-  padding: 44px 24px 32px; font-size: 13px;
+
+/* ── العنصر الرئيسي ── */
+.site-footer {
+  background: var(--navy-800);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.50);
+  font-family: var(--font-body);
+  font-size: 14px;
 }
-.footer-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-.footer-brand-name { color: #fff; font-size: 20px; font-weight: 900; }
-.footer-brand-name span { color: var(--orange); }
-.footer-tagline { font-size: 13px; color: rgba(255,255,255,0.40); margin-bottom: 24px; }
-.footer-social { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-.footer-social a {
-  display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px;
-  border-radius: var(--radius); font-size: 13px; font-weight: 600;
-  text-decoration: none; transition: all var(--dur-fast) var(--ease-out); border: 1px solid rgba(255,255,255,0.10);
+
+/* ── شبكة الأعمدة (Desktop: 3 columns) ── */
+.sf-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 56px 48px 44px;
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1.1fr;
+  gap: 48px;
 }
-.footer-social a:hover { transform: translateY(-2px); }
-.footer-wa  { background: rgba(37,211,102,0.12); color: #25D366; }
-.footer-wa:hover  { background: #25D366 !important; color: #fff !important; border-color: #25D366 !important; }
-.footer-fb  { background: rgba(24,119,242,0.12); color: #1877F2; }
-.footer-fb:hover  { background: #1877F2 !important; color: #fff !important; border-color: #1877F2 !important; }
-.footer-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 auto 20px; max-width: 400px; }
-.footer-copy { font-size: 12px; color: rgba(255,255,255,0.20); }
+
+/* ── العمود الأول: الهوية ── */
+.sf-logo {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.sf-logo-ar {
+  font-family: var(--font-display); font-size: 22px; font-weight: 900;
+  color: var(--orange); line-height: 1;
+}
+.sf-logo-sep {
+  width: 1px; height: 18px;
+  background: rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+.sf-logo-en {
+  font-family: var(--font-latin); font-size: 20px; font-weight: 800;
+  color: rgba(255,255,255,0.88); letter-spacing: -0.01em;
+  line-height: 1;
+}
+.sf-about {
+  font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.8;
+  margin-bottom: 20px; max-width: 310px;
+}
+.sf-paths {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.sf-path {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(243,100,24,0.08); border: 1px solid rgba(243,100,24,0.18);
+  border-radius: var(--radius-pill);
+  padding: 5px 13px; font-size: 12px; color: rgba(255,255,255,0.55);
+  font-family: var(--font-display); font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── عنوان العمود ── */
+.sf-col-title {
+  font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  color: rgba(255,255,255,0.28); letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+
+/* ── روابط التنقل ── */
+.sf-link {
+  display: block; font-size: 13px; color: rgba(255,255,255,0.52);
+  text-decoration: none; padding: 5px 0;
+  transition: color var(--dur-fast) var(--ease-out),
+              padding-right var(--dur-fast) var(--ease-out);
+  border-bottom: none;
+}
+.sf-link:hover { color: var(--orange); padding-right: 4px; }
+
+/* ── أزرار التواصل الاجتماعي ── */
+.sf-social-btn {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 16px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.09);
+  transition: all var(--dur-fast) var(--ease-out);
+  margin-bottom: 10px;
+}
+.sf-social-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+.sf-wa { background: rgba(37,211,102,0.10); color: #25D366; }
+.sf-wa:hover { background: #25D366 !important; color: #fff !important; border-color: #25D366 !important; }
+.sf-fb { background: rgba(24,119,242,0.10); color: #1877F2; }
+.sf-fb:hover { background: #1877F2 !important; color: #fff !important; border-color: #1877F2 !important; }
+
+/* ── فاصل العمود ── */
+.sf-col-divider {
+  height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0;
+}
+
+/* ── رابط السياسات ── */
+.sf-policies-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; color: rgba(255,255,255,0.32);
+  text-decoration: none; padding: 8px 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-pill);
+  transition: all var(--dur-fast) var(--ease-out);
+  font-family: var(--font-display); font-weight: 600;
+}
+.sf-policies-link:hover {
+  color: var(--orange); border-color: rgba(243,100,24,0.30);
+  background: rgba(243,100,24,0.06);
+}
+
+/* ── الشريط السفلي ── */
+.sf-bottom {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 18px 48px;
+}
+.sf-bottom-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.sf-legal {
+  font-family: var(--font-latin); font-size: 11px;
+  color: rgba(255,255,255,0.20); letter-spacing: 0.04em;
+}
+.sf-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+
+/* ── Tablet (≤900px): عمودان ── */
+@media (max-width: 900px) {
+  .sf-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 40px 32px 28px;
+  }
+  .sf-col--brand { grid-column: 1 / -1; }
+  .sf-about { max-width: 100%; }
+  .sf-bottom { padding: 16px 32px; }
+}
+
+/* ── Mobile (≤640px): عمود واحد مضغوط ── */
+@media (max-width: 640px) {
+  .sf-inner {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 24px 18px 20px;
+  }
+  .sf-col--links { display: none; }
+  .sf-col--contact { margin-top: 18px; }
+  .sf-col-title { display: none; }
+  .sf-about { font-size: 12px; margin-bottom: 14px; max-width: 100%; }
+  .sf-paths { gap: 6px; }
+  .sf-path { font-size: 11px; padding: 4px 10px; }
+  .sf-social-btn { padding: 9px 14px; font-size: 12px; }
+  .sf-bottom { padding: 14px 18px 84px; }
+  .sf-bottom-inner { flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+}
 
 
 /* ============================================================
@@ -1852,7 +1981,7 @@ footer {
 
   /* مساحة للـ Bottom Nav */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-  footer { margin-bottom: 0; padding-bottom: 80px; }
+  .site-footer { margin-bottom: 0; }
 
   /* Marketplace */
   .mp-header { padding: 18px 16px; }
@@ -1862,8 +1991,7 @@ footer {
   .mp-header-sub { font-size: 12px; }
   .mp-sort-select { padding: 8px 10px; font-size: 12px; flex: 1; }
 
-  /* Footer */
-  footer { padding: 28px 16px 80px; }
+  /* Footer — handled by .sf-inner and .sf-bottom mobile media inside site-footer block */
 }
 
 /* ── 640px: الكروت عمود واحد ── */
