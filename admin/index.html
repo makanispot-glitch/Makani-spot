@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>لوحة مراجعة الإعلانات — مكاني Spot Admin</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#FF6B00">
+<meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,10 +34,10 @@ body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-
   border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 15px;
   outline: none; margin-bottom: 14px; transition: border .2s;
 }
-.adm-login-box input:focus { border-color: #FF6B00; }
+.adm-login-box input:focus { border-color: #F36418; }
 .adm-login-err { color: #EF4444; font-size: 13px; margin-bottom: 10px; display: none; }
 .adm-login-btn {
-  width: 100%; padding: 14px; background: #FF6B00; color: #fff;
+  width: 100%; padding: 14px; background: #F36418; color: #fff;
   border: none; border-radius: 10px; font-family: 'Cairo', sans-serif;
   font-size: 16px; font-weight: 800; cursor: pointer; transition: background .2s;
 }
@@ -63,12 +63,12 @@ body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-
 }
 .adm-logout:hover { background: rgba(255,255,255,0.2); }
 .adm-hub-btn {
-  padding: 7px 16px; background: rgba(255,107,0,0.2); color: #FF6B00;
+  padding: 7px 16px; background: rgba(255,107,0,0.2); color: #F36418;
   border: 1px solid rgba(255,107,0,0.4); border-radius: 8px;
   text-decoration: none; font-family: 'Cairo', sans-serif; font-size: 13px;
   font-weight: 700; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
 }
-.adm-hub-btn:hover { background: #FF6B00; color: #fff; }
+.adm-hub-btn:hover { background: #F36418; color: #fff; }
 
 /* ── Stats Bar ── */
 .adm-stats {
@@ -105,14 +105,14 @@ body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-
   font-weight: 700; cursor: pointer; transition: all .2s;
 }
 .adm-filter-btn:hover, .adm-filter-btn.on {
-  border-color: #FF6B00; background: #FF6B00; color: #fff;
+  border-color: #F36418; background: #F36418; color: #fff;
 }
 .adm-search {
   margin-right: auto; padding: 9px 14px; border: 1.5px solid #E8E8E8;
   border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 13px;
   outline: none; min-width: 220px; transition: border .2s;
 }
-.adm-search:focus { border-color: #FF6B00; }
+.adm-search:focus { border-color: #F36418; }
 .adm-refresh {
   padding: 9px 16px; background: #F7F7F7; border: 1.5px solid #E8E8E8;
   border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif;
@@ -176,7 +176,7 @@ tr:hover td { background: #FAFAFA; }
 .adm-loading { text-align: center; padding: 60px 20px; color: #999; }
 .adm-spinner {
   width: 40px; height: 40px; border-radius: 50%;
-  border: 4px solid #E8E8E8; border-top-color: #FF6B00;
+  border: 4px solid #E8E8E8; border-top-color: #F36418;
   animation: spin 0.9s linear infinite; margin: 0 auto 14px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -196,7 +196,7 @@ tr:hover td { background: #FAFAFA; }
   font-family: 'Cairo', sans-serif; font-size: 14px; resize: vertical; min-height: 100px;
   outline: none; transition: border .2s;
 }
-.adm-modal textarea:focus { border-color: #FF6B00; }
+.adm-modal textarea:focus { border-color: #F36418; }
 .adm-modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
 
 /* ── Preview Modal ── */
@@ -489,7 +489,7 @@ function admBuildTable(list) {
         <strong>${escHtml(l.title)}</strong>
         <span>${cat} — ${COND_LABELS[l.condition] || escHtml(l.condition)}</span>
       </td>
-      <td style="font-weight:800;color:#FF6B00">${Number(l.price).toLocaleString('ar-EG')} ج</td>
+      <td style="font-weight:800;color:#F36418">${Number(l.price).toLocaleString('ar-EG')} ج</td>
       <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || escHtml(l.status)}</span></td>
       <td style="color:#666">${escHtml(l.region) || '—'}</td>
       <td style="color:#999;font-size:12px">${date}</td>
@@ -593,7 +593,7 @@ function admShowPreview(id) {
     <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${escHtml(l.title)}</span></div>
     <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || escHtml(l.category)}</span></div>
     <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || escHtml(l.condition)}</span></div>
-    <div class="adm-preview-row"><strong>السعر</strong><span style="color:#FF6B00;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
+    <div class="adm-preview-row"><strong>السعر</strong><span style="color:#F36418;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
     <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${escHtml(l.description) || '—'}</span></div>
     <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${escHtml(l.region) || '—'}${l.area ? ' — ' + escHtml(l.area) : ''}</span></div>
     <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${escHtml(l.phone) || '—'}</span></div>
@@ -633,7 +633,7 @@ document.addEventListener('keydown', e => {
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:#FF6B00;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>
@@ -660,3 +660,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
@@ -15,7 +15,7 @@
 /* ── Standalone Nav (نسخة مشتركة) ── */
 .bz-standalone-nav {
   position: sticky; top: 0; z-index: 200;
-  background: rgba(255,255,255,0.97);
+  background: rgba(250,250,247,0.96);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
   padding: 0 32px;
@@ -26,19 +26,19 @@
 .bz-nav-logo {
   display: flex; align-items: center; gap: 10px; text-decoration: none;
 }
-.bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; color: var(--dark); }
-.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; color: var(--orange); }
+.bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; font-family: var(--font-display); color: var(--dark); }
+.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--orange); }
 .bz-nav-title {
-  font-size: 13px; font-weight: 700; color: var(--ink2);
+  font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2);
   padding: 4px 12px; background: var(--orange-ultra);
-  border-radius: 20px; white-space: nowrap;
+  border-radius: var(--radius-pill); white-space: nowrap;
 }
 .bz-nav-right { display: flex; align-items: center; gap: 12px; }
 .bz-nav-back {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 16px; border-radius: 50px;
-  font-size: 13px; font-weight: 700; color: var(--ink2);
-  text-decoration: none; transition: color .2s;
+  padding: 7px 16px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2);
+  text-decoration: none; transition: color var(--dur-fast) var(--ease-out);
 }
 .bz-nav-back:hover { color: var(--orange); }
 @media (max-width: 640px) {
@@ -51,20 +51,34 @@
   min-height: 100vh; background: var(--bg, #F9FAFB); padding-bottom: 80px;
 }
 .vr-hero {
-  background: linear-gradient(135deg, var(--dark) 0%, #2E2E2E 100%);
+  background: var(--navy-700);
   padding: 48px 32px 40px; text-align: center; color: #fff;
+  position: relative; overflow: hidden;
 }
-.vr-hero h1 { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+.vr-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(243,100,24,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243,100,24,0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.vr-hero::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 80% at 50% -10%, rgba(243,100,24,0.14) 0%, transparent 65%);
+}
+.vr-hero > * { position: relative; z-index: 1; }
+.vr-hero h1 { font-size: 26px; font-weight: 900; font-family: var(--font-display); margin-bottom: 8px; }
 .vr-hero h1 span { color: var(--orange); }
-.vr-hero p { font-size: 14px; color: rgba(255,255,255,0.7); max-width: 520px; margin: 0 auto; }
+.vr-hero p { font-size: 14px; color: rgba(255,255,255,0.7); font-family: var(--font-body); max-width: 520px; margin: 0 auto; }
 .vr-form-wrap { max-width: 720px; margin: 36px auto; padding: 0 20px; }
 .vr-section {
-  background: var(--surface); border-radius: 16px;
+  background: var(--surface); border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   padding: 24px; margin-bottom: 20px;
+  box-shadow: var(--shadow-xs);
 }
 .vr-section-title {
-  font-size: 16px; font-weight: 900; color: var(--dark);
+  font-size: 16px; font-weight: 900; font-family: var(--font-display); color: var(--dark);
   margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
   padding-bottom: 12px; border-bottom: 1.5px solid var(--border);
 }
@@ -74,15 +88,17 @@
 .vr-fg label { font-size: 13px; font-weight: 700; color: var(--ink2); }
 .vr-fg input, .vr-fg select, .vr-fg textarea {
   padding: 10px 12px; border: 1.5px solid var(--border);
-  border-radius: 8px; font-family: 'Cairo', sans-serif;
+  border-radius: var(--radius-md); font-family: var(--font-body);
   font-size: 14px; color: var(--ink); background: var(--surface2);
-  outline: none; transition: border-color .2s; width: 100%; box-sizing: border-box;
+  outline: none; transition: border-color var(--dur-fast) var(--ease-out); width: 100%; box-sizing: border-box;
 }
-.vr-fg input:focus, .vr-fg select:focus, .vr-fg textarea:focus { border-color: var(--orange); }
+.vr-fg input:focus, .vr-fg select:focus, .vr-fg textarea:focus {
+  border-color: var(--orange); box-shadow: var(--ring-focus);
+}
 .vr-upload-box {
-  border: 2px dashed var(--border); border-radius: 10px;
+  border: 2px dashed var(--border); border-radius: var(--radius-lg);
   padding: 20px; text-align: center; cursor: pointer;
-  transition: all .2s; background: var(--surface2);
+  transition: all var(--dur-base) var(--ease-out); background: var(--surface2);
 }
 .vr-upload-box:hover { border-color: var(--orange); background: var(--orange-ultra); }
 .vr-upload-box.has-img { border-style: solid; border-color: var(--orange); }
@@ -92,19 +108,19 @@
 .vr-radio-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
 .vr-radio-btn {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 8px;
+  padding: 8px 16px; border-radius: var(--radius-lg);
   border: 1.5px solid var(--border); background: var(--surface2);
-  cursor: pointer; font-family: 'Cairo', sans-serif;
+  cursor: pointer; font-family: var(--font-display);
   font-size: 13px; font-weight: 600; color: var(--ink2);
-  transition: all .2s; user-select: none;
+  transition: all var(--dur-fast) var(--ease-out); user-select: none;
 }
 .vr-radio-btn input { display: none; }
 .vr-radio-btn.active { border-color: var(--orange); background: var(--orange-ultra); color: var(--orange); }
 .vr-checkbox-row {
   display: flex; align-items: flex-start; gap: 10px;
-  padding: 12px; border-radius: 10px;
+  padding: 12px; border-radius: var(--radius-lg);
   border: 1.5px solid var(--border); background: var(--surface2);
-  cursor: pointer; transition: border-color .2s;
+  cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out);
 }
 .vr-checkbox-row:hover { border-color: var(--orange); }
 .vr-checkbox-row input[type=checkbox] {
@@ -112,16 +128,23 @@
 }
 .vr-checkbox-lbl { font-size: 13px; color: var(--ink2); line-height: 1.6; }
 .vr-submit-btn {
-  width: 100%; padding: 16px; border-radius: 12px;
-  background: var(--orange); color: #fff; border: none;
-  font-family: 'Cairo', sans-serif; font-size: 16px; font-weight: 900;
-  cursor: pointer; transition: all .2s; margin-top: 8px;
+  width: 100%; padding: 16px; border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 4px 18px rgba(243,100,24,0.32);
+  color: #fff; border: none;
+  font-family: var(--font-display); font-size: 16px; font-weight: 900;
+  cursor: pointer; transition: all var(--dur-base) var(--ease-out); margin-top: 8px;
 }
-.vr-submit-btn:hover { background: var(--orange-hover, #e05500); }
-.vr-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+.vr-submit-btn:hover {
+  box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 6px 22px rgba(243,100,24,0.42);
+  transform: translateY(-1px);
+}
+.vr-submit-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.vr-submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 .vr-success {
   text-align: center; padding: 60px 24px;
-  background: var(--surface); border-radius: 16px; border: 1px solid var(--border);
+  background: var(--surface); border-radius: var(--radius-xl); border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .vr-success-icon { font-size: 64px; margin-bottom: 16px; }
 .vr-success-title { font-size: 22px; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
@@ -326,3 +349,4 @@
 <script src="verification.js" defer></script>
 </body>
 </html>
+

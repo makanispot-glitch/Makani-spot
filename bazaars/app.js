@@ -286,7 +286,7 @@ async function loadBazaars() {
 function _renderBazaarsEmpty(hint) {
   const hintHtml = hint
     ? `<div style="margin-top:10px;font-size:11px;color:#FFA366;opacity:0.80;
-                   background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.20);
+                   background:rgba(243,100,24,0.08);border:1px solid rgba(243,100,24,0.20);
                    border-radius:8px;padding:8px 14px;max-width:400px;margin-inline:auto">
          ⚠️ ${hint}
        </div>`
@@ -581,7 +581,7 @@ function updateBzSlider() {
   const pct = (val / max) * 100;
   const tr  = document.getElementById('bz-slider-track');
   if (tr) tr.style.background =
-    `linear-gradient(to right, #e8e8e8 ${100 - pct}%, #FF6B00 ${100 - pct}%)`;
+    `linear-gradient(to right, #e8e8e8 ${100 - pct}%, #F36418 ${100 - pct}%)`;
   const lb = document.getElementById('bz-price-label');
   if (lb) lb.textContent = val >= max ? 'بلا حد' : Number(val).toLocaleString('ar-EG') + ' ج';
 }
@@ -894,15 +894,15 @@ async function _loadOrganizerCard(userId, fallbackName) {
     el.innerHTML = `
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;overflow:hidden">
       <!-- رأس المربع -->
-      <div style="background:linear-gradient(135deg,rgba(255,107,0,.12),rgba(255,107,0,.04));
+      <div style="background:linear-gradient(135deg,rgba(243,100,24,.10),rgba(243,100,24,.03));
                   padding:16px 20px;border-bottom:1px solid var(--border);
                   display:flex;align-items:center;gap:14px">
         <div style="width:56px;height:56px;border-radius:50%;
-                    background:linear-gradient(135deg,var(--orange),#ff8c3a);
+                    background:linear-gradient(180deg,#F47432 0%,#F36418 100%);
                     display:flex;align-items:center;justify-content:center;
                     font-size:22px;font-weight:900;color:#fff;
                     flex-shrink:0;overflow:hidden;
-                    border:2px solid rgba(255,107,0,.3)">
+                    border:2px solid rgba(243,100,24,.28)">
           ${avatarHtml}
         </div>
         <div style="flex:1;min-width:0">
@@ -933,7 +933,7 @@ async function _loadOrganizerCard(userId, fallbackName) {
             <div style="font-size:10px;color:var(--ink3)">بازار نشط</div>
           </div>` : ''}
           ${avgRating ? `
-          <div style="background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);
+          <div style="background:rgba(243,100,24,.08);border:1px solid rgba(243,100,24,.2);
                       border-radius:10px;padding:10px;text-align:center">
             <div style="font-size:18px;font-weight:900;color:var(--orange)">${avgRating}⭐</div>
             <div style="font-size:10px;color:var(--ink3)">متوسط التقييم</div>
@@ -957,8 +957,8 @@ async function _loadOrganizerCard(userId, fallbackName) {
           </a>` : ''}
           <a href="/bazaars/profile.html?organizer=${userId}"
              style="display:inline-flex;align-items:center;gap:5px;
-                    background:rgba(255,107,0,.1);color:var(--orange);
-                    border:1px solid rgba(255,107,0,.3);border-radius:8px;
+                    background:rgba(243,100,24,.10);color:var(--orange);
+                    border:1px solid rgba(243,100,24,.28);border-radius:8px;
                     padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none"
              onclick="event.stopPropagation()">
             👤 صفحة المنظّم ←
@@ -981,7 +981,7 @@ function _renderOrganizerCardBasic(name, isVerified) {
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;
               padding:14px 18px;display:flex;align-items:center;gap:12px">
     <div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;
-                background:linear-gradient(135deg,var(--orange),#ff8c3a);
+                background:linear-gradient(180deg,#F47432 0%,#F36418 100%);
                 display:flex;align-items:center;justify-content:center;
                 font-size:18px;font-weight:900;color:#fff">
       ${name[0].toUpperCase()}

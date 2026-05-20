@@ -7,7 +7,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#FF6B00">
+<meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="مكاني Spot">
@@ -25,7 +25,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css?v=25">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
@@ -70,9 +70,9 @@
 }
 .bz-organizer-section {
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px; border-radius: 12px;
+  padding: 14px 18px; border-radius: var(--radius-lg);
   background: var(--surface2); border: 1px solid var(--border);
-  margin-top: 16px; cursor: pointer; transition: border-color .2s;
+  margin-top: 16px; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out);
 }
 .bz-organizer-section:hover { border-color: var(--orange); }
 .bz-organizer-avatar {
@@ -127,20 +127,20 @@
   gap: 9px;
   padding: 8px 10px;
   margin-top: 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--surface2);
   border: 1px solid var(--border);
-  transition: border-color 0.18s, background 0.18s;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .bz-card-organizer[style*="cursor:pointer"]:hover {
   border-color: var(--orange);
-  background: rgba(255, 107, 0, 0.04);
+  background: rgba(243, 100, 24, 0.04);
 }
 .bz-org-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--orange), #ff8c3a);
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
   color: #fff;
   display: flex;
   align-items: center;
@@ -438,10 +438,10 @@
             <label>ملاحظات (اختياري)</label>
             <textarea id="bzb-notes" placeholder="أي تفاصيل إضافية تريد إضافتها…"
                       style="min-height:64px;resize:vertical;width:100%;
-                             border-radius:var(--radius);border:1.5px solid var(--border);
-                             padding:10px 12px;font-family:'Cairo',sans-serif;
+                             border-radius:var(--radius-md);border:1.5px solid var(--border);
+                             padding:10px 12px;font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);
                              font-size:14px;background:var(--surface2);color:var(--ink);
-                             outline:none;transition:border-color 0.15s"></textarea>
+                             outline:none;transition:border-color var(--dur-fast) var(--ease-out)"></textarea>
           </div>
           <div class="form-error" id="bzb-error" style="display:none"></div>
 
@@ -528,7 +528,7 @@
       </svg>
     </span>
     <span class="bn-label" style="color:var(--orange);font-weight:800">مشاريع</span>
-    <span class="bn-desc" style="color:rgba(255,107,0,0.65)">كاملة للبيع</span>
+    <span class="bn-desc" style="color:rgba(243,100,24,0.65)">كاملة للبيع</span>
   </a>
 
   <!-- دخول / حساب -->
@@ -545,6 +545,7 @@
 
 </nav>
 
-<script src="app.js?v=202605201926" defer></script>
+<script src="app.js?v=202605202228" defer></script>
 </body>
 </html>
+

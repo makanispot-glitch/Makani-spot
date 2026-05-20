@@ -11,9 +11,9 @@
   <link rel="manifest" href="/manifest.json">
 
   <!-- Theme & Brand Colors -->
-  <meta name="theme-color" content="#FF6B00">
-  <meta name="msapplication-TileColor" content="#FF6B00">
-  <meta name="msapplication-navbutton-color" content="#FF6B00">
+  <meta name="theme-color" content="#F36418">
+  <meta name="msapplication-TileColor" content="#F36418">
+  <meta name="msapplication-navbutton-color" content="#F36418">
 
   <!-- Apple PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,7 +43,7 @@
   <!-- روابط الخطوط من Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
@@ -53,7 +53,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <style>
-    /* تأكيد عرض الـ Bottom Nav على الموبايل */
+    /* ── Page-specific overrides — Spaces ── */
+
+    /* مسافة أسفل الصفحة للـ Bottom Nav على الموبايل */
     @media (max-width: 768px) {
       #bottom-nav {
         display: flex !important;
@@ -65,7 +67,62 @@
         justify-content: space-around !important;
         align-items: center !important;
       }
+      .mp-page { padding-bottom: 64px; }
     }
+
+    /* ── تحسين Header Title وSubtitle ── */
+    .mp-header-title {
+      font-family: var(--font-display);
+      font-size: clamp(18px, 3vw, 24px);
+      letter-spacing: -0.01em;
+    }
+    .mp-header-sub {
+      font-family: var(--font-body);
+      line-height: 1.6;
+    }
+
+    /* ── زرار الفلاتر (Mobile): Pill + Gradient ── */
+    @media (max-width: 1024px) {
+      .mp-filter-toggle {
+        border-radius: var(--radius-pill);
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
+    /* ── Sticky Footer: Design system tokens ── */
+    .sd-book-btn {
+      background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, var(--shadow-orange);
+      border-radius: var(--radius-pill) !important;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .sd-book-btn:hover {
+      background: linear-gradient(180deg, #E66520 0%, #D9510A 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(243,100,24,0.38);
+    }
+    .sd-back-btn-footer {
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--fg-2);
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .sd-back-btn-footer:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
+    /* ── كارد المساحة: hover warm border ── */
+    .space-card:hover { border-color: var(--warm-300); }
+
+    /* ── Modal: warm bg ── */
+    .modal { border-color: var(--warm-200); }
+
+    /* ── Breadcrumb body font ── */
+    .sd-breadcrumb { font-family: var(--font-body); }
+    .sd-meta       { font-family: var(--font-body); }
+
+    /* ── result-badge: pill shape ── */
+    .result-badge { border-radius: var(--radius-pill); font-family: var(--font-display); }
   </style>
 </head>
 
@@ -735,11 +792,12 @@
     <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
     <div style="margin-bottom:20px">
       <a href="/catalog/" target="_blank" style="display:inline-flex;align-items:center;gap:9px;
-            background:var(--orange);color:#fff;
-            padding:12px 28px;border-radius:var(--radius-lg);
+            background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;
+            padding:12px 28px;border-radius:var(--radius-pill);
             font-size:14px;font-weight:800;text-decoration:none;
-            box-shadow:0 4px 18px rgba(255,107,0,0.35);
-            transition:all 0.2s;font-family:'Cairo',sans-serif">
+            box-shadow:0 1px 0 rgba(255,255,255,0.20) inset,0 4px 18px rgba(243,100,24,0.35);
+            transition:all var(--dur-fast,160ms) var(--ease-out,ease);
+            font-family:var(--font-display,'Cairo',sans-serif)">
         📋 كتالوج الأنشطة التجارية
       </a>
       <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px">
@@ -774,7 +832,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="app.js?v=202605201926" defer></script>
+  <script src="app.js?v=202605202228" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -802,7 +860,7 @@
         </svg>
       </span>
       <span class="bn-label" style="color:var(--orange);font-weight:800">مساحات</span>
-      <span class="bn-desc" style="color:rgba(255,107,0,0.65)">ثابتة وتجارية</span>
+      <span class="bn-desc" style="color:rgba(243,100,24,0.65)">ثابتة وتجارية</span>
     </button>
 
     <!-- البازارات -->
@@ -854,3 +912,4 @@
 
 </body>
 </html>
+
