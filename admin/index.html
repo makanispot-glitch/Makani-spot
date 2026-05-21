@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -318,6 +319,14 @@ tr:hover td { background: #FAFAFA; }
 <script>
 const ADM_TOKEN_KEY = 'makani_admin_token';
 
+/* ── Supabase Direct Access (bypasses RLS via SECURITY DEFINER functions) ── */
+const ADM_SB_URL     = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const ADM_SB_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const ADM_RPC_SECRET = 'MkSp0t_Adm1n_2026_L1st';
+
+let directMode = true;  // prefer Supabase RPC over Cloudflare Function
+let sbDirect   = null;
+
 const CAT_LABELS  = {partition:'بارتشن وأثاث','food-cart':'عربات طعام',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',coffee:'معدات كافيه',pos:'كاشير وPOS',vending:'أجهزة بيع ذاتي',storage:'رفوف وتخزين',lighting:'إضاءة تجارية',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 const CONTACT_LABELS = {both:'واتساب + اتصال',whatsapp:'واتساب فقط',call:'اتصال فقط'};
@@ -385,6 +394,7 @@ function admShowDash() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  sbDirect = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
   if (admCheckAuth()) admShowDash();
 });
 
@@ -393,29 +403,50 @@ async function admLoad() {
   document.getElementById('adm-table-container').innerHTML =
     '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
 
-  const res = await fetch('/admin/listings', {
-    headers: { 'Authorization': 'Bearer ' + admGetToken() },
-  });
-
-  if (res.status === 401) {
-    sessionStorage.removeItem(ADM_TOKEN_KEY);
-    location.reload();
+  /* 1️⃣ Primary: Supabase RPC (bypasses RLS — sees ALL listings) */
+  try {
+    const { data, error } = await sbDirect.rpc('admin_list_listings', { p_secret: ADM_RPC_SECRET });
+    if (error) throw error;
+    admAll     = data || [];
+    directMode = true;
+    admUpdateStats();
+    admRender();
+    const now = new Date().toLocaleTimeString('ar-EG');
+    document.getElementById('adm-last-update').textContent = 'آخر تحديث (Supabase): ' + now;
     return;
+  } catch (sbErr) {
+    console.warn('[admin] Supabase RPC failed, falling back to CF Function:', sbErr.message);
   }
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+  /* 2️⃣ Fallback: Cloudflare Function */
+  try {
+    const res = await fetch('/admin/listings', {
+      headers: { 'Authorization': 'Bearer ' + admGetToken() },
+    });
+
+    if (res.status === 401) {
+      sessionStorage.removeItem(ADM_TOKEN_KEY);
+      location.reload();
+      return;
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      document.getElementById('adm-table-container').innerHTML =
+        `<div class="adm-empty">⚠️ خطأ في التحميل: ${escHtml(err.error || res.statusText)}</div>`;
+      return;
+    }
+
+    admAll     = await res.json() || [];
+    directMode = false;
+    admUpdateStats();
+    admRender();
+    const now = new Date().toLocaleTimeString('ar-EG');
+    document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + now;
+  } catch (cfErr) {
     document.getElementById('adm-table-container').innerHTML =
-      `<div class="adm-empty">⚠️ خطأ في التحميل: ${err.error || res.statusText}</div>`;
-    return;
+      `<div class="adm-empty">⚠️ تعذّر الاتصال بالخادم — تحقق من الإنترنت وأعد المحاولة</div>`;
   }
-
-  admAll = await res.json() || [];
-  admUpdateStats();
-  admRender();
-
-  const now = new Date().toLocaleTimeString('ar-EG');
-  document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + now;
 }
 
 function admUpdateStats() {
@@ -525,13 +556,22 @@ async function admApprove(id) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 60);
 
-  const res = await fetch('/admin/listings', {
-    method:  'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
-    body:    JSON.stringify({ id, status: 'approved', reject_reason: null, expires_at: expiresAt.toISOString() }),
-  });
-
-  if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+  if (directMode) {
+    const { error } = await sbDirect.rpc('admin_update_listing', {
+      p_secret:    ADM_RPC_SECRET,
+      p_id:        id,
+      p_status:    'approved',
+      p_expires_at: expiresAt.toISOString(),
+    });
+    if (error) { alert('خطأ: ' + error.message); return; }
+  } else {
+    const res = await fetch('/admin/listings', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ id, status: 'approved', reject_reason: null, expires_at: expiresAt.toISOString() }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+  }
 
   const listing = admAll.find(l => l.id === id);
   if (listing) {
@@ -559,13 +599,22 @@ async function admConfirmReject() {
   const reason = document.getElementById('adm-reject-reason').value.trim();
   if (!reason) { alert('من فضلك اكتب سبب الرفض'); return; }
 
-  const res = await fetch('/admin/listings', {
-    method:  'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
-    body:    JSON.stringify({ id, status: 'rejected', reject_reason: reason }),
-  });
-
-  if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+  if (directMode) {
+    const { error } = await sbDirect.rpc('admin_update_listing', {
+      p_secret:        ADM_RPC_SECRET,
+      p_id:            id,
+      p_status:        'rejected',
+      p_reject_reason: reason,
+    });
+    if (error) { alert('خطأ: ' + error.message); return; }
+  } else {
+    const res = await fetch('/admin/listings', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ id, status: 'rejected', reject_reason: reason }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+  }
 
   const listing = admAll.find(l => l.id === id);
   if (listing) { listing.status = 'rejected'; listing.reject_reason = reason; }

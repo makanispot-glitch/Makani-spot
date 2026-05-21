@@ -714,6 +714,62 @@ body {
 @keyframes sli { from { transform: translateX(-14px); opacity: 0; } }
 
 /* ══════════════════════════════════════
+   WORKFLOW STEPS
+══════════════════════════════════════ */
+.wf-card {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.wf-item {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  border-bottom: 1px solid var(--bd);
+}
+.wf-item:last-child { border-bottom: none; }
+.wf-item-side {
+  background: var(--bg3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 10px;
+  border-left: 1px solid var(--bd);
+  gap: 6px;
+}
+.wf-item-num {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--org); border: 1px solid var(--bdo);
+  color: var(--or); font-size: 13px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.wf-item-connector { width: 2px; flex: 1; min-height: 12px; background: linear-gradient(var(--bdo), transparent); }
+.wf-item-body { padding: 16px 18px; }
+.wf-item-title {
+  font-size: 13px; font-weight: 700;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.wf-item-desc {
+  font-size: 11.5px; color: var(--mu); line-height: 1.75; margin-bottom: 8px;
+}
+.wf-item-desc code {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 4px;
+  padding: 1px 5px; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--or);
+}
+.wf-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.wf-tag {
+  font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace;
+  padding: 2px 8px; border-radius: 4px;
+}
+.wf-tag-user  { background: rgba(96,165,250,.1);  color: var(--bl); border: 1px solid rgba(96,165,250,.2); }
+.wf-tag-admin { background: rgba(255,107,0,.1);   color: var(--or); border: 1px solid var(--bdo); }
+.wf-tag-db    { background: rgba(167,139,250,.1); color: var(--pu); border: 1px solid rgba(167,139,250,.2); }
+.wf-tag-ok    { background: rgba(34,197,94,.1);   color: var(--gr); border: 1px solid rgba(34,197,94,.2); }
+.wf-tag-pend  { background: rgba(245,158,11,.1);  color: var(--yw); border: 1px solid rgba(245,158,11,.2); }
+
+/* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 900px) {
@@ -774,7 +830,7 @@ body {
   <div class="topbar">
     <div class="topbar-brand">
       <div class="logo-text">مكاني Spot</div>
-      <div class="badge">ADMIN HUB v1.0</div>
+      <div class="badge">ADMIN HUB v2.0</div>
     </div>
     <div class="topbar-right">
       <div class="topbar-time" id="clock">—</div>
@@ -796,10 +852,10 @@ body {
     <div class="status-card">
       <div class="status-dot-wrap dot-ok">🛍️</div>
       <div class="status-info">
-        <div class="status-name">Apps Script — البازارات</div>
-        <div class="status-sub">Google Sheets API</div>
+        <div class="status-name">Supabase — البازارات</div>
+        <div class="status-sub">rxqkpjuvudweyovekvvx</div>
       </div>
-      <span class="status-pill pill-ok" id="st-bazaars">LIVE</span>
+      <span class="status-pill pill-idle" id="st-bazaars">CHECK</span>
     </div>
     <div class="status-card">
       <div class="status-dot-wrap dot-idle">🌐</div>
@@ -847,12 +903,12 @@ body {
       <div class="quick-arrow">فتح صفحة المراجعة ←</div>
     </a>
 
-    <a href="./organizer-requests.html" target="_blank" class="quick-card">
+    <a href="./bazaar-dashboard.html" target="_blank" class="quick-card">
       <span class="quick-badge" style="background:rgba(167,139,250,.15);color:#A78BFA;border:1px solid rgba(167,139,250,.3)">منظّمون</span>
       <div class="quick-icon">🎪</div>
-      <div class="quick-title">طلبات منظّمي البازارات</div>
-      <div class="quick-desc">مراجعة طلبات التوثيق، قبول أو رفض الطلبات، عرض صور الهوية، وترتيب المنظّمين النشطين حسب عدد البازارات.</div>
-      <div class="quick-arrow">فتح صفحة الطلبات ←</div>
+      <div class="quick-title">طلبات التوثيق والتنظيم</div>
+      <div class="quick-desc">مراجعة طلبات توثيق المنظّمين وطلبات تنظيم البازارات — داخل داشبورد البازارات في تبويبَي "طلبات التوثيق" و"طلبات التنظيم".</div>
+      <div class="quick-arrow">فتح داشبورد البازارات ←</div>
     </a>
 
   </div>
@@ -922,64 +978,65 @@ body {
       </div>
     </div>
 
-    <!-- BAZAARS SYSTEM -->
+    <!-- BAZAARS SYSTEM — Supabase -->
     <div class="sys-card">
       <div class="sys-card-head">
-        <div class="sys-card-title">🛍️ نظام البازارات</div>
+        <div class="sys-card-title">🛍️ نظام البازارات — Supabase</div>
         <span class="status-pill pill-ok">ACTIVE</span>
       </div>
       <div class="sys-card-body">
 
         <div class="info-row">
-          <div class="info-label">Apps Script URL</div>
+          <div class="info-label">Supabase Project</div>
           <div class="info-value">
-            <a class="link-chip" href="https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec" target="_blank">
-              🔗 script.google.com/.../exec
+            <a class="link-chip" href="https://supabase.com/dashboard/project/rxqkpjuvudweyovekvvx" target="_blank">
+              🗄️ rxqkpjuvudweyovekvvx
             </a>
           </div>
-          <button class="copy-btn" onclick="copyText('https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec',this)">نسخ</button>
+          <button class="copy-btn" onclick="copyText('https://rxqkpjuvudweyovekvvx.supabase.co',this)">نسخ URL</button>
         </div>
 
         <div class="info-row">
-          <div class="info-label">Google Sheet</div>
-          <div class="info-value">
-            <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit" target="_blank">
-              📊 makani_bazaar_sheet
-            </a>
+          <div class="info-label">Storage Bucket</div>
+          <div class="info-value" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📁 organizer-docs</span>
+            <span style="font-size:11px;color:var(--mu)">صور هويات طلبات التوثيق</span>
           </div>
-          <button class="copy-btn" onclick="copyText('https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit',this)">نسخ</button>
         </div>
 
         <div class="info-row">
-          <div class="info-label">الشيتات الرئيسية</div>
+          <div class="info-label">الجداول الرئيسية</div>
           <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🛍️ Bazaars</span>
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 BazaarSlots</span>
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🧾 Bookings</span>
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">💰 Costs</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🛍️ bazaars</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 bazaar_slots</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🧾 bazaar_bookings</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">💰 bazaar_costs</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📋 organizer_requests</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">👤 organizer_profiles</span>
           </div>
         </div>
 
         <div class="info-row">
-          <div class="info-label">الـ Actions</div>
-          <div class="info-value" style="font-size:11px;line-height:2">
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">?action=all</code> ← كل البيانات دفعة واحدة<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">?action=bazaars</code> ← للموقع الرئيسي<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">addBazaar</code> ← إضافة بازار<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">createSlots</code> ← إنشاء وحدات<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">editSlotStatus</code> ← تغيير حالة وحدة
+          <div class="info-label">حالات البازار</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--yw)">⏳ pending_review</span>
+            <span style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--gr)">✅ published</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📝 draft</span>
+            <span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--rd)">❌ cancelled</span>
           </div>
         </div>
 
         <div class="info-row">
-          <div class="info-label">الـ CONST في app.js</div>
-          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mu);direction:ltr">
-            BAZAAR_SHEET_URL = "...exec"
+          <div class="info-label">حالات التوثيق</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--yw)">⏳ pending</span>
+            <span style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--gr)">✅ approved</span>
+            <span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--rd)">❌ rejected</span>
           </div>
         </div>
 
         <div class="info-box">
-          💡 <strong>id البازار</strong> بصيغة BZ-001 — يتولّد تلقائياً عند الإضافة. الـ <code style="font-size:10px">status=published</code> هي اللي بتخلي البازار يظهر على الموقع.
+          💡 البازار يظهر على الموقع <strong>فقط</strong> عند <code style="font-size:10px">status = published</code> — الموافقة في الداشبورد تغيّره تلقائياً وتضع <code style="font-size:10px">available_slots = total_slots</code>
         </div>
       </div>
     </div>
@@ -1060,19 +1117,33 @@ body {
     </div>
 
     <div style="margin-bottom:20px">
-      <div style="font-size:11px;font-weight:700;color:var(--bl);margin-bottom:8px">🛍️ نظام البازارات</div>
+      <div style="font-size:11px;font-weight:700;color:var(--bl);margin-bottom:8px">🛍️ نظام البازارات — مسار التوثيق</div>
       <div class="arch-flow">
-        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">الداشبورد</div></div>
+        <div class="arch-node"><div class="node-icon">👤</div>مستخدم<div class="node-label">verification.html</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doPost</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">organizer_requests</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">📊</div>Google Sheet<div class="node-label">Bazaars+Slots</div></div>
+        <div class="arch-node"><div class="node-icon">🛡️</div>Admin<div class="node-label">طلبات التوثيق</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">?action=all</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">organizer_profiles</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">BAZAAR_URL</div></div>
+        <div class="arch-node"><div class="node-icon">⭐</div>منظّم موثّق<div class="node-label">is_verified = true</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--pu);margin-bottom:8px">🎪 نظام البازارات — مسار التنظيم والحجز</div>
+      <div class="arch-flow">
+        <div class="arch-node"><div class="node-icon">⭐</div>منظّم<div class="node-label">organize.html</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">👥</div>الموقع<div class="node-label">المستخدمين</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">pending_review</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🛡️</div>Admin<div class="node-label">طلبات التنظيم</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">published</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🌐</div>/bazaars/<div class="node-label">العارضون</div></div>
+        <div class="arch-arrow">⟶</div>
+        <div class="arch-node"><div class="node-icon">🧾</div>Supabase<div class="node-label">bazaar_bookings</div></div>
       </div>
     </div>
 
@@ -1097,6 +1168,163 @@ body {
     </div>
   </div>
 
+  <!-- ─── BAZAAR WORKFLOW ─── -->
+  <div class="sec-title">🔄 مسار نظام البازارات الكامل</div>
+  <div class="wf-card">
+
+    <!-- خطوة 1 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">1</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">👤 طلب التوثيق كمنظّم بازارات</div>
+        <div class="wf-item-desc">
+          المستخدم يزور <code>/bazaars/verification.html</code> ويعبئ بياناته الشخصية (الاسم، الهاتف، تجربته السابقة في تنظيم البازارات).<br>
+          يرفع صورة هوية وطنية أو جواز سفر — تُحفظ في Supabase Storage bucket <code>organizer-docs</code>.<br>
+          البيانات تُحفظ في جدول <code>organizer_requests</code> بحالة <code>status = pending</code>، ويظهر الطلب في داشبورد الأدمن.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-user">مستخدم</span>
+          <span class="wf-tag wf-tag-db">organizer_requests</span>
+          <span class="wf-tag wf-tag-pend">status = pending</span>
+          <span class="wf-tag wf-tag-db">organizer-docs (storage)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 2 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">2</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">🛡️ مراجعة طلب التوثيق — الأدمن</div>
+        <div class="wf-item-desc">
+          الأدمن يفتح <strong>داشبورد البازارات</strong> ← تبويب <code>🎪 طلبات التوثيق</code> — يُعرض عداد الطلبات المعلّقة في الشريط الجانبي.<br>
+          يراجع بيانات المتقدم وصورة هويته (Lightbox)، خبرته السابقة، ووسائل التواصل.<br>
+          <strong>موافقة:</strong> <code>organizer_requests.status = approved</code> + يُنشأ/يُحدَّث <code>organizer_profiles.is_verified = true</code>.<br>
+          <strong>رفض:</strong> <code>organizer_requests.status = rejected</code> مع سبب مُسجَّل في <code>admin_notes</code>.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-admin">أدمن</span>
+          <span class="wf-tag wf-tag-db">organizer_profiles</span>
+          <span class="wf-tag wf-tag-ok">is_verified = true</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 3 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">3</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">🎪 تقديم طلب تنظيم بازار</div>
+        <div class="wf-item-desc">
+          المنظّم الموثّق يزور <code>/bazaars/organize.html</code> — تتحقق الصفحة تلقائياً من <code>organizer_profiles.is_verified</code>، وترفض غير الموثّقين.<br>
+          نموذج من 3 خطوات: <strong>(1)</strong> معلومات الفعالية (اسم، مكان، عنوان، تواريخ، خرائط، وصف) — <strong>(2)</strong> التسعير (وحدات، سعر، عربون أولي ونهائي، قيمة العقد) — <strong>(3)</strong> ملخص + تأكيد.<br>
+          البازار يُحفظ في جدول <code>bazaars</code> بحالة <code>status = pending_review</code> ويصل فوراً للأدمن.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-user">منظّم موثّق</span>
+          <span class="wf-tag wf-tag-db">bazaars</span>
+          <span class="wf-tag wf-tag-pend">status = pending_review</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 4 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">4</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">🛡️ مراجعة طلب التنظيم والنشر — الأدمن</div>
+        <div class="wf-item-desc">
+          الأدمن يفتح <strong>داشبورد البازارات</strong> ← تبويب <code>📥 طلبات التنظيم</code>.<br>
+          يراجع كافة التفاصيل: اسم البازار، المكان، التواريخ، التسعير، العربون، قيمة العقد، ملاحظات المنظّم. يمكن فتح مودال المراجعة الكاملة.<br>
+          <strong>موافقة ونشر:</strong> <code>bazaars.status = published</code> + <code>available_slots = total_slots</code> — البازار يصبح مرئياً فوراً على الموقع.<br>
+          <strong>رفض:</strong> <code>bazaars.status = cancelled</code> مع سبب الرفض يُسجَّل في ملاحظات المنظّم.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-admin">أدمن</span>
+          <span class="wf-tag wf-tag-db">bazaars</span>
+          <span class="wf-tag wf-tag-ok">status = published</span>
+          <span class="wf-tag wf-tag-ok">available_slots = total_slots</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 5 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">5</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">🌐 البازار مباشر على الموقع</div>
+        <div class="wf-item-desc">
+          يظهر البازار في صفحة <code>/bazaars/</code> — تُجلب فقط البازارات بـ <code>status = published</code>.<br>
+          العارضون يتصفحون ويجدون التفاصيل (المكان، التواريخ، السعر، عدد الوحدات المتاحة <code>available_slots</code>).<br>
+          كل حجز ناجح يخفض <code>available_slots</code> تلقائياً ويُحدَّث عداد الوحدات المعروضة.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-user">العارضون</span>
+          <span class="wf-tag wf-tag-db">bazaars (published only)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 6 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">6</div>
+        <div class="wf-item-connector"></div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">🧾 حجز الوحدات</div>
+        <div class="wf-item-desc">
+          العارض يختار وحدة ويقدّم طلب حجز — يُسجَّل في جدول <code>bazaar_bookings</code>.<br>
+          الوحدة في جدول <code>bazaar_slots</code> تتغير من <code>available</code> إلى <code>booked</code>.<br>
+          الأدمن يتابع الحجوزات من داشبورد البازارات ويمكنه تأكيدها أو إلغاؤها مع تحديث الحالة.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-user">عارض</span>
+          <span class="wf-tag wf-tag-db">bazaar_bookings</span>
+          <span class="wf-tag wf-tag-db">bazaar_slots → booked</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- خطوة 7 -->
+    <div class="wf-item">
+      <div class="wf-item-side">
+        <div class="wf-item-num">7</div>
+      </div>
+      <div class="wf-item-body">
+        <div class="wf-item-title">📊 انتهاء البازار والتقارير المالية</div>
+        <div class="wf-item-desc">
+          بعد انتهاء البازار، يستعرض الأدمن تقارير شاملة من لوحة التحكم:<br>
+          • <strong>الإيرادات</strong>: الفعلية مقابل المتوقعة — عدد الوحدات المحجوزة — نسبة الإشغال.<br>
+          • <strong>التكاليف</strong>: من جدول <code>bazaar_costs</code> (إيجار المكان، تكاليف تشغيلية...)<br>
+          • <strong>صافي الربح</strong>: الإيرادات − التكاليف — يُحسب تلقائياً في الداشبورد.<br>
+          يمكن تحديث حالة البازار وأرشفته من لوحة التحكم.
+        </div>
+        <div class="wf-tags">
+          <span class="wf-tag wf-tag-admin">أدمن</span>
+          <span class="wf-tag wf-tag-db">bazaar_costs</span>
+          <span class="wf-tag wf-tag-db">bazaar_bookings</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ─── HOW-TO DOCS ─── -->
   <div class="sec-title">دليل الاستخدام والتعديل</div>
   <div class="docs-grid">
@@ -1113,12 +1341,13 @@ body {
     </div>
 
     <div class="doc-card">
-      <div class="doc-head">➕ إزاي تضيف بازار جديد</div>
+      <div class="doc-head">🎪 إزاي تراجع وتنشر بازار جديد</div>
       <div class="doc-body">
-        <div class="doc-step"><div class="step-num">1</div><div class="step-text">افتح <strong>داشبورد البازارات</strong> واضغط <strong>بازار جديد</strong></div></div>
-        <div class="doc-step"><div class="step-num">2</div><div class="step-text">املأ الاسم، المكان، التواريخ، السعر — الـ ID بيتولّد تلقائياً</div></div>
-        <div class="doc-step"><div class="step-num">3</div><div class="step-text">اضغط <strong>إضافة وحدات</strong> وحدد عدد الأماكن والسعر</div></div>
-        <div class="doc-step"><div class="step-num">4</div><div class="step-text">غيّر الحالة لـ <code>published</code> عشان يظهر على الموقع</div></div>
+        <div class="doc-step"><div class="step-num">1</div><div class="step-text">المنظّم الموثّق يرسل طلب عبر <code>/bazaars/organize.html</code> — يصلك في الداشبورد تلقائياً</div></div>
+        <div class="doc-step"><div class="step-num">2</div><div class="step-text">افتح <strong>داشبورد البازارات</strong> ← تبويب <code>📥 طلبات التنظيم</code></div></div>
+        <div class="doc-step"><div class="step-num">3</div><div class="step-text">اضغط على الطلب لفتح المودال — راجع كل التفاصيل (المكان، التواريخ، التسعير، ملاحظات المنظّم)</div></div>
+        <div class="doc-step"><div class="step-num">4</div><div class="step-text">اضغط <strong>موافقة ونشر</strong> — البازار يُنشر فوراً وتُضبط <code>available_slots</code> تلقائياً</div></div>
+        <div class="info-box">📌 يمكنك أيضاً إضافة بازار يدوياً من الداشبورد بدون طلب منظّم — غيّر الحالة لـ <code>published</code> بعد الحفظ</div>
       </div>
     </div>
 
@@ -1155,7 +1384,10 @@ body {
             <tr><td>الصور مش بتظهر</td><td>رابط Google Drive خاطئ</td><td>استخدم postimages.org</td></tr>
             <tr><td>Error 522</td><td>Cloudflare Orange Cloud</td><td>حوّله لـ Grey Cloud (DNS Only)</td></tr>
             <tr><td>مساحة مش ظاهرة على الموقع</td><td>عمود "ظاهر؟" = لا</td><td>غيّره لـ نعم من الداشبورد أو الشيت</td></tr>
-            <tr><td>البازار مش ظاهر</td><td>status ≠ published</td><td>غيّر الحالة لـ published</td></tr>
+            <tr><td>البازار مش ظاهر</td><td>status ≠ published</td><td>وافق على الطلب من "طلبات التنظيم" أو غيّر الحالة يدوياً</td></tr>
+            <tr><td>داشبورد البازارات بيرجع خطأ</td><td>Supabase RLS أو anon key منتهي</td><td>افتح الكونسول وتحقق من رسالة الخطأ — تأكد من صلاحيات الجداول</td></tr>
+            <tr><td>منظّم مش قادر يفتح organize.html</td><td><code>is_verified</code> = false أو null</td><td>وافق على طلب التوثيق من تبويب "طلبات التوثيق"</td></tr>
+            <tr><td>صورة الهوية مش بتظهر</td><td>Storage bucket permissions</td><td>تأكد إن bucket <code>organizer-docs</code> على <code>public</code> في Supabase Storage</td></tr>
           </tbody>
         </table>
       </div>
@@ -1206,17 +1438,17 @@ body {
       <div class="ext-icon">☁️</div>
       <div><div class="ext-name">Cloudflare Dashboard</div><div class="ext-desc">Pages & DNS & Workers</div></div>
     </a>
-    <a class="ext-link" href="https://supabase.com/dashboard" target="_blank">
+    <a class="ext-link" href="https://supabase.com/dashboard/project/rxqkpjuvudweyovekvvx" target="_blank">
       <div class="ext-icon">🗄️</div>
-      <div><div class="ext-name">Supabase Dashboard</div><div class="ext-desc">listings table & Auth</div></div>
+      <div><div class="ext-name">Supabase Dashboard</div><div class="ext-desc">listings · bazaars · auth</div></div>
     </a>
     <a class="ext-link" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
       <div class="ext-icon">📊</div>
       <div><div class="ext-name">شيت المساحات</div><div class="ext-desc">Google Sheets — Spaces</div></div>
     </a>
-    <a class="ext-link" href="https://docs.google.com/spreadsheets/d/1JCHObVMEQY_1S0HktWaCp_XdfTFBnfXVZnfM4Aq4R1M/edit" target="_blank">
-      <div class="ext-icon">📊</div>
-      <div><div class="ext-name">شيت البازارات</div><div class="ext-desc">Google Sheets — Bazaars</div></div>
+    <a class="ext-link" href="https://supabase.com/dashboard/project/rxqkpjuvudweyovekvvx/editor" target="_blank">
+      <div class="ext-icon">🛍️</div>
+      <div><div class="ext-name">جداول البازارات</div><div class="ext-desc">Supabase Table Editor</div></div>
     </a>
     <a class="ext-link" href="https://script.google.com/home" target="_blank">
       <div class="ext-icon">⚙️</div>
@@ -1230,7 +1462,7 @@ body {
 
   <!-- FOOTER -->
   <div style="text-align:center;font-size:11px;color:var(--mu2);padding-top:20px;border-top:1px solid var(--bd)">
-    مكاني Spot Admin Hub · نسخة 1.0 · <span id="build-date"></span>
+    مكاني Spot Admin Hub · نسخة 2.0 · Supabase Edition · <span id="build-date"></span>
   </div>
 
 </div>
@@ -1357,40 +1589,44 @@ function startClock() {
    SYSTEM STATUS CHECK
 ══════════════════════════════════════ */
 async function checkSystemStatus() {
-  const apis = [
-    {
-      id: 'st-spaces',
-      url: 'https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec'
-    },
-    {
-      id: 'st-bazaars',
-      url: 'https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec'
-    },
-  ];
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
-  for (const api of apis) {
-    const el = document.getElementById(api.id);
-    el.textContent = 'CHECKING...';
-    el.className   = 'status-pill pill-idle';
-    try {
-      const controller = new AbortController();
-      const timeout    = setTimeout(() => controller.abort(), 5000);
-      const r = await fetch(api.url, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (r.ok) {
-        el.textContent = 'LIVE ✓';
-        el.className   = 'status-pill pill-ok';
-      } else {
-        el.textContent = 'ERROR ' + r.status;
-        el.className   = 'status-pill pill-err';
-      }
-    } catch(e) {
-      el.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
-      el.className   = 'status-pill pill-err';
-    }
+  // 1) فحص Apps Script — المساحات
+  const spacesEl = document.getElementById('st-spaces');
+  spacesEl.textContent = 'CHECKING...';
+  spacesEl.className   = 'status-pill pill-idle';
+  try {
+    const ctrl = new AbortController();
+    const t    = setTimeout(() => ctrl.abort(), 5000);
+    const r = await fetch('https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec', { signal: ctrl.signal });
+    clearTimeout(t);
+    if (r.ok) { spacesEl.textContent = 'LIVE ✓'; spacesEl.className = 'status-pill pill-ok'; }
+    else       { spacesEl.textContent = 'ERROR ' + r.status; spacesEl.className = 'status-pill pill-err'; }
+  } catch(e) {
+    spacesEl.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
+    spacesEl.className   = 'status-pill pill-err';
   }
 
-  // فحص Supabase API عبر /admin/auth endpoint
+  // 2) فحص Supabase — البازارات (REST ping)
+  const bzEl = document.getElementById('st-bazaars');
+  bzEl.textContent = 'CHECKING...';
+  bzEl.className   = 'status-pill pill-idle';
+  try {
+    const ctrl2 = new AbortController();
+    const t2    = setTimeout(() => ctrl2.abort(), 5000);
+    const r2 = await fetch('https://rxqkpjuvudweyovekvvx.supabase.co/rest/v1/bazaars?select=id&limit=1', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+      signal: ctrl2.signal,
+    });
+    clearTimeout(t2);
+    if (r2.ok) { bzEl.textContent = 'LIVE ✓'; bzEl.className = 'status-pill pill-ok'; }
+    else        { bzEl.textContent = 'ERROR ' + r2.status; bzEl.className = 'status-pill pill-err'; }
+  } catch(e) {
+    bzEl.textContent = e.name === 'AbortError' ? 'TIMEOUT' : 'OFFLINE';
+    bzEl.className   = 'status-pill pill-err';
+  }
+
+  // 3) فحص Supabase API عبر /admin/auth endpoint (نظام الإعلانات)
   const sbEl = document.getElementById('st-supabase');
   sbEl.textContent = 'CHECKING...';
   sbEl.className   = 'status-pill pill-idle';

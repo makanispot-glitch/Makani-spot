@@ -226,6 +226,58 @@ tbody tr:hover .row-acts{opacity:1}
 
 @media(max-width:900px){#sb{width:190px}#main{margin-right:190px}.sg-5{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){#sb{transform:translateX(100%)}#sb.open{transform:translateX(0)}#main{margin-right:0}}
+
+/* ═══ ORGANIZER VERIFICATION ═══ */
+.orv-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:border-color .2s;margin-bottom:10px}
+.orv-card:hover{border-color:rgba(255,255,255,.1)}
+.orv-card.pend{border-right:3px solid var(--yw)}
+.orv-card.appr{border-right:3px solid var(--gr)}
+.orv-card.rej{border-right:3px solid var(--rd);opacity:.75}
+.orv-hdr{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;transition:background .14s}
+.orv-hdr:hover{background:rgba(255,255,255,.02)}
+.orv-main{flex:1;min-width:0}
+.orv-name{font-size:13.5px;font-weight:700}
+.orv-meta{font-size:11px;color:var(--mu);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap}
+.orv-body{display:none;padding:0 16px 16px;border-top:1px solid var(--bd)}
+.orv-body.open{display:block}
+.orv-dg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.orv-di-lbl{font-size:10px;color:var(--mu);font-weight:700;margin-bottom:4px}
+.orv-di-val{font-size:12.5px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;word-break:break-all}
+.orv-imgs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.orv-img-lbl{font-size:10px;color:var(--mu);font-weight:700;margin-bottom:5px}
+.orv-img-box{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;overflow:hidden;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;position:relative}
+.orv-img-box:hover{border-color:var(--bdo)}
+.orv-img-box img{width:100%;height:100%;object-fit:cover}
+.orv-img-ph{font-size:12px;color:var(--mu);text-align:center;padding:10px}
+.orv-exp{margin-top:14px}
+.orv-exp-title{font-size:10px;color:var(--mu);font-weight:700;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.orv-chips{display:flex;flex-wrap:wrap;gap:6px}
+.orv-chip{background:var(--bg4);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:11.5px}
+.orv-acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;align-items:center}
+.btn-appr{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:var(--gr)}
+.btn-appr:hover{background:rgba(34,197,94,.28)}
+.btn-rej{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--rd)}
+.btn-rej:hover{background:rgba(239,68,68,.22)}
+.btn-rst{background:transparent;border:1px solid var(--bd);color:var(--mu)}
+.btn-rst:hover{border-color:var(--bdo);color:var(--or)}
+.orv-lb-item{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:border-color .2s;margin-bottom:8px}
+.orv-lb-item:hover{border-color:rgba(255,255,255,.09)}
+.orv-rank{width:28px;height:28px;border-radius:50%;background:var(--bg4);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mu);flex-shrink:0}
+.orv-rank.gold{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:var(--yw)}
+.orv-rank.silver{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--bl)}
+.orv-rank.bronze{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--pu)}
+.orv-fbar{display:flex;align-items:center;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+.orv-fbtn{padding:6px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--bg3);color:var(--mu);font-family:'Cairo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.orv-fbtn:hover{border-color:var(--bdo);color:var(--or)}
+.orv-fbtn.fa{background:var(--org);border-color:var(--bdo);color:var(--or)}
+.orv-fbtn.fp{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:var(--yw)}
+.orv-fbtn.fap{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--gr)}
+.orv-fbtn.fr{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--rd)}
+#orv-lightbox{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;cursor:zoom-out}
+#orv-lightbox.open{display:flex}
+#orv-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
+#orv-lb-close{position:fixed;top:20px;left:20px;width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);color:var(--tx);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000}
+@media(max-width:700px){.orv-dg{grid-template-columns:1fr}.orv-imgs{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -279,6 +331,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('add-bz')"><span class="ic">➕</span>إضافة بازار</div>
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
     <div class="ni" onclick="gp('req')" id="ni-req"><span class="ic">📬</span>طلبات التنظيم<span class="nb" id="nb-req" style="display:none">0</span></div>
+    <div class="ni" onclick="gp('org-ver')" id="ni-org-ver"><span class="ic">🎪</span>طلبات التوثيق<span class="nb" id="nb-org-ver" style="display:none">0</span></div>
   </nav>
   <div class="sb-api" style="display:none"></div>
 </aside>
@@ -340,6 +393,8 @@ tbody tr:hover .row-acts{opacity:1}
         <option value="published">✅ منشور</option>
         <option value="draft">📝 مسودة</option>
         <option value="pending">⏳ بانتظار</option>
+        <option value="pending_review">📬 طلب تنظيم</option>
+        <option value="cancelled">❌ ملغي</option>
       </select>
       <select class="fc-s" id="bz-far" onchange="renderBazaars()"><option value="">كل المناطق</option></select>
       <select class="fc-s" id="bz-fvt" onchange="renderBazaars()">
@@ -614,6 +669,48 @@ tbody tr:hover .row-acts{opacity:1}
     <div id="req-list"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
   </div>
 
+  <!-- ═══ ORGANIZER VERIFICATION REQUESTS ═══ -->
+  <div class="pg" id="pg-org-ver">
+    <div class="sh">
+      <div class="st">🎪 طلبات <span>توثيق المنظّمين</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadOrgVerRequests()">🔄 تحديث</button>
+    </div>
+    <div class="hint" style="margin-bottom:16px">طلبات المستخدمين الراغبين بأن يصبحوا منظّمي بازارات موثّقين — راجع الهوية والخبرات ثم اقبل أو ارفض</div>
+
+    <!-- Stats -->
+    <div class="sg sg-5" style="margin-bottom:18px">
+      <div class="scard"><div class="sc-ico">📋</div><div class="sc-lbl">إجمالي الطلبات</div><div class="sc-val" id="orv-s-total" style="color:var(--or)">—</div></div>
+      <div class="scard"><div class="sc-ico">⏳</div><div class="sc-lbl">قيد المراجعة</div><div class="sc-val" id="orv-s-pending" style="color:var(--yw)">—</div></div>
+      <div class="scard"><div class="sc-ico">✅</div><div class="sc-lbl">مقبولة</div><div class="sc-val" id="orv-s-approved" style="color:var(--gr)">—</div></div>
+      <div class="scard"><div class="sc-ico">❌</div><div class="sc-lbl">مرفوضة</div><div class="sc-val" id="orv-s-rejected" style="color:var(--rd)">—</div></div>
+      <div class="scard"><div class="sc-ico">🎪</div><div class="sc-lbl">منظّم نشط</div><div class="sc-val" id="orv-s-active" style="color:var(--bl)">—</div></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="orv-fbar">
+      <button class="orv-fbtn fa" data-orvf="all"      onclick="setOrgVerFilter('all')">الكل</button>
+      <button class="orv-fbtn"    data-orvf="pending"  onclick="setOrgVerFilter('pending')">⏳ قيد المراجعة</button>
+      <button class="orv-fbtn"    data-orvf="approved" onclick="setOrgVerFilter('approved')">✅ مقبول</button>
+      <button class="orv-fbtn"    data-orvf="rejected" onclick="setOrgVerFilter('rejected')">❌ مرفوض</button>
+      <input class="fc-s" type="text" id="orv-search"
+             placeholder="🔍 ابحث بالاسم أو الهاتف أو المنطقة"
+             oninput="renderOrgVerRequests()" style="flex:1;max-width:260px">
+    </div>
+
+    <!-- Requests list -->
+    <div id="orv-requests-container">
+      <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="sh" style="margin-top:28px">
+      <div class="st">🏆 ترتيب المنظّمين <span>النشطين</span></div>
+    </div>
+    <div id="orv-leaderboard-container">
+      <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+  </div>
+
 </main>
 
 <!-- ═══ MODALS ═══ -->
@@ -656,6 +753,8 @@ tbody tr:hover .row-acts{opacity:1}
               <option value="published">✅ منشور</option>
               <option value="draft">📝 مسودة</option>
               <option value="pending">⏳ بانتظار</option>
+              <option value="pending_review">📬 طلب تنظيم (قيد المراجعة)</option>
+              <option value="cancelled">❌ ملغي/مرفوض</option>
             </select>
           </div>
         </div>
@@ -739,6 +838,23 @@ tbody tr:hover .row-acts{opacity:1}
   </div>
 </div>
 
+<!-- ORGANIZER ID LIGHTBOX -->
+<div id="orv-lightbox" onclick="closeOrgLightbox()">
+  <button id="orv-lb-close" onclick="closeOrgLightbox()">✕</button>
+  <img id="orv-lb-img" src="" alt="صورة الهوية">
+</div>
+
+<!-- ORGANIZE REQUEST REVIEW MODAL -->
+<div class="mov" id="modal-org-req">
+  <div class="mod mod-lg">
+    <div class="mhd">
+      <div class="mtt">📬 مراجعة طلب تنظيم — <span id="mreq-name" style="color:var(--or)"></span></div>
+      <button class="mx" onclick="closeModal('modal-org-req')">✕</button>
+    </div>
+    <div class="mbd" id="modal-org-req-body"></div>
+  </div>
+</div>
+
 <div id="toasts"></div>
 
 <script>
@@ -758,6 +874,10 @@ const PER = 20;
 let bzPg=1, slPg=1, bkPg=1;
 let fBz=[], fSl=[], fBk=[], fCs=[];
 let _nbImgUrl = '';   /* رابط صورة البازار بعد الرفع على R2 */
+let _orgRequests = []; /* طلبات تنظيم البازارات المحمّلة */
+let _orgVerRequests   = []; /* طلبات توثيق المنظّمين */
+let _orgVerOrganizers = []; /* المنظّمون النشطون */
+let _orgVerFilter     = 'all';
 
 /* ══════════════════════════════════════════
    🖼️  BAZAAR IMAGE — ضغط WebP + رفع R2
@@ -843,10 +963,11 @@ async function loadData() {
   setLoad(true);
   toast('جارٍ التحميل...', 'i');
   try {
-    const [bzRes, slRes, bkRes] = await Promise.all([
+    const [bzRes, slRes, bkRes, orgVerRes] = await Promise.all([
       db.from('bazaars').select('*').order('created_at', { ascending: false }),
       db.from('bazaar_slots').select('*'),
-      db.from('bazaar_bookings').select('*').order('created_at', { ascending: false })
+      db.from('bazaar_bookings').select('*').order('created_at', { ascending: false }),
+      db.from('organizer_requests').select('id').eq('status', 'pending')
     ]);
     if (bzRes.error) throw bzRes.error;
     if (slRes.error) throw slRes.error;
@@ -860,10 +981,14 @@ async function loadData() {
     setConn('ok', BAZAARS.length + ' بازار');
     updateAll();
     toast('✅ ' + BAZAARS.length + ' بازار · ' + SLOTS.length + ' وحدة · ' + BOOKINGS.length + ' حجز', 's');
-    /* تحديث شارة طلبات التنظيم */
+    /* تحديث شارات الطلبات */
     const pendingCount = bzRes.data.filter(b => b.status === 'pending_review').length;
     const nbReq = document.getElementById('nb-req');
     if (nbReq) { nbReq.textContent = pendingCount; nbReq.style.display = pendingCount ? '' : 'none'; }
+
+    const orgVerPending = orgVerRes.data?.length || 0;
+    const nbOrgVer = document.getElementById('nb-org-ver');
+    if (nbOrgVer) { nbOrgVer.textContent = orgVerPending; nbOrgVer.style.display = orgVerPending ? '' : 'none'; }
   } catch(e) {
     setConn('err');
     toast('فشل التحميل: ' + e.message, 'e');
@@ -1620,6 +1745,8 @@ async function loadOrgRequests() {
       .order('created_at', { ascending: false });
     if (error) throw error;
 
+    _orgRequests = data;
+
     const badge = document.getElementById('nb-req');
     if (badge) {
       badge.textContent = data.length;
@@ -1627,7 +1754,12 @@ async function loadOrgRequests() {
     }
 
     if (!data.length) {
-      list.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--mu)">لا توجد طلبات معلّقة حالياً ✓</div>';
+      list.innerHTML = `
+        <div style="text-align:center;padding:60px 24px;color:var(--mu)">
+          <div style="font-size:44px;margin-bottom:12px;opacity:.25">📬</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">لا توجد طلبات معلّقة حالياً</div>
+          <div style="font-size:12px">ستظهر هنا الطلبات الجديدة من المنظّمين الموثّقين</div>
+        </div>`;
       return;
     }
 
@@ -1637,31 +1769,72 @@ async function loadOrgRequests() {
         : '—';
       const ds = b.date_start ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' }) : '—';
       const de = b.date_end   ? new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })   : '—';
+      const expectedRev = (b.price_per_slot || 0) * (b.total_slots || 0);
+      const safeId   = b.id;
+      const safeName = (b.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
       return `
-      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin-bottom:14px;transition:border-color .2s"
+           onmouseenter="this.style.borderColor='var(--bdo)'" onmouseleave="this.style.borderColor='var(--bd)'">
+
+        <!-- Header Row -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px">
           <div>
-            <div style="font-size:16px;font-weight:900;color:var(--tx)">${b.name}</div>
-            <div style="font-size:12px;color:var(--mu);margin-top:3px">قُدِّم في ${created} · المنظّم: <span style="color:var(--or)">${b.organizer || '—'}</span></div>
+            <div style="font-size:17px;font-weight:900;color:var(--tx)">${b.name}</div>
+            <div style="font-size:11.5px;color:var(--mu);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span>قُدِّم في ${created}</span>
+              <span style="color:var(--bd)">·</span>
+              <span>المنظّم: <strong style="color:var(--or)">${b.organizer || '—'}</strong></span>
+              ${b.is_organizer_verified ? '<span style="background:rgba(34,197,94,.12);color:var(--gr);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px">✓ موثّق</span>' : ''}
+            </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-or btn-sm" onclick="approveOrgRequest('${b.id}', '${(b.name||'').replace(/'/g,"\\'")}')">✅ قبول</button>
-            <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3)" onclick="rejectOrgRequest('${b.id}', '${(b.name||'').replace(/'/g,"\\'")}')">✕ رفض</button>
+          <div style="display:flex;gap:7px;flex-shrink:0">
+            <button class="btn btn-gh btn-sm" onclick="openOrgReqModal('${safeId}')">👁 التفاصيل</button>
+            <button class="btn btn-or btn-sm" onclick="approveOrgRequest('${safeId}','${safeName}',${b.total_slots||0})">✅ قبول ونشر</button>
+            <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3)"
+                    onclick="rejectOrgRequest('${safeId}','${safeName}')">✕ رفض</button>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:12px">
-          <div><span style="color:var(--mu)">المكان:</span> ${b.venue_name || b.venue_address || '—'}</div>
-          <div><span style="color:var(--mu)">التاريخ:</span> ${ds} → ${de}</div>
-          <div><span style="color:var(--mu)">الوحدات:</span> ${b.total_slots || '—'}</div>
-          <div><span style="color:var(--mu)">سعر الوحدة:</span> ${b.price_per_slot ? fmt(b.price_per_slot) + ' ج' : '—'}</div>
-          ${b.deposit_initial  ? `<div><span style="color:var(--mu)">العربون الأولي:</span> ${fmt(b.deposit_initial)} ج</div>` : ''}
-          ${b.deposit_final    ? `<div><span style="color:var(--mu)">العربون النهائي:</span> ${fmt(b.deposit_final)} ج</div>` : ''}
-          ${b.contact_phone    ? `<div><span style="color:var(--mu)">تليفون:</span> <span style="direction:ltr;unicode-bidi:embed">${b.contact_phone}</span></div>` : ''}
-          ${b.maps_link        ? `<div><a href="${b.maps_link}" target="_blank" style="color:var(--bl)">📍 خريطة</a></div>` : ''}
+
+        <!-- Info Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:12px">
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📍 المكان</div>
+            <div style="font-size:12.5px;font-weight:700">${b.venue_name || '—'}</div>
+            ${b.venue_address ? `<div style="font-size:11px;color:var(--mu);margin-top:2px">${b.venue_address}</div>` : ''}
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📅 التواريخ</div>
+            <div style="font-size:12.5px;font-weight:700">${ds}</div>
+            <div style="font-size:11px;color:var(--mu);margin-top:2px">→ ${de}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📦 الوحدات</div>
+            <div style="font-size:20px;font-weight:900;color:var(--or);line-height:1">${b.total_slots || '—'}</div>
+            <div style="font-size:10px;color:var(--mu);margin-top:2px">وحدة</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">💰 سعر الوحدة</div>
+            <div style="font-size:15px;font-weight:900;color:var(--gr)">${b.price_per_slot ? fmt(b.price_per_slot)+' ج' : '—'}</div>
+            ${expectedRev > 0 ? `<div style="font-size:10px;color:var(--mu);margin-top:2px">متوقع: ${fmt(expectedRev)} ج</div>` : ''}
+          </div>
+          ${b.contact_phone ? `
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📞 التليفون</div>
+            <div style="font-size:13px;font-weight:700;direction:ltr;text-align:right">${b.contact_phone}</div>
+          </div>` : ''}
+          ${(b.deposit_initial || b.deposit_final) ? `
+          <div style="background:var(--bg3);border-radius:8px;padding:9px 11px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:3px">💵 العربون</div>
+            ${b.deposit_initial ? `<div style="font-size:11.5px">أولي: <strong>${fmt(b.deposit_initial)} ج</strong></div>` : ''}
+            ${b.deposit_final   ? `<div style="font-size:11.5px">نهائي: <strong>${fmt(b.deposit_final)} ج</strong></div>` : ''}
+          </div>` : ''}
         </div>
-        ${b.description     ? `<div style="margin-top:10px;font-size:12px;color:var(--mu)">${b.description}</div>` : ''}
-        ${b.organizer_notes ? `<div style="margin-top:6px;font-size:12px;background:var(--bg3);padding:8px 10px;border-radius:6px;color:var(--mu)">💬 ${b.organizer_notes}</div>` : ''}
-        ${b.total_contract_price ? `<div style="margin-top:8px;font-size:11px;color:var(--mu);background:var(--bg4);padding:6px 10px;border-radius:6px">🔒 قيمة العقد الإجمالية: ${fmt(b.total_contract_price)} ج (داخلي فقط)</div>` : ''}
+
+        <!-- Description / Notes / Contract -->
+        ${b.description ? `<div style="font-size:12px;color:var(--mu);padding:8px 11px;background:var(--bg3);border-radius:7px;margin-bottom:6px">${b.description}</div>` : ''}
+        ${b.organizer_notes ? `<div style="font-size:12px;padding:8px 11px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.2);border-radius:7px;color:var(--bl);margin-bottom:6px">💬 ملاحظات: ${b.organizer_notes}</div>` : ''}
+        ${b.total_contract_price ? `<div style="font-size:11px;padding:6px 11px;background:var(--bg4);border-radius:6px;color:var(--mu)">🔒 قيمة عقد المكان (داخلي): ${fmt(b.total_contract_price)} ج</div>` : ''}
+        ${b.maps_link ? `<div style="margin-top:8px"><a href="${b.maps_link}" target="_blank" style="color:var(--bl);font-size:12px;text-decoration:none">📍 فتح خريطة Google ↗</a></div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -1669,26 +1842,95 @@ async function loadOrgRequests() {
   }
 }
 
-async function approveOrgRequest(id, name) {
-  if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار بحالة "قادم" وسيظهر للمستخدمين.`)) return;
+function openOrgReqModal(id) {
+  const b = _orgRequests.find(r => r.id === id);
+  if (!b) { toast('لم يُعثر على بيانات الطلب — حاول التحديث', 'e'); return; }
+
+  document.getElementById('mreq-name').textContent = b.name;
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '—';
+  const expectedRev = (b.price_per_slot || 0) * (b.total_slots || 0);
+  const safeId   = b.id;
+  const safeName = (b.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+
+  const rows = [
+    ['المنظّم',               `<strong style="color:var(--or)">${b.organizer||'—'}</strong>${b.is_organizer_verified ? ' <span style="color:var(--gr);font-size:10.5px">✓ موثّق</span>' : ''}`],
+    ['تاريخ التقديم',         fmtDate(b.created_at)],
+    ['اسم المكان / القاعة',  b.venue_name || '—'],
+    ['عنوان المكان',          b.venue_address || '—'],
+    ['تاريخ البداية',         fmtDate(b.date_start)],
+    ['تاريخ النهاية',         fmtDate(b.date_end)],
+    ['عدد الوحدات',           b.total_slots ? `<strong style="color:var(--or)">${b.total_slots} وحدة</strong>` : '—'],
+    ['سعر الوحدة',            b.price_per_slot ? `<strong style="color:var(--gr)">${fmt(b.price_per_slot)} ج</strong>` : '—'],
+    ['الإيراد المتوقع',       expectedRev > 0 ? `<strong style="color:var(--bl)">${fmt(expectedRev)} ج</strong>` : '—'],
+    ['العربون الأولي',        b.deposit_initial ? `${fmt(b.deposit_initial)} ج` : '—'],
+    ['العربون النهائي',       b.deposit_final   ? `${fmt(b.deposit_final)} ج`   : '—'],
+    ['تليفون التواصل',        b.contact_phone   ? `<span style="direction:ltr;unicode-bidi:embed;font-weight:700">${b.contact_phone}</span>` : '—'],
+    ['قيمة عقد المكان (داخلي)', b.total_contract_price ? `${fmt(b.total_contract_price)} ج` : '—'],
+    ['رابط Supabase (ID)',    `<code style="color:var(--mu);font-size:10.5px">${b.id}</code>`],
+  ];
+
+  document.getElementById('modal-org-req-body').innerHTML = `
+    <div style="margin-bottom:18px">
+      ${rows.map(([l,v]) => `
+        <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)">
+          <div style="width:160px;flex-shrink:0;font-size:11px;color:var(--mu);padding-top:2px">${l}</div>
+          <div style="font-size:12.5px;flex:1">${v}</div>
+        </div>`).join('')}
+    </div>
+
+    ${b.description ? `
+    <div style="margin-bottom:13px">
+      <div style="font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">📝 وصف البازار</div>
+      <div style="background:var(--bg3);padding:11px 13px;border-radius:8px;font-size:12.5px;line-height:1.65">${b.description}</div>
+    </div>` : ''}
+
+    ${b.organizer_notes ? `
+    <div style="margin-bottom:13px">
+      <div style="font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">💬 ملاحظات المنظّم</div>
+      <div style="background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.25);padding:11px 13px;border-radius:8px;font-size:12.5px;color:var(--bl);line-height:1.65">${b.organizer_notes}</div>
+    </div>` : ''}
+
+    ${b.maps_link ? `
+    <div style="margin-bottom:16px">
+      <a href="${b.maps_link}" target="_blank" class="btn btn-gh btn-sm">📍 فتح خريطة Google في تبويب جديد</a>
+    </div>` : ''}
+
+    <div style="border-top:1px solid var(--bd);padding-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-or" onclick="approveOrgRequest('${safeId}','${safeName}',${b.total_slots||0},true)">✅ قبول ونشر مباشرة</button>
+      <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3)"
+              onclick="rejectOrgRequest('${safeId}','${safeName}',true)">✕ رفض الطلب</button>
+      <button class="btn btn-gh" onclick="closeModal('modal-org-req')" style="margin-right:auto">إغلاق</button>
+    </div>`;
+
+  openModal('modal-org-req');
+}
+
+async function approveOrgRequest(id, name, totalSlots, fromModal) {
+  if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار منشوراً ومرئياً في صفحة البازارات فوراً.`)) return;
+  if (fromModal) closeModal('modal-org-req');
   try {
-    const { error } = await db.from('bazaars').update({ status: 'upcoming' }).eq('id', id);
+    const { error } = await db.from('bazaars').update({
+      status:           'published',
+      available_slots:  totalSlots || 0,
+    }).eq('id', id);
     if (error) throw error;
-    toast('✅ تم قبول الطلب — البازار أصبح قادماً', 's');
+    toast('✅ تم القبول — البازار منشور الآن في صفحة البازارات', 's');
     loadOrgRequests();
     loadData();
   } catch(e) { toast('❌ ' + e.message, 'e'); }
 }
 
-async function rejectOrgRequest(id, name) {
+async function rejectOrgRequest(id, name, fromModal) {
   const reason = prompt(`رفض طلب "${name}".\nأدخل سبب الرفض (اختياري):`);
-  if (reason === null) return; // ألغى
+  if (reason === null) return;
+  if (fromModal) closeModal('modal-org-req');
   try {
-    const upd = { status: 'cancelled' };
-    if (reason.trim()) upd.organizer_notes = (upd.organizer_notes || '') + '\n[مرفوض] ' + reason.trim();
-    const { error } = await db.from('bazaars').update(upd).eq('id', id);
+    const updateObj = { status: 'cancelled' };
+    if (reason.trim()) updateObj.organizer_notes = '[مرفوض] ' + reason.trim();
+    const { error } = await db.from('bazaars').update(updateObj).eq('id', id);
     if (error) throw error;
-    toast('تم رفض الطلب', 'i');
+    toast('تم رفض الطلب وإلغاؤه', 'i');
     loadOrgRequests();
     loadData();
   } catch(e) { toast('❌ ' + e.message, 'e'); }
@@ -1703,7 +1945,8 @@ function gp(tab){
   document.getElementById('pg-'+tab).classList.add('active');
   const ni=document.querySelector(`.ni[onclick*="'${tab}'"]`);
   if(ni)ni.classList.add('active');
-  if(tab==='req') loadOrgRequests();
+  if(tab==='req')     loadOrgRequests();
+  if(tab==='org-ver') loadOrgVerRequests();
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -1713,11 +1956,282 @@ document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',e=>{if(e
    UTILS
 ══════════════════════════════════════════ */
 function fmt(n){return Number(n||0).toLocaleString('ar-EG');}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function formatPhone(p){if(!p)return '—';const s=String(p).replace(/\..*$/,'').replace(/[^\d]/g,'');return s.length>=10?s.replace(/^(01\d)(\d{4})(\d{4})$/,'$1-$2-$3'):s;}
 function setLoad(on){const b=document.getElementById('btnref');if(b)b.disabled=on;}
 function setConn(s,t=''){const p=document.getElementById('cpill');p.className='sb-conn '+(s==='ok'?'ok':s==='err'?'err':'');document.getElementById('ctxt').textContent=s==='ok'?'متصل — '+t:s==='err'?'خطأ':'جارٍ التحميل...';}
 function renderPag(cid,tot,cur,cb){const pages=Math.ceil(tot/PER);const c=document.getElementById(cid);if(!c||pages<=1){if(c)c.innerHTML='';return;}let h='';if(cur>1)h+=`<button class="pb2" onclick="(${cb})(${cur-1})">‹</button>`;for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-cur)<=1)h+=`<button class="pb2 ${i===cur?'active':''}" onclick="(${cb})(${i})">${i}</button>`;else if(Math.abs(i-cur)===2)h+=`<span class="pi">…</span>`;}if(cur<pages)h+=`<button class="pb2" onclick="(${cb})(${cur+1})">›</button>`;h+=`<span class="pi">${tot} عنصر</span>`;c.innerHTML=h;}
 function toast(msg,t='i'){const c=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast t${t}`;el.textContent=msg;c.appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+/* ══════════════════════════════════════════
+   ORGANIZER VERIFICATION REQUESTS
+══════════════════════════════════════════ */
+function getOrgStorageUrl(path) {
+  if (!path) return null;
+  return `${SUPABASE_URL}/storage/v1/object/public/organizer-docs/${path}`;
+}
+
+async function loadOrgVerRequests() {
+  const rc = document.getElementById('orv-requests-container');
+  const lc = document.getElementById('orv-leaderboard-container');
+  if (!rc) return;
+  rc.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  if (lc) lc.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  try {
+    const [reqRes, orgRes, bzRes] = await Promise.all([
+      db.from('organizer_requests').select('*').order('created_at', { ascending: false }),
+      db.from('organizer_profiles').select('*'),
+      db.from('bazaars').select('organizer_id,status')
+    ]);
+    if (reqRes.error) throw reqRes.error;
+    _orgVerRequests = reqRes.data || [];
+
+    const bzCount = {};
+    (bzRes.data || []).forEach(b => { if(b.organizer_id) bzCount[b.organizer_id] = (bzCount[b.organizer_id]||0)+1; });
+
+    _orgVerOrganizers = (orgRes.data || [])
+      .filter(op => op.is_verified)
+      .map(op => ({ ...op, bazaar_count: bzCount[op.user_id]||0, req: _orgVerRequests.find(r=>r.user_id===op.user_id&&r.status==='approved') }))
+      .sort((a,b) => b.bazaar_count - a.bazaar_count);
+
+    const pendingCount = _orgVerRequests.filter(r=>r.status==='pending').length;
+    const badge = document.getElementById('nb-org-ver');
+    if (badge) { badge.textContent = pendingCount; badge.style.display = pendingCount ? '' : 'none'; }
+
+    updateOrgVerStats();
+    renderOrgVerRequests();
+    renderOrgVerLeaderboard();
+  } catch(e) {
+    toast('❌ فشل تحميل طلبات التوثيق: ' + e.message, 'e');
+    if (rc) rc.innerHTML = `<div style="color:var(--rd);padding:16px">❌ فشل التحميل: ${e.message}</div>`;
+  }
+}
+
+function updateOrgVerStats() {
+  const $ = id => document.getElementById(id);
+  const total    = _orgVerRequests.length;
+  const pending  = _orgVerRequests.filter(r=>r.status==='pending').length;
+  const approved = _orgVerRequests.filter(r=>r.status==='approved').length;
+  const rejected = _orgVerRequests.filter(r=>r.status==='rejected').length;
+  if($('orv-s-total'))    $('orv-s-total').textContent    = total;
+  if($('orv-s-pending'))  $('orv-s-pending').textContent  = pending;
+  if($('orv-s-approved')) $('orv-s-approved').textContent = approved;
+  if($('orv-s-rejected')) $('orv-s-rejected').textContent = rejected;
+  if($('orv-s-active'))   $('orv-s-active').textContent   = _orgVerOrganizers.length;
+}
+
+function setOrgVerFilter(f) {
+  _orgVerFilter = f;
+  document.querySelectorAll('.orv-fbtn').forEach(btn => {
+    btn.className = 'orv-fbtn';
+    const d = btn.dataset.orvf;
+    if (d === f) btn.className += ' ' + (f==='all'?'fa':f==='pending'?'fp':f==='approved'?'fap':'fr');
+  });
+  renderOrgVerRequests();
+}
+
+function renderOrgVerRequests() {
+  const search = (document.getElementById('orv-search')?.value||'').trim().toLowerCase();
+  let list = _orgVerRequests;
+  if (_orgVerFilter !== 'all') list = list.filter(r=>r.status===_orgVerFilter);
+  if (search) list = list.filter(r=>
+    (r.full_name||'').toLowerCase().includes(search) ||
+    (r.phone||'').toLowerCase().includes(search) ||
+    (r.region||'').toLowerCase().includes(search)
+  );
+  const cont = document.getElementById('orv-requests-container');
+  if (!cont) return;
+  if (!list.length) {
+    cont.innerHTML = '<div class="empty"><div class="ei">📭</div>لا توجد طلبات تطابق الفلتر الحالي</div>';
+    return;
+  }
+  cont.innerHTML = list.map(orgVerCardHTML).join('');
+}
+
+function orgVerCardHTML(r) {
+  const sc   = r.status==='pending'?'pend':r.status==='approved'?'appr':'rej';
+  const slbl = r.status==='pending'?'⏳ قيد المراجعة':r.status==='approved'?'✅ مقبول':'❌ مرفوض';
+  const sba  = r.status==='pending'?'ba-pd':r.status==='approved'?'ba-pa':'ba-ca';
+  const date = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}) : '—';
+  const frontUrl = getOrgStorageUrl(r.id_front_path);
+  const backUrl  = getOrgStorageUrl(r.id_back_path);
+
+  const chips = [];
+  if (r.has_experience) chips.push(`<span class="orv-chip">✅ لديه خبرة سابقة</span>`);
+  if (r.exp_count)      chips.push(`<span class="orv-chip">🔢 ${escHtml(String(r.exp_count))} بازار سابق</span>`);
+  if (r.exp_locations)  chips.push(`<span class="orv-chip">📍 ${escHtml(r.exp_locations)}</span>`);
+  if (r.trade_reg)      chips.push(`<span class="orv-chip">📄 سجل تجاري</span>`);
+
+  const acts = r.status === 'pending' ? `
+    <button class="btn btn-appr" onclick="approveOrgVerRequest('${r.id}','${r.user_id||''}');event.stopPropagation()">✅ قبول الطلب</button>
+    <button class="btn btn-rej"  onclick="rejectOrgVerRequest('${r.id}','${r.user_id||''}');event.stopPropagation()">❌ رفض الطلب</button>
+  ` : r.status === 'approved' ? `
+    <button class="btn btn-rej" onclick="rejectOrgVerRequest('${r.id}','${r.user_id||''}');event.stopPropagation()">❌ سحب الموافقة</button>
+    <button class="btn btn-rst" onclick="resetOrgVerRequest('${r.id}');event.stopPropagation()">🔄 إعادة للمراجعة</button>
+  ` : `
+    <button class="btn btn-appr" onclick="approveOrgVerRequest('${r.id}','${r.user_id||''}');event.stopPropagation()">✅ قبول الطلب</button>
+    <button class="btn btn-rst"  onclick="resetOrgVerRequest('${r.id}');event.stopPropagation()">🔄 إعادة للمراجعة</button>
+  `;
+
+  return `
+  <div class="orv-card ${sc}" id="orvc-${r.id}">
+    <div class="orv-hdr" onclick="toggleOrgVer('${r.id}')">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🧑</div>
+      <div class="orv-main">
+        <div class="orv-name">${escHtml(r.full_name||'غير محدد')}</div>
+        <div class="orv-meta">
+          <span>📞 ${escHtml(r.phone||'—')}</span>
+          <span>📍 ${escHtml(r.region||'—')}</span>
+          ${r.user_id?`<span style="font-family:'Space Mono',monospace;font-size:9.5px;color:var(--mu2)">${r.user_id.substring(0,8)}…</span>`:''}
+        </div>
+      </div>
+      <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mu);flex-shrink:0">${date}</span>
+      <span class="ba ${sba}" style="flex-shrink:0">${slbl}</span>
+      <span style="color:var(--mu);font-size:11px;flex-shrink:0" id="orvt-${r.id}">▼</span>
+    </div>
+
+    <div class="orv-body" id="orvb-${r.id}">
+      <div class="orv-dg">
+        <div><div class="orv-di-lbl">📛 الاسم الكامل</div><div class="orv-di-val">${escHtml(r.full_name||'—')}</div></div>
+        <div><div class="orv-di-lbl">📞 رقم الهاتف</div><div class="orv-di-val" dir="ltr">${escHtml(r.phone||'—')}</div></div>
+        <div><div class="orv-di-lbl">📍 المنطقة</div><div class="orv-di-val">${escHtml(r.region||'—')}</div></div>
+        <div><div class="orv-di-lbl">🏢 سجل تجاري</div><div class="orv-di-val">${r.trade_reg?'✅ يملك سجلاً تجارياً':'❌ لا يملك سجلاً'}</div></div>
+        <div><div class="orv-di-lbl">🆔 User ID</div><div class="orv-di-val" style="font-family:'Space Mono',monospace;font-size:10.5px" dir="ltr">${escHtml(r.user_id||'—')}</div></div>
+        <div><div class="orv-di-lbl">📅 تاريخ التقديم</div><div class="orv-di-val">${date}</div></div>
+      </div>
+
+      <div class="orv-imgs">
+        <div>
+          <div class="orv-img-lbl">🪪 وجه الهوية (الأمامي)</div>
+          <div class="orv-img-box" onclick="${frontUrl?`openOrgLightbox('${frontUrl}')`:''}" style="${frontUrl?'':'cursor:default'}">
+            ${frontUrl
+              ? `<span style="position:absolute;font-size:11px;color:var(--mu)" id="orv-if-${r.id}">جارٍ التحميل…</span><img src="${frontUrl}" onload="document.getElementById('orv-if-${r.id}').style.display='none'" onerror="this.style.display='none';document.getElementById('orv-if-${r.id}').textContent='⚠️ تعذّر التحميل'" alt="">`
+              : `<div class="orv-img-ph">📷<br>لا توجد صورة</div>`}
+          </div>
+        </div>
+        <div>
+          <div class="orv-img-lbl">🪪 ظهر الهوية (الخلفي)</div>
+          <div class="orv-img-box" onclick="${backUrl?`openOrgLightbox('${backUrl}')`:''}" style="${backUrl?'':'cursor:default'}">
+            ${backUrl
+              ? `<span style="position:absolute;font-size:11px;color:var(--mu)" id="orv-ib-${r.id}">جارٍ التحميل…</span><img src="${backUrl}" onload="document.getElementById('orv-ib-${r.id}').style.display='none'" onerror="this.style.display='none';document.getElementById('orv-ib-${r.id}').textContent='⚠️ تعذّر التحميل'" alt="">`
+              : `<div class="orv-img-ph">📷<br>لا توجد صورة</div>`}
+          </div>
+        </div>
+      </div>
+
+      ${chips.length || r.latest_exp_desc ? `
+      <div class="orv-exp">
+        <div class="orv-exp-title">💼 الخبرات السابقة</div>
+        ${chips.length ? `<div class="orv-chips">${chips.join('')}</div>` : ''}
+        ${r.latest_exp_desc ? `<div style="margin-top:8px;font-size:12px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;line-height:1.7">${escHtml(r.latest_exp_desc)}</div>` : ''}
+      </div>` : ''}
+
+      <div class="orv-acts">
+        ${acts}
+        <span style="font-size:11px;color:var(--mu);margin-right:auto" id="orv-ast-${r.id}"></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleOrgVer(id) {
+  const body = document.getElementById(`orvb-${id}`);
+  const tog  = document.getElementById(`orvt-${id}`);
+  if (!body) return;
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  if (tog) tog.textContent = open ? '▼' : '▲';
+}
+
+async function approveOrgVerRequest(reqId, userId) {
+  if (!confirm('تأكيد قبول الطلب؟ سيحصل المستخدم على صلاحيات منظّم بازارات.')) return;
+  const tag = document.getElementById(`orv-ast-${reqId}`);
+  if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
+  try {
+    const updates = [db.from('organizer_requests').update({ status: 'approved' }).eq('id', reqId)];
+    if (userId) updates.push(db.from('organizer_profiles').upsert({ user_id: userId, is_verified: true }, { onConflict: 'user_id' }));
+    const results = await Promise.all(updates);
+    for (const r of results) if (r.error) throw r.error;
+    toast('✅ تم قبول الطلب وتفعيل حساب المنظّم', 's');
+    loadOrgVerRequests();
+  } catch(e) {
+    if (tag) tag.textContent = '❌ فشل التحديث';
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+async function rejectOrgVerRequest(reqId, userId) {
+  if (!confirm('تأكيد رفض / سحب الموافقة على هذا الطلب؟')) return;
+  const tag = document.getElementById(`orv-ast-${reqId}`);
+  if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
+  try {
+    const updates = [db.from('organizer_requests').update({ status: 'rejected' }).eq('id', reqId)];
+    if (userId) updates.push(db.from('organizer_profiles').update({ is_verified: false }).eq('user_id', userId));
+    const results = await Promise.all(updates);
+    for (const r of results) if (r.error) throw r.error;
+    toast('❌ تم رفض الطلب وسحب صلاحيات المنظّم', 'e');
+    loadOrgVerRequests();
+  } catch(e) {
+    if (tag) tag.textContent = '❌ فشل التحديث';
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+async function resetOrgVerRequest(reqId) {
+  if (!confirm('إعادة الطلب لحالة "قيد المراجعة"؟')) return;
+  const tag = document.getElementById(`orv-ast-${reqId}`);
+  if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
+  try {
+    const { error } = await db.from('organizer_requests').update({ status: 'pending' }).eq('id', reqId);
+    if (error) throw error;
+    toast('🔄 تمت إعادة الطلب لقيد المراجعة', 'i');
+    loadOrgVerRequests();
+  } catch(e) {
+    if (tag) tag.textContent = '❌ فشل التحديث';
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+function renderOrgVerLeaderboard() {
+  const cont = document.getElementById('orv-leaderboard-container');
+  if (!cont) return;
+  if (!_orgVerOrganizers.length) {
+    cont.innerHTML = '<div class="empty"><div class="ei">🏆</div>لا يوجد منظّمون نشطون حتى الآن</div>';
+    return;
+  }
+  cont.innerHTML = _orgVerOrganizers.map((org, i) => {
+    const rank = i + 1;
+    const rc = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+    const rl = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
+    const name   = org.req?.full_name || org.full_name || 'منظّم مجهول';
+    const phone  = org.req?.phone  || org.phone  || '—';
+    const region = org.req?.region || org.region || '—';
+    return `
+    <div class="orv-lb-item">
+      <div class="orv-rank ${rc}">${rl}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">🎪 ${escHtml(name)}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">📞 ${escHtml(phone)} &nbsp;·&nbsp; 📍 ${escHtml(region)}</div>
+        <div style="font-size:9px;color:var(--mu2);font-family:'Space Mono',monospace;margin-top:1px">${escHtml(org.user_id||'')}</div>
+      </div>
+      <div style="text-align:center;flex-shrink:0;min-width:48px">
+        <div style="font-size:18px;font-weight:900;color:var(--or)">${org.bazaar_count}</div>
+        <div style="font-size:9px;color:var(--mu);font-weight:600">بازار</div>
+      </div>
+      <span class="ba ba-pa" style="flex-shrink:0">✅ نشط</span>
+    </div>`;
+  }).join('');
+}
+
+function openOrgLightbox(url) {
+  const img = document.getElementById('orv-lb-img');
+  if (img) img.src = url;
+  document.getElementById('orv-lightbox').classList.add('open');
+}
+function closeOrgLightbox() {
+  document.getElementById('orv-lightbox').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeOrgLightbox(); });
 
 /* ══════════════════════════════════════════
    INIT

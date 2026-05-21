@@ -11,6 +11,7 @@ const R2_PUBLIC_BASE   = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
 const MAX_W            = 1280;
 const MAX_H            = 1280;
 const QUALITY          = 0.82;
+const WEBP_QUALITY     = 0.83;   // جودة WebP (أفضل ضغطاً بنفس الجودة)
 const MAX_FILE_BYTES   = 20 * 1024 * 1024; // 20MB
 
 let _uploadAbortCtrl = null;
@@ -126,10 +127,13 @@ async function compressImage(file) {
 
 /* ──────────────────────────────────────────────────────────────
    رفع blob واحد لـ R2 مع دعم إلغاء الرفع
+   يكتشف نوع الملف تلقائياً (webp / jpeg)
    ────────────────────────────────────────────────────────────── */
 async function uploadToR2(blob, path, authToken, signal) {
+  const mimeType = blob.type || 'image/webp';
+  const ext      = mimeType === 'image/webp' ? 'webp' : 'jpg';
   const form = new FormData();
-  form.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }));
+  form.append('file', new File([blob], `image.${ext}`, { type: mimeType }));
   form.append('path', path);
 
   const res = await fetch(UPLOAD_ENDPOINT, {
@@ -158,27 +162,36 @@ async function uploadWithRetry(blob, path, authToken, signal, retries = 2) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   رفع مصفوفة الملفات بالتوازي (Promise.all) مع ضغط + retry
+   رفع مصفوفة الملفات بالتوازي الكامل — Pipeline: ضغط WebP + رفع
+   كل صورة تُضغط وتُرفع في نفس الوقت بمجرد أن تنتهي من الضغط،
+   بدون انتظار باقي الصور (أسرع بكثير من الطريقة القديمة).
    @param {File[]}   files
    @param {string}   userId
    @param {Function} onProgress  — callback(done, total)
    @param {string}   authToken
-   @returns {Promise<string[]>}
+   @returns {Promise<string[]>}  — URLs مرتّبة بنفس ترتيب المدخلات
    ────────────────────────────────────────────────────────────── */
 async function uploadImages(files, userId, onProgress, authToken) {
   _uploadAbortCtrl = new AbortController();
   const signal = _uploadAbortCtrl.signal;
 
-  // ضغط كل الصور بالتوازي (خفيفة على الذاكرة لأنها تعمل محلياً)
-  const blobs = await Promise.all(files.map(f => compressImage(f)));
-
   let done = 0;
+
+  /*
+    Pipeline per-file: compressToWebP → uploadWithRetry
+    تبدأ كل صورة رفعها فور انتهاء ضغطها
+    بدون انتظار بقية الصور (parallel pipeline)
+  */
   const urls = await Promise.all(
-    blobs.map(async (blob, i) => {
-      // إضافة random suffix لتفادي تعارض الأسماء عند الرفع المتوازي
+    files.map(async (file, i) => {
+      // 1. ضغط وتحويل لـ WebP مباشرة
+      const blob = await compressToWebP(file, MAX_W, MAX_H, WEBP_QUALITY);
+
+      // 2. رفع فوري بمجرد انتهاء الضغط
       const rand = Math.random().toString(36).slice(2, 6);
-      const path = `${userId}/${Date.now()}_${i}_${rand}.jpg`;
+      const path = `${userId}/${Date.now()}_${i}_${rand}.webp`;
       const url  = await uploadWithRetry(blob, path, authToken, signal);
+
       if (onProgress) onProgress(++done, files.length);
       return url;
     })
