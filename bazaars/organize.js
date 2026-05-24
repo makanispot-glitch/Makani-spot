@@ -184,12 +184,14 @@ function orgUpdatePrice() {
    بناء ملخص البيانات (خطوة 3)
 ────────────────────────────────────────────────────── */
 function _buildSummary() {
-  const ds    = document.getElementById('o-ds').value;
-  const de    = document.getElementById('o-de').value;
-  const slots = Number(document.getElementById('o-slots').value);
-  const price = Number(document.getElementById('o-price').value);
-  const dep1  = Number(document.getElementById('o-dep1').value) || 0;
-  const dep2  = Number(document.getElementById('o-dep2').value) || 0;
+  const ds       = document.getElementById('o-ds').value;
+  const de       = document.getElementById('o-de').value;
+  const slots    = Number(document.getElementById('o-slots').value);
+  const price    = Number(document.getElementById('o-price').value);
+  const dep1     = Number(document.getElementById('o-dep1').value) || 0;
+  const dep2     = Number(document.getElementById('o-dep2').value) || 0;
+  const sketch   = document.getElementById('o-sketch')?.value.trim() || '';
+  const eventImg = document.getElementById('o-event-image')?.value.trim() || '';
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '—';
   const fmtNum  = n => n ? n.toLocaleString('ar-EG') + ' جنيه' : '—';
@@ -205,6 +207,8 @@ function _buildSummary() {
     ['الإيراد المتوقع', fmtNum(slots * price)],
     ['العربون الأولي', dep1 > 0 ? fmtNum(dep1) : '—'],
     ['العربون النهائي', dep2 > 0 ? fmtNum(dep2) : '—'],
+    ...(sketch   ? [['خريطة / اسكتش', '✅ رابط مضاف']] : []),
+    ...(eventImg ? [['صورة واقعية',   '✅ رابط مضاف']] : []),
   ];
 
   const box = document.getElementById('org-summary-box');
@@ -246,6 +250,8 @@ async function orgSubmit() {
     const dep2     = Number(document.getElementById('o-dep2').value) || 0;
     const contract = Number(document.getElementById('o-contract').value) || 0;
     const notes    = document.getElementById('o-notes').value.trim() || null;
+    const sketch   = document.getElementById('o-sketch')?.value.trim() || null;
+    const eventImg = document.getElementById('o-event-image')?.value.trim() || null;
 
     const displayName = orgProfile?.full_name
       || (await sbClient.from('profiles').select('full_name').eq('id', currentUser.id).single()).data?.full_name
@@ -269,6 +275,8 @@ async function orgSubmit() {
       total_contract_price:   contract || null,
       contact_phone:          phone,
       organizer_notes:        notes,
+      sketch_url:             sketch,
+      event_image_url:        eventImg,
       status:                 'pending_review',
     };
 

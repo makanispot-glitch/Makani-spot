@@ -271,6 +271,8 @@ async function loadBazaars() {
       is_organizer_verified: b.is_organizer_verified || false,
       venue_address:        b.venue_address || b.address || '',
       maps_link:            b.maps_link || '',
+      sketch_url:           _toDirectImgUrl(b.sketch_url || ''),
+      event_image_url:      _toDirectImgUrl(b.event_image_url || ''),
       status:               b.status || 'published',
     }));
 
@@ -614,9 +616,76 @@ function setBzTimeNav(nav) {
    🗺️ القسم 11: صفحة تفاصيل البازار
    ================================================================ */
 
+function _showBzLoginGate(b) {
+  currentBazaar  = b;
+  selectedSlotId = null;
+
+  const dateStr = b.date_start
+    ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'long', day:'numeric' })
+    : '';
+
+  const headerEl = document.getElementById('bzd-header');
+  if (headerEl) {
+    headerEl.innerHTML = `
+      <div class="sd-header-inner">
+        <div class="sd-back-row">
+          <button class="sd-back-btn" onclick="closeBazaarDetail()">→ العودة للبازارات</button>
+        </div>
+        <div class="sd-title-row">
+          <div style="flex:1">
+            ${b.category ? `<span class="bz-detail-cat-badge">${b.category}</span>` : ''}
+            <h1 class="sd-name" style="margin-top:8px">${b.name}</h1>
+            <div class="sd-meta">
+              <span>📍 ${b.location || '—'}</span>
+              ${dateStr ? `<span class="sd-meta-sep">·</span><span>📅 ${dateStr}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const infoEl = document.getElementById('bzd-info');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
+        <div style="font-size:64px;margin-bottom:20px">🔒</div>
+        <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
+          سجّل دخولك لعرض التفاصيل
+        </h2>
+        <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
+          سجّل دخولك لمعرفة المزيد من تفاصيل البازار والحجز
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
+                  onclick="window.location.href='/?p=login'">
+            تسجيل الدخول ←
+          </button>
+          <button class="btn" style="padding:13px 22px;font-size:14px"
+                  onclick="closeBazaarDetail()">
+            العودة للبازارات
+          </button>
+        </div>
+      </div>`;
+  }
+
+  const slotmapEl = document.getElementById('bzd-slotmap');
+  if (slotmapEl) slotmapEl.innerHTML = '';
+
+  const panel = document.getElementById('bzd-booking-panel');
+  if (panel) panel.style.display = 'none';
+
+  showBzPage('bazaar-detail');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
 async function openBazaarDetail(bazaarId) {
   const b = BAZAARS.find(x => String(x.id) === String(bazaarId));
   if (!b) return;
+
+  if (!currentUser) {
+    _showBzLoginGate(b);
+    return;
+  }
 
   currentBazaar  = b;
   selectedSlotId = null;
@@ -804,11 +873,40 @@ function _renderBazaarInfo(b) {
           </div>
           ${b.venue_address ? `<div class="sd-extra-row"><span>العنوان</span><span>${b.venue_address}</span></div>` : ''}
           ${b.region ? `<div class="sd-extra-row"><span>المنطقة</span><span>${b.region}</span></div>` : ''}
-          ${mapsHref ? `
-          <a href="${mapsHref}" target="_blank" rel="noopener"
-             class="bz-maps-btn">
-            🗺️ فتح في Google Maps
-          </a>` : ''}
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
+            ${mapsHref ? `
+            <a href="${mapsHref}" target="_blank" rel="noopener"
+               class="bz-maps-btn">
+              🗺️ فتح في Google Maps
+            </a>` : ''}
+            ${b.sketch_url ? `
+            <button onclick="openBazaarMap('sketch')"
+                    class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
+              🗺️ خريطة / اسكتش البازار
+            </button>` : ''}
+            ${b.event_image_url ? `
+            <button onclick="openBazaarMap('photo')"
+                    class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
+              📸 صورة واقعية للمكان
+            </button>` : ''}
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${(!b.venue_address && !b.location && (b.sketch_url || b.event_image_url)) ? `
+      <div class="sd-info-card sd-info-full">
+        <div class="sd-info-title">🖼️ خريطة وصور البازار</div>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px">
+          ${b.sketch_url ? `
+          <button onclick="openBazaarMap('sketch')"
+                  class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
+            🗺️ خريطة / اسكتش البازار
+          </button>` : ''}
+          ${b.event_image_url ? `
+          <button onclick="openBazaarMap('photo')"
+                  class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
+            📸 صورة واقعية للمكان
+          </button>` : ''}
         </div>
       </div>` : ''}
 
@@ -829,6 +927,55 @@ function closeBazaarDetail() {
   currentBazaar  = null;
   selectedSlotId = null;
   showBzPage('bazaars');
+}
+
+function openBazaarMap(type) {
+  if (!currentBazaar) return;
+  const url   = type === 'sketch' ? currentBazaar.sketch_url : currentBazaar.event_image_url;
+  const name  = currentBazaar.name || 'البازار';
+  const title = type === 'sketch'
+    ? '🗺️ خريطة البازار — ' + name
+    : '📸 صورة المكان — ' + name;
+  if (!url) return;
+
+  const existing = document.getElementById('bz-map-lightbox');
+  if (existing) existing.remove();
+
+  const lb = document.createElement('div');
+  lb.id = 'bz-map-lightbox';
+  Object.assign(lb.style, {
+    position: 'fixed', inset: '0', zIndex: '9999',
+    background: 'rgba(0,0,0,0.92)',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    padding: '20px', cursor: 'zoom-out',
+  });
+  lb.onclick = () => lb.remove();
+  lb.innerHTML = `
+    <div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;gap:14px;cursor:default"
+         onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="color:#fff;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700">${title}</div>
+        <button onclick="document.getElementById('bz-map-lightbox').remove()"
+                style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:50%;
+                       width:38px;height:38px;cursor:pointer;font-size:22px;font-family:'Cairo',sans-serif;
+                       display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>
+      <img src="${url}" alt="${name}"
+           style="max-width:80vw;max-height:74vh;object-fit:contain;border-radius:12px;display:block;
+                  box-shadow:0 8px 40px rgba(0,0,0,0.5)"
+           onerror="this.outerHTML='<div style=&quot;color:white;text-align:center;padding:40px;font-family:Cairo,sans-serif&quot;>⚠️ تعذّر تحميل الصورة</div>'">
+      <div style="text-align:center">
+        <a href="${url}" target="_blank" rel="noopener"
+           style="color:rgba(255,255,255,0.65);font-size:12px;font-family:'Cairo',sans-serif;text-decoration:none">
+          فتح في تبويب جديد ↗
+        </a>
+      </div>
+    </div>`;
+  document.body.appendChild(lb);
+
+  const onKey = e => { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
 }
 
 
