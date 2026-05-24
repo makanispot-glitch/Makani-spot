@@ -65,6 +65,58 @@ export async function onRequest(context) {
       });
     }
 
+    /* ── DELETE: hard-delete listing + R2 images ── */
+    if (method === 'DELETE') {
+      let body;
+      try { body = await context.request.json(); }
+      catch { return json({ error: 'Invalid JSON body' }, 400); }
+
+      const { id } = body;
+      if (!id) return json({ error: 'Missing listing id' }, 400);
+
+      /* جلب بيانات الصور قبل الحذف */
+      const getRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(id)}&select=cover_image,images`,
+        { headers: sbHeaders }
+      );
+      let listing = null;
+      try {
+        const arr = await getRes.json();
+        listing = arr && arr[0];
+      } catch {}
+
+      /* حذف الصور من R2 */
+      const bucket = context.env.BUCKET || context.env['BUCKET-1'];
+      if (bucket && listing) {
+        const R2_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
+        const allUrls = [listing.cover_image, ...(listing.images || [])].filter(Boolean);
+        for (const url of allUrls) {
+          if (typeof url === 'string' && url.startsWith(R2_BASE)) {
+            const path = url.slice(R2_BASE.length);
+            try { await bucket.delete(path); } catch {}
+            if (path.endsWith('_f.webp')) {
+              try { await bucket.delete(path.replace('_f.webp', '_c.webp')); } catch {}
+              try { await bucket.delete(path.replace('_f.webp', '_d.webp')); } catch {}
+            }
+          }
+        }
+      }
+
+      /* حذف السجل من Supabase */
+      const delRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(id)}`,
+        { method: 'DELETE', headers: sbHeaders }
+      );
+      if (!delRes.ok) {
+        const errText = await delRes.text();
+        let errMsg;
+        try { errMsg = JSON.parse(errText); } catch { errMsg = { error: errText }; }
+        return json(errMsg, delRes.status);
+      }
+
+      return json({ ok: true }, 200);
+    }
+
     return json({ error: 'Method not allowed' }, 405);
 
   } catch (e) {

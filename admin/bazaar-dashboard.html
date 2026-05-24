@@ -1968,6 +1968,7 @@ function toast(msg,t='i'){const c=document.getElementById('toasts');const el=doc
 ══════════════════════════════════════════ */
 function getOrgStorageUrl(path) {
   if (!path) return null;
+  if (path.startsWith('https://')) return path;
   return `${SUPABASE_URL}/storage/v1/object/public/organizer-docs/${path}`;
 }
 

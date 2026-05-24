@@ -56,6 +56,76 @@ function getExifOrientation(file) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   تحميل صورة كـ HTMLImageElement بدون قراءة EXIF
+   ────────────────────────────────────────────────────────────── */
+function _loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('فشل قراءة الصورة')); };
+    img.src = url;
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ضغط صورة محمّلة مسبقاً إلى WebP بأبعاد وجودة محددة
+   يُعيد مسار EXIF نفسه للدوران — قابل للاستدعاء المتوازي
+   ────────────────────────────────────────────────────────────── */
+function _drawToWebP(img, orientation, maxW, maxH, quality) {
+  return new Promise((resolve, reject) => {
+    let fw = img.naturalWidth, fh = img.naturalHeight;
+    if (fw > maxW || fh > maxH) {
+      const r = Math.min(maxW / fw, maxH / fh);
+      fw = Math.round(fw * r);
+      fh = Math.round(fh * r);
+    }
+    const swapDim = orientation >= 5 && orientation <= 8;
+    const canvas  = document.createElement('canvas');
+    canvas.width  = swapDim ? fh : fw;
+    canvas.height = swapDim ? fw : fh;
+    const ctx = canvas.getContext('2d');
+    switch (orientation) {
+      case 2: ctx.transform(-1,  0,  0,  1, fw,  0); break;
+      case 3: ctx.transform(-1,  0,  0, -1, fw, fh); break;
+      case 4: ctx.transform( 1,  0,  0, -1,  0, fh); break;
+      case 5: ctx.transform( 0,  1,  1,  0,  0,  0); break;
+      case 6: ctx.transform( 0,  1, -1,  0, fh,  0); break;
+      case 7: ctx.transform( 0, -1, -1,  0, fh, fw); break;
+      case 8: ctx.transform( 0, -1,  1,  0,  0, fw); break;
+    }
+    ctx.drawImage(img, 0, 0, fw, fh);
+    canvas.toBlob(
+      blob => blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة')),
+      'image/webp',
+      quality
+    );
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ضغط صورة إلى 3 أحجام في عملية واحدة (تحميل مرة واحدة)
+   card   400×300  q0.65 → ~30 KB
+   detail 900×675  q0.80 → ~120 KB
+   full  1280×960  q0.83 → ~250 KB
+   ────────────────────────────────────────────────────────────── */
+async function _compressVariants(file) {
+  if (file.size > MAX_FILE_BYTES) {
+    throw new Error(`حجم الصورة كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB) — الحد الأقصى 20 MB`);
+  }
+  const [orientation, img] = await Promise.all([
+    getExifOrientation(file),
+    _loadImage(file),
+  ]);
+  const [cardBlob, detailBlob, fullBlob] = await Promise.all([
+    _drawToWebP(img, orientation,  400,  300, 0.65),
+    _drawToWebP(img, orientation,  900,  675, 0.80),
+    _drawToWebP(img, orientation, 1280,  960, 0.83),
+  ]);
+  return { cardBlob, detailBlob, fullBlob };
+}
+
+/* ──────────────────────────────────────────────────────────────
    ضغط صورة واحدة مع تصحيح EXIF Rotation
    @param {File} file
    @returns {Promise<Blob>}
@@ -174,26 +244,30 @@ async function uploadWithRetry(blob, path, authToken, signal, retries = 2) {
 async function uploadImages(files, userId, onProgress, authToken) {
   _uploadAbortCtrl = new AbortController();
   const signal = _uploadAbortCtrl.signal;
-
   let done = 0;
 
   /*
-    Pipeline per-file: compressToWebP → uploadWithRetry
-    تبدأ كل صورة رفعها فور انتهاء ضغطها
-    بدون انتظار بقية الصور (parallel pipeline)
+    لكل صورة:
+      1. تحميل الصورة مرة واحدة + قراءة EXIF مرة واحدة
+      2. ضغط 3 أحجام بالتوازي (card · detail · full)
+      3. رفع 3 ملفات بالتوازي إلى R2
+      4. تُحفظ فقط الـ URL الكامل (_f.webp) في قاعدة البيانات
+         ويشتق market/app.js منه card (_c.webp) و detail (_d.webp) تلقائياً
   */
   const urls = await Promise.all(
     files.map(async (file, i) => {
-      // 1. ضغط وتحويل لـ WebP مباشرة
-      const blob = await compressToWebP(file, MAX_W, MAX_H, WEBP_QUALITY);
+      const { cardBlob, detailBlob, fullBlob } = await _compressVariants(file);
 
-      // 2. رفع فوري بمجرد انتهاء الضغط
       const rand = Math.random().toString(36).slice(2, 6);
-      const path = `${userId}/${Date.now()}_${i}_${rand}.webp`;
-      const url  = await uploadWithRetry(blob, path, authToken, signal);
+      const base = `${userId}/${Date.now()}_${i}_${rand}`;
+      const [, , fullUrl] = await Promise.all([
+        uploadWithRetry(cardBlob,   `${base}_c.webp`, authToken, signal),
+        uploadWithRetry(detailBlob, `${base}_d.webp`, authToken, signal),
+        uploadWithRetry(fullBlob,   `${base}_f.webp`, authToken, signal),
+      ]);
 
       if (onProgress) onProgress(++done, files.length);
-      return url;
+      return fullUrl;
     })
   );
 

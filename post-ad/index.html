@@ -215,7 +215,7 @@ body { background: var(--surface2); }
     <div class="guard-icon">🔐</div>
     <h2>يجب تسجيل الدخول أولاً</h2>
     <p>لنشر إعلان في سوق المعدات، سجّل دخولك من المنصة الرئيسية أولاً</p>
-    <a href="/" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
+    <a href="/?p=login" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
   </div>
 
   <!-- ── Success ── -->
@@ -263,13 +263,15 @@ body { background: var(--surface2); }
         <label class="pa-label">التصنيف <span>*</span></label>
         <select class="pa-select" id="pa-category">
           <option value="">— اختر التصنيف —</option>
-          <option value="partition">بارتشن وأثاث</option>
-          <option value="food-cart">عربية أكل</option>
-          <option value="fridge">ثلاجات وتبريد</option>
-          <option value="display">ڤيترينات وعرض</option>
-          <option value="kitchen">معدات مطبخ</option>
-          <option value="pos">كاشير وPOS</option>
-          <option value="lighting">إضاءة تجارية</option>
+          <option value="food-juice-cart">عربية أكل / عصير</option>
+          <option value="fast-food-partition">بارتشن وجبات سريعة</option>
+          <option value="beauty-partition">بارتشن عناية شخصية</option>
+          <option value="clothing-partition">بارتشن ملابس / بوتيك</option>
+          <option value="handmade">هاند ميد</option>
+          <option value="phones">تليفونات وإكسسوار</option>
+          <option value="gifts">هدايا وديكور</option>
+          <option value="corner-space">كورنر سبيس</option>
+          <option value="vending">آلات بيع ذاتي</option>
           <option value="other">أخرى</option>
         </select>
         <div class="pa-error-msg" id="err-category">من فضلك اختر التصنيف</div>
@@ -424,7 +426,7 @@ body { background: var(--surface2); }
 const PA_SB_URL  = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const PA_SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const PA_GOVS = ['القاهرة','الجيزة','الإسكندرية','الشرقية','الدقهلية','المنوفية','القليوبية','البحيرة','كفر الشيخ','الغربية','سوهاج','المنيا','أسيوط','قنا','الأقصر','أسوان','بورسعيد','السويس','الإسماعيلية','دمياط','الفيوم','بني سويف','مطروح','شمال سيناء','جنوب سيناء','الوادي الجديد','البحر الأحمر'];
-const CAT_LABELS = {partition:'بارتشن وأثاث','food-cart':'عربية أكل',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',pos:'كاشير وPOS',lighting:'إضاءة تجارية',other:'أخرى'};
+const CAT_LABELS = {'food-juice-cart':'عربية أكل / عصير','fast-food-partition':'بارتشن وجبات سريعة','beauty-partition':'بارتشن عناية شخصية','clothing-partition':'بارتشن ملابس / بوتيك',handmade:'هاند ميد',phones:'تليفونات وإكسسوار',gifts:'هدايا وديكور','corner-space':'كورنر سبيس',vending:'آلات بيع ذاتي',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 
 let paSb   = null;

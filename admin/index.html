@@ -390,7 +390,7 @@ function admCheckAuth() {
 function admShowDash() {
   document.getElementById('adm-login').style.display = 'none';
   document.getElementById('adm-main').style.display = 'block';
-  admLoad();
+  admLoad(true);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -399,7 +399,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ── Load ── */
-async function admLoad() {
+async function admLoad(runCleanup = false) {
   document.getElementById('adm-table-container').innerHTML =
     '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
 
@@ -413,6 +413,7 @@ async function admLoad() {
     admRender();
     const now = new Date().toLocaleTimeString('ar-EG');
     document.getElementById('adm-last-update').textContent = 'آخر تحديث (Supabase): ' + now;
+    if (runCleanup) admAutoCleanup();
     return;
   } catch (sbErr) {
     console.warn('[admin] Supabase RPC failed, falling back to CF Function:', sbErr.message);
@@ -443,6 +444,7 @@ async function admLoad() {
     admRender();
     const now = new Date().toLocaleTimeString('ar-EG');
     document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + now;
+    if (runCleanup) admAutoCleanup();
   } catch (cfErr) {
     document.getElementById('adm-table-container').innerHTML =
       `<div class="adm-empty">⚠️ تعذّر الاتصال بالخادم — تحقق من الإنترنت وأعد المحاولة</div>`;
@@ -513,6 +515,8 @@ function admBuildTable(list) {
       ? `<button class="adm-btn adm-btn-approve" onclick="admApprove('${safeId}')">✅ قبول</button>` : '';
     const rejectBtn = l.status !== 'rejected'
       ? `<button class="adm-btn adm-btn-reject" onclick="admOpenReject('${safeId}')">❌ رفض</button>` : '';
+    const deleteBtn = ['rejected','expired','deleted'].includes(l.status)
+      ? `<button class="adm-btn adm-btn-delete" onclick="admHardDelete('${safeId}')">🗑 حذف نهائي</button>` : '';
 
     return `<tr>
       <td>${imgHtml}</td>
@@ -529,6 +533,7 @@ function admBuildTable(list) {
           ${approveBtn}
           ${rejectBtn}
           <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${safeId}')">👁 معاينة</button>
+          ${deleteBtn}
         </div>
       </td>
     </tr>`;
@@ -658,7 +663,9 @@ function admShowPreview(id) {
     ? `<button class="adm-btn adm-btn-approve" style="padding:10px 24px" onclick="admApprove('${safeId}');admClosePreview()">✅ قبول</button>` : '';
   const rejectBtn = l.status !== 'rejected'
     ? `<button class="adm-btn adm-btn-reject" style="padding:10px 24px" onclick="admClosePreview();admOpenReject('${safeId}')">❌ رفض</button>` : '';
-  actionsEl.innerHTML = approveBtn + rejectBtn +
+  const deleteBtn2 = ['rejected','expired','deleted'].includes(l.status)
+    ? `<button class="adm-btn adm-btn-delete" style="padding:10px 24px" onclick="admHardDelete('${safeId}');admClosePreview()">🗑 حذف نهائي</button>` : '';
+  actionsEl.innerHTML = approveBtn + rejectBtn + deleteBtn2 +
     `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview()">إغلاق</button>`;
 
   document.getElementById('adm-preview-modal').classList.add('open');
@@ -666,6 +673,63 @@ function admShowPreview(id) {
 
 function admClosePreview() {
   document.getElementById('adm-preview-modal').classList.remove('open');
+}
+
+/* ── Hard Delete (DB + R2) ── */
+async function admHardDelete(id) {
+  if (!confirm('⚠️ حذف نهائي — سيُحذف الإعلان وصوره نهائياً من الخادم. لا يمكن التراجع.\n\nمتأكد؟')) return;
+
+  const token = admGetToken();
+  try {
+    const res = await fetch('/admin/listings', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('خطأ في الحذف: ' + (err.error || res.statusText));
+      return;
+    }
+  } catch (e) {
+    /* Fallback: حذف من Supabase مباشرة (بدون حذف R2) */
+    const { error } = await sbDirect.rpc('admin_delete_listing', { p_secret: ADM_RPC_SECRET, p_id: id });
+    if (error) { alert('خطأ: ' + error.message); return; }
+  }
+
+  admAll = admAll.filter(l => l.id !== id);
+  admUpdateStats();
+  admRender();
+}
+
+/* ── Auto-Cleanup: حذف الإعلانات المرفوضة أو المنتهية بعد 7 أيام ── */
+async function admAutoCleanup() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+
+  const toDelete = admAll.filter(l => {
+    if (!['rejected', 'expired'].includes(l.status)) return false;
+    const ts = l.updated_at || l.created_at;
+    return ts && new Date(ts) < cutoff;
+  });
+
+  for (const l of toDelete) {
+    const token = admGetToken();
+    try {
+      await fetch('/admin/listings', {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body:    JSON.stringify({ id: l.id }),
+      });
+      admAll = admAll.filter(x => x.id !== l.id);
+    } catch {}
+  }
+
+  if (toDelete.length > 0) {
+    admUpdateStats();
+    admRender();
+    console.log(`[admin] cleanup: ${toDelete.length} listing(s) permanently deleted`);
+  }
 }
 
 /* ── Close on backdrop ── */

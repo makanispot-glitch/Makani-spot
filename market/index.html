@@ -130,7 +130,7 @@
 /* ── Hero ── */
 .eq-hero {
   background: var(--navy-700);
-  padding: 64px 32px 54px;
+  padding: 40px 32px 54px;
   text-align: center;
   color: #fff;
   position: relative;
@@ -411,6 +411,40 @@
   width: 18px; border-radius: 3px;
   background: #fff;
 }
+
+/* ── Detail Swiper Nav Arrows ── */
+.eq-swiper-prev, .eq-swiper-next {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 6; background: rgba(14,18,24,0.55); color: #fff;
+  border: 1px solid rgba(255,255,255,0.40);
+  width: 40px; height: 40px; border-radius: 50%;
+  font-size: 24px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  transition: background .18s, transform .18s, opacity .18s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  padding: 0; line-height: 1;
+}
+.eq-swiper-prev { left: 10px; }
+.eq-swiper-next { right: 10px; }
+.eq-swiper-prev:hover, .eq-swiper-next:hover {
+  background: rgba(243,100,24,0.85);
+  transform: translateY(-50%) scale(1.06);
+}
+@media (max-width: 640px) {
+  .eq-swiper-prev, .eq-swiper-next { width: 34px; height: 34px; font-size: 20px; }
+}
+/* Click to expand hint */
+.eq-swiper-expand-hint {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  background: rgba(0,0,0,0.40); backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 8px;
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 4px 8px; pointer-events: none; opacity: 0;
+  transition: opacity .2s;
+  font-family: var(--font-display);
+}
+.eq-swiper-wrap:hover .eq-swiper-expand-hint { opacity: 1; }
 
 /* Share button — شفاف فوق الصورة */
 .eq-share-btn {
@@ -711,7 +745,7 @@ body.lightbox-open { overflow: hidden; }
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .eq-nav { padding: 0 16px; }
-  .eq-hero { padding: 40px 16px 36px; }
+  .eq-hero { padding: 26px 16px 36px; }
   .eq-hero h1 { font-size: 24px; }
   .eq-filters-bar { padding: 0 16px; top: 68px; }
   .eq-main { padding: 20px 16px; }
@@ -1154,6 +1188,89 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     align-items: center !important;
   }
 }
+
+/* ── Free Posting Banner ── */
+.eq-free-bar {
+  background: linear-gradient(90deg, rgba(243,100,24,0.07) 0%, rgba(243,100,24,0.03) 100%);
+  border-bottom: 1px solid rgba(243,100,24,0.15);
+  padding: 9px 32px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-body); font-size: 13px;
+}
+.eq-free-bar-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(243,100,24,0.12); display: flex; align-items: center;
+  justify-content: center; font-size: 14px; flex-shrink: 0;
+}
+.eq-free-bar-text { flex: 1; color: var(--ink2); line-height: 1.4; }
+.eq-free-bar-text strong { color: var(--orange); font-weight: 800; }
+.eq-free-bar-btn {
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
+  color: #fff; text-decoration: none; flex-shrink: 0;
+  font-family: var(--font-display); font-size: 12px; font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 8px rgba(243,100,24,0.25);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.eq-free-bar-btn:hover { background: linear-gradient(180deg, #E66520 0%, #D9510A 100%); transform: translateY(-1px); }
+@media (max-width: 768px) {
+  .eq-free-bar { padding: 9px 16px; }
+  .eq-free-bar-btn { display: none; }
+}
+
+/* ── Desktop filter label ── */
+.eq-filter-label {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 0 0;
+  font-size: 11px; font-weight: 800; color: var(--ink3);
+  letter-spacing: .07em; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.eq-filters-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0 10px;
+}
+.eq-filters-row-label {
+  font-size: 11px; font-weight: 800; color: var(--ink3);
+  letter-spacing: .05em; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ── Card arrows: شفاف على الديسكتوب، تظهر عند hover ── */
+@media (min-width: 769px) {
+  .eq-cn-btn {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.88);
+    transition: opacity .2s var(--ease-out), transform .2s var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  .eq-card:hover .eq-cn-btn {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  .eq-cn-btn:hover {
+    background: rgba(243,100,24,0.92);
+    transform: translateY(-50%) scale(1.06) !important;
+  }
+}
+
+/* ── Card image: object-fit cover للنظافة البصرية ── */
+.eq-card-slide img {
+  object-fit: cover;
+}
+.eq-card-img img {
+  object-fit: cover;
+}
+
+/* ── Load more button — تحسين ── */
+#eq-load-more {
+  padding: 13px 52px;
+  font-size: 14px;
+  border-width: 2px;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+#eq-load-more:disabled {
+  opacity: 0.6; cursor: not-allowed; transform: none !important;
+}
 </style>
 </head>
 <body class="eq-page">
@@ -1250,10 +1367,20 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   </a>
 </div>
 
+<!-- ── Free Posting Banner ── -->
+<div class="eq-free-bar">
+  <div class="eq-free-bar-icon">🆓</div>
+  <span class="eq-free-bar-text">اعرض مشروعك للبيع <strong>مجاناً 100%</strong> — بدون عمولة أو رسوم خفية</span>
+  <a class="eq-free-bar-btn" href="/post-ad/">انشر الآن ←</a>
+</div>
+
 <!-- ── Filters ── -->
 <div class="eq-filters-bar" id="eq-filters-bar">
-  <div class="eq-tabs-wrap" id="eq-tabs"></div>
-  <div class="eq-sub-filters">
+  <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px">
+    <span class="eq-filters-row-label">📂 التصنيف</span>
+    <div class="eq-tabs-wrap" id="eq-tabs" style="padding:0;flex:1"></div>
+  </div>
+  <div class="eq-sub-filters" style="padding:4px 0 12px">
     <select id="eq-gov"></select>
     <div class="eq-price-wrap">
       <span>السعر حتى:</span>
@@ -1556,21 +1683,20 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="app.js?v=202605210133" defer></script>
+<script src="app.js?v=202605241835" defer></script>
 <script>
 (function () {
   const FALLBACK_CATEGORIES = [
-    ['partition', 'بارتشن وأثاث'],
-    ['food-cart', 'عربات طعام'],
-    ['fridge', 'ثلاجات وتبريد'],
-    ['display', 'ڤيترينات وعرض'],
-    ['kitchen', 'معدات مطبخ'],
-    ['coffee', 'معدات كافيه'],
-    ['pos', 'كاشير وPOS'],
-    ['vending', 'أجهزة بيع ذاتي'],
-    ['storage', 'رفوف وتخزين'],
-    ['lighting', 'إضاءة تجارية'],
-    ['other', 'أخرى']
+    ['food-juice-cart',     'عربية أكل / عصير'],
+    ['fast-food-partition', 'بارتشن وجبات سريعة'],
+    ['beauty-partition',    'بارتشن عناية شخصية'],
+    ['clothing-partition',  'بارتشن ملابس / بوتيك'],
+    ['handmade',            'هاند ميد'],
+    ['phones',              'تليفونات وإكسسوار'],
+    ['gifts',               'هدايا وديكور'],
+    ['corner-space',        'كورنر سبيس'],
+    ['vending',             'آلات بيع ذاتي'],
+    ['other',               'أخرى']
   ];
   const FALLBACK_GOVS = [
     'القاهرة','الجيزة','الإسكندرية','الشرقية','الدقهلية',

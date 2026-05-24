@@ -17,17 +17,16 @@ const R2_PUBLIC       = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
    ================================================================ */
 
 const EQ_CATEGORIES = [
-  { id: 'partition',   label: 'بارتشن وأثاث' },
-  { id: 'food-cart',   label: 'عربات طعام' },
-  { id: 'fridge',      label: 'ثلاجات وتبريد' },
-  { id: 'display',     label: 'ڤيترينات وعرض' },
-  { id: 'kitchen',     label: 'معدات مطبخ' },
-  { id: 'coffee',      label: 'معدات كافيه' },
-  { id: 'pos',         label: 'كاشير وPOS' },
-  { id: 'vending',     label: 'أجهزة بيع ذاتي' },
-  { id: 'storage',     label: 'رفوف وتخزين' },
-  { id: 'lighting',    label: 'إضاءة تجارية' },
-  { id: 'other',       label: 'أخرى' },
+  { id: 'food-juice-cart',     label: 'عربية أكل / عصير' },
+  { id: 'fast-food-partition', label: 'بارتشن وجبات سريعة' },
+  { id: 'beauty-partition',    label: 'بارتشن عناية شخصية' },
+  { id: 'clothing-partition',  label: 'بارتشن ملابس / بوتيك' },
+  { id: 'handmade',            label: 'هاند ميد' },
+  { id: 'phones',              label: 'تليفونات وإكسسوار' },
+  { id: 'gifts',               label: 'هدايا وديكور' },
+  { id: 'corner-space',        label: 'كورنر سبيس' },
+  { id: 'vending',             label: 'آلات بيع ذاتي' },
+  { id: 'other',               label: 'أخرى' },
 ];
 
 const EQ_CONDITIONS = [
@@ -46,20 +45,26 @@ const EQ_GOVS = [
   'الوادي الجديد','البحر الأحمر',
 ];
 
-const EQ_PER_PAGE = 12;
+const FETCH_SIZE   = 24;  // إعلانات لكل جلب من الخادم
 const MAX_RENEWALS = 5;
-const LISTING_DAYS  = 60;
+const LISTING_DAYS = 60;
+
+/* يشتق URL الكرت/التفاصيل من URL الكامل المخزّن في DB
+   الصور القديمة (قبل نظام المستويات) ترجع كما هي — backward-compatible */
+function _cardUrl(u)   { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_c.webp') : u; }
+function _detailUrl(u) { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_d.webp') : u; }
 
 
 /* ================================================================
    🗄️ القسم 3: المتغيرات العامة + نقطة البداية
    ================================================================ */
 
-let eqSb            = null;
-let eqUser          = null;
-let eqListings      = [];
-let eqFiltered      = [];
-let eqPage          = 1;
+let eqSb             = null;
+let eqUser           = null;
+let eqListings       = [];
+let eqFiltered       = [];
+let eqOffset         = 0;     // offset للجلب التالي من الخادم
+let eqHasMore        = false; // هل يوجد المزيد على الخادم
 let eqActiveCategory = '';
 let eqSearch        = '';
 let eqSortBy        = 'newest';
@@ -297,22 +302,30 @@ async function eqSignOut() {
    📥 القسم 4: تحميل الإعلانات من Supabase
    ================================================================ */
 
-async function eqLoadListings() {
-  eqShowLoading();
-  try {
-    const { data, error } = await eqSb
-      .from('listings')
-      .select(`id, title, description, category, condition, price, negotiable,
+const _EQ_SELECT = `id, title, description, category, condition, price, negotiable,
                region, area, phone, contact_pref,
                cover_image, images, is_featured,
                view_count, contact_count, status,
-               expires_at, created_at, user_id`)
+               expires_at, created_at, user_id`;
+
+async function eqLoadListings(append = false) {
+  if (!append) { eqShowLoading(); eqOffset = 0; }
+  try {
+    const { data, error } = await eqSb
+      .from('listings')
+      .select(_EQ_SELECT)
       .eq('status', 'approved')
       .gt('expires_at', new Date().toISOString())
       .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at',  { ascending: false })
+      .range(eqOffset, eqOffset + FETCH_SIZE);   // +1 لكشف وجود المزيد
+
     if (error) throw error;
-    eqListings = data || [];
+    eqHasMore = (data || []).length > FETCH_SIZE;
+    const items = eqHasMore ? data.slice(0, FETCH_SIZE) : (data || []);
+    eqOffset += items.length;
+
+    eqListings = append ? [...eqListings, ...items] : items;
     eqApplyFilters();
   } catch (e) {
     eqShowError(e.message);
@@ -353,7 +366,6 @@ function eqApplyFilters() {
   }
 
   eqFiltered = list;
-  eqPage = 1;
   eqRenderGrid();
 }
 
@@ -911,7 +923,7 @@ function eqBuildCard(listing) {
     imgAreaHtml = `<div class="eq-card-no-img">📦</div>${feat}`;
   } else {
     const slides = allImgs.map((u, i) =>
-      `<div class="eq-card-slide"><img src="${u}" alt="${listing.title}" loading="lazy"
+      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${listing.title}" loading="lazy"
         onclick="eqOpenLightbox('${lid}',${i});event.stopPropagation()"
         onerror="this.parentNode.style.display='none'"></div>`
     ).join('');
@@ -958,8 +970,6 @@ function eqRenderGrid() {
 
   if (!grid) return;
 
-  const slice = eqFiltered.slice(0, eqPage * EQ_PER_PAGE);
-
   if (eqFiltered.length === 0) {
     grid.innerHTML = `<div class="eq-empty">لا توجد إعلانات تطابق بحثك 🔍</div>`;
     if (count) count.textContent = '0 إعلان';
@@ -967,14 +977,20 @@ function eqRenderGrid() {
     return;
   }
 
-  grid.innerHTML = slice.map(eqBuildCard).join('');
-  if (count) count.textContent = eqFiltered.length + ' إعلان';
-  if (more)  more.style.display = slice.length < eqFiltered.length ? 'flex' : 'none';
+  grid.innerHTML = eqFiltered.map(eqBuildCard).join('');
+  if (count) count.textContent = eqFiltered.length + (eqHasMore ? '+' : '') + ' إعلان';
+  if (more)  more.style.display = eqHasMore ? 'flex' : 'none';
 }
 
-function eqLoadMore() {
-  eqPage++;
-  eqRenderGrid();
+async function eqLoadMore() {
+  if (!eqHasMore) return;
+  const btn = document.getElementById('eq-load-more');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ تحميل…'; }
+  try {
+    await eqLoadListings(true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'عرض المزيد'; }
+  }
 }
 
 function eqShowLoading() {
@@ -1018,10 +1034,12 @@ async function eqOpenDetail(id) {
     ? `<div class="eq-detail-gallery">
         <div class="eq-swiper-wrap">
           <div class="eq-swiper" id="${swiperId}">
-            ${imgs.map(u => `<div class="eq-swiper-slide"><img src="${u}" alt="${listing.title}" loading="lazy"></div>`).join('')}
+            ${imgs.map((u, i) => `<div class="eq-swiper-slide"><img src="${_detailUrl(u)}" alt="${listing.title}" loading="lazy" onclick="eqOpenLightbox('${id}',${i})" style="cursor:zoom-in"></div>`).join('')}
           </div>
           ${imgs.length > 1
-            ? `<div class="eq-swiper-dots" id="${swiperId}-dots">${imgs.map((_, i) => `<span class="eq-swiper-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
+            ? `<div class="eq-swiper-dots" id="${swiperId}-dots">${imgs.map((_, i) => `<span class="eq-swiper-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>
+               <button class="eq-swiper-prev" onclick="eqSwiperNav('${swiperId}',-1);event.stopPropagation()" aria-label="السابقة">&#8249;</button>
+               <button class="eq-swiper-next" onclick="eqSwiperNav('${swiperId}',1);event.stopPropagation()" aria-label="التالية">&#8250;</button>`
             : ''}
           <button class="eq-share-btn" onclick="eqShare('${id}')" title="مشاركة الإعلان">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1087,6 +1105,12 @@ function eqCloseModal() {
   document.body.style.overflow = '';
 }
 
+function eqSwiperNav(swiperId, dir) {
+  const swiper = document.getElementById(swiperId);
+  if (!swiper) return;
+  swiper.scrollBy({ left: dir * swiper.clientWidth, behavior: 'smooth' });
+}
+
 /* زر مشاركة الإعلان — Web Share API أو واتساب */
 function eqShare(id) {
   const listing = eqListings.find(l => l.id === id);
@@ -1107,13 +1131,33 @@ function eqShare(id) {
    📊 القسم 19 & 20: عدادات المشاهدات والتواصل
    ================================================================ */
 
-async function eqIncrementView(id) {
+/* Batch view_count: queue IDs, flush every 30 s to avoid a DB write per open */
+const _eqViewQueue = new Set();
+let   _eqViewTimer = null;
+
+function eqIncrementView(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
+  /* Skip listings already seen this browser session */
+  if (sessionStorage.getItem('eq_seen_' + id)) return;
+  sessionStorage.setItem('eq_seen_' + id, '1');
   listing.view_count = (listing.view_count || 0) + 1;
-  const { error } = await eqSb.rpc('increment_view_count', { listing_id: id });
-  if (error) console.warn('[view_count RPC]', error.message);
+  _eqViewQueue.add(id);
+  if (!_eqViewTimer) _eqViewTimer = setTimeout(_eqFlushViews, 30_000);
 }
+
+async function _eqFlushViews() {
+  _eqViewTimer = null;
+  if (_eqViewQueue.size === 0) return;
+  const ids = [..._eqViewQueue];
+  _eqViewQueue.clear();
+  for (const id of ids) {
+    const { error } = await eqSb.rpc('increment_view_count', { listing_id: id });
+    if (error) console.warn('[view_count]', error.message);
+  }
+}
+
+window.addEventListener('beforeunload', _eqFlushViews);
 
 async function eqIncrementContact(id) {
   const listing = eqListings.find(l => l.id === id);
@@ -1210,7 +1254,7 @@ function eqBuildMyCard(l) {
   return `
 <div class="eq-my-card">
   <div class="eq-my-card-img">
-    ${l.cover_image ? `<img src="${l.cover_image}" alt="${l.title}">` : '<div class="eq-card-no-img">📦</div>'}
+    ${l.cover_image ? `<img src="${_cardUrl(l.cover_image)}" alt="${l.title}">` : '<div class="eq-card-no-img">📦</div>'}
   </div>
   <div class="eq-my-card-body">
     <div class="eq-my-card-title">${l.title}</div>
@@ -1272,15 +1316,42 @@ async function eqRenew(id) {
 
 async function eqDeleteListing(id, status) {
   const msg = status === 'approved'
-    ? 'هل أنت متأكد من حذف الإعلان النشط؟ لن يظهر للمستخدمين ولا يمكن التراجع.'
-    : 'هل أنت متأكد من حذف الإعلان؟';
+    ? 'هل أنت متأكد من حذف الإعلان النشط؟ سيُحذف نهائياً مع صوره ولا يمكن التراجع.'
+    : 'هل أنت متأكد من الحذف النهائي؟ سيُحذف الإعلان وصوره نهائياً.';
   if (!confirm(msg)) return;
-  const { error } = await eqSb.from('listings')
-    .update({ status: 'deleted' })
-    .eq('id', id).eq('user_id', eqUser.id);
-  if (error) { alert('حدث خطأ في الحذف: ' + error.message); return; }
-  alert('تم حذف الإعلان');
-  eqLoadMyListings();
+
+  try {
+    const { data: { session } } = await eqSb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) { alert('يجب تسجيل الدخول أولاً'); return; }
+
+    const res = await fetch('/delete-listing', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body:    JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      /* Fallback: soft delete إذا فشل الـ Function */
+      if (res.status >= 500) {
+        const { error } = await eqSb.from('listings')
+          .update({ status: 'deleted' })
+          .eq('id', id).eq('user_id', eqUser.id);
+        if (error) { alert('حدث خطأ في الحذف: ' + error.message); return; }
+        alert('تم حذف الإعلان');
+        eqLoadMyListings();
+        return;
+      }
+      alert('تعذّر الحذف: ' + (err.error || 'خطأ غير متوقع'));
+      return;
+    }
+
+    alert('تم حذف الإعلان نهائياً');
+    eqLoadMyListings();
+  } catch (e) {
+    alert('حدث خطأ في الحذف — تحقق من الاتصال وأعد المحاولة');
+  }
 }
 
 
@@ -1556,7 +1627,7 @@ async function eqOpenFavorites() {
 
   cont.innerHTML = data.map(l => {
     const img = l.cover_image
-      ? `<img src="${l.cover_image}" alt="${l.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`
+      ? `<img src="${_cardUrl(l.cover_image)}" alt="${l.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`
       : `<div style="width:60px;height:60px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📦</div>`;
     const price = Number(l.price).toLocaleString('ar-EG');
     return `
