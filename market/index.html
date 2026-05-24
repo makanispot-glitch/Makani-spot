@@ -1276,26 +1276,32 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <body class="eq-page">
 
 <!-- ── Navbar ── -->
-<nav class="eq-nav">
+<nav class="nav">
 
   <!-- اللوجو -->
-  <a class="eq-nav-logo" href="/">
+  <a class="logo" href="/">
     <div class="logo-text">
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
   </a>
 
-  <!-- أزرار الأقسام الثلاثة (تختفي على الموبايل) -->
-  <div class="eq-nav-sections">
-    <button class="nav-section-btn" onclick="window.location.href='/?p=market'">
+  <!-- روابط التنقل + أزرار الأقسام الثلاثة -->
+  <div class="nav-links">
+    <a href="/">الرئيسية</a>
+    <a href="/?p=how">إزاي بيشتغل؟</a>
+    <a href="/?p=owner">عندك مساحة؟</a>
+
+    <div class="nav-divider"></div>
+
+    <a class="nav-section-btn" id="nsb-spaces" href="/spaces/">
       <span class="nsb-icon">◈</span>
       <span class="nsb-text">
         <strong>كل المساحات</strong>
         <small>ابحث عن مساحة لمشروعك</small>
       </span>
-    </button>
-    <button class="nav-section-btn" onclick="window.location.href='/bazaars/'">
+    </a>
+    <a class="nav-section-btn" id="nsb-bazaars" href="/bazaars/">
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1310,8 +1316,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <strong>البازارات</strong>
         <small>اشترك في بازار مؤقت</small>
       </span>
-    </button>
-    <a class="nav-section-btn nav-section-orange active" href="/market/">
+    </a>
+    <a class="nav-section-btn active" id="nsb-market" href="/market/">
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

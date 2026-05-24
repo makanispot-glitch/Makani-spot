@@ -286,9 +286,79 @@ function renderCards(data, gridId, showViewAll, fromPage) {
    🏢 القسم السابع: صفحة تفاصيل المساحة
    ================================================================ */
 
+function _showSpaceLoginGate(s, fromPage) {
+  currentSpaceDetail = s;
+  detailPrevPage = fromPage || 'market';
+
+  const headerEl = document.getElementById('sd-header');
+  if (headerEl) {
+    headerEl.innerHTML = `
+      <div class="sd-header-inner">
+        <div class="sd-back-row">
+          <button class="sd-back-btn" onclick="closeSpaceDetail()">→ العودة</button>
+          <div class="sd-breadcrumb">
+            <span onclick="window.location.href='/'" style="cursor:pointer">الرئيسية</span>
+            <span class="sd-bc-sep">·</span>
+            <span onclick="showPage('market')" style="cursor:pointer">المساحات</span>
+            <span class="sd-bc-sep">·</span>
+            <span style="color:var(--orange)">${s.name}</span>
+          </div>
+        </div>
+        <div class="sd-title-row">
+          <div>
+            <h1 class="sd-name">${s.name}</h1>
+            <div class="sd-meta">
+              <span>📍 ${s.loc}</span>
+              <span class="sd-meta-sep">·</span>
+              <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const galleryEl = document.getElementById('sd-gallery');
+  if (galleryEl) galleryEl.innerHTML = '';
+
+  const infoEl = document.getElementById('sd-info');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
+        <div style="font-size:64px;margin-bottom:20px">🔒</div>
+        <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
+          سجّل دخولك لعرض التفاصيل
+        </h2>
+        <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
+          سجّل دخولك لمعرفة المزيد من تفاصيل المساحة والحجز
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
+                  onclick="showPage('login')">
+            تسجيل الدخول ←
+          </button>
+          <button class="btn" style="padding:13px 22px;font-size:14px"
+                  onclick="closeSpaceDetail()">
+            العودة للمساحات
+          </button>
+        </div>
+      </div>`;
+  }
+
+  const subEl = document.getElementById('sd-subspaces');
+  if (subEl) subEl.innerHTML = '';
+
+  showPage('space-detail');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
 function openSpaceDetail(spaceId, fromPage) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
+
+  if (!currentUser) {
+    _showSpaceLoginGate(s, fromPage);
+    return;
+  }
 
   currentSpaceDetail = s;
   detailPrevPage = fromPage || 'market';
@@ -1165,8 +1235,10 @@ function showPage(p) {
 
   // تحديث الـ Nav
   document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
-  if (p === 'market') {
+  if (p === 'market' || p === 'space-detail') {
     document.getElementById('nsb-spaces')?.classList.add('active');
+  }
+  if (p === 'market') {
     setTimeout(initMpSlider, 120);
     if (SPACES.length && !mpFiltered.length) {
       mpFiltered = [...SPACES];

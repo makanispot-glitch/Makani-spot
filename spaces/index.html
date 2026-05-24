@@ -151,18 +151,19 @@
       <div class="nav-divider"></div>
 
       <!-- الأقسام الثلاثة الرئيسية -->
-      <button class="nav-section-btn active" id="nsb-spaces" onclick="showPage('market')">
+      <a class="nav-section-btn active" id="nsb-spaces" href="/spaces/"
+         onclick="event.preventDefault();showPage('market')">
         <span class="nsb-icon">◈</span>
         <span class="nsb-text">
           <strong>كل المساحات</strong>
           <small>ابحث عن مساحة لمشروعك</small>
         </span>
-      </button>
+      </a>
 
-      <button class="nav-section-btn" id="nsb-bazaars" onclick="window.location.href='/bazaars/'">
+      <a class="nav-section-btn" id="nsb-bazaars" href="/bazaars/">
         <span class="nsb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M2 7h20" />
             <path d="M5 7 7 3h10l2 4" />
             <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0" />
@@ -176,14 +177,13 @@
           <strong>البازارات</strong>
           <small>اشترك في بازار مؤقت</small>
         </span>
-      </button>
+      </a>
 
-      <a class="nav-section-btn" href="/market/">
+      <a class="nav-section-btn" id="nsb-market" href="/market/">
         <span class="nsb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <path
-              d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
             <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
           </svg>
         </span>
