@@ -353,6 +353,47 @@ function getSB() {
 }
 
 /* ══════════════════════════════════════════
+   💎  PLAN GATING
+   ══════════════════════════════════════════ */
+function getPlan() { return currentOwner?.planTier || 'starter'; }
+
+const PLAN_LEVELS = { starter: 0, growth: 1, pro: 2 };
+function canAccess(minPlan) {
+  return (PLAN_LEVELS[getPlan()] ?? 0) >= (PLAN_LEVELS[minPlan] ?? 0);
+}
+
+function planGateHtml(requiredPlan) {
+  const names = {
+    growth: 'Growth — ٣,٠٠٠ ج/شهر',
+    pro:    'Pro — ٤,٥٠٠ ج/شهر',
+  };
+  return `
+    <div class="pcard">
+      <div class="pcard-body" style="text-align:center;padding:60px 20px">
+        <div style="font-size:60px;margin-bottom:16px">🔒</div>
+        <div style="font-size:17px;font-weight:900;color:var(--text);margin-bottom:10px">
+          هذه الميزة متاحة في باقة ${names[requiredPlan] || requiredPlan}
+        </div>
+        <div style="font-size:13px;color:var(--text2);max-width:400px;margin:0 auto 28px;line-height:1.8">
+          قم بترقية حسابك للوصول إلى هذه الأداة وكل مميزات الإدارة المتقدمة في منصة مكاني Spot.
+        </div>
+        <a href="/" class="btn btn-primary" style="font-size:14px;padding:13px 30px;text-decoration:none;display:inline-flex;gap:8px">
+          🚀 ترقية الحساب الآن ←
+        </a>
+        <div style="margin-top:14px;font-size:11px;color:var(--text3)">
+          باقتك الحالية: <strong style="color:var(--orange)">${getPlan().charAt(0).toUpperCase() + getPlan().slice(1)}</strong>
+        </div>
+      </div>
+    </div>`;
+}
+
+function _planBadgeHtml(tier) {
+  if (tier === 'pro')    return `<span style="background:rgba(245,197,24,0.14);border:1px solid rgba(245,197,24,0.40);color:#F5C518;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.03em">🏆 Pro</span>`;
+  if (tier === 'growth') return `<span style="background:rgba(34,212,110,0.12);border:1px solid rgba(34,212,110,0.28);color:var(--green);padding:2px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.03em">✓ Growth</span>`;
+  return `<span style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700">Starter</span>`;
+}
+
+/* ══════════════════════════════════════════
    🔐  AUTH — helpers
    ══════════════════════════════════════════ */
 
@@ -452,6 +493,7 @@ async function checkRoleAndProceed(user) {
     initial:  displayName.charAt(0).toUpperCase(),
     phone:    profile.phone || '',
     role:     'owner',
+    planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
   };
 
   sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
@@ -523,10 +565,34 @@ function initDashboard() {
   if (stPhone) stPhone.value = currentOwner.phone  || '';
   if (stEmail) stEmail.value = currentOwner.email  || '';
 
+  /* عرض بادج الباقة في السايدبار */
+  const planBadgeEl = document.getElementById('sb-plan-badge');
+  if (planBadgeEl) {
+    planBadgeEl.style.display = 'block';
+    planBadgeEl.innerHTML = _planBadgeHtml(getPlan());
+  }
+
+  /* قفل/فتح عناصر التنقل بناءً على الباقة */
+  const _lockNav = (id, minPlan) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!canAccess(minPlan)) {
+      el.style.opacity = '0.55';
+      const lockSpan = el.querySelector('.nav-lock');
+      if (lockSpan) lockSpan.style.display = 'inline';
+    }
+  };
+  _lockNav('nav-payments',   'growth');
+  _lockNav('nav-violations', 'growth');
+  _lockNav('nav-bazaar',     'growth');
+  _lockNav('nav-reports',    'pro');
+
   /* تحميل العقود والتقييمات والمساحات المعلقة من localStorage */
   loadContractsLocal();
   loadRatingsLocal();
   loadPendingSpaces();
+  loadPaymentsLocal();
+  loadViolationsLocal();
   syncDataFromContracts(); /* يُشتق منها ownerTenants و ownerContracts */
 
   loadOwnerData();
@@ -603,6 +669,9 @@ function renderAll() {
   renderRevenue();
   renderInsights();
   renderRatingsHistory();
+  renderPayments();
+  renderViolations();
+  renderReports();
   populateSelects();
 }
 
@@ -783,6 +852,575 @@ function renderRatingsHistory() {
         <td><button class="btn btn-sm" style="background:var(--red);color:#fff;padding:3px 10px;font-size:11px" onclick="deleteRating('${r.id}')">🗑️</button></td>
       </tr>`;
   }).join('');
+}
+
+/* ══════════════════════════════════════════
+   💰  PAYMENTS VIEW — تسجيل الدفعات
+   ══════════════════════════════════════════ */
+function renderPayments() {
+  const container = document.getElementById('payments-content');
+  if (!container) return;
+
+  if (!canAccess('growth')) {
+    container.innerHTML = planGateHtml('growth');
+    return;
+  }
+
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const now       = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+  const expectedMonthly = activeContracts.reduce((s,c) => s + (parseFloat(c.rent)||0), 0);
+  const collectedThisMonth = paymentsList
+    .filter(p => p.month === thisMonth && p.status === 'paid')
+    .reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+  const partialThisMonth = paymentsList
+    .filter(p => p.month === thisMonth && p.status === 'partial')
+    .reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+  const remaining = Math.max(0, expectedMonthly - collectedThisMonth - partialThisMonth);
+  const fmt = n => n ? n.toLocaleString('ar-EG') + ' ج' : '—';
+
+  const kpiHtml = `
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-ico">📅</div>
+        <div class="kpi-label">المتوقع هذا الشهر</div>
+        <div class="kpi-value" style="font-size:20px">${fmt(expectedMonthly)}</div>
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">${activeContracts.length} عقد نشط</div>
+      </div>
+      <div class="kpi-card" style="${collectedThisMonth>=expectedMonthly&&expectedMonthly>0?'border-color:rgba(34,212,110,0.35)':''}">
+        <div class="kpi-ico">✅</div>
+        <div class="kpi-label">محصّل بالكامل</div>
+        <div class="kpi-value" style="font-size:20px;color:var(--green)">${fmt(collectedThisMonth)}</div>
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">${expectedMonthly>0?Math.round((collectedThisMonth/expectedMonthly)*100):0}% من المتوقع</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-ico">⚡</div>
+        <div class="kpi-label">دفع جزئي</div>
+        <div class="kpi-value" style="font-size:20px;color:var(--yellow)">${fmt(partialThisMonth)}</div>
+      </div>
+      <div class="kpi-card" style="${remaining>0?'border-color:rgba(255,77,77,0.30)':''}">
+        <div class="kpi-ico">⏳</div>
+        <div class="kpi-label">متبقي / غير محصّل</div>
+        <div class="kpi-value" style="font-size:20px;color:${remaining>0?'var(--red)':'var(--green)'}">${fmt(remaining)}</div>
+      </div>
+    </div>`;
+
+  const sortedPayments = [...paymentsList].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  const stMap = {
+    paid:    { cls:'badge-green',  lbl:'مدفوع ✅' },
+    partial: { cls:'badge-yellow', lbl:'جزئي ⚡' },
+    late:    { cls:'badge-red',    lbl:'متأخر ⏰' },
+  };
+
+  const tableHtml = `
+    <div class="pcard" style="margin-bottom:20px">
+      <div class="pcard-head">
+        <div><div class="pcard-title">💰 سجل الدفعات</div><div class="pcard-sub">جميع المبالغ المحصّلة من المستأجرين</div></div>
+        <span class="db-tag">DB: payments</span>
+      </div>
+      <div class="pcard-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>المستأجر</th><th>المساحة</th><th>الشهر</th><th>المبلغ</th><th>تاريخ الدفع</th><th>الحالة</th><th>ملاحظات</th><th></th></tr></thead>
+          <tbody>
+            ${!sortedPayments.length
+              ? `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">لا توجد دفعات مسجّلة بعد — أضف أول دفعة من النموذج أدناه</td></tr>`
+              : sortedPayments.map(p => {
+                  const st = stMap[p.status] || { cls:'badge-blue', lbl:p.status };
+                  const [yr,mo] = p.month.split('-');
+                  const mLbl = (MONTHS_AR[parseInt(mo,10)-1]||mo) + ' ' + yr;
+                  return `<tr>
+                    <td style="font-weight:700">${p.tenantName}</td>
+                    <td style="font-family:'Space Mono',monospace;color:var(--orange)">${p.spaceCode}</td>
+                    <td style="font-size:11px;color:var(--text2)">${mLbl}</td>
+                    <td style="font-family:'Space Mono',monospace;font-weight:700">${parseFloat(p.amount).toLocaleString('ar-EG')} ج</td>
+                    <td style="font-size:11px;color:var(--text3)">${formatDate(p.paidDate)}</td>
+                    <td><span class="badge ${st.cls}">${st.lbl}</span></td>
+                    <td style="font-size:11px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.notes||'—'}</td>
+                    <td><button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:11px;padding:3px 10px" onclick="deletePayment('${p.id}')">🗑️</button></td>
+                  </tr>`;
+                }).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  const activeForSelect = contractsList.filter(c => c.status !== 'expired');
+  const formHtml = `
+    <div class="pcard">
+      <div class="pcard-head">
+        <div class="pcard-title">➕ تسجيل دفعة جديدة</div>
+        <div class="pcard-sub">كل دفعة تُضاف فوراً في السجل أعلاه وتُحتسب في التقارير</div>
+      </div>
+      <div class="pcard-body">
+        <div id="payment-msg" class="alert-item" style="display:none;margin-bottom:14px"></div>
+        <form id="payment-form" onsubmit="submitPayment(event)">
+          <div class="form-row">
+            <div class="form-group" style="margin:0">
+              <label>المستأجر / العقد <span style="color:var(--red)">*</span></label>
+              <select id="pf-contract" required>
+                <option value="">اختر العقد</option>
+                ${activeForSelect.map(c=>`<option value="${c.id}">${c.tenantName} — ${c.spaceCode}${c.rent?' ('+parseFloat(c.rent).toLocaleString('ar-EG')+' ج)':''}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>شهر الدفعة <span style="color:var(--red)">*</span></label>
+              <input type="month" id="pf-month" required>
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group" style="margin:0">
+              <label>المبلغ المدفوع (ج.م.) <span style="color:var(--red)">*</span></label>
+              <input type="number" id="pf-amount" placeholder="مثال: 4200" min="0" required style="font-family:'Space Mono',monospace">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>تاريخ الاستلام</label>
+              <input type="date" id="pf-date">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group" style="margin:0">
+              <label>حالة الدفع</label>
+              <select id="pf-status">
+                <option value="paid">✅ مدفوع بالكامل</option>
+                <option value="partial">⚡ دفع جزئي</option>
+                <option value="late">⏰ متأخر / مؤجّل</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>ملاحظات</label>
+              <input type="text" id="pf-notes" placeholder="مثال: دفع نقداً، المتبقي الأسبوع القادم…">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:14px">💰 تسجيل الدفعة</button>
+        </form>
+      </div>
+    </div>`;
+
+  container.innerHTML = kpiHtml + tableHtml + formHtml;
+}
+
+function submitPayment(e) {
+  e.preventDefault();
+  const get = id => document.getElementById(id)?.value?.trim();
+  const contractId = get('pf-contract');
+  const month      = get('pf-month');
+  const amount     = parseFloat(get('pf-amount'));
+  const paidDate   = get('pf-date') || new Date().toISOString().slice(0,10);
+  const status     = get('pf-status') || 'paid';
+  const notes      = get('pf-notes');
+  const msgEl      = document.getElementById('payment-msg');
+
+  const showMsg = (type, text) => {
+    if (!msgEl) return;
+    msgEl.className = `alert-item ${type}`;
+    msgEl.style.display = 'flex';
+    msgEl.innerHTML = `<span class="alert-ico">${type==='success'?'✅':'❌'}</span><div class="alert-text"><strong>${text}</strong></div>`;
+    setTimeout(() => { if (msgEl) msgEl.style.display='none'; }, 4000);
+  };
+
+  if (!contractId) { showMsg('danger','اختر العقد أولاً.'); return; }
+  if (!month)      { showMsg('danger','حدد الشهر أولاً.'); return; }
+  if (!amount||amount<=0) { showMsg('danger','أدخل مبلغاً صحيحاً.'); return; }
+
+  const contract = contractsList.find(c => c.id === contractId);
+  paymentsList.push({
+    id:         genId(),
+    contractId,
+    tenantName: contract?.tenantName || '—',
+    spaceCode:  contract?.spaceCode  || '—',
+    amount,
+    month,
+    paidDate,
+    status,
+    notes,
+    createdAt:  new Date().toISOString(),
+  });
+
+  savePayments();
+  renderPayments();
+  renderKPIs(); /* تحديث KPI الإيراد */
+  document.getElementById('payment-form')?.reset();
+  showMsg('success', `تم تسجيل دفعة ${amount.toLocaleString('ar-EG')} ج بنجاح ✅`);
+}
+
+function deletePayment(id) {
+  if (!confirm('هل تريد حذف هذه الدفعة؟')) return;
+  paymentsList = paymentsList.filter(p => p.id !== id);
+  savePayments();
+  renderPayments();
+}
+
+/* ══════════════════════════════════════════
+   🚨  VIOLATIONS VIEW — سجل المخالفات
+   ══════════════════════════════════════════ */
+function renderViolations() {
+  const container = document.getElementById('violations-content');
+  if (!container) return;
+
+  if (!canAccess('growth')) {
+    container.innerHTML = planGateHtml('growth');
+    return;
+  }
+
+  const sortedV = [...violationsList].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+
+  const sevCounts = { high:0, medium:0, low:0 };
+  violationsList.forEach(v => { if (sevCounts[v.severity] !== undefined) sevCounts[v.severity]++; });
+
+  const sevMap = {
+    high:   { cls:'badge-red',    lbl:'خطير',  ico:'🚨' },
+    medium: { cls:'badge-yellow', lbl:'متوسط', ico:'⚠️' },
+    low:    { cls:'badge-blue',   lbl:'خفيف',  ico:'📋' },
+  };
+
+  const kpiHtml = `
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+      <div class="kpi-card" style="${sevCounts.high>0?'border-color:rgba(255,77,77,0.35)':''}">
+        <div class="kpi-ico">🚨</div>
+        <div class="kpi-label">مخالفات خطيرة</div>
+        <div class="kpi-value" style="color:${sevCounts.high?'var(--red)':'var(--text)'}">${sevCounts.high}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">تتطلب إجراءً فورياً</div>
+      </div>
+      <div class="kpi-card" style="${sevCounts.medium>0?'border-color:rgba(255,184,0,0.35)':''}">
+        <div class="kpi-ico">⚠️</div>
+        <div class="kpi-label">تحذيرات رسمية</div>
+        <div class="kpi-value" style="color:${sevCounts.medium?'var(--yellow)':'var(--text)'}">${sevCounts.medium}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">متوسطة الخطورة</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-ico">📋</div>
+        <div class="kpi-label">ملاحظات خفيفة</div>
+        <div class="kpi-value">${sevCounts.low}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">للمتابعة فقط</div>
+      </div>
+    </div>`;
+
+  const tableHtml = `
+    <div class="pcard" style="margin-bottom:20px">
+      <div class="pcard-head">
+        <div><div class="pcard-title">🚨 سجل المخالفات والتحذيرات</div><div class="pcard-sub">كل مخالفة مسجّلة تُحتسب عند تجديد العقد</div></div>
+        <span class="db-tag">DB: violations</span>
+      </div>
+      <div class="pcard-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>المستأجر</th><th>المساحة</th><th>نوع المخالفة</th><th>الخطورة</th><th>التاريخ</th><th>التفاصيل</th><th></th></tr></thead>
+          <tbody>
+            ${!sortedV.length
+              ? `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">لا توجد مخالفات مسجّلة — هذا شيء جيد! 👍</td></tr>`
+              : sortedV.map(v => {
+                  const sev = sevMap[v.severity] || sevMap.low;
+                  return `<tr style="${v.severity==='high'?'background:rgba(255,77,77,0.04)':''}">
+                    <td style="font-weight:700">${v.tenantName}</td>
+                    <td style="font-family:'Space Mono',monospace;color:var(--orange)">${v.spaceCode}</td>
+                    <td>${v.type}</td>
+                    <td><span class="badge ${sev.cls}">${sev.ico} ${sev.lbl}</span></td>
+                    <td style="font-size:11px;color:var(--text3)">${formatDate(v.date)}</td>
+                    <td style="font-size:11px;color:var(--text3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.notes||'—'}</td>
+                    <td><button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:11px;padding:3px 10px" onclick="deleteViolation('${v.id}')">🗑️</button></td>
+                  </tr>`;
+                }).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  const formHtml = `
+    <div class="pcard">
+      <div class="pcard-head">
+        <div class="pcard-title">➕ تسجيل مخالفة / تحذير جديد</div>
+      </div>
+      <div class="pcard-body">
+        <div id="violation-msg" class="alert-item" style="display:none;margin-bottom:14px"></div>
+        <form id="violation-form" onsubmit="submitViolation(event)">
+          <div class="form-row">
+            <div class="form-group" style="margin:0">
+              <label>المستأجر / العقد <span style="color:var(--red)">*</span></label>
+              <select id="vf-contract" required>
+                <option value="">اختر العقد</option>
+                ${activeContracts.map(c=>`<option value="${c.id}">${c.tenantName} — ${c.spaceCode}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>تاريخ المخالفة <span style="color:var(--red)">*</span></label>
+              <input type="date" id="vf-date" required>
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group" style="margin:0">
+              <label>نوع المخالفة <span style="color:var(--red)">*</span></label>
+              <select id="vf-type" required>
+                <option value="">اختر النوع</option>
+                <option value="تأخر الدفع">💳 تأخر الدفع</option>
+                <option value="مخالفة النظافة">🧹 مخالفة النظافة</option>
+                <option value="انتهاك شروط العقد">📄 انتهاك شروط العقد</option>
+                <option value="ضوضاء وإزعاج">🔊 ضوضاء وإزعاج</option>
+                <option value="تجاوز حدود المساحة">📐 تجاوز حدود المساحة</option>
+                <option value="بضاعة منتهية الصلاحية">⚠️ بضاعة منتهية الصلاحية</option>
+                <option value="سلوك غير لائق مع العملاء">🤝 سلوك غير لائق مع العملاء</option>
+                <option value="أخرى">📋 أخرى</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>درجة الخطورة</label>
+              <select id="vf-severity">
+                <option value="low">📋 خفيفة — ملاحظة فقط</option>
+                <option value="medium" selected>⚠️ متوسطة — تحذير رسمي</option>
+                <option value="high">🚨 خطيرة — إجراء فوري مطلوب</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:12px">
+            <label>تفاصيل وملاحظات</label>
+            <textarea id="vf-notes" placeholder="اشرح المخالفة بالتفصيل للتوثيق الرسمي…" style="min-height:68px"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:10px;background:var(--red);border-color:var(--red)">⚠️ تسجيل المخالفة</button>
+        </form>
+      </div>
+    </div>`;
+
+  container.innerHTML = kpiHtml + tableHtml + formHtml;
+}
+
+function submitViolation(e) {
+  e.preventDefault();
+  const get = id => document.getElementById(id)?.value?.trim();
+  const contractId = get('vf-contract');
+  const date       = get('vf-date');
+  const type       = get('vf-type');
+  const severity   = get('vf-severity') || 'medium';
+  const notes      = get('vf-notes');
+  const msgEl      = document.getElementById('violation-msg');
+
+  const showMsg = (t, text) => {
+    if (!msgEl) return;
+    msgEl.className = `alert-item ${t}`;
+    msgEl.style.display = 'flex';
+    msgEl.innerHTML = `<span class="alert-ico">${t==='success'?'✅':'❌'}</span><div class="alert-text"><strong>${text}</strong></div>`;
+    setTimeout(() => { if (msgEl) msgEl.style.display='none'; }, 4000);
+  };
+
+  if (!contractId) { showMsg('danger','اختر العقد أولاً.'); return; }
+  if (!date)       { showMsg('danger','حدد تاريخ المخالفة.'); return; }
+  if (!type)       { showMsg('danger','اختر نوع المخالفة.'); return; }
+
+  const contract = contractsList.find(c => c.id === contractId);
+  violationsList.push({
+    id:         genId(),
+    contractId,
+    tenantName: contract?.tenantName || '—',
+    spaceCode:  contract?.spaceCode  || '—',
+    type,
+    severity,
+    date,
+    notes,
+    createdAt:  new Date().toISOString(),
+  });
+
+  saveViolations();
+  renderViolations();
+  document.getElementById('violation-form')?.reset();
+  showMsg('success','تم تسجيل المخالفة بنجاح في سجل التوثيق.');
+}
+
+function deleteViolation(id) {
+  if (!confirm('هل تريد حذف هذه المخالفة من السجل؟')) return;
+  violationsList = violationsList.filter(v => v.id !== id);
+  saveViolations();
+  renderViolations();
+}
+
+/* ══════════════════════════════════════════
+   📊  REPORTS VIEW — التقارير الشهرية (Pro)
+   ══════════════════════════════════════════ */
+function renderReports() {
+  const container = document.getElementById('reports-content');
+  if (!container) return;
+
+  if (!canAccess('pro')) {
+    container.innerHTML = planGateHtml('pro');
+    return;
+  }
+
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const now        = new Date();
+  const thisMonth  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthLabel = MONTHS_AR[now.getMonth()] + ' ' + now.getFullYear();
+
+  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+  const expiring  = activeContracts.filter(c => c.status==='expiring'||c.status==='renewal');
+  const monthly   = activeContracts.reduce((s,c)=>s+(parseFloat(c.rent)||0),0);
+  const collected = paymentsList.filter(p=>p.month===thisMonth&&p.status==='paid').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const rented    = ownerSpaces.filter(s=>s.status==='rented');
+  const occ       = ownerSpaces.length ? Math.round((rented.length/ownerSpaces.length)*100) : 0;
+  const scoredT   = ownerTenants.filter(t=>t.score!==null);
+  const avgScore  = scoredT.length ? (scoredT.reduce((s,t)=>s+t.score,0)/scoredT.length).toFixed(1) : '—';
+  const fmt = n => n ? n.toLocaleString('ar-EG') + ' ج' : '—';
+
+  /* --- Tenant violations count per tenant --- */
+  const violationsByTenant = {};
+  violationsList.forEach(v => {
+    violationsByTenant[v.tenantName] = (violationsByTenant[v.tenantName]||0) + 1;
+  });
+
+  container.innerHTML = `
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-label">التقرير الشهري الكامل</div>
+        <div style="font-size:20px;font-weight:900;color:var(--text)">${monthLabel}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px;font-family:'Space Mono',monospace">
+          📍 ${currentOwner.place || 'مكاني Spot'} · ${currentOwner.name}
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="window.print()" style="gap:6px;background:var(--panel2)">🖨️ طباعة PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="renderReports()">🔄 تحديث</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" style="margin-bottom:22px">
+      <div class="kpi-card">
+        <div class="kpi-ico">💰</div>
+        <div class="kpi-label">الإيجارات المتوقعة</div>
+        <div class="kpi-value" style="font-size:22px">${fmt(monthly)}</div>
+        <div style="margin-top:4px;font-size:10px;color:var(--text3)">${activeContracts.length} عقد نشط</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-ico">✅</div>
+        <div class="kpi-label">المحصّل هذا الشهر</div>
+        <div class="kpi-value" style="font-size:22px;color:var(--green)">${fmt(collected)}</div>
+        <div style="margin-top:4px;font-size:10px;color:var(--text3)">${monthly>0?Math.round((collected/monthly)*100):0}% تحصيل</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-ico">📍</div>
+        <div class="kpi-label">نسبة الإشغال</div>
+        <div class="kpi-value" style="font-size:22px">${occ}%</div>
+        <div style="margin-top:7px"><div class="prog-bar"><div class="prog-fill ${occ>=70?'green':occ>=40?'yellow':'red'}" style="width:${occ}%"></div></div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-ico">⭐</div>
+        <div class="kpi-label">متوسط تقييم المستأجرين</div>
+        <div class="kpi-value" style="font-size:22px">${avgScore}</div>
+        <div style="margin-top:4px;font-size:10px;color:var(--text3)">${scoredT.length} مستأجر مقيّم</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Contract status -->
+      <div class="pcard">
+        <div class="pcard-head"><div><div class="pcard-title">📄 حالة العقود</div><div class="pcard-sub">${expiring.length>0?`⚠ ${expiring.length} تنتهي قريباً`:'كل العقود سارية ✅'}</div></div></div>
+        <div class="pcard-body" style="padding:0">
+          ${!activeContracts.length
+            ? `<div style="text-align:center;padding:24px;color:var(--text3)">لا توجد عقود نشطة حالياً</div>`
+            : activeContracts.map(c=>{
+                const bCls = c.status==='active'?'badge-green':c.status==='expiring'?'badge-yellow':'badge-red';
+                const lbl  = c.status==='active'?'سارية':c.status==='expiring'?'تنتهي قريباً':'للتجديد';
+                const vCount = violationsByTenant[c.tenantName] || 0;
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border)">
+                  <div>
+                    <div style="font-size:13px;font-weight:800">${c.tenantName}</div>
+                    <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace">${c.spaceCode}${c.rent?' · '+parseFloat(c.rent).toLocaleString('ar-EG')+' ج/شهر':''}</div>
+                  </div>
+                  <div style="text-align:left;flex-shrink:0">
+                    <span class="badge ${bCls}">${lbl}</span>
+                    ${vCount>0?`<div style="font-size:10px;color:var(--red);margin-top:3px">⚠ ${vCount} مخالفة</div>`:''}
+                    <div style="font-size:10px;color:var(--text3);margin-top:2px">${c.daysLeft>0?c.daysLeft+' يوم متبقٍ':'منتهي'}</div>
+                  </div>
+                </div>`;
+              }).join('')
+          }
+        </div>
+      </div>
+
+      <!-- Tenant performance -->
+      <div class="pcard">
+        <div class="pcard-head"><div><div class="pcard-title">⭐ أداء المستأجرين</div><div class="pcard-sub">مرتّبون حسب التقييم</div></div></div>
+        <div class="pcard-body" style="padding:0">
+          ${!ownerTenants.length
+            ? `<div style="text-align:center;padding:24px;color:var(--text3)">لا توجد بيانات تقييم حتى الآن</div>`
+            : [...ownerTenants].sort((a,b)=>(b.score||0)-(a.score||0)).map((t,i)=>{
+                const col = t.score>=8?'var(--green)':t.score>=6?'var(--yellow)':'var(--red)';
+                const trend = t.trend==='up'?'↑':t.trend==='down'?'↓':'→';
+                const trendCls = t.trend==='up'?'up':t.trend==='down'?'down':'flat';
+                return `<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border)">
+                  <div style="font-size:22px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':t.icon}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700">${t.name}</div>
+                    <div style="font-size:10px;color:var(--text3)">${t.space} · ${t.act}</div>
+                  </div>
+                  <div style="text-align:left;flex-shrink:0">
+                    <div style="font-size:16px;font-weight:900;color:${col};font-family:'Space Mono',monospace">${t.score||'—'}/10</div>
+                    <span class="kpi-delta ${trendCls}" style="font-size:10px">${trend}</span>
+                  </div>
+                </div>`;
+              }).join('')
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments summary -->
+    ${paymentsList.length ? `
+    <div class="pcard" style="margin-top:20px">
+      <div class="pcard-head"><div class="pcard-title">💰 ملخص الدفعات — ${monthLabel}</div></div>
+      <div class="pcard-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>المستأجر</th><th>المساحة</th><th>المبلغ</th><th>الحالة</th><th>تاريخ الاستلام</th></tr></thead>
+          <tbody>
+            ${paymentsList.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,10).map(p=>{
+              const stMap={paid:'badge-green مدفوع',partial:'badge-yellow جزئي',late:'badge-red متأخر'};
+              const [cls,lbl]=(stMap[p.status]||'badge-blue —').split(' ');
+              return `<tr>
+                <td style="font-weight:700">${p.tenantName}</td>
+                <td style="font-family:'Space Mono',monospace;color:var(--orange)">${p.spaceCode}</td>
+                <td style="font-family:'Space Mono',monospace">${parseFloat(p.amount).toLocaleString('ar-EG')} ج</td>
+                <td><span class="badge ${cls}">${lbl}</span></td>
+                <td style="font-size:11px;color:var(--text3)">${formatDate(p.paidDate)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+
+    <!-- Violations this period -->
+    ${violationsList.length ? `
+    <div class="pcard" style="margin-top:20px;border-color:rgba(255,77,77,0.20)">
+      <div class="pcard-head" style="background:rgba(255,77,77,0.04)">
+        <div class="pcard-title" style="color:var(--red)">🚨 المخالفات المسجّلة (${violationsList.length})</div>
+      </div>
+      <div class="pcard-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>المستأجر</th><th>المساحة</th><th>المخالفة</th><th>الخطورة</th><th>التاريخ</th></tr></thead>
+          <tbody>
+            ${violationsList.slice(0,8).map(v=>{
+              const sevCol=v.severity==='high'?'var(--red)':v.severity==='medium'?'var(--yellow)':'var(--text3)';
+              const sevIco=v.severity==='high'?'🚨':v.severity==='medium'?'⚠️':'📋';
+              return `<tr>
+                <td style="font-weight:700">${v.tenantName}</td>
+                <td style="font-family:'Space Mono',monospace;color:var(--orange)">${v.spaceCode}</td>
+                <td>${v.type}</td>
+                <td style="color:${sevCol}">${sevIco} ${v.severity==='high'?'خطير':v.severity==='medium'?'متوسط':'خفيف'}</td>
+                <td style="font-size:11px;color:var(--text3)">${formatDate(v.date)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
+
+    <!-- Print footer -->
+    <div style="margin-top:28px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3)">
+      <span>🏢 مكاني Spot — نظام إدارة المساحات الصغيرة</span>
+      <span>${monthLabel} · تم الإنشاء: ${new Date().toLocaleDateString('ar-EG')}</span>
+    </div>`;
 }
 
 /* ══════════════════════════════════════════
@@ -1126,17 +1764,20 @@ function closeSidebar() {
    🗺️  NAVIGATION
    ══════════════════════════════════════════ */
 const VIEW_TITLES = {
-  'overview':  'نظرة عامة',
-  'tenants':   'المستأجرون',
-  'spaces':    'المساحات',
-  'contracts': 'العقود',
-  'ratings':   'التقييمات',
-  'revenue':   'الإيرادات',
-  'insights':  'الرؤى والتوصيات',
-  'add-space': 'إضافة مساحة جديدة',
-  'add-bazaar':'تنظيم بازار',
-  'alerts':    'التنبيهات',
-  'settings':  'الإعدادات',
+  'overview':   'نظرة عامة',
+  'tenants':    'المستأجرون',
+  'spaces':     'المساحات',
+  'contracts':  'العقود',
+  'ratings':    'التقييمات',
+  'revenue':    'الإيرادات',
+  'payments':   'تسجيل الدفعات',
+  'violations': 'سجل المخالفات',
+  'insights':   'الرؤى والتوصيات',
+  'reports':    'التقارير الشهرية',
+  'add-space':  'إضافة مساحة جديدة',
+  'add-bazaar': 'تنظيم بازار',
+  'alerts':     'التنبيهات',
+  'settings':   'الإعدادات',
 };
 
 function goTo(viewId, navEl) {
@@ -2394,6 +3035,24 @@ let asSizeRowCount     = 0;     /* عداد صفوف الأحجام */
 let asUnitCounter      = 0;     /* عداد الوحدات الفرعية */
 let ownerPendingSpaces = [];    /* مساحات معلقة محفوظة محلياً */
 
+/* ── state: الدفعات والمخالفات ── */
+let paymentsList   = [];
+let violationsList = [];
+const LS_PAYMENTS   = 'ms_payments_';
+const LS_VIOLATIONS = 'ms_violations_';
+
+function paymentsKey()   { return LS_PAYMENTS   + (currentOwner?.id || 'guest'); }
+function violationsKey() { return LS_VIOLATIONS + (currentOwner?.id || 'guest'); }
+
+function loadPaymentsLocal() {
+  try { paymentsList = JSON.parse(localStorage.getItem(paymentsKey()) || '[]'); } catch { paymentsList = []; }
+}
+function loadViolationsLocal() {
+  try { violationsList = JSON.parse(localStorage.getItem(violationsKey()) || '[]'); } catch { violationsList = []; }
+}
+function savePayments()   { localStorage.setItem(paymentsKey(),   JSON.stringify(paymentsList)); }
+function saveViolations() { localStorage.setItem(violationsKey(), JSON.stringify(violationsList)); }
+
 async function loadNotifications() {
   const sb = getSB();
   if (!sb || !currentOwner?.id) return;
@@ -2526,6 +3185,7 @@ async function checkSessionOnLoad() {
     initial:  displayName.charAt(0).toUpperCase(),
     phone:    profile.phone || '',
     role:     'owner',
+    planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
   };
   sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
   initDashboard();

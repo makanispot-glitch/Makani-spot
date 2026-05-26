@@ -228,7 +228,11 @@ async function loadData() {
     if (json.status !== "ok") throw new Error(json.message || "خطأ في قراءة الشيت");
 
     ACTIVITIES = json.activities || [];
-    SPACES     = json.spaces     || [];
+    SPACES     = (json.spaces || []).map(s => ({
+      ...s,
+      planTier: (s.planTier || s.plan_tier || '').toLowerCase().trim() || 'starter',
+    }));
+    _sortByPlan(SPACES);
 
     buildActivityFilters();
     buildModalActivityPicker();
@@ -333,6 +337,28 @@ function buildMpActivityFilters() {
  * @param {string} fromPage — من أين يُستدعى الكارد (home / market) — يُحفظ للرجوع منه
  * @returns {string} — HTML الكارد
  */
+/* ── نظام الباقات والبادجيات ── */
+
+/** ترتيب المساحات حسب الباقة: Pro أول، Growth ثاني، Starter أخير */
+function _sortByPlan(arr) {
+  const ord = { pro: 0, growth: 1, starter: 2 };
+  arr.sort((a, b) => (ord[a.planTier] ?? 2) - (ord[b.planTier] ?? 2));
+  return arr;
+}
+
+/** يبني HTML لـ badge الثقة بناءً على planTier */
+function _planTrustBadgeHtml(s) {
+  const tier = (s.planTier || 'starter').toLowerCase();
+  if (tier === 'pro')    return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
+  if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
+  return '';
+}
+
+/** يضيف class خاص بالكارت Pro */
+function _planCardClass(s) {
+  return (s.planTier || 'starter') === 'pro' ? ' space-card--pro' : '';
+}
+
 function buildCardHtml(s, fromPage) {
   fromPage = fromPage || 'market';
 
@@ -393,12 +419,15 @@ function buildCardHtml(s, fromPage) {
   // 4. البناء النهائي
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space',${s.id},'${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+  const _trustBadge    = _planTrustBadgeHtml(s);
+  const _cardClass     = _planCardClass(s);
 
   return `
-  <div class="space-card">
+  <div class="space-card${_cardClass}">
     <div class="card-thumb">
       ${thumbHtml}
       <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
+      ${_trustBadge}
       ${unitsBadgeHtml}
       ${_shareSpaceBtn}
     </div>
@@ -411,8 +440,10 @@ function buildCardHtml(s, fromPage) {
         <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${detailsBtnHtml}
+          <button class="btn btn-ghost btn-insp"
+                  onclick="event.stopPropagation();openInspectionModal(${s.id})">🔍 معاينة</button>
           <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
+                  onclick="openBooking(${s.id})">احجز ←</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `
@@ -565,7 +596,10 @@ function openSpaceDetail(spaceId, fromPage) {
         </div>
         <div class="sd-title-row">
           <div>
-            <h1 class="sd-name">${s.name}</h1>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+              <h1 class="sd-name" style="margin:0">${s.name}</h1>
+              ${_planTrustBadgeHtml(s) ? `<span class="sd-trust-badge trust-${(s.planTier||'starter') === 'pro' ? 'partner' : 'verified'}">${(s.planTier||'starter') === 'pro' ? '🏆 شريك معتمد' : '✓ موثّق'}</span>` : ''}
+            </div>
             <div class="sd-meta">
               <span>📍 ${s.loc}</span>
               <span class="sd-meta-sep">·</span>
@@ -579,8 +613,12 @@ function openSpaceDetail(spaceId, fromPage) {
           <div class="sd-price-box">
             <div class="sd-price-val">${Number(s.price).toLocaleString('ar-EG')} ج</div>
             <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
-            <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center"
-                    onclick="openBooking(${s.id})">احجز دلوقتي ←</button>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
+                      onclick="openInspectionModal(${s.id})">🔍 معاينة</button>
+              <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
+                      onclick="openBooking(${s.id})">احجز ←</button>
+            </div>
           </div>
         </div>
       </div>`;
@@ -1439,7 +1477,7 @@ function showPage(p) {
   }
 
   // حفظ الصفحة الحالية (باستثناء صفحات التفاصيل — لا نحفظها في localStorage)
-  if (['home','how','owner','market','bazaars','dashboard'].includes(p)) {
+  if (['home','how','owner','pricing','market','bazaars','dashboard'].includes(p)) {
     localStorage.setItem('lastPage', p);
   }
 
@@ -1454,6 +1492,7 @@ function showPage(p) {
   if (p === 'home')    links[0]?.classList.add('active');
   if (p === 'how')     links[1]?.classList.add('active');
   if (p === 'owner')   links[2]?.classList.add('active');
+  if (p === 'pricing') links[3]?.classList.add('active');
   if (p === 'market' || p === 'space-detail')  document.getElementById('nsb-spaces')?.classList.add('active');
 
   // لو فتحنا الماركت بليس
@@ -1463,6 +1502,10 @@ function showPage(p) {
       mpFiltered = [...SPACES];
       renderMarketplace();
     }
+  }
+
+  if (p === 'pricing') {
+    setTimeout(initPricingAnimations, 80);
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2661,6 +2704,270 @@ function _normalizeBazaarRow(row) {
     venue_address:  get('venue_address','address','Address','عنوان المكان','العنوان','Venue') || '',
     status:         get('status','الحالة','Status')                                || 'published',
   };
+}
+
+/* ================================================================
+   🔍 مودال المعاينة — Inspection Modal
+   ================================================================ */
+
+let _inspSpaceId   = null;
+let _inspSelDate   = null;
+
+const _INSP_DAY_NAMES   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const _INSP_MONTH_NAMES = ['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function openInspectionModal(spaceId) {
+  const s = SPACES.find(x => x.id === spaceId);
+  if (!s) return;
+  _inspSpaceId = spaceId;
+  _inspSelDate = null;
+
+  // اسم المساحة
+  const nameEl = document.getElementById('insp-space-name');
+  if (nameEl) nameEl.textContent = s.name;
+
+  // قائمة الأنشطة
+  const actSel = document.getElementById('insp-activity');
+  if (actSel) {
+    actSel.innerHTML = '<option value="">اختر نشاطك</option>';
+    const actList = (ACTIVITIES && ACTIVITIES.length) ? ACTIVITIES : (s.acts || []);
+    actList.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      actSel.appendChild(opt);
+    });
+    const other = document.createElement('option');
+    other.value = 'أخرى'; other.textContent = 'أخرى';
+    actSel.appendChild(other);
+  }
+
+  // توليد المواعيد
+  _inspBuildDates();
+
+  // تعبئة بيانات المستخدم إن وجدت
+  const nameInput = document.getElementById('insp-name');
+  const phoneInput = document.getElementById('insp-phone');
+  if (nameInput) nameInput.value = currentProfile?.full_name || currentProfile?.name || '';
+  if (phoneInput) phoneInput.value = currentProfile?.phone || '';
+
+  // reset
+  const errEl = document.getElementById('insp-error');
+  if (errEl) errEl.textContent = '';
+  _inspGoStep(1);
+
+  // فتح المودال
+  const modal = document.getElementById('inspection-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('open'));
+  document.body.style.overflow = 'hidden';
+}
+
+function closeInspectionModal() {
+  const modal = document.getElementById('inspection-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  setTimeout(() => { modal.style.display = 'none'; }, 240);
+  document.body.style.overflow = '';
+}
+
+function closeInspModalOnBg(e) {
+  if (e.target.id === 'inspection-modal') closeInspectionModal();
+}
+
+function _inspGoStep(step) {
+  [1,2,3].forEach(n => {
+    const body = document.getElementById(`insp-step-${n}`);
+    const dot  = document.getElementById(`insp-dot-${n}`);
+    const line = document.getElementById(`insp-line-${n}`);
+    if (body) body.style.display = n === step ? 'block' : 'none';
+    if (dot) {
+      dot.classList.toggle('active', n === step);
+      dot.classList.toggle('done',   n <  step);
+    }
+    if (line) line.classList.toggle('done', n < step);
+  });
+}
+
+function _inspBuildDates() {
+  const grid = document.getElementById('insp-dates-grid');
+  if (!grid) return;
+  const slots = _inspGetWorkingDays();
+  grid.innerHTML = slots.map(d => `
+    <label class="insp-date-card" onclick="_inspSelectDate(this,'${d.value}')">
+      <input type="radio" name="insp-date" style="display:none">
+      <div class="insp-date-radio"></div>
+      <span style="flex:1">${d.dayLabel} — ${d.dateLabel}</span>
+      <span class="insp-date-time">${d.time}</span>
+    </label>`).join('');
+}
+
+function _inspSelectDate(el, val) {
+  document.querySelectorAll('.insp-date-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  _inspSelDate = val;
+}
+
+function _inspSubmitForm() {
+  const name     = (document.getElementById('insp-name')?.value     || '').trim();
+  const phone    = (document.getElementById('insp-phone')?.value    || '').trim();
+  const activity = (document.getElementById('insp-activity')?.value || '').trim();
+  const errEl    = document.getElementById('insp-error');
+
+  if (!name)                         { errEl.textContent = '⚠ يرجى إدخال الاسم الكامل'; return; }
+  if (!/^01\d{9}$/.test(phone))      { errEl.textContent = '⚠ رقم الهاتف 11 رقم يبدأ بـ 01'; return; }
+  if (!activity)                     { errEl.textContent = '⚠ يرجى اختيار النشاط التجاري'; return; }
+  if (!_inspSelDate)                 { errEl.textContent = '⚠ يرجى اختيار موعد للمعاينة'; return; }
+  errEl.textContent = '';
+
+  const s = SPACES.find(x => x.id === _inspSpaceId);
+  const spaceName = s ? s.name : '—';
+  const waMsg = `مرحباً، عايز أحجز معاينة 🏪\nالاسم: ${name}\nالمساحة: ${spaceName}\nالموعد: ${_inspSelDate}\nالنشاط: ${activity}\nتم التحويل 150 ج على انستاباي`;
+  const waLink = document.getElementById('insp-wa-link');
+  if (waLink) waLink.href = `https://wa.me/+201148662218?text=${encodeURIComponent(waMsg)}`;
+
+  _inspGoStep(2);
+}
+
+function _inspCopyNumber() {
+  navigator.clipboard?.writeText('01148662218').then(() => _inspFlashCopy('insp-copy-num-btn'));
+}
+
+function _inspCopyId() {
+  const id = document.getElementById('insp-id-val')?.textContent || '';
+  navigator.clipboard?.writeText(id).then(() => _inspFlashCopy('insp-copy-id-btn'));
+}
+
+function _inspFlashCopy(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = '✓ تم';
+  btn.style.cssText += ';background:rgba(37,211,102,0.2);color:#25D366;border-color:rgba(37,211,102,0.3)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }, 2000);
+}
+
+function _inspConfirm() {
+  const name     = (document.getElementById('insp-name')?.value     || '').trim();
+  const phone    = (document.getElementById('insp-phone')?.value    || '').trim();
+  const activity = (document.getElementById('insp-activity')?.value || '').trim();
+  const s        = SPACES.find(x => x.id === _inspSpaceId);
+  const spaceName = s ? s.name : '—';
+
+  const inspId = `INS-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+  const idEl = document.getElementById('insp-id-val');
+  if (idEl) idEl.textContent = inspId;
+
+  const detailsEl = document.getElementById('insp-confirm-details');
+  if (detailsEl) {
+    detailsEl.innerHTML = [
+      ['المساحة', spaceName],
+      ['الموعد',  _inspSelDate || '—'],
+      ['النشاط',  activity],
+    ].map(([k,v]) => `
+      <div class="insp-detail-row">
+        <span class="insp-detail-key">${k}</span>
+        <span class="insp-detail-val">${v}</span>
+      </div>`).join('');
+  }
+
+  // رسالة واتساب للأونر
+  const ownerMsg = `🔔 طلب معاينة جديد\n${'─'.repeat(16)}\nرقم الطلب: ${inspId}\nالمساحة: ${spaceName}\nالاسم: ${name}\nالهاتف: ${phone}\nالنشاط: ${activity}\nالموعد المطلوب: ${_inspSelDate || '—'}\n${'─'.repeat(16)}\n⏳ في انتظار تأكيد الدفع`;
+  window.open(`https://wa.me/+201148662218?text=${encodeURIComponent(ownerMsg)}`, '_blank');
+
+  _inspGoStep(3);
+}
+
+function _inspGetWorkingDays() {
+  const result = [];
+  const times  = ['11:00 ص', '11:00 ص', '2:00 م'];
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  while (result.length < 3) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) {
+      const dayLabel  = _INSP_DAY_NAMES[dow];
+      const dateLabel = `${d.getDate()} ${_INSP_MONTH_NAMES[d.getMonth()]}`;
+      const time      = times[result.length];
+      result.push({
+        dayLabel,
+        dateLabel,
+        time,
+        value: `${dayLabel} ${dateLabel} — الساعة ${time}`,
+      });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return result;
+}
+
+/* ================================================================
+   ⭐ صفحة الباقات — Pricing Page Animations
+   ================================================================ */
+
+let _pricingObserver = null;
+
+function initPricingAnimations() {
+  const pg = document.getElementById('pg-pricing');
+  if (!pg) return;
+
+  // trigger hero animations immediately
+  pg.querySelectorAll('.pkg-hero .pkg-anim-down').forEach(el => {
+    el.classList.add('pkg-ready');
+  });
+  pg.querySelector('.pkg-hero')?.classList.add('pkg-anim-in');
+
+  // IntersectionObserver for Trust Bar count-up + other sections
+  if (_pricingObserver) _pricingObserver.disconnect();
+
+  _pricingObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+
+      const el = entry.target;
+
+      // count-up numbers
+      if (el.classList.contains('pkg-trust-num') && !el.dataset.static) {
+        _pkgCountUp(el);
+      }
+
+      // section reveal — trigger parent animation class
+      const section = el.closest('section') || el;
+      section.classList.add('pkg-anim-in');
+
+      // pitch pulse
+      if (el.classList.contains('pkg-pitch')) {
+        el.classList.add('pkg-pitch-pulse');
+      }
+
+      _pricingObserver.unobserve(el);
+    });
+  }, { threshold: 0.15 });
+
+  // observe each animatable element
+  pg.querySelectorAll('.pkg-trust-num').forEach(el => _pricingObserver.observe(el));
+  pg.querySelectorAll('.pkg-cards-section, .pkg-table-section, .pkg-addons-section, .pkg-pitch, .pkg-faq-section, .pkg-cta-banner').forEach(el => _pricingObserver.observe(el));
+}
+
+function _pkgCountUp(el) {
+  const target = parseInt(el.dataset.target, 10);
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  const duration = target > 100 ? 1200 : 800;
+  const step = 16;
+  const increment = target / (duration / step);
+  let current = 0;
+
+  const timer = setInterval(() => {
+    current = Math.min(current + increment, target);
+    el.textContent = prefix + Math.floor(current).toLocaleString('ar-EG') + suffix;
+    if (current >= target) clearInterval(timer);
+  }, step);
 }
 
 /**

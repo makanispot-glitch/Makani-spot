@@ -95,6 +95,7 @@
       <a class="active" onclick="showPage('home')">الرئيسية</a>
       <a onclick="showPage('how')">إزاي بيشتغل؟</a>
       <a onclick="showPage('owner')">عندك مساحة؟</a>
+      <a onclick="showPage('pricing')">الباقات</a>
 
       <div class="nav-divider"></div>
 
@@ -861,6 +862,373 @@
 
 
   <!-- ================================================================
+     📄 صفحة الباقات — اشتراكات أصحاب المساحات
+     ================================================================ -->
+  <div id="pg-pricing" class="page">
+    <div class="pkg-page" dir="rtl">
+
+      <!-- ══ 1. HERO ══ -->
+      <section class="pkg-hero">
+        <div class="pkg-hero-glow" aria-hidden="true"></div>
+        <div class="pkg-hero-inner">
+          <div class="pkg-hero-pill pkg-anim-down" style="--delay:0ms">
+            <span aria-hidden="true">✦</span> خطط تناسب كل حجم مكان
+          </div>
+          <h1 class="pkg-hero-h1 pkg-anim-down" style="--delay:100ms">اختار الخطة اللي تناسبك</h1>
+          <p class="pkg-hero-sub pkg-anim-down" style="--delay:200ms">وابدأ تحوّل مساحاتك الفاضية لدخل ثابت</p>
+          <p class="pkg-hero-note pkg-anim-down" style="--delay:280ms">مفيش عمولة لحد ما الحجز يتأكد — إنت بتدفع بس لما الصفقة تتم</p>
+        </div>
+      </section>
+
+      <!-- ══ 2. TRUST BAR ══ -->
+      <section class="pkg-trust">
+        <div class="pkg-trust-inner">
+          <div class="pkg-trust-item">
+            <span class="pkg-trust-num" data-target="500" data-prefix="+">0</span>
+            <span class="pkg-trust-label">طلب حجز شهرياً</span>
+          </div>
+          <div class="pkg-trust-sep" aria-hidden="true"></div>
+          <div class="pkg-trust-item">
+            <span class="pkg-trust-num" data-static="true">8%</span>
+            <span class="pkg-trust-label">فقط على الصفقات المكتملة</span>
+          </div>
+          <div class="pkg-trust-sep" aria-hidden="true"></div>
+          <div class="pkg-trust-item">
+            <span class="pkg-trust-num" data-target="24" data-suffix=" ساعة">0</span>
+            <span class="pkg-trust-label">للمراجعة والنشر</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 3. PRICING CARDS ══ -->
+      <section class="pkg-cards-section">
+        <div class="pkg-cards-grid">
+
+          <!-- ─ Starter ─ -->
+          <div class="pkg-card pkg-card--starter pkg-anim-up" style="--delay:0ms">
+            <div class="pkg-card-name">Starter</div>
+            <div class="pkg-card-price-wrap">
+              <span class="pkg-card-price">مجاناً</span>
+            </div>
+            <div class="pkg-card-sub">"جرّب بدون أي مخاطرة"</div>
+            <div class="pkg-card-limit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              حتى 2 مساحة · حد أقصى 16م²
+            </div>
+            <ul class="pkg-features-list">
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج المساحات عبر الداشبورد</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ظهور في نتائج البحث</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>استقبال طلبات الحجز</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score — عرض التقييم</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>ERP وإدارة عقود</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>إيجاد مستأجرين</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تسويق على المنصة</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تقارير شهرية</li>
+            </ul>
+            <div class="pkg-card-support">دعم: بريد إلكتروني</div>
+            <button class="btn btn-ghost pkg-card-cta" onclick="showPage('owner')">ابدأ مجاناً</button>
+          </div>
+
+          <!-- ─ Growth ─ -->
+          <div class="pkg-card pkg-card--growth pkg-anim-up" style="--delay:120ms">
+            <div class="pkg-card-name pkg-card-name--accent">Growth — نمو</div>
+            <div class="pkg-card-price-wrap">
+              <span class="pkg-card-price">3,000</span>
+              <span class="pkg-card-currency">ج<span class="pkg-card-period">/شهر</span></span>
+            </div>
+            <div class="pkg-card-sub">"إدارة + تسويق أساسي"</div>
+            <div class="pkg-card-limit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              حتى 8 مساحات · حد أقصى 16م²
+            </div>
+            <ul class="pkg-features-list">
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج حتى 8 مساحات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>أولوية الظهور فوق Starter</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ERP أساسي — عقود + مدفوعات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score كامل + مخالفات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إيجاد مستأجرين — 3/شهر</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>2 منشور شهري على مكاني Spot</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تقرير شهري أساسي</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Badge "موثّق" على صفحة المول</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تصوير AI للمساحات</li>
+            </ul>
+            <div class="pkg-card-support">دعم: واتساب خلال ساعات العمل</div>
+            <a class="btn btn-ghost pkg-card-cta" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth" target="_blank" rel="noopener">تواصل معنا</a>
+          </div>
+
+          <!-- ─ Pro (Featured) ─ -->
+          <div class="pkg-card pkg-card--pro pkg-anim-up" style="--delay:240ms">
+            <div class="pkg-badge-popular">الأكثر طلباً</div>
+            <div class="pkg-card-name pkg-card-name--accent">Pro — احترافي</div>
+            <div class="pkg-card-price-wrap">
+              <span class="pkg-card-price">4,500</span>
+              <span class="pkg-card-currency">ج<span class="pkg-card-period">/شهر</span></span>
+            </div>
+            <div class="pkg-card-sub">"نظام تشغيل متكامل"</div>
+            <div class="pkg-card-limit pkg-card-limit--unlimited">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>
+              غير محدود
+            </div>
+            <ul class="pkg-features-list">
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج غير محدود للمساحات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>أول 3 نتائج دائماً + Featured أسبوعي</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تصوير AI — 3 صور لكل مساحة جديدة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تنظيم طلبات المعاينة + متابعة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ERP كامل + تجديد تلقائي + واتساب</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score + توصية ذكية</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إيجاد مستأجرين بنشاط محدد</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>4 منشورات + Email/WhatsApp Campaign</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تقرير AI شهري + توقعات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>دعم تنظيم البازار + موردين</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>دعم 9ص–11م + رد خلال ساعة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>مدير حساب مخصص + call شهري</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Badge "شريك معتمد" بعد 3 أشهر</li>
+            </ul>
+            <div class="pkg-card-support">دعم واتساب مخصص 9ص – 11م</div>
+            <a class="btn btn-primary pkg-card-cta pkg-card-cta--pro" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank" rel="noopener">تواصل معنا</a>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ══ 4. COMPARISON TABLE ══ -->
+      <section class="pkg-table-section">
+        <h2 class="pkg-section-title">مقارنة تفصيلية بين الباقات</h2>
+        <div class="pkg-table-wrap">
+          <table class="pkg-table" role="table">
+            <thead>
+              <tr>
+                <th class="pkg-th pkg-th--feature">الخدمة</th>
+                <th class="pkg-th">Starter<br><span class="pkg-th-sub">مجاناً</span></th>
+                <th class="pkg-th">Growth<br><span class="pkg-th-sub">3,000 ج/شهر</span></th>
+                <th class="pkg-th pkg-th--pro">Pro<br><span class="pkg-th-sub">4,500 ج/شهر</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- الإدراج والظهور -->
+              <tr class="pkg-tr-group"><td colspan="4">الإدراج والظهور</td></tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">إدراج المساحات</td>
+                <td class="pkg-td pkg-td--val">2 مساحة / 16م²</td>
+                <td class="pkg-td pkg-td--val">8 مساحات / 16م²</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">غير محدود</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">أولوية الظهور</td>
+                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted">عادي</span></td>
+                <td class="pkg-td pkg-td--val">مرتفعة</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">قصوى (أول 3 دائماً)</td>
+              </tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">Featured في الهوم</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">أسبوعياً</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">Badge الموثوقية</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val">موثّق</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">شريك معتمد</td>
+              </tr>
+              <!-- التسويق -->
+              <tr class="pkg-tr-group"><td colspan="4">التسويق والإيجاد</td></tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">إيجاد مستأجرين</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val">3 شهرياً</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">محدد بالنشاط المطلوب</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">منشورات تسويقية</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val">2 منشور/شهر</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">4 + Email/WhatsApp Campaign</td>
+              </tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">تصوير AI</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">3 صور لكل مساحة جديدة</td>
+              </tr>
+              <!-- ERP -->
+              <tr class="pkg-tr-group"><td colspan="4">الإدارة والـ ERP</td></tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">استقبال طلبات الحجز</td>
+                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted">بدون إدارة</span></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">✓ + متابعة المعاينة</td>
+              </tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">إدارة العقود</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">✓ + تجديد تلقائي</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">تسجيل المدفوعات</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              </tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">تنبيهات انتهاء العقد</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">✓ واتساب تلقائي</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">تسجيل المخالفات</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              </tr>
+              <!-- Tenant Score -->
+              <tr class="pkg-tr-group"><td colspan="4">Tenant Score</td></tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">تقييم المستأجر</td>
+                <td class="pkg-td pkg-td--val">عرض فقط</td>
+                <td class="pkg-td pkg-td--val">تاريخ كامل + مخالفات</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">درجة + توصية ذكية</td>
+              </tr>
+              <!-- التقارير -->
+              <tr class="pkg-tr-group"><td colspan="4">التقارير</td></tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">تقرير شهري</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val">أساسي</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">AI كامل + توقعات الشهر</td>
+              </tr>
+              <!-- الدعم -->
+              <tr class="pkg-tr-group"><td colspan="4">الدعم</td></tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">قناة الدعم</td>
+                <td class="pkg-td pkg-td--val">إيميل</td>
+                <td class="pkg-td pkg-td--val">واتساب ساعات العمل</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">واتساب مخصص 9ص–11م</td>
+              </tr>
+              <tr class="pkg-tr pkg-tr--alt">
+                <td class="pkg-td pkg-td--label">مدير حساب مخصص</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">✓ Call شهري 30 دقيقة</td>
+              </tr>
+              <!-- البازارات -->
+              <tr class="pkg-tr-group"><td colspan="4">البازارات</td></tr>
+              <tr class="pkg-tr">
+                <td class="pkg-td pkg-td--label">دعم تنظيم البازار</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro">قوائم موردين + إدارة حجوزات</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ══ 5. ADD-ONS ══ -->
+      <section class="pkg-addons-section">
+        <h2 class="pkg-section-title">➕ خدمات إضافية — لأي باقة</h2>
+        <div class="pkg-addons-grid">
+          <div class="pkg-addon pkg-anim-slide" style="--delay:0ms">
+            <div class="pkg-addon-ico">📸</div>
+            <div class="pkg-addon-name">تصوير AI لمساحات موجودة</div>
+            <div class="pkg-addon-price">300 ج<span class="pkg-addon-unit">/مساحة</span></div>
+          </div>
+          <div class="pkg-addon pkg-anim-slide" style="--delay:80ms">
+            <div class="pkg-addon-ico">🎪</div>
+            <div class="pkg-addon-name">تنظيم بازار — قوائم فقط</div>
+            <div class="pkg-addon-price">1,500 ج<span class="pkg-addon-unit">/بازار</span></div>
+          </div>
+          <div class="pkg-addon pkg-anim-slide" style="--delay:160ms">
+            <div class="pkg-addon-ico">🏆</div>
+            <div class="pkg-addon-name">تنظيم بازار كامل مع مكاني</div>
+            <div class="pkg-addon-price">25%<span class="pkg-addon-unit"> من الإيرادات</span></div>
+          </div>
+          <div class="pkg-addon pkg-anim-slide" style="--delay:240ms">
+            <div class="pkg-addon-ico">🔗</div>
+            <div class="pkg-addon-name">حجوزات بازار عبر المنصة</div>
+            <div class="pkg-addon-price">10%<span class="pkg-addon-unit"> من كل حجز</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 6. PITCH BANNER ══ -->
+      <section class="pkg-pitch">
+        <div class="pkg-pitch-inner">
+          <div class="pkg-pitch-icon" aria-hidden="true">🏪</div>
+          <p class="pkg-pitch-main">كيوسك فاضي شهر واحد = <span class="pkg-pitch-loss">6,000 – 15,000 ج خسارة</span></p>
+          <p class="pkg-pitch-compare">باقة Pro = <span class="pkg-pitch-pro-price">4,500 ج</span></p>
+          <p class="pkg-pitch-note">أقل من تكلفة مساحة فاضية واحدة شهر واحد</p>
+        </div>
+      </section>
+
+      <!-- ══ 7. FAQ ══ -->
+      <section class="pkg-faq-section">
+        <h2 class="pkg-section-title">الأسئلة الشائعة</h2>
+        <div class="pkg-faq-list">
+
+          <details class="pkg-faq-item">
+            <summary class="pkg-faq-q">
+              إيه الفرق بين Growth وPro؟
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="pkg-faq-a">Growth بيديك الأدوات تشتغل بنفسك. Pro بيديك مدير حساب بيعمل التشغيل نيابةً عنك — ويتابعك شهرياً بتقرير AI ومراجعة مباشرة.</div>
+          </details>
+
+          <details class="pkg-faq-item">
+            <summary class="pkg-faq-q">
+              هل ممكن أغير الباقة بعدين؟
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="pkg-faq-a">أيوه، تقدر تترقى لأي وقت. مفيش عقود طويلة — كل شيء شهري وتقدر تغير في أي لحظة.</div>
+          </details>
+
+          <details class="pkg-faq-item">
+            <summary class="pkg-faq-q">
+              إيه المقصود بـ "حد 16م²" في Starter وGrowth؟
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="pkg-faq-a">كل مساحة بتدرجها لازم تكون 16م² أو أقل. المساحات الأكبر متاحة في Pro مع مدير الحساب اللي بيساعدك في الإدراج.</div>
+          </details>
+
+          <details class="pkg-faq-item">
+            <summary class="pkg-faq-q">
+              هل العمولة 8% بتتحسب على السعر بعد الخصم؟
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="pkg-faq-a">العمولة بتتحسب على القيمة الفعلية للعقد المكتمل فقط — مش على أي مفاوضات أو عروض غير مكتملة.</div>
+          </details>
+
+          <details class="pkg-faq-item">
+            <summary class="pkg-faq-q">
+              هل في تجربة مجانية للـ Growth؟
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="pkg-faq-a">Starter مجاني تماماً كتجربة. Growth وPro بيبدأوا بمحادثة معنا عشان نتأكد إن الخطة تناسب حجم مكانك واحتياجاتك.</div>
+          </details>
+
+        </div>
+      </section>
+
+      <!-- ══ 8. CTA FOOTER BANNER ══ -->
+      <section class="pkg-cta-banner">
+        <h2 class="pkg-cta-title">جاهز تحوّل مساحاتك؟</h2>
+        <p class="pkg-cta-sub">ابدأ بـ Starter مجاناً — أو تكلمنا عشان نختار الباقة الصح ليك</p>
+        <div class="pkg-cta-btns">
+          <button class="btn btn-ghost pkg-cta-btn" onclick="showPage('owner')">ابدأ مجاناً</button>
+          <a class="btn btn-primary pkg-cta-btn" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقات مكاني Spot" target="_blank" rel="noopener">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            تكلمنا على واتساب
+          </a>
+        </div>
+      </section>
+
+    </div><!-- end pkg-page -->
+  </div><!-- end pg-pricing -->
+
+
+  <!-- ================================================================
      📄 صفحة الماركت بليس (كل المساحات) — من الكود الأول
      ================================================================ -->
   <div id="pg-market" class="page">
@@ -1500,6 +1868,149 @@
   </div>
 
   <!-- ================================================================
+     🔍 مودال المعاينة — 3 خطوات
+     ================================================================ -->
+  <div class="modal-overlay" id="inspection-modal" onclick="closeInspModalOnBg(event)">
+    <div class="modal insp-modal">
+
+      <!-- ── شريط الخطوات ── -->
+      <div class="insp-steps-bar">
+        <div class="insp-step-node active" id="insp-dot-1">
+          <div class="insp-step-circle">١</div>
+          <div class="insp-step-lbl">البيانات</div>
+        </div>
+        <div class="insp-step-line" id="insp-line-1"></div>
+        <div class="insp-step-node" id="insp-dot-2">
+          <div class="insp-step-circle">٢</div>
+          <div class="insp-step-lbl">الدفع</div>
+        </div>
+        <div class="insp-step-line" id="insp-line-2"></div>
+        <div class="insp-step-node" id="insp-dot-3">
+          <div class="insp-step-circle">٣</div>
+          <div class="insp-step-lbl">التأكيد</div>
+        </div>
+        <button class="modal-close insp-close-btn" onclick="closeInspectionModal()" aria-label="إغلاق">×</button>
+      </div>
+
+      <!-- ══ Step 1: الفورم ══ -->
+      <div id="insp-step-1" class="insp-step-body">
+        <div class="insp-header">
+          <div class="insp-header-ico">🔍</div>
+          <div>
+            <div class="insp-header-title">احجز معاينة</div>
+            <div class="insp-header-space" id="insp-space-name">—</div>
+          </div>
+        </div>
+        <div class="insp-fee-note">
+          رسوم المعاينة <strong>150 ج</strong> · بترجعلك لو اكملت الحجز بعدين
+        </div>
+        <div class="mfg-2" style="gap:10px;margin-bottom:12px">
+          <div class="mfg" style="margin:0">
+            <label>الاسم الكامل *</label>
+            <input type="text" id="insp-name" placeholder="اسمك كامل">
+          </div>
+          <div class="mfg" style="margin:0">
+            <label>رقم الهاتف *</label>
+            <input type="tel" id="insp-phone" placeholder="01xxxxxxxxx" dir="ltr">
+          </div>
+        </div>
+        <div class="mfg" style="margin-bottom:14px">
+          <label>النشاط التجاري *</label>
+          <select id="insp-activity">
+            <option value="">اختر نشاطك</option>
+          </select>
+        </div>
+        <div class="mfg" style="margin-bottom:6px">
+          <label>اختر موعد المعاينة *</label>
+          <div class="insp-dates-grid" id="insp-dates-grid"></div>
+        </div>
+        <div class="form-error" id="insp-error" style="margin-bottom:4px"></div>
+        <button class="btn btn-primary" onclick="_inspSubmitForm()"
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg)">
+          التالي — متابعة للدفع ←
+        </button>
+      </div>
+
+      <!-- ══ Step 2: تعليمات الدفع ══ -->
+      <div id="insp-step-2" class="insp-step-body" style="display:none">
+        <div class="insp-s2-title">💳 ادفع رسوم المعاينة</div>
+        <div class="insp-s2-sub">حوّل 150 ج على انستاباي ثم ابعت صورة التحويل على واتساب</div>
+
+        <div class="insp-pay-box">
+          <div class="insp-pay-logo-row">
+            <span class="insp-pay-logo-txt">InstaPay</span>
+            <span class="insp-pay-amount-badge">150 ج</span>
+          </div>
+          <div class="insp-pay-num-row">
+            <span class="insp-pay-num">01148662218</span>
+            <button class="insp-copy-btn" id="insp-copy-num-btn" onclick="_inspCopyNumber()">نسخ</button>
+          </div>
+        </div>
+
+        <div class="insp-steps-list">
+          <div class="insp-list-item">
+            <span class="insp-list-num">١</span>
+            <span>اتحول 150 ج على الرقم اللي فوق</span>
+          </div>
+          <div class="insp-list-item">
+            <span class="insp-list-num">٢</span>
+            <span>خد سكرين شوت للتحويل</span>
+          </div>
+          <div class="insp-list-item">
+            <span class="insp-list-num">٣</span>
+            <span>ابعت الصورة على واتساب من الزرار ده:</span>
+          </div>
+        </div>
+
+        <a class="insp-wa-btn" id="insp-wa-link" href="#" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+          </svg>
+          افتح واتساب وابعت الصورة
+        </a>
+
+        <button class="btn btn-primary" onclick="_inspConfirm()"
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:10px">
+          بعدت الصورة؟ تأكيد ←
+        </button>
+        <button onclick="_inspGoStep(1)"
+          style="width:100%;padding:10px;font-size:13px;margin-top:8px;background:transparent;border:none;color:var(--ink3);cursor:pointer;font-family:var(--font-display,'Cairo',sans-serif)">
+          ← عودة لتعديل البيانات
+        </button>
+      </div>
+
+      <!-- ══ Step 3: التأكيد ══ -->
+      <div id="insp-step-3" class="insp-step-body" style="display:none">
+        <div class="insp-confirm-ico">✅</div>
+        <div class="insp-confirm-title">تم استلام طلب المعاينة!</div>
+        <div class="insp-confirm-sub">سيتم التواصل معك خلال 24 ساعة</div>
+
+        <div class="insp-id-box">
+          <div class="insp-id-label">رقم الطلب</div>
+          <div class="insp-id-row">
+            <span class="insp-id-val" id="insp-id-val">INS-000000</span>
+            <button class="insp-copy-btn" id="insp-copy-id-btn" onclick="_inspCopyId()">نسخ</button>
+          </div>
+        </div>
+
+        <div class="insp-confirm-details" id="insp-confirm-details"></div>
+
+        <div class="insp-confirm-note">
+          ⏰ هتوصلك رسالة واتساب بتأكيد الموعد خلال 24 ساعة
+        </div>
+
+        <button class="btn btn-primary" onclick="closeInspectionModal()"
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:20px">
+          🏠 تمام، شكراً ←
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ================================================================
      📄 الصفحة الثامنة: تفاصيل المساحة الرئيسية + الوحدات الفرعية
      ================================================================ -->
   <div id="pg-space-detail" class="page">
@@ -1533,11 +2044,14 @@
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
       <div class="sd-sticky-footer">
+        <button class="btn btn-ghost sd-insp-btn" onclick="currentSpaceDetail && openInspectionModal(currentSpaceDetail.id)">
+          🔍 احجز معاينة
+        </button>
         <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
-          احجز هذا المكان ←
+          احجز الآن ←
         </button>
         <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()">
-          → العودة للمساحات
+          → العودة
         </button>
       </div>
 
@@ -1574,6 +2088,7 @@
         <a class="sf-link" href="/market/">مشاريع كاملة للبيع</a>
         <a class="sf-link" href="/catalog/">كتالوج الأنشطة</a>
         <a class="sf-link" href="/post-ad/">نشر إعلانك</a>
+        <a class="sf-link" onclick="showPage('pricing')" style="cursor:pointer">باقات أصحاب المساحات</a>
       </div>
 
       <!-- العمود الثالث: التواصل والقانون -->
@@ -1609,7 +2124,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="app.js?v=202605241835" defer></script>
+  <script src="app.js?v=202605261956" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
