@@ -1107,6 +1107,129 @@ function closeModalOnBg(e) {
   if (e.target === document.getElementById('booking-modal')) closeModal();
 }
 
+/* ================================================================
+   📅 حجز المعاينة — Viewing System
+   ================================================================ */
+
+let _viewingSpaceId = null;
+
+function openViewing(spaceId) {
+  const s = SPACES.find(x => x.id === spaceId);
+  if (!s) return;
+  _viewingSpaceId = spaceId;
+
+  // بيانات المساحة في الموديل
+  document.getElementById('vm-space-name').textContent = s.name || '—';
+  document.getElementById('vm-space-loc').textContent  = s.loc  ? '📍 ' + s.loc : '—';
+
+  // تعبئة الاسم والموبايل لو المستخدم مسجل
+  if (currentUser) {
+    const nameEl  = document.getElementById('vm-name');
+    const phoneEl = document.getElementById('vm-phone');
+    if (nameEl)  nameEl.value  = currentProfile?.full_name || currentUser.user_metadata?.full_name || '';
+    if (phoneEl) phoneEl.value = currentProfile?.phone || '';
+  } else {
+    ['vm-name', 'vm-phone'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  // تاريخ افتراضي = بكره
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateEl = document.getElementById('vm-date');
+  if (dateEl) {
+    dateEl.min   = tomorrow.toISOString().split('T')[0];
+    dateEl.value = '';
+  }
+
+  // إظهار الفورم وإخفاء النجاح
+  document.getElementById('vm-form-wrap').style.display = 'block';
+  document.getElementById('vm-success').style.display   = 'none';
+  document.getElementById('vm-error').style.display     = 'none';
+
+  document.getElementById('visit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeViewingModal() {
+  document.getElementById('visit-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  _viewingSpaceId = null;
+}
+
+function closeViewingOnBg(e) {
+  if (e.target === document.getElementById('visit-modal')) closeViewingModal();
+}
+
+async function submitViewing() {
+  const name  = document.getElementById('vm-name').value.trim();
+  const phone = document.getElementById('vm-phone').value.trim();
+  const date  = document.getElementById('vm-date').value;
+
+  const errEl = document.getElementById('vm-error');
+  const show  = msg => { errEl.textContent = '⚠ ' + msg; errEl.style.display = 'block'; };
+
+  if (!name)  { show('من فضلك ادخل اسمك الكريم'); return; }
+  if (!phone || phone.replace(/\D/g,'').length < 10) {
+    show('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('vm-submit-btn');
+  btn.innerHTML = '⏳ جاري الإرسال…';
+  btn.disabled  = true;
+
+  const s = SPACES.find(x => x.id === _viewingSpaceId);
+  const payload = {
+    type:      'viewing',
+    name, phone,
+    spaceName: s?.name || '',
+    spaceLoc:  s?.loc  || '',
+    date,
+    userId:    currentUser?.id || '',
+    viewingId: crypto.randomUUID(),
+  };
+
+  try {
+    // إرسال لـ Google Sheets (نفس رابط الحجز)
+    try {
+      await fetch(BOOKING_URL, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+    } catch (_) {}
+
+    // حفظ في Supabase لو مسجل
+    if (sbClient && currentUser) {
+      await sbClient.from('bookings').insert({
+        id:         payload.viewingId,
+        user_id:    currentUser.id,
+        space_name: payload.spaceName,
+        space_loc:  payload.spaceLoc,
+        activity:   'معاينة',
+        duration:   'معاينة - 150 ج',
+        start_date: date || null,
+        notes:      'طلب معاينة — ١٥٠ ج.م.',
+        status:     'viewing_pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    document.getElementById('vm-form-wrap').style.display = 'none';
+    document.getElementById('vm-success').style.display   = 'block';
+
+  } catch (err) {
+    btn.innerHTML = 'تأكيد طلب المعاينة ←';
+    btn.disabled  = false;
+    show('في مشكلة في الإرسال — تأكد من الاتصال بالإنترنت وحاول تاني');
+  }
+}
+
 async function submitBooking() {
   const name     = document.getElementById('bk-name').value.trim();
   const phone    = document.getElementById('bk-phone').value.trim();

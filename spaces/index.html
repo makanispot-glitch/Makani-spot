@@ -111,6 +111,184 @@
     }
     .sd-back-btn-footer:focus-visible { outline: none; box-shadow: var(--ring-focus); }
 
+    /* ── زرار المعاينة ── */
+    .sd-visit-btn {
+      border-radius: var(--radius-pill) !important;
+      background: transparent;
+      border: 1.8px solid var(--orange, #F36418);
+      color: var(--orange, #F36418);
+      font-weight: 700;
+      transition: all var(--dur-fast, 0.15s) var(--ease-out, ease);
+      white-space: nowrap;
+    }
+    .sd-visit-btn:hover {
+      background: rgba(243,100,24,0.08);
+      transform: translateY(-1px);
+    }
+
+    /* ── موديل المعاينة ── */
+    .visit-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .visit-modal-overlay.open { display: flex; }
+    .visit-modal {
+      background: var(--surface, #fff);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+      animation: vmSlide 0.28s cubic-bezier(.34,1.36,.64,1);
+    }
+    @keyframes vmSlide {
+      from { opacity:0; transform:translateY(24px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0)   scale(1); }
+    }
+    .vm-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 22px 22px 0;
+    }
+    .vm-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--fg-1, #1a1a1a);
+      margin-bottom: 2px;
+    }
+    .vm-sub { font-size: 12px; color: var(--fg-3, #888); }
+    .vm-close {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--bg-2, #f4f4f4);
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-2, #555);
+      transition: background 0.15s;
+    }
+    .vm-close:hover { background: var(--bg-3, #e8e8e8); }
+    .vm-fee-box {
+      margin: 16px 22px 0;
+      background: linear-gradient(135deg, rgba(243,100,24,0.07), rgba(243,100,24,0.03));
+      border: 1.5px solid rgba(243,100,24,0.22);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .vm-fee-title {
+      font-size: 13px; font-weight: 800;
+      color: var(--orange, #F36418);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .vm-fee-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--fg-2, #555);
+      margin-bottom: 5px; line-height: 1.5;
+    }
+    .vm-fee-row:last-child { margin-bottom: 0; }
+    .vm-fee-ico { font-size: 14px; flex-shrink: 0; }
+    .vm-pay-methods {
+      margin: 10px 0 0;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .vm-pay-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface, #fff);
+      border: 1px solid rgba(243,100,24,0.18);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .vm-pay-label { color: var(--fg-2, #555); flex: 1; font-weight: 600; }
+    .vm-pay-num {
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--fg-1, #1a1a1a);
+      letter-spacing: 0.03em;
+    }
+    .vm-body { padding: 16px 22px 22px; }
+    .vm-field { margin-bottom: 12px; }
+    .vm-field label {
+      display: block;
+      font-size: 11px; font-weight: 700;
+      color: var(--fg-3, #888);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+    .vm-field input {
+      width: 100%;
+      background: var(--bg-2, #f7f7f7);
+      border: 1.5px solid var(--border, #e0e0e0);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--fg-1, #1a1a1a);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .vm-field input:focus { border-color: var(--orange, #F36418); }
+    .vm-space-box {
+      background: var(--bg-2, #f7f7f7);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .vm-space-name { font-weight: 800; color: var(--fg-1, #1a1a1a); }
+    .vm-space-loc  { font-size: 11px; color: var(--fg-3, #888); margin-top: 2px; }
+    .vm-error {
+      color: #e53e3e; font-size: 12px; font-weight: 600;
+      margin-bottom: 10px; display: none;
+    }
+    .vm-submit {
+      width: 100%; padding: 14px;
+      background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
+      color: #fff; border: none;
+      border-radius: 50px;
+      font-size: 15px; font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(243,100,24,0.30);
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .vm-submit:hover { background: linear-gradient(180deg,#E66520,#D9510A); transform: translateY(-1px); }
+    .vm-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .vm-hint {
+      text-align: center; font-size: 11px;
+      color: var(--fg-3, #888); margin-top: 8px; line-height: 1.5;
+    }
+    .vm-success {
+      display: none; text-align: center; padding: 40px 24px;
+    }
+    .vm-success-circle {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      color: #fff; font-size: 30px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(34,197,94,0.30);
+    }
+    .vm-success-title { font-size: 18px; font-weight: 900; color: var(--fg-1,#1a1a1a); margin-bottom: 8px; }
+    .vm-success-body  { font-size: 13px; color: var(--fg-2,#555); line-height: 1.7; margin-bottom: 20px; }
+    .vm-success-body strong { color: var(--orange, #F36418); }
+
     /* ── كارد المساحة: hover warm border ── */
     .space-card:hover { border-color: var(--warm-300); }
 
@@ -398,6 +576,9 @@
         <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
           احجز هذا المكان ←
         </button>
+        <button class="btn sd-visit-btn" onclick="currentSpaceDetail && openViewing(currentSpaceDetail.id)">
+          📅 حجز معاينة
+        </button>
         <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()">
           → العودة للمساحات
         </button>
@@ -406,6 +587,99 @@
     </div>
   </div><!-- end pg-space-detail -->
 
+
+  <!-- ================================================================
+     📅 مودال حجز المعاينة
+     ================================================================ -->
+  <div class="visit-modal-overlay" id="visit-modal" onclick="closeViewingOnBg(event)">
+    <div class="visit-modal">
+
+      <!-- حالة الفورم -->
+      <div id="vm-form-wrap">
+        <div class="vm-header">
+          <div>
+            <div class="vm-title">📅 حجز معاينة</div>
+            <div class="vm-sub">شوف المساحة بعينك قبل ما تقرر</div>
+          </div>
+          <button class="vm-close" onclick="closeViewingModal()">×</button>
+        </div>
+
+        <!-- بيانات المساحة -->
+        <div style="padding: 12px 22px 0">
+          <div class="vm-space-box">
+            <div class="vm-space-name" id="vm-space-name">—</div>
+            <div class="vm-space-loc"  id="vm-space-loc">—</div>
+          </div>
+        </div>
+
+        <!-- صندوق الرسوم وطريقة الدفع -->
+        <div class="vm-fee-box">
+          <div class="vm-fee-title">💳 رسوم المعاينة — ١٥٠ ج.م.</div>
+          <div class="vm-fee-row">
+            <span class="vm-fee-ico">✅</span>
+            <span>المبلغ بيتحسب كاملاً من <strong>أول شهر إيجار</strong> عند توقيع العقد</span>
+          </div>
+          <div class="vm-fee-row">
+            <span class="vm-fee-ico">📌</span>
+            <span>ادفع الرسوم <strong>قبل</strong> موعد المعاينة — الموعد مش بيتأكد غير بعد الاستلام</span>
+          </div>
+          <div class="vm-pay-methods">
+            <div class="vm-pay-row">
+              <span class="vm-fee-ico">📲</span>
+              <span class="vm-pay-label">InstaPay</span>
+              <span class="vm-pay-num">01103467711</span>
+            </div>
+            <div class="vm-pay-row">
+              <span class="vm-fee-ico">📱</span>
+              <span class="vm-pay-label">Vodafone Cash</span>
+              <span class="vm-pay-num">01103467711</span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3,#888);margin-top:8px;line-height:1.5">
+            * بعد التحويل ابعت صورة الإيصال على الواتساب وهيتم تأكيد موعدك.
+          </div>
+        </div>
+
+        <!-- الفورم -->
+        <div class="vm-body">
+          <div class="vm-field">
+            <label>الاسم الكريم *</label>
+            <input type="text" id="vm-name" placeholder="اسمك الكريم">
+          </div>
+          <div class="vm-field">
+            <label>رقم الموبايل *</label>
+            <input type="tel" id="vm-phone" placeholder="01xxxxxxxxx" dir="ltr">
+          </div>
+          <div class="vm-field">
+            <label>تاريخ المعاينة المقترح (اختياري)</label>
+            <input type="date" id="vm-date">
+          </div>
+          <div class="vm-error" id="vm-error"></div>
+          <button class="vm-submit" id="vm-submit-btn" onclick="submitViewing()">
+            تأكيد طلب المعاينة ←
+          </button>
+          <div class="vm-hint">
+            هيتواصل معاك فريق مكاني Spot خلال <strong>٢٤ ساعة</strong> لتأكيد الموعد
+          </div>
+        </div>
+      </div>
+
+      <!-- حالة النجاح -->
+      <div class="vm-success" id="vm-success">
+        <div class="vm-success-circle">✓</div>
+        <div class="vm-success-title">اتبعت طلبك بنجاح!</div>
+        <div class="vm-success-body">
+          شكراً — فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong>٢٤ ساعة</strong> لتأكيد موعد المعاينة.<br><br>
+          تذكر تحول <strong>١٥٠ ج.م.</strong> على InstaPay أو Vodafone Cash<br>
+          على رقم <strong>01103467711</strong> وتبعت صورة الإيصال.
+        </div>
+        <button class="vm-submit" onclick="closeViewingModal()" style="max-width:200px;margin:0 auto">
+          تمام، شكراً ←
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ================================================================
      📋 مودال الحجز
@@ -838,7 +1112,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="app.js?v=202605261956" defer></script>
+  <script src="app.js?v=202605262011" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
