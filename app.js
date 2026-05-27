@@ -126,23 +126,37 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ================================================================
-   ✨ Animation: ظهور بطاقات المسارات عند التمرير
+   ✨ Animation: ظهور بطاقات المسارات والعناصر التفاعلية عند التمرير
    ================================================================ */
 function initPathAnimation() {
   if (!window.IntersectionObserver) {
     /* fallback للمتصفحات القديمة: أظهر الكل فوراً */
     document.querySelectorAll('.path-anim').forEach(el => el.classList.add('path-in'));
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('revealed'));
     return;
   }
-  const obs = new IntersectionObserver((entries) => {
+  
+  // 1. مراقبة بطاقات المسارات (Path Cards)
+  const pathObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         e.target.classList.add('path-in');
-        obs.unobserve(e.target);
+        pathObs.unobserve(e.target);
       }
     });
   }, { threshold: 0.12 });
-  document.querySelectorAll('.path-anim').forEach(el => obs.observe(el));
+  document.querySelectorAll('.path-anim').forEach(el => pathObs.observe(el));
+
+  // 2. مراقبة أقسام الصفحة الرئيسية (Scroll Reveal)
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('revealed');
+        revealObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObs.observe(el));
 }
 
 

@@ -194,13 +194,20 @@
   <!-- روابط التنقل + أزرار الأقسام الثلاثة -->
   <div class="nav-links">
     <a href="/">الرئيسية</a>
-    <a href="/?p=how">إزاي بيشتغل؟</a>
+    <a href="/?p=how">كيف تعمل المنصة؟</a>
     <a href="/?p=owner">عندك مساحة؟</a>
 
     <div class="nav-divider"></div>
 
     <a class="nav-section-btn" id="nsb-spaces" href="/spaces/">
-      <span class="nsb-icon">◈</span>
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 7h20l-2 4H4Z"/>
+          <path d="M4 11v9h16v-9"/>
+          <path d="M9 20v-6h6v6"/>
+        </svg>
+      </span>
       <span class="nsb-text">
         <strong>كل المساحات</strong>
         <small>ابحث عن مساحة لمشروعك</small>
@@ -210,11 +217,8 @@
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M2 7h20"/>
-          <path d="M5 7 7 3h10l2 4"/>
-          <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
-          <path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/>
-          <rect x="9" y="14" width="6" height="7"/>
+          <path d="M3.5 21h17L12 3 3.5 21Z"/>
+          <path d="M12 3v18"/>
         </svg>
       </span>
       <span class="nsb-text">
@@ -226,13 +230,13 @@
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
-          <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>
+          <path d="M20.5 13 13 20.5a2 2 0 0 1-2.8 0L3 13.2V3h10.2L20.5 10a2 2 0 0 1 0 3Z"/>
+          <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
         </svg>
       </span>
       <span class="nsb-text">
         <strong>مشاريع للبيع</strong>
-        <small>دور على مشروع تشتريه</small>
+        <small>ابحث عن مشروع جاهز</small>
       </span>
     </a>
   </div>
@@ -264,8 +268,8 @@
     <div class="bz-market-hero">
       <div class="bz-market-hero-bg"></div>
       <div class="bz-market-hero-inner">
-        <div class="bz-market-hero-title">جميع البازارات المتاحة</div>
-        <div class="bz-market-hero-sub">احجز مكانك في البازار القادم — اختار الوقت والموقع المناسب</div>
+        <div class="bz-market-hero-title">البازارات — جرّب مشروعك بدون مخاطرة</div>
+        <div class="bz-market-hero-sub">احجز مكانك في البازار القادم واختر الوقت والموقع المناسب</div>
       </div>
     </div>
 
@@ -273,7 +277,9 @@
     <div class="bz-search-bar">
       <div class="bz-search-bar-inner">
         <div class="bz-search-input-wrap">
-          <span class="bz-search-ico">🔍</span>
+          <span class="bz-search-ico">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </span>
           <input type="text" id="bz-search"
                  class="bz-search-input"
                  placeholder="ابحث عن بازار… (الاسم، المكان، الفئة)"
@@ -357,7 +363,7 @@
           </select>
         </div>
 
-        <button class="bz-fbar-clear" onclick="clearBzFilters()">🗑 مسح الكل</button>
+        <button class="bz-fbar-clear" onclick="clearBzFilters()">مسح الكل</button>
 
       </div>
     </div>
@@ -414,8 +420,8 @@
         <!-- هيدر البانل -->
         <div class="bz-bp-header">
           <div>
-            <div class="bz-bp-title">✍️ تأكيد حجز المكان</div>
-            <div class="bz-bp-slot-info" id="bzd-slot-info">اختار مكان من الخريطة أعلاه</div>
+            <div class="bz-bp-title">تأكيد حجز المكان</div>
+            <div class="bz-bp-slot-info" id="bzd-slot-info">اختر مكاناً من الخريطة أعلاه</div>
           </div>
           <button class="bz-bp-close" onclick="clearSlotSelection()" title="إلغاء الاختيار">×</button>
         </div>
@@ -454,7 +460,7 @@
           <!-- بلوك ضمان العربون -->
           <div class="escrow-block">
             <div class="escrow-header">
-              🔒 عربونك محمي بضمان مكاني Spot
+              عربونك محمي بضمان مكاني Spot
             </div>
             <div class="escrow-items">
               <div class="escrow-item">بتدفع العربون لـ <strong>مكاني</strong> (مش للمنظم)</div>
@@ -492,9 +498,9 @@
       </div>
       <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
       <div class="sf-paths">
-        <span class="sf-path">🏪 مساحات تجارية</span>
-        <span class="sf-path">🎪 بازارات ومعارض</span>
-        <span class="sf-path">💼 مشاريع للبيع</span>
+        <span class="sf-path">مساحات تجارية</span>
+        <span class="sf-path">بازارات ومعارض</span>
+        <span class="sf-path">مشاريع للبيع</span>
       </div>
     </div>
     <div class="sf-col sf-col--links">
@@ -562,17 +568,12 @@
   <button class="bn-item active" id="bn-bazaars" onclick="window.location.href='/bazaars/'">
     <span class="bn-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2 7h20"/>
-        <path d="M5 7 7 3h10l2 4"/>
-        <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
-        <path d="M5 21V11"/>
-        <path d="M19 21V11"/>
-        <path d="M5 21h14"/>
-        <rect x="9" y="14" width="6" height="7"/>
+        <path d="M3.5 21h17L12 3 3.5 21Z"/>
+        <path d="M12 3v18"/>
       </svg>
     </span>
     <span class="bn-label">بازارات</span>
-    <span class="bn-desc">معارض مؤقتة</span>
+    <span class="bn-desc">أحداث وبازارات</span>
   </button>
 
   <!-- مشاريع للبيع -->
@@ -601,7 +602,7 @@
 
 </nav>
 
-<script src="app.js?v=202605262011" defer></script>
+<script src="app.js?v=202605270323" defer></script>
 </body>
 </html>
 

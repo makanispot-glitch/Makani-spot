@@ -1066,7 +1066,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   transition: all var(--dur-fast) var(--ease-out);
 }
 .eq-quick-link:hover { border-color: var(--orange); background: var(--orange-ultra); }
-.eq-ql-icon { font-size: 22px; color: var(--orange); flex-shrink: 0; }
+.eq-ql-icon { font-size: 22px; color: var(--orange); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.eq-ql-icon svg { width: 22px; height: 22px; }
 .eq-ql-text { flex: 1; }
 .eq-ql-text strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 2px; }
 .eq-ql-text small { font-size: 12px; color: var(--ink3); }
@@ -1198,10 +1199,11 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   font-family: var(--font-body); font-size: 13px;
 }
 .eq-free-bar-icon {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   background: rgba(243,100,24,0.12); display: flex; align-items: center;
-  justify-content: center; font-size: 14px; flex-shrink: 0;
+  justify-content: center; flex-shrink: 0; color: var(--orange);
 }
+.eq-free-bar-icon svg { width: 18px; height: 18px; }
 .eq-free-bar-text { flex: 1; color: var(--ink2); line-height: 1.4; }
 .eq-free-bar-text strong { color: var(--orange); font-weight: 800; }
 .eq-free-bar-btn {
@@ -1289,13 +1291,20 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <!-- روابط التنقل + أزرار الأقسام الثلاثة -->
   <div class="nav-links">
     <a href="/">الرئيسية</a>
-    <a href="/?p=how">إزاي بيشتغل؟</a>
+    <a href="/?p=how">كيف تعمل المنصة؟</a>
     <a href="/?p=owner">عندك مساحة؟</a>
 
     <div class="nav-divider"></div>
 
     <a class="nav-section-btn" id="nsb-spaces" href="/spaces/">
-      <span class="nsb-icon">◈</span>
+      <span class="nsb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 7h20l-2 4H4Z"/>
+          <path d="M4 11v9h16v-9"/>
+          <path d="M9 20v-6h6v6"/>
+        </svg>
+      </span>
       <span class="nsb-text">
         <strong>كل المساحات</strong>
         <small>ابحث عن مساحة لمشروعك</small>
@@ -1305,11 +1314,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M2 7h20"/>
-          <path d="M5 7 7 3h10l2 4"/>
-          <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
-          <path d="M5 21V11"/><path d="M19 21V11"/><path d="M5 21h14"/>
-          <rect x="9" y="14" width="6" height="7"/>
+          <path d="M3.5 21h17L12 3 3.5 21Z"/>
+          <path d="M12 3v18"/>
         </svg>
       </span>
       <span class="nsb-text">
@@ -1321,13 +1327,13 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       <span class="nsb-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
-          <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>
+          <path d="M20.5 13 13 20.5a2 2 0 0 1-2.8 0L3 13.2V3h10.2L20.5 10a2 2 0 0 1 0 3Z"/>
+          <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
         </svg>
       </span>
       <span class="nsb-text">
         <strong>مشاريع للبيع</strong>
-        <small>دور على مشروع تشتريه</small>
+        <small>ابحث عن مشروع جاهز</small>
       </span>
     </a>
   </div>
@@ -1340,8 +1346,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Hero ── -->
 <section class="eq-hero">
   <div class="eq-hero-inner">
-    <h1>مشاريع <span>كاملة للبيع</span></h1>
-    <p>تصفح وبيع المشاريع التجارية الجاهزة بأفضل الأسعار — مجاناً وبدون عمولة</p>
+    <h1>ابدأ بمشروع <span>جاهز للبيع</span></h1>
+    <p>تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</p>
     <div class="eq-search-wrap">
       <input type="text" id="eq-search" placeholder="ابحث عن مشروع أو منطقة…">
       <span class="eq-search-icon">
@@ -1356,7 +1362,9 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Quick Links ── -->
 <div class="eq-quick-links">
   <a class="eq-quick-link" href="/">
-    <span class="eq-ql-icon">◈</span>
+    <span class="eq-ql-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
+    </span>
     <span class="eq-ql-text">
       <strong>تصفح المساحات التجارية</strong>
       <small>ابحث عن موقع مناسب لمشروعك</small>
@@ -1364,7 +1372,9 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     <span class="eq-ql-arrow">←</span>
   </a>
   <a class="eq-quick-link" href="/bazaars/">
-    <span class="eq-ql-icon">◈</span>
+    <span class="eq-ql-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
+    </span>
     <span class="eq-ql-text">
       <strong>البازارات والمعارض المؤقتة</strong>
       <small>اشترك في بازار قريب منك</small>
@@ -1375,7 +1385,9 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 <!-- ── Free Posting Banner ── -->
 <div class="eq-free-bar">
-  <div class="eq-free-bar-icon">🆓</div>
+  <div class="eq-free-bar-icon">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-12V4l-8-2-8 2v6c0 8 8 12 8 12Z"/><path d="m9 12 2 2 4-4"/></svg>
+  </div>
   <span class="eq-free-bar-text">اعرض مشروعك للبيع <strong>مجاناً 100%</strong> — بدون عمولة أو رسوم خفية</span>
   <a class="eq-free-bar-btn" href="/post-ad/">انشر الآن ←</a>
 </div>
@@ -1383,7 +1395,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Filters ── -->
 <div class="eq-filters-bar" id="eq-filters-bar">
   <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px">
-    <span class="eq-filters-row-label">📂 التصنيف</span>
+    <span class="eq-filters-row-label">التصنيف</span>
     <div class="eq-tabs-wrap" id="eq-tabs" style="padding:0;flex:1"></div>
   </div>
   <div class="eq-sub-filters" style="padding:4px 0 12px">
@@ -1533,7 +1545,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <div class="eq-my-overlay" id="eq-edit-modal">
   <div class="eq-my-box eq-edit-box">
     <div class="eq-my-header">
-      <h2>✏️ تعديل الإعلان</h2>
+      <h2>تعديل الإعلان</h2>
       <button class="eq-my-close" onclick="eqCloseEdit()">✕</button>
     </div>
     <div class="eq-edit-scroll">
@@ -1592,7 +1604,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
       <div class="eq-edit-actions">
         <button class="eq-btn eq-btn-ghost" onclick="eqCloseEdit()">إلغاء</button>
-        <button class="eq-btn eq-btn-primary" id="eq-edit-save-btn" onclick="eqSubmitEdit()">💾 حفظ التعديلات</button>
+        <button class="eq-btn eq-btn-primary" id="eq-edit-save-btn" onclick="eqSubmitEdit()">حفظ التعديلات</button>
       </div>
     </div>
   </div>
@@ -1650,17 +1662,12 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <button class="bn-item" id="bn-bazaars" onclick="window.location.href='/bazaars/'">
     <span class="bn-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2 7h20"/>
-        <path d="M5 7 7 3h10l2 4"/>
-        <path d="M4 10.5a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/>
-        <path d="M5 21V11"/>
-        <path d="M19 21V11"/>
-        <path d="M5 21h14"/>
-        <rect x="9" y="14" width="6" height="7"/>
+        <path d="M3.5 21h17L12 3 3.5 21Z"/>
+        <path d="M12 3v18"/>
       </svg>
     </span>
     <span class="bn-label">بازارات</span>
-    <span class="bn-desc">معارض مؤقتة</span>
+    <span class="bn-desc">أحداث وبازارات</span>
   </button>
 
   <!-- مشاريع للبيع — نشط -->
@@ -1689,7 +1696,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="app.js?v=202605262011" defer></script>
+<script src="app.js?v=202605270323" defer></script>
 <script>
 (function () {
   const FALLBACK_CATEGORIES = [
@@ -2188,9 +2195,9 @@ document.addEventListener('DOMContentLoaded',function(){
       </div>
       <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
       <div class="sf-paths">
-        <span class="sf-path">🏪 مساحات تجارية</span>
-        <span class="sf-path">🎪 بازارات ومعارض</span>
-        <span class="sf-path">💼 مشاريع للبيع</span>
+        <span class="sf-path">مساحات تجارية</span>
+        <span class="sf-path">بازارات ومعارض</span>
+        <span class="sf-path">مشاريع للبيع</span>
       </div>
     </div>
     <div class="sf-col sf-col--links">
@@ -2228,9 +2235,9 @@ document.addEventListener('DOMContentLoaded',function(){
 </footer>
 
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--navy-700,#212833);border:1.5px solid rgba(243,100,24,.6);border-radius:var(--radius-xl,14px);padding:12px 18px;box-shadow:var(--shadow-xl);align-items:center;gap:12px;white-space:nowrap;font-family:var(--font-display,'Cairo',sans-serif);">
-  <span style="font-size:20px">🚀</span>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:rgba(255,255,255,0.7)"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
   <span style="color:rgba(255,255,255,0.88);font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:var(--font-display,'Cairo',sans-serif);font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <button onclick="window.location.reload()" style="background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:var(--font-display,'Cairo',sans-serif);font-size:12px;font-weight:700;cursor:pointer;">تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,0.45);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>
