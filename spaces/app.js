@@ -14,7 +14,6 @@
    ⚙️ القسم الأول: إعدادات وروابط المنصة
    ================================================================ */
 
-const SHEET_URL   = "https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec";
 const BOOKING_URL = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
@@ -62,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   loadData();
   initAuth();
+  subscribeSpacesRealtime();
 
   // تهيئة مؤشر سعر الماركت بعد لحظة
   setTimeout(initMpSlider, 150);
@@ -92,24 +92,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 /* ================================================================
-   📊 القسم الرابع: تحميل البيانات من Google Sheets
+   📊 القسم الرابع: تحميل البيانات من Supabase
    ================================================================ */
 
 async function loadData() {
   showLoadingState('mp-grid');
   try {
-    const res  = await fetch(SHEET_URL);
-    const json = await res.json();
+    // تحميل الأنشطة
+    const { data: activitiesData, error: actErr } = await sbClient
+      .from('space_activities')
+      .select('id, emoji, name_ar')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (actErr) throw actErr;
+    ACTIVITIES = (activitiesData || []).map(a => ({
+      id:    a.id,
+      label: `${a.emoji || ''} ${a.name_ar}`.trim(),
+    }));
 
-    if (json.status !== "ok") throw new Error(json.message || "خطأ في قراءة الشيت");
+    // تحميل المساحات المعتمدة مع وحداتها الفرعية
+    const { data: spacesData, error: spacesErr } = await sbClient
+      .from('spaces')
+      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (spacesErr) throw spacesErr;
 
-    ACTIVITIES = json.activities || [];
-    SPACES     = json.spaces     || [];
+    // تحميل باقات أصحاب المساحات
+    const ownerIds = [...new Set((spacesData || []).map(s => s.owner_id).filter(Boolean))];
+    let profilesMap = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await sbClient
+        .from('profiles')
+        .select('id, plan_tier')
+        .in('id', ownerIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+    }
+
+    SPACES = (spacesData || []).map(row => mapSupabaseToSpaceObject(row, profilesMap));
+    _sortByPlan(SPACES);
 
     buildModalActivityPicker();
     buildMpActivityFilters();
 
-    // عرض الماركت بليس فوراً
     mpFiltered = [...SPACES];
     renderMarketplace();
     setTimeout(() => csInitAll(), 120);
@@ -118,8 +144,47 @@ async function loadData() {
     if (counter) counter.textContent = SPACES.length + ' مساحة';
 
   } catch (err) {
-    showLoadingState('mp-grid', true, err.message);
+    showLoadingState('mp-grid', true, err.message || 'خطأ في تحميل البيانات');
   }
+}
+
+function mapSupabaseToSpaceObject(row, profilesMap) {
+  profilesMap = profilesMap || {};
+  const sizes = row.sizes_prices
+    ? row.sizes_prices.split('|').map(s => s.trim()).filter(Boolean)
+    : [];
+  return {
+    id:          row.id,
+    name:        row.name        || '',
+    loc:         row.region      || '',
+    type:        row.type        || '',
+    price:       row.min_price   || 0,
+    sizes:       sizes,
+    acts:        row.activities  || [],
+    allActs:     row.all_acts    || false,
+    badge:       row.badge       || 'متاح',
+    badgeClass:  row.badge_class || 'badge-avail',
+    season:      row.season      || '',
+    insight:     row.insight     || '',
+    image:       row.image_url   || '',
+    icon:        row.icon_emoji  || '',
+    thumbClass:  row.thumb_color || '',
+    extraImages: row.extra_images || [],
+    description: row.description || '',
+    amenities:   row.amenities   || [],
+    planTier:    profilesMap[row.owner_id] || 'starter',
+    subSpaces:   (row.space_units || []).map(u => ({
+      unitId:   u.unit_id   || '',
+      name:     u.name      || '',
+      location: u.location  || '',
+      size:     u.size      || '',
+      price:    u.price     || 0,
+      status:   u.status    || 'available',
+      image:    u.image_url || '',
+      floor:    u.floor     || '',
+      notes:    u.notes     || '',
+    })),
+  };
 }
 
 function showLoadingState(gridId, isError, msg) {
@@ -141,6 +206,76 @@ function showLoadingState(gridId, isError, msg) {
       <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">جاري تحميل البيانات…</div>
       <div style="font-size:13px;color:var(--ink3)">لحظة صغيرة…</div>
     </div>`;
+}
+
+
+/* ================================================================
+   🔄 Supabase Realtime — تحديث فوري عند الموافقة على مساحة
+   ================================================================ */
+
+/**
+ * تحديث صامت للمساحات — بدون spinner وبدون إعادة ضبط الصفحة الحالية
+ * يُستدعى من Realtime ومن الـ polling الاحتياطي
+ */
+async function silentRefreshSpaces() {
+  if (document.hidden || !sbClient) return;
+  try {
+    const { data: spacesData, error } = await sbClient
+      .from('spaces')
+      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (error || !spacesData) return;
+
+    /* باقات الأصحاب */
+    const ownerIds = [...new Set(spacesData.map(s => s.owner_id).filter(Boolean))];
+    let profilesMap = {};
+    if (ownerIds.length) {
+      const { data: profiles } = await sbClient
+        .from('profiles').select('id, plan_tier').in('id', ownerIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+    }
+
+    SPACES = spacesData.map(row => mapSupabaseToSpaceObject(row, profilesMap));
+    _sortByPlan(SPACES);
+
+    /* أعد تطبيق الفلاتر الحالية بدون إعادة ضبط الصفحة */
+    const region = document.getElementById('mp-region')?.value  || '';
+    const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
+    const sort   = document.getElementById('mp-sort')?.value    || 'default';
+    let data = [...SPACES];
+    if (region) data = data.filter(s => s.loc === region);
+    if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
+    data = data.filter(s => (parseInt(s.price) || 0) <= maxVal);
+    if (mpActiveActs.length) {
+      data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
+    }
+    if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
+    if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
+    mpFiltered = data;
+
+    /* احتفظ بالصفحة الحالية — فقط صحّح لو أصبحت خارج النطاق */
+    const maxPage = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
+    if (mpPage > maxPage) mpPage = maxPage;
+
+    renderMarketplace();
+    const counter = document.getElementById('mp-count');
+    if (counter) counter.textContent = SPACES.length + ' مساحة';
+  } catch { /* صامت — لو الشبكة منقطعة */ }
+}
+
+function subscribeSpacesRealtime() {
+  if (!sbClient) return;
+  let debounce = null;
+  sbClient.channel('spaces-public-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(silentRefreshSpaces, 1500);
+    })
+    .subscribe();
+  /* Fallback polling كل 5 دقائق — لو انقطع الـ Realtime */
+  setInterval(silentRefreshSpaces, 300000);
 }
 
 
@@ -169,6 +304,26 @@ function buildMpActivityFilters() {
   cont.innerHTML = ACTIVITIES.map(a =>
     `<button class="mp-act-btn" data-id="${a.id}" onclick="toggleMpAct('${a.id}',this)">${a.label}</button>`
   ).join('');
+}
+
+
+/* ── نظام الباقات والبادجيات ── */
+
+function _sortByPlan(arr) {
+  const ord = { pro: 0, growth: 1, starter: 2 };
+  arr.sort((a, b) => (ord[a.planTier] ?? 2) - (ord[b.planTier] ?? 2));
+  return arr;
+}
+
+function _planTrustBadgeHtml(s) {
+  const tier = (s.planTier || 'starter').toLowerCase();
+  if (tier === 'pro')    return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
+  if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
+  return '';
+}
+
+function _planCardClass(s) {
+  return (s.planTier || 'starter') === 'pro' ? ' space-card--pro' : '';
 }
 
 
@@ -232,12 +387,15 @@ function buildCardHtml(s, fromPage) {
 
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space',${s.id},'${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+  const _trustBadge    = _planTrustBadgeHtml(s);
+  const _cardClass     = _planCardClass(s);
 
   return `
-  <div class="space-card">
+  <div class="space-card${_cardClass}">
     <div class="card-thumb">
       ${thumbHtml}
       <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
+      ${_trustBadge}
       ${unitsBadgeHtml}
       ${_shareSpaceBtn}
     </div>

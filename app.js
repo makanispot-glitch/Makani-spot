@@ -2,7 +2,7 @@
    📁 app.js — الطبقة الثالثة: السلوك والوظائف
    ================================================================
    🧠 هذا الملف مسؤول عن كل ما يتحرك في الموقع:
-      - تحميل البيانات من Google Sheets
+      - تحميل بيانات المساحات من Supabase
       - نظام تسجيل الدخول عبر Supabase
       - عرض الكروت والفلاتر
       - مودال الحجز وإرسال البيانات
@@ -11,7 +11,6 @@
       - لوحة التحكم: تعديل البيانات، الحجوزات، التقييمات
 
    📌 كيف تعدّل؟
-      - لتغيير رابط Google Sheet: غيّر SHEET_URL
       - لتغيير رابط استقبال الحجوزات: غيّر BOOKING_URL
       - لتغيير إعدادات Supabase: غيّر SUPABASE_URL و SUPABASE_KEY
    ================================================================ */
@@ -21,12 +20,6 @@
    ⚙️ القسم الأول: إعدادات وروابط المنصة
    (هنا كل الروابط المهمة — عدّلها من هنا فقط)
    ================================================================ */
-
-/**
- * 📊 رابط Google Apps Script الذي يجيب بيانات المساحات والأنشطة
- * لو غيّرت الشيت أو أعدت نشر الـ Script، ضع الرابط الجديد هنا
- */
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec";
 
 /**
  * 📬 رابط Google Apps Script الذي يستقبل طلبات الحجز ويحفظها في الشيت
@@ -236,16 +229,75 @@ function updateMainSlider() {
 async function loadData() {
   showLoadingState('spaces-grid');
   try {
-    const res  = await fetch(SHEET_URL);
-    const json = await res.json();
-
-    if (json.status !== "ok") throw new Error(json.message || "خطأ في قراءة الشيت");
-
-    ACTIVITIES = json.activities || [];
-    SPACES     = (json.spaces || []).map(s => ({
-      ...s,
-      planTier: (s.planTier || s.plan_tier || '').toLowerCase().trim() || 'starter',
+    // تحميل الأنشطة من Supabase
+    const { data: activitiesData, error: actErr } = await sbClient
+      .from('space_activities')
+      .select('id, emoji, name_ar')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (actErr) throw actErr;
+    ACTIVITIES = (activitiesData || []).map(a => ({
+      id:    a.id,
+      label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
+
+    // تحميل المساحات المعتمدة مع وحداتها
+    const { data: spacesData, error: spacesErr } = await sbClient
+      .from('spaces')
+      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (spacesErr) throw spacesErr;
+
+    // تحميل باقات أصحاب المساحات
+    const ownerIds = [...new Set((spacesData || []).map(s => s.owner_id).filter(Boolean))];
+    let profilesMap = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await sbClient
+        .from('profiles')
+        .select('id, plan_tier')
+        .in('id', ownerIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+    }
+
+    SPACES = (spacesData || []).map(row => {
+      const sizes = row.sizes_prices
+        ? row.sizes_prices.split('|').map(s => s.trim()).filter(Boolean)
+        : [];
+      return {
+        id:          row.id,
+        name:        row.name        || '',
+        loc:         row.region      || '',
+        type:        row.type        || '',
+        price:       row.min_price   || 0,
+        sizes:       sizes,
+        acts:        row.activities  || [],
+        allActs:     row.all_acts    || false,
+        badge:       row.badge       || 'متاح',
+        badgeClass:  row.badge_class || 'badge-avail',
+        season:      row.season      || '',
+        insight:     row.insight     || '',
+        image:       row.image_url   || '',
+        icon:        row.icon_emoji  || '',
+        thumbClass:  row.thumb_color || '',
+        extraImages: row.extra_images || [],
+        description: row.description || '',
+        amenities:   row.amenities   || [],
+        planTier:    profilesMap[row.owner_id] || 'starter',
+        subSpaces:   (row.space_units || []).map(u => ({
+          unitId:   u.unit_id   || '',
+          name:     u.name      || '',
+          location: u.location  || '',
+          size:     u.size      || '',
+          price:    u.price     || 0,
+          status:   u.status    || 'available',
+          image:    u.image_url || '',
+          floor:    u.floor     || '',
+          notes:    u.notes     || '',
+        })),
+      };
+    });
     _sortByPlan(SPACES);
 
     buildActivityFilters();
@@ -253,14 +305,13 @@ async function loadData() {
     buildMpActivityFilters();
 
     renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6, 'home');
-    // تهيئة الـ sliders بعد رسم الكروت
     setTimeout(() => csInitAll(), 120);
 
     const counter = document.getElementById('res-count');
     if (counter) counter.textContent = SPACES.length + ' مساحة';
 
   } catch (err) {
-    showErrorState(err.message, 'spaces-grid');
+    showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
   }
 }
 

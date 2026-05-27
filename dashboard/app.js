@@ -7,9 +7,7 @@
 /* ══════════════════════════════════════════
    ⚙️  CONFIG
    ══════════════════════════════════════════ */
-const SHEET_URL     = "https://script.google.com/macros/s/AKfycbxyCDOQW3SlaoSEPAAFfClUcHYyxA6-iei4Zuvvv5Us8caWP9X3WjgoeyhsOVNGJ9XqQw/exec";
-const BOOKING_URL   = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
-const ADD_SPACE_URL = SHEET_URL; // نفس الـ Apps Script الخاص بالمساحات — يدعم doPost بعد التحديث
+const BOOKING_URL    = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec";
 
 const ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة"
@@ -597,6 +595,7 @@ function initDashboard() {
 
   loadOwnerData();
   loadNotifications();
+  subscribeNotificationsRealtime();
 
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('visible');
@@ -606,39 +605,77 @@ function initDashboard() {
 }
 
 /* ══════════════════════════════════════════
-   📊  DATA LOADING
-   🔗 DB-LINK: يجلب من Google Sheets ويفلتر بـ ownerId
+   📊  DATA LOADING — Supabase
    ══════════════════════════════════════════ */
 async function loadOwnerData() {
-  applyDemoData(); // عرض البيانات التجريبية فوراً كـ fallback
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { applyDemoData(); return; }
 
   try {
-    const res  = await fetch(SHEET_URL);
-    const data = await res.json();
-    if (!data || !data.spaces) throw new Error('no spaces');
+    /* مساحات مفعّلة + وحداتها */
+    const { data: spacesData, error: spacesErr } = await sb
+      .from('spaces')
+      .select('id, name, type, region, sort_order, space_units(unit_id, name, floor, size, price, status, location, notes, image_url)')
+      .eq('owner_id', currentOwner.id)
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('sort_order');
 
-    /* 🔗 DB-LINK: فلتر المساحات حسب ownerId في الشيت */
-    const mySpaces = (data.spaces || []).filter(s =>
-      s.ownerId === currentOwner.id || s.ownerId === currentOwner.username
-    );
+    if (spacesErr) throw spacesErr;
 
-    if (mySpaces.length > 0) {
-      ownerSpaces = mySpaces.map(s => ({
-        code:      s.unitId || s.id,
-        loc:       s.location || s.loc || '—',
-        size:      s.size || '—',
-        act:       Array.isArray(s.acts) ? s.acts[0] : (s.acts || null),
-        rent:      parseFloat(s.price) || null,
-        status:    s.status || 'available',
-        tenant:    s.tenant || null,
-        score:     parseFloat(s.score) || null,
-        daysEmpty: parseInt(s.daysEmpty) || 0,
-        floor:     parseInt(s.floor) || 0,
-      }));
-      renderAll();
+    /* تحويل الوحدات لمصفوفة ownerSpaces */
+    ownerSpaces = [];
+    (spacesData || []).forEach(space => {
+      (space.space_units || []).forEach(u => {
+        ownerSpaces.push({
+          code:      u.unit_id || '—',
+          loc:       u.location || space.region || '—',
+          size:      u.size || '—',
+          act:       null,
+          rent:      u.price || null,
+          status:    u.status || 'available',
+          tenant:    null,
+          score:     null,
+          daysEmpty: 0,
+          floor:     u.floor || '',
+          spaceId:   space.id,
+          spaceName: space.name,
+        });
+      });
+    });
+
+    /* مساحات معلقة / مرفوضة */
+    const { data: pendingData } = await sb
+      .from('spaces')
+      .select('id, name, type, region, min_price, sizes_prices, status, created_at')
+      .eq('owner_id', currentOwner.id)
+      .in('status', ['pending', 'rejected'])
+      .order('created_at', { ascending: false });
+
+    ownerPendingSpaces = (pendingData || []).map(s => ({
+      id:          s.id,
+      name:        s.name || '—',
+      type:        s.type || '',
+      loc:         s.region || '—',
+      sizes:       s.sizes_prices || '',
+      price:       s.min_price || 0,
+      subCount:    0,
+      status:      s.status,
+      submittedAt: s.created_at,
+    }));
+
+    /* العقود والمستأجرون من localStorage (لم تُنقل بعد) */
+    if (contractsList.length > 0) {
+      syncDataFromContracts();
+    } else {
+      ownerTenants   = DEMO_TENANTS[currentOwner.id]   || DEMO_TENANTS[currentOwner.username] || [];
+      ownerContracts = DEMO_CONTRACTS[currentOwner.id] || DEMO_CONTRACTS[currentOwner.username] || [];
     }
-  } catch {
-    /* الـ fallback (DEMO data) مُعرَض بالفعل — لا شيء */
+
+    renderAll();
+  } catch (err) {
+    console.warn('[Makani] loadOwnerData error:', err.message);
+    applyDemoData();
   }
 }
 
@@ -1792,6 +1829,12 @@ function goTo(viewId, navEl) {
 
   /* على الموبايل: أغلق السايدبار بعد الاختيار */
   if (window.innerWidth <= 900) closeSidebar();
+
+  /* عند فتح التنبيهات: أعد رسمها ثم اعتبرها مقروءة */
+  if (viewId === 'alerts') {
+    renderAlerts();
+    setTimeout(markNotificationsRead, 1500);
+  }
 }
 
 function setPeriod(p, btn) {
@@ -1813,26 +1856,31 @@ function renderSpaces() {
         <div class="pcard" style="border-color:rgba(255,184,0,0.35)">
           <div class="pcard-head" style="background:rgba(255,184,0,0.06)">
             <div>
-              <div class="pcard-title" style="color:var(--yellow)">⏳ طلبات إضافة قيد المراجعة (${ownerPendingSpaces.length})</div>
-              <div class="pcard-sub">أُرسلت للمنصة — فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة</div>
+              <div class="pcard-title" style="color:var(--yellow)">⏳ طلبات المساحات المُرسلة (${ownerPendingSpaces.length})</div>
+              <div class="pcard-sub">فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة</div>
             </div>
           </div>
           <div class="pcard-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>تاريخ الإرسال</th><th></th></tr></thead>
+              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>الحالة</th><th>تاريخ الإرسال</th><th></th></tr></thead>
               <tbody>
                 ${ownerPendingSpaces.map(p => {
                   const typeLabels = { mall:'🏬 مول', club:'🏊 نادي', school:'🏫 مدرسة' };
                   const sentDate   = p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('ar-EG') : '—';
-                  return `<tr style="background:rgba(255,184,0,0.03)">
+                  const isRejected = p.status === 'rejected';
+                  const statusBadge = isRejected
+                    ? `<span class="badge badge-red">❌ مرفوض</span>`
+                    : `<span class="badge badge-yellow">⏳ قيد المراجعة</span>`;
+                  return `<tr style="background:${isRejected ? 'rgba(255,77,77,0.03)' : 'rgba(255,184,0,0.03)'}">
                     <td style="font-weight:700">${p.name}</td>
                     <td>${typeLabels[p.type] || p.type}</td>
                     <td>${p.loc}</td>
                     <td style="font-size:11px;color:var(--text3)">${p.sizes || '—'}</td>
                     <td style="font-family:'Space Mono',monospace">${p.price ? p.price.toLocaleString('ar-EG')+' ج' : '—'}</td>
                     <td style="text-align:center">${p.subCount > 0 ? `<span class="badge badge-blue">${p.subCount} وحدة</span>` : '—'}</td>
+                    <td>${statusBadge}</td>
                     <td style="font-size:11px;color:var(--text3)">${sentDate}</td>
-                    <td><button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">إلغاء</button></td>
+                    <td>${!isRejected ? `<button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">إلغاء</button>` : ''}</td>
                   </tr>`;
                 }).join('')}
               </tbody>
@@ -2145,16 +2193,16 @@ function renderAlerts() {
   /* ── تنبيهات Supabase (مساحات + بازارات) ── */
   supabaseNotifications.forEach(n => {
     const typeMap = {
-      'space_submitted': { type:'info',    ico:'📋', title:'طلب إضافة مساحة جديدة',      body: n.message || 'تم إرسال طلب إضافة المساحة — في انتظار المراجعة.' },
-      'space_approved':  { type:'success', ico:'✅', title:'تمت الموافقة على المساحة',    body: n.message || 'تمت الموافقة على مساحتك وهي الآن قيد الإعداد للنشر.' },
-      'space_published': { type:'success', ico:'🚀', title:'تم نشر المساحة على المنصة',  body: n.message || 'مساحتك أصبحت مرئية للمستأجرين على منصة مكاني Spot.' },
-      'space_rejected':  { type:'danger',  ico:'❌', title:'تم رفض طلب المساحة',         body: n.message || 'راجع بيانات المساحة وأعد تقديم الطلب.' },
-      'bazaar_submitted':{ type:'info',    ico:'🎪', title:'طلب تنظيم بازار قيد المراجعة',body: n.message || 'تم استلام طلب البازار وسيتم الرد خلال 24 ساعة.' },
-      'bazaar_approved': { type:'success', ico:'🎉', title:'تمت الموافقة على البازار',     body: n.message || 'تمت الموافقة على بازارك وسيُنشر على المنصة قريباً.' },
-      'bazaar_rejected': { type:'danger',  ico:'⚠️', title:'مراجعة مطلوبة على طلب البازار', body: n.message || 'يوجد ملاحظات على طلب البازار — تواصل مع الإدارة لمعرفة التفاصيل.' },
-      'bazaar_updated':  { type:'warning', ico:'🔄', title:'تحديث على حالة البازار',       body: n.message || 'حدث تغيير في حالة طلب البازار — راجع التفاصيل.' },
+      'space_submitted': { type:'info',    ico:'📋', title:'طلب إضافة مساحة جديدة',      body: n.body || 'تم إرسال طلب إضافة المساحة — في انتظار المراجعة.' },
+      'space_approved':  { type:'success', ico:'✅', title:'تمت الموافقة على المساحة',    body: n.body || 'تمت الموافقة على مساحتك وهي الآن قيد الإعداد للنشر.' },
+      'space_published': { type:'success', ico:'🚀', title:'تم نشر المساحة على المنصة',  body: n.body || 'مساحتك أصبحت مرئية للمستأجرين على منصة مكاني Spot.' },
+      'space_rejected':  { type:'danger',  ico:'❌', title:'تم رفض طلب المساحة',         body: n.body || 'راجع بيانات المساحة وأعد تقديم الطلب.' },
+      'bazaar_submitted':{ type:'info',    ico:'🎪', title:'طلب تنظيم بازار قيد المراجعة',body: n.body || 'تم استلام طلب البازار وسيتم الرد خلال 24 ساعة.' },
+      'bazaar_approved': { type:'success', ico:'🎉', title:'تمت الموافقة على البازار',     body: n.body || 'تمت الموافقة على بازارك وسيُنشر على المنصة قريباً.' },
+      'bazaar_rejected': { type:'danger',  ico:'⚠️', title:'مراجعة مطلوبة على طلب البازار', body: n.body || 'يوجد ملاحظات على طلب البازار — تواصل مع الإدارة لمعرفة التفاصيل.' },
+      'bazaar_updated':  { type:'warning', ico:'🔄', title:'تحديث على حالة البازار',       body: n.body || 'حدث تغيير في حالة طلب البازار — راجع التفاصيل.' },
     };
-    const mapped = typeMap[n.type] || { type:'info', ico:'🔔', title: n.title || 'إشعار جديد', body: n.message || '' };
+    const mapped = typeMap[n.type] || { type:'info', ico:'🔔', title: n.title || 'إشعار جديد', body: n.body || '' };
     alerts.push(mapped);
   });
 
@@ -2222,25 +2270,21 @@ function renderAlerts() {
 }
 
 /* ══════════════════════════════════════════
-   📦  PENDING SPACES — localStorage
+   📦  PENDING SPACES — Supabase
    ══════════════════════════════════════════ */
-function pendingSpacesKey() { return 'ms_pending_' + (currentOwner?.id || 'guest'); }
+function loadPendingSpaces() { /* loaded from Supabase in loadOwnerData() */ }
+function savePendingSpaces() { /* deprecated — stored in Supabase */ }
 
-function loadPendingSpaces() {
-  try {
-    const raw = localStorage.getItem(pendingSpacesKey());
-    ownerPendingSpaces = raw ? JSON.parse(raw) : [];
-  } catch { ownerPendingSpaces = []; }
-}
-
-function savePendingSpaces() {
-  localStorage.setItem(pendingSpacesKey(), JSON.stringify(ownerPendingSpaces));
-}
-
-function removePendingSpace(id) {
+async function removePendingSpace(id) {
   if (!confirm('هل تريد إلغاء هذا الطلب؟')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    await sb.from('spaces').delete()
+      .eq('id', id)
+      .eq('owner_id', currentOwner.id)
+      .eq('status', 'pending');
+  }
   ownerPendingSpaces = ownerPendingSpaces.filter(p => p.id !== id);
-  savePendingSpaces();
   renderSpaces();
 }
 
@@ -2418,23 +2462,49 @@ function removeSubUnitRow(idx) {
 async function handleUnitImageUpload(input, idx) {
   const file = input.files?.[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    alert('الصورة أكبر من 5 ميجا — اختر صورة أصغر.');
+  if (file.size > 20 * 1024 * 1024) {
+    alert('الصورة أكبر من 20 ميجا — اختر صورة أصغر.');
     input.value = ''; return;
   }
-  const resized = await resizeBazaarImage(file, 800, 600, 0.82);
-  input.dataset.imgDataUrl = resized;
+
   const preview = document.getElementById('as-unit-img-preview-' + idx);
+  const zone    = document.getElementById('as-unit-img-zone-' + idx);
+
+  /* معاينة فورية */
+  const previewUrl = URL.createObjectURL(file);
   if (preview) {
     preview.innerHTML = `
       <div style="position:relative">
-        <img src="${resized}" style="width:100%;max-height:130px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border)">
-        <button type="button"
-                onclick="clearUnitImage(${idx})"
-                style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;line-height:22px;text-align:center">✕</button>
+        <img src="${previewUrl}" style="width:100%;max-height:130px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border);opacity:0.6">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;background:rgba(0,0,0,0.45);border-radius:var(--r)">⏳ جاري الرفع…</div>
       </div>`;
-    const zone = document.getElementById('as-unit-img-zone-' + idx);
     if (zone) zone.style.display = 'none';
+  }
+
+  try {
+    const sb = getSB();
+    const { data: { session } } = sb ? await sb.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token || SUPABASE_KEY;
+
+    const ts   = Date.now();
+    const rand = Math.random().toString(36).slice(2, 6);
+    const r2Path = `owner-spaces/${currentOwner.id}/units/${ts}_${rand}.webp`;
+    const url = await uploadSingleImageToR2(file, r2Path, token);
+    asUnitImgUrls[idx] = url;
+
+    if (preview) {
+      preview.innerHTML = `
+        <div style="position:relative">
+          <img src="${url}" style="width:100%;max-height:130px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,0.35)">
+          <button type="button" onclick="clearUnitImage(${idx})"
+                  style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;line-height:22px;text-align:center">✕</button>
+        </div>`;
+    }
+  } catch (err) {
+    delete asUnitImgUrls[idx];
+    if (preview) preview.innerHTML = '';
+    if (zone)    zone.style.display = 'block';
+    alert('فشل رفع صورة الوحدة: ' + err.message);
   }
 }
 
@@ -2442,7 +2512,8 @@ function clearUnitImage(idx) {
   const input   = document.getElementById('as-unit-img-' + idx);
   const preview = document.getElementById('as-unit-img-preview-' + idx);
   const zone    = document.getElementById('as-unit-img-zone-' + idx);
-  if (input)   { input.value = ''; delete input.dataset.imgDataUrl; }
+  if (input)  input.value = '';
+  delete asUnitImgUrls[idx];
   if (preview) preview.innerHTML = '';
   if (zone)    zone.style.display = 'block';
 }
@@ -2454,26 +2525,52 @@ async function handleMainSpaceImageUpload(input) {
   const statusEl  = document.getElementById('as-main-img-status');
   const uploadIco = document.getElementById('as-main-upload-ico');
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">❌ أكبر من 5 ميجا</span>';
+  if (file.size > 20 * 1024 * 1024) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">❌ أكبر من 20 ميجا</span>';
     input.value = ''; return;
   }
-  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ جاري المعالجة…</span>';
-  asMainImgDataUrl = await resizeBazaarImage(file, 1200, 800, 0.85);
+
+  /* معاينة فورية */
+  const previewUrl = URL.createObjectURL(file);
   if (preview) {
     preview.innerHTML = `
       <div style="position:relative;margin-top:8px">
-        <img src="${asMainImgDataUrl}" style="width:100%;border-radius:var(--r);max-height:180px;object-fit:cover;border:2px solid rgba(0,200,83,0.30)">
-        <button type="button" onclick="clearMainSpaceImage()"
-                style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;line-height:24px;text-align:center">✕</button>
+        <img src="${previewUrl}" style="width:100%;border-radius:var(--r);max-height:180px;object-fit:cover;border:2px solid rgba(255,107,0,0.30);opacity:0.7">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:rgba(0,0,0,0.45);border-radius:var(--r)">⏳ جاري الضغط والرفع…</div>
       </div>`;
   }
-  if (statusEl)  statusEl.innerHTML  = '<span style="color:var(--green)">✅ جاهزة للإرسال</span>';
-  if (uploadIco) uploadIco.textContent = '✅';
+  if (statusEl)  statusEl.innerHTML   = '<span style="color:var(--orange)">⏳ جاري الرفع…</span>';
+  if (uploadIco) uploadIco.textContent = '⏳';
+
+  try {
+    const sb = getSB();
+    const { data: { session } } = sb ? await sb.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token || SUPABASE_KEY;
+
+    const folder = `owner-spaces/${currentOwner.id}`;
+    const [url] = await uploadImages([file], folder, null, token);
+    asMainImgUrl = url;
+
+    if (preview) {
+      preview.innerHTML = `
+        <div style="position:relative;margin-top:8px">
+          <img src="${url.replace('_f.webp', '_d.webp')}" style="width:100%;border-radius:var(--r);max-height:180px;object-fit:cover;border:2px solid rgba(0,200,83,0.35)">
+          <button type="button" onclick="clearMainSpaceImage()"
+                  style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;line-height:24px;text-align:center">✕</button>
+        </div>`;
+    }
+    if (statusEl)  statusEl.innerHTML   = '<span style="color:var(--green)">✅ تم الرفع</span>';
+    if (uploadIco) uploadIco.textContent = '✅';
+  } catch (err) {
+    asMainImgUrl = null;
+    if (preview)   preview.innerHTML    = '';
+    if (statusEl)  statusEl.innerHTML   = `<span style="color:var(--red)">❌ فشل الرفع</span>`;
+    if (uploadIco) uploadIco.textContent = '📤';
+  }
 }
 
 function clearMainSpaceImage() {
-  asMainImgDataUrl = null;
+  asMainImgUrl = null;
   const preview   = document.getElementById('as-main-img-preview');
   const input     = document.getElementById('as-main-img-input');
   const statusEl  = document.getElementById('as-main-img-status');
@@ -2486,28 +2583,48 @@ function clearMainSpaceImage() {
 
 /* ── صور إضافية للمساحة ── */
 async function handleExtraSpaceImagesUpload(input) {
-  const files     = Array.from(input.files).slice(0, 5 - asExtraImgsData.filter(Boolean).length);
+  const maxExtra  = 5;
+  const remaining = maxExtra - asExtraImgUrls.filter(Boolean).length;
+  const files     = Array.from(input.files).slice(0, remaining);
   const container = document.getElementById('as-extra-imgs-container');
   if (!files.length || !container) return;
+
+  const sb = getSB();
+  const { data: { session } } = sb ? await sb.auth.getSession() : { data: { session: null } };
+  const token  = session?.access_token || SUPABASE_KEY;
+  const folder = `owner-spaces/${currentOwner.id}`;
+
   for (const file of files) {
-    if (file.size > 5 * 1024 * 1024) continue;
-    const resized = await resizeBazaarImage(file, 1000, 700, 0.82);
-    const idx     = asExtraImgsData.length;
-    asExtraImgsData.push({ dataUrl: resized, name: file.name });
+    if (file.size > 20 * 1024 * 1024) continue;
+    const idx = asExtraImgUrls.length;
+    asExtraImgUrls.push(null);
+
+    const previewUrl = URL.createObjectURL(file);
     const div = document.createElement('div');
     div.id = 'as-extra-img-' + idx;
     div.style.cssText = 'position:relative;width:calc(50% - 4px);flex-shrink:0';
     div.innerHTML = `
-      <img src="${resized}" style="width:100%;height:90px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border)">
-      <button type="button" onclick="removeExtraSpaceImage(${idx})"
-              style="position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;line-height:20px;text-align:center">✕</button>`;
+      <img src="${previewUrl}" style="width:100%;height:90px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border);opacity:0.6">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:rgba(0,0,0,0.4);border-radius:var(--r)">⏳</div>`;
     container.appendChild(div);
+
+    try {
+      const [url] = await uploadImages([file], folder, null, token);
+      asExtraImgUrls[idx] = url;
+      div.innerHTML = `
+        <img src="${url.replace('_f.webp', '_c.webp')}" style="width:100%;height:90px;object-fit:cover;border-radius:var(--r);border:1px solid rgba(0,200,83,0.35)">
+        <button type="button" onclick="removeExtraSpaceImage(${idx})"
+                style="position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;line-height:20px;text-align:center">✕</button>`;
+    } catch {
+      asExtraImgUrls[idx] = null;
+      div.remove();
+    }
   }
   input.value = '';
 }
 
 function removeExtraSpaceImage(idx) {
-  asExtraImgsData[idx] = null;
+  asExtraImgUrls[idx] = null;
   const el = document.getElementById('as-extra-img-' + idx);
   if (el) el.remove();
 }
@@ -2515,22 +2632,20 @@ function removeExtraSpaceImage(idx) {
 function collectSubUnits() {
   const units = [];
   document.querySelectorAll('[id^="as-unit-row-"]').forEach(div => {
-    const idx     = div.dataset.idx;
-    const imgInput = document.getElementById('as-unit-img-' + idx);
-    const uid  = document.getElementById('as-unit-uid-' + idx)?.value.trim()   || '';
+    const idx  = div.dataset.idx;
+    const uid  = document.getElementById('as-unit-uid-' + idx)?.value.trim()  || '';
     const name = document.getElementById('as-unit-name-' + idx)?.value.trim() || '';
     if (!uid && !name) return;
     units.push({
-      unitId:     uid,
-      name:       name,
-      floor:      document.getElementById('as-unit-floor-' + idx)?.value   || '',
-      size:       document.getElementById('as-unit-size-' + idx)?.value.trim() || '',
-      price:      parseFloat(document.getElementById('as-unit-price-' + idx)?.value) || 0,
-      status:     document.getElementById('as-unit-status-' + idx)?.value  || 'available',
-      location:   document.getElementById('as-unit-loc-' + idx)?.value.trim() || '',
-      notes:      document.getElementById('as-unit-notes-' + idx)?.value.trim() || '',
-      imgDataUrl: imgInput?.dataset?.imgDataUrl || '',
-      imgName:    imgInput?.files?.[0]?.name || (uid + '.jpg'),
+      unitId:   uid || ('U' + (units.length + 1)),
+      name:     name,
+      floor:    document.getElementById('as-unit-floor-' + idx)?.value || '',
+      size:     document.getElementById('as-unit-size-' + idx)?.value.trim() || '',
+      price:    parseFloat(document.getElementById('as-unit-price-' + idx)?.value) || 0,
+      status:   document.getElementById('as-unit-status-' + idx)?.value || 'available',
+      location: document.getElementById('as-unit-loc-' + idx)?.value.trim() || '',
+      notes:    document.getElementById('as-unit-notes-' + idx)?.value.trim() || '',
+      imageUrl: asUnitImgUrls[idx] || null,
     });
   });
   return units;
@@ -2569,85 +2684,111 @@ async function submitAddSpace(e) {
   const spaceLoc  = get('as-loc');
 
   if (!spaceName || !spaceType || !spaceLoc) {
-    msg.className   = 'alert-item danger';
+    msg.className = 'alert-item danger';
     msg.style.display = 'flex';
-    msg.innerHTML   = `<span class="alert-ico">❌</span><div class="alert-text"><strong>اسم المساحة ونوعها ومنطقتها مطلوبة.</strong></div>`;
+    msg.innerHTML = `<span class="alert-ico">❌</span><div class="alert-text"><strong>اسم المساحة ونوعها ومنطقتها مطلوبة.</strong></div>`;
+    return;
+  }
+
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) {
+    msg.className = 'alert-item danger';
+    msg.style.display = 'flex';
+    msg.innerHTML = `<span class="alert-ico">❌</span><div class="alert-text"><strong>خطأ في الاتصال — أعد تحميل الصفحة.</strong></div>`;
     return;
   }
 
   btn.disabled  = true;
-  btn.innerHTML = '⏳ جاري إرسال الطلب…';
+  btn.innerHTML = '⏳ جاري الحفظ…';
   msg.style.display = 'none';
-
-  const typeMap = {
-    mall:   { badge:'متاح', badgeClass:'badge-avail', thumbClass:'thumb-mall' },
-    club:   { badge:'متاح', badgeClass:'badge-info',  thumbClass:'thumb-club' },
-    school: { badge:'متاح', badgeClass:'badge-warn',  thumbClass:'thumb-school' },
-  };
-  const tm = typeMap[spaceType] || typeMap.mall;
 
   const subUnits = collectSubUnits();
 
-  /* ═══ Payload — يطابق أعمدة شيتي المساحات والوحدات الفرعية ═══ */
-  const payload = {
-    action:       'addSpace',
-    /* Owner info */
-    ownerId:      currentOwner.id,
-    ownerName:    currentOwner.name,
-    ownerPhone:   currentOwner.phone  || '',
-    ownerEmail:   currentOwner.email  || '',
-    ownerPlace:   currentOwner.place  || '',
-    /* B-U: شيت "🏢 المساحات" */
-    name:         spaceName,                          /* B */
-    type:         spaceType,                          /* C */
-    loc:          spaceLoc,                           /* D */
-    badge:        get('as-badge') || tm.badge,        /* E */
-    badgeClass:   tm.badgeClass,                      /* F */
-    icon:         get('as-icon') || '🏬',             /* I */
-    thumbClass:   tm.thumbClass,                      /* J */
-    sizes:        getSizesString(),                   /* K */
-    defaultPrice: parseFloat(get('as-default-price')) || 0, /* L */
-    allActs:      document.getElementById('as-all-acts')?.checked ? 'نعم' : 'لا', /* M */
-    acts:         get('as-acts'),                     /* N */
-    season:       get('as-season'),                   /* O */
-    insight:      get('as-insight'),                  /* P */
-    description:  get('as-desc'),                     /* Q */
-    amenities:    getAmenitiesString(),               /* R */
-    visible:      'لا',                               /* S — غير ظاهر حتى الموافقة */
-    order:        parseInt(get('as-order')) || 99,    /* T */
-    notes:        get('as-notes'),                    /* U */
-    /* الصور */
-    mainImageDataUrl: asMainImgDataUrl || '',
-    mainImageName:    document.getElementById('as-main-img-input')?.files?.[0]?.name || (spaceName + '.jpg'),
-    extraImages:      asExtraImgsData.filter(Boolean),
-    /* الوحدات الفرعية */
-    subUnits:         subUnits,
-    timestamp:        new Date().toISOString(),
-  };
-
   try {
-    await fetch(ADD_SPACE_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-    });
+    const typeMap = {
+      mall:   { badge:'متاح', badgeClass:'badge-avail', thumbClass:'thumb-mall' },
+      club:   { badge:'متاح', badgeClass:'badge-info',  thumbClass:'thumb-club' },
+      school: { badge:'متاح', badgeClass:'badge-warn',  thumbClass:'thumb-school' },
+    };
+    const tm = typeMap[spaceType] || typeMap.mall;
 
-    /* حفظ محلي كـ pending */
-    const pendingEntry = {
-      id:          'ps-' + Date.now(),
+    const actsRaw = get('as-acts');
+    const actsArr = actsRaw ? actsRaw.split('·').map(s => s.trim()).filter(Boolean) : [];
+    const amenStr = getAmenitiesString();
+    const amenArr = amenStr ? amenStr.split('·').map(s => s.trim()).filter(Boolean) : [];
+
+    const spacePayload = {
+      owner_id:     currentOwner.id,
+      name:         spaceName,
+      type:         spaceType,
+      region:       spaceLoc,
+      badge:        get('as-badge') || tm.badge,
+      badge_class:  tm.badgeClass,
+      icon_emoji:   get('as-icon') || '🏬',
+      thumb_color:  tm.thumbClass,
+      sizes_prices: getSizesString(),
+      min_price:    parseInt(get('as-default-price')) || 0,
+      all_acts:     document.getElementById('as-all-acts')?.checked || false,
+      activities:   actsArr,
+      season:       get('as-season') || null,
+      insight:      get('as-insight') || null,
+      description:  get('as-desc') || null,
+      amenities:    amenArr,
+      sort_order:   parseInt(get('as-order')) || 99,
+      status:       'pending',
+      is_active:    false,
+      image_url:    asMainImgUrl || null,
+      extra_images: asExtraImgUrls.filter(Boolean),
+    };
+
+    const { data: newSpace, error: spaceErr } = await sb
+      .from('spaces')
+      .insert(spacePayload)
+      .select('id')
+      .single();
+
+    if (spaceErr) throw spaceErr;
+
+    /* إضافة الوحدات الفرعية */
+    if (subUnits.length > 0 && newSpace?.id) {
+      const unitsPayload = subUnits.map((u, i) => ({
+        space_id:  newSpace.id,
+        unit_id:   u.unitId,
+        name:      u.name || null,
+        floor:     u.floor || null,
+        size:      u.size || null,
+        price:     u.price ? Math.round(u.price) : null,
+        status:    u.status || 'available',
+        location:  u.location || null,
+        notes:     u.notes || null,
+        image_url: u.imageUrl || null,
+      }));
+      const { error: unitsErr } = await sb.from('space_units').insert(unitsPayload);
+      if (unitsErr) console.warn('[Makani] space_units insert:', unitsErr.message);
+    }
+
+    /* إشعار لصاحب المساحة */
+    try {
+      await sb.from('notifications').insert({
+        owner_id: currentOwner.id,
+        type:     'space_submitted',
+        title:    'طلب إضافة مساحة جديدة',
+        body:     `تم إرسال طلب إضافة المساحة "${spaceName}" — في انتظار المراجعة.`,
+      });
+    } catch { /* notifications table optional */ }
+
+    /* تحديث الحالة المحلية */
+    ownerPendingSpaces.push({
+      id:          newSpace.id,
       name:        spaceName,
       type:        spaceType,
       loc:         spaceLoc,
       sizes:       getSizesString(),
-      price:       parseFloat(get('as-default-price')) || 0,
-      acts:        get('as-acts'),
+      price:       parseInt(get('as-default-price')) || 0,
       subCount:    subUnits.length,
       status:      'pending',
       submittedAt: new Date().toISOString(),
-    };
-    ownerPendingSpaces.push(pendingEntry);
-    savePendingSpaces();
+    });
     renderSpaces();
 
     msg.className     = 'alert-item success';
@@ -2655,14 +2796,14 @@ async function submitAddSpace(e) {
     msg.innerHTML     = `<span class="alert-ico">✅</span>
       <div class="alert-text">
         <strong>تم إرسال طلب إضافة المساحة بنجاح!</strong><br>
-        تظهر في شيت المساحات بحالة <strong>غير ظاهر</strong> — فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة.<br>
+        المساحة في قائمة الانتظار — فريق مكاني Spot سيراجعها خلال 24 ساعة.<br>
         <div style="margin-top:6px;font-size:11px;color:var(--text3)">للمتابعة: واتساب 01103467711</div>
       </div>`;
 
     /* إعادة ضبط النموذج */
     document.getElementById('add-space-form')?.reset();
     clearMainSpaceImage();
-    asExtraImgsData = [];
+    asExtraImgUrls = []; asUnitImgUrls = {};
     const extraCont = document.getElementById('as-extra-imgs-container');
     const sizesCont = document.getElementById('as-sizes-container');
     const unitsCont = document.getElementById('as-units-container');
@@ -2677,11 +2818,11 @@ async function submitAddSpace(e) {
     if (unitEmpty) unitEmpty.style.display = 'block';
     if (priceDisp) priceDisp.style.display = 'none';
 
-  } catch {
+  } catch (err) {
     msg.className     = 'alert-item danger';
     msg.style.display = 'flex';
     msg.innerHTML     = `<span class="alert-ico">❌</span>
-      <div class="alert-text"><strong>تعذّر إرسال الطلب</strong><br>تأكد من الاتصال بالإنترنت وأعد المحاولة، أو تواصل معنا على واتساب 01103467711.</div>`;
+      <div class="alert-text"><strong>تعذّر حفظ المساحة</strong><br>${err.message || 'تأكد من الاتصال وأعد المحاولة.'}</div>`;
   }
 
   btn.disabled  = false;
@@ -3029,11 +3170,12 @@ let supabaseNotifications = [];
 let bzImageDataUrl = null; /* بيانات صورة البازار (base64 مضغوطة) */
 
 /* ── state لصفحة إضافة المساحة ── */
-let asMainImgDataUrl   = null;  /* صورة رئيسية للمساحة */
-let asExtraImgsData    = [];    /* [{dataUrl, name}] — صور إضافية */
-let asSizeRowCount     = 0;     /* عداد صفوف الأحجام */
-let asUnitCounter      = 0;     /* عداد الوحدات الفرعية */
-let ownerPendingSpaces = [];    /* مساحات معلقة محفوظة محلياً */
+let asMainImgUrl     = null;  /* R2 URL للصورة الرئيسية بعد الرفع */
+let asExtraImgUrls   = [];    /* [r2Url] — R2 URLs للصور الإضافية */
+let asUnitImgUrls    = {};    /* { idx: r2Url } — R2 URLs لصور الوحدات الفرعية */
+let asSizeRowCount   = 0;     /* عداد صفوف الأحجام */
+let asUnitCounter    = 0;     /* عداد الوحدات الفرعية */
+let ownerPendingSpaces = [];  /* مساحات معلقة — تُجلب من Supabase */
 
 /* ── state: الدفعات والمخالفات ── */
 let paymentsList   = [];
@@ -3074,6 +3216,52 @@ async function loadNotifications() {
   } catch {
     /* جدول notifications غير موجود بعد — التنبيهات المحلية تعمل */
   }
+}
+
+/* ── Supabase Realtime — تنبيهات فورية ── */
+let _notifChannel = null;
+function subscribeNotificationsRealtime() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  if (_notifChannel) return; /* تأكد من عدم الاشتراك مرتين */
+
+  _notifChannel = sb.channel('notif-live-' + currentOwner.id.slice(0, 8))
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `owner_id=eq.${currentOwner.id}`,
+    }, payload => {
+      if (!payload.new) return;
+      /* أضف التنبيه الجديد في أول القائمة */
+      supabaseNotifications.unshift(payload.new);
+      updateNotifBadge();
+      renderAlerts();
+      /* إذا وافق أو رفض الأدمن على المساحة → أعد تحميل المساحات تلقائياً */
+      if (['space_approved', 'space_rejected'].includes(payload.new.type)) {
+        loadOwnerData();
+      }
+    })
+    .subscribe();
+
+  /* Fallback: استعلام دوري كل دقيقتين لو انقطع الـ Realtime */
+  setInterval(() => { if (!document.hidden) loadNotifications(); }, 120000);
+}
+
+/* ── تعليم التنبيهات كمقروءة ── */
+async function markNotificationsRead() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id || !supabaseNotifications.length) return;
+  const ids = supabaseNotifications.map(n => n.id).filter(Boolean);
+  if (!ids.length) return;
+  try {
+    await sb.from('notifications')
+      .update({ is_read: true })
+      .in('id', ids)
+      .eq('owner_id', currentOwner.id);
+    supabaseNotifications = [];
+    updateNotifBadge();
+  } catch { /* silent */ }
 }
 
 function updateNotifBadge() {

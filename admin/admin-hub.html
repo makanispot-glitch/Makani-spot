@@ -770,6 +770,74 @@ body {
 .wf-tag-pend  { background: rgba(245,158,11,.1);  color: var(--yw); border: 1px solid rgba(245,158,11,.2); }
 
 /* ══════════════════════════════════════
+   SPACES MANAGEMENT
+══════════════════════════════════════ */
+.sp-tabs { display: flex; border-bottom: 1px solid var(--bd); background: var(--bg3); overflow-x: auto; }
+.sp-tab {
+  padding: 11px 18px; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--mu);
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
+}
+.sp-tab:hover  { color: var(--tx); }
+.sp-tab.active { color: var(--or); border-bottom-color: var(--or); }
+.sp-tab-body   { padding: 20px; }
+
+.sp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.sp-table th { padding: 8px 12px; text-align: right; background: var(--bg3); color: var(--mu); font-size: 11px; font-weight: 700; border-bottom: 1px solid var(--bd); }
+.sp-table td { padding: 10px 12px; border-bottom: 1px solid var(--bd); vertical-align: middle; }
+.sp-table tr:last-child td { border-bottom: none; }
+.sp-table tr:hover td { background: rgba(255,255,255,.02); }
+
+.sp-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+.sp-pending  { background: rgba(245,158,11,.12); color: var(--yw); border: 1px solid rgba(245,158,11,.25); }
+.sp-approved { background: rgba(34,197,94,.12);  color: var(--gr); border: 1px solid rgba(34,197,94,.25); }
+.sp-rejected { background: rgba(239,68,68,.12);  color: var(--rd); border: 1px solid rgba(239,68,68,.25); }
+
+.plan-starter { background: rgba(107,107,138,.15); color: var(--mu); border: 1px solid rgba(107,107,138,.3); }
+.plan-growth  { background: rgba(96,165,250,.12);  color: var(--bl); border: 1px solid rgba(96,165,250,.25); }
+.plan-pro     { background: rgba(255,107,0,.12);   color: var(--or); border: 1px solid rgba(255,107,0,.25); }
+
+.sp-btn { padding: 5px 11px; border-radius: 6px; border: none; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.sp-btn-ok  { background: rgba(34,197,94,.15);  color: var(--gr); border: 1px solid rgba(34,197,94,.3); }
+.sp-btn-ok:hover { background: rgba(34,197,94,.3); }
+.sp-btn-err { background: rgba(239,68,68,.15);  color: var(--rd); border: 1px solid rgba(239,68,68,.3); }
+.sp-btn-err:hover { background: rgba(239,68,68,.3); }
+.sp-btn-neu { background: var(--bg3); color: var(--mu); border: 1px solid var(--bd); }
+.sp-btn-neu:hover { color: var(--tx); border-color: var(--mu); }
+
+.plan-sel {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 6px;
+  color: var(--tx); font-family: 'Cairo', sans-serif; font-size: 12px;
+  padding: 5px 10px; cursor: pointer;
+}
+.plan-sel:focus { outline: none; border-color: var(--or); }
+
+.sp-pending-card {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 10px;
+  padding: 16px; display: flex; gap: 14px; align-items: flex-start;
+}
+.sp-pending-thumb {
+  width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
+  background: var(--bg4); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; overflow: hidden;
+}
+.sp-pending-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.sp-pending-info { flex: 1; min-width: 0; }
+.sp-pending-name { font-size: 14px; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
+.sp-pending-meta { font-size: 12px; color: var(--mu); margin-bottom: 8px; line-height: 1.7; }
+.sp-pending-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.sp-reject-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.sp-reject-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--bd); border-radius: 6px;
+  padding: 7px 10px; font-family: 'Cairo', sans-serif; font-size: 12px;
+  color: var(--tx);
+}
+.sp-reject-input:focus { outline: none; border-color: var(--rd); }
+
+/* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 900px) {
@@ -842,12 +910,12 @@ body {
   <div class="sec-title">حالة الأنظمة</div>
   <div class="status-grid">
     <div class="status-card">
-      <div class="status-dot-wrap dot-ok">📡</div>
+      <div class="status-dot-wrap dot-ok">🏢</div>
       <div class="status-info">
-        <div class="status-name">Apps Script — المساحات</div>
-        <div class="status-sub">Google Sheets API</div>
+        <div class="status-name">Supabase — المساحات</div>
+        <div class="status-sub">spaces · space_units · activities</div>
       </div>
-      <span class="status-pill pill-ok" id="st-spaces">LIVE</span>
+      <span class="status-pill pill-idle" id="st-spaces">CHECK</span>
     </div>
     <div class="status-card">
       <div class="status-dot-wrap dot-ok">🛍️</div>
@@ -879,12 +947,12 @@ body {
   <div class="sec-title">الوصول السريع</div>
   <div class="quick-grid">
 
-    <a href="./makani-admin-v3-fixed.html" target="_blank" class="quick-card">
-      <span class="quick-badge qb-live">LIVE</span>
+    <a href="./spaces-hub.html" target="_blank" class="quick-card">
+      <span class="quick-badge qb-live">SUPABASE</span>
       <div class="quick-icon">🏢</div>
-      <div class="quick-title">داشبورد المساحات</div>
-      <div class="quick-desc">إدارة المساحات، الوحدات الفرعية، الحجوزات، والموافقة على المساحات الجديدة المضافة من أصحاب الأماكن.</div>
-      <div class="quick-arrow">فتح الداشبورد ←</div>
+      <div class="quick-title">إدارة المساحات</div>
+      <div class="quick-desc">لوحة موحدة لإدارة المساحات، الوحدات الفرعية، الأنشطة، الطلبات، وأصحاب المساحات عبر Supabase.</div>
+      <div class="quick-arrow">فتح لوحة المساحات ←</div>
     </a>
 
     <a href="./bazaar-dashboard.html" target="_blank" class="quick-card">
@@ -913,67 +981,84 @@ body {
 
   </div>
 
+  <!-- ─── SPACES MANAGEMENT ─── -->
+  <div class="sec-title" id="spaces-mgmt">🏢 إدارة المساحات <span id="spaces-pending-badge" style="display:none;background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3);border-radius:5px;padding:2px 8px;font-size:11px;margin-right:8px;font-weight:700"></span></div>
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:32px;overflow:hidden">
+
+    <div class="sp-tabs" id="sp-tab-bar">
+      <button class="sp-tab active" onclick="switchSpTab('pending',this)">⏳ بانتظار الموافقة</button>
+      <button class="sp-tab" onclick="switchSpTab('all',this)">📋 جميع المساحات</button>
+      <button class="sp-tab" onclick="switchSpTab('owners',this)">👥 أصحاب الحسابات</button>
+      <button style="margin-right:auto;padding:10px 16px;font-size:12px;background:none;border:none;color:var(--or);cursor:pointer;font-family:Cairo,sans-serif;font-weight:700" onclick="loadSpacesData()">🔄 تحديث</button>
+    </div>
+
+    <div id="sp-tab-body" class="sp-tab-body">
+      <div style="text-align:center;padding:50px;color:var(--mu)">
+        <div style="font-size:28px;margin-bottom:10px">🔄</div>
+        <div style="font-size:13px">جاري التحميل…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ─── SYSTEM DETAILS ─── -->
   <div class="sec-title">تفاصيل الأنظمة والروابط</div>
   <div class="systems-grid">
 
-    <!-- SPACES SYSTEM -->
+    <!-- SPACES SYSTEM — Supabase -->
     <div class="sys-card">
       <div class="sys-card-head">
-        <div class="sys-card-title">🏢 نظام المساحات</div>
+        <div class="sys-card-title">🏢 نظام المساحات — Supabase</div>
         <span class="status-pill pill-ok">ACTIVE</span>
       </div>
       <div class="sys-card-body">
 
         <div class="info-row">
-          <div class="info-label">Apps Script URL</div>
+          <div class="info-label">Supabase Project</div>
           <div class="info-value">
-            <a class="link-chip" href="https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec" target="_blank">
-              🔗 script.google.com/.../exec
+            <a class="link-chip" href="https://supabase.com/dashboard/project/rxqkpjuvudweyovekvvx/editor" target="_blank">
+              🗄️ rxqkpjuvudweyovekvvx
             </a>
           </div>
-          <button class="copy-btn" onclick="copyText('https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec',this)">نسخ</button>
+          <button class="copy-btn" onclick="copyText('https://rxqkpjuvudweyovekvvx.supabase.co',this)">نسخ URL</button>
         </div>
 
         <div class="info-row">
-          <div class="info-label">Google Sheet</div>
-          <div class="info-value">
-            <a class="link-chip" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
-              📊 makani_spaces_sheet
-            </a>
-          </div>
-          <button class="copy-btn" onclick="copyText('https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit',this)">نسخ</button>
-        </div>
-
-        <div class="info-row">
-          <div class="info-label">الشيتات الرئيسية</div>
+          <div class="info-label">الجداول الرئيسية</div>
           <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏢 المساحات</span>
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 الوحدات الفرعية</span>
-            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏷️ الأنشطة</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏢 spaces</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📦 space_units</span>
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">🏷️ space_activities</span>
           </div>
         </div>
 
         <div class="info-row">
-          <div class="info-label">الـ Actions</div>
-          <div class="info-value" style="font-size:11px;line-height:2">
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--tl);font-size:10px">doGet</code> ← جلب المساحات والأنشطة للموقع<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">addSpace</code> ← إضافة مساحة جديدة<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">editSpace</code> ← تعديل مساحة موجودة<br>
-            <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;color:var(--or);font-size:10px">approveSpace</code> ← قبول / رفض مساحة
+          <div class="info-label">R2 Storage</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">📁 makani-listings-images/spaces/</span>
           </div>
         </div>
 
         <div class="info-row">
-          <div class="info-label">الـ CONST في app.js</div>
-          <div class="info-value" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mu);direction:ltr;line-height:1.8">
-            SHEET_URL = "...exec"
+          <div class="info-label">حالات المساحة</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--yw)">⏳ pending</span>
+            <span style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--gr)">✅ approved</span>
+            <span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--rd)">❌ rejected</span>
           </div>
         </div>
 
-        <div class="warn-box">
-          <span>⚠️</span>
-          <span>بعد أي تعديل في كود الـ Script — لازم تعمل <strong>New Deployment</strong> (مش Update) وتحدّث الرابط في app.js</span>
+        <div class="info-row">
+          <div class="info-label">باقات الأصحاب</div>
+          <div class="info-value" style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:10.5px">⬜ starter</span>
+            <span style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--bl)">✓ growth — موثّق</span>
+            <span style="background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.2);border-radius:5px;padding:2px 8px;font-size:10.5px;color:var(--or)">🏆 pro — شريك معتمد</span>
+          </div>
+        </div>
+
+        <div class="info-box">
+          💡 المساحة تظهر على الموقع <strong>فقط</strong> عند <code style="font-size:10px">status = approved</code> و <code style="font-size:10px">is_active = true</code>
         </div>
       </div>
     </div>
@@ -1086,8 +1171,9 @@ body {
         </div>
         <div class="info-row" style="border-bottom:none">
           <div class="info-label">صفحة المراجعة</div>
-          <div class="info-value">
+          <div class="info-value" style="display:flex;gap:8px;flex-wrap:wrap">
             <a class="link-chip" href="./index.html" target="_blank">🛡️ /admin/index.html</a>
+            <a class="link-chip" href="./spaces-hub.html" target="_blank">🏢 spaces-hub.html</a>
           </div>
         </div>
       </div>
@@ -1100,17 +1186,17 @@ body {
     <div style="font-size:12px;color:var(--mu);margin-bottom:6px">كيف تتدفق البيانات — من المصدر للمستخدم</div>
 
     <div style="margin-bottom:20px">
-      <div style="font-size:11px;font-weight:700;color:var(--or);margin-bottom:8px">📡 نظام المساحات</div>
+      <div style="font-size:11px;font-weight:700;color:var(--or);margin-bottom:8px">🏢 نظام المساحات — Supabase</div>
       <div class="arch-flow">
-        <div class="arch-node"><div class="node-icon">👤</div>Admin<div class="node-label">الداشبورد</div></div>
+        <div class="arch-node"><div class="node-icon">🏪</div>صاحب المساحة<div class="node-label">dashboard/</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doPost</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=pending</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">📊</div>Google Sheet<div class="node-label">المساحات</div></div>
+        <div class="arch-node" style="cursor:pointer" onclick="window.open('./spaces-hub.html','_blank')"><div class="node-icon">🛡️</div>Admin Hub<div class="node-label">spaces-hub ↗</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">⚙️</div>Apps Script<div class="node-label">doGet</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=approved</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">SHEET_URL</div></div>
+        <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">Supabase Query</div></div>
         <div class="arch-arrow">⟶</div>
         <div class="arch-node"><div class="node-icon">👥</div>الموقع<div class="node-label">المستخدمين</div></div>
       </div>
@@ -1442,6 +1528,10 @@ body {
       <div class="ext-icon">🗄️</div>
       <div><div class="ext-name">Supabase Dashboard</div><div class="ext-desc">listings · bazaars · auth</div></div>
     </a>
+    <a class="ext-link" href="./spaces-hub.html" target="_blank">
+      <div class="ext-icon">🏢</div>
+      <div><div class="ext-name">إدارة المساحات</div><div class="ext-desc">spaces-hub — لوحة التحكم الشاملة</div></div>
+    </a>
     <a class="ext-link" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
       <div class="ext-icon">📊</div>
       <div><div class="ext-name">شيت المساحات</div><div class="ext-desc">Google Sheets — Spaces</div></div>
@@ -1473,9 +1563,15 @@ body {
 const PW_HASH   = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
 const PW_SALT   = "MkSpot_2026_Salt";
 const MAX_TRIES = 5;
+const SB_URL    = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
-let attempts = 0;
-let locked   = false;
+let attempts   = 0;
+let locked     = false;
+let adminHash  = null;   // set after successful login
+let spCurrentTab = 'pending';
+let spAllSpaces  = [];
+let spAllOwners  = [];
 
 /* ══════════════════════════════════════
    SHA-256 implementation (pure JS)
@@ -1503,6 +1599,7 @@ async function tryLogin() {
 
   if (hashed === PW_HASH) {
     // ✅ صح
+    adminHash = hashed;
     document.getElementById('login-screen').style.animation = 'fadeOut .4s ease forwards';
     setTimeout(() => {
       document.getElementById('login-screen').style.display = 'none';
@@ -1511,6 +1608,8 @@ async function tryLogin() {
       document.getElementById('build-date').textContent = new Date().toLocaleDateString('ar-EG');
       toast('أهلاً بك في لوحة التحكم 👋', 's');
       checkSystemStatus();
+      loadSpacesData();
+      startAdminAutoRefresh();
     }, 400);
     sessionStorage.setItem('mkadmin', hashed.slice(0,16));
   } else {
@@ -1552,13 +1651,30 @@ async function tryLogin() {
 (async function() {
   const sess = sessionStorage.getItem('mkadmin');
   if (sess && sess === PW_HASH.slice(0,16)) {
+    adminHash = PW_HASH;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     startClock();
     document.getElementById('build-date').textContent = new Date().toLocaleDateString('ar-EG');
     checkSystemStatus();
+    loadSpacesData();
+    startAdminAutoRefresh();
   }
 })();
+
+/* ══════════════════════════════════════
+   AUTO-REFRESH — تحديث تلقائي كل 5 دقائق
+   يحدّث badge المساحات المعلقة وبيانات التاب
+══════════════════════════════════════ */
+let _adminRefreshStarted = false;
+function startAdminAutoRefresh() {
+  if (_adminRefreshStarted) return;
+  _adminRefreshStarted = true;
+  setInterval(() => {
+    if (!adminHash) return;
+    loadSpacesData();
+  }, 300000); /* كل 5 دقائق */
+}
 
 /* ══════════════════════════════════════
    LOGOUT
@@ -1589,16 +1705,17 @@ function startClock() {
    SYSTEM STATUS CHECK
 ══════════════════════════════════════ */
 async function checkSystemStatus() {
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-
-  // 1) فحص Apps Script — المساحات
+  // 1) فحص Supabase — المساحات
   const spacesEl = document.getElementById('st-spaces');
   spacesEl.textContent = 'CHECKING...';
   spacesEl.className   = 'status-pill pill-idle';
   try {
     const ctrl = new AbortController();
     const t    = setTimeout(() => ctrl.abort(), 5000);
-    const r = await fetch('https://script.google.com/macros/s/AKfycbwNGSGQXZjQeG1i-3DSiUdHKQJQq7JGBFNuXx0deVfJB1b2jGkxDRRI2SIgWwvU900tsQ/exec', { signal: ctrl.signal });
+    const r = await fetch(SB_URL + '/rest/v1/spaces?select=id&limit=1', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+      signal: ctrl.signal,
+    });
     clearTimeout(t);
     if (r.ok) { spacesEl.textContent = 'LIVE ✓'; spacesEl.className = 'status-pill pill-ok'; }
     else       { spacesEl.textContent = 'ERROR ' + r.status; spacesEl.className = 'status-pill pill-err'; }
@@ -1685,6 +1802,226 @@ function toast(msg, t='i') {
 const style = document.createElement('style');
 style.textContent = '@keyframes sp{to{transform:rotate(360deg)}} @keyframes fadeOut{to{opacity:0}}';
 document.head.appendChild(style);
+
+/* ══════════════════════════════════════
+   SPACES MANAGEMENT
+══════════════════════════════════════ */
+
+async function sbRpc(fn, params) {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function loadSpacesData() {
+  if (!adminHash) return;
+  showSpLoading();
+  try {
+    const [spaces, owners] = await Promise.all([
+      sbRpc('admin_get_spaces', { p_secret: adminHash }),
+      sbRpc('admin_get_owners', { p_secret: adminHash }),
+    ]);
+    spAllSpaces = spaces || [];
+    spAllOwners = owners || [];
+
+    const pendingCount = spAllSpaces.filter(s => s.status === 'pending').length;
+    const badge = document.getElementById('spaces-pending-badge');
+    if (badge) {
+      badge.textContent = pendingCount + ' جديد';
+      badge.style.display = pendingCount > 0 ? 'inline' : 'none';
+    }
+
+    renderSpTab(spCurrentTab);
+  } catch(err) {
+    showSpError(err.message);
+  }
+}
+
+function switchSpTab(tab, el) {
+  spCurrentTab = tab;
+  document.querySelectorAll('.sp-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderSpTab(tab);
+}
+
+function renderSpTab(tab) {
+  if (tab === 'pending') {
+    const pending = spAllSpaces.filter(s => s.status === 'pending');
+    renderPendingSpaces(pending);
+  } else if (tab === 'all') {
+    renderAllSpaces(spAllSpaces);
+  } else if (tab === 'owners') {
+    renderOwners(spAllOwners);
+  }
+}
+
+function showSpLoading() {
+  const el = document.getElementById('sp-tab-body');
+  if (el) el.innerHTML = `<div style="text-align:center;padding:50px;color:var(--mu)"><div style="font-size:28px;margin-bottom:10px;display:inline-block;animation:sp .9s linear infinite">⏳</div><div style="font-size:13px">جاري التحميل…</div></div>`;
+}
+
+function showSpError(msg) {
+  const el = document.getElementById('sp-tab-body');
+  if (el) el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--rd)"><div style="font-size:28px;margin-bottom:10px">⚠️</div><div style="font-size:13px">${msg}</div><button class="sp-btn sp-btn-neu" style="margin-top:12px" onclick="loadSpacesData()">🔄 حاول تاني</button></div>`;
+}
+
+function renderPendingSpaces(spaces) {
+  const body = document.getElementById('sp-tab-body');
+  if (!body) return;
+  if (!spaces.length) {
+    body.innerHTML = `<div style="text-align:center;padding:50px;color:var(--mu)"><div style="font-size:36px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:700">مفيش مساحات بانتظار الموافقة</div></div>`;
+    return;
+  }
+  body.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;padding:20px">` +
+    spaces.map(s => `
+      <div class="sp-pending-card" id="pcard-${s.id}">
+        <div class="sp-pending-thumb">
+          ${s.image_url
+            ? `<img src="${s.image_url}" alt="${s.name}" onerror="this.parentElement.innerHTML='🏪'">`
+            : '🏪'}
+        </div>
+        <div class="sp-pending-info">
+          <div class="sp-pending-name">${s.name}</div>
+          <div class="sp-pending-meta">
+            📍 ${s.region || '—'} &nbsp;·&nbsp;
+            ${typeLabel(s.type)} &nbsp;·&nbsp;
+            👤 ${s.owner_name} (${s.owner_email}) &nbsp;·&nbsp;
+            📦 ${s.units_count} وحدة &nbsp;·&nbsp;
+            🕐 ${fmtDate(s.created_at)}
+          </div>
+          <div class="sp-pending-actions">
+            <button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','approve')">✅ قبول</button>
+            <button class="sp-btn sp-btn-err" onclick="toggleRejectRow('${s.id}')">❌ رفض</button>
+          </div>
+          <div id="reject-row-${s.id}" style="display:none" class="sp-reject-row">
+            <input class="sp-reject-input" id="reject-reason-${s.id}" placeholder="سبب الرفض (اختياري)…" type="text">
+            <button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','reject',document.getElementById('reject-reason-${s.id}').value)">تأكيد الرفض</button>
+          </div>
+        </div>
+      </div>`).join('') + `</div>`;
+}
+
+function renderAllSpaces(spaces) {
+  const body = document.getElementById('sp-tab-body');
+  if (!body) return;
+  if (!spaces.length) {
+    body.innerHTML = `<div style="text-align:center;padding:50px;color:var(--mu)"><div style="font-size:36px;margin-bottom:12px">🏪</div><div>لا توجد مساحات بعد</div></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="sp-table">
+        <thead><tr>
+          <th>المساحة</th><th>النوع</th><th>المنطقة</th><th>الوحدات</th>
+          <th>الحالة</th><th>الباقة</th><th>الصاحب</th><th>الإجراءات</th>
+        </tr></thead>
+        <tbody>
+          ${spaces.map(s => `
+            <tr id="row-${s.id}">
+              <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</td>
+              <td>${typeLabel(s.type)}</td>
+              <td>${s.region || '—'}</td>
+              <td style="text-align:center">${s.units_count}</td>
+              <td><span class="sp-badge ${s.status === 'approved' ? 'sp-approved' : s.status === 'pending' ? 'sp-pending' : 'sp-rejected'}">${statusLabel(s.status)}</span></td>
+              <td><span class="sp-badge ${planClass(s.owner_plan)}">${planLabel(s.owner_plan)}</span></td>
+              <td style="font-size:11px;color:var(--mu);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.owner_name}</td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  ${s.status !== 'approved' ? `<button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','approve')">قبول</button>` : ''}
+                  ${s.status !== 'rejected' ? `<button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','reject','')">رفض</button>` : ''}
+                  <button class="sp-btn sp-btn-neu" onclick="manageSpace('${s.id}','toggle_active')">${s.is_active ? '⏸ إيقاف' : '▶ تشغيل'}</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderOwners(owners) {
+  const body = document.getElementById('sp-tab-body');
+  if (!body) return;
+  if (!owners.length) {
+    body.innerHTML = `<div style="text-align:center;padding:50px;color:var(--mu)"><div style="font-size:36px;margin-bottom:12px">👥</div><div>لا توجد حسابات بعد</div></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="sp-table">
+        <thead><tr>
+          <th>الاسم</th><th>الإيميل</th><th>الباقة</th>
+          <th>المساحات</th><th>تاريخ التسجيل</th><th>تغيير الباقة</th>
+        </tr></thead>
+        <tbody>
+          ${owners.map(o => `
+            <tr id="orow-${o.id}">
+              <td style="font-weight:700">${o.full_name}</td>
+              <td style="font-size:11px;direction:ltr">${o.email}</td>
+              <td><span class="sp-badge ${planClass(o.plan_tier)}" id="plan-badge-${o.id}">${planLabel(o.plan_tier)}</span></td>
+              <td style="text-align:center">${o.spaces_count}</td>
+              <td style="font-size:11px;color:var(--mu)">${fmtDate(o.created_at)}</td>
+              <td>
+                <select class="plan-sel" id="plan-sel-${o.id}" onchange="setOwnerPlan('${o.id}',this.value)">
+                  <option value="starter" ${o.plan_tier==='starter'?'selected':''}>⬜ Starter</option>
+                  <option value="growth"  ${o.plan_tier==='growth' ?'selected':''}>✓ Growth — موثّق</option>
+                  <option value="pro"     ${o.plan_tier==='pro'    ?'selected':''}>🏆 Pro — شريك معتمد</option>
+                </select>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function manageSpace(spaceId, action, reason) {
+  if (!adminHash) return;
+  try {
+    await sbRpc('admin_manage_space', { p_space_id: spaceId, p_action: action, p_reason: reason || null, p_secret: adminHash });
+    toast(action === 'approve' ? '✅ تم قبول المساحة' : action === 'reject' ? '❌ تم رفض المساحة' : '🔄 تم التحديث', 's');
+    await loadSpacesData();
+  } catch(err) {
+    toast('خطأ: ' + err.message, 'e');
+  }
+}
+
+async function setOwnerPlan(ownerId, planTier) {
+  if (!adminHash) return;
+  const sel = document.getElementById('plan-sel-' + ownerId);
+  const badge = document.getElementById('plan-badge-' + ownerId);
+  try {
+    await sbRpc('admin_set_plan_tier', { p_owner_id: ownerId, p_plan_tier: planTier, p_secret: adminHash });
+    if (badge) { badge.className = 'sp-badge ' + planClass(planTier); badge.textContent = planLabel(planTier); }
+    toast('🏆 تم تحديث الباقة إلى ' + planLabel(planTier), 's');
+  } catch(err) {
+    toast('خطأ: ' + err.message, 'e');
+    if (sel) {
+      const owner = spAllOwners.find(o => o.id === ownerId);
+      if (owner) sel.value = owner.plan_tier;
+    }
+  }
+}
+
+function toggleRejectRow(spaceId) {
+  const row = document.getElementById('reject-row-' + spaceId);
+  if (row) row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+}
+
+/* helpers */
+function typeLabel(t)  { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة'}[t]||t||'—'; }
+function statusLabel(s){ return {pending:'⏳ انتظار',approved:'✅ معتمد',rejected:'❌ مرفوض'}[s]||s; }
+function planClass(p)  { return {starter:'plan-starter',growth:'plan-growth',pro:'plan-pro'}[p]||'plan-starter'; }
+function planLabel(p)  { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p; }
+function fmtDate(d)    { return d ? new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
 </script>
 </body>
 </html>

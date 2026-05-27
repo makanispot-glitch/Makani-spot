@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>مكاني Spot — لوحة تحكم المساحات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080810;--bg2:#0d0d1a;--bg3:#12121f;--bg4:#1a1a2e;--bg5:#222238;
+  --or:#F36418;--or2:#ff8c3a;--org:rgba(255,107,0,.12);--bdo:rgba(255,107,0,.3);
+  --tx:#e8e8f0;--tx2:#b0b0c8;--mu:#6b6b8a;--mu2:#3a3a55;--bd:rgba(255,255,255,.07);
+  --gr:#22C55E;--rd:#EF4444;--yw:#F59E0B;--bl:#60A5FA;--pu:#A78BFA;--tl:#2DD4BF;
+  --r:10px;--r2:14px;--sb:240px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+a{color:var(--or);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;color:var(--tx)}
+
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,107,0,.03)1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ── Login ── */
+#login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.97);backdrop-filter:blur(4px)}
+.login-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:40px 36px;width:360px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.login-logo{text-align:center;font-size:36px;margin-bottom:8px}
+.login-title{text-align:center;font-size:18px;font-weight:800;color:var(--or);margin-bottom:4px}
+.login-sub{text-align:center;font-size:12px;color:var(--mu);margin-bottom:24px}
+.login-inp{width:100%;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:var(--r);padding:12px 14px;font-size:14px;color:var(--tx);margin-bottom:12px;outline:none;transition:border-color .2s}
+.login-inp:focus{border-color:var(--or)}
+.login-btn{width:100%;background:var(--or);border:none;border-radius:var(--r);padding:13px;font-size:15px;font-weight:700;color:#fff;transition:opacity .2s}
+.login-btn:hover{opacity:.88}
+.login-err{margin-top:10px;color:var(--rd);font-size:12px;text-align:center;min-height:16px}
+
+/* ── App shell ── */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+#app.visible{display:flex}
+
+/* ── Sidebar ── */
+.sidebar{position:fixed;top:0;right:0;width:var(--sb);height:100vh;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;z-index:100;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.sb-logo{display:flex;align-items:center;gap:12px;padding:20px 18px 16px;border-bottom:1px solid var(--bd)}
+.sb-logo-ico{font-size:28px}
+.sb-logo-name{font-size:14px;font-weight:800;color:var(--or)}
+.sb-logo-sub{font-size:10px;color:var(--mu);margin-top:1px}
+.sb-nav{flex:1;padding:10px 8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .18s;margin-bottom:2px;position:relative}
+.sb-item:hover{background:var(--bg3);color:var(--tx)}
+.sb-item.active{background:var(--org);color:var(--or);border:1px solid var(--bdo)}
+.sb-ico{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.sb-badge{background:var(--rd);color:#fff;border-radius:10px;font-size:10px;font-weight:800;padding:1px 7px;margin-right:auto}
+.sb-sep{height:1px;background:var(--bd);margin:8px 12px}
+.sb-bottom{padding:12px 8px 20px;border-top:1px solid var(--bd)}
+.sb-logout{width:100%;background:transparent;border:1px solid var(--mu2);border-radius:var(--r);padding:9px;font-size:12px;font-weight:700;color:var(--mu);transition:all .2s}
+.sb-logout:hover{border-color:var(--rd);color:var(--rd)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+/* ── Main wrap ── */
+.main-wrap{margin-right:var(--sb);min-height:100vh;display:flex;flex-direction:column;transition:margin-right .28s}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
+.topbar-menu{background:transparent;border:none;color:var(--tx2);font-size:20px;padding:4px 8px;border-radius:6px;transition:color .2s;display:none}
+.topbar-menu:hover{color:var(--or)}
+.topbar-title{font-size:16px;font-weight:800;color:var(--tx);flex:1}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.tbtn{background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--tx2);transition:all .2s}
+.tbtn:hover{border-color:var(--or);color:var(--or)}
+.tbtn-primary{background:var(--or);border-color:var(--or);color:#fff}
+.tbtn-primary:hover{opacity:.88}
+
+/* ── Page body ── */
+.page-body{flex:1;overflow-y:auto}
+.page{display:none;padding:24px}
+.page.active{display:block}
+
+/* ── Overview stat cards ── */
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.stat-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 18px;display:flex;flex-direction:column;gap:4px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--bdo)}
+.stat-card-ico{font-size:20px;margin-bottom:4px}
+.stat-card-val{font-size:26px;font-weight:900;font-family:'IBM Plex Mono',monospace;line-height:1}
+.stat-card-lbl{font-size:11px;color:var(--mu);font-weight:600;margin-top:2px}
+
+/* ── Section headers ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:14px;font-weight:800;color:var(--tx)}
+.sec-sub{font-size:11px;color:var(--mu);margin-top:2px}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.f-inp,.f-sel{background:var(--bg3);border:1.5px solid var(--mu2);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--tx);outline:none;transition:border-color .2s}
+.f-inp:focus,.f-sel:focus{border-color:var(--or)}
+.f-sel{cursor:pointer}
+
+/* ── Stats chips ── */
+.stats-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.stat-chip{background:var(--bg3);border:1px solid var(--bd);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.stat-num{font-size:14px;font-weight:900;font-family:'IBM Plex Mono',monospace}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-approved{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
+.b-pending {background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.b-rejected{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.b-active  {background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.3)}
+.b-hidden  {background:rgba(107,107,138,.15);color:#6b6b8a;border:1px solid rgba(107,107,138,.3)}
+.b-pro     {background:rgba(251,191,36,.15);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
+.b-growth  {background:rgba(52,211,153,.15);color:#34D399;border:1px solid rgba(52,211,153,.3)}
+.b-starter {background:rgba(107,107,138,.12);color:#6b6b8a;border:1px solid rgba(107,107,138,.25)}
+.b-dormant {background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.25)}
+.b-ok      {background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.25)}
+
+/* ── Tables ── */
+.t-wrap{overflow-x:auto}
+.t{width:100%;border-collapse:collapse;font-size:12px}
+.t th{background:var(--bg4);padding:10px 12px;text-align:right;font-weight:700;color:var(--mu);border-bottom:1px solid var(--bd);white-space:nowrap}
+.t td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.t tr.sp-row:hover td{background:rgba(255,107,0,.04)}
+.t tr.sp-row{cursor:pointer}
+.t tr.unit-row td{background:var(--bg2);padding:8px 12px 8px 20px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px}
+.exp-ico{transition:transform .2s;display:inline-block;color:var(--mu);font-size:10px}
+.exp-ico.open{transform:rotate(90deg)}
+
+/* ── Action buttons ── */
+.btn{border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn:hover{opacity:.82}
+.btn-ok  {background:rgba(34,197,94,.18);color:#22C55E}
+.btn-err {background:rgba(239,68,68,.18);color:#EF4444}
+.btn-neu {background:var(--bg5);color:var(--tx2);border:1px solid var(--bd)}
+.btn-or  {background:var(--or);color:#fff}
+.btn-yw  {background:rgba(245,158,11,.18);color:#F59E0B}
+.btn-bl  {background:rgba(96,165,250,.18);color:#60A5FA}
+
+/* ── Pending cards ── */
+.p-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:18px;display:flex;gap:16px;align-items:flex-start;transition:border-color .2s;margin-bottom:12px}
+.p-card:hover{border-color:var(--bdo)}
+.p-thumb{width:80px;height:72px;border-radius:var(--r);overflow:hidden;flex-shrink:0;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:28px}
+.p-thumb img{width:100%;height:100%;object-fit:cover}
+.p-info{flex:1;min-width:0}
+.p-name{font-size:15px;font-weight:800;color:var(--tx);margin-bottom:6px}
+.p-meta{font-size:11px;color:var(--mu);line-height:1.8;margin-bottom:10px}
+.p-meta b{color:var(--tx2)}
+.p-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ── Detail panel ── */
+.detail-panel{background:var(--bg2);border-top:1px solid rgba(255,107,0,.15);padding:16px 20px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.detail-field{background:var(--bg3);border-radius:8px;padding:8px 10px}
+.detail-key{font-size:10px;color:var(--mu);margin-bottom:2px}
+.detail-val{font-size:12px;font-weight:600;color:var(--tx);word-break:break-word}
+.detail-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.detail-img{width:80px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--bd)}
+
+/* ── Mini unit table ── */
+.ut{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.ut th{background:var(--bg3);padding:6px 10px;color:var(--mu);font-weight:700;text-align:right}
+.ut td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03)}
+
+/* ── Form ── */
+.form-wrap{max-width:840px}
+.form-sec{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:22px;margin-bottom:16px}
+.form-sec-title{font-size:13px;font-weight:800;color:var(--or);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;font-weight:600;color:var(--tx2)}
+.fl .rq{color:var(--rd)}
+.fc{background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--tx);outline:none;transition:border-color .2s;width:100%}
+.fc:focus{border-color:var(--or)}
+textarea.fc{resize:vertical;min-height:72px}
+
+/* ── Upload ── */
+.upload-zone{border:2px dashed rgba(255,107,0,.3);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;background:var(--org);transition:all .2s}
+.upload-zone:hover{border-color:var(--or);background:rgba(255,107,0,.16)}
+.upload-zone-ico{font-size:24px;margin-bottom:4px}
+.upload-zone-lbl{font-size:11px;color:var(--or);font-weight:600}
+.upload-status{font-size:11px;margin-top:4px}
+.chip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:6px}
+.pick-chip{display:flex;align-items:center;gap:6px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;user-select:none;transition:all .18s}
+.pick-chip:hover{border-color:var(--or);color:var(--tx)}
+.pick-chip input{accent-color:var(--or)}
+.pick-chip:has(input:checked){background:var(--org);border-color:var(--bdo);color:var(--or)}
+.form-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.activity-row{display:grid;grid-template-columns:90px 1fr 90px 90px 130px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.activity-row:hover{background:rgba(255,107,0,.03)}
+.activity-row-hd{background:var(--bg4);color:var(--mu);font-size:11px;font-weight:800;border-radius:var(--r) var(--r) 0 0}
+.extra-imgs-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.extra-img-wrap{position:relative;width:90px;height:70px;border-radius:8px;overflow:hidden;flex-shrink:0}
+.extra-img-wrap img{width:100%;height:100%;object-fit:cover}
+.extra-img-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:9px;cursor:pointer;line-height:18px;text-align:center}
+
+/* ── Unit rows in form ── */
+.unit-form-row{background:var(--bg4);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.unit-form-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.unit-form-title{font-size:12px;font-weight:700;color:var(--or)}
+
+/* ── Owner list card ── */
+.owner-row{display:grid;grid-template-columns:40px 1fr 140px 100px 100px 90px 100px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;transition:background .15s}
+.owner-row:hover{background:rgba(255,107,0,.03)}
+.owner-row-hd{background:var(--bg4);font-weight:700;color:var(--mu);font-size:11px;border-radius:var(--r) var(--r) 0 0}
+.owner-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--or)}
+
+/* ── Recent list ── */
+.recent-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.recent-item:last-child{border-bottom:none}
+.recent-thumb{width:42px;height:34px;border-radius:7px;overflow:hidden;flex-shrink:0;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px}
+.recent-thumb img{width:100%;height:100%;object-fit:cover}
+.recent-info{flex:1;min-width:0}
+.recent-name{font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-meta{font-size:10px;color:var(--mu);margin-top:2px}
+
+/* ── Overview split ── */
+.ov-split{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.ov-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:18px}
+.ov-box-title{font-size:13px;font-weight:800;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ── Confirm ── */
+#confirm-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
+#confirm-modal.open{display:flex}
+.confirm-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:380px;width:94%;text-align:center}
+.confirm-title{font-size:16px;font-weight:800;color:var(--tx);margin-bottom:8px}
+.confirm-sub{font-size:12px;color:var(--mu);margin-bottom:20px}
+.confirm-actions{display:flex;gap:10px;justify-content:center}
+
+/* ── Toast ── */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);animation:toastIn .3s ease;pointer-events:all}
+.toast-s{background:rgba(34,197,94,.92);color:#fff}
+.toast-e{background:rgba(239,68,68,.92);color:#fff}
+.toast-i{background:rgba(96,165,250,.92);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+
+/* ── Empty / loading ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--mu)}
+.empty-ico{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:14px;font-weight:700;margin-bottom:6px;color:var(--tx2)}
+
+@media(max-width:900px){
+  :root{--sb:0px}
+  .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sb-overlay{display:block}
+  .sb-overlay.visible{display:block;z-index:99}
+  .topbar-menu{display:block}
+  .main-wrap{margin-right:0}
+  .ov-split,.fg2,.fg3{grid-template-columns:1fr}
+  .page{padding:14px}
+  .owner-row{grid-template-columns:36px 1fr 90px 80px}
+  .owner-row>*:nth-child(n+5){display:none}
+  .topbar{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🏢</div>
+    <div class="login-title">إدارة المساحات</div>
+    <div class="login-sub">مكاني Spot — لوحة التحكم الشاملة</div>
+    <input id="pw-inp" class="login-inp" type="password" placeholder="كلمة المرور"
+           onkeydown="if(event.key==='Enter')tryLogin()">
+    <button class="login-btn" id="login-btn" onclick="tryLogin()">دخول ←</button>
+    <div id="login-err" class="login-err"></div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-ico">🏢</div>
+      <div>
+        <div class="sb-logo-name">مكاني Spot</div>
+        <div class="sb-logo-sub">Admin — إدارة المساحات</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active" id="sbi-overview" onclick="gp('overview',this)">
+        <span class="sb-ico">📊</span> نظرة عامة
+      </div>
+      <div class="sb-item" id="sbi-spaces" onclick="gp('spaces',this)">
+        <span class="sb-ico">🏢</span> المساحات
+      </div>
+      <div class="sb-item" id="sbi-pending" onclick="gp('pending',this)">
+        <span class="sb-ico">⏳</span> الطلبات
+        <span id="pending-badge" class="sb-badge" style="display:none">0</span>
+      </div>
+      <div class="sb-item" id="sbi-owners" onclick="gp('owners',this)">
+        <span class="sb-ico">👥</span> الأصحاب
+      </div>
+      <div class="sb-item" id="sbi-activities" onclick="gp('activities',this)">
+        <span class="sb-ico">🏷️</span> الأنشطة
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item" id="sbi-add" onclick="openAddForm()">
+        <span class="sb-ico">➕</span> إضافة مساحة
+      </div>
+    </nav>
+    <div class="sb-bottom">
+      <div style="font-size:10px;color:var(--mu2);text-align:center;margin-bottom:8px" id="sb-last-sync"></div>
+      <button class="sb-logout" onclick="doLogout()">⏏ خروج</button>
+    </div>
+  </aside>
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="main-wrap" id="main-wrap">
+    <div class="topbar">
+      <button class="topbar-menu" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">نظرة عامة</div>
+      <div class="topbar-actions">
+        <button class="tbtn" onclick="loadAll()">🔄 تحديث</button>
+        <button class="tbtn tbtn-primary" onclick="openAddForm()">+ مساحة جديدة</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div id="pg-overview" class="page active"></div>
+      <div id="pg-spaces"   class="page"></div>
+      <div id="pg-pending"  class="page"></div>
+      <div id="pg-owners"   class="page"></div>
+      <div id="pg-activities" class="page"></div>
+      <div id="pg-form"     class="page"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">تأكيد الإجراء</div>
+    <div class="confirm-sub"   id="confirm-sub"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-err" id="confirm-ok">تأكيد</button>
+      <button class="btn btn-neu" onclick="closeConfirm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="../media-handler.js?v=20260527"></script>
+<script>
+/* ═══════════════════════════════
+   CONFIG
+═══════════════════════════════ */
+const PW_HASH  = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
+const PW_SALT  = 'MkSpot_2026_Salt';
+const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات',activities:'إدارة الأنشطة',form:'إضافة / تعديل مساحة'};
+const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
+const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
+const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
+
+let adminHash   = null;
+let allSpaces   = [];
+let allOwners   = [];
+let allActivities = [];
+let currentPage = 'overview';
+let editingId   = null;
+let fMainImgUrl   = null;
+let fExtraImgUrls = [];
+let fUnitImgUrls  = {};
+let fUnitCounter  = 0;
+
+/* filters state */
+let fltStatus = '', fltType = '', fltSearch = '';
+let ownerSearch = '';
+let activitySearch = '';
+
+/* ═══════════════════════════════
+   LOGIN
+═══════════════════════════════ */
+async function tryLogin() {
+  const pw  = document.getElementById('pw-inp').value.trim();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  if (!pw) { err.textContent = 'أدخل كلمة المرور'; return; }
+  btn.disabled = true; btn.textContent = '⏳…';
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PW_SALT + pw));
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if (hash === PW_HASH) {
+    adminHash = hash;
+    sessionStorage.setItem('ms_sphub', hash.slice(0,16));
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    loadAll();
+  } else {
+    err.textContent = '❌ كلمة المرور خاطئة';
+    btn.disabled = false; btn.textContent = 'دخول ←';
+  }
+}
+function doLogout() { sessionStorage.removeItem('ms_sphub'); location.reload(); }
+
+(function() {
+  const s = sessionStorage.getItem('ms_sphub');
+  if (s && s === PW_HASH.slice(0,16)) {
+    adminHash = PW_HASH;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    setTimeout(loadAll, 100);
+  }
+})();
+
+/* ═══════════════════════════════
+   SUPABASE
+═══════════════════════════════ */
+async function sbRpc(fn, params) {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST', headers:SB_HDR, body:JSON.stringify(params)
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message||e.hint||`HTTP ${res.status}`); }
+  return res.json();
+}
+
+/* ═══════════════════════════════
+   DATA
+═══════════════════════════════ */
+async function loadAll() {
+  if (!adminHash) return;
+  setPageLoading(currentPage);
+  try {
+    const [spaces, owners, activities] = await Promise.all([
+      sbRpc('admin_get_spaces', {p_secret:adminHash}),
+      sbRpc('admin_get_owners', {p_secret:adminHash}),
+      fetchActivities().catch(()=>[]),
+    ]);
+    allSpaces = spaces || [];
+    allOwners = owners || [];
+    allActivities = activities || [];
+    updatePendingBadge();
+    const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    const sync = document.getElementById('sb-last-sync');
+    if (sync) sync.textContent = 'آخر تحديث: ' + now;
+    renderCurrentPage();
+  } catch(e) {
+    setPageContent(currentPage, `<div class="empty-state"><div class="empty-ico">⚠️</div><div class="empty-title">${esc(e.message)}</div><button class="btn btn-neu" style="margin-top:12px" onclick="loadAll()">🔄 حاول تاني</button></div>`);
+  }
+}
+
+function updatePendingBadge() {
+  const n = allSpaces.filter(s=>s.status==='pending').length;
+  const b = document.getElementById('pending-badge');
+  if (b) { b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none'; }
+}
+
+async function loadSpaceDetail(id) {
+  return sbRpc('admin_get_space_detail', {p_space_id:id, p_secret:adminHash});
+}
+
+async function fetchActivities() {
+  const res = await fetch(`${SB_URL}/rest/v1/space_activities?select=id,emoji,name_ar,sort_order,is_active&order=sort_order.asc`, {headers:SB_HDR});
+  if (!res.ok) throw new Error('فشل تحميل الأنشطة: HTTP ' + res.status);
+  return res.json();
+}
+
+async function sbTable(method, table, body, query='') {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}${query}`, {
+    method,
+    headers: {...SB_HDR, Prefer:'return=representation'},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.message || e.hint || `HTTP ${res.status}`);
+  }
+  return method === 'DELETE' ? null : res.json();
+}
+
+/* ═══════════════════════════════
+   NAVIGATION
+═══════════════════════════════ */
+function gp(page, el) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('pg-' + page);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    const sbi = document.getElementById('sbi-' + page);
+    if (sbi) sbi.classList.add('active');
+  }
+  const ttl = document.getElementById('topbar-title');
+  if (ttl) ttl.textContent = PAGE_TITLES[page] || page;
+  if (window.innerWidth <= 900) closeSidebar();
+  renderCurrentPage();
+}
+
+function renderCurrentPage() {
+  switch(currentPage) {
+    case 'overview': renderOverview(); break;
+    case 'spaces':   renderSpaces();   break;
+    case 'pending':  renderPending();  break;
+    case 'owners':   renderOwners();   break;
+    case 'activities': renderActivities(); break;
+    case 'form':     /* rendered by editSpace/openAddForm */ break;
+  }
+}
+
+function setPageLoading(page) {
+  const el = document.getElementById('pg-' + page);
+  if (el) el.innerHTML = loading();
+}
+function setPageContent(page, html) {
+  const el = document.getElementById('pg-' + page);
+  if (el) el.innerHTML = html;
+}
+
+/* ═══════════════════════════════
+   SIDEBAR TOGGLE
+═══════════════════════════════ */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sb-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('visible', sb.classList.contains('open'));
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('visible');
+}
+
+/* ═══════════════════════════════
+   PAGE: OVERVIEW
+═══════════════════════════════ */
+function renderOverview() {
+  const total    = allSpaces.length;
+  const approved = allSpaces.filter(s=>s.status==='approved').length;
+  const pending  = allSpaces.filter(s=>s.status==='pending').length;
+  const rejected = allSpaces.filter(s=>s.status==='rejected').length;
+  const visible  = allSpaces.filter(s=>s.status==='approved'&&s.is_active).length;
+  const totalUnits = allSpaces.reduce((sum,s)=>sum+(s.units_count||0),0);
+
+  const totalOwners = allOwners.length;
+  const activeOwnerIds = new Set(
+    allSpaces.filter(s=>s.status==='approved'&&s.is_active).map(s=>s.owner_id).filter(Boolean)
+  );
+  const activeOwners  = activeOwnerIds.size;
+  const dormantOwners = totalOwners - activeOwners;
+  const proOwners     = allOwners.filter(o=>o.plan_tier==='pro').length;
+  const growthOwners  = allOwners.filter(o=>o.plan_tier==='growth').length;
+
+  const recentPending = allSpaces.filter(s=>s.status==='pending').slice(0,5);
+  const recentSpaces  = [...allSpaces]
+    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
+    .slice(0,6);
+
+  const html = `
+  <div class="ov-grid">
+    ${sc('🏢','إجمالي المساحات', total, 'var(--bl)')}
+    ${sc('✅','مساحات معتمدة',   approved,'var(--gr)')}
+    ${sc('⏳','في الانتظار',     pending, 'var(--yw)')}
+    ${sc('❌','مرفوضة',          rejected,'var(--rd)')}
+    ${sc('👁','ظاهرة للعموم',    visible, 'var(--tl)')}
+    ${sc('📦','وحدات فرعية',     totalUnits,'var(--pu)')}
+    ${sc('👥','أصحاب المساحات', totalOwners,'var(--or)')}
+    ${sc('🟢','أصحاب نشطون',    activeOwners,'var(--gr)')}
+    ${sc('🔴','أصحاب خاملون',   dormantOwners,'var(--rd)')}
+    ${sc('🏆','باقة Pro',        proOwners,'var(--yw)')}
+    ${sc('✓','باقة Growth',      growthOwners,'var(--tl)')}
+    ${sc('📋','إجمالي الوحدات', totalUnits,'var(--pu)')}
+    ${sc('🏷️','أنشطة مفعلة', allActivities.filter(a=>a.is_active!==false).length,'var(--or)')}
+  </div>
+
+  ${pending > 0 ? `
+  <div class="ov-box" style="margin-bottom:20px;border-color:rgba(245,158,11,.3)">
+    <div class="ov-box-title">⏳ طلبات تنتظر المراجعة <span class="sb-badge" style="background:var(--yw)">${pending}</span></div>
+    ${recentPending.map(s=>`
+      <div class="recent-item">
+        <div class="recent-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
+        <div class="recent-info">
+          <div class="recent-name">${esc(s.name)}</div>
+          <div class="recent-meta">📍 ${esc(s.region||'—')} · ${typeLabel(s.type)} · 👤 ${esc(s.owner_name||'—')} · ${fmtDate(s.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅ قبول</button>
+          <button class="btn btn-err" onclick="promptReject('${s.id}','${esc(s.name)}')">❌ رفض</button>
+        </div>
+      </div>`).join('')}
+    <div style="margin-top:12px">
+      <button class="btn btn-neu" onclick="gp('pending',document.getElementById('sbi-pending'))">عرض جميع الطلبات ←</button>
+    </div>
+  </div>` : ''}
+
+  <div class="ov-split">
+    <div class="ov-box">
+      <div class="ov-box-title">🏢 آخر المساحات المضافة</div>
+      ${recentSpaces.length ? recentSpaces.map(s=>`
+        <div class="recent-item">
+          <div class="recent-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
+          <div class="recent-info">
+            <div class="recent-name">${esc(s.name)}</div>
+            <div class="recent-meta">${typeLabel(s.type)} · ${esc(s.region||'—')} · ${fmtDate(s.created_at)}</div>
+          </div>
+          <span class="badge ${statusCls(s.status)}">${statusLbl(s.status)}</span>
+        </div>`).join('') : '<div style="color:var(--mu);font-size:12px;text-align:center;padding:20px">لا توجد مساحات</div>'}
+    </div>
+    <div class="ov-box">
+      <div class="ov-box-title">👥 توزيع الأصحاب</div>
+      ${ownerDistChart(proOwners, growthOwners, totalOwners-proOwners-growthOwners, activeOwners, dormantOwners)}
+    </div>
+  </div>`;
+
+  setPageContent('overview', html);
+}
+
+function sc(ico, lbl, val, color) {
+  return `<div class="stat-card"><div class="stat-card-ico" style="color:${color}">${ico}</div><div class="stat-card-val" style="color:${color}">${val}</div><div class="stat-card-lbl">${lbl}</div></div>`;
+}
+
+function ownerDistChart(pro, growth, starter, active, dormant) {
+  const total = pro + growth + starter || 1;
+  const rows = [
+    {lbl:'🏆 Pro',    val:pro,     color:'var(--yw)',  pct:Math.round(pro/total*100)},
+    {lbl:'✓ Growth', val:growth,  color:'var(--tl)',  pct:Math.round(growth/total*100)},
+    {lbl:'Starter',  val:starter, color:'var(--mu)',  pct:Math.round(starter/total*100)},
+    {lbl:'🟢 نشط',   val:active,  color:'var(--gr)',  pct:Math.round(active/Math.max(1,active+dormant)*100)},
+    {lbl:'🔴 خامل',  val:dormant, color:'var(--rd)',  pct:Math.round(dormant/Math.max(1,active+dormant)*100)},
+  ];
+  return rows.map(r=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:52px;font-size:11px;color:var(--tx2);flex-shrink:0">${r.lbl}</div>
+      <div style="flex:1;background:var(--bg4);border-radius:20px;height:7px;overflow:hidden">
+        <div style="width:${r.pct}%;height:100%;background:${r.color};border-radius:20px;transition:width .6s"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:${r.color};width:24px;text-align:left;font-family:'IBM Plex Mono',monospace">${r.val}</div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════
+   PAGE: ALL SPACES
+═══════════════════════════════ */
+function renderSpaces() {
+  let filtered = [...allSpaces];
+  if (fltStatus) filtered = filtered.filter(s=>s.status===fltStatus);
+  if (fltType)   filtered = filtered.filter(s=>s.type===fltType);
+  if (fltSearch) {
+    const q = fltSearch.toLowerCase();
+    filtered = filtered.filter(s=>
+      (s.name||'').toLowerCase().includes(q)||
+      (s.region||'').toLowerCase().includes(q)||
+      (s.owner_name||'').toLowerCase().includes(q)
+    );
+  }
+
+  const approved = allSpaces.filter(s=>s.status==='approved').length;
+  const pending  = allSpaces.filter(s=>s.status==='pending').length;
+  const rejected = allSpaces.filter(s=>s.status==='rejected').length;
+  const active   = allSpaces.filter(s=>s.is_active).length;
+
+  let html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${allSpaces.length}</span> إجمالي</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> معتمد</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending}</span> انتظار</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${rejected}</span> مرفوض</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--bl)">${active}</span> ظاهر</div>
+  </div>
+  <div class="filter-bar">
+    <input class="f-inp" placeholder="🔍 بحث…" value="${esc(fltSearch)}"
+           oninput="fltSearch=this.value;renderSpaces()" style="min-width:200px">
+    <select class="f-sel" onchange="fltStatus=this.value;renderSpaces()">
+      <option value="" ${!fltStatus?'selected':''}>جميع الحالات</option>
+      <option value="approved" ${fltStatus==='approved'?'selected':''}>✅ معتمد</option>
+      <option value="pending"  ${fltStatus==='pending' ?'selected':''}>⏳ انتظار</option>
+      <option value="rejected" ${fltStatus==='rejected'?'selected':''}>❌ مرفوض</option>
+    </select>
+    <select class="f-sel" onchange="fltType=this.value;renderSpaces()">
+      <option value="" ${!fltType?'selected':''}>جميع الأنواع</option>
+      <option value="mall"   ${fltType==='mall'  ?'selected':''}>🏬 مول</option>
+      <option value="club"   ${fltType==='club'  ?'selected':''}>⚽ نادي</option>
+      <option value="school" ${fltType==='school'?'selected':''}>🏫 مدرسة</option>
+    </select>
+    <button class="btn btn-neu" onclick="fltStatus='';fltType='';fltSearch='';renderSpaces()">× مسح</button>
+    <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div>
+  </div>`;
+
+  if (!filtered.length) {
+    html += `<div class="empty-state"><div class="empty-ico">🔍</div><div class="empty-title">لا توجد نتائج</div></div>`;
+    setPageContent('spaces', html); return;
+  }
+
+  html += `<div class="t-wrap"><table class="t"><thead><tr>
+    <th style="width:24px"></th>
+    <th>المساحة</th><th>النوع</th><th>المنطقة</th>
+    <th style="text-align:center">وحدات</th>
+    <th>الحالة</th><th>الظهور</th><th>الباقة</th><th>الصاحب</th>
+    <th>الإجراءات</th>
+  </tr></thead><tbody>`;
+
+  filtered.forEach(s => {
+    const stCls = statusCls(s.status);
+    const acLbl = s.is_active
+      ? '<span class="badge b-active">ظاهر</span>'
+      : '<span class="badge b-hidden">مخفي</span>';
+    html += `
+    <tr class="sp-row" id="srow-${s.id}" onclick="toggleSpaceRow('${s.id}')">
+      <td><span class="exp-ico" id="exp-${s.id}">▶</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${s.image_url
+            ? `<img src="${s.image_url.replace('_f.webp','_c.webp')}" style="width:36px;height:28px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">`
+            : `<div style="width:36px;height:28px;background:var(--bg5);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px">${esc(s.icon_emoji||'🏪')}</div>`}
+          <span style="font-weight:700;font-size:12px">${esc(s.name)}</span>
+        </div>
+      </td>
+      <td>${typeLabel(s.type)}</td>
+      <td style="font-size:11px;color:var(--tx2)">${esc(s.region||'—')}</td>
+      <td style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700">${s.units_count||0}</td>
+      <td><span class="badge ${stCls}">${statusLbl(s.status)}</span></td>
+      <td>${acLbl}</td>
+      <td><span class="badge ${planCls(s.owner_plan)}">${planLbl(s.owner_plan)}</span></td>
+      <td style="font-size:11px;color:var(--mu);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.owner_name||'—')}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          ${s.status!=='approved'?`<button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅</button>`:''}
+          ${s.status!=='rejected'?`<button class="btn btn-err" onclick="promptReject('${s.id}','${esc(s.name)}')">❌</button>`:''}
+          <button class="btn btn-neu" title="${s.is_active?'إخفاء':'إظهار'}" onclick="doToggle('${s.id}',${s.is_active})">${s.is_active?'⏸':'▶'}</button>
+          <button class="btn btn-yw"  onclick="editSpace('${s.id}')">✏️</button>
+          <button class="btn btn-err" onclick="promptDelete('${s.id}','${esc(s.name)}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+    <tr id="detail-row-${s.id}" style="display:none"><td colspan="10" style="padding:0">
+      <div id="detail-panel-${s.id}" class="detail-panel"></div>
+    </td></tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  setPageContent('spaces', html);
+}
+
+async function toggleSpaceRow(id) {
+  const row   = document.getElementById('detail-row-' + id);
+  const panel = document.getElementById('detail-panel-' + id);
+  const icon  = document.getElementById('exp-' + id);
+  if (!row) return;
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : 'table-row';
+  if (icon) icon.classList.toggle('open', !isOpen);
+  if (!isOpen && panel && !panel.dataset.loaded) {
+    panel.innerHTML = `<div style="padding:14px;color:var(--mu);font-size:12px"><span class="spin">⏳</span> جاري التحميل…</div>`;
+    try {
+      const d = await loadSpaceDetail(id);
+      panel.innerHTML = buildDetailHtml(d.space, d.units, d.owner);
+      panel.dataset.loaded = '1';
+    } catch(e) {
+      panel.innerHTML = `<div style="padding:12px;color:var(--rd);font-size:12px">⚠️ ${esc(e.message)}</div>`;
+    }
+  }
+}
+
+function buildDetailHtml(sp, units, owner) {
+  if (!sp) return '<div style="padding:12px;color:var(--mu)">لا بيانات</div>';
+  const imgs = (sp.extra_images||[]).filter(Boolean);
+  return `<div style="padding:16px">
+    <div class="detail-grid">
+      ${df('الوصف',         sp.description)}
+      ${df('الأحجام/الأسعار', sp.sizes_prices)}
+      ${df('أدنى سعر',      sp.min_price ? sp.min_price.toLocaleString('ar-EG')+' ج' : '—')}
+      ${df('الأنشطة',       (sp.activities||[]).join(' · ')||'—')}
+      ${df('الموسم',        sp.season)}
+      ${df('ملاحظة',        sp.insight)}
+      ${df('المرافق',       (sp.amenities||[]).join(' · ')||'—')}
+      ${df('الترتيب',       sp.sort_order)}
+      ${df('تاريخ الإضافة', fmtDate(sp.created_at))}
+      ${df('آخر تحديث',    fmtDate(sp.updated_at))}
+      ${owner?.email ? df('الصاحب', esc(owner.full_name||'—')+' — '+esc(owner.email)) : ''}
+    </div>
+    ${sp.reject_reason?`<div style="margin-bottom:10px;padding:8px 12px;background:rgba(239,68,68,.1);border-radius:8px;font-size:11px;color:var(--rd)">سبب الرفض: ${esc(sp.reject_reason)}</div>`:''}
+    ${imgs.length?`<div class="detail-imgs">${imgs.map(u=>`<img src="${u}" class="detail-img" onerror="this.style.display='none'">`).join('')}</div>`:''}
+    ${units&&units.length?`
+      <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--or);margin-bottom:6px">📦 الوحدات الفرعية (${units.length})</div>
+      <table class="ut">
+        <thead><tr><th>كود</th><th>الاسم</th><th>الدور</th><th>المساحة</th><th>السعر</th><th>الحالة</th><th>الموقع</th><th></th></tr></thead>
+        <tbody>${units.map(u=>`
+          <tr>
+            <td style="font-family:'IBM Plex Mono',monospace;color:var(--or)">${esc(u.unit_id)}</td>
+            <td>${esc(u.name||'—')}</td>
+            <td>${esc(u.floor||'—')}</td>
+            <td>${esc(u.size||'—')}</td>
+            <td style="font-family:'IBM Plex Mono',monospace">${u.price?u.price.toLocaleString('ar-EG')+' ج':'—'}</td>
+            <td><span class="badge ${u.status==='available'?'b-approved':u.status==='rented'?'b-rejected':'b-pending'}">${unitStatusLbl(u.status)}</span></td>
+            <td style="font-size:10px;color:var(--mu)">${esc(u.location||'—')}</td>
+            <td><button class="btn btn-err" style="font-size:10px;padding:3px 7px" onclick="doDeleteUnit('${u.id}','${sp.id}')">🗑</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<div style="color:var(--mu);font-size:11px;margin-top:8px">لا توجد وحدات فرعية</div>'}
+  </div>`;
+}
+function df(k, v) {
+  return `<div class="detail-field"><div class="detail-key">${k}</div><div class="detail-val">${esc(String(v||'—'))}</div></div>`;
+}
+
+/* ═══════════════════════════════
+   PAGE: PENDING
+═══════════════════════════════ */
+function renderPending() {
+  const pending  = allSpaces.filter(s=>s.status==='pending');
+  const approved = allSpaces.filter(s=>s.status==='approved').length;
+
+  let html = `<div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending.length}</span> انتظار</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> معتمد</div>
+    <div class="stat-chip"><span class="stat-num">${allSpaces.length}</span> إجمالي</div>
+  </div>`;
+
+  if (!pending.length) {
+    html += `<div class="empty-state"><div class="empty-ico">✅</div><div class="empty-title">لا توجد طلبات معلقة</div><div>جميع المساحات تمت مراجعتها</div></div>`;
+    setPageContent('pending', html); return;
+  }
+
+  html += pending.map(s=>`
+  <div class="p-card" id="pcard-${s.id}">
+    <div class="p-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
+    <div class="p-info">
+      <div class="p-name">${esc(s.name)}</div>
+      <div class="p-meta">
+        📍 <b>${esc(s.region||'—')}</b> &nbsp;·&nbsp;
+        ${typeLabel(s.type)} &nbsp;·&nbsp;
+        👤 <b>${esc(s.owner_name||'—')}</b> (${esc(s.owner_email||s.owner_name||'—')}) &nbsp;·&nbsp;
+        📦 ${s.units_count||0} وحدة &nbsp;·&nbsp;
+        🏷 <span class="badge ${planCls(s.owner_plan)}">${planLbl(s.owner_plan)}</span> &nbsp;·&nbsp;
+        🕐 ${fmtDate(s.created_at)}
+      </div>
+      <div class="p-actions">
+        <button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅ قبول</button>
+        <button class="btn btn-err" onclick="toggleRejectRow('${s.id}')">❌ رفض</button>
+        <button class="btn btn-bl"  onclick="togglePendingDetail('${s.id}')">🔍 معاينة</button>
+        <button class="btn btn-yw"  onclick="editSpace('${s.id}')">✏️ تعديل</button>
+      </div>
+      <div id="rrow-${s.id}" style="display:none;margin-top:8px;display:none;gap:8px;align-items:center">
+        <input id="rreason-${s.id}" style="flex:1;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--tx);outline:none" placeholder="سبب الرفض (اختياري)…" type="text">
+        <button class="btn btn-err" onclick="doReject('${s.id}')">تأكيد الرفض</button>
+      </div>
+      <div id="pdetail-${s.id}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px"></div>
+    </div>
+  </div>`).join('');
+
+  setPageContent('pending', html);
+}
+
+function toggleRejectRow(id) {
+  const r = document.getElementById('rrow-' + id);
+  if (r) r.style.display = (r.style.display === 'none' || r.style.display === '') ? 'flex' : 'none';
+}
+
+async function togglePendingDetail(id) {
+  const el = document.getElementById('pdetail-' + id);
+  if (!el) return;
+  const show = el.style.display === 'none' || el.style.display === '';
+  el.style.display = show ? 'block' : 'none';
+  if (show && !el.dataset.loaded) {
+    el.innerHTML = `<span class="spin">⏳</span> جاري التحميل…`;
+    try {
+      const d = await loadSpaceDetail(id);
+      el.innerHTML = buildDetailHtml(d.space, d.units, d.owner);
+      el.dataset.loaded = '1';
+    } catch(e) {
+      el.innerHTML = `<span style="color:var(--rd)">⚠️ ${esc(e.message)}</span>`;
+    }
+  }
+}
+
+/* ═══════════════════════════════
+   PAGE: OWNERS
+═══════════════════════════════ */
+function renderOwners() {
+  const activeOwnerIds = new Set(
+    allSpaces.filter(s=>s.status==='approved'&&s.is_active).map(s=>s.owner_id).filter(Boolean)
+  );
+  const ownerSpaceCount = {};
+  allSpaces.forEach(s => {
+    if (s.owner_id) ownerSpaceCount[s.owner_id] = (ownerSpaceCount[s.owner_id]||0) + 1;
+  });
+  const ownerApprovedCount = {};
+  allSpaces.filter(s=>s.status==='approved').forEach(s => {
+    if (s.owner_id) ownerApprovedCount[s.owner_id] = (ownerApprovedCount[s.owner_id]||0) + 1;
+  });
+
+  const total   = allOwners.length;
+  const active  = allOwners.filter(o=>activeOwnerIds.has(o.id)).length;
+  const dormant = total - active;
+  const pro     = allOwners.filter(o=>o.plan_tier==='pro').length;
+  const growth  = allOwners.filter(o=>o.plan_tier==='growth').length;
+
+  let filtered = [...allOwners];
+  if (ownerSearch) {
+    const q = ownerSearch.toLowerCase();
+    filtered = filtered.filter(o=>
+      (o.full_name||o.name||'').toLowerCase().includes(q)||
+      (o.email||'').toLowerCase().includes(q)
+    );
+  }
+
+  let html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${total}</span> إجمالي</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> نشط</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${dormant}</span> خامل</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pro}</span> Pro</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--tl)">${growth}</span> Growth</div>
+  </div>
+  <div class="filter-bar">
+    <input class="f-inp" placeholder="🔍 بحث بالاسم أو الإيميل…" value="${esc(ownerSearch)}"
+           oninput="ownerSearch=this.value;renderOwners()" style="min-width:220px">
+    <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} صاحب</div>
+  </div>`;
+
+  if (!filtered.length) {
+    html += `<div class="empty-state"><div class="empty-ico">👥</div><div class="empty-title">لا توجد نتائج</div></div>`;
+    setPageContent('owners', html); return;
+  }
+
+  html += `<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+    <div class="owner-row owner-row-hd">
+      <div></div>
+      <div>الصاحب</div>
+      <div>البريد</div>
+      <div>الباقة</div>
+      <div>المساحات</div>
+      <div>الحالة</div>
+      <div>انضم</div>
+    </div>
+    ${filtered.map((o,i)=>{
+      const name = o.full_name || o.name || '—';
+      const isActive = activeOwnerIds.has(o.id);
+      const spCount  = ownerSpaceCount[o.id] || 0;
+      const apCount  = ownerApprovedCount[o.id] || 0;
+      const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '؟';
+      return `
+      <div class="owner-row">
+        <div><div class="owner-avatar">${initials}</div></div>
+        <div>
+          <div style="font-weight:700;font-size:12px">${esc(name)}</div>
+        </div>
+        <div style="font-size:11px;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.email||'—')}</div>
+        <div><span class="badge ${planCls(o.plan_tier)}">${planLbl(o.plan_tier)}</span></div>
+        <div style="font-size:11px;text-align:center">
+          <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--tx)">${spCount}</span>
+          <span style="color:var(--mu)"> كل · </span>
+          <span style="color:var(--gr)">${apCount}</span>
+          <span style="color:var(--mu)"> معتمد</span>
+        </div>
+        <div><span class="badge ${isActive?'b-ok':'b-dormant'}">${isActive?'🟢 نشط':'🔴 خامل'}</span></div>
+        <div style="font-size:11px;color:var(--mu)">${fmtDate(o.created_at)}</div>
+      </div>`}).join('')}
+  </div>`;
+
+  setPageContent('owners', html);
+}
+
+/* ACTIVITIES */
+function renderActivities() {
+  let filtered = [...allActivities];
+  if (activitySearch) {
+    const q = activitySearch.toLowerCase();
+    filtered = filtered.filter(a => (a.id||'').toLowerCase().includes(q) || (a.name_ar||'').toLowerCase().includes(q));
+  }
+  const active = allActivities.filter(a=>a.is_active!==false).length;
+  const inactive = allActivities.length - active;
+  const html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${allActivities.length}</span> إجمالي الأنشطة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> مفعلة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${inactive}</span> مخفية</div>
+  </div>
+  <div class="form-sec">
+    <div class="form-sec-title">➕ إضافة / تعديل نشاط</div>
+    <div class="fg3">
+      <div class="fg"><label class="fl">ID إنجليزي</label><input class="fc" id="act-id" placeholder="coffee" style="direction:ltr"></div>
+      <div class="fg"><label class="fl">الاسم بالعربي</label><input class="fc" id="act-name" placeholder="قهوة ومشروبات"></div>
+      <div class="fg"><label class="fl">الإيموجي</label><input class="fc" id="act-emoji" placeholder="☕"></div>
+      <div class="fg"><label class="fl">ترتيب العرض</label><input class="fc" id="act-order" type="number" min="0" placeholder="0"></div>
+      <div class="fg"><label class="fl">الحالة</label><select class="fc" id="act-active"><option value="true">مفعل</option><option value="false">مخفي</option></select></div>
+    </div>
+    <div class="form-toolbar"><button class="btn btn-or" onclick="saveActivity()">💾 حفظ النشاط</button><button class="btn btn-neu" onclick="clearActivityForm()">مسح</button></div>
+  </div>
+  <div class="filter-bar"><input class="f-inp" placeholder="🔎 بحث في الأنشطة..." value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderActivities()"><div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div></div>
+  <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+    <div class="activity-row activity-row-hd"><div>ID</div><div>النشاط</div><div>الترتيب</div><div>الحالة</div><div>الإجراءات</div></div>
+    ${filtered.map(a=>`<div class="activity-row"><div style="font-family:'IBM Plex Mono',monospace;color:var(--or);direction:ltr;text-align:left">${esc(a.id)}</div><div style="font-weight:800">${esc(a.emoji||'🏷️')} ${esc(a.name_ar||'')}</div><div>${a.sort_order??0}</div><div><span class="badge ${a.is_active!==false?'b-approved':'b-hidden'}">${a.is_active!==false?'مفعل':'مخفي'}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-yw" onclick="fillActivity('${esc(a.id)}')">تعديل</button><button class="btn btn-neu" onclick="toggleActivity('${esc(a.id)}',${a.is_active!==false})">${a.is_active!==false?'إخفاء':'تفعيل'}</button><button class="btn btn-err" onclick="deleteActivity('${esc(a.id)}')">حذف</button></div></div>`).join('')}
+  </div>`;
+  setPageContent('activities', html);
+}
+function clearActivityForm(){['act-id','act-name','act-emoji','act-order'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const a=document.getElementById('act-active');if(a)a.value='true';}
+function fillActivity(id){const a=allActivities.find(x=>x.id===id);if(!a)return;document.getElementById('act-id').value=a.id;document.getElementById('act-name').value=a.name_ar||'';document.getElementById('act-emoji').value=a.emoji||'';document.getElementById('act-order').value=a.sort_order??0;document.getElementById('act-active').value=String(a.is_active!==false);}
+async function saveActivity(){const id=(document.getElementById('act-id')?.value||'').trim().toLowerCase().replace(/\s+/g,'-');const name=(document.getElementById('act-name')?.value||'').trim();if(!id||!name){toast('اكتب ID واسم النشاط','e');return;}const payload={id,name_ar:name,emoji:(document.getElementById('act-emoji')?.value||'').trim()||null,sort_order:parseInt(document.getElementById('act-order')?.value||'0')||0,is_active:document.getElementById('act-active')?.value!=='false'};try{const exists=allActivities.some(a=>a.id===id);await sbTable(exists?'PATCH':'POST','space_activities',exists?payload:[payload],exists?`?id=eq.${encodeURIComponent(id)}`:'');allActivities=await fetchActivities();clearActivityForm();renderActivities();toast('تم حفظ النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
+async function toggleActivity(id,isActive){try{await sbTable('PATCH','space_activities',{is_active:!isActive},`?id=eq.${encodeURIComponent(id)}`);allActivities=await fetchActivities();renderActivities();toast('تم تحديث النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
+async function deleteActivity(id){if(!confirm('حذف هذا النشاط؟ سيبقى اسم النشاط داخل المساحات التي استخدمته مسبقًا.'))return;try{await sbTable('DELETE','space_activities',null,`?id=eq.${encodeURIComponent(id)}`);allActivities=await fetchActivities();renderActivities();toast('تم حذف النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
+
+/* ═══════════════════════════════
+   SPACE ACTIONS
+═══════════════════════════════ */
+async function doApprove(id) {
+  try {
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'approve',p_reason:null,p_secret:adminHash});
+    toast('✅ تمت الموافقة — تم إرسال إشعار للصاحب','s');
+    invalidateDetailCache(id);
+    await loadAll();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+async function doReject(id) {
+  const reason = document.getElementById('rreason-'+id)?.value.trim()||'';
+  try {
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'reject',p_reason:reason||null,p_secret:adminHash});
+    toast('❌ تم الرفض — تم إرسال إشعار للصاحب','s');
+    await loadAll();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+function promptReject(id, name) {
+  showConfirm(`رفض مساحة "${name}"`, 'سيُرسل إشعار لصاحب المساحة وستتغير حالتها إلى مرفوض.', ()=>doReject(id));
+}
+
+async function doToggle(id, isActive) {
+  try {
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'toggle_active',p_reason:null,p_secret:adminHash});
+    toast(isActive?'⏸ تم إخفاء المساحة':'▶ تم إظهار المساحة','i');
+    invalidateDetailCache(id);
+    await loadAll();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+function promptDelete(id, name) {
+  showConfirm(`حذف مساحة "${name}"`, '⚠️ سيُحذف السجل نهائياً مع جميع وحداته الفرعية. لا يمكن التراجع!', async ()=>{
+    try {
+      await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null,p_secret:adminHash});
+      toast('🗑 تم الحذف','s');
+      await loadAll();
+    } catch(e) { toast('خطأ: '+e.message,'e'); }
+  });
+}
+
+async function doDeleteUnit(unitId, spaceId) {
+  if (!confirm('حذف هذه الوحدة؟')) return;
+  try {
+    await sbRpc('admin_delete_unit',{p_unit_id:unitId,p_secret:adminHash});
+    toast('🗑 تم حذف الوحدة','s');
+    invalidateDetailCache(spaceId);
+    const panel = document.getElementById('detail-panel-'+spaceId);
+    if (panel) {
+      delete panel.dataset.loaded;
+      const d = await loadSpaceDetail(spaceId);
+      panel.innerHTML = buildDetailHtml(d.space,d.units,d.owner);
+      panel.dataset.loaded='1';
+    }
+    allSpaces = allSpaces.map(s=>s.id===spaceId?{...s,units_count:Math.max(0,(s.units_count||1)-1)}:s);
+    updatePendingBadge();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+function invalidateDetailCache(id) {
+  const p1 = document.getElementById('detail-panel-'+id);
+  const p2 = document.getElementById('pdetail-'+id);
+  if (p1) delete p1.dataset.loaded;
+  if (p2) delete p2.dataset.loaded;
+}
+
+/* ═══════════════════════════════
+   ADD / EDIT FORM
+═══════════════════════════════ */
+function openAddForm() {
+  editingId     = null;
+  fMainImgUrl   = null;
+  fExtraImgUrls = [];
+  fUnitImgUrls  = {};
+  fUnitCounter  = 0;
+  currentPage   = 'form';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-form').classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('topbar-title').textContent = PAGE_TITLES['form'];
+  if (window.innerWidth<=900) closeSidebar();
+  renderFormPage();
+}
+
+async function editSpace(id) {
+  currentPage = 'form';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-form').classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('topbar-title').textContent = PAGE_TITLES['form'];
+  setPageContent('form', loading());
+  if (window.innerWidth<=900) closeSidebar();
+  try {
+    const detail = await loadSpaceDetail(id);
+    editingId     = id;
+    fMainImgUrl   = detail.space?.image_url || null;
+    fExtraImgUrls = [...(detail.space?.extra_images||[])];
+    fUnitImgUrls  = {};
+    fUnitCounter  = 0;
+    renderFormPage(detail.space, detail.units);
+  } catch(e) {
+    setPageContent('form',`<div class="empty-state"><div class="empty-ico">⚠️</div><div class="empty-title">${esc(e.message)}</div></div>`);
+  }
+}
+
+function renderFormPage(sp, units) {
+  sp    = sp    || {};
+  units = units || [];
+  const isEdit = !!editingId;
+
+  const html = `<div class="form-wrap">
+  <div style="font-size:13px;font-weight:700;color:var(--mu);margin-bottom:16px">
+    ${isEdit?`✏️ تعديل مساحة: <span style="color:var(--or)">${esc(sp.name||'')}</span>`:'➕ إضافة مساحة جديدة'}
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">🏢 المعلومات الأساسية</div>
+    <div class="fg2">
+      <div class="fg"><label class="fl">اسم المساحة <span class="rq">*</span></label>
+        <input class="fc" id="f-name" value="${esc(sp.name||'')}" placeholder="مثال: مول مدينة نصر"></div>
+      <div class="fg"><label class="fl">النوع <span class="rq">*</span></label>
+        <select class="fc" id="f-type">
+          <option value="mall"   ${(sp.type||'mall')==='mall'  ?'selected':''}>🏬 مول تجاري</option>
+          <option value="club"   ${sp.type==='club'  ?'selected':''}>⚽ نادي رياضي</option>
+          <option value="school" ${sp.type==='school'?'selected':''}>🏫 مدرسة</option>
+        </select></div>
+      <div class="fg"><label class="fl">المنطقة / الموقع <span class="rq">*</span></label>
+        <input class="fc" id="f-region" value="${esc(sp.region||'')}" list="region-presets" placeholder="اختر أو اكتب المنطقة">
+        <datalist id="region-presets">${REGION_PRESETS.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></div>
+      <div class="fg"><label class="fl">أيقونة</label>
+        <input class="fc" id="f-icon" value="${esc(sp.icon_emoji||'🏪')}" placeholder="🏬"></div>
+      <div class="fg"><label class="fl">الترتيب (رقم أقل = يظهر أولاً)</label>
+        <input class="fc" type="number" id="f-order" value="${sp.sort_order??0}" min="0"></div>
+      <div class="fg"><label class="fl">لون الكارد</label>
+        <select class="fc" id="f-thumb">
+          <option value="thumb-mall"   ${(sp.thumb_color||'thumb-mall')==='thumb-mall'  ?'selected':''}>مول (برتقالي)</option>
+          <option value="thumb-club"   ${sp.thumb_color==='thumb-club'  ?'selected':''}>نادي (أزرق)</option>
+          <option value="thumb-school" ${sp.thumb_color==='thumb-school'?'selected':''}>مدرسة (أخضر)</option>
+        </select></div>
+    </div>
+    ${!isEdit?`
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label class="fl">صاحب المساحة (Owner)</label>
+        <select class="fc" id="f-owner">
+          <option value="">— بدون مالك (إضافة مباشرة) —</option>
+          ${allOwners.map(o=>`<option value="${o.id}">${esc(o.full_name||o.name||o.email)}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label class="fl">الحالة الابتدائية</label>
+        <select class="fc" id="f-status">
+          <option value="approved" selected>✅ معتمد (يظهر فوراً)</option>
+          <option value="pending">⏳ انتظار</option>
+        </select></div>
+    </div>` : `
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label class="fl">الحالة</label>
+        <select class="fc" id="f-status">
+          <option value="approved" ${sp.status==='approved'?'selected':''}>✅ معتمد</option>
+          <option value="pending"  ${sp.status==='pending' ?'selected':''}>⏳ انتظار</option>
+          <option value="rejected" ${sp.status==='rejected'?'selected':''}>❌ مرفوض</option>
+        </select></div>
+      <div class="fg"><label class="fl">الظهور على الموقع</label>
+        <select class="fc" id="f-active">
+          <option value="true"  ${sp.is_active!==false?'selected':''}>👁 ظاهر</option>
+          <option value="false" ${sp.is_active===false?'selected':''}>🙈 مخفي</option>
+        </select></div>
+    </div>`}
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">💰 الأسعار والأنشطة</div>
+    <div class="fg2">
+      <div class="fg"><label class="fl">الأحجام والأسعار (حجم:سعر · حجم:سعر)</label>
+        <input class="fc" id="f-sizes" value="${esc(sp.sizes_prices||'')}" placeholder="مثال: ١×١م:4500 · ١×٢م:7500"></div>
+      <div class="fg"><label class="fl">أدنى سعر (ج.م.)</label>
+        <input class="fc" type="number" id="f-price" value="${sp.min_price||''}" placeholder="0" min="0"></div>
+      <div class="fg"><label class="fl">الأنشطة (مفصولة بـ · )</label>
+        ${activityPickerHtml(sp.activities||[])}</div>
+      <div class="fg"><label class="fl">موسم الذروة</label>
+        <input class="fc" id="f-season" value="${esc(sp.season||'')}" list="season-presets" placeholder="اختر أو اكتب موسم الذروة">
+        <datalist id="season-presets">${SEASON_PRESETS.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></div>
+    </div>
+    <div class="fg" style="margin-top:10px">
+      <label class="fl">ملاحظة مميزة (تظهر على الكارد)</label>
+      <input class="fc" id="f-insight" value="${esc(sp.insight||'')}" placeholder="مثال: 92% إشغال · الأعلى إيراداً">
+    </div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="f-allacts" ${sp.all_acts?'checked':''} style="width:16px;height:16px;accent-color:var(--or)">
+      <label for="f-allacts" class="fl" style="cursor:pointer">يقبل جميع الأنشطة</label>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">📝 الوصف والمرافق</div>
+    <div class="fg" style="margin-bottom:12px">
+      <label class="fl">وصف المساحة</label>
+      <textarea class="fc" id="f-desc" rows="3" placeholder="وصف تفصيلي للمساحة…">${esc(sp.description||'')}</textarea>
+    </div>
+    <div class="fg">
+      <label class="fl">المرافق (مفصولة بـ · )</label>
+      ${amenityPickerHtml(sp.amenities||[])}
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">🖼️ الصور</div>
+    <div class="fg2">
+      <div>
+        <div class="fl" style="margin-bottom:6px">الصورة الرئيسية</div>
+        <div class="upload-zone" onclick="document.getElementById('f-main-img').click()">
+          <div class="upload-zone-ico">📤</div>
+          <div class="upload-zone-lbl">اختر صورة رئيسية</div>
+        </div>
+        <input type="file" id="f-main-img" accept="image/*" style="display:none" onchange="handleMainImg(this)">
+        <div id="f-main-status" class="upload-status" style="color:var(--mu)">
+          ${fMainImgUrl?`<span style="color:var(--gr)">✅ صورة محفوظة</span>`:'لم تُرفع'}
+        </div>
+        <div id="f-main-preview" style="margin-top:8px">
+          ${fMainImgUrl?`<div style="position:relative"><img src="${fMainImgUrl.replace('_f.webp','_d.webp')}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.3)"><button type="button" onclick="clearMainImg()" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button></div>`:''}
+        </div>
+      </div>
+      <div>
+        <div class="fl" style="margin-bottom:6px">صور إضافية (حتى 5)</div>
+        <div class="upload-zone" onclick="document.getElementById('f-extra-imgs').click()">
+          <div class="upload-zone-ico">📷</div>
+          <div class="upload-zone-lbl">إضافة صور إضافية</div>
+        </div>
+        <input type="file" id="f-extra-imgs" accept="image/*" multiple style="display:none" onchange="handleExtraImgs(this)">
+        <div id="f-extra-preview" class="extra-imgs-grid">
+          ${fExtraImgUrls.filter(Boolean).map((u,i)=>extraImgHtml(u,i)).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title" style="justify-content:space-between">
+      <span>📦 الوحدات الفرعية</span>
+      <button class="btn btn-or" onclick="addUnitRow()" style="font-size:11px;padding:5px 12px">+ إضافة وحدة</button>
+    </div>
+    <div id="f-units-container">${units.map(u=>buildUnitRow(null,u)).join('')}</div>
+    <div id="f-units-empty" style="${units.length?'display:none':'display:block'};text-align:center;padding:20px;color:var(--mu);font-size:12px">
+      لا توجد وحدات — اضغط "+ إضافة وحدة"
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:4px;margin-bottom:32px">
+    <button class="btn btn-or" style="padding:12px 28px;font-size:14px;border-radius:var(--r)" onclick="submitSpaceForm()">
+      💾 ${isEdit?'حفظ التعديلات':'إضافة المساحة'}
+    </button>
+    <button class="btn btn-neu" style="padding:12px 20px;font-size:13px;border-radius:var(--r)" onclick="cancelForm()">إلغاء</button>
+  </div>
+  <div id="f-msg" style="display:none;padding:12px 16px;border-radius:var(--r);font-size:13px;font-weight:600;margin-bottom:16px"></div>
+  </div>`;
+
+  setPageContent('form', html);
+  fUnitCounter = units.length;
+}
+
+function activityPickerHtml(selected) {
+  const selectedSet = new Set(selected || []);
+  const items = allActivities.length ? allActivities : [
+    {id:'coffee',emoji:'☕',name_ar:'قهوة ومشروبات',is_active:true},
+    {id:'food',emoji:'🥪',name_ar:'أكل سريع',is_active:true},
+    {id:'sweets',emoji:'🍰',name_ar:'حلويات ومخبوزات',is_active:true},
+    {id:'accessories',emoji:'💍',name_ar:'إكسسوارات',is_active:true},
+  ];
+  const knownValues = new Set();
+  const chips = items.filter(a=>a.is_active!==false).map(a=>{
+    knownValues.add(a.id);
+    knownValues.add(a.name_ar);
+    const label = `${a.emoji||''} ${a.name_ar||a.id}`.trim();
+    knownValues.add(label);
+    const checked = selectedSet.has(a.id) || selectedSet.has(a.name_ar) || selectedSet.has(label);
+    return `<label class="pick-chip"><input type="checkbox" class="act-pick" value="${esc(a.id)}" ${checked?'checked':''}> <span>${esc(a.emoji||'🏷️')} ${esc(a.name_ar||a.id)}</span></label>`;
+  }).join('');
+  const custom = (selected||[]).filter(x=>!knownValues.has(x)).join(' · ');
+  return `<div class="chip-grid">${chips}</div><div class="form-toolbar"><input class="fc" id="f-acts-custom" value="${esc(custom)}" placeholder="أنشطة إضافية مفصولة بـ ·"></div>`;
+}
+
+function amenityPickerHtml(selected) {
+  const set = new Set(selected || []);
+  const chips = AMENITY_PRESETS.map(a=>`<label class="pick-chip"><input type="checkbox" class="amen-pick" value="${esc(a)}" ${set.has(a)?'checked':''}> <span>${esc(a)}</span></label>`).join('');
+  const custom = (selected||[]).filter(x=>!AMENITY_PRESETS.includes(x)).join(' · ');
+  return `<div class="chip-grid">${chips}</div><div class="form-toolbar"><input class="fc" id="f-amen-custom" value="${esc(custom)}" placeholder="مرافق إضافية مفصولة بـ ·"></div>`;
+}
+
+function getPickedValues(selector, customId) {
+  const picked = [...document.querySelectorAll(selector+':checked')].map(x=>x.value.trim()).filter(Boolean);
+  const custom = (document.getElementById(customId)?.value||'').split('·').map(s=>s.trim()).filter(Boolean);
+  return [...new Set([...picked, ...custom])];
+}
+
+function buildUnitRow(localIdx, u) {
+  const idx  = localIdx !== null ? localIdx : fUnitCounter++;
+  const data = u || {};
+  return `<div class="unit-form-row" id="f-unit-${idx}" data-idx="${idx}" data-db-id="${data.id||''}">
+    <div class="unit-form-head">
+      <div class="unit-form-title">📦 وحدة ${idx+1}${data.unit_id?' — '+esc(data.unit_id):''}</div>
+      <button class="btn btn-err" onclick="removeUnitRow(${idx},'${data.id||''}')">حذف ✕</button>
+    </div>
+    <div class="fg3">
+      <div class="fg"><label class="fl">كود الوحدة <span class="rq">*</span></label>
+        <input class="fc" id="fu-uid-${idx}"  value="${esc(data.unit_id||'')}" placeholder="A1, B-12"></div>
+      <div class="fg"><label class="fl">الاسم</label>
+        <input class="fc" id="fu-name-${idx}" value="${esc(data.name||'')}" placeholder="كشك أمام المصعد"></div>
+      <div class="fg"><label class="fl">الدور</label>
+        <select class="fc" id="fu-floor-${idx}">
+          ${['','أرضي','أول','ثاني','ثالث','بدروم'].map(f=>`<option ${data.floor===f?'selected':''}>${f}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label class="fl">المساحة</label>
+        <input class="fc" id="fu-size-${idx}"  value="${esc(data.size||'')}" placeholder="١×١م"></div>
+      <div class="fg"><label class="fl">السعر / شهر (ج)</label>
+        <input class="fc" type="number" id="fu-price-${idx}" value="${data.price||''}" placeholder="4500" min="0"></div>
+      <div class="fg"><label class="fl">الحالة</label>
+        <select class="fc" id="fu-status-${idx}">
+          <option value="available"   ${(data.status||'available')==='available'?'selected':''}>✅ متاحة</option>
+          <option value="rented"      ${data.status==='rented'     ?'selected':''}>🔴 مؤجّرة</option>
+          <option value="reserved"    ${data.status==='reserved'   ?'selected':''}>🟡 محجوزة</option>
+          <option value="maintenance" ${data.status==='maintenance'?'selected':''}>🔧 صيانة</option>
+        </select></div>
+    </div>
+    <div class="fg" style="margin-top:10px">
+      <label class="fl">الموقع الدقيق</label>
+      <input class="fc" id="fu-loc-${idx}" value="${esc(data.location||'')}" placeholder="أمام المصعد — الركن الغربي">
+    </div>
+    <div class="fg" style="margin-top:8px">
+      <label class="fl">ملاحظات</label>
+      <input class="fc" id="fu-notes-${idx}" value="${esc(data.notes||'')}" placeholder="أي تفاصيل إضافية">
+    </div>
+    <div style="margin-top:10px">
+      <label class="fl" style="margin-bottom:6px;display:block">📷 صورة الوحدة</label>
+      ${data.image_url
+        ?`<div id="fu-img-preview-${idx}"><img src="${data.image_url}" style="width:100%;max-height:110px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.3)"><button type="button" onclick="clearUnitImg(${idx})" style="margin-top:4px;background:none;border:1px solid var(--rd);color:var(--rd);border-radius:6px;padding:3px 10px;font-size:11px">حذف الصورة</button></div>`
+        :`<div class="upload-zone" id="fu-img-zone-${idx}" onclick="document.getElementById('fu-img-${idx}').click()" style="padding:12px">
+            <div style="font-size:16px">📤</div>
+            <div class="upload-zone-lbl">صورة الوحدة</div>
+          </div>
+          <div id="fu-img-preview-${idx}" style="margin-top:6px"></div>`}
+      <input type="file" id="fu-img-${idx}" accept="image/*" style="display:none" onchange="handleUnitImg(this,${idx})">
+      <div id="fu-img-status-${idx}" class="upload-status" style="color:var(--mu)">${fUnitImgUrls[idx]||data.image_url?'✅ صورة محفوظة':''}</div>
+    </div>
+  </div>`;
+}
+
+function addUnitRow() {
+  const cont  = document.getElementById('f-units-container');
+  const empty = document.getElementById('f-units-empty');
+  if (!cont) return;
+  if (empty) empty.style.display = 'none';
+  const idx = fUnitCounter++;
+  const div = document.createElement('div');
+  div.innerHTML = buildUnitRow(idx, null);
+  cont.appendChild(div.firstElementChild);
+}
+
+function removeUnitRow(idx, dbId) {
+  const el = document.getElementById('f-unit-'+idx);
+  if (el) el.remove();
+  delete fUnitImgUrls[idx];
+  const cont = document.getElementById('f-units-container');
+  const empty = document.getElementById('f-units-empty');
+  if (cont && !cont.children.length && empty) empty.style.display = 'block';
+  if (dbId && editingId) {
+    sbRpc('admin_delete_unit',{p_unit_id:dbId,p_secret:adminHash})
+      .then(()=>toast('🗑 تم حذف الوحدة','s'))
+      .catch(e=>toast('خطأ: '+e.message,'e'));
+  }
+}
+
+function cancelForm() {
+  editingId = null;
+  gp('spaces', document.getElementById('sbi-spaces'));
+}
+
+/* ═══════════════════════════════
+   IMAGE UPLOAD
+═══════════════════════════════ */
+async function handleMainImg(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const preview = document.getElementById('f-main-preview');
+  const status  = document.getElementById('f-main-status');
+  const pUrl = URL.createObjectURL(file);
+  if (preview) preview.innerHTML = `<div style="position:relative"><img src="${pUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);opacity:.6"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;background:rgba(0,0,0,.4);border-radius:var(--r)">⏳ جاري الرفع…</div></div>`;
+  if (status) status.innerHTML = '<span style="color:var(--yw)">⏳ جاري الرفع…</span>';
+  try {
+    const folder = editingId?`admin-spaces/${editingId}`:`admin-spaces/new`;
+    const [url]  = await uploadImages([file], folder, null, SB_KEY);
+    fMainImgUrl = url;
+    if (preview) preview.innerHTML = `<div style="position:relative"><img src="${url.replace('_f.webp','_d.webp')}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.35)"><button type="button" onclick="clearMainImg()" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button></div>`;
+    if (status) status.innerHTML = '<span style="color:var(--gr)">✅ تم الرفع</span>';
+  } catch(e) {
+    fMainImgUrl = null;
+    if (preview) preview.innerHTML = '';
+    if (status) status.innerHTML = `<span style="color:var(--rd)">❌ فشل: ${esc(e.message)}</span>`;
+  }
+}
+function clearMainImg() {
+  fMainImgUrl = null;
+  const p = document.getElementById('f-main-preview');
+  const s = document.getElementById('f-main-status');
+  if (p) p.innerHTML = '';
+  if (s) s.textContent = 'لم تُرفع';
+  const i = document.getElementById('f-main-img');
+  if (i) i.value = '';
+}
+
+async function handleExtraImgs(input) {
+  const remaining = 5 - fExtraImgUrls.filter(Boolean).length;
+  const files = Array.from(input.files).slice(0, remaining);
+  const cont  = document.getElementById('f-extra-preview');
+  if (!files.length || !cont) return;
+  for (const file of files) {
+    const idx = fExtraImgUrls.length;
+    fExtraImgUrls.push(null);
+    const div = document.createElement('div');
+    div.className = 'extra-img-wrap'; div.id = 'fei-'+idx;
+    div.innerHTML = `<img src="${URL.createObjectURL(file)}" style="opacity:.6"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:rgba(0,0,0,.4)">⏳</div>`;
+    cont.appendChild(div);
+    try {
+      const folder = editingId?`admin-spaces/${editingId}`:`admin-spaces/new`;
+      const [url]  = await uploadImages([file], folder, null, SB_KEY);
+      fExtraImgUrls[idx] = url;
+      div.innerHTML = `<img src="${url.replace('_f.webp','_c.webp')}"><button class="extra-img-del" onclick="removeExtraImg(${idx})">✕</button>`;
+    } catch { fExtraImgUrls[idx] = null; div.remove(); }
+  }
+  input.value = '';
+}
+function removeExtraImg(idx) {
+  fExtraImgUrls[idx] = null;
+  const el = document.getElementById('fei-'+idx);
+  if (el) el.remove();
+}
+function extraImgHtml(url, idx) {
+  return `<div class="extra-img-wrap" id="fei-${idx}"><img src="${url.replace('_f.webp','_c.webp')}" onerror="this.src='${url}'"><button class="extra-img-del" onclick="removeExtraImg(${idx})">✕</button></div>`;
+}
+
+async function handleUnitImg(input, idx) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const preview = document.getElementById('fu-img-preview-'+idx);
+  const zone    = document.getElementById('fu-img-zone-'+idx);
+  const status  = document.getElementById('fu-img-status-'+idx);
+  if (preview) preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;max-height:110px;object-fit:cover;border-radius:var(--r);opacity:.6">`;
+  if (zone)    zone.style.display = 'none';
+  if (status)  status.innerHTML   = '<span style="color:var(--yw)">⏳ جاري الرفع…</span>';
+  try {
+    const ts   = Date.now();
+    const rand = Math.random().toString(36).slice(2,6);
+    const path = `admin-spaces/${editingId||'new'}/units/${ts}_${rand}.webp`;
+    const url  = await uploadSingleImageToR2(file, path, SB_KEY);
+    fUnitImgUrls[idx] = url;
+    if (preview) preview.innerHTML = `<img src="${url}" style="width:100%;max-height:110px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.35)">`;
+    if (status)  status.innerHTML  = '<span style="color:var(--gr)">✅ تم الرفع</span>';
+  } catch(e) {
+    delete fUnitImgUrls[idx];
+    if (preview) preview.innerHTML = '';
+    if (zone)    zone.style.display = 'block';
+    if (status)  status.innerHTML   = '<span style="color:var(--rd)">❌ فشل</span>';
+  }
+}
+function clearUnitImg(idx) {
+  delete fUnitImgUrls[idx];
+  const preview = document.getElementById('fu-img-preview-'+idx);
+  const zone    = document.getElementById('fu-img-zone-'+idx);
+  if (preview) preview.innerHTML = '';
+  if (zone)    zone.style.display = 'block';
+}
+
+/* ═══════════════════════════════
+   FORM SUBMIT
+═══════════════════════════════ */
+async function submitSpaceForm() {
+  const get = id => document.getElementById(id)?.value?.trim()||'';
+  const name   = get('f-name');
+  const region = get('f-region');
+  if (!name || !region) { showFormMsg('error','اسم المساحة والمنطقة مطلوبان'); return; }
+
+  const acts = getPickedValues('.act-pick', 'f-acts-custom');
+  const amen = getPickedValues('.amen-pick', 'f-amen-custom');
+
+  const spaceData = {
+    ...(editingId?{id:editingId}:{}),
+    ...(!editingId && get('f-owner')?{owner_id:get('f-owner')}:{}),
+    name, region,
+    type:         get('f-type'),
+    icon_emoji:   get('f-icon')||'🏪',
+    thumb_color:  get('f-thumb'),
+    sizes_prices: get('f-sizes'),
+    min_price:    parseInt(get('f-price'))||0,
+    all_acts:     document.getElementById('f-allacts')?.checked||false,
+    activities:   acts,
+    season:       get('f-season')||null,
+    insight:      get('f-insight')||null,
+    description:  get('f-desc')||null,
+    amenities:    amen,
+    sort_order:   parseInt(get('f-order'))||0,
+    status:       get('f-status')||'approved',
+    is_active:    get('f-active')!=='false',
+    image_url:    fMainImgUrl||null,
+    extra_images: fExtraImgUrls.filter(Boolean),
+  };
+
+  setFormSaving(true);
+  try {
+    const result  = await sbRpc('admin_upsert_space',{p_data:spaceData,p_secret:adminHash});
+    const spaceId = result.id || editingId;
+    const unitRows = document.querySelectorAll('[id^="f-unit-"]');
+    for (const row of unitRows) {
+      const idx   = row.dataset.idx;
+      const dbId  = row.dataset.dbId;
+      const uid   = document.getElementById(`fu-uid-${idx}`)?.value.trim();
+      const uname = document.getElementById(`fu-name-${idx}`)?.value.trim();
+      if (!uid && !uname) continue;
+      const unitData = {
+        ...(dbId?{id:dbId}:{space_id:spaceId}),
+        unit_id:  uid||('U-'+(parseInt(idx)+1)),
+        name:     uname||null,
+        floor:    document.getElementById(`fu-floor-${idx}`)?.value||null,
+        size:     document.getElementById(`fu-size-${idx}`)?.value.trim()||null,
+        price:    document.getElementById(`fu-price-${idx}`)?.value||null,
+        status:   document.getElementById(`fu-status-${idx}`)?.value||'available',
+        location: document.getElementById(`fu-loc-${idx}`)?.value.trim()||null,
+        notes:    document.getElementById(`fu-notes-${idx}`)?.value.trim()||null,
+        image_url: fUnitImgUrls[idx]||null,
+      };
+      await sbRpc('admin_upsert_unit',{p_data:unitData,p_secret:adminHash});
+    }
+    toast(editingId?'✅ تم حفظ التعديلات':'✅ تمت إضافة المساحة','s');
+    showFormMsg('success', editingId?'تم حفظ التعديلات بنجاح!':'تمت إضافة المساحة بنجاح!');
+    editingId = null;
+    await loadAll();
+    setTimeout(()=>gp('spaces',document.getElementById('sbi-spaces')), 700);
+  } catch(e) {
+    showFormMsg('error','خطأ: '+e.message);
+  }
+  setFormSaving(false);
+}
+
+function setFormSaving(on) {
+  const btn = document.querySelector('[onclick="submitSpaceForm()"]');
+  if (btn) { btn.disabled = on; btn.innerHTML = on?'<span class="spin">⏳</span> جاري الحفظ…':`💾 ${editingId?'حفظ التعديلات':'إضافة المساحة'}`; }
+}
+function showFormMsg(type, text) {
+  const el = document.getElementById('f-msg');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = type==='success'?'rgba(34,197,94,.15)':'rgba(239,68,68,.15)';
+  el.style.color       = type==='success'?'var(--gr)':'var(--rd)';
+  el.style.border      = '1px solid '+(type==='success'?'rgba(34,197,94,.3)':'rgba(239,68,68,.3)');
+  el.textContent = text;
+  setTimeout(()=>{ el.style.display='none'; }, 5000);
+}
+
+/* ═══════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════ */
+function showConfirm(title, sub, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-sub').textContent   = sub;
+  document.getElementById('confirm-ok').onclick        = ()=>{ closeConfirm(); cb(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+function toast(msg, type='i') {
+  const wrap = document.getElementById('toasts');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 3200);
+}
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function loading() { return `<div style="text-align:center;padding:60px;color:var(--mu)"><span class="spin" style="font-size:28px">⏳</span><div style="margin-top:12px;font-size:13px">جاري التحميل…</div></div>`; }
+function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d){ return d?new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}):'—'; }
+function typeLabel(t) { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة'}[t]||t||'—'; }
+function statusLbl(s) { return {pending:'⏳ انتظار',approved:'✅ معتمد',rejected:'❌ مرفوض'}[s]||s; }
+function statusCls(s) { return {approved:'b-approved',pending:'b-pending',rejected:'b-rejected'}[s]||'b-pending'; }
+function planCls(p)   { return {starter:'b-starter',growth:'b-growth',pro:'b-pro'}[p]||'b-starter'; }
+function planLbl(p)   { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p||'Starter'; }
+function unitStatusLbl(s){ return {available:'متاحة',rented:'مؤجّرة',reserved:'محجوزة',maintenance:'صيانة'}[s]||s; }
+
+/* ═══════════════════════════════
+   AUTO-REFRESH — كل 5 دقائق
+═══════════════════════════════ */
+setInterval(()=>{
+  if (!adminHash) return;
+  sbRpc('admin_get_spaces',{p_secret:adminHash})
+    .then(spaces=>{
+      allSpaces = spaces||[];
+      updatePendingBadge();
+      if (currentPage==='overview'||currentPage==='pending') renderCurrentPage();
+    })
+    .catch(()=>{});
+}, 300000);
+</script>
+</body>
+</html>
