@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // تحميل بيانات المساحات من Google Sheets
   loadData();
+  subscribeSpacesRealtime();
 
   // تحميل البازارات من Supabase
   loadBazaars();
@@ -263,7 +264,7 @@ async function loadData() {
 
     SPACES = (spacesData || []).map(row => {
       const sizes = row.sizes_prices
-        ? row.sizes_prices.split('|').map(s => s.trim()).filter(Boolean)
+        ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
         : [];
       return {
         id:          row.id,
@@ -313,6 +314,100 @@ async function loadData() {
   } catch (err) {
     showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
   }
+}
+
+async function fetchVisibleSpacesFromSupabase() {
+  const { data: spacesData, error } = await sbClient
+    .from('spaces')
+    .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+    .eq('status', 'approved')
+    .eq('is_active', true)
+    .order('sort_order');
+  if (error) throw error;
+
+  const ownerIds = [...new Set((spacesData || []).map(s => s.owner_id).filter(Boolean))];
+  let profilesMap = {};
+  if (ownerIds.length > 0) {
+    const { data: profiles } = await sbClient
+      .from('profiles')
+      .select('id, plan_tier')
+      .in('id', ownerIds);
+    (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+  }
+
+  return (spacesData || []).map(row => {
+    const sizes = row.sizes_prices
+      ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
+      : [];
+    return {
+      id:          row.id,
+      name:        row.name        || '',
+      loc:         row.region      || '',
+      type:        row.type        || '',
+      price:       row.min_price   || 0,
+      sizes:       sizes,
+      acts:        row.activities  || [],
+      allActs:     row.all_acts    || false,
+      badge:       row.badge       || 'متاح',
+      badgeClass:  row.badge_class || 'badge-avail',
+      season:      row.season      || '',
+      insight:     row.insight     || '',
+      image:       row.image_url   || '',
+      icon:        row.icon_emoji  || '',
+      thumbClass:  row.thumb_color || '',
+      extraImages: row.extra_images || [],
+      description: row.description || '',
+      amenities:   row.amenities   || [],
+      planTier:    profilesMap[row.owner_id] || 'starter',
+      subSpaces:   (row.space_units || []).map(u => ({
+        unitId:   u.unit_id   || '',
+        name:     u.name      || '',
+        location: u.location  || '',
+        size:     u.size      || '',
+        price:    u.price     || 0,
+        status:   u.status    || 'available',
+        image:    u.image_url || '',
+        floor:    u.floor     || '',
+        notes:    u.notes     || '',
+      })),
+    };
+  });
+}
+
+async function silentRefreshSpaces() {
+  if (document.hidden || !sbClient) return;
+  try {
+    SPACES = await fetchVisibleSpacesFromSupabase();
+    _sortByPlan(SPACES);
+
+    filterAndRender();
+
+    const isMarketplaceActive = document.getElementById('pg-market')?.classList.contains('active');
+    if (isMarketplaceActive) {
+      applyMpFilters();
+    } else if (!mpFiltered.length) {
+      mpFiltered = [...SPACES];
+    }
+
+    const counter = document.getElementById('res-count');
+    if (counter) counter.textContent = SPACES.length + ' مساحة';
+  } catch (_) {
+    /* silent refresh intentionally keeps the current UI if the network blips */
+  }
+}
+
+function subscribeSpacesRealtime() {
+  if (!sbClient) return;
+  let debounce = null;
+  const refresh = () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(silentRefreshSpaces, 1500);
+  };
+  sbClient.channel('spaces-home-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, refresh)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'space_units' }, refresh)
+    .subscribe();
+  setInterval(silentRefreshSpaces, 300000);
 }
 
 /**

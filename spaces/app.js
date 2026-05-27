@@ -151,7 +151,7 @@ async function loadData() {
 function mapSupabaseToSpaceObject(row, profilesMap) {
   profilesMap = profilesMap || {};
   const sizes = row.sizes_prices
-    ? row.sizes_prices.split('|').map(s => s.trim()).filter(Boolean)
+    ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
     : [];
   return {
     id:          row.id,
@@ -270,6 +270,10 @@ function subscribeSpacesRealtime() {
   let debounce = null;
   sbClient.channel('spaces-public-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(silentRefreshSpaces, 1500);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'space_units' }, () => {
       clearTimeout(debounce);
       debounce = setTimeout(silentRefreshSpaces, 1500);
     })
