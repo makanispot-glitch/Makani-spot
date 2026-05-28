@@ -228,15 +228,33 @@ function eqRenderNavUser() {
           <div class="nav-dropdown-header">
             <div class="nav-dropdown-name">${name || 'حسابي'}</div>
             <div class="nav-dropdown-email">${email}</div>
-            <div class="nav-dropdown-role">📋 مشاريع للبيع</div>
+            <div class="nav-dropdown-role">مشاريع للبيع</div>
           </div>
-          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">👤 الملف الشخصي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">🏠 لوحة التحكم</button>
-          <button class="nav-dropdown-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">📋 إعلاناتي</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">🎟 اشترك في بزار</button>
-          <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">🔍 دور على مساحة</button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
+            الملف الشخصي
+          </button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            لوحة التحكم
+          </button>
+          <button class="nav-dropdown-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
+            إعلاناتي
+          </button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
+            اشترك في بزار
+          </button>
+          <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            دور على مساحة
+          </button>
           <div class="nav-dropdown-sep"></div>
-          <button class="nav-dropdown-item danger" onclick="eqSignOut()">🚪 تسجيل الخروج</button>
+          <button class="nav-dropdown-item danger" onclick="eqSignOut()">
+            <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+            تسجيل الخروج
+          </button>
         </div>
       </div>`;
     eqLoadNotifications();
