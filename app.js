@@ -566,7 +566,7 @@ function buildCardHtml(s, fromPage) {
 
   const detailsBtnHtml = hasDetails
     ? `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
-              onclick="event.stopPropagation();openSpaceDetail(${s.id},'${fromPage}')">
+              onclick="event.stopPropagation();openSpaceDetail('${s.id}','${fromPage}')">
          تفاصيل ←
        </button>`
     : '';
@@ -578,7 +578,7 @@ function buildCardHtml(s, fromPage) {
 
   // 4. البناء النهائي
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space',${s.id},'${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
   const _trustBadge    = _planTrustBadgeHtml(s);
   const _cardClass     = _planCardClass(s);
 
@@ -601,9 +601,9 @@ function buildCardHtml(s, fromPage) {
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${detailsBtnHtml}
           <button class="btn btn-ghost btn-insp"
-                  onclick="event.stopPropagation();openInspectionModal(${s.id})">🔍 معاينة</button>
+                  onclick="event.stopPropagation();openInspectionModal('${s.id}')">🔍 معاينة</button>
           <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="openBooking(${s.id})">احجز ←</button>
+                  onclick="openBooking('${s.id}')">احجز ←</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `
@@ -775,9 +775,9 @@ function openSpaceDetail(spaceId, fromPage) {
             <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
             <div style="display:flex;gap:8px;margin-top:10px">
               <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
-                      onclick="openInspectionModal(${s.id})">🔍 معاينة</button>
+                      onclick="openInspectionModal('${s.id}')">🔍 معاينة</button>
               <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
-                      onclick="openBooking(${s.id})">احجز ←</button>
+                      onclick="openBooking('${s.id}')">احجز ←</button>
             </div>
           </div>
         </div>
@@ -1237,7 +1237,7 @@ function _renderSubSpaces(s) {
         <div style="font-size:36px;margin-bottom:10px">🏪</div>
         <div style="font-size:14px">لا توجد وحدات مفصّلة لهذا المكان بعد</div>
         <div style="font-size:12px;margin-top:6px">يمكنك الحجز مباشرة وسيتواصل معك فريقنا</div>
-        <button class="btn btn-primary" style="margin-top:16px" onclick="openBooking(${s.id})">
+        <button class="btn btn-primary" style="margin-top:16px" onclick="openBooking('${s.id}')">
           احجز دلوقتي ←
         </button>
       </div>`;
@@ -1286,7 +1286,7 @@ function _renderSubSpaces(s) {
           <div style="display:flex;align-items:center;gap:6px">
             ${!isBlocked
               ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                         onclick="openBookingForUnit(${s.id},'${unit.unitId}')">
+                         onclick="openBookingForUnit('${s.id}','${unit.unitId}')">
                    احجز ←
                  </button>`
               : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
