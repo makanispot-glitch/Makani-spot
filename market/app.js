@@ -54,6 +54,15 @@ const LISTING_DAYS = 60;
 function _cardUrl(u)   { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_c.webp') : u; }
 function _detailUrl(u) { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_d.webp') : u; }
 
+/* عدّاد عام لتحديد fetchpriority للصور الأولى (above-the-fold)
+   أول 6 صور = high priority (LCP)، الباقي = lazy + low priority */
+let _eqImgCounter = 0;
+function _imgAttrs(isLazy = true) {
+  const idx = _eqImgCounter++;
+  if (idx < 6) return ' decoding="async" fetchpriority="high"';
+  return (isLazy ? ' loading="lazy"' : '') + ' decoding="async" fetchpriority="low"';
+}
+
 
 /* ================================================================
    🗄️ القسم 3: المتغيرات العامة + نقطة البداية
@@ -941,7 +950,7 @@ function eqBuildCard(listing) {
     imgAreaHtml = `<div class="eq-card-no-img">📦</div>${feat}`;
   } else {
     const slides = allImgs.map((u, i) =>
-      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${listing.title}" loading="lazy"
+      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${listing.title}"${_imgAttrs(true)}
         onclick="eqOpenLightbox('${lid}',${i});event.stopPropagation()"
         onerror="this.parentNode.style.display='none'"></div>`
     ).join('');
@@ -995,6 +1004,7 @@ function eqRenderGrid() {
     return;
   }
 
+  _eqImgCounter = 0; /* أعد العدّاد لتحصل أول 6 صور على fetchpriority=high */
   grid.innerHTML = eqFiltered.map(eqBuildCard).join('');
   if (count) count.textContent = eqFiltered.length + (eqHasMore ? '+' : '') + ' إعلان';
   if (more)  more.style.display = eqHasMore ? 'flex' : 'none';

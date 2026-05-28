@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>مكاني Spot — إدارة الاشتراكات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:  #080810; --bg2: #0d0d1a; --bg3: #12121f; --bg4: #1a1a2e;
+  --or:  #F36418; --or2: #ff8c3a;
+  --org: rgba(255,107,0,.12); --bdo: rgba(255,107,0,.3);
+  --tx:  #e8e8f0; --mu: #6b6b8a; --mu2: #3a3a55; --bd: rgba(255,255,255,.06);
+  --gr:  #22C55E; --rd: #EF4444; --yw: #F59E0B; --bl: #60A5FA; --tl: #2DD4BF;
+  --r:   10px; --sh: 0 8px 40px rgba(0,0,0,.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,107,0,.03)1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,107,0,.03)1px,transparent 1px);
+  background-size:40px 40px}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
+.login-card{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:40px 44px;width:100%;max-width:400px;box-shadow:var(--sh),0 0 80px rgba(255,107,0,.05);animation:loginIn .4s ease;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;right:0;left:0;height:2px;background:linear-gradient(90deg,transparent,var(--or),transparent)}
+@keyframes loginIn{from{opacity:0;transform:translateY(20px)}}
+.l-logo{text-align:center;margin-bottom:28px}
+.l-logo .ico{font-size:44px;margin-bottom:14px;filter:drop-shadow(0 0 18px rgba(255,107,0,.4));display:block}
+.l-logo .brand{font-size:26px;font-weight:900;color:var(--or)}
+.l-logo .sub{font-size:11px;color:var(--mu);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.lbl{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:6px;display:block;letter-spacing:1px;text-transform:uppercase}
+.l-inp{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:13px 16px;font-family:monospace;font-size:14px;color:var(--tx);letter-spacing:3px;transition:border-color .2s,box-shadow .2s;direction:ltr;text-align:center;margin-bottom:16px;outline:none}
+.l-inp:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(255,107,0,.1)}
+.l-inp.shake{animation:shake .4s ease;border-color:var(--rd)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.l-btn{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.l-btn:hover{background:var(--or2);transform:translateY(-1px)}
+.l-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.l-err{margin-top:12px;padding:9px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;font-size:12px;color:var(--rd);text-align:center;display:none}
+.l-tries{margin-top:8px;font-size:11px;color:var(--mu);text-align:center}
+
+/* ── DASHBOARD ── */
+#dashboard{display:none;max-width:1400px;margin:0 auto;padding:28px 24px 60px;position:relative;z-index:1}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--bd);gap:16px;flex-wrap:wrap}
+.topbar-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.back-link{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--mu);text-decoration:none;transition:all .18s}
+.back-link:hover{border-color:var(--or);color:var(--or)}
+.topbar-title{font-size:20px;font-weight:900;display:flex;align-items:center;gap:10px}
+.topbar-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;background:var(--org);border:1px solid var(--bdo);border-radius:4px;color:var(--or);letter-spacing:1px}
+.topbar-sub{font-size:11px;color:var(--mu);margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.t-btn{padding:8px 16px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer;transition:all .18s}
+.t-btn:hover{border-color:var(--or);color:var(--or)}
+.t-btn-primary{background:var(--or);border-color:var(--or);color:#fff}
+.t-btn-primary:hover{opacity:.88}
+.t-btn-logout:hover{border-color:var(--rd);color:var(--rd)}
+
+/* Section title */
+.sec-hd{font-size:13px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-hd::before{content:'';width:3px;height:16px;background:var(--or);border-radius:2px;flex-shrink:0}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px) {.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;transition:border-color .2s,transform .2s}
+.kpi-card:hover{border-color:var(--bdo);transform:translateY(-2px)}
+.kpi-icon{font-size:22px;margin-bottom:10px}
+.kpi-val{font-size:34px;font-weight:900;font-family:'IBM Plex Mono',monospace;line-height:1}
+.kpi-lbl{font-size:12px;font-weight:700;color:var(--mu);margin-top:6px;text-transform:uppercase;letter-spacing:1px}
+.kpi-sub{font-size:10px;color:var(--mu);margin-top:3px}
+.kv-starter .kpi-val{color:var(--mu)}
+.kv-growth  .kpi-val{color:var(--bl)}
+.kv-pro     .kpi-val{color:var(--or)}
+.kv-expiring .kpi-val{color:var(--rd)}
+.kv-total   .kpi-val{color:var(--gr)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.f-search{flex:1;min-width:200px;background:var(--bg3);border:1.5px solid var(--mu2);border-radius:8px;padding:9px 14px;font-size:13px;color:var(--tx);outline:none;transition:border-color .2s;font-family:'Cairo',sans-serif}
+.f-search:focus{border-color:var(--or)}
+.f-select{background:var(--bg3);border:1.5px solid var(--mu2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--tx);cursor:pointer;outline:none;transition:border-color .2s;font-family:'Cairo',sans-serif}
+.f-select:focus{border-color:var(--or)}
+.f-chip{background:var(--bg3);border:1.5px solid var(--mu2);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer;transition:all .18s;white-space:nowrap;user-select:none}
+.f-chip:hover{border-color:var(--mu);color:var(--tx)}
+.f-chip.active{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.4);color:var(--rd)}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:28px}
+.sub-table{width:100%;border-collapse:collapse;font-size:13px}
+.sub-table th{padding:10px 14px;background:var(--bg3);color:var(--mu);font-size:11px;font-weight:700;text-align:right;border-bottom:1px solid var(--bd);white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.sub-table td{padding:12px 14px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.sub-table tr:last-child td{border-bottom:none}
+.sub-table tbody tr:hover td{background:rgba(255,255,255,.015)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.b-starter {background:rgba(107,107,138,.15);color:var(--mu); border:1px solid rgba(107,107,138,.3)}
+.b-growth  {background:rgba(96,165,250,.12); color:var(--bl); border:1px solid rgba(96,165,250,.25)}
+.b-pro     {background:rgba(255,107,0,.12);  color:var(--or); border:1px solid rgba(255,107,0,.25)}
+.b-active  {background:rgba(34,197,94,.12);  color:var(--gr); border:1px solid rgba(34,197,94,.25)}
+.b-suspended{background:rgba(245,158,11,.12);color:var(--yw); border:1px solid rgba(245,158,11,.25)}
+.b-expired {background:rgba(239,68,68,.12);  color:var(--rd); border:1px solid rgba(239,68,68,.25)}
+.b-none    {background:var(--bg3);           color:var(--mu); border:1px solid var(--bd)}
+.exp-chip{background:rgba(239,68,68,.1);color:var(--rd);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800;margin-right:5px;vertical-align:middle}
+.row-btn{padding:5px 13px;border-radius:7px;border:1px solid var(--bd);background:var(--bg3);color:#b0b0c8;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.row-btn:hover{border-color:var(--or);color:var(--or)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal-card{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:mPop .24s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden}
+.modal-card::before{content:'';position:absolute;top:0;right:0;left:0;height:2px;background:linear-gradient(90deg,transparent,var(--or),transparent)}
+@keyframes mPop{from{opacity:0;transform:scale(.92) translateY(-12px)}}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--bd)}
+.m-title{font-size:16px;font-weight:800}
+.m-close{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:2px 7px;border-radius:5px;transition:color .18s;line-height:1}
+.m-close:hover{color:var(--rd)}
+.m-body{padding:20px 22px}
+.m-profile{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border-radius:10px;margin-bottom:18px}
+.m-avatar{width:42px;height:42px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.m-uname{font-size:14px;font-weight:800}
+.m-uemail{font-size:12px;color:var(--mu);direction:ltr;margin-top:2px}
+.m-row{margin-bottom:15px}
+.m-lbl{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:6px;display:block;letter-spacing:1px;text-transform:uppercase}
+.m-sel,.m-inp,.m-date{width:100%;background:var(--bg3);border:1.5px solid var(--mu2);border-radius:8px;padding:11px 13px;font-size:13px;color:var(--tx);outline:none;transition:border-color .2s;font-family:'Cairo',sans-serif}
+.m-sel:focus,.m-inp:focus,.m-date:focus{border-color:var(--or)}
+.m-date{direction:ltr;color-scheme:dark}
+.m-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.m-two{grid-template-columns:1fr}}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg3);border-radius:8px}
+.toggle-lbl{font-size:13px;font-weight:600}
+.toggle-sw{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-sl{position:absolute;cursor:pointer;inset:0;background:var(--mu2);border-radius:24px;transition:.2s}
+.toggle-sl::before{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;bottom:3px;right:3px;transition:.2s}
+input:checked+.toggle-sl{background:var(--or)}
+input:checked+.toggle-sl::before{transform:translateX(-20px)}
+.m-foot{padding:14px 22px 20px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end}
+.m-cancel{padding:10px 20px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;font-size:13px;font-weight:700;color:var(--mu);cursor:pointer;transition:all .18s}
+.m-cancel:hover{border-color:var(--mu);color:var(--tx)}
+.m-save{padding:10px 26px;background:var(--or);border:none;border-radius:8px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .2s}
+.m-save:hover{opacity:.88}
+.m-save:disabled{opacity:.45;cursor:not-allowed}
+
+/* ── TOAST ── */
+#toasts{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.toast{padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;box-shadow:var(--sh);animation:sli .25s ease;display:flex;align-items:center;gap:6px}
+.toast-s{background:var(--bg2);border:1px solid var(--gr);color:var(--gr)}
+.toast-e{background:var(--bg2);border:1px solid var(--rd);color:var(--rd)}
+.toast-i{background:var(--bg2);border:1px solid var(--or);color:var(--or)}
+@keyframes sli{from{transform:translateX(-14px);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeOut{to{opacity:0}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="l-logo">
+      <span class="ico">💳</span>
+      <div class="brand">مكاني Spot</div>
+      <div class="sub">Subscriptions Admin</div>
+    </div>
+    <label class="lbl" for="pw-inp">كلمة الدخول</label>
+    <input type="password" id="pw-inp" class="l-inp" placeholder="••••••••••"
+           onkeydown="if(event.key==='Enter')tryLogin()" autocomplete="off" autofocus>
+    <button class="l-btn" id="login-btn" onclick="tryLogin()"><span>🔑</span> دخول</button>
+    <div class="l-err"  id="l-err">كلمة السر غير صحيحة — حاول مرة أخرى</div>
+    <div class="l-tries" id="l-tries"></div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="dashboard">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <a class="back-link" href="./admin-hub.html">← Hub</a>
+      <div>
+        <div class="topbar-title">💳 إدارة الاشتراكات <span class="topbar-badge">SUBSCRIPTIONS</span></div>
+        <div class="topbar-sub">التحكم الكامل في باقات أصحاب المساحات</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="t-btn t-btn-primary" onclick="loadAll()">🔄 تحديث</button>
+      <button class="t-btn t-btn-logout"  onclick="doLogout()">🚪 خروج</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="sec-hd">نظرة عامة</div>
+  <div class="kpi-grid">
+    <div class="kpi-card kv-starter">
+      <div class="kpi-icon">⬜</div>
+      <div class="kpi-val" id="kpi-starter">—</div>
+      <div class="kpi-lbl">Starter</div>
+      <div class="kpi-sub">مجاني / بدون اشتراك</div>
+    </div>
+    <div class="kpi-card kv-growth">
+      <div class="kpi-icon">✓</div>
+      <div class="kpi-val" id="kpi-growth">—</div>
+      <div class="kpi-lbl">Growth</div>
+      <div class="kpi-sub">موثّق ومفعّل</div>
+    </div>
+    <div class="kpi-card kv-pro">
+      <div class="kpi-icon">🏆</div>
+      <div class="kpi-val" id="kpi-pro">—</div>
+      <div class="kpi-lbl">Pro</div>
+      <div class="kpi-sub">شريك معتمد</div>
+    </div>
+    <div class="kpi-card kv-expiring">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-val" id="kpi-expiring">—</div>
+      <div class="kpi-lbl">ينتهي قريباً</div>
+      <div class="kpi-sub">خلال 7 أيام</div>
+    </div>
+    <div class="kpi-card kv-total">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-val" id="kpi-total">—</div>
+      <div class="kpi-lbl">إجمالي الحسابات</div>
+      <div class="kpi-sub">كل المستخدمين</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="sec-hd">فلترة وبحث</div>
+  <div class="filter-bar">
+    <input type="text" class="f-search" id="f-search"
+           placeholder="🔍 بحث بالاسم أو البريد الإلكتروني…" oninput="applyFilters()">
+    <select class="f-select" id="f-plan" onchange="applyFilters()">
+      <option value="all">📋 كل الباقات</option>
+      <option value="starter">⬜ Starter</option>
+      <option value="growth">✓ Growth</option>
+      <option value="pro">🏆 Pro</option>
+    </select>
+    <select class="f-select" id="f-status" onchange="applyFilters()">
+      <option value="all">🔵 كل الحالات</option>
+      <option value="active">✅ نشط</option>
+      <option value="suspended">⏸ معلق</option>
+      <option value="expired">❌ منتهي</option>
+      <option value="none">— بدون اشتراك</option>
+    </select>
+    <div class="f-chip" id="chip-expiring" onclick="toggleExpiring()">⚠️ ينتهي خلال 7 أيام</div>
+  </div>
+
+  <!-- Table -->
+  <div class="sec-hd">
+    أصحاب المساحات
+    <span id="count-chip"
+      style="background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:2px 10px;font-size:11px;font-weight:700;color:var(--mu)">
+    </span>
+  </div>
+  <div class="table-wrap" id="table-wrap">
+    <div style="text-align:center;padding:60px;color:var(--mu)">
+      <div style="font-size:28px;margin-bottom:10px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
+      <div style="font-size:13px">جاري التحميل…</div>
+    </div>
+  </div>
+
+</div><!-- /dashboard -->
+
+<!-- ══ MODAL ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="m-head">
+      <div class="m-title">✏️ تعديل الاشتراك</div>
+      <button class="m-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="m-body">
+
+      <div class="m-profile">
+        <div class="m-avatar" id="m-avatar">👤</div>
+        <div>
+          <div class="m-uname"  id="m-name">—</div>
+          <div class="m-uemail" id="m-email">—</div>
+        </div>
+      </div>
+
+      <!-- الباقة -->
+      <div class="m-row">
+        <label class="m-lbl">الباقة</label>
+        <select class="m-sel" id="m-plan">
+          <option value="starter">⬜ Starter — مجاني</option>
+          <option value="growth">✓ Growth — موثّق</option>
+          <option value="pro">🏆 Pro — شريك معتمد</option>
+        </select>
+      </div>
+
+      <!-- تواريخ الاشتراك -->
+      <div class="m-two">
+        <div class="m-row">
+          <label class="m-lbl">تاريخ البداية</label>
+          <input type="date" class="m-date" id="m-start">
+        </div>
+        <div class="m-row">
+          <label class="m-lbl">تاريخ الانتهاء</label>
+          <input type="date" class="m-date" id="m-end">
+        </div>
+      </div>
+
+      <!-- الحالة -->
+      <div class="m-row">
+        <label class="m-lbl">حالة الاشتراك</label>
+        <select class="m-sel" id="m-status">
+          <option value="active">✅ نشط</option>
+          <option value="suspended">⏸ معلق مؤقتاً</option>
+          <option value="expired">❌ منتهي</option>
+        </select>
+      </div>
+
+      <!-- تجديد تلقائي -->
+      <div class="m-row">
+        <div class="toggle-row">
+          <span class="toggle-lbl">تجديد تلقائي</span>
+          <label class="toggle-sw">
+            <input type="checkbox" id="m-autorenew" checked>
+            <span class="toggle-sl"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ملاحظات -->
+      <div class="m-row">
+        <label class="m-lbl">ملاحظات (اختياري)</label>
+        <input type="text" class="m-inp" id="m-notes" placeholder="ملاحظة للأدمن — غير مرئية للمستخدم…">
+      </div>
+
+    </div>
+    <div class="m-foot">
+      <button class="m-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="m-save"   id="m-save-btn" onclick="saveSub()">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ═══════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════ */
+const SB_URL  = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const PW_HASH = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
+const PW_SALT = 'MkSpot_2026_Salt';
+const MAX_TRIES = 5;
+
+/* ═══════════════════════════════════
+   STATE
+═══════════════════════════════════ */
+let adminHash      = null;
+let allOwners      = [];   // من admin_get_owners — كل حساب يحمل sub_* مباشرة
+let editingOwner   = null;
+let filterExpiring = false;
+let attempts       = 0;
+let locked         = false;
+
+/* ═══════════════════════════════════
+   AUTH
+═══════════════════════════════════ */
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function tryLogin() {
+  if (locked) return;
+  const pw  = document.getElementById('pw-inp').value;
+  const btn = document.getElementById('login-btn');
+  if (!pw) return;
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:inline-block"></div>';
+
+  const hashed = await sha256(PW_SALT + pw);
+  if (hashed === PW_HASH) {
+    adminHash = hashed;
+    const scr = document.getElementById('login-screen');
+    scr.style.animation = 'fadeOut .4s ease forwards';
+    setTimeout(() => {
+      scr.style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      sessionStorage.setItem('mkadmin', hashed.slice(0, 16));
+      toast('أهلاً — إدارة الاشتراكات 💳', 's');
+      loadAll();
+    }, 400);
+  } else {
+    attempts++;
+    const inp = document.getElementById('pw-inp');
+    inp.classList.add('shake');
+    setTimeout(() => inp.classList.remove('shake'), 500);
+    inp.value = '';
+    document.getElementById('l-err').style.display = 'block';
+    const rem = MAX_TRIES - attempts;
+    if (rem <= 0) {
+      locked = true;
+      document.getElementById('l-err').textContent = '🔒 تم قفل الوصول مؤقتاً — أعد التحميل بعد دقيقة';
+      inp.disabled = true;
+      setTimeout(() => {
+        locked = false; attempts = 0; inp.disabled = false;
+        document.getElementById('l-err').style.display = 'none';
+      }, 60000);
+    } else {
+      document.getElementById('l-tries').textContent = `محاولات متبقية: ${rem}`;
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔑</span> دخول';
+  }
+}
+
+// Auto-login من الـ session
+(async () => {
+  const sess = sessionStorage.getItem('mkadmin');
+  if (sess && sess === PW_HASH.slice(0, 16)) {
+    adminHash = PW_HASH;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadAll();
+  }
+})();
+
+function doLogout() {
+  sessionStorage.removeItem('mkadmin');
+  adminHash = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-inp').value = '';
+  document.getElementById('l-err').style.display = 'none';
+  document.getElementById('l-tries').textContent = '';
+}
+
+/* ═══════════════════════════════════
+   SUPABASE RPC HELPER
+═══════════════════════════════════ */
+async function sbRpc(fn, params) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method:  'POST',
+    headers: {
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json', 'Accept': 'application/json',
+    },
+    body: JSON.stringify(params),
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.message || e.hint || `HTTP ${r.status}`);
+  }
+  return r.json();
+}
+
+/* ═══════════════════════════════════
+   DATA LOADING
+   admin_get_owners يعيد الآن أعمدة sub_*
+   مضمّنة مباشرة في كل كائن owner
+═══════════════════════════════════ */
+async function loadAll() {
+  showTableLoading();
+  try {
+    const data  = await sbRpc('admin_get_owners', { p_secret: adminHash });
+    allOwners   = data || [];
+    renderKPIs();
+    applyFilters();
+  } catch (e) {
+    showTableError('فشل التحميل: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════
+   KPIs
+═══════════════════════════════════ */
+function renderKPIs() {
+  let starter = 0, growth = 0, pro = 0, expiring = 0;
+  const now = Date.now();
+  const in7 = now + 7 * 86400000;
+
+  allOwners.forEach(o => {
+    const p = o.plan_tier || 'starter';
+    if (p === 'starter') starter++;
+    else if (p === 'growth') growth++;
+    else if (p === 'pro') pro++;
+
+    if (o.sub_ends) {
+      const t = new Date(o.sub_ends).getTime();
+      if (t > now && t <= in7) expiring++;
+    }
+  });
+
+  setText('kpi-starter',  starter);
+  setText('kpi-growth',   growth);
+  setText('kpi-pro',      pro);
+  setText('kpi-expiring', expiring);
+  setText('kpi-total',    allOwners.length);
+}
+
+/* ═══════════════════════════════════
+   FILTERS
+═══════════════════════════════════ */
+function applyFilters() {
+  const q      = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+  const plan   = document.getElementById('f-plan')?.value   || 'all';
+  const status = document.getElementById('f-status')?.value || 'all';
+  const now    = Date.now();
+  const in7    = now + 7 * 86400000;
+
+  const filtered = allOwners.filter(o => {
+    // بحث نصي
+    if (q && !o.full_name?.toLowerCase().includes(q) && !o.email?.toLowerCase().includes(q)) return false;
+
+    // فلتر الباقة
+    if (plan !== 'all' && (o.plan_tier || 'starter') !== plan) return false;
+
+    // فلتر الحالة
+    if (status !== 'all') {
+      const st = o.sub_status || 'none';
+      if (status === 'none'  && o.sub_status)          return false;
+      if (status !== 'none'  && st !== status)          return false;
+    }
+
+    // فلتر "ينتهي قريباً"
+    if (filterExpiring) {
+      if (!o.sub_ends) return false;
+      const t = new Date(o.sub_ends).getTime();
+      if (!(t > now && t <= in7)) return false;
+    }
+
+    return true;
+  });
+
+  setText('count-chip', filtered.length + ' حساب');
+  renderTable(filtered);
+}
+
+function toggleExpiring() {
+  filterExpiring = !filterExpiring;
+  document.getElementById('chip-expiring').classList.toggle('active', filterExpiring);
+  applyFilters();
+}
+
+/* ═══════════════════════════════════
+   TABLE RENDER
+═══════════════════════════════════ */
+function showTableLoading() {
+  document.getElementById('table-wrap').innerHTML =
+    `<div style="text-align:center;padding:60px;color:var(--mu)">
+       <div style="font-size:28px;margin-bottom:10px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
+       <div style="font-size:13px">جاري التحميل…</div>
+     </div>`;
+}
+
+function showTableError(msg) {
+  document.getElementById('table-wrap').innerHTML =
+    `<div style="text-align:center;padding:40px;color:var(--rd)">
+       <div style="font-size:28px;margin-bottom:10px">⚠️</div>
+       <div style="font-size:13px">${esc(msg)}</div>
+       <button onclick="loadAll()" style="margin-top:14px;padding:7px 18px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;color:var(--mu);cursor:pointer;font-family:Cairo,sans-serif;font-size:12px;font-weight:700">🔄 إعادة المحاولة</button>
+     </div>`;
+}
+
+function renderTable(owners) {
+  const wrap = document.getElementById('table-wrap');
+  if (!owners?.length) {
+    wrap.innerHTML =
+      `<div style="text-align:center;padding:60px;color:var(--mu)">
+         <div style="font-size:40px;margin-bottom:14px">🔍</div>
+         <div style="font-size:14px;font-weight:700">لا توجد نتائج مطابقة</div>
+         <div style="font-size:12px;margin-top:6px">جرّب تغيير الفلاتر</div>
+       </div>`;
+    return;
+  }
+
+  const now = Date.now();
+  const in7 = now + 7 * 86400000;
+
+  const rows = owners.map(o => {
+    const plan       = o.plan_tier  || 'starter';
+    const subStatus  = o.sub_status || 'none';
+    const endsAt     = o.sub_ends ? new Date(o.sub_ends) : null;
+    const isExpiring = endsAt && endsAt.getTime() > now && endsAt.getTime() <= in7;
+    const daysLeft   = endsAt ? Math.ceil((endsAt.getTime() - now) / 86400000) : null;
+
+    return `
+      <tr id="row-${o.id}">
+        <td>
+          <div style="font-weight:700;font-size:13px">${esc(o.full_name)}</div>
+          <div style="font-size:11px;color:var(--mu);direction:ltr;margin-top:2px">${esc(o.email)}</div>
+        </td>
+        <td>
+          <span class="badge ${planClass(plan)}" id="plbdg-${o.id}">${planLabel(plan)}</span>
+        </td>
+        <td style="font-size:12px">
+          ${o.sub_started
+            ? `<span>${fmtDate(o.sub_started)}</span>`
+            : '<span style="color:var(--mu)">—</span>'}
+        </td>
+        <td style="font-size:12px">
+          ${endsAt
+            ? `<span style="${isExpiring ? 'color:var(--rd);font-weight:700' : ''}">${fmtDate(o.sub_ends)}</span>${isExpiring ? `<span class="exp-chip">${daysLeft}د</span>` : ''}`
+            : '<span style="color:var(--mu)">—</span>'}
+        </td>
+        <td>
+          <span class="badge ${statusClass(subStatus)}" id="stbdg-${o.id}">${statusLabel(subStatus)}</span>
+          ${o.sub_renew ? '<span title="تجديد تلقائي" style="font-size:11px;color:var(--tl);margin-right:5px">🔄</span>' : ''}
+        </td>
+        <td style="text-align:center;font-size:12px;color:var(--mu)">${o.spaces_count || 0}</td>
+        <td>
+          <button class="row-btn" onclick="openModal('${o.id}')">✏️ تعديل</button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="sub-table">
+        <thead>
+          <tr>
+            <th>الاسم / البريد</th>
+            <th>الباقة</th>
+            <th>تاريخ البداية</th>
+            <th>تاريخ الانتهاء</th>
+            <th>الحالة</th>
+            <th>المساحات</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ═══════════════════════════════════
+   MODAL
+═══════════════════════════════════ */
+function openModal(ownerId) {
+  editingOwner = allOwners.find(o => o.id === ownerId);
+  if (!editingOwner) return;
+
+  const o = editingOwner;
+  document.getElementById('m-name').textContent  = o.full_name || '—';
+  document.getElementById('m-email').textContent = o.email    || '—';
+  document.getElementById('m-avatar').textContent = '👤';
+
+  document.getElementById('m-plan').value        = o.plan_tier   || 'starter';
+  document.getElementById('m-status').value      = o.sub_status  || 'active';
+  document.getElementById('m-autorenew').checked = o.sub_renew   !== false;
+  document.getElementById('m-notes').value       = o.sub_notes   || '';
+
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('m-start').value = o.sub_started ? o.sub_started.slice(0, 10) : today;
+  document.getElementById('m-end').value   = o.sub_ends    ? o.sub_ends.slice(0, 10)    : '';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingOwner = null;
+}
+
+/* ═══════════════════════════════════
+   SAVE  — يستخدم RPC آمن حصراً
+═══════════════════════════════════ */
+async function saveSub() {
+  if (!editingOwner || !adminHash) return;
+
+  const btn = document.getElementById('m-save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الحفظ…';
+
+  const newPlan   = document.getElementById('m-plan').value;
+  const newStatus = document.getElementById('m-status').value;
+  const startVal  = document.getElementById('m-start').value;
+  const endVal    = document.getElementById('m-end').value;
+  const autoRenew = document.getElementById('m-autorenew').checked;
+  const notes     = document.getElementById('m-notes').value.trim();
+
+  try {
+    // 1. تحديث plan_tier في profiles
+    await sbRpc('admin_set_plan_tier', {
+      p_owner_id:  editingOwner.id,
+      p_plan_tier: newPlan,
+      p_secret:    adminHash,
+    });
+
+    // 2. Upsert في subscriptions عبر RPC آمن
+    await sbRpc('admin_upsert_subscription', {
+      p_secret:     adminHash,
+      p_user_id:    editingOwner.id,
+      p_plan:       newPlan,
+      p_status:     newStatus,
+      p_started_at: startVal ? startVal + 'T00:00:00+00:00' : null,
+      p_ends_at:    endVal   ? endVal   + 'T23:59:59+00:00' : null,
+      p_auto_renew: autoRenew,
+      p_notes:      notes || null,
+    });
+
+    // 3. تحديث الحالة المحلية
+    const idx = allOwners.findIndex(o => o.id === editingOwner.id);
+    if (idx !== -1) {
+      allOwners[idx].plan_tier  = newPlan;
+      allOwners[idx].sub_status = newStatus;
+      allOwners[idx].sub_started = startVal ? startVal + 'T00:00:00+00:00' : allOwners[idx].sub_started;
+      allOwners[idx].sub_ends   = endVal    ? endVal   + 'T23:59:59+00:00' : null;
+      allOwners[idx].sub_renew  = autoRenew;
+      allOwners[idx].sub_notes  = notes || null;
+    }
+
+    toast(`✅ ${editingOwner.full_name} → ${planLabel(newPlan)}`, 's');
+    closeModal();
+    renderKPIs();
+    applyFilters();
+
+  } catch (e) {
+    toast('❌ خطأ: ' + e.message, 'e');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '💾 حفظ التعديلات';
+}
+
+/* ═══════════════════════════════════
+   HELPERS
+═══════════════════════════════════ */
+function planLabel(p)  { return {starter:'⬜ Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p] || (p || 'Starter'); }
+function planClass(p)  { return {starter:'b-starter',growth:'b-growth',pro:'b-pro'}[p] || 'b-starter'; }
+function statusLabel(s){ return {active:'✅ نشط',suspended:'⏸ معلق',expired:'❌ منتهي',none:'— بدون'}[s] || s; }
+function statusClass(s){ return {active:'b-active',suspended:'b-suspended',expired:'b-expired',none:'b-none'}[s] || 'b-none'; }
+function fmtDate(d)    { return d ? new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+function esc(s)        { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setText(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+function toast(msg, type='i') {
+  const wrap = document.getElementById('toasts');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* ═══════════════════════════════════
+   AUTO-REFRESH — كل 5 دقائق
+═══════════════════════════════════ */
+setInterval(() => { if (adminHash) loadAll().catch(() => {}); }, 300000);
+</script>
+</body>
+</html>

@@ -85,6 +85,9 @@ function _drawToWebP(img, orientation, maxW, maxH, quality) {
     canvas.width  = swapDim ? fh : fw;
     canvas.height = swapDim ? fw : fh;
     const ctx = canvas.getContext('2d');
+    /* جودة تكبير/تصغير عالية — يحسن الحدة عند downscale (خصوصاً للـ card) */
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     switch (orientation) {
       case 2: ctx.transform(-1,  0,  0,  1, fw,  0); break;
       case 3: ctx.transform(-1,  0,  0, -1, fw, fh); break;
@@ -105,9 +108,14 @@ function _drawToWebP(img, orientation, maxW, maxH, quality) {
 
 /* ──────────────────────────────────────────────────────────────
    ضغط صورة إلى 3 أحجام في عملية واحدة (تحميل مرة واحدة)
-   card   400×300  q0.65 → ~30 KB
-   detail 900×675  q0.80 → ~120 KB
-   full  1280×960  q0.83 → ~250 KB
+   ────────────────────────────────────────────────────────────────
+   التوازن بين الجودة والحجم — مضبوط بعد اختبارات:
+     • card   384×288  q0.68 → ~26 KB  (شبكة الكروت — مساحة صغيرة، جودة جيدة)
+     • detail 880×660  q0.78 → ~95  KB (صفحة تفاصيل المشروع — متوازنة)
+     • full  1280×960  q0.80 → ~210 KB (Lightbox / Zoom — أقصى جودة عملية)
+
+   النتيجة: ~330 KB لكل صورة بثلاث أحجام مقابل ~2-5 MB للأصل
+   = تخزين أقل بنسبة ~85-93% مع جودة بصرية ممتازة
    ────────────────────────────────────────────────────────────── */
 async function _compressVariants(file) {
   if (file.size > MAX_FILE_BYTES) {
@@ -118,9 +126,9 @@ async function _compressVariants(file) {
     _loadImage(file),
   ]);
   const [cardBlob, detailBlob, fullBlob] = await Promise.all([
-    _drawToWebP(img, orientation,  400,  300, 0.65),
-    _drawToWebP(img, orientation,  900,  675, 0.80),
-    _drawToWebP(img, orientation, 1280,  960, 0.83),
+    _drawToWebP(img, orientation,  384,  288, 0.68),
+    _drawToWebP(img, orientation,  880,  660, 0.78),
+    _drawToWebP(img, orientation, 1280,  960, 0.80),
   ]);
   return { cardBlob, detailBlob, fullBlob };
 }

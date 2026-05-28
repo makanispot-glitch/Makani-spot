@@ -61,7 +61,8 @@
   <!-- روابط الخطوط من Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
@@ -101,11 +102,11 @@
       <!-- الأقسام الثلاثة الرئيسية -->
       <a class="nav-section-btn" id="nsb-spaces" href="/spaces/">
         <span class="nsb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M2 7h20l-2 4H4Z"/>
-            <path d="M4 11v9h16v-9"/>
-            <path d="M9 20v-6h6v6"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 7h20l-2 4H4Z" />
+            <path d="M4 11v9h16v-9" />
+            <path d="M9 20v-6h6v6" />
           </svg>
         </span>
         <span class="nsb-text">
@@ -116,10 +117,10 @@
 
       <a class="nav-section-btn" id="nsb-bazaars" href="/bazaars/">
         <span class="nsb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3.5 21h17L12 3 3.5 21Z"/>
-            <path d="M12 3v18"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 21h17L12 3 3.5 21Z" />
+            <path d="M12 3v18" />
           </svg>
         </span>
         <span class="nsb-text">
@@ -130,10 +131,10 @@
 
       <a class="nav-section-btn" id="nsb-market" href="/market/">
         <span class="nsb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.5 13 13 20.5a2 2 0 0 1-2.8 0L3 13.2V3h10.2L20.5 10a2 2 0 0 1 0 3Z"/>
-            <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.5 13 13 20.5a2 2 0 0 1-2.8 0L3 13.2V3h10.2L20.5 10a2 2 0 0 1 0 3Z" />
+            <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none" />
           </svg>
         </span>
         <span class="nsb-text">
@@ -176,38 +177,71 @@
           <!-- القائمة المنسدلة — تظهر عند الضغط على الأفاتار -->
           <div class="nav-dropdown" id="nav-dropdown">
             <div class="nav-dropdown-header">
-              <div class="nav-dropdown-name" id="dd-name">—</div>
+              <div class="nav-dd-name-row">
+                <div class="nav-dropdown-name" id="dd-name">—</div>
+                <span class="plan-badge" id="dd-plan-badge" style="display:none"></span>
+              </div>
               <div class="nav-dropdown-email" id="dd-email">—</div>
               <div class="nav-dropdown-role" id="dd-role">مستخدم</div>
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 22a8 8 0 0 1 16 0" />
+              </svg>
               ملفي الشخصي
             </button>
             <button class="nav-dropdown-item" onclick="goToDashboard()">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
               لوحة التحكم
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16v18l-4-2-4 2-4-2-4 2z" />
+                <path d="M8 8h8M8 12h8M8 16h4" />
+              </svg>
               إعلاناتي
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3.5 21h17L12 3 3.5 21Z" />
+                <path d="M12 3v18" />
+              </svg>
               اشترك في بازار
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/spaces/';closeUserDropdown()">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
               ابحث عن مساحة
             </button>
             <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()"
               style="display:none;color:#16a34a;font-weight:700">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 7h20l-2 4H4Z" />
+                <path d="M4 11v9h16v-9" />
+                <path d="M9 20v-6h6v6" />
+              </svg>
               لوحة الملاك
             </button>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item danger" onclick="doLogout()">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+              </svg>
               تسجيل الخروج
             </button>
           </div>
@@ -240,7 +274,7 @@
           </p>
 
           <h1 class="hv2-h1">
-            ابدأ مشروعك<br>من <em>المكان الصح!</em>
+            ابدأ مشروعك<br>من <em>المكان الصح</em>
           </h1>
 
           <p class="hv2-desc">
@@ -250,7 +284,11 @@
           <div class="hv2-actions">
             <button class="hv2-btn-primary" onclick="scrollToSearch()">
               احجز مساحتك الآن
-              <svg class="hv2-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <svg class="hv2-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </button>
             <button class="hv2-btn-ghost" onclick="showPage('how')">كيف تعمل المنصة؟</button>
           </div>
@@ -276,49 +314,44 @@
 
         <!-- ── الفيجوال: مخطط المساحات الصغيرة (أكشاك + بارتشنات) ── -->
         <div class="hv2-visual" aria-hidden="true">
-          <svg class="hv2-fp-svg" viewBox="0 0 420 362"
-               xmlns="http://www.w3.org/2000/svg">
+          <svg class="hv2-fp-svg" viewBox="0 0 420 362" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="fp-grid" x="0" y="0" width="20" height="20"
-                       patternUnits="userSpaceOnUse">
-                <circle cx="10" cy="10" r="0.8" fill="rgba(255,255,255,0.055)"/>
+              <pattern id="fp-grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="0.8" fill="rgba(255,255,255,0.055)" />
               </pattern>
             </defs>
 
             <!-- شبكة خلفية -->
-            <rect width="420" height="362" fill="url(#fp-grid)"/>
+            <rect width="420" height="362" fill="url(#fp-grid)" />
 
             <!-- الإطار الخارجي -->
-            <rect x="12" y="12" width="396" height="338" rx="8"
-                  fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <rect x="12" y="12" width="396" height="338" rx="8" fill="none" stroke="rgba(255,255,255,0.1)"
+              stroke-width="1.5" />
 
             <!-- ══ ممر المشاة بين الصف A والصف B ══ -->
-            <rect x="18" y="118" width="384" height="30"
-                  fill="rgba(255,255,255,0.025)" rx="0"/>
-            <line x1="24" y1="133" x2="396" y2="133"
-                  stroke="rgba(255,255,255,0.06)" stroke-width="1"
-                  stroke-dasharray="6 12"/>
+            <rect x="18" y="118" width="384" height="30" fill="rgba(255,255,255,0.025)" rx="0" />
+            <line x1="24" y1="133" x2="396" y2="133" stroke="rgba(255,255,255,0.06)" stroke-width="1"
+              stroke-dasharray="6 12" />
 
             <!-- فاصل بين الصف B والصف C -->
-            <line x1="12" y1="254" x2="408" y2="254"
-                  stroke="rgba(255,255,255,0.11)" stroke-width="2.5"/>
+            <line x1="12" y1="254" x2="408" y2="254" stroke="rgba(255,255,255,0.11)" stroke-width="2.5" />
 
             <!-- ══ جدران بين كشك وكشك — الصف A (y=18..116) ══ -->
-            <line x1="86"  y1="18" x2="86"  y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="154" y1="18" x2="154" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="222" y1="18" x2="222" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="290" y1="18" x2="290" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
+            <line x1="86" y1="18" x2="86" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="154" y1="18" x2="154" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="222" y1="18" x2="222" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="290" y1="18" x2="290" y2="116" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
 
             <!-- ══ جدران بين كشك وكشك — الصف B (y=152..250) ══ -->
-            <line x1="86"  y1="152" x2="86"  y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="154" y1="152" x2="154" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="222" y1="152" x2="222" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="290" y1="152" x2="290" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
+            <line x1="86" y1="152" x2="86" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="154" y1="152" x2="154" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="222" y1="152" x2="222" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="290" y1="152" x2="290" y2="250" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
 
             <!-- ══ جدران بين كشك وكشك — الصف C (y=258..340) ══ -->
-            <line x1="118" y1="258" x2="118" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="208" y1="258" x2="208" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
-            <line x1="298" y1="258" x2="298" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5"/>
+            <line x1="118" y1="258" x2="118" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="208" y1="258" x2="208" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
+            <line x1="298" y1="258" x2="298" y2="340" stroke="rgba(255,255,255,0.13)" stroke-width="2.5" />
 
             <!-- ══════════════════════════════
                   الصف A — 5 أكشاك صغيرة
@@ -326,163 +359,166 @@
                  ══════════════════════════════ -->
 
             <!-- A1 برتقالي (18,18) -->
-            <rect x="18" y="18" width="66" height="96" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="18" y="18" width="66" height="96" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:0s"/>
-            <line x1="27" y1="48" x2="76" y2="48" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="27" y1="70" x2="76" y2="70" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="30" y="86" width="42" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="18" y="18" width="66" height="96" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="18" y="18" width="66" height="96" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:0s" />
+            <line x1="27" y1="48" x2="76" y2="48" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="27" y1="70" x2="76" y2="70" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="30" y="86" width="42" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- A2 كريمي (88,18) -->
-            <rect x="88" y="18" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="88" y="18" width="64" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="97" y1="48" x2="144" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="97" y1="70" x2="144" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="100" y="86" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="88" y="18" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="88" y="18" width="64" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="97" y1="48" x2="144" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="97" y1="70" x2="144" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="100" y="86" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- A3 برتقالي (156,18) -->
-            <rect x="156" y="18" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="156" y="18" width="64" height="96" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:0.8s"/>
-            <line x1="165" y1="48" x2="212" y2="48" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="165" y1="70" x2="212" y2="70" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="168" y="86" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="156" y="18" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="156" y="18" width="64" height="96" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:0.8s" />
+            <line x1="165" y1="48" x2="212" y2="48" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="165" y1="70" x2="212" y2="70" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="168" y="86" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- A4 كريمي (224,18) -->
-            <rect x="224" y="18" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="224" y="18" width="64" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="233" y1="48" x2="280" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="233" y1="70" x2="280" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="236" y="86" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="224" y="18" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="224" y="18" width="64" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="233" y1="48" x2="280" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="233" y1="70" x2="280" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="236" y="86" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- A5 كريمي واسع (292,18) يملأ الباقي -->
-            <rect x="292" y="18" width="108" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="292" y="18" width="108" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="302" y1="48" x2="392" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="302" y1="70" x2="392" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="318" y="86" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="292" y="18" width="108" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="292" y="18" width="108" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="302" y1="48" x2="392" y2="48" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="302" y1="70" x2="392" y2="70" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="318" y="86" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- ══════════════════════════════
                   الصف B — 5 أكشاك صغيرة
                  ══════════════════════════════ -->
 
             <!-- B1 كريمي (18,152) -->
-            <rect x="18" y="152" width="66" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="18" y="152" width="66" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="27" y1="182" x2="76" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="27" y1="204" x2="76" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="30" y="220" width="42" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="18" y="152" width="66" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="18" y="152" width="66" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="27" y1="182" x2="76" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="27" y1="204" x2="76" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="30" y="220" width="42" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- B2 برتقالي (88,152) -->
-            <rect x="88" y="152" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="88" y="152" width="64" height="96" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:1.6s"/>
-            <line x1="97" y1="182" x2="144" y2="182" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="97" y1="204" x2="144" y2="204" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="100" y="220" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="88" y="152" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="88" y="152" width="64" height="96" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:1.6s" />
+            <line x1="97" y1="182" x2="144" y2="182" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="97" y1="204" x2="144" y2="204" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="100" y="220" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- B3 كريمي (156,152) -->
-            <rect x="156" y="152" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="156" y="152" width="64" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="165" y1="182" x2="212" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="165" y1="204" x2="212" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="168" y="220" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="156" y="152" width="64" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="156" y="152" width="64" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="165" y1="182" x2="212" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="165" y1="204" x2="212" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="168" y="220" width="40" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- B4 برتقالي (224,152) -->
-            <rect x="224" y="152" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="224" y="152" width="64" height="96" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:0.4s"/>
-            <line x1="233" y1="182" x2="280" y2="182" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="233" y1="204" x2="280" y2="204" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="236" y="220" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="224" y="152" width="64" height="96" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="224" y="152" width="64" height="96" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:0.4s" />
+            <line x1="233" y1="182" x2="280" y2="182" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="233" y1="204" x2="280" y2="204" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="236" y="220" width="40" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- B5 كريمي واسع (292,152) -->
-            <rect x="292" y="152" width="108" height="96" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="292" y="152" width="108" height="96" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="302" y1="182" x2="392" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="302" y1="204" x2="392" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="318" y="220" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="292" y="152" width="108" height="96" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="292" y="152" width="108" height="96" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="302" y1="182" x2="392" y2="182" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="302" y1="204" x2="392" y2="204" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="318" y="220" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- ══════════════════════════════
                   الصف C — 4 أكشاك (ارتفاع أقل)
                  ══════════════════════════════ -->
 
             <!-- C1 برتقالي (18,258,98,82) -->
-            <rect x="18" y="258" width="98" height="80" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="18" y="258" width="98" height="80" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:1.2s"/>
-            <line x1="28" y1="284" x2="108" y2="284" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="28" y1="304" x2="108" y2="304" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="34" y="318" width="66" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="18" y="258" width="98" height="80" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="18" y="258" width="98" height="80" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:1.2s" />
+            <line x1="28" y1="284" x2="108" y2="284" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="28" y1="304" x2="108" y2="304" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="34" y="318" width="66" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- C2 كريمي (120,258,86,82) -->
-            <rect x="120" y="258" width="86" height="80" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="120" y="258" width="86" height="80" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="130" y1="284" x2="198" y2="284" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="130" y1="304" x2="198" y2="304" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="134" y="318" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="120" y="258" width="86" height="80" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="120" y="258" width="86" height="80" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="130" y1="284" x2="198" y2="284" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="130" y1="304" x2="198" y2="304" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="134" y="318" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- C3 كريمي (210,258,86,82) -->
-            <rect x="210" y="258" width="86" height="80" rx="3" fill="rgba(212,190,150,0.07)"/>
-            <rect x="210" y="258" width="86" height="80" rx="3" fill="none"
-                  stroke="rgba(212,190,150,0.27)" stroke-width="1"/>
-            <line x1="220" y1="284" x2="288" y2="284" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <line x1="220" y1="304" x2="288" y2="304" stroke="rgba(212,190,150,0.15)" stroke-width="1"/>
-            <rect x="224" y="318" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)"/>
+            <rect x="210" y="258" width="86" height="80" rx="3" fill="rgba(212,190,150,0.07)" />
+            <rect x="210" y="258" width="86" height="80" rx="3" fill="none" stroke="rgba(212,190,150,0.27)"
+              stroke-width="1" />
+            <line x1="220" y1="284" x2="288" y2="284" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <line x1="220" y1="304" x2="288" y2="304" stroke="rgba(212,190,150,0.15)" stroke-width="1" />
+            <rect x="224" y="318" width="58" height="9" rx="2" fill="rgba(212,190,150,0.17)" />
 
             <!-- C4 برتقالي (300,258,102,82) -->
-            <rect x="300" y="258" width="102" height="80" rx="3" fill="rgba(243,100,24,0.11)"/>
-            <rect x="300" y="258" width="102" height="80" rx="3" fill="none"
-                  stroke="#F36418" stroke-width="1.5" class="fp-brdr" style="--fp-delay:2.0s"/>
-            <line x1="310" y1="284" x2="394" y2="284" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <line x1="310" y1="304" x2="394" y2="304" stroke="rgba(243,100,24,0.2)" stroke-width="1"/>
-            <rect x="318" y="318" width="66" height="9" rx="2" fill="rgba(243,100,24,0.18)"/>
+            <rect x="300" y="258" width="102" height="80" rx="3" fill="rgba(243,100,24,0.11)" />
+            <rect x="300" y="258" width="102" height="80" rx="3" fill="none" stroke="#F36418" stroke-width="1.5"
+              class="fp-brdr" style="--fp-delay:2.0s" />
+            <line x1="310" y1="284" x2="394" y2="284" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <line x1="310" y1="304" x2="394" y2="304" stroke="rgba(243,100,24,0.2)" stroke-width="1" />
+            <rect x="318" y="318" width="66" height="9" rx="2" fill="rgba(243,100,24,0.18)" />
 
             <!-- ══ نقاط التوافر (البرتقالي فقط) ══ -->
-            <!-- A1 --> <circle cx="77"  cy="27"  r="3.5" fill="#F36418"/>
-                       <circle cx="77"  cy="27"  r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0s"/>
-            <!-- A3 --> <circle cx="213" cy="27"  r="3.5" fill="#F36418"/>
-                       <circle cx="213" cy="27"  r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0.8s"/>
-            <!-- B2 --> <circle cx="145" cy="161" r="3.5" fill="#F36418"/>
-                       <circle cx="145" cy="161" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:1.6s"/>
-            <!-- B4 --> <circle cx="281" cy="161" r="3.5" fill="#F36418"/>
-                       <circle cx="281" cy="161" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0.4s"/>
-            <!-- C1 --> <circle cx="109" cy="267" r="3.5" fill="#F36418"/>
-                       <circle cx="109" cy="267" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:1.2s"/>
-            <!-- C4 --> <circle cx="395" cy="267" r="3.5" fill="#F36418"/>
-                       <circle cx="395" cy="267" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:2.0s"/>
+            <!-- A1 -->
+            <circle cx="77" cy="27" r="3.5" fill="#F36418" />
+            <circle cx="77" cy="27" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0s" />
+            <!-- A3 -->
+            <circle cx="213" cy="27" r="3.5" fill="#F36418" />
+            <circle cx="213" cy="27" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0.8s" />
+            <!-- B2 -->
+            <circle cx="145" cy="161" r="3.5" fill="#F36418" />
+            <circle cx="145" cy="161" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:1.6s" />
+            <!-- B4 -->
+            <circle cx="281" cy="161" r="3.5" fill="#F36418" />
+            <circle cx="281" cy="161" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:0.4s" />
+            <!-- C1 -->
+            <circle cx="109" cy="267" r="3.5" fill="#F36418" />
+            <circle cx="109" cy="267" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:1.2s" />
+            <!-- C4 -->
+            <circle cx="395" cy="267" r="3.5" fill="#F36418" />
+            <circle cx="395" cy="267" r="7.5" fill="rgba(243,100,24,0.22)" class="fp-pulse" style="--fp-delay:2.0s" />
 
             <!-- ══ مؤشر التصفح — يتنقل بين الأكشاك ══ -->
-            <rect x="18" y="18" width="66" height="96" rx="3"
-                  fill="rgba(243,100,24,0.06)"
-                  stroke="#F36418" stroke-width="1.5" stroke-dasharray="5 4"
-                  class="fp-cursor"/>
+            <rect x="18" y="18" width="66" height="96" rx="3" fill="rgba(243,100,24,0.06)" stroke="#F36418"
+              stroke-width="1.5" stroke-dasharray="5 4" class="fp-cursor" />
 
             <!-- ══ خط المسح المتحرك ══ -->
-            <rect x="18" y="18" width="384" height="1.5" rx="1"
-                  fill="rgba(243,100,24,0.7)" class="fp-scan"/>
+            <rect x="18" y="18" width="384" height="1.5" rx="1" fill="rgba(243,100,24,0.7)" class="fp-scan" />
 
             <!-- ══ بطاقات في ممر المشاة ══ -->
             <g class="fp-chip" style="--fp-delay:0s">
-              <rect x="62" y="126" width="80" height="18" rx="9"
-                    fill="rgba(14,18,24,0.88)" stroke="rgba(243,100,24,0.5)" stroke-width="1"/>
-              <circle cx="75"  cy="135" r="3.5" fill="#F36418"/>
-              <rect x="83"  y="131" width="48" height="3"   rx="1.5" fill="rgba(243,100,24,0.7)"/>
-              <rect x="83"  y="137" width="30" height="2.5" rx="1.25" fill="rgba(255,255,255,0.2)"/>
+              <rect x="62" y="126" width="80" height="18" rx="9" fill="rgba(14,18,24,0.88)"
+                stroke="rgba(243,100,24,0.5)" stroke-width="1" />
+              <circle cx="75" cy="135" r="3.5" fill="#F36418" />
+              <rect x="83" y="131" width="48" height="3" rx="1.5" fill="rgba(243,100,24,0.7)" />
+              <rect x="83" y="137" width="30" height="2.5" rx="1.25" fill="rgba(255,255,255,0.2)" />
             </g>
             <g class="fp-chip" style="--fp-delay:1.8s">
-              <rect x="246" y="126" width="80" height="18" rx="9"
-                    fill="rgba(14,18,24,0.88)" stroke="rgba(243,100,24,0.42)" stroke-width="1"/>
-              <circle cx="259" cy="135" r="3.5" fill="#F36418"/>
-              <rect x="267" y="131" width="48" height="3"   rx="1.5" fill="rgba(243,100,24,0.6)"/>
-              <rect x="267" y="137" width="30" height="2.5" rx="1.25" fill="rgba(255,255,255,0.18)"/>
+              <rect x="246" y="126" width="80" height="18" rx="9" fill="rgba(14,18,24,0.88)"
+                stroke="rgba(243,100,24,0.42)" stroke-width="1" />
+              <circle cx="259" cy="135" r="3.5" fill="#F36418" />
+              <rect x="267" y="131" width="48" height="3" rx="1.5" fill="rgba(243,100,24,0.6)" />
+              <rect x="267" y="137" width="30" height="2.5" rx="1.25" fill="rgba(255,255,255,0.18)" />
             </g>
 
           </svg>
@@ -515,7 +551,8 @@
           </div>
           <div class="bz-home-intro-text">
             <strong>البازارات — فعاليات حية في أرقى المواقع التجارية</strong>
-            <p>احجز مكانك في فعالية قادمة، جرّب منتجك أمام جمهور حقيقي، وابدأ البيع بدون التزامات طويلة أو تعقيدات إدارية.</p>
+            <p>احجز مكانك في فعالية قادمة، جرّب منتجك أمام جمهور حقيقي، وابدأ البيع بدون التزامات طويلة أو تعقيدات
+              إدارية.</p>
           </div>
         </div>
 
@@ -757,7 +794,10 @@
 
       <!-- ══ FREE BADGE ══ -->
       <div class="how-free-bar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
         <span><strong>الاستخدام مجاني تماماً</strong> للزوار والمستأجرين — بدون رسوم أو عمولة</span>
       </div>
 
@@ -778,14 +818,20 @@
             <!-- مساحة ثابتة -->
             <div class="how-sub-card">
               <div class="how-sub-pill">مشروع ثابت</div>
-              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg></div>
+              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 7h20l-2 4H4Z" />
+                  <path d="M4 11v9h16v-9" />
+                  <path d="M9 20v-6h6v6" />
+                </svg></div>
               <div class="how-sub-title">مساحة إيجار ثابتة</div>
               <ul class="how-sub-steps">
                 <li>ابحث بالمنطقة والنشاط والسعر</li>
                 <li>اطلع على صور وتفاصيل كل مساحة</li>
                 <li>أرسل طلب حجز — سنتواصل معك خلال ٢٤ ساعة</li>
               </ul>
-              <button class="how-sub-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)">ابحث عن مساحة ←</button>
+              <button class="how-sub-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)">ابحث عن مساحة
+                ←</button>
             </div>
 
             <div class="how-sub-sep" aria-hidden="true">أو</div>
@@ -793,14 +839,19 @@
             <!-- بازار مؤقت -->
             <div class="how-sub-card">
               <div class="how-sub-pill how-sub-pill--alt">تجربة سريعة</div>
-              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg></div>
+              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3.5 21h17L12 3 3.5 21Z" />
+                  <path d="M12 3v18" />
+                </svg></div>
               <div class="how-sub-title">مكان في بازار مؤقت</div>
               <ul class="how-sub-steps">
                 <li>بدون التزام — أيام محددة فقط</li>
                 <li>اختبر منتجك أمام جمهور حقيقي</li>
                 <li>احجز مكانك من الخريطة مباشرة</li>
               </ul>
-              <button class="how-sub-btn how-sub-btn--alt" onclick="window.location.href='/bazaars/'">تصفح البازارات ←</button>
+              <button class="how-sub-btn how-sub-btn--alt" onclick="window.location.href='/bazaars/'">تصفح البازارات
+                ←</button>
             </div>
 
           </div>
@@ -828,7 +879,11 @@
             <!-- شراء -->
             <div class="how-sub-card">
               <div class="how-sub-pill">فرصة استثمار</div>
-              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg></div>
               <div class="how-sub-title">اشتري مشروع جاهز</div>
               <ul class="how-sub-steps">
                 <li>مشاريع كاملة بكل معداتها</li>
@@ -843,7 +898,12 @@
             <!-- بيع -->
             <div class="how-sub-card">
               <div class="how-sub-pill how-sub-pill--alt">بيع وانتقل</div>
-              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42Z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></div>
+              <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42Z" />
+                  <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+                </svg></div>
               <div class="how-sub-title">انشر مشروعك للبيع</div>
               <ul class="how-sub-steps">
                 <li>صور + وصف + سعر في خطوات بسيطة</li>
@@ -858,11 +918,18 @@
 
         <!-- ══ REVENUE MODEL NOTE ══ -->
         <div class="how-revenue-note">
-          <div class="how-rev-ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></div>
+          <div class="how-rev-ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+              <path d="M9 18h6" />
+              <path d="M10 22h4" />
+            </svg></div>
           <div class="how-rev-body">
             <div class="how-rev-title">كيف تربح المنصة؟</div>
             <div class="how-rev-text">
-              أصحاب المساحات — المولات والشركات والمدارس — يشتركون في باقة شهرية لنشر مساحاتهم والوصول إلى مستأجرين. هذا هو مصدر ربحنا الوحيد. أنت كمستأجر تستخدم المنصة <strong>مجاناً تماماً</strong>.
+              أصحاب المساحات — المولات والشركات والمدارس — يشتركون في باقة شهرية لنشر مساحاتهم والوصول إلى مستأجرين. هذا
+              هو مصدر ربحنا الوحيد. أنت كمستأجر تستخدم المنصة <strong>مجاناً تماماً</strong>.
             </div>
             <button class="how-rev-cta" onclick="showPage('pricing')">اطلع على باقات أصحاب المساحات ←</button>
           </div>
@@ -894,7 +961,12 @@
         <!-- ══ MODEL BANNER ══ -->
         <div class="owner-model-bar">
           <div class="owner-model-item">
-            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                <line x1="1" y1="10" x2="23" y2="10" />
+              </svg></span>
             <div>
               <div class="owner-model-label">نموذج الربح</div>
               <div class="owner-model-val">اشتراك شهري ثابت لصاحب المساحة</div>
@@ -902,7 +974,12 @@
           </div>
           <div class="owner-model-sep" aria-hidden="true"></div>
           <div class="owner-model-item">
-            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg></span>
             <div>
               <div class="owner-model-label">للمستأجر</div>
               <div class="owner-model-val">تصفح وحجز مجاني بالكامل</div>
@@ -910,7 +987,12 @@
           </div>
           <div class="owner-model-sep" aria-hidden="true"></div>
           <div class="owner-model-item">
-            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg></span>
+            <span class="owner-model-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M3.5 21h17L12 3 3.5 21Z" />
+                <path d="M12 3v18" />
+              </svg></span>
             <div>
               <div class="owner-model-label">البازارات</div>
               <div class="owner-model-val">10% من كل حجز عبر المنصة</div>
@@ -938,7 +1020,8 @@
               </div>
               <div class="owner-step">
                 <div class="owner-step-num">٢</div>
-                <div class="owner-step-txt"><strong>اطلب تحويل الحساب</strong> لصاحب مساحة — سيراجع فريقنا الطلب خلال ٢٤ ساعة</div>
+                <div class="owner-step-txt"><strong>اطلب تحويل الحساب</strong> لصاحب مساحة — سيراجع فريقنا الطلب خلال ٢٤
+                  ساعة</div>
               </div>
               <div class="owner-step">
                 <div class="owner-step-num">٣</div>
@@ -952,22 +1035,32 @@
 
             <div class="owner-path-limits">
               <div class="owner-limit-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
                 Starter مجاني — حتى مساحتين · 16م² كحد أقصى للمساحة الواحدة
               </div>
               <div class="owner-limit-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
                 Growth 3,000ج/شهر — حتى 8 مساحات + ERP + تسويق
               </div>
               <div class="owner-limit-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
                 Pro 4,500ج/شهر — غير محدود + مدير حساب + تصوير AI
               </div>
             </div>
 
             <div class="owner-path-actions">
               <button class="owner-btn-primary" onclick="showPage('pricing')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
                 اطلع على الباقات
               </button>
               <button class="owner-btn-secondary" onclick="handleOwnerUpgradeBtn()">
@@ -989,19 +1082,23 @@
             <div class="owner-steps-list">
               <div class="owner-step owner-step--purple">
                 <div class="owner-step-num owner-step-num--purple">١</div>
-                <div class="owner-step-txt"><strong>يجب أن يكون لديك حساب صاحب مساحة</strong> أولاً (راجع المسار ١ أعلاه)</div>
+                <div class="owner-step-txt"><strong>يجب أن يكون لديك حساب صاحب مساحة</strong> أولاً (راجع المسار ١
+                  أعلاه)</div>
               </div>
               <div class="owner-step owner-step--purple">
                 <div class="owner-step-num owner-step-num--purple">٢</div>
-                <div class="owner-step-txt"><strong>اطلب تحويل الحساب لمنظم بازارات</strong> — من لوحة التحكم أو عبر واتساب</div>
+                <div class="owner-step-txt"><strong>اطلب تحويل الحساب لمنظم بازارات</strong> — من لوحة التحكم أو عبر
+                  واتساب</div>
               </div>
               <div class="owner-step owner-step--purple">
                 <div class="owner-step-num owner-step-num--purple">٣</div>
-                <div class="owner-step-txt"><strong>سنراجع طلبك</strong> ونتأكد من المكان والطاقة الاستيعابية خلال ٤٨ ساعة</div>
+                <div class="owner-step-txt"><strong>سنراجع طلبك</strong> ونتأكد من المكان والطاقة الاستيعابية خلال ٤٨
+                  ساعة</div>
               </div>
               <div class="owner-step owner-step--purple">
                 <div class="owner-step-num owner-step-num--purple">٤</div>
-                <div class="owner-step-txt"><strong>تقدر تنشر بازاراتك</strong> من لوحة التحكم — بتحدد التواريخ والأماكن والأسعار</div>
+                <div class="owner-step-txt"><strong>تقدر تنشر بازاراتك</strong> من لوحة التحكم — بتحدد التواريخ والأماكن
+                  والأسعار</div>
               </div>
             </div>
 
@@ -1015,12 +1112,20 @@
                 <span>تنظيم كامل مع فريق مكاني</span>
                 <span class="owner-baz-fee-val">25–30% من إيرادات البازار</span>
               </div>
-              <div class="owner-baz-fee-note">الاشتراك الشهري للباقة يغطي إدراج المساحة — البازار له نظام رسوم منفصل</div>
+              <div class="owner-baz-fee-note">الاشتراك الشهري للباقة يغطي إدراج المساحة — البازار له نظام رسوم منفصل
+              </div>
             </div>
 
             <div class="owner-path-actions">
-              <a class="owner-btn-purple" href="https://wa.me/201103467711?text=مرحبا، عايز أنظم بازار في مكاني وعايز أعرف أكتر" target="_blank" rel="noopener">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              <a class="owner-btn-purple"
+                href="https://wa.me/201103467711?text=مرحبا، عايز أنظم بازار في مكاني وعايز أعرف أكتر" target="_blank"
+                rel="noopener">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                  <path
+                    d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+                </svg>
                 استفسر على واتساب
               </a>
               <a class="owner-btn-outline-purple" href="/bazaars/organize.html">
@@ -1041,19 +1146,40 @@
 
             <div class="owner-vendor-how">
               <div class="owner-vendor-step">
-                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" />
+                  </svg></span>
                 <span>اختر بازاراً يناسب نشاطك من صفحة البازارات</span>
               </div>
               <div class="owner-vendor-step">
-                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span>
+                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                    <line x1="9" y1="3" x2="9" y2="18" />
+                    <line x1="15" y1="6" x2="15" y2="21" />
+                  </svg></span>
                 <span>احجز مكانك من الخريطة التفاعلية مباشرة</span>
               </div>
               <div class="owner-vendor-step">
-                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg></span>
                 <span>ادفع رسوم المكان — تختلف حسب كل بازار ومنظّمه</span>
               </div>
               <div class="owner-vendor-step">
-                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+                <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg></span>
                 <span>ستصلك رسالة تأكيد وتفاصيل الفعالية</span>
               </div>
             </div>
@@ -1079,7 +1205,12 @@
             <a class="owner-btn-whatsapp"
               href="https://wa.me/201103467711?text=مرحبا، عندي مساحة فاضية وعايز أعرف أكتر عن مكاني Spot"
               target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                <path
+                  d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+              </svg>
               واتساب — 011 0346 7711
             </a>
             <button class="owner-btn-upgrade" onclick="handleOwnerUpgradeBtn()">
@@ -1112,7 +1243,8 @@
           </div>
           <h1 class="pkg-hero-h1 pkg-anim-down" style="--delay:100ms">اختر الخطة المناسبة</h1>
           <p class="pkg-hero-sub pkg-anim-down" style="--delay:200ms">وابدأ بتحويل مساحاتك الفارغة إلى دخل ثابت</p>
-          <p class="pkg-hero-note pkg-anim-down" style="--delay:280ms">لا عمولة حتى يتأكد الحجز — تدفع فقط عند إتمام الصفقة</p>
+          <p class="pkg-hero-note pkg-anim-down" style="--delay:280ms">لا عمولة حتى يتأكد الحجز — تدفع فقط عند إتمام
+            الصفقة</p>
         </div>
       </section>
 
@@ -1128,18 +1260,50 @@
             </div>
             <div class="pkg-card-sub">"جرّب بدون أي مخاطرة"</div>
             <div class="pkg-card-limit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
               حتى 2 مساحة · حد أقصى 16م²
             </div>
             <ul class="pkg-features-list">
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج المساحات عبر الداشبورد</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ظهور في نتائج البحث</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>استقبال طلبات الحجز</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score — عرض التقييم</li>
-              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>ERP وإدارة عقود</li>
-              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>إيجاد مستأجرين</li>
-              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تسويق على المنصة</li>
-              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تقارير شهرية</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>إدراج المساحات عبر الداشبورد</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>ظهور في نتائج البحث</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>استقبال طلبات الحجز</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>Tenant Score — عرض التقييم</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>ERP وإدارة عقود</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>إيجاد مستأجرين</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>تسويق على المنصة</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>تقارير شهرية</li>
             </ul>
             <div class="pkg-card-support">دعم: بريد إلكتروني</div>
             <button class="btn btn-ghost pkg-card-cta" onclick="showPage('owner')">ابدأ مجاناً</button>
@@ -1154,22 +1318,56 @@
             </div>
             <div class="pkg-card-sub">"إدارة + تسويق أساسي"</div>
             <div class="pkg-card-limit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
               حتى 8 مساحات · حد أقصى 16م²
             </div>
             <ul class="pkg-features-list">
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج حتى 8 مساحات</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>أولوية الظهور فوق Starter</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ERP أساسي — عقود + مدفوعات</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score كامل + مخالفات</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إيجاد مستأجرين — 3/شهر</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>2 منشور شهري على مكاني Spot</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تقرير شهري أساسي</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Badge "موثّق" على صفحة المول</li>
-              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تصوير AI للمساحات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>إدراج حتى 8 مساحات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>أولوية الظهور فوق Starter</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>ERP أساسي — عقود + مدفوعات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>Tenant Score كامل + مخالفات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>إيجاد مستأجرين — 3/شهر</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>2 منشور شهري على مكاني Spot</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>تقرير شهري أساسي</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>Badge "موثّق" على صفحة المول</li>
+              <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>تصوير AI للمساحات</li>
             </ul>
             <div class="pkg-card-support">دعم: واتساب خلال ساعات العمل</div>
-            <a class="btn btn-ghost pkg-card-cta" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth" target="_blank" rel="noopener">تواصل معنا</a>
+            <a class="btn btn-ghost pkg-card-cta"
+              href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth" target="_blank"
+              rel="noopener">تواصل معنا</a>
           </div>
 
           <!-- ─ Pro (Featured) ─ -->
@@ -1182,26 +1380,71 @@
             </div>
             <div class="pkg-card-sub">"نظام تشغيل متكامل"</div>
             <div class="pkg-card-limit pkg-card-limit--unlimited">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                  d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z" />
+              </svg>
               غير محدود
             </div>
             <ul class="pkg-features-list">
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إدراج غير محدود للمساحات</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>أول 3 نتائج دائماً + Featured أسبوعي</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تصوير AI — 3 صور لكل مساحة جديدة</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تنظيم طلبات المعاينة + متابعة</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ERP كامل + تجديد تلقائي + واتساب</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Tenant Score + توصية ذكية</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>إيجاد مستأجرين بنشاط محدد</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>4 منشورات + Email/WhatsApp Campaign</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>تقرير AI شهري + توقعات</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>دعم تنظيم البازار + موردين</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>دعم 9ص–11م + رد خلال ساعة</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>مدير حساب مخصص + call شهري</li>
-              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Badge "شريك معتمد" بعد 3 أشهر</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>إدراج غير محدود للمساحات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>أول 3 نتائج دائماً + Featured أسبوعي</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>تصوير AI — 3 صور لكل مساحة جديدة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>تنظيم طلبات المعاينة + متابعة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>ERP كامل + تجديد تلقائي + واتساب</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>Tenant Score + توصية ذكية</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>إيجاد مستأجرين بنشاط محدد</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>4 منشورات + Email/WhatsApp Campaign</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>تقرير AI شهري + توقعات</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>دعم تنظيم البازار + موردين</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>دعم 9ص–11م + رد خلال ساعة</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>مدير حساب مخصص + call شهري</li>
+              <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>Badge "شريك معتمد" بعد 3 أشهر</li>
             </ul>
             <div class="pkg-card-support">دعم واتساب مخصص 9ص – 11م</div>
-            <a class="btn btn-primary pkg-card-cta pkg-card-cta--pro" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank" rel="noopener">تواصل معنا</a>
+            <a class="btn btn-primary pkg-card-cta pkg-card-cta--pro"
+              href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank"
+              rel="noopener">تواصل معنا</a>
           </div>
 
         </div>
@@ -1223,18 +1466,23 @@
                 <th class="pkg-th">
                   <div class="pkg-th-name">Growth</div>
                   <div class="pkg-th-price">3,000 ج<span class="pkg-th-period">/شهر</span></div>
-                  <a class="pkg-th-cta" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth" target="_blank" rel="noopener">تواصل معنا</a>
+                  <a class="pkg-th-cta" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth"
+                    target="_blank" rel="noopener">تواصل معنا</a>
                 </th>
                 <th class="pkg-th pkg-th--pro">
                   <div class="pkg-th-name">Pro</div>
                   <div class="pkg-th-price">4,500 ج<span class="pkg-th-period">/شهر</span></div>
-                  <a class="pkg-th-cta pkg-th-cta--pro" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank" rel="noopener">تواصل معنا</a>
+                  <a class="pkg-th-cta pkg-th-cta--pro"
+                    href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank"
+                    rel="noopener">تواصل معنا</a>
                 </th>
               </tr>
             </thead>
             <tbody>
               <!-- الإدراج والظهور -->
-              <tr class="pkg-tr-group"><td colspan="4">الإدراج والظهور</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">الإدراج والظهور</td>
+              </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">إدراج المساحات</td>
                 <td class="pkg-td pkg-td--val">2 مساحة / 16م²</td>
@@ -1249,70 +1497,151 @@
               </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">Featured في الهوم</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">أسبوعياً</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">Badge الموثوقية</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val">موثّق</td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">شريك معتمد</td>
               </tr>
               <!-- التسويق -->
-              <tr class="pkg-tr-group"><td colspan="4">التسويق والإيجاد</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">التسويق والإيجاد</td>
+              </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">إيجاد مستأجرين</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val">3 شهرياً</td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">محدد بالنشاط المطلوب</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">منشورات تسويقية</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val">2 منشور/شهر</td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">4 + Email/WhatsApp Campaign</td>
               </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">تصوير AI</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">3 صور لكل مساحة جديدة</td>
               </tr>
               <!-- ERP -->
-              <tr class="pkg-tr-group"><td colspan="4">الإدارة والـ ERP</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">الإدارة والـ ERP</td>
+              </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">استقبال طلبات الحجز</td>
                 <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted">بدون إدارة</span></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> + متابعة المعاينة</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg> + متابعة المعاينة</td>
               </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">إدارة العقود</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> + تجديد تلقائي</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg> + تجديد تلقائي</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">تسجيل المدفوعات</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
               </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">تنبيهات انتهاء العقد</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> واتساب تلقائي</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg> واتساب تلقائي</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">تسجيل المخالفات</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg></td>
               </tr>
               <!-- Tenant Score -->
-              <tr class="pkg-tr-group"><td colspan="4">Tenant Score</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">Tenant Score</td>
+              </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">تقييم المستأجر</td>
                 <td class="pkg-td pkg-td--val">عرض فقط</td>
@@ -1320,15 +1649,23 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro">درجة + توصية ذكية</td>
               </tr>
               <!-- التقارير -->
-              <tr class="pkg-tr-group"><td colspan="4">التقارير</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">التقارير</td>
+              </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">تقرير شهري</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val">أساسي</td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">AI كامل + توقعات الشهر</td>
               </tr>
               <!-- الدعم -->
-              <tr class="pkg-tr-group"><td colspan="4">الدعم</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">الدعم</td>
+              </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">قناة الدعم</td>
                 <td class="pkg-td pkg-td--val">إيميل</td>
@@ -1337,16 +1674,37 @@
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
                 <td class="pkg-td pkg-td--label">مدير حساب مخصص</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> مدير حساب + Call شهري 30 دقيقة</td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg> مدير حساب + Call شهري 30 دقيقة</td>
               </tr>
               <!-- البازارات -->
-              <tr class="pkg-tr-group"><td colspan="4">البازارات</td></tr>
+              <tr class="pkg-tr-group">
+                <td colspan="4">البازارات</td>
+              </tr>
               <tr class="pkg-tr">
                 <td class="pkg-td pkg-td--label">دعم تنظيم البازار</td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
+                <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg></td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">قوائم موردين + إدارة حجوزات</td>
               </tr>
             </tbody>
@@ -1359,22 +1717,42 @@
         <h2 class="pkg-section-title">خدمات إضافية — لأي باقة</h2>
         <div class="pkg-addons-grid">
           <div class="pkg-addon pkg-anim-slide" style="--delay:0ms">
-            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg></div>
             <div class="pkg-addon-name">تصوير AI لمساحات موجودة</div>
             <div class="pkg-addon-price">300 ج<span class="pkg-addon-unit">/مساحة</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:80ms">
-            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg></div>
+            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3.5 21h17L12 3 3.5 21Z" />
+                <path d="M12 3v18" />
+              </svg></div>
             <div class="pkg-addon-name">تنظيم بازار — قوائم فقط</div>
             <div class="pkg-addon-price">1,500 ج<span class="pkg-addon-unit">/بازار</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:160ms">
-            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></div>
+            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+              </svg></div>
             <div class="pkg-addon-name">تنظيم بازار كامل مع مكاني</div>
             <div class="pkg-addon-price">25%<span class="pkg-addon-unit"> من الإيرادات</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:240ms">
-            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+            <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg></div>
             <div class="pkg-addon-name">حجوزات بازار عبر المنصة</div>
             <div class="pkg-addon-price">10%<span class="pkg-addon-unit"> من كل حجز</span></div>
           </div>
@@ -1384,7 +1762,12 @@
       <!-- ══ 6. PITCH BANNER ══ -->
       <section class="pkg-pitch">
         <div class="pkg-pitch-inner">
-          <div class="pkg-pitch-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg></div>
+          <div class="pkg-pitch-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h20l-2 4H4Z" />
+              <path d="M4 11v9h16v-9" />
+              <path d="M9 20v-6h6v6" />
+            </svg></div>
           <p class="pkg-pitch-main">كيوسك فاضي شهر واحد = <span class="pkg-pitch-loss">6,000 – 15,000 ج خسارة</span></p>
           <p class="pkg-pitch-compare">باقة Pro = <span class="pkg-pitch-pro-price">4,500 ج</span></p>
           <p class="pkg-pitch-note">أقل من تكلفة مساحة فاضية واحدة شهر واحد</p>
@@ -1399,15 +1782,22 @@
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
               إيه الفرق بين Growth وPro؟
-              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </summary>
-            <div class="pkg-faq-a">Growth بيديك الأدوات تشتغل بنفسك. Pro بيديك مدير حساب بيعمل التشغيل نيابةً عنك — ويتابعك شهرياً بتقرير AI ومراجعة مباشرة.</div>
+            <div class="pkg-faq-a">Growth بيديك الأدوات تشتغل بنفسك. Pro بيديك مدير حساب بيعمل التشغيل نيابةً عنك —
+              ويتابعك شهرياً بتقرير AI ومراجعة مباشرة.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
               هل ممكن أغير الباقة بعدين؟
-              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </summary>
             <div class="pkg-faq-a">أيوه، تقدر تترقى لأي وقت. مفيش عقود طويلة — كل شيء شهري وتقدر تغير في أي لحظة.</div>
           </details>
@@ -1415,25 +1805,37 @@
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
               إيه المقصود بـ "حد 16م²" في Starter وGrowth؟
-              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </summary>
-            <div class="pkg-faq-a">كل مساحة بتدرجها لازم تكون 16م² أو أقل. المساحات الأكبر متاحة في Pro مع مدير الحساب اللي بيساعدك في الإدراج.</div>
+            <div class="pkg-faq-a">كل مساحة بتدرجها لازم تكون 16م² أو أقل. المساحات الأكبر متاحة في Pro مع مدير الحساب
+              اللي بيساعدك في الإدراج.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
               هل العمولة 8% بتتحسب على السعر بعد الخصم؟
-              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </summary>
-            <div class="pkg-faq-a">العمولة بتتحسب على القيمة الفعلية للعقد المكتمل فقط — مش على أي مفاوضات أو عروض غير مكتملة.</div>
+            <div class="pkg-faq-a">العمولة بتتحسب على القيمة الفعلية للعقد المكتمل فقط — مش على أي مفاوضات أو عروض غير
+              مكتملة.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
               هل في تجربة مجانية للـ Growth؟
-              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </summary>
-            <div class="pkg-faq-a">Starter مجاني تماماً كتجربة. Growth وPro بيبدأوا بمحادثة معنا عشان نتأكد إن الخطة تناسب حجم مكانك واحتياجاتك.</div>
+            <div class="pkg-faq-a">Starter مجاني تماماً كتجربة. Growth وPro بيبدأوا بمحادثة معنا عشان نتأكد إن الخطة
+              تناسب حجم مكانك واحتياجاتك.</div>
           </details>
 
         </div>
@@ -1445,8 +1847,15 @@
         <p class="pkg-cta-sub">ابدأ بـ Starter مجاناً — أو تكلمنا عشان نختار الباقة الصح ليك</p>
         <div class="pkg-cta-btns">
           <button class="btn btn-ghost pkg-cta-btn" onclick="showPage('owner')">ابدأ مجاناً</button>
-          <a class="btn btn-primary pkg-cta-btn" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقات مكاني Spot" target="_blank" rel="noopener">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          <a class="btn btn-primary pkg-cta-btn"
+            href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقات مكاني Spot" target="_blank"
+            rel="noopener">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+            </svg>
             تكلمنا على واتساب
           </a>
         </div>
@@ -1577,21 +1986,37 @@
           </p>
           <div class="auth-feats">
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">ابحث وفلتر بسهولة</div>
                 <div class="auth-feat-s">بالنشاط أو المنطقة أو السعر</div>
               </div>
             </div>
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">احجز في ثوانٍ</div>
                 <div class="auth-feat-s">بدون دفع مسبق — نموذج بسيط فقط</div>
               </div>
             </div>
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                  <path d="M12 18V6" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">عمولة 8% فقط</div>
                 <div class="auth-feat-s">إن لم يتأكد الحجز — لا شيء يُدفع</div>
@@ -1643,7 +2068,12 @@
           <div class="afg">
             <label>كلمة المرور</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور"><svg width="16"
+                  height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg></span>
               <input type="password" id="li-pass" placeholder="••••••••" dir="ltr">
             </div>
           </div>
@@ -1659,7 +2089,11 @@
           <div class="owner-divider">بوابة أصحاب المساحات</div>
           <a href="/dashboard/" class="owner-portal-btn">
             <div class="owner-portal-ico">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
               <div class="owner-portal-dot"></div>
             </div>
             <div class="owner-portal-info">
@@ -1695,21 +2129,35 @@
           <p class="auth-subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
           <div class="auth-feats">
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">مجاني تماماً</div>
                 <div class="auth-feat-s">إنشاء الحساب وتصفح المساحات والحجز</div>
               </div>
             </div>
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">دقيقتان فقط</div>
                 <div class="auth-feat-s">أدخل بياناتك وابدأ فوراً</div>
               </div>
             </div>
             <div class="auth-feat-row">
-              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+              <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg></div>
               <div>
                 <div class="auth-feat-t">بياناتك آمنة</div>
                 <div class="auth-feat-s">لا نشاركها مع أي طرف ثالث</div>
@@ -1767,7 +2215,12 @@
           <div class="afg">
             <label>كلمة المرور *</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور"><svg width="16"
+                  height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg></span>
               <input type="password" id="su-pass" placeholder="٨ أحرف على الأقل" dir="ltr">
             </div>
           </div>
@@ -1806,7 +2259,11 @@
           <div class="owner-divider">بوابة أصحاب المساحات</div>
           <a href="/dashboard/" class="owner-portal-btn">
             <div class="owner-portal-ico">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
               <div class="owner-portal-dot"></div>
             </div>
             <div class="owner-portal-info">
@@ -1829,7 +2286,11 @@
   <div id="pg-confirm" class="page">
     <div class="confirm-wrap">
       <div class="confirm-box">
-        <div class="confirm-icon-c"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+        <div class="confirm-icon-c"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          </svg></div>
         <div class="confirm-title-c">اتحقق من <span>بريدك</span></div>
         <p style="font-size:14px;color:var(--ink2);line-height:1.85;margin-bottom:20px">
           بعتنالك رسالة تأكيد على<br>
@@ -1837,7 +2298,13 @@
           افتح الرسالة واضغط على رابط التأكيد عشان تفعّل حسابك.
         </p>
         <div class="auth-alert auth-alert-info" style="text-align:right;margin-bottom:18px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path
+              d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+            <path d="M9 18h6" />
+            <path d="M10 22h4" />
+          </svg>
           <span>إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
         </div>
         <button class="btn-auth-submit" onclick="showPage('login')">ارجع لتسجيل الدخول</button>
@@ -1872,13 +2339,21 @@
         <!-- ══ إحصائيات ══ -->
         <div class="dash-grid-2">
           <div class="dash-stat-card">
-            <div class="dash-stat-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="dash-stat-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg></div>
             <div class="dash-stat-lbl">طلبات الحجز</div>
             <div class="dash-stat-val" id="dash-booking-count">٠</div>
             <div class="dash-stat-sub">إجمالي الطلبات</div>
           </div>
           <div class="dash-stat-card">
-            <div class="dash-stat-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="dash-stat-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg></div>
             <div class="dash-stat-lbl">تقييماتك</div>
             <div class="dash-stat-val">—</div>
             <div class="dash-stat-sub">تقييمات المساحات</div>
@@ -1920,10 +2395,10 @@
               </div>
               <div class="afg"><label>تعليقك (اختياري)</label>
                 <textarea id="rating-comment" placeholder="شاركنا تجربتك مع المساحة…"
-                          style="min-height:70px;resize:vertical"></textarea>
+                  style="min-height:70px;resize:vertical"></textarea>
               </div>
-              <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()"
-                      style="margin-top:0">إرسال التقييم</button>
+              <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()" style="margin-top:0">إرسال
+                التقييم</button>
             </div>
           </div>
           <div id="dash-ratings">
@@ -1936,7 +2411,7 @@
           <div class="dash-section-head">
             <div class="dash-section-title">بزاراتي</div>
             <a href="/bazaars/profile.html" class="btn btn-primary"
-               style="font-size:13px;padding:8px 18px;text-decoration:none">إدارة البازارات ←</a>
+              style="font-size:13px;padding:8px 18px;text-decoration:none">إدارة البازارات ←</a>
           </div>
           <!-- وصف مختصر -->
           <p style="font-size:13px;color:var(--ink3);line-height:1.75;margin:0 0 16px;
@@ -1957,35 +2432,59 @@
 
             <!-- المساحات -->
             <a class="dash-nav-card" href="/spaces/">
-              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg></span>
+              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 7h20l-2 4H4Z" />
+                  <path d="M4 11v9h16v-9" />
+                  <path d="M9 20v-6h6v6" />
+                </svg></span>
               <span class="dnc-ttl">جميع المساحات</span>
               <span class="dnc-sub">استأجر مساحة لمشروعك</span>
             </a>
 
             <!-- البازارات القادمة -->
             <a class="dash-nav-card" href="/bazaars/">
-              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg></span>
               <span class="dnc-ttl">البازارات القادمة</span>
               <span class="dnc-sub">تعرّف على البازارات القادمة</span>
             </a>
 
             <!-- اشترك في بزار -->
             <a class="dash-nav-card" href="/bazaars/">
-              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg></span>
+              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3.5 21h17L12 3 3.5 21Z" />
+                  <path d="M12 3v18" />
+                </svg></span>
               <span class="dnc-ttl">اشترك في بزار</span>
               <span class="dnc-sub">احجز مكانك كعارض</span>
             </a>
 
             <!-- نظّم بزار -->
             <a class="dash-nav-card dash-nav-card-orange" href="/bazaars/verification.html">
-              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg></span>
+              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3.5 21h17L12 3 3.5 21Z" />
+                  <path d="M12 3v18" />
+                </svg></span>
               <span class="dnc-ttl">نظّم بزار</span>
               <span class="dnc-sub">وثّق حسابك كمنظّم</span>
             </a>
 
             <!-- المشاريع للبيع — عرض كامل العرض -->
             <a class="dash-nav-card dash-nav-card-wide" href="/market/">
-              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42Z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></span>
+              <span class="dnc-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path
+                    d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42Z" />
+                  <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+                </svg></span>
               <div>
                 <div class="dnc-ttl">ابحث عن مشروع جاهز</div>
                 <div class="dnc-sub">إكسسوارات ومشاريع جاهزة للبيع</div>
@@ -2018,7 +2517,11 @@
       <div id="modal-form-wrap">
         <div class="modal-header">
           <div class="modal-header-inner">
-            <div class="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg></div>
             <div>
               <div class="modal-title">احجز مساحتك</div>
               <div class="modal-sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
@@ -2123,7 +2626,11 @@
       <!-- ══ Step 1: الفورم ══ -->
       <div id="insp-step-1" class="insp-step-body">
         <div class="insp-header">
-          <div class="insp-header-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+          <div class="insp-header-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg></div>
           <div>
             <div class="insp-header-title">احجز معاينة</div>
             <div class="insp-header-space" id="insp-space-name">—</div>
@@ -2192,8 +2699,10 @@
 
         <a class="insp-wa-btn" id="insp-wa-link" href="#" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            <path
+              d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+            <path
+              d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
           </svg>
           افتح واتساب وابعت الصورة
         </a>
@@ -2210,7 +2719,11 @@
 
       <!-- ══ Step 3: التأكيد ══ -->
       <div id="insp-step-3" class="insp-step-body" style="display:none">
-        <div class="insp-confirm-ico"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="insp-confirm-ico"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m9 12 2 2 4-4" />
+          </svg></div>
         <div class="insp-confirm-title">تم استلام طلب المعاينة!</div>
         <div class="insp-confirm-sub">سيتم التواصل معك خلال 24 ساعة</div>
 
@@ -2272,7 +2785,8 @@
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
       <div class="sd-sticky-footer">
-        <button class="btn btn-ghost sd-insp-btn" onclick="currentSpaceDetail && openInspectionModal(currentSpaceDetail.id)">
+        <button class="btn btn-ghost sd-insp-btn"
+          onclick="currentSpaceDetail && openInspectionModal(currentSpaceDetail.id)">
           احجز معاينة
         </button>
         <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
@@ -2299,7 +2813,8 @@
           <span class="sf-logo-sep" aria-hidden="true"></span>
           <span class="sf-logo-en">Spot</span>
         </div>
-        <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
+        <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة
+          في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
         <div class="sf-paths">
           <span class="sf-path">مساحات تجارية</span>
           <span class="sf-path">بازارات ومعارض</span>
@@ -2322,17 +2837,30 @@
       <!-- العمود الثالث: التواصل والقانون -->
       <div class="sf-col sf-col--contact">
         <h4 class="sf-col-title">تواصل معنا</h4>
-        <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot"
+          target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+            <path
+              d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+          </svg>
           <span dir="ltr">011 0346 7711</span>
         </a>
-        <a class="sf-social-btn sf-fb" href="https://www.facebook.com/profile.php?id=100069918048151" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.93-1.956 1.886v2.286h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        <a class="sf-social-btn sf-fb" href="https://www.facebook.com/profile.php?id=100069918048151" target="_blank"
+          rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.93-1.956 1.886v2.286h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
+          </svg>
           Makani Spot
         </a>
         <div class="sf-col-divider"></div>
         <a class="sf-policies-link" href="/policies/">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
           السياسات والشروط القانونية
         </a>
       </div>
@@ -2388,8 +2916,8 @@
       <span class="bn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
-          <path d="M3.5 21h17L12 3 3.5 21Z"/>
-          <path d="M12 3v18"/>
+          <path d="M3.5 21h17L12 3 3.5 21Z" />
+          <path d="M12 3v18" />
         </svg>
       </span>
       <span class="bn-label">بازارات</span>
@@ -2433,7 +2961,13 @@
     display:none; align-items:center; gap:12px; white-space:nowrap;
     font-family:'Cairo',sans-serif; animation:slideUpBar .35s ease;
   ">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 2v6h-6" />
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M3 22v-6h6" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+    </svg>
     <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
     <button onclick="window.location.reload()" style="
       background:var(--orange,#FF6B00); color:#fff; border:none;
@@ -2447,8 +2981,15 @@
   </div>
   <style>
     @keyframes slideUpBar {
-      from { opacity:0; transform:translateX(-50%) translateY(20px); }
-      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
   </style>
 
@@ -2484,6 +3025,68 @@
       });
     }
   </script>
+
+  <!-- ================================================================
+     🏢 مودال طلب تحويل الحساب لصاحب مساحة
+     ================================================================ -->
+  <div class="modal-overlay" id="owner-request-modal" onclick="closeOwnerRequestModalOnBg(event)">
+    <div class="modal" style="max-width:480px">
+      <div id="owner-req-form-wrap">
+        <div class="modal-header">
+          <div class="modal-header-inner">
+            <div class="modal-icon" style="font-size:22px">🏢</div>
+            <div>
+              <div class="modal-title">طلب تحويل الحساب</div>
+              <div class="modal-sub">سيراجع فريقنا طلبك خلال ٢٤ ساعة</div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeOwnerRequestModal()" aria-label="إغلاق">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="mfg">
+            <label>اسم المكان / المول *</label>
+            <input class="mfg-inp" id="oreq-place-name" placeholder="مثال: مول العرب، نادي الجيزة…" autocomplete="off">
+          </div>
+          <div class="mfg">
+            <label>نوع المكان *</label>
+            <select class="mfg-inp" id="oreq-place-type">
+              <option value="">— اختر النوع —</option>
+              <option value="mall">🏬 مول تجاري</option>
+              <option value="club">🏊 نادي رياضي</option>
+              <option value="school">🏫 مدرسة</option>
+              <option value="other">🏢 غيره</option>
+            </select>
+          </div>
+          <div class="mfg">
+            <label>رقم الواتساب *</label>
+            <input class="mfg-inp" id="oreq-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr" style="text-align:right" autocomplete="tel">
+          </div>
+          <div class="mfg">
+            <label>ملاحظة (اختياري)</label>
+            <textarea class="mfg-inp" id="oreq-notes" rows="2" placeholder="أي تفاصيل تريد إضافتها…" style="resize:vertical"></textarea>
+          </div>
+          <div id="oreq-msg" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600"></div>
+          <button class="btn btn-primary" id="oreq-btn" onclick="submitOwnerRequest()" style="width:100%;padding:13px;font-size:15px">
+            إرسال الطلب ←
+          </button>
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
+            ستصلك إشعار فور مراجعة الطلب
+          </div>
+        </div>
+      </div>
+      <div id="oreq-success" style="display:none;padding:44px 24px 36px;text-align:center">
+        <div class="success-circle">✓</div>
+        <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
+        <div class="success-body">
+          شكراً ليك — فريق مكاني Spot هيراجع طلبك ويتواصل معاك خلال<br>
+          <strong style="color:var(--orange)">٢٤ ساعة</strong>.
+        </div>
+        <button class="btn btn-primary" onclick="closeOwnerRequestModal()" style="padding:14px 42px;font-size:15px;margin-top:20px">
+          تمام، شكراً ←
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 

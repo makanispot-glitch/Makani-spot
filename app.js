@@ -2018,6 +2018,24 @@ function setNavUser(user, profile) {
     set('dd-email',      email);
     set('dd-role',       roleLabel);
 
+    const badgeEl = document.getElementById('dd-plan-badge');
+    if (badgeEl) {
+      if (profile?.role === 'owner') {
+        const plan = profile?.plan_tier || 'starter';
+        const planBadges = {
+          starter: { text: '🆓 Starter', cls: 'pb-starter' },
+          growth:  { text: '🟧 Growth',  cls: 'pb-growth'  },
+          pro:     { text: '👑 Pro',     cls: 'pb-pro'      },
+        };
+        const b = planBadges[plan] || planBadges.starter;
+        badgeEl.textContent = b.text;
+        badgeEl.className   = `plan-badge ${b.cls}`;
+        badgeEl.style.display = 'inline-flex';
+      } else {
+        badgeEl.style.display = 'none';
+      }
+    }
+
     const ownerBtn = document.getElementById('dd-owner-dash-btn');
     if (ownerBtn) ownerBtn.style.display = profile?.role === 'owner' ? 'flex' : 'none';
 
@@ -3327,14 +3345,82 @@ function _showShareToast(msg) {
   t._tmr = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
-/**
- * يتحقق من حالة تسجيل الدخول ويوجّه لطلب الترقية أو التسجيل
- * يُستخدم في صفحة "عندك مساحة فاضية؟"
- */
+/* ══════════════════════════════════════════
+   🏢  OWNER REQUEST — طلب تحويل الحساب
+   ══════════════════════════════════════════ */
 function handleOwnerUpgradeBtn() {
-  if (currentUser) {
-    goToDashboard();
-  } else {
-    showPage('signup');
+  if (!currentUser) { showPage('signup'); return; }
+  if (currentProfile?.role === 'owner') { goToDashboard(); return; }
+  openOwnerRequestModal();
+}
+
+function openOwnerRequestModal() {
+  const phoneEl = document.getElementById('oreq-phone');
+  if (phoneEl) phoneEl.value = currentProfile?.phone || '';
+  ['oreq-place-name', 'oreq-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const typeEl = document.getElementById('oreq-place-type');
+  if (typeEl) typeEl.value = '';
+  const msgEl = document.getElementById('oreq-msg');
+  if (msgEl) msgEl.style.display = 'none';
+  const btn = document.getElementById('oreq-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'إرسال الطلب ←'; }
+  const formWrap = document.getElementById('owner-req-form-wrap');
+  const success  = document.getElementById('oreq-success');
+  if (formWrap) formWrap.style.display = 'block';
+  if (success)  success.style.display  = 'none';
+  document.getElementById('owner-request-modal')?.classList.add('open');
+}
+
+function closeOwnerRequestModal() {
+  document.getElementById('owner-request-modal')?.classList.remove('open');
+}
+
+function closeOwnerRequestModalOnBg(e) {
+  if (e.target === document.getElementById('owner-request-modal')) closeOwnerRequestModal();
+}
+
+async function submitOwnerRequest() {
+  const placeName = document.getElementById('oreq-place-name')?.value.trim() || '';
+  const placeType = document.getElementById('oreq-place-type')?.value || '';
+  const phone     = document.getElementById('oreq-phone')?.value.trim() || '';
+  const notes     = document.getElementById('oreq-notes')?.value.trim() || '';
+  const msgEl     = document.getElementById('oreq-msg');
+  const btn       = document.getElementById('oreq-btn');
+
+  const showMsg = (text, isErr) => {
+    if (!msgEl) return;
+    msgEl.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${isErr?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};color:${isErr?'var(--red)':'var(--green)'};border:1px solid ${isErr?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`;
+    msgEl.textContent = text;
+  };
+
+  if (!placeName || !placeType || !phone) {
+    showMsg('⚠ اسم المكان ونوعه ورقم الواتساب مطلوبة', true); return;
+  }
+  if (!sbClient || !currentUser) {
+    showMsg('⚠ خطأ في الاتصال — أعد تحميل الصفحة', true); return;
+  }
+
+  btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
+  if (msgEl) msgEl.style.display = 'none';
+
+  try {
+    const { error } = await sbClient.from('upgrade_requests').insert({
+      user_id:    currentUser.id,
+      user_email: currentUser.email,
+      user_name:  currentProfile?.full_name || currentUser.email,
+      place_name: placeName,
+      place_type: placeType,
+      phone,
+      notes: notes || null,
+      status: 'pending',
+    });
+    if (error) throw error;
+    document.getElementById('owner-req-form-wrap').style.display = 'none';
+    document.getElementById('oreq-success').style.display = 'block';
+  } catch (err) {
+    showMsg('❌ حدث خطأ: ' + (err.message || 'حاول مرة أخرى'), true);
+    btn.disabled = false; btn.textContent = 'إرسال الطلب ←';
   }
 }

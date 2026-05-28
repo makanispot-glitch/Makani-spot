@@ -848,8 +848,12 @@ body.lightbox-open { overflow: hidden; }
 
 /* ── Mobile: fix nav + hide static filter bar ── */
 @media (max-width: 768px) {
-  .eq-nav    { position: fixed; left: 0; right: 0; }
-  .eq-page   { padding-top: 68px; }
+  .nav {
+    position: fixed !important;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+  }
+  .eq-page { padding-top: 60px; }
   .eq-filters-bar { display: none !important; }
 }
 
@@ -1256,11 +1260,12 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 }
 
 /* ── Card image: object-fit cover للنظافة البصرية ── */
-.eq-card-slide img {
-  object-fit: cover;
-}
+.eq-card-slide img,
 .eq-card-img img {
   object-fit: cover;
+  /* تحسين حدة الصور عند العرض على شاشات Retina/HiDPI
+     يقلل الـ blur الذي يحدث عند downscale من 384px إلى 160-200px */
+  image-rendering: -webkit-optimize-contrast;
 }
 
 /* ── Load more button — تحسين ── */

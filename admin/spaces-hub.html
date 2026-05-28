@@ -296,6 +296,10 @@ textarea.fc{resize:vertical;min-height:72px}
       <div class="sb-item" id="sbi-owners" onclick="gp('owners',this)">
         <span class="sb-ico">👥</span> الأصحاب
       </div>
+      <div class="sb-item" id="sbi-owner-requests" onclick="gp('owner-requests',this)">
+        <span class="sb-ico">📋</span> طلبات التحويل
+        <span id="oreq-badge" class="sb-badge" style="display:none">0</span>
+      </div>
       <div class="sb-item" id="sbi-activities" onclick="gp('activities',this)">
         <span class="sb-ico">🏷️</span> الأنشطة
       </div>
@@ -327,6 +331,7 @@ textarea.fc{resize:vertical;min-height:72px}
       <div id="pg-spaces"   class="page"></div>
       <div id="pg-pending"  class="page"></div>
       <div id="pg-owners"   class="page"></div>
+      <div id="pg-owner-requests" class="page"></div>
       <div id="pg-activities" class="page"></div>
       <div id="pg-form"     class="page"></div>
     </div>
@@ -356,7 +361,7 @@ const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات',activities:'إدارة الأنشطة',form:'إضافة / تعديل مساحة'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',form:'إضافة / تعديل مساحة'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
@@ -364,7 +369,8 @@ const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','ب
 let adminHash   = null;
 let allSpaces   = [];
 let allOwners   = [];
-let allActivities = [];
+let allActivities    = [];
+let allOwnerRequests = [];
 let currentPage = 'overview';
 let editingId   = null;
 let fMainImgUrl   = null;
@@ -374,8 +380,9 @@ let fUnitCounter  = 0;
 
 /* filters state */
 let fltStatus = '', fltType = '', fltSearch = '';
-let ownerSearch = '';
+let ownerSearch    = '';
 let activitySearch = '';
+let oreqFilter     = 'pending';
 
 /* ═══════════════════════════════
    LOGIN
@@ -429,14 +436,16 @@ async function loadAll() {
   if (!adminHash) return;
   setPageLoading(currentPage);
   try {
-    const [spaces, owners, activities] = await Promise.all([
-      sbRpc('admin_get_spaces', {p_secret:adminHash}),
-      sbRpc('admin_get_owners', {p_secret:adminHash}),
+    const [spaces, owners, activities, ownerReqs] = await Promise.all([
+      sbRpc('admin_get_spaces',           {p_secret:adminHash}),
+      sbRpc('admin_get_owners',           {p_secret:adminHash}),
       fetchActivities().catch(()=>[]),
+      sbRpc('admin_get_upgrade_requests', {p_secret:adminHash}).catch(()=>[]),
     ]);
-    allSpaces = spaces || [];
-    allOwners = owners || [];
-    allActivities = activities || [];
+    allSpaces        = spaces     || [];
+    allOwners        = owners     || [];
+    allActivities    = activities || [];
+    allOwnerRequests = ownerReqs  || [];
     updatePendingBadge();
     const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     const sync = document.getElementById('sb-last-sync');
@@ -451,6 +460,10 @@ function updatePendingBadge() {
   const n = allSpaces.filter(s=>s.status==='pending').length;
   const b = document.getElementById('pending-badge');
   if (b) { b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none'; }
+
+  const nr = allOwnerRequests.filter(r=>r.status==='pending').length;
+  const br = document.getElementById('oreq-badge');
+  if (br) { br.textContent = nr; br.style.display = nr > 0 ? 'inline' : 'none'; }
 }
 
 async function loadSpaceDetail(id) {
@@ -498,11 +511,12 @@ function gp(page, el) {
 
 function renderCurrentPage() {
   switch(currentPage) {
-    case 'overview': renderOverview(); break;
-    case 'spaces':   renderSpaces();   break;
-    case 'pending':  renderPending();  break;
-    case 'owners':   renderOwners();   break;
-    case 'activities': renderActivities(); break;
+    case 'overview':       renderOverview();       break;
+    case 'spaces':         renderSpaces();         break;
+    case 'pending':        renderPending();        break;
+    case 'owners':         renderOwners();         break;
+    case 'owner-requests': renderOwnerRequests();  break;
+    case 'activities':     renderActivities();     break;
     case 'form':     /* rendered by editSpace/openAddForm */ break;
   }
 }
@@ -958,6 +972,113 @@ function renderOwners() {
   </div>`;
 
   setPageContent('owners', html);
+}
+
+/* ═══════════════════════════════
+   PAGE: OWNER REQUESTS — طلبات تحويل الحساب
+═══════════════════════════════ */
+function renderOwnerRequests() {
+  const all      = allOwnerRequests;
+  const pending  = all.filter(r=>r.status==='pending').length;
+  const approved = all.filter(r=>r.status==='approved').length;
+  const rejected = all.filter(r=>r.status==='rejected').length;
+
+  const typeLabels = {mall:'🏬 مول',club:'🏊 نادي',school:'🏫 مدرسة',other:'🏢 غيره'};
+
+  let filtered = oreqFilter === 'all' ? [...all] : all.filter(r=>r.status===oreqFilter);
+
+  const filterBtn = (val, label) =>
+    `<button class="btn ${oreqFilter===val?'btn-or':'btn-neu'}" style="font-size:11px;padding:5px 12px"
+             onclick="oreqFilter='${val}';renderOwnerRequests()">${label}</button>`;
+
+  let html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${all.length}</span> إجمالي</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending}</span> معلق</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> موافق</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${rejected}</span> مرفوض</div>
+  </div>
+  <div class="filter-bar" style="gap:6px;flex-wrap:wrap">
+    ${filterBtn('pending','🟡 معلق')}
+    ${filterBtn('approved','✅ موافق')}
+    ${filterBtn('rejected','❌ مرفوض')}
+    ${filterBtn('all','الكل')}
+    <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} طلب</div>
+  </div>`;
+
+  if (!filtered.length) {
+    html += `<div class="empty-state"><div class="empty-ico">📋</div><div class="empty-title">لا توجد طلبات في هذه الحالة</div></div>`;
+    setPageContent('owner-requests', html); return;
+  }
+
+  html += `<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 120px 90px 160px;gap:0;padding:10px 16px;background:var(--bg4);border-bottom:1px solid var(--bd);font-size:11px;font-weight:800;color:var(--mu)">
+      <div>الصاحب</div>
+      <div>المكان</div>
+      <div>النوع</div>
+      <div>الهاتف</div>
+      <div>تاريخ الطلب</div>
+      <div>الحالة</div>
+      <div>الإجراء</div>
+    </div>
+    ${filtered.map(r => {
+      const statusBadge = r.status === 'pending'
+        ? `<span class="badge b-pending" style="background:rgba(245,158,11,.15);color:var(--yw);border:1px solid rgba(245,158,11,.3)">🟡 معلق</span>`
+        : r.status === 'approved'
+          ? `<span class="badge b-approved">✅ موافق</span>`
+          : `<span class="badge b-rejected">❌ مرفوض</span>`;
+
+      const actions = r.status === 'pending' ? `
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-or" style="font-size:11px;padding:4px 10px" onclick="approveOwnerRequest('${r.id}','${esc(r.user_name||'')}')">موافقة</button>
+          <button class="btn btn-err" style="font-size:11px;padding:4px 10px" onclick="promptRejectOwnerRequest('${r.id}')">رفض</button>
+        </div>` : r.status === 'approved'
+          ? `<span style="font-size:11px;color:var(--gr)">✓ تم التفعيل</span>`
+          : `<span style="font-size:11px;color:var(--mu)">${esc(r.rejection_reason||'—')}</span>`;
+
+      return `<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 120px 90px 160px;gap:0;padding:10px 16px;border-bottom:1px solid var(--bd);font-size:12px;align-items:center">
+        <div>
+          <div style="font-weight:700">${esc(r.user_name||'—')}</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.user_email||'—')}</div>
+        </div>
+        <div style="font-weight:600">${esc(r.place_name||'—')}</div>
+        <div>${esc(typeLabels[r.place_type]||r.place_type||'—')}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;direction:ltr;text-align:right">${esc(r.phone||'—')}</div>
+        <div style="color:var(--mu)">${fmtDate(r.requested_at)}</div>
+        <div>${statusBadge}</div>
+        <div>${actions}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  setPageContent('owner-requests', html);
+}
+
+async function approveOwnerRequest(id, name) {
+  if (!confirm(`موافقة على طلب "${name}"؟\nسيتم تحويل الحساب لـ Owner بباقة Starter.`)) return;
+  try {
+    await sbRpc('admin_manage_upgrade_request', {
+      p_request_id: id, p_action: 'approve', p_reason: null, p_secret: adminHash
+    });
+    toast('✅ تمت الموافقة — تم تفعيل الحساب كصاحب مساحة', 's');
+    await loadAll();
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+function promptRejectOwnerRequest(id) {
+  const reason = prompt('سبب الرفض (اختياري):') ?? null;
+  if (reason === null) return; // المستخدم ضغط Cancel
+  doRejectOwnerRequest(id, reason.trim() || null);
+}
+
+async function doRejectOwnerRequest(id, reason) {
+  try {
+    await sbRpc('admin_manage_upgrade_request', {
+      p_request_id: id, p_action: 'reject', p_reason: reason, p_secret: adminHash
+    });
+    toast('❌ تم الرفض وإبلاغ المستخدم', 'i');
+    await loadAll();
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
 }
 
 /* ACTIVITIES */

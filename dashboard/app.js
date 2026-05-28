@@ -494,6 +494,17 @@ async function checkRoleAndProceed(user) {
     planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
   };
 
+  /* 🔒 باقة Starter — لوحة التحكم تتطلب Growth فما فوق */
+  if (currentOwner.planTier === 'starter') {
+    setLoginLoading(false);
+    showOwnerAccessGate(
+      'warning',
+      '🔒 لوحة التحكم متاحة من باقة Growth فما فوق',
+      'باقتك الحالية هي Starter. قم بترقية حسابك إلى Growth أو Pro للوصول إلى لوحة التحكم وإدارة مساحاتك.'
+    );
+    return;
+  }
+
   sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
   setLoginLoading(false);
   initDashboard();
@@ -582,7 +593,7 @@ function initDashboard() {
   };
   _lockNav('nav-payments',   'growth');
   _lockNav('nav-violations', 'growth');
-  _lockNav('nav-bazaar',     'growth');
+  _lockNav('nav-bazaar',     'pro');
   _lockNav('nav-reports',    'pro');
 
   /* تحميل العقود والتقييمات والمساحات المعلقة من localStorage */
@@ -766,6 +777,12 @@ function renderRevenue() {
    🧠  INSIGHTS VIEW — محسوبة من البيانات
    ══════════════════════════════════════════ */
 function renderInsights() {
+  if (!canAccess('pro')) {
+    const viewEl = document.getElementById('view-insights');
+    if (viewEl) viewEl.innerHTML = `<div class="section-label">الرؤى والتوصيات الذكية</div>${planGateHtml('pro')}`;
+    return;
+  }
+
   const urgentEl = document.getElementById('insights-urgent');
   const goodEl   = document.getElementById('insights-good');
   if (!urgentEl && !goodEl) return;
@@ -857,6 +874,13 @@ function renderInsights() {
           <div class="insight-body">${g.body}</div></div>
         </div>`).join('');
     }
+  }
+}
+
+function renderAddBazaarView() {
+  if (!canAccess('pro')) {
+    const viewEl = document.getElementById('view-add-bazaar');
+    if (viewEl) viewEl.innerHTML = `<div class="section-label">🎪 تنظيم بازار جديد</div>${planGateHtml('pro')}`;
   }
 }
 
@@ -1831,10 +1855,8 @@ function goTo(viewId, navEl) {
   if (window.innerWidth <= 900) closeSidebar();
 
   /* عند فتح التنبيهات: أعد رسمها ثم اعتبرها مقروءة */
-  if (viewId === 'alerts') {
-    renderAlerts();
-    setTimeout(markNotificationsRead, 1500);
-  }
+  if (viewId === 'alerts')     { renderAlerts(); setTimeout(markNotificationsRead, 1500); }
+  if (viewId === 'add-bazaar') renderAddBazaarView();
 }
 
 function setPeriod(p, btn) {
@@ -2696,6 +2718,22 @@ async function submitAddSpace(e) {
     msg.style.display = 'flex';
     msg.innerHTML = `<span class="alert-ico">❌</span><div class="alert-text"><strong>خطأ في الاتصال — أعد تحميل الصفحة.</strong></div>`;
     return;
+  }
+
+  /* 🔒 حد ٨ مساحات لباقة Growth */
+  if (getPlan() === 'growth') {
+    const { count, error: countErr } = await sb
+      .from('spaces')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', currentOwner.id)
+      .neq('status', 'rejected');
+
+    if (!countErr && count >= 8) {
+      msg.className = 'alert-item danger';
+      msg.style.display = 'flex';
+      msg.innerHTML = `<span class="alert-ico">🔒</span><div class="alert-text"><strong>وصلت إلى الحد الأقصى لباقة Growth (٨ مساحات).</strong><br>قم بالترقية إلى Pro للإضافة بلا حدود. <a href="/" style="color:var(--orange);font-weight:700">ترقية الآن ←</a></div>`;
+      return;
+    }
   }
 
   btn.disabled  = true;
