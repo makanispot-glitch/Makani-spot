@@ -6919,4 +6919,156 @@ footer {
 }
 
 
+/* ============================================================
+   ⭐ القسم: السمعة والتقييمات المستلمة (لوحة المستأجر)
+   تُستخدم بواسطة loadUserRatings في app.js
+   ============================================================ */
+
+/* ── الحالة الفارغة ── */
+.rep-empty {
+  text-align: center;
+  padding: 38px 22px;
+  background: linear-gradient(180deg, var(--surface2) 0%, var(--bg) 100%);
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+.rep-empty-ico { font-size: 40px; line-height: 1; margin-bottom: 12px; }
+.rep-empty-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--ink); margin-bottom: 7px; }
+.rep-empty-sub { font-size: 13px; color: var(--ink3); line-height: 1.8; max-width: 460px; margin: 0 auto; }
+
+/* ── لوحة السمعة (الشارة + المعايير) ── */
+.rep-panel {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+
+/* بطاقة الشارة الرئيسية */
+.rep-badge {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 22px 18px;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+}
+.rep-badge-emoji { font-size: 34px; line-height: 1; margin-bottom: 6px; }
+.rep-score {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -1px;
+}
+.rep-stars { margin: 6px 0 4px; letter-spacing: 1px; }
+.rep-badge-label {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+.rep-count {
+  font-size: 12px;
+  color: var(--ink3);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  font-weight: 600;
+}
+
+/* تلوين الشارة حسب المستوى */
+.rep-badge.rep-excellent { background: linear-gradient(160deg, #FCF6E3 0%, #FBF0CE 100%); border-color: var(--egyptian-gold); }
+.rep-badge.rep-excellent .rep-badge-label { color: var(--egyptian-bronze); }
+.rep-badge.rep-excellent .rep-score { color: var(--egyptian-bronze); }
+
+.rep-badge.rep-trusted { background: var(--green-light); border-color: var(--success-500); }
+.rep-badge.rep-trusted .rep-badge-label { color: var(--success-700); }
+
+.rep-badge.rep-good { background: var(--accent-tint); border-color: var(--accent); }
+.rep-badge.rep-good .rep-badge-label { color: var(--accent-press); }
+
+.rep-badge.rep-weak { background: var(--warning-50); border-color: var(--warning-500); }
+.rep-badge.rep-weak .rep-badge-label { color: var(--warning-700); }
+
+.rep-badge.rep-new { background: var(--surface2); border-color: var(--border); }
+.rep-badge.rep-new .rep-badge-label { color: var(--ink3); }
+
+/* قائمة المعايير */
+.rep-criteria {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 13px;
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.rep-crit-row { display: flex; align-items: center; gap: 12px; }
+.rep-crit-label { flex: 0 0 138px; font-size: 13px; font-weight: 600; color: var(--ink2); }
+.rep-crit-bar {
+  flex: 1;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-sunken);
+  overflow: hidden;
+  position: relative;
+}
+.rep-crit-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--egyptian-gold) 100%);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.rep-crit-val {
+  flex: 0 0 34px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ── قائمة التقييمات المستلمة ── */
+.recv-ratings-list { display: flex; flex-direction: column; gap: 12px; }
+.recv-rating-card {
+  padding: 15px 17px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.recv-rating-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+.recv-rating-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.recv-rater { font-family: var(--font-display); font-size: 14px; font-weight: 800; color: var(--ink); }
+.recv-context { font-size: 12px; color: var(--ink3); margin-top: 3px; font-weight: 500; }
+.recv-rating-stars { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.recv-date { font-size: 11px; color: var(--ink3); font-weight: 500; }
+.recv-comment {
+  margin-top: 11px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border-right: 3px solid var(--accent);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink2);
+}
+
+@media (max-width: 720px) {
+  .rep-panel { grid-template-columns: 1fr; gap: 14px; }
+  .rep-crit-label { flex-basis: 116px; font-size: 12px; }
+}
+
+
 

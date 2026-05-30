@@ -786,6 +786,27 @@ body {
 .stars { color: var(--orange); font-size: 16px; letter-spacing: 2px; }
 .stars-sm { color: var(--orange); font-size: 13px; letter-spacing: 1px; }
 
+/* ⭐ Interactive star-input (نموذج تقييم المالك للمستأجر) */
+.rate-crit { margin-bottom: 12px; }
+.rate-crit-head {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
+}
+.rate-crit-label { font-size: 12px; color: var(--text2); }
+.rate-crit-val {
+  font-size: 13px; font-weight: 900; color: var(--orange);
+  font-family: 'Space Mono', monospace; min-width: 18px; text-align: center;
+}
+/* النجوم في DOM بالترتيب ١..٥؛ في RTL تظهر من اليمين لليسار (النجمة ١ يميناً).
+   التعبئة يتحكم بها JS عبر .on — وهذا يعمل بشكل صحيح في الاتجاهين. */
+.star-input { display: inline-flex; gap: 2px; }
+.star-input .si-star {
+  background: none; border: none; cursor: pointer; padding: 0 2px;
+  font-size: 24px; line-height: 1; color: var(--bg3);
+  transition: color .12s, transform .12s;
+}
+.star-input .si-star:hover { transform: scale(1.18); color: var(--yellow); }
+.star-input .si-star.on { color: var(--orange); }
+
 /* Score circle */
 .score-circle {
   width: 60px;
@@ -1773,10 +1794,10 @@ body {
           <div>
             <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">كيف تعمل صفحة التقييمات؟</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              ① اختر المستأجر من القائمة (المستأجرون يظهرون هنا بعد إضافة عقودهم) &nbsp;·&nbsp;
-              ② اختر الشهر الذي تريد تقييمه &nbsp;·&nbsp;
-              ③ قيّم أداءه على 5 معايير &nbsp;·&nbsp;
-              ④ احفظ — يظهر التقييم في سجل المستأجرين وصفحة العقود.
+              ① اختر المستأجر من قائمة حجوزات منصتك الحقيقية &nbsp;·&nbsp;
+              ② قيّم تعامله على ٥ معايير (نجوم من ١ إلى ٥) &nbsp;·&nbsp;
+              ③ أضف ملاحظة إن أردت &nbsp;·&nbsp;
+              ④ احفظ — يظهر التقييم في سمعة المستأجر على حسابه فوراً.
             </div>
           </div>
         </div>
@@ -1789,74 +1810,31 @@ body {
               <span class="db-tag">DB: ratings</span>
             </div>
             <div class="pcard-body">
-              <!-- 🔗 DB-LINK: اختيار المستأجر من جدول tenants -->
+              <!-- 🔗 المستأجرون يُجلبون من حجوزات المنصة الحقيقية عبر owner_list_rateable_tenants() -->
               <div class="form-group">
-                <label>المستأجر</label>
-                <select id="rate-tenant" class="select-tenant">
-                  <option value="">اختر المستأجر</option>
-                  <option value="1">أحمد — كشك القهوة A-12</option>
-                  <option value="2">سارة — إكسسوارات B-03</option>
-                  <option value="3">محمد — حلويات C-07</option>
-                  <option value="4">نور — مشروبات A-05</option>
-                  <option value="5">خالد — فاست فود D-02</option>
+                <label>المستأجر (من حجوزات منصتك)</label>
+                <select id="rate-tenant" class="select-tenant" onchange="onRateTenantChange()">
+                  <option value="">جاري التحميل…</option>
                 </select>
+                <div id="rate-context" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
               </div>
-              <div class="form-group">
-                <label>الشهر</label>
-                <input type="month" id="rate-month">
-              </div>
-              <div class="section-label" style="margin-top:16px">معايير التقييم (كل معيار من ١ إلى ١٠)</div>
 
-              <!-- Rating criteria -->
-              <div id="rate-criteria">
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:12px;color:var(--text2)">⏰ الالتزام بالمواعيد</span>
-                    <span id="rv-0" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٧</span>
-                  </div>
-                  <input type="range" min="1" max="10" value="7" oninput="updateRVal(0,this.value)" style="width:100%;accent-color:var(--orange)">
-                </div>
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:12px;color:var(--text2)">🧹 نظافة المكان</span>
-                    <span id="rv-1" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٨</span>
-                  </div>
-                  <input type="range" min="1" max="10" value="8" oninput="updateRVal(1,this.value)" style="width:100%;accent-color:var(--orange)">
-                </div>
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:12px;color:var(--text2)">🎨 شكل البراند والعرض</span>
-                    <span id="rv-2" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٦</span>
-                  </div>
-                  <input type="range" min="1" max="10" value="6" oninput="updateRVal(2,this.value)" style="width:100%;accent-color:var(--orange)">
-                </div>
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:12px;color:var(--text2)">🤝 تعامل مع العملاء</span>
-                    <span id="rv-3" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">٩</span>
-                  </div>
-                  <input type="range" min="1" max="10" value="9" oninput="updateRVal(3,this.value)" style="width:100%;accent-color:var(--orange)">
-                </div>
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                    <span style="font-size:12px;color:var(--text2)">💼 الالتزام بالعقد</span>
-                    <span id="rv-4" style="font-size:13px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace">١٠</span>
-                  </div>
-                  <input type="range" min="1" max="10" value="10" oninput="updateRVal(4,this.value)" style="width:100%;accent-color:var(--orange)">
-                </div>
-              </div>
+              <div class="section-label" style="margin-top:16px">معايير التقييم (كل معيار من ١ إلى ٥ نجوم)</div>
+
+              <!-- Rating criteria — تُبنى ديناميكياً من renderRateStars() -->
+              <div id="rate-criteria"></div>
 
               <div style="background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;text-align:center">
-                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">متوسط التقييم</div>
-                <div style="font-size:28px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace" id="rate-avg">٨.٠</div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">التقييم العام (متوسط المعايير)</div>
+                <div style="font-size:28px;font-weight:900;color:var(--orange);font-family:'Space Mono',monospace" id="rate-avg">٠.٠</div>
               </div>
 
               <div class="form-group">
                 <label>ملاحظات (اختياري)</label>
-                <textarea id="rate-notes" placeholder="مثال: أداء ممتاز هذا الشهر، لكن النظافة تحتاج تحسين…"></textarea>
+                <textarea id="rate-notes" placeholder="مثال: ملتزم بالمواعيد ونظيف، لكن تأخّر في دفعة الإيجار…"></textarea>
               </div>
               <div id="rate-msg" style="display:none"></div>
-              <button class="btn btn-primary" onclick="submitRating()">⭐ حفظ التقييم</button>
+              <button class="btn btn-primary" id="btn-submit-rating" onclick="submitRating()">⭐ حفظ التقييم</button>
             </div>
           </div>
 
@@ -1870,10 +1848,10 @@ body {
               <!-- 🔗 DB-LINK: يُحدَّث من renderRatingsHistory() في makani-dashboard-app.js -->
               <table class="data-table">
                 <thead>
-                  <tr><th>المستأجر</th><th>الشهر</th><th>التقييم</th><th>مؤشر</th><th>حذف</th></tr>
+                  <tr><th>المستأجر</th><th>المساحة</th><th>التقييم</th><th>ملاحظة</th><th>التاريخ</th></tr>
                 </thead>
                 <tbody id="ratings-history-tbody">
-                  <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">لا توجد تقييمات بعد — أضف أول تقييم من النموذج على اليسار</td></tr>
+                  <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">جاري التحميل…</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2551,11 +2529,11 @@ body {
 <!-- Supabase Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=202605300403"></script>
+<script src="../media-handler.js?v=202605300420"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="app.js?v=202605300403"></script>
+<script src="app.js?v=202605300420"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>

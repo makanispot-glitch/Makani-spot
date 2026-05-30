@@ -41,6 +41,9 @@ let mpActiveActs  = [];
 let currentSpaceDetail = null;
 let detailPrevPage     = 'market';
 
+// المساحة الجاري حجزها — لربط الحجز بصاحب المساحة (نظام التقييمات)
+let bookingSpace = null;
+
 // ── نظام الـ Slider ──
 const _sliders = {};
 const CS_AUTO_DELAY = 3800;
@@ -155,6 +158,7 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
     : [];
   return {
     id:          row.id,
+    ownerId:     row.owner_id    || null,
     name:        row.name        || '',
     loc:         row.region      || '',
     type:        row.type        || '',
@@ -1200,6 +1204,7 @@ function _sdCleanup(id) {
 function openBooking(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
+  bookingSpace = s;   // ربط الحجز بالمساحة وصاحبها (نظام التقييمات)
 
   const sizePrices = {};
   const sizesClean = [];
@@ -1453,6 +1458,8 @@ async function submitBooking() {
       await sbClient.from('bookings').insert({
         id:         bookingId,
         user_id:    currentUser.id,
+        owner_id:   bookingSpace?.ownerId || null,   // ربط بصاحب المساحة (نظام التقييمات)
+        space_id:   bookingSpace?.id || null,         // ربط بالمساحة
         space_name: spaceName,
         space_loc:  spaceLoc,
         price:      spacePrice,

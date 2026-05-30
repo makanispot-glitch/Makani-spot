@@ -64,6 +64,7 @@ let mpActiveActs  = [];     // الأنشطة المفلترة حالياً
 // ── متغيرات خاصة بصفحة تفاصيل المساحة ── (جديد)
 let currentSpaceDetail = null;  // المساحة الرئيسية المعروضة حالياً في صفحة التفاصيل
 let detailPrevPage     = 'market'; // الصفحة السابقة للرجوع إليها من التفاصيل
+let currentBookingSpace = null; // المساحة المختارة في مودال الحجز (لالتقاط owner_id/space_id)
 
 // ── متغيرات خاصة بنظام البازارات ──
 let BAZAARS        = [];          // قائمة البازارات المحمّلة من الشيت / Supabase
@@ -286,6 +287,7 @@ async function loadData() {
         description: row.description || '',
         amenities:   row.amenities   || [],
         planTier:    profilesMap[row.owner_id] || 'starter',
+        ownerId:     row.owner_id || null,
         subSpaces:   (row.space_units || []).map(u => ({
           unitId:   u.unit_id   || '',
           name:     u.name      || '',
@@ -1694,6 +1696,7 @@ function goToDashboard() {
 function openBooking(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
+  currentBookingSpace = s;   /* لالتقاط owner_id/space_id عند الإرسال */
 
   const sizePrices = {};
   const sizesClean = [];
@@ -1850,6 +1853,8 @@ try {
       const { error: bookingError } = await sbClient.from('bookings').insert({
         id:         bookingId,
         user_id:    currentUser.id,
+        owner_id:   currentBookingSpace?.ownerId || null,  // ← ربط الحجز بصاحب المساحة (لنظام التقييمات)
+        space_id:   currentBookingSpace?.id || null,        // ← ربط الحجز بالمساحة
         space_name: spaceName,
         space_loc:  spaceLoc,
         price:      spacePrice,
@@ -2662,8 +2667,35 @@ function toggleBookings(total) {
 }
 
 /* ================================================================
-   ⭐ القسم الواحد والعشرون: تقييمات المستخدم
+   ⭐ القسم الواحد والعشرون: سمعة المستخدم (التقييمات المستلمة)
+   نظام أحادي الاتجاه: أصحاب المساحات ومنظمو البازارات يقيّمون المستأجرين،
+   وتظهر هنا على حساب المستأجر للقراءة فقط (لا يقيّم المستأجر أحداً).
    ================================================================ */
+
+/* تأمين النص قبل عرضه (منع XSS لتعليقات الملّاك) */
+function _escHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const REP_BADGES = {
+  excellent: { label: 'سمعة ممتازة',        emoji: '🏆', cls: 'rep-excellent' },
+  trusted:   { label: 'مستأجر موثوق',       emoji: '✅', cls: 'rep-trusted' },
+  good:      { label: 'سمعة جيدة',           emoji: '👍', cls: 'rep-good' },
+  weak:      { label: 'تحتاج لتحسين',        emoji: '⚠️', cls: 'rep-weak' },
+  new:       { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
+};
+
+/* نجوم 1-5 للعرض */
+function repStarsHtml(val, size) {
+  const v = Math.round(Number(val) || 0);
+  let s = '';
+  for (let i = 1; i <= 5; i++) {
+    s += `<span style="color:${i <= v ? '#F36418' : '#d9d9d9'};font-size:${size || 14}px">★</span>`;
+  }
+  return s;
+}
 
 async function loadUserRatings(userId) {
   if (!sbClient) return;
@@ -2672,86 +2704,84 @@ async function loadUserRatings(userId) {
   if (!contEl) return;
 
   try {
-    const { data: ratings } = await sbClient
-      .from('ratings')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    const [{ data: rep }, { data: list }] = await Promise.all([
+      sbClient.rpc('get_user_reputation', { p_user_id: userId }),
+      sbClient.from('user_ratings')
+        .select('*')
+        .eq('ratee_id', userId)
+        .eq('status', 'visible')
+        .order('created_at', { ascending: false }),
+    ]);
 
-    if (!ratings?.length) {
-      contEl.innerHTML = `<div class="no-bookings">لا يوجد تقييمات بعد</div>`;
+    const total = rep?.total || 0;
+    const avg   = Number(rep?.avg_overall || 0);
+    const badge = REP_BADGES[rep?.badge] || REP_BADGES.new;
+
+    /* تحديث بطاقة الإحصائية في الأعلى */
+    const statVal = document.getElementById('dash-rep-stat');
+    const statSub = document.getElementById('dash-rep-sub');
+    if (statVal) statVal.textContent = total ? avg.toFixed(1) : '—';
+    if (statSub) statSub.textContent = total ? `${total} تقييم` : 'لا تقييمات بعد';
+
+    if (!total) {
+      contEl.innerHTML = `
+        <div class="rep-empty">
+          <div class="rep-empty-ico">✨</div>
+          <div class="rep-empty-title">لا توجد تقييمات على حسابك بعد</div>
+          <div class="rep-empty-sub">عند تعاملك مع أصحاب المساحات أو منظمي البازارات عبر المنصة، تظهر تقييماتهم لك هنا وتبني سمعتك.</div>
+        </div>`;
       return;
     }
 
-    contEl.innerHTML = ratings.map(r => {
-      const stars   = Array.from({ length: 5 }, (_, i) =>
-        `<span style="color:${i < r.rating ? '#FF6B00' : '#ddd'}">★</span>`
-      ).join('');
-      const dateStr = r.created_at
-        ? new Date(r.created_at).toLocaleDateString('ar-EG')
-        : '—';
+    const critRows = [
+      ['⏰ الالتزام بالمواعيد', rep.avg_commitment],
+      ['🧹 نظافة المكان',        rep.avg_cleanliness],
+      ['🤝 حسن التعامل',         rep.avg_dealing],
+      ['💳 الالتزام المالي',     rep.avg_payment],
+      ['📋 احترام الشروط',       rep.avg_rules],
+    ].filter(r => r[1] != null);
 
-      return `
-      <div class="rating-card">
-        <div class="rating-card-header">
-          <div class="rating-stars">${stars}</div>
-          <span class="rating-date">${dateStr}</span>
+    const repPanel = `
+      <div class="rep-panel">
+        <div class="rep-badge ${badge.cls}">
+          <div class="rep-badge-emoji">${badge.emoji}</div>
+          <div class="rep-score">${avg.toFixed(1)}</div>
+          <div class="rep-stars">${repStarsHtml(avg, 16)}</div>
+          <div class="rep-badge-label">${badge.label}</div>
+          <div class="rep-count">${total} تقييم · 👍 ${rep.positive || 0} · 👎 ${rep.negative || 0}</div>
         </div>
-        <div class="rating-space">${r.space_name || '—'}</div>
-        ${r.comment ? `<div class="rating-comment">"${r.comment}"</div>` : ''}
+        ${critRows.length ? `<div class="rep-criteria">
+          ${critRows.map(([label, val]) => `
+            <div class="rep-crit-row">
+              <span class="rep-crit-label">${label}</span>
+              <span class="rep-crit-bar"><span class="rep-crit-fill" style="width:${(Number(val) / 5 * 100)}%"></span></span>
+              <span class="rep-crit-val">${Number(val).toFixed(1)}</span>
+            </div>`).join('')}
+        </div>` : ''}
       </div>`;
+
+    const listHtml = (list || []).map(r => {
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '';
+      const ctxIcon = r.context_type === 'bazaar' ? '🎪' : '🏬';
+      const roleLbl = r.rater_role === 'organizer' ? 'منظّم بازار' : 'صاحب مساحة';
+      return `
+        <div class="recv-rating-card">
+          <div class="recv-rating-head">
+            <div>
+              <div class="recv-rater">${ctxIcon} ${_escHtml(r.rater_name || roleLbl)}</div>
+              <div class="recv-context">${roleLbl}${r.context_name ? ' · ' + _escHtml(r.context_name) : ''}</div>
+            </div>
+            <div class="recv-rating-stars">${repStarsHtml(r.overall, 14)}<span class="recv-date">${dateStr}</span></div>
+          </div>
+          ${r.comment ? `<div class="recv-comment">"${_escHtml(r.comment)}"</div>` : ''}
+        </div>`;
     }).join('');
+
+    contEl.innerHTML = repPanel + `<div class="recv-ratings-list">${listHtml}</div>`;
 
   } catch (e) {
     contEl.innerHTML = '<div class="no-bookings">تعذّر تحميل التقييمات</div>';
   }
-}
-
-async function submitRating() {
-  if (!sbClient || !currentUser) {
-    showDashAlert('error', 'لازم تسجّل دخولك الأول');
-    return;
-  }
-
-  const spaceName = document.getElementById('rating-space-name')?.value.trim();
-  const ratingVal = parseInt(document.querySelector('.star-btn.on')?.dataset.val || '0');
-  const comment   = document.getElementById('rating-comment')?.value.trim();
-
-  if (!spaceName) { showDashAlert('error', 'اكتب اسم المساحة'); return; }
-  if (!ratingVal) { showDashAlert('error', 'اختار تقييمك بالنجوم'); return; }
-
-  setBtnLoading('btn-submit-rating', true);
-  const { error } = await sbClient.from('ratings').insert({
-    user_id:    currentUser.id,
-    space_name: spaceName,
-    rating:     ratingVal,
-    comment:    comment,
-    created_at: new Date().toISOString(),
-  });
-  setBtnLoading('btn-submit-rating', false, '⭐ إرسال التقييم');
-
-  if (error) { showDashAlert('error', 'في مشكلة في الإرسال'); return; }
-
-  showDashAlert('success', 'شكراً! اتضاف تقييمك ⭐');
-
-  document.getElementById('rating-space-name').value = '';
-  document.getElementById('rating-comment').value    = '';
-  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('on'));
-  document.getElementById('rating-form-wrap').style.display = 'none';
-
-  await loadUserRatings(currentUser.id);
-}
-
-function selectStar(val, el) {
-  const btns = document.querySelectorAll('.star-btn');
-  btns.forEach((b, i) => b.classList.toggle('on', i < val));
-  if (btns[val - 1]) btns[val - 1].dataset.val = val;
-}
-
-function toggleRatingForm() {
-  const formEl = document.getElementById('rating-form-wrap');
-  if (!formEl) return;
-  formEl.style.display = (formEl.style.display === 'none' || !formEl.style.display) ? 'block' : 'none';
 }
 
 

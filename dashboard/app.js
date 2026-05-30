@@ -605,6 +605,7 @@ function initDashboard() {
   syncDataFromContracts(); /* يُشتق منها ownerTenants و ownerContracts */
 
   loadOwnerData();
+  loadOwnerRatings();          /* المستأجرون القابلون للتقييم + سجل التقييمات من Supabase */
   loadNotifications();
   subscribeNotificationsRealtime();
 
@@ -891,26 +892,31 @@ function renderRatingsHistory() {
   const tbody = document.getElementById('ratings-history-tbody');
   if (!tbody) return;
 
-  if (!ratingsList.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد تقييمات بعد — ابدأ بتقييم مستأجريك</td></tr>`;
+  if (!sbOwnerRatings.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد تقييمات بعد — قيّم أول مستأجر من النموذج المجاور</td></tr>`;
     return;
   }
 
-  const sorted = [...ratingsList].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  /* خريطة booking_id → بيانات المستأجر/المساحة من قائمة القابلين للتقييم */
+  const nameMap = {};
+  sbRateableTenants.forEach(t => { nameMap[t.booking_id] = t; });
 
-  tbody.innerHTML = sorted.map(r => {
-    const col  = r.avgScore >= 8 ? 'var(--green)' : r.avgScore >= 6 ? 'var(--yellow)' : 'var(--red)';
-    const [yr, mo] = r.month.split('-');
-    const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
-                        'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-    const monthLbl = (monthNames[parseInt(mo, 10) - 1] || mo) + ' \'' + String(yr).slice(-2);
+  tbody.innerHTML = sbOwnerRatings.map(r => {
+    const t      = nameMap[r.booking_id] || {};
+    const name   = _escR(t.tenant_name || 'مستأجر');
+    const space  = _escR(t.space_name || r.context_name || '—');
+    const ov     = parseInt(r.overall) || 0;
+    const col    = ov >= 4 ? 'var(--green)' : ov >= 3 ? 'var(--yellow)' : 'var(--red)';
+    const stars  = '★'.repeat(ov) + '☆'.repeat(Math.max(0, 5 - ov));
+    const date   = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '—';
+    const hidden = r.status === 'hidden';
     return `
-      <tr>
-        <td>${r.tenantName}</td>
-        <td style="font-family:'Space Mono',monospace;color:var(--text3)">${monthLbl}</td>
-        <td><strong style="color:${col};font-family:'Space Mono',monospace">${r.avgScore}</strong>/10</td>
-        <td style="font-size:11px;color:var(--text3)">${r.notes || '—'}</td>
-        <td><button class="btn btn-sm" style="background:var(--red);color:#fff;padding:3px 10px;font-size:11px" onclick="deleteRating('${r.id}')">🗑️</button></td>
+      <tr style="${hidden ? 'opacity:.5' : ''}">
+        <td style="font-weight:700">${name}</td>
+        <td style="font-size:12px;color:var(--text3)">${space}</td>
+        <td><span style="color:${col};letter-spacing:2px">${stars}</span> <strong style="color:${col};font-family:'Space Mono',monospace">${ov}</strong></td>
+        <td style="font-size:11px;color:var(--text3);max-width:220px">${r.comment ? _escR(r.comment) : '—'}</td>
+        <td style="font-size:11px;color:var(--text3)">${hidden ? '🚫 مخفي' : date}</td>
       </tr>`;
   }).join('');
 }
@@ -1857,6 +1863,7 @@ function goTo(viewId, navEl) {
   /* عند فتح التنبيهات: أعد رسمها ثم اعتبرها مقروءة */
   if (viewId === 'alerts')     { renderAlerts(); setTimeout(markNotificationsRead, 1500); }
   if (viewId === 'add-bazaar') renderAddBazaarView();
+  if (viewId === 'ratings')    loadOwnerRatings();   /* تحديث القائمة والسجل من Supabase */
 }
 
 function setPeriod(p, btn) {
@@ -2685,12 +2692,8 @@ function populateSelects() {
     sel.innerHTML = available.map(s => `<option value="${s.code}">${s.code} — ${s.loc}</option>`).join('');
   });
 
-  /* قائمة المستأجرين في نموذج التقييم — من contractsList */
-  document.querySelectorAll('.select-tenant').forEach(sel => {
-    const active = contractsList.filter(c => c.status !== 'expired');
-    sel.innerHTML = '<option value="">اختر المستأجر</option>' +
-      active.map(c => `<option value="${c.id}">${c.tenantName} — ${c.spaceCode}</option>`).join('');
-  });
+  /* ملاحظة: قائمة المستأجرين في نموذج التقييم تُملأ من Supabase عبر
+     populateRateTenantSelect() داخل loadOwnerRatings() — وليست من العقود المحلية. */
 }
 
 async function submitAddSpace(e) {
@@ -3095,73 +3098,199 @@ async function submitAddBazaar(e) {
 }
 
 /* ══════════════════════════════════════════
-   ⭐  RATINGS
+   ⭐  RATINGS — متصل بـ Supabase (المالك → المستأجر)
+   نظام أحادي الاتجاه: صاحب المساحة يقيّم المستأجرين الذين
+   حجزوا فعلياً عبر المنصة. لا تقييم بدون حجز حقيقي.
    ══════════════════════════════════════════ */
 const AR_NUMS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','١٠'];
 
-function updateRVal(idx, val) {
-  const el = document.getElementById('rv-' + idx);
-  if (el) el.textContent = AR_NUMS[parseInt(val)] || val;
+function _escR(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const RATE_CRITERIA = [
+  { key: 'commitment',  label: '⏰ الالتزام بالمواعيد' },
+  { key: 'cleanliness', label: '🧹 نظافة المكان' },
+  { key: 'dealing',     label: '🤝 حسن التعامل' },
+  { key: 'payment',     label: '💳 الالتزام المالي' },
+  { key: 'rules',       label: '📋 احترام الشروط' },
+];
+
+let sbRateableTenants = [];   /* من owner_list_rateable_tenants() */
+let sbOwnerRatings    = [];    /* من user_ratings حيث rater_id = المالك الحالي */
+let rateVals          = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
+
+/* بناء نجوم تفاعلية (١-٥) لكل معيار */
+function renderRateStars() {
+  const wrap = document.getElementById('rate-criteria');
+  if (!wrap) return;
+  wrap.innerHTML = RATE_CRITERIA.map(c => {
+    const v = rateVals[c.key] || 0;
+    const stars = [1, 2, 3, 4, 5].map(i =>
+      `<button type="button" class="si-star${i <= v ? ' on' : ''}" onclick="setRateStar('${c.key}',${i})">★</button>`
+    ).join('');
+    return `
+      <div class="rate-crit">
+        <div class="rate-crit-head">
+          <span class="rate-crit-label">${c.label}</span>
+          <span class="rate-crit-val">${v ? AR_NUMS[v] : '—'}</span>
+        </div>
+        <div class="star-input">${stars}</div>
+      </div>`;
+  }).join('');
+}
+
+function setRateStar(key, val) {
+  rateVals[key] = val;
+  renderRateStars();
   updateAvgRating();
 }
 
-function updateAvgRating() {
-  const sliders = document.querySelectorAll('#rate-criteria input[type=range]');
-  if (!sliders.length) return;
-  const avg = Array.from(sliders).reduce((s, r) => s + parseInt(r.value), 0) / sliders.length;
-  setTxt('rate-avg', avg.toFixed(1));
+function _rateValsArray() {
+  return RATE_CRITERIA.map(c => rateVals[c.key]).filter(v => v > 0);
 }
 
-function submitRating() {
-  const contractId = document.getElementById('rate-tenant')?.value;
-  const month      = document.getElementById('rate-month')?.value;
-  const msgEl      = document.getElementById('rate-msg');
+function updateAvgRating() {
+  const set = _rateValsArray();
+  const avg = set.length ? set.reduce((a, b) => a + b, 0) / set.length : 0;
+  setTxt('rate-avg', avg ? avg.toFixed(1) : '٠.٠');
+}
+
+/* القديمة — لم تعد مستخدمة (نتركها للتوافق مع أي استدعاء قديم) */
+function updateRVal() { updateAvgRating(); }
+
+/* تحميل المستأجرين القابلين للتقييم + سجل تقييمات المالك من Supabase */
+async function loadOwnerRatings() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { renderRateStars(); renderRatingsHistory(); return; }
+  try {
+    const [{ data: rateable, error: e1 }, { data: mine, error: e2 }] = await Promise.all([
+      sb.rpc('owner_list_rateable_tenants'),
+      sb.from('user_ratings').select('*')
+        .eq('rater_id', currentOwner.id).eq('context_type', 'space')
+        .order('created_at', { ascending: false }),
+    ]);
+    if (e1) console.error('[loadOwnerRatings] rateable:', JSON.stringify(e1));
+    if (e2) console.error('[loadOwnerRatings] mine:', JSON.stringify(e2));
+    sbRateableTenants = rateable || [];
+    sbOwnerRatings    = mine || [];
+  } catch (e) {
+    console.error('[loadOwnerRatings]', e);
+    sbRateableTenants = []; sbOwnerRatings = [];
+  }
+  populateRateTenantSelect();
+  renderRateStars();
+  renderRatingsHistory();
+}
+
+function populateRateTenantSelect() {
+  const sel = document.getElementById('rate-tenant');
+  if (!sel) return;
+  if (!sbRateableTenants.length) {
+    sel.innerHTML = '<option value="">لا يوجد مستأجرون عبر المنصة بعد</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">اختر المستأجر</option>' +
+    sbRateableTenants.map(t => {
+      const mark = t.rating_id ? ' ✓' : '';
+      return `<option value="${t.booking_id}">${_escR(t.tenant_name)} — ${_escR(t.space_name || 'مساحة')}${mark}</option>`;
+    }).join('');
+}
+
+/* عند اختيار مستأجر: اعرض سياق الحجز + عبّئ تقييماً سابقاً إن وُجد (تعديل) */
+function onRateTenantChange() {
+  const sel       = document.getElementById('rate-tenant');
+  const bookingId = sel?.value;
+  const ctxEl     = document.getElementById('rate-context');
+  const t         = sbRateableTenants.find(x => x.booking_id === bookingId);
+
+  if (ctxEl) {
+    ctxEl.textContent = t
+      ? `🏬 ${t.space_name || 'مساحة'}${t.activity ? ' · ' + t.activity : ''}${t.start_date ? ' · يبدأ ' + t.start_date : ''}`
+      : '';
+  }
+
+  const prev = sbOwnerRatings.find(r => r.booking_id === bookingId);
+  rateVals = {
+    commitment:  prev?.commitment  || 0,
+    cleanliness: prev?.cleanliness || 0,
+    dealing:     prev?.dealing     || 0,
+    payment:     prev?.payment     || 0,
+    rules:       prev?.rules       || 0,
+  };
+  const notesEl = document.getElementById('rate-notes');
+  if (notesEl) notesEl.value = prev?.comment || '';
+  renderRateStars();
+  updateAvgRating();
+}
+
+async function submitRating() {
+  const sel       = document.getElementById('rate-tenant');
+  const bookingId = sel?.value;
+  const msgEl     = document.getElementById('rate-msg');
+  const btn       = document.getElementById('btn-submit-rating');
 
   const showMsg = (type, text) => {
     if (!msgEl) return;
     msgEl.className = `alert-item ${type}`;
     msgEl.style.display = 'flex';
     const ico = type === 'success' ? '✅' : '❌';
-    msgEl.innerHTML = `<span class="alert-ico">${ico}</span><div class="alert-text"><strong>${text}</strong></div>`;
-    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+    msgEl.innerHTML = `<span class="alert-ico">${ico}</span><div class="alert-text"><strong>${_escR(text)}</strong></div>`;
+    if (type === 'success') setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
   };
 
-  if (!contractId) { showMsg('danger', 'اختر المستأجر أولاً.'); return; }
-  if (!month)      { showMsg('danger', 'اختر الشهر أولاً.');    return; }
+  if (!bookingId) { showMsg('danger', 'اختر المستأجر أولاً.'); return; }
 
-  const contract = contractsList.find(c => c.id === contractId);
-  if (!contract) { showMsg('danger', 'لم يُعثر على العقد.'); return; }
+  const set = _rateValsArray();
+  if (!set.length) { showMsg('danger', 'قيّم معياراً واحداً على الأقل بالنجوم.'); return; }
 
-  const sliders = document.querySelectorAll('#rate-criteria input[type=range]');
-  const vals    = Array.from(sliders).map(s => parseInt(s.value));
-  const [schedule, cleanliness, brand, customerService, contractCompliance] = vals;
-  const avgScore = parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
-  const notes    = document.getElementById('rate-notes')?.value.trim() || '';
+  const overall = Math.max(1, Math.min(5, Math.round(set.reduce((a, b) => a + b, 0) / set.length)));
+  const notes   = document.getElementById('rate-notes')?.value.trim() || '';
+  const nn      = v => (v && v > 0 ? v : null);
 
-  const rating = {
-    id: genId(),
-    contractId,
-    tenantName: contract.tenantName,
-    space: contract.spaceCode,
-    month,
-    scores: { schedule, cleanliness, brand, customerService, contractCompliance },
-    avgScore,
-    notes,
-    createdAt: new Date().toISOString(),
-  };
+  const sb = getSB();
+  if (!sb) { showMsg('danger', 'تعذّر الاتصال بالخادم.'); return; }
 
-  ratingsList.push(rating);
-  saveRatings();
-  syncDataFromContracts();
-  renderAll();
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ…'; }
 
-  /* reset form */
-  document.getElementById('rate-tenant').value = '';
-  document.getElementById('rate-month').value  = '';
-  sliders.forEach((s, i) => { s.value = [7,8,6,9,10][i]; updateRVal(i, s.value); });
-  if (document.getElementById('rate-notes')) document.getElementById('rate-notes').value = '';
+  try {
+    const { error } = await sb.rpc('rate_tenant', {
+      p_booking_id:   bookingId,
+      p_context_type: 'space',
+      p_overall:      overall,
+      p_commitment:   nn(rateVals.commitment),
+      p_cleanliness:  nn(rateVals.cleanliness),
+      p_dealing:      nn(rateVals.dealing),
+      p_payment:      nn(rateVals.payment),
+      p_rules:        nn(rateVals.rules),
+      p_comment:      notes || null,
+    });
+    if (error) throw error;
 
-  showMsg('success', `تم حفظ التقييم! المتوسط: ${avgScore}/10`);
+    showMsg('success', `تم حفظ التقييم! التقييم العام: ${overall}/5 ⭐`);
+    await loadOwnerRatings();
+
+    /* تصفير الفورم */
+    if (sel) sel.value = '';
+    rateVals = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
+    const ctxEl = document.getElementById('rate-context'); if (ctxEl) ctxEl.textContent = '';
+    const notesEl = document.getElementById('rate-notes'); if (notesEl) notesEl.value = '';
+    renderRateStars();
+    updateAvgRating();
+  } catch (e) {
+    const map = {
+      not_authorized_booking: 'لا يمكنك تقييم هذا الحجز — ليس ضمن مساحاتك.',
+      cannot_rate_self:       'لا يمكنك تقييم نفسك.',
+      invalid_overall:        'قيمة التقييم غير صحيحة.',
+      no_registered_user:     'هذا الحجز غير مرتبط بحساب مستخدم مسجّل.',
+      unauthorized:           'انتهت الجلسة — سجّل الدخول من جديد.',
+    };
+    showMsg('danger', map[e?.message] || ('تعذّر حفظ التقييم: ' + (e?.message || 'خطأ غير معروف')));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⭐ حفظ التقييم'; }
+  }
 }
 
 /* ══════════════════════════════════════════

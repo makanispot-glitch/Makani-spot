@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>إشراف التقييمات والسمعة — مكاني Spot Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F36418">
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-size: 14px; }
+
+/* ── Login Screen ── */
+.adm-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%);
+}
+.adm-login-box {
+  background: #fff; border-radius: 20px; padding: 40px 36px;
+  width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.adm-login-box h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+.adm-login-box p  { font-size: 13px; color: #666; margin-bottom: 28px; }
+.adm-login-box input {
+  width: 100%; padding: 13px 16px; border: 2px solid #E8E8E8;
+  border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 15px;
+  outline: none; margin-bottom: 14px; transition: border .2s;
+}
+.adm-login-box input:focus { border-color: #F36418; }
+.adm-login-err { color: #EF4444; font-size: 13px; margin-bottom: 10px; display: none; }
+.adm-login-btn {
+  width: 100%; padding: 14px; background: #F36418; color: #fff;
+  border: none; border-radius: 10px; font-family: 'Cairo', sans-serif;
+  font-size: 16px; font-weight: 800; cursor: pointer; transition: background .2s;
+}
+.adm-login-btn:hover { background: #E85E00; }
+
+/* ── Main Layout ── */
+#adm-main { display: none; min-height: 100vh; }
+.adm-nav {
+  background: #1A1A1A; color: #fff;
+  padding: 0 28px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.adm-nav h1 { font-size: 18px; font-weight: 900; }
+.adm-nav-right { display: flex; align-items: center; gap: 14px; }
+.adm-nav span { font-size: 13px; color: rgba(255,255,255,0.6); }
+.adm-logout {
+  padding: 7px 16px; background: rgba(255,255,255,0.1); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+  cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px;
+  transition: background .2s;
+}
+.adm-logout:hover { background: rgba(255,255,255,0.2); }
+.adm-hub-btn {
+  padding: 7px 16px; background: rgba(255,107,0,0.2); color: #F36418;
+  border: 1px solid rgba(255,107,0,0.4); border-radius: 8px;
+  text-decoration: none; font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 700; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+}
+.adm-hub-btn:hover { background: #F36418; color: #fff; }
+
+/* ── Stats Bar ── */
+.adm-stats {
+  display: flex; gap: 16px; padding: 18px 28px; background: #fff;
+  border-bottom: 1px solid #E8E8E8; flex-wrap: wrap;
+}
+.adm-stat { padding: 10px 20px; border-radius: 10px; text-align: center; min-width: 120px; }
+.adm-stat-num { font-size: 26px; font-weight: 900; }
+.adm-stat-lbl { font-size: 12px; font-weight: 700; margin-top: 2px; }
+.adm-stat.total    { background: #E0F2FE; }
+.adm-stat.total    .adm-stat-num { color: #0369A1; }
+.adm-stat.total    .adm-stat-lbl { color: #0284C7; }
+.adm-stat.visible  { background: #DCFCE7; }
+.adm-stat.visible  .adm-stat-num { color: #15803D; }
+.adm-stat.visible  .adm-stat-lbl { color: #16A34A; }
+.adm-stat.hidden   { background: #FEE2E2; }
+.adm-stat.hidden   .adm-stat-num { color: #991B1B; }
+.adm-stat.hidden   .adm-stat-lbl { color: #DC2626; }
+.adm-stat.neg      { background: #FEF3C7; }
+.adm-stat.neg      .adm-stat-num { color: #92400E; }
+.adm-stat.neg      .adm-stat-lbl { color: #B45309; }
+
+/* ── Toolbar ── */
+.adm-toolbar {
+  padding: 14px 28px; background: #fff; border-bottom: 1px solid #E8E8E8;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.adm-filter-btn {
+  padding: 8px 18px; border-radius: 8px; border: 2px solid #E8E8E8;
+  background: #fff; font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.adm-filter-btn:hover, .adm-filter-btn.on { border-color: #F36418; background: #F36418; color: #fff; }
+.adm-search {
+  margin-right: auto; padding: 9px 14px; border: 1.5px solid #E8E8E8;
+  border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 13px;
+  outline: none; min-width: 220px; transition: border .2s;
+}
+.adm-search:focus { border-color: #F36418; }
+.adm-refresh {
+  padding: 9px 16px; background: #F7F7F7; border: 1.5px solid #E8E8E8;
+  border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif;
+  font-size: 13px; font-weight: 700; transition: background .2s;
+}
+.adm-refresh:hover { background: #E8E8E8; }
+
+/* ── Table ── */
+.adm-content { padding: 24px 28px; }
+.adm-table-wrap { background: #fff; border-radius: 14px; overflow-x: auto; border: 1px solid #E8E8E8; }
+table { width: 100%; border-collapse: collapse; min-width: 900px; }
+thead { background: #F7F7F7; }
+th { padding: 12px 16px; font-size: 12px; font-weight: 800; color: #666; text-align: right; white-space: nowrap; }
+td { padding: 14px 16px; border-top: 1px solid #F0F0F0; vertical-align: top; }
+tr:hover td { background: #FAFAFA; }
+tr.row-hidden td { background: #FFF8F8; opacity: .72; }
+
+/* ── Person cells ── */
+.r-person strong { display: block; font-size: 14px; font-weight: 800; color: #1A1A1A; }
+.r-person a { color: #1A1A1A; text-decoration: none; }
+.r-person a:hover { color: #F36418; text-decoration: underline; }
+.r-id { font-size: 10px; color: #BBB; font-family: 'Inter', monospace; direction: ltr; }
+
+.r-chip {
+  display: inline-block; padding: 3px 9px; border-radius: 50px;
+  font-size: 11px; font-weight: 800; margin-top: 4px;
+}
+.r-chip.owner     { background: #EFF6FF; color: #1D4ED8; }
+.r-chip.organizer { background: #FFF7ED; color: #C2410C; }
+.r-chip.admin     { background: #F3E8FF; color: #7E22CE; }
+.r-chip.ctx-space  { background: #ECFEFF; color: #0E7490; }
+.r-chip.ctx-bazaar { background: #FDF2F8; color: #BE185D; }
+.r-ctx-name { font-size: 12px; color: #666; margin-top: 4px; }
+
+/* ── Rating cell ── */
+.r-stars { color: #F59E0B; font-size: 16px; letter-spacing: 1px; white-space: nowrap; }
+.r-overall-num { font-size: 12px; font-weight: 800; color: #92400E; margin-right: 4px; }
+.r-crits { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-width: 230px; }
+.r-crit {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #F7F7F7; border: 1px solid #ECECEC; border-radius: 6px;
+  padding: 2px 6px; font-size: 11px; font-weight: 700; color: #555;
+}
+.r-crit b { color: #F36418; }
+
+/* ── Comment ── */
+.r-comment {
+  max-width: 260px; font-size: 13px; color: #444; line-height: 1.6;
+  background: #FAFAFA; border-right: 3px solid #E8E8E8; border-radius: 6px;
+  padding: 7px 10px; white-space: pre-wrap; word-break: break-word;
+}
+.r-comment.empty { color: #BBB; background: none; border: none; padding: 0; }
+
+/* ── Status badge ── */
+.adm-status { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 12px; font-weight: 800; }
+.adm-status-visible { background: #DCFCE7; color: #15803D; }
+.adm-status-hidden  { background: #FEE2E2; color: #991B1B; }
+
+/* ── Action Buttons ── */
+.adm-btn {
+  padding: 7px 14px; border-radius: 8px; border: none;
+  font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 800;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.adm-btn-hide { background: #FEE2E2; color: #991B1B; }
+.adm-btn-hide:hover { background: #EF4444; color: #fff; }
+.adm-btn-show { background: #DCFCE7; color: #15803D; }
+.adm-btn-show:hover { background: #22C55E; color: #fff; }
+.adm-btn:disabled { opacity: .5; cursor: default; }
+
+/* ── Empty / Loading ── */
+.adm-empty { text-align: center; padding: 60px 20px; color: #999; font-size: 15px; }
+.adm-loading { text-align: center; padding: 60px 20px; color: #999; }
+.adm-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid #E8E8E8; border-top-color: #F36418;
+  animation: spin 0.9s linear infinite; margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ── */
+.adm-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1A1A1A; color: #fff; padding: 12px 22px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; box-shadow: 0 8px 28px rgba(0,0,0,.3);
+  opacity: 0; pointer-events: none; transition: all .25s; z-index: 600;
+}
+.adm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.adm-toast.err { background: #991B1B; }
+
+@media (max-width: 768px) {
+  .adm-nav, .adm-stats, .adm-toolbar, .adm-content { padding-left: 14px; padding-right: 14px; }
+  .adm-content { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="adm-login" class="adm-login">
+  <div class="adm-login-box">
+    <div style="font-size:40px;margin-bottom:12px">⭐</div>
+    <h1>إشراف التقييمات</h1>
+    <p>أدخل كلمة مرور الإدارة للدخول</p>
+    <div class="adm-login-err" id="adm-login-err">كلمة المرور غير صحيحة</div>
+    <input type="password" id="adm-pass" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')admLogin()">
+    <br>
+    <button class="adm-login-btn" onclick="admLogin()">دخول</button>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div id="adm-main">
+  <nav class="adm-nav">
+    <h1>🛡️ إشراف التقييمات والسمعة</h1>
+    <div class="adm-nav-right">
+      <span id="adm-last-update"></span>
+      <a href="./admin-hub.html" class="adm-hub-btn">🏠 لوحة التحكم</a>
+      <button class="adm-logout" onclick="admLogout()">خروج</button>
+    </div>
+  </nav>
+
+  <div class="adm-stats" id="adm-stats">
+    <div class="adm-stat total">   <div class="adm-stat-num" id="stat-total">—</div>   <div class="adm-stat-lbl">⭐ كل التقييمات</div></div>
+    <div class="adm-stat visible"> <div class="adm-stat-num" id="stat-visible">—</div> <div class="adm-stat-lbl">✅ ظاهرة</div></div>
+    <div class="adm-stat hidden">  <div class="adm-stat-num" id="stat-hidden">—</div>  <div class="adm-stat-lbl">🚫 مخفية</div></div>
+    <div class="adm-stat neg">     <div class="adm-stat-num" id="stat-neg">—</div>     <div class="adm-stat-lbl">⚠️ سلبية (≤٢)</div></div>
+  </div>
+
+  <div class="adm-toolbar">
+    <button class="adm-filter-btn on" onclick="admSetFilter('all',this)">الكل</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('visible',this)">✅ الظاهرة</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('hidden',this)">🚫 المخفية</button>
+    <button class="adm-filter-btn" onclick="admSetFilter('negative',this)">⚠️ السلبية (≤٢)</button>
+    <input class="adm-search" id="adm-search" type="text" placeholder="بحث بالاسم أو التعليق أو السياق…" oninput="admFilterTable()">
+    <button class="adm-refresh" onclick="admLoad()">🔄 تحديث</button>
+  </div>
+
+  <div class="adm-content">
+    <div class="adm-table-wrap">
+      <div id="adm-table-container">
+        <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="adm-toast" id="adm-toast"></div>
+
+<script>
+const ADM_TOKEN_KEY = 'makani_admin_token';
+
+/* ── Supabase (RLS مُتجاوَز عبر دوال SECURITY DEFINER) ── */
+const ADM_SB_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
+const ADM_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+/* السر الخاص بدوال إشراف التقييمات (admin_list_user_ratings / admin_set_rating_status) */
+const RATINGS_SECRET = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
+
+let sbDirect = null;
+
+const ROLE_LABELS = { owner: '🏪 صاحب مساحة', organizer: '🎪 منظّم', admin: '🛡️ أدمن', tenant: '👤 مستأجر' };
+const CTX_LABELS  = { space: '🏬 مساحة', bazaar: '🎪 بازار' };
+const CRITERIA = [
+  { key: 'commitment',  emoji: '⏰' },
+  { key: 'cleanliness', emoji: '🧹' },
+  { key: 'dealing',     emoji: '🤝' },
+  { key: 'payment',     emoji: '💳' },
+  { key: 'rules',       emoji: '📋' },
+];
+
+/* ── XSS Protection ── */
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function starStr(n) {
+  n = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
+let admAll      = [];
+let admFilter   = 'all';
+let admSearch   = '';
+
+/* ── Auth (نفس بوابة /admin/auth المستخدمة في باقي صفحات الإدارة) ── */
+async function admLogin() {
+  const pass  = document.getElementById('adm-pass').value;
+  const errEl = document.getElementById('adm-login-err');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass }),
+    });
+    if (!res.ok) {
+      errEl.style.display = 'block';
+      document.getElementById('adm-pass').value = '';
+      return;
+    }
+    const { token } = await res.json();
+    sessionStorage.setItem(ADM_TOKEN_KEY, token);
+    admShowDash();
+  } catch {
+    errEl.textContent = 'خطأ في الاتصال — حاول مرة أخرى';
+    errEl.style.display = 'block';
+  }
+}
+function admLogout() { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); }
+function admGetToken() { return sessionStorage.getItem(ADM_TOKEN_KEY) || ''; }
+function admCheckAuth() { return !!admGetToken(); }
+function admShowDash() {
+  document.getElementById('adm-login').style.display = 'none';
+  document.getElementById('adm-main').style.display = 'block';
+  admLoad();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  sbDirect = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
+  if (admCheckAuth()) admShowDash();
+});
+
+/* ── Load ── */
+async function admLoad() {
+  document.getElementById('adm-table-container').innerHTML =
+    '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const { data, error } = await sbDirect.rpc('admin_list_user_ratings', { p_secret: RATINGS_SECRET });
+    if (error) throw error;
+    admAll = data || [];
+    admUpdateStats();
+    admRender();
+    document.getElementById('adm-last-update').textContent =
+      'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+  } catch (e) {
+    document.getElementById('adm-table-container').innerHTML =
+      `<div class="adm-empty">⚠️ تعذّر تحميل التقييمات: ${escHtml(e.message || e)}</div>`;
+  }
+}
+
+function admUpdateStats() {
+  const total   = admAll.length;
+  const visible = admAll.filter(r => r.status === 'visible').length;
+  const hidden  = admAll.filter(r => r.status === 'hidden').length;
+  const neg     = admAll.filter(r => (Number(r.overall) || 0) <= 2).length;
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-visible').textContent = visible;
+  document.getElementById('stat-hidden').textContent  = hidden;
+  document.getElementById('stat-neg').textContent     = neg;
+}
+
+/* ── Filter ── */
+function admSetFilter(f, el) {
+  admFilter = f;
+  document.querySelectorAll('.adm-filter-btn').forEach(b => b.classList.remove('on'));
+  if (el) el.classList.add('on');
+  admRender();
+}
+function admFilterTable() {
+  admSearch = document.getElementById('adm-search').value.toLowerCase();
+  admRender();
+}
+
+function admRender() {
+  let list = admAll.slice();
+  if (admFilter === 'visible')      list = list.filter(r => r.status === 'visible');
+  else if (admFilter === 'hidden')  list = list.filter(r => r.status === 'hidden');
+  else if (admFilter === 'negative')list = list.filter(r => (Number(r.overall) || 0) <= 2);
+  if (admSearch) list = list.filter(r =>
+    (r.ratee_name   || '').toLowerCase().includes(admSearch) ||
+    (r.rater_name   || '').toLowerCase().includes(admSearch) ||
+    (r.comment      || '').toLowerCase().includes(admSearch) ||
+    (r.context_name || '').toLowerCase().includes(admSearch)
+  );
+  admBuildTable(list);
+}
+
+/* ── Table ── */
+function admBuildTable(list) {
+  const cont = document.getElementById('adm-table-container');
+  if (!list.length) {
+    cont.innerHTML = '<div class="adm-empty">لا توجد تقييمات مطابقة</div>';
+    return;
+  }
+
+  const rows = list.map(r => {
+    const safeId   = escHtml(r.id);
+    const rateeId  = escHtml(r.ratee_id || '');
+    const roleKey  = (r.rater_role || '').toLowerCase();
+    const roleChip = ROLE_LABELS[roleKey]
+      ? `<span class="r-chip ${roleKey}">${ROLE_LABELS[roleKey]}</span>` : '';
+    const ctxKey   = (r.context_type || '').toLowerCase();
+    const ctxChip  = CTX_LABELS[ctxKey]
+      ? `<span class="r-chip ctx-${ctxKey}">${CTX_LABELS[ctxKey]}</span>` : '';
+
+    const crits = CRITERIA
+      .filter(c => r[c.key] != null)
+      .map(c => `<span class="r-crit">${c.emoji} <b>${escHtml(r[c.key])}</b></span>`).join('');
+
+    const comment = r.comment
+      ? `<div class="r-comment">${escHtml(r.comment)}</div>`
+      : `<div class="r-comment empty">— بدون تعليق —</div>`;
+
+    const date = r.created_at
+      ? new Date(r.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+      : '—';
+
+    const statusBadge = r.status === 'hidden'
+      ? `<span class="adm-status adm-status-hidden">🚫 مخفي</span>`
+      : `<span class="adm-status adm-status-visible">✅ ظاهر</span>`;
+
+    const actionBtn = r.status === 'hidden'
+      ? `<button class="adm-btn adm-btn-show" onclick="admSetStatus('${safeId}','visible',this)">✅ إظهار</button>`
+      : `<button class="adm-btn adm-btn-hide" onclick="admSetStatus('${safeId}','hidden',this)">🚫 إخفاء</button>`;
+
+    return `<tr class="${r.status === 'hidden' ? 'row-hidden' : ''}">
+      <td class="r-person">
+        <a href="/bazaars/profile.html?user=${rateeId}" target="_blank">${escHtml(r.ratee_name || 'مستأجر')}</a>
+        <div class="r-id">${rateeId.slice(0,8)}</div>
+      </td>
+      <td class="r-person">
+        <strong>${escHtml(r.rater_name || 'مُقيِّم')}</strong>
+        ${roleChip}
+      </td>
+      <td>
+        ${ctxChip}
+        ${r.context_name ? `<div class="r-ctx-name">${escHtml(r.context_name)}</div>` : ''}
+      </td>
+      <td>
+        <div class="r-stars"><span class="r-overall-num">${escHtml(r.overall)}/5</span>${starStr(r.overall)}</div>
+        ${crits ? `<div class="r-crits">${crits}</div>` : ''}
+      </td>
+      <td>${comment}</td>
+      <td>${statusBadge}</td>
+      <td style="color:#999;font-size:12px;white-space:nowrap">${date}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>المُقَيَّم (المستأجر)</th>
+          <th>المُقيِّم</th>
+          <th>السياق</th>
+          <th>التقييم</th>
+          <th>التعليق</th>
+          <th>الحالة</th>
+          <th>التاريخ</th>
+          <th>إجراء</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+/* ── Toggle status (hide / show abusive ratings) ── */
+async function admSetStatus(id, status, btn) {
+  if (status === 'hidden' &&
+      !confirm('🚫 إخفاء هذا التقييم سيمنع ظهوره على حساب المستأجر وفي حساب سمعته.\n\nمتأكد؟')) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
+  try {
+    const { error } = await sbDirect.rpc('admin_set_rating_status', {
+      p_rating_id: id, p_status: status, p_secret: RATINGS_SECRET,
+    });
+    if (error) throw error;
+    const row = admAll.find(r => r.id === id);
+    if (row) row.status = status;
+    admUpdateStats();
+    admRender();
+    admToast(status === 'hidden' ? '🚫 تم إخفاء التقييم' : '✅ تم إظهار التقييم');
+  } catch (e) {
+    admToast('خطأ: ' + (e.message || e), true);
+    if (btn) { btn.disabled = false; btn.textContent = status === 'hidden' ? '🚫 إخفاء' : '✅ إظهار'; }
+  }
+}
+
+/* ── Toast ── */
+let _toastTimer = null;
+function admToast(msg, isErr) {
+  const t = document.getElementById('adm-toast');
+  t.textContent = msg;
+  t.className = 'adm-toast show' + (isErr ? ' err' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = 'adm-toast'; }, 3000);
+}
+
+/* ── Enter key login ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('adm-login').style.display !== 'none') admLogin();
+});
+</script>
+</body>
+</html>

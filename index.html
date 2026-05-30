@@ -66,7 +66,7 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -2354,9 +2354,9 @@
                 <polygon
                   points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg></div>
-            <div class="dash-stat-lbl">تقييماتك</div>
-            <div class="dash-stat-val">—</div>
-            <div class="dash-stat-sub">تقييمات المساحات</div>
+            <div class="dash-stat-lbl">سمعتك</div>
+            <div class="dash-stat-val" id="dash-rep-stat">—</div>
+            <div class="dash-stat-sub" id="dash-rep-sub">لا تقييمات بعد</div>
           </div>
         </div>
 
@@ -2372,35 +2372,16 @@
           </div>
         </div>
 
-        <!-- ══════════════════ التقييمات ══════════════════ -->
+        <!-- ══════════════════ السمعة والتقييمات ══════════════════ -->
         <div class="dash-section-card">
           <div class="dash-section-head">
-            <div class="dash-section-title">تقييماتك</div>
-            <button class="edit-profile-btn" onclick="toggleRatingForm()">+ إضافة تقييم</button>
+            <div class="dash-section-title">سمعتك وتقييماتك</div>
           </div>
-          <div id="rating-form-wrap" style="display:none;margin-bottom:22px">
-            <div class="rating-form-box">
-              <div class="afg"><label>اسم المساحة التي استأجرتها *</label>
-                <input type="text" id="rating-space-name" placeholder="مثال: مول مدينة نصر — كشك A3">
-              </div>
-              <div class="afg">
-                <label>تقييمك *</label>
-                <div class="stars-row">
-                  <button class="star-btn" data-val="1" onclick="selectStar(1,this)">★</button>
-                  <button class="star-btn" data-val="2" onclick="selectStar(2,this)">★</button>
-                  <button class="star-btn" data-val="3" onclick="selectStar(3,this)">★</button>
-                  <button class="star-btn" data-val="4" onclick="selectStar(4,this)">★</button>
-                  <button class="star-btn" data-val="5" onclick="selectStar(5,this)">★</button>
-                </div>
-              </div>
-              <div class="afg"><label>تعليقك (اختياري)</label>
-                <textarea id="rating-comment" placeholder="شاركنا تجربتك مع المساحة…"
-                  style="min-height:70px;resize:vertical"></textarea>
-              </div>
-              <button class="btn-auth-submit" id="btn-submit-rating" onclick="submitRating()" style="margin-top:0">إرسال
-                التقييم</button>
-            </div>
-          </div>
+          <p style="font-size:13px;color:var(--ink3);line-height:1.75;margin:0 0 16px;
+                    padding-bottom:14px;border-bottom:1px solid var(--border)">
+            دي التقييمات اللي وصلتك من أصحاب المساحات ومنظّمي البازارات اللي اتعاملت معاهم.
+            كل ما تلتزم وتتعامل كويس، سمعتك بتزيد وفرصتك في الحجز بتكبر.
+          </p>
           <div id="dash-ratings">
             <div class="no-bookings">جاري التحميل…</div>
           </div>
@@ -2880,7 +2861,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="app.js?v=202605300403" defer></script>
+  <script src="app.js?v=202605300420" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">

@@ -28,6 +28,20 @@ let myUserProfile  = null;   // profiles row
 let myMergedPhone  = null;   // هاتف مدمج من مصادر متعددة
 let myMergedCity   = null;   // مدينة مدمجة من مصادر متعددة
 
+/* ── تقييم المشاركين (المنظم → المستأجر) — نظام أحادي الاتجاه ──
+   المنظم يقيّم العارضين الذين حجزوا/شاركوا فعلياً في بازاراته فقط. */
+let bzRateableParticipants = [];   // من organizer_list_rateable_participants()
+let bzOrganizerRatings     = [];   // user_ratings حيث rater_id = المنظم & context_type='bazaar'
+let bzRateVals             = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
+const BZ_RATE_CRITERIA = [
+  { key: 'commitment',  label: '⏰ الالتزام بالمواعيد' },
+  { key: 'cleanliness', label: '🧹 ترتيب ونظافة الركن' },
+  { key: 'dealing',     label: '🤝 حسن التعامل' },
+  { key: 'payment',     label: '💳 الالتزام المالي' },
+  { key: 'rules',       label: '📋 احترام شروط البازار' },
+];
+const BZ_AR_NUMS = ['٠', '١', '٢', '٣', '٤', '٥'];
+
 /* ================================================================
    🚀 بدء التشغيل
    ================================================================ */
@@ -88,7 +102,8 @@ async function _loadMyProfile() {
   try {
     const [
       orgProfileRes, userProfileRes, reviewsRes,
-      reqRes, bazaarsRes, listingsRes, upgradeRes
+      reqRes, bazaarsRes, listingsRes, upgradeRes,
+      rateableRes, bzRatingsRes
     ] = await Promise.all([
       sbClient.from('organizer_profiles').select('*')
               .eq('user_id', currentUser.id).single(),
@@ -111,6 +126,11 @@ async function _loadMyProfile() {
       sbClient.from('upgrade_requests').select('status')
               .eq('user_id', currentUser.id)
               .order('created_at', { ascending: false }).limit(1).single(),
+      /* 🔗 تقييم المشاركين: المشاركون القابلون للتقييم + سجل تقييماتي كمنظم */
+      sbClient.rpc('organizer_list_rateable_participants'),
+      sbClient.from('user_ratings').select('*')
+              .eq('rater_id', currentUser.id).eq('context_type', 'bazaar')
+              .order('created_at', { ascending: false }),
     ]);
 
     profile     = orgProfileRes.data  || null;
@@ -119,6 +139,11 @@ async function _loadMyProfile() {
     reqStatus   = reqRes.data?.status || null;
     bazaars     = bazaarsRes.data     || [];
     listings    = listingsRes.data    || [];
+
+    /* تقييم المشاركين (حالة وحدات الوحدة على مستوى الموديول) */
+    bzRateableParticipants = rateableRes.data || [];
+    bzOrganizerRatings     = bzRatingsRes.data || [];
+    if (rateableRes.error) console.warn('[profile] rateable participants:', rateableRes.error.message);
 
     /* ── تحقق من صاحب المساحة عبر upgrade_requests أو role ── */
     const upgradeStatus = upgradeRes.data?.status || null;
@@ -426,6 +451,68 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     </div>`}
   </div>
 
+  <!-- ═══════ تقييم المشاركين في بازاراتك (المنظم → المستأجر) ═══════ -->
+  ${totalBaz > 0 ? `
+  <div class="op-section-card op-rate-card" style="margin-top:16px">
+    <div class="op-section-title">
+      <span>⭐ قيّم المشاركين في بازاراتك</span>
+      <span class="op-rate-count" id="bz-rate-count">${bzRateableParticipants.length} مشارك</span>
+    </div>
+
+    <p class="op-rate-intro">
+      قيّم العارضين الذين حجزوا أو شاركوا فعلياً في بازاراتك. تقييمك يُبني سمعتهم على المنصّة
+      ويساعد بقية المنظّمين وأصحاب المساحات على معرفة المتعاملين الجادّين.
+      <strong>التقييم متاح فقط لمن لديه حجز حقيقي معك</strong> — لا تقييم بدون تعامل.
+    </p>
+
+    ${bzRateableParticipants.length ? `
+    <div class="op-rate-form">
+      <div class="vr-fg">
+        <label>اختر المشارك</label>
+        <select id="bz-rate-participant" onchange="bzOnParticipantChange()">
+          <option value="">— اختر مشاركاً قمت باستضافته —</option>
+          ${bzRateableParticipants.map(p => {
+            const mark = p.rating_id ? ' ✓ (مُقيَّم)' : '';
+            const who  = _escR(p.business_name || p.tenant_name || 'مشارك');
+            return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || 'بازار')}${mark}</option>`;
+          }).join('')}
+        </select>
+      </div>
+
+      <div id="bz-rate-context" class="op-rate-context"></div>
+
+      <div id="bz-rate-criteria" class="op-rate-criteria"></div>
+
+      <div class="op-rate-avg-row">
+        <span>متوسط تقييمك</span>
+        <span><strong id="bz-rate-avg">٠.٠</strong> / ٥ ⭐</span>
+      </div>
+
+      <div class="vr-fg">
+        <label>ملاحظات (اختياري)</label>
+        <textarea id="bz-rate-notes" rows="3" class="op-rate-notes"
+          placeholder="مثال: عارض ملتزم بالمواعيد، ركنه مرتّب، تعامل راقٍ مع الزوار…"></textarea>
+      </div>
+
+      <div id="bz-rate-msg" class="op-rate-msg" style="display:none"></div>
+
+      <button id="bz-btn-submit-rating" class="op-rate-submit" onclick="submitBazaarRating()">⭐ حفظ التقييم</button>
+    </div>` : `
+    <div class="op-empty">
+      <div style="font-size:26px;margin-bottom:8px">🪑</div>
+      <div>لا يوجد مشاركون قابلون للتقييم بعد</div>
+      <div style="font-size:11px;margin-top:6px;color:var(--ink3)">
+        عندما يحجز عارضون أركاناً في بازاراتك ستظهر أسماؤهم هنا لتقييمهم.
+      </div>
+    </div>`}
+
+    <!-- سجل التقييمات التي منحتها -->
+    <div id="bz-rate-history" class="op-rate-history" style="${bzOrganizerRatings.length ? '' : 'display:none'}">
+      <div class="op-rate-history-title">📋 سجل تقييماتك (<span id="bz-rate-hist-count">${bzOrganizerRatings.length}</span>)</div>
+      <div id="bz-rate-history-rows">${_bzHistoryRowsHtml()}</div>
+    </div>
+  </div>` : ''}
+
   <!-- ═══════ التقييمات ═══════ -->
   ${reviews.length ? `
   <div class="op-section-card" style="margin-top:16px">
@@ -447,6 +534,220 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
         </div>`;
     }).join('')}
   </div>` : ''}`;
+
+  /* بعد بناء الـ DOM: ارسم نجوم معايير التقييم التفاعلية */
+  if (totalBaz > 0) bzRenderRateStars();
+}
+
+
+/* ================================================================
+   ⭐ تقييم المشاركين في البازار (المنظم → المستأجر)
+   نظام أحادي الاتجاه — يعتمد على حجز حقيقي عبر rate_tenant(context='bazaar')
+   ================================================================ */
+function _escR(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* بناء نجوم تفاعلية (١-٥) لكل معيار */
+function bzRenderRateStars() {
+  const wrap = document.getElementById('bz-rate-criteria');
+  if (!wrap) return;
+  wrap.innerHTML = BZ_RATE_CRITERIA.map(c => {
+    const v = bzRateVals[c.key] || 0;
+    const stars = [1, 2, 3, 4, 5].map(i =>
+      `<button type="button" class="op-si-star${i <= v ? ' on' : ''}" onclick="bzSetRateStar('${c.key}',${i})">★</button>`
+    ).join('');
+    return `
+      <div class="op-rate-crit">
+        <div class="op-rate-crit-head">
+          <span class="op-rate-crit-label">${c.label}</span>
+          <span class="op-rate-crit-val">${v ? BZ_AR_NUMS[v] : '—'}</span>
+        </div>
+        <div class="op-star-input">${stars}</div>
+      </div>`;
+  }).join('');
+}
+
+function bzSetRateStar(key, val) {
+  bzRateVals[key] = val;
+  bzRenderRateStars();
+  bzUpdateAvg();
+}
+
+function _bzRateValsArray() {
+  return BZ_RATE_CRITERIA.map(c => bzRateVals[c.key]).filter(v => v > 0);
+}
+
+function bzUpdateAvg() {
+  const set = _bzRateValsArray();
+  const avg = set.length ? set.reduce((a, b) => a + b, 0) / set.length : 0;
+  const el  = document.getElementById('bz-rate-avg');
+  if (el) el.textContent = avg ? avg.toFixed(1) : '٠.٠';
+}
+
+/* صفوف سجل التقييمات التي منحها المنظّم */
+function _bzHistoryRowsHtml() {
+  if (!bzOrganizerRatings.length) return '';
+  /* خريطة الاسم من القائمة القابلة للتقييم (booking_id → اسم المشارك) */
+  const nameByBooking = {};
+  bzRateableParticipants.forEach(p => {
+    nameByBooking[p.booking_id] = p.business_name || p.tenant_name || 'مشارك';
+  });
+  return bzOrganizerRatings.map(r => {
+    const who   = _escR(nameByBooking[r.booking_id] || 'مشارك');
+    const bz    = _escR(r.context_name || 'بازار');
+    const stars = '⭐'.repeat(Math.max(0, Math.min(5, r.overall || 0)));
+    const rd    = r.created_at
+      ? new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+    return `
+      <div class="op-rate-hrow">
+        <div class="op-rate-hrow-top">
+          <span class="op-rate-hrow-who">${who}</span>
+          <span class="op-rate-hrow-stars">${stars || '—'}</span>
+        </div>
+        <div class="op-rate-hrow-meta">🎪 ${bz} · ${rd}</div>
+        ${r.comment ? `<div class="op-rate-hrow-note">${_escR(r.comment)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+/* عند اختيار مشارك: اعرض سياق البازار + عبّئ تقييماً سابقاً إن وُجد (تعديل) */
+function bzOnParticipantChange() {
+  const sel       = document.getElementById('bz-rate-participant');
+  const bookingId = sel?.value;
+  const ctxEl     = document.getElementById('bz-rate-context');
+  const p         = bzRateableParticipants.find(x => x.booking_id === bookingId);
+
+  if (ctxEl) {
+    if (p) {
+      const act = p.activity ? ' · ' + _escR(p.activity) : '';
+      ctxEl.innerHTML   = `🎪 ${_escR(p.bazaar_name || 'بازار')}${act}`;
+      ctxEl.style.display = 'block';
+    } else {
+      ctxEl.style.display = 'none';
+      ctxEl.innerHTML = '';
+    }
+  }
+
+  const prev = bzOrganizerRatings.find(r => r.booking_id === bookingId);
+  bzRateVals = {
+    commitment:  prev?.commitment  || 0,
+    cleanliness: prev?.cleanliness || 0,
+    dealing:     prev?.dealing     || 0,
+    payment:     prev?.payment     || 0,
+    rules:       prev?.rules       || 0,
+  };
+  const notesEl = document.getElementById('bz-rate-notes');
+  if (notesEl) notesEl.value = prev?.comment || '';
+  bzRenderRateStars();
+  bzUpdateAvg();
+}
+
+async function submitBazaarRating() {
+  const sel       = document.getElementById('bz-rate-participant');
+  const bookingId = sel?.value;
+  const msgEl     = document.getElementById('bz-rate-msg');
+  const btn       = document.getElementById('bz-btn-submit-rating');
+
+  const showMsg = (type, text) => {
+    if (!msgEl) return;
+    msgEl.className = 'op-rate-msg ' + type;
+    msgEl.style.display = 'block';
+    msgEl.textContent = (type === 'success' ? '✅ ' : '❌ ') + text;
+    if (type === 'success') setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+  };
+
+  if (!bookingId) { showMsg('error', 'اختر المشارك أولاً.'); return; }
+
+  const set = _bzRateValsArray();
+  if (!set.length) { showMsg('error', 'قيّم معياراً واحداً على الأقل بالنجوم.'); return; }
+
+  const overall = Math.max(1, Math.min(5, Math.round(set.reduce((a, b) => a + b, 0) / set.length)));
+  const notes   = document.getElementById('bz-rate-notes')?.value.trim() || '';
+  const nn      = v => (v && v > 0 ? v : null);
+
+  if (!sbClient) { showMsg('error', 'تعذّر الاتصال بالخادم.'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ…'; }
+
+  try {
+    const { error } = await sbClient.rpc('rate_tenant', {
+      p_booking_id:   bookingId,
+      p_context_type: 'bazaar',
+      p_overall:      overall,
+      p_commitment:   nn(bzRateVals.commitment),
+      p_cleanliness:  nn(bzRateVals.cleanliness),
+      p_dealing:      nn(bzRateVals.dealing),
+      p_payment:      nn(bzRateVals.payment),
+      p_rules:        nn(bzRateVals.rules),
+      p_comment:      notes || null,
+    });
+    if (error) throw error;
+
+    showMsg('success', `تم حفظ التقييم! التقييم العام: ${overall}/5 ⭐`);
+    await _reloadBazaarRatings();
+  } catch (e) {
+    const map = {
+      not_authorized_booking:    'لا يمكنك تقييم هذا الحجز — ليس ضمن بازاراتك.',
+      cannot_rate_self:          'لا يمكنك تقييم نفسك.',
+      invalid_overall:           'قيمة التقييم غير صحيحة.',
+      no_registered_user:        'هذا الحجز غير مرتبط بحساب مستخدم مسجّل.',
+      participant_not_registered:'هذا المشارك لم يُسجّل بحساب على المنصة — لا يمكن تقييمه.',
+      invalid_context:           'سياق تقييم غير صالح.',
+      unauthorized:              'انتهت الجلسة — سجّل الدخول من جديد.',
+    };
+    showMsg('error', map[e?.message] || ('تعذّر حفظ التقييم: ' + (e?.message || 'خطأ غير معروف')));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⭐ حفظ التقييم'; }
+  }
+}
+
+/* أعد جلب القوائم وحدّث الودجة دون إعادة رسم الصفحة كاملة */
+async function _reloadBazaarRatings() {
+  try {
+    const [rateableRes, ratingsRes] = await Promise.all([
+      sbClient.rpc('organizer_list_rateable_participants'),
+      sbClient.from('user_ratings').select('*')
+        .eq('rater_id', currentUser.id).eq('context_type', 'bazaar')
+        .order('created_at', { ascending: false }),
+    ]);
+    bzRateableParticipants = rateableRes.data || [];
+    bzOrganizerRatings     = ratingsRes.data || [];
+  } catch (_) {}
+
+  /* أعد بناء القائمة المنسدلة (مع علامة ✓ للمُقيَّمين) */
+  const sel = document.getElementById('bz-rate-participant');
+  if (sel) {
+    sel.innerHTML = '<option value="">— اختر مشاركاً قمت باستضافته —</option>' +
+      bzRateableParticipants.map(p => {
+        const mark = p.rating_id ? ' ✓ (مُقيَّم)' : '';
+        const who  = _escR(p.business_name || p.tenant_name || 'مشارك');
+        return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || 'بازار')}${mark}</option>`;
+      }).join('');
+    sel.value = '';
+  }
+
+  /* صفّر الفورم */
+  bzRateVals = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
+  const ctxEl   = document.getElementById('bz-rate-context');
+  if (ctxEl) { ctxEl.style.display = 'none'; ctxEl.innerHTML = ''; }
+  const notesEl = document.getElementById('bz-rate-notes');
+  if (notesEl) notesEl.value = '';
+  bzRenderRateStars();
+  bzUpdateAvg();
+
+  /* حدّث عدّاد المشاركين + سجل التقييمات */
+  const cntEl = document.getElementById('bz-rate-count');
+  if (cntEl) cntEl.textContent = `${bzRateableParticipants.length} مشارك`;
+
+  const histWrap  = document.getElementById('bz-rate-history');
+  const histRows  = document.getElementById('bz-rate-history-rows');
+  const histCount = document.getElementById('bz-rate-hist-count');
+  if (histRows)  histRows.innerHTML  = _bzHistoryRowsHtml();
+  if (histCount) histCount.textContent = bzOrganizerRatings.length;
+  if (histWrap)  histWrap.style.display = bzOrganizerRatings.length ? '' : 'none';
 }
 
 
@@ -540,29 +841,37 @@ async function _loadPublicProfile(userId) {
   let organizer  = null;   // organizer_profiles
   let reviews    = [];
   let bazaars    = [];
+  let reputation = null;   // get_user_reputation (السمعة كمستأجر)
+  let recvRatings = [];    // user_ratings المستلمة من أصحاب المساحات/المنظمين
 
   try {
-    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes] = await Promise.all([
+    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes] = await Promise.all([
       sbClient.from('profiles').select('full_name,created_at,role').eq('id', userId).single(),
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
       sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots')
               .eq('organizer_id', userId).order('date_start', { ascending: false }),
+      sbClient.rpc('get_user_reputation', { p_user_id: userId }),
+      sbClient.from('user_ratings').select('*')
+              .eq('ratee_id', userId).eq('status', 'visible')
+              .order('created_at', { ascending: false }),
     ]);
 
-    publicUser = profileRes.data  || null;
-    organizer  = orgProfileRes.data || null;
-    reviews    = reviewsRes.data   || [];
-    bazaars    = bazaarsRes.data   || [];
+    publicUser  = profileRes.data  || null;
+    organizer   = orgProfileRes.data || null;
+    reviews     = reviewsRes.data   || [];
+    bazaars     = bazaarsRes.data   || [];
+    reputation  = repRes.data       || null;
+    recvRatings = recvRes.data      || [];
   } catch (e) {
     console.warn('[profile] public load error:', e.message);
   }
 
-  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars);
+  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings);
 }
 
-function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars) {
+function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings) {
   const content = document.getElementById('op-content');
 
   /* اسم المستخدم — من profiles أو organizer_profiles */
@@ -712,6 +1021,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars) {
     </div>
   </div>
 
+  <!-- ═══════ السمعة كمستأجر (تقييمات أصحاب المساحات والمنظمين) ═══════ -->
+  ${_pubRepPanelHtml(reputation, recvRatings)}
+
   <!-- ═══════ بازاراته ═══════ -->
   ${bazaars.length ? `
   <div class="op-section-card" style="margin-bottom:16px">
@@ -724,6 +1036,86 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars) {
     <div class="op-section-title"><span>⭐ التقييمات (${reviews.length})</span></div>
     ${reviewsHtml}
   </div>`;
+}
+
+/* ── السمعة كمستأجر: شارة + معايير + تقييمات مستلمة (للملف العام) ── */
+const PUB_REP_BADGES = {
+  excellent: { label: 'سمعة ممتازة',        emoji: '🏆', cls: 'rep-excellent' },
+  trusted:   { label: 'مستأجر موثوق',       emoji: '✅', cls: 'rep-trusted' },
+  good:      { label: 'سمعة جيدة',           emoji: '👍', cls: 'rep-good' },
+  weak:      { label: 'تحتاج لتحسين',        emoji: '⚠️', cls: 'rep-weak' },
+  new:       { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
+};
+
+function _pubRepStars(val, size) {
+  const v = Math.round(Number(val) || 0);
+  let s = '';
+  for (let i = 1; i <= 5; i++) {
+    s += `<span style="color:${i <= v ? '#F36418' : '#d9d9d9'};font-size:${size || 14}px">★</span>`;
+  }
+  return s;
+}
+
+function _pubRepPanelHtml(reputation, recvRatings) {
+  const total = reputation?.total || 0;
+  if (!total) return '';   // لا نعرض القسم إن لم توجد تقييمات مستلمة
+
+  const avg   = Number(reputation?.avg_overall || 0);
+  const badge = PUB_REP_BADGES[reputation?.badge] || PUB_REP_BADGES.new;
+
+  const critRows = [
+    ['⏰ الالتزام بالمواعيد', reputation.avg_commitment],
+    ['🧹 نظافة المكان',        reputation.avg_cleanliness],
+    ['🤝 حسن التعامل',         reputation.avg_dealing],
+    ['💳 الالتزام المالي',     reputation.avg_payment],
+    ['📋 احترام الشروط',       reputation.avg_rules],
+  ].filter(r => r[1] != null);
+
+  const panel = `
+    <div class="rep-panel">
+      <div class="rep-badge ${badge.cls}">
+        <div class="rep-badge-emoji">${badge.emoji}</div>
+        <div class="rep-score">${avg.toFixed(1)}</div>
+        <div class="rep-stars">${_pubRepStars(avg, 16)}</div>
+        <div class="rep-badge-label">${badge.label}</div>
+        <div class="rep-count">${total} تقييم · 👍 ${reputation.positive || 0} · 👎 ${reputation.negative || 0}</div>
+      </div>
+      ${critRows.length ? `<div class="rep-criteria">
+        ${critRows.map(([label, val]) => `
+          <div class="rep-crit-row">
+            <span class="rep-crit-label">${label}</span>
+            <span class="rep-crit-bar"><span class="rep-crit-fill" style="width:${(Number(val) / 5 * 100)}%"></span></span>
+            <span class="rep-crit-val">${Number(val).toFixed(1)}</span>
+          </div>`).join('')}
+      </div>` : ''}
+    </div>`;
+
+  const list = (recvRatings || []).map(r => {
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '';
+    const ctxIcon = r.context_type === 'bazaar' ? '🎪' : '🏬';
+    const roleLbl = r.rater_role === 'organizer' ? 'منظّم بازار' : 'صاحب مساحة';
+    return `
+      <div class="recv-rating-card">
+        <div class="recv-rating-head">
+          <div>
+            <div class="recv-rater">${ctxIcon} ${_escR(r.rater_name || roleLbl)}</div>
+            <div class="recv-context">${roleLbl}${r.context_name ? ' · ' + _escR(r.context_name) : ''}</div>
+          </div>
+          <div class="recv-rating-stars">${_pubRepStars(r.overall, 14)}<span class="recv-date">${dateStr}</span></div>
+        </div>
+        ${r.comment ? `<div class="recv-comment">"${_escR(r.comment)}"</div>` : ''}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="op-section-card" style="margin-bottom:16px">
+      <div class="op-section-title"><span>🛡️ السمعة كمستأجر (${total})</span></div>
+      <p style="font-size:12.5px;color:var(--ink3);line-height:1.7;margin:0 0 14px">
+        تقييمات هذا الحساب من أصحاب المساحات ومنظّمي البازارات بعد تعاملات حقيقية عبر المنصة.
+      </p>
+      ${panel}
+      ${list ? `<div class="recv-ratings-list">${list}</div>` : ''}
+    </div>`;
 }
 
 
