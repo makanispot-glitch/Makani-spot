@@ -198,7 +198,7 @@ textarea.fc{resize:vertical;min-height:72px}
 .unit-form-title{font-size:12px;font-weight:700;color:var(--or)}
 
 /* ── Owner list card ── */
-.owner-row{display:grid;grid-template-columns:40px 1fr 140px 100px 100px 90px 100px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;transition:background .15s}
+.owner-row{display:grid;grid-template-columns:40px 1fr 140px 100px 100px 90px 100px 100px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;transition:background .15s}
 .owner-row:hover{background:rgba(255,107,0,.03)}
 .owner-row-hd{background:var(--bg4);font-weight:700;color:var(--mu);font-size:11px;border-radius:var(--r) var(--r) 0 0}
 .owner-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--or)}
@@ -353,7 +353,7 @@ textarea.fc{resize:vertical;min-height:72px}
 </div>
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../media-handler.js?v=202605280337"></script>
+<script src="../media-handler.js?v=202605300403"></script>
 <script>
 /* ═══════════════════════════════
    CONFIG
@@ -573,6 +573,7 @@ function renderOverview() {
   const recentSpaces  = [...allSpaces]
     .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
     .slice(0,6);
+  const pendingUpgradeReqs = allOwnerRequests.filter(r=>r.status==='pending'||r.status==='contacted').length;
 
   const html = `
   <div class="ov-grid">
@@ -587,7 +588,7 @@ function renderOverview() {
     ${sc('🔴','أصحاب خاملون',   dormantOwners,'var(--rd)')}
     ${sc('🏆','باقة Pro',        proOwners,'var(--yw)')}
     ${sc('✓','باقة Growth',      growthOwners,'var(--tl)')}
-    ${sc('📋','إجمالي الوحدات', totalUnits,'var(--pu)')}
+    ${sc('📨','طلبات تحويل معلقة', pendingUpgradeReqs,'var(--bl)')}
     ${sc('🏷️','أنشطة مفعلة', allActivities.filter(a=>a.is_active!==false).length,'var(--or)')}
   </div>
 
@@ -950,6 +951,7 @@ function renderOwners() {
       <div>المساحات</div>
       <div>الحالة</div>
       <div>انضم</div>
+      <div>إجراء</div>
     </div>
     ${filtered.map((o,i)=>{
       const name = o.full_name || o.name || '—';
@@ -973,10 +975,34 @@ function renderOwners() {
         </div>
         <div><span class="badge ${isActive?'b-ok':'b-dormant'}">${isActive?'🟢 نشط':'🔴 خامل'}</span></div>
         <div style="font-size:11px;color:var(--mu)">${fmtDate(o.created_at)}</div>
+        <div>
+          <select onchange="changeOwnerPlan('${o.id}',this.value,this)"
+                  style="background:var(--bg4);color:var(--tx);border:1px solid var(--mu2);border-radius:6px;padding:3px 6px;font-size:11px;cursor:pointer">
+            <option value="starter" ${(o.plan_tier||'starter')==='starter'?'selected':''}>Starter</option>
+            <option value="growth"  ${o.plan_tier==='growth' ?'selected':''}>Growth</option>
+            <option value="pro"     ${o.plan_tier==='pro'    ?'selected':''}>Pro</option>
+          </select>
+        </div>
       </div>`}).join('')}
   </div>`;
 
   setPageContent('owners', html);
+}
+
+async function changeOwnerPlan(ownerId, newPlan, selectEl) {
+  const prev = allOwners.find(o=>o.id===ownerId)?.plan_tier || 'starter';
+  if (newPlan === prev) return;
+  selectEl.disabled = true;
+  try {
+    await sbRpc('admin_set_plan_tier', {p_owner_id: ownerId, p_plan_tier: newPlan, p_secret: adminHash});
+    const o = allOwners.find(o=>o.id===ownerId);
+    if (o) o.plan_tier = newPlan;
+    toast(`✅ تم تغيير الباقة إلى ${planLbl(newPlan)}`, 's');
+  } catch(e) {
+    selectEl.value = prev;
+    toast('خطأ: ' + e.message, 'e');
+  }
+  selectEl.disabled = false;
 }
 
 /* ═══════════════════════════════════════════════════════════

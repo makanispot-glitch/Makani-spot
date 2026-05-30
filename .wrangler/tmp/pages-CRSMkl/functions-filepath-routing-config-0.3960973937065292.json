@@ -1,0 +1,53 @@
+{
+  "routes": [
+    {
+      "routePath": "/admin/auth",
+      "mountPath": "/admin",
+      "method": "POST",
+      "module": [
+        "admin/auth.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/admin/listings",
+      "mountPath": "/admin",
+      "method": "",
+      "module": [
+        "admin/listings.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/delete-listing",
+      "mountPath": "/",
+      "method": "DELETE",
+      "module": [
+        "delete-listing.js:onRequestDelete"
+      ]
+    },
+    {
+      "routePath": "/delete-listing",
+      "mountPath": "/",
+      "method": "OPTIONS",
+      "module": [
+        "delete-listing.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/upload",
+      "mountPath": "/",
+      "method": "OPTIONS",
+      "module": [
+        "upload.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/upload",
+      "mountPath": "/",
+      "method": "POST",
+      "module": [
+        "upload.js:onRequestPost"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}
