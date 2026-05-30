@@ -3030,25 +3030,35 @@
      🏢 مودال طلب تحويل الحساب لصاحب مساحة
      ================================================================ -->
   <div class="modal-overlay" id="owner-request-modal" onclick="closeOwnerRequestModalOnBg(event)">
-    <div class="modal" style="max-width:480px">
+    <div class="modal" style="max-width:500px">
       <div id="owner-req-form-wrap">
         <div class="modal-header">
           <div class="modal-header-inner">
             <div class="modal-icon" style="font-size:22px">🏢</div>
             <div>
-              <div class="modal-title">طلب تحويل الحساب</div>
-              <div class="modal-sub">سيراجع فريقنا طلبك خلال ٢٤ ساعة</div>
+              <div class="modal-title">طلب تحويل الحساب لصاحب مساحة</div>
+              <div class="modal-sub">أرسل طلبك وسيتواصل معك فريقنا خلال ٢٤ ساعة</div>
             </div>
           </div>
           <button class="modal-close" onclick="closeOwnerRequestModal()" aria-label="إغلاق">×</button>
         </div>
         <div class="modal-body">
+
+          <!-- رقم الواتساب — إلزامي -->
           <div class="mfg">
-            <label>اسم المكان / المول *</label>
+            <label>رقم الواتساب <span style="color:var(--red,#ef4444)">*</span></label>
+            <input class="mfg-inp" id="oreq-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr" style="text-align:right;font-size:15px;letter-spacing:1px" autocomplete="tel">
+          </div>
+
+          <!-- اسم المكان — اختياري -->
+          <div class="mfg">
+            <label>اسم المكان / المول <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
             <input class="mfg-inp" id="oreq-place-name" placeholder="مثال: مول العرب، نادي الجيزة…" autocomplete="off">
           </div>
+
+          <!-- نوع المكان — اختياري -->
           <div class="mfg">
-            <label>نوع المكان *</label>
+            <label>نوع المكان <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
             <select class="mfg-inp" id="oreq-place-type">
               <option value="">— اختر النوع —</option>
               <option value="mall">🏬 مول تجاري</option>
@@ -3057,29 +3067,42 @@
               <option value="other">🏢 غيره</option>
             </select>
           </div>
+
+          <!-- الباقة المطلوبة — اختياري -->
           <div class="mfg">
-            <label>رقم الواتساب *</label>
-            <input class="mfg-inp" id="oreq-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr" style="text-align:right" autocomplete="tel">
+            <label>الباقة التي تريدها <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
+            <select class="mfg-inp" id="oreq-selected-plan">
+              <option value="">— لم أقرر بعد —</option>
+              <option value="starter">🆓 Starter — مجاناً</option>
+              <option value="growth">📈 Growth — 3,000 ج/شهر</option>
+              <option value="pro">⭐ Pro — 4,500 ج/شهر</option>
+            </select>
           </div>
+
+          <!-- ملاحظات — اختياري -->
           <div class="mfg">
-            <label>ملاحظة (اختياري)</label>
-            <textarea class="mfg-inp" id="oreq-notes" rows="2" placeholder="أي تفاصيل تريد إضافتها…" style="resize:vertical"></textarea>
+            <label>ملاحظات إضافية <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
+            <textarea class="mfg-inp" id="oreq-notes" rows="2" placeholder="أي تفاصيل تريد إضافتها حول مكانك أو نشاطك…" style="resize:vertical"></textarea>
           </div>
+
           <div id="oreq-msg" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600"></div>
+
           <button class="btn btn-primary" id="oreq-btn" onclick="submitOwnerRequest()" style="width:100%;padding:13px;font-size:15px">
             إرسال الطلب ←
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
-            ستصلك إشعار فور مراجعة الطلب
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px;line-height:1.6">
+            بعد إرسال الطلب سيتواصل معك فريقنا عبر الواتساب لتأكيد التفاصيل واختيار الباقة.
           </div>
         </div>
       </div>
+
+      <!-- شاشة النجاح -->
       <div id="oreq-success" style="display:none;padding:44px 24px 36px;text-align:center">
         <div class="success-circle">✓</div>
-        <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
+        <div class="success-title">تم إرسال طلبك <span>بنجاح!</span></div>
         <div class="success-body">
-          شكراً ليك — فريق مكاني Spot هيراجع طلبك ويتواصل معاك خلال<br>
-          <strong style="color:var(--orange)">٢٤ ساعة</strong>.
+          شكراً — فريق مكاني Spot سيراجع طلبك ويتواصل معك على الواتساب خلال<br>
+          <strong style="color:var(--orange)">٢٤ ساعة</strong> لإتمام الإجراءات.
         </div>
         <button class="btn btn-primary" onclick="closeOwnerRequestModal()" style="padding:14px 42px;font-size:15px;margin-top:20px">
           تمام، شكراً ←

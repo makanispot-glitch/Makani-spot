@@ -102,7 +102,9 @@ input,select,textarea{font-family:inherit;color:var(--tx)}
 .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
 .b-approved{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
 .b-pending {background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
-.b-rejected{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.b-rejected  {background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.b-contacted {background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.3)}
+.b-activated {background:rgba(52,211,153,.15);color:#34D399;border:1px solid rgba(52,211,153,.3)}
 .b-active  {background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.3)}
 .b-hidden  {background:rgba(107,107,138,.15);color:#6b6b8a;border:1px solid rgba(107,107,138,.3)}
 .b-pro     {background:rgba(251,191,36,.15);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
@@ -436,16 +438,19 @@ async function loadAll() {
   if (!adminHash) return;
   setPageLoading(currentPage);
   try {
+    let ownerReqsErr = null;
     const [spaces, owners, activities, ownerReqs] = await Promise.all([
-      sbRpc('admin_get_spaces',           {p_secret:adminHash}),
-      sbRpc('admin_get_owners',           {p_secret:adminHash}),
+      sbRpc('admin_get_spaces',   {p_secret:adminHash}),
+      sbRpc('admin_get_owners',   {p_secret:adminHash}),
       fetchActivities().catch(()=>[]),
-      sbRpc('admin_get_upgrade_requests', {p_secret:adminHash}).catch(()=>[]),
+      sbRpc('admin_get_upgrade_requests', {p_secret:adminHash})
+        .catch(e => { ownerReqsErr = e; return []; }),
     ]);
     allSpaces        = spaces     || [];
     allOwners        = owners     || [];
     allActivities    = activities || [];
     allOwnerRequests = ownerReqs  || [];
+    if (ownerReqsErr) console.error('[upgrade_requests]', ownerReqsErr.message);
     updatePendingBadge();
     const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     const sync = document.getElementById('sb-last-sync');
@@ -461,7 +466,7 @@ function updatePendingBadge() {
   const b = document.getElementById('pending-badge');
   if (b) { b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none'; }
 
-  const nr = allOwnerRequests.filter(r=>r.status==='pending').length;
+  const nr = allOwnerRequests.filter(r=>r.status==='pending'||r.status==='contacted').length;
   const br = document.getElementById('oreq-badge');
   if (br) { br.textContent = nr; br.style.display = nr > 0 ? 'inline' : 'none'; }
 }
@@ -974,111 +979,254 @@ function renderOwners() {
   setPageContent('owners', html);
 }
 
-/* ═══════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    PAGE: OWNER REQUESTS — طلبات تحويل الحساب
-═══════════════════════════════ */
+═══════════════════════════════════════════════════════════ */
+
+/* حالة الفلتر — يشمل الآن contacted */
+let oreqSearchVal = '';
+
 function renderOwnerRequests() {
-  const all      = allOwnerRequests;
-  const pending  = all.filter(r=>r.status==='pending').length;
-  const approved = all.filter(r=>r.status==='approved').length;
-  const rejected = all.filter(r=>r.status==='rejected').length;
+  const all       = allOwnerRequests;
+  const nPending   = all.filter(r=>r.status==='pending').length;
+  const nContacted = all.filter(r=>r.status==='contacted').length;
+  const nApproved  = all.filter(r=>r.status==='approved').length;
+  const nRejected  = all.filter(r=>r.status==='rejected').length;
 
-  const typeLabels = {mall:'🏬 مول',club:'🏊 نادي',school:'🏫 مدرسة',other:'🏢 غيره'};
+  const typeLabels  = {mall:'🏬 مول',club:'🏊 نادي',school:'🏫 مدرسة',other:'🏢 غيره'};
+  const planLabels  = {starter:'Starter',growth:'Growth',pro:'Pro'};
+  const planBadges  = {
+    starter:`<span class="badge b-starter">Starter</span>`,
+    growth:`<span class="badge b-growth">Growth</span>`,
+    pro:`<span class="badge b-pro">Pro</span>`,
+  };
 
+  /* فلترة */
   let filtered = oreqFilter === 'all' ? [...all] : all.filter(r=>r.status===oreqFilter);
+  if (oreqSearchVal) {
+    const q = oreqSearchVal.toLowerCase();
+    filtered = filtered.filter(r =>
+      (r.user_name||'').toLowerCase().includes(q) ||
+      (r.user_email||'').toLowerCase().includes(q) ||
+      (r.phone||'').includes(q) ||
+      (r.place_name||'').toLowerCase().includes(q)
+    );
+  }
 
   const filterBtn = (val, label) =>
     `<button class="btn ${oreqFilter===val?'btn-or':'btn-neu'}" style="font-size:11px;padding:5px 12px"
              onclick="oreqFilter='${val}';renderOwnerRequests()">${label}</button>`;
 
   let html = `
+  <!-- إحصائيات -->
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${all.length}</span> إجمالي</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending}</span> معلق</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> موافق</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${rejected}</span> مرفوض</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${nPending}</span> معلق</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--bl)">${nContacted}</span> تم التواصل</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${nApproved}</span> مقبول</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${nRejected}</span> مرفوض</div>
   </div>
-  <div class="filter-bar" style="gap:6px;flex-wrap:wrap">
+
+  <!-- فلاتر + بحث -->
+  <div class="filter-bar" style="gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
     ${filterBtn('pending','🟡 معلق')}
-    ${filterBtn('approved','✅ موافق')}
+    ${filterBtn('contacted','📞 تم التواصل')}
+    ${filterBtn('approved','✅ مقبول')}
     ${filterBtn('rejected','❌ مرفوض')}
     ${filterBtn('all','الكل')}
-    <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} طلب</div>
+    <input class="f-inp" style="margin-right:auto;width:200px" placeholder="🔍 بحث باسم أو هاتف…"
+           value="${esc(oreqSearchVal)}"
+           oninput="oreqSearchVal=this.value;renderOwnerRequests()">
+    <div style="font-size:12px;color:var(--mu);white-space:nowrap">${filtered.length} طلب</div>
   </div>`;
 
   if (!filtered.length) {
-    html += `<div class="empty-state"><div class="empty-ico">📋</div><div class="empty-title">لا توجد طلبات في هذه الحالة</div></div>`;
+    html += `<div class="empty-state">
+      <div class="empty-ico">📋</div>
+      <div class="empty-title">لا توجد طلبات في هذه الحالة</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:6px">جرب فلتر "الكل" أو غيّر كلمة البحث</div>
+    </div>`;
     setPageContent('owner-requests', html); return;
   }
 
-  html += `<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
-    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 120px 90px 160px;gap:0;padding:10px 16px;background:var(--bg4);border-bottom:1px solid var(--bd);font-size:11px;font-weight:800;color:var(--mu)">
-      <div>الصاحب</div>
-      <div>المكان</div>
-      <div>النوع</div>
-      <div>الهاتف</div>
-      <div>تاريخ الطلب</div>
-      <div>الحالة</div>
-      <div>الإجراء</div>
-    </div>
-    ${filtered.map(r => {
-      const statusBadge = r.status === 'pending'
-        ? `<span class="badge b-pending" style="background:rgba(245,158,11,.15);color:var(--yw);border:1px solid rgba(245,158,11,.3)">🟡 معلق</span>`
-        : r.status === 'approved'
-          ? `<span class="badge b-approved">✅ موافق</span>`
-          : `<span class="badge b-rejected">❌ مرفوض</span>`;
+  /* بطاقات الطلبات */
+  html += `<div style="display:flex;flex-direction:column;gap:12px">`;
 
-      const actions = r.status === 'pending' ? `
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-or" style="font-size:11px;padding:4px 10px" onclick="approveOwnerRequest('${r.id}','${esc(r.user_name||'')}')">موافقة</button>
-          <button class="btn btn-err" style="font-size:11px;padding:4px 10px" onclick="promptRejectOwnerRequest('${r.id}')">رفض</button>
-        </div>` : r.status === 'approved'
-          ? `<span style="font-size:11px;color:var(--gr)">✓ تم التفعيل</span>`
-          : `<span style="font-size:11px;color:var(--mu)">${esc(r.rejection_reason||'—')}</span>`;
+  filtered.forEach(r => {
+    const initial = (r.user_name||r.user_email||'؟').charAt(0).toUpperCase();
 
-      return `<div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 120px 90px 160px;gap:0;padding:10px 16px;border-bottom:1px solid var(--bd);font-size:12px;align-items:center">
-        <div>
-          <div style="font-weight:700">${esc(r.user_name||'—')}</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.user_email||'—')}</div>
+    const statusBadge =
+      r.status === 'pending'   ? `<span class="badge b-pending">🟡 معلق</span>` :
+      r.status === 'contacted' ? `<span class="badge b-contacted">📞 تم التواصل</span>` :
+      r.status === 'approved'  ? `<span class="badge b-approved">✅ مقبول</span>` :
+                                  `<span class="badge b-rejected">❌ مرفوض</span>`;
+
+    const waLink = r.phone
+      ? `<a href="https://wa.me/2${r.phone.replace(/^0/,'').replace(/\D/g,'')}"
+            target="_blank" rel="noopener"
+            style="display:inline-flex;align-items:center;gap:4px;background:rgba(37,211,102,.15);color:#25d366;
+                   border:1px solid rgba(37,211,102,.3);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;
+                   text-decoration:none;white-space:nowrap">
+           📱 واتساب
+         </a>`
+      : '';
+
+    const planBadge = r.selected_plan && planBadges[r.selected_plan]
+      ? planBadges[r.selected_plan]
+      : `<span style="font-size:11px;color:var(--mu)">—</span>`;
+
+    /* أزرار الإجراءات */
+    let actions = '';
+    if (r.status === 'pending') {
+      actions = `
+        <button class="btn btn-bl" style="font-size:11px;padding:5px 12px"
+                onclick="markContactedRequest('${r.id}')">📞 تم التواصل</button>
+        <button class="btn btn-or" style="font-size:11px;padding:5px 12px"
+                onclick="promptApproveOwnerRequest('${r.id}','${esc(r.user_name||'')}')">✅ موافقة وتفعيل</button>
+        <button class="btn btn-err" style="font-size:11px;padding:5px 12px"
+                onclick="promptRejectOwnerRequest('${r.id}')">❌ رفض</button>`;
+    } else if (r.status === 'contacted') {
+      actions = `
+        <button class="btn btn-or" style="font-size:11px;padding:5px 12px"
+                onclick="promptApproveOwnerRequest('${r.id}','${esc(r.user_name||'')}')">✅ موافقة وتفعيل</button>
+        <button class="btn btn-err" style="font-size:11px;padding:5px 12px"
+                onclick="promptRejectOwnerRequest('${r.id}')">❌ رفض</button>`;
+    } else if (r.status === 'approved') {
+      actions = `<span style="font-size:11px;color:var(--gr)">✓ تم التفعيل</span>`;
+    } else {
+      actions = `<span style="font-size:11px;color:var(--mu)">${esc(r.rejection_reason||'مرفوض')}</span>`;
+    }
+
+    html += `
+    <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 18px;transition:border-color .2s"
+         onmouseenter="this.style.borderColor='rgba(255,107,0,.3)'" onmouseleave="this.style.borderColor='rgba(255,255,255,.07)'">
+
+      <!-- رأس البطاقة -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--org);border:1px solid var(--bdo);
+                    display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;
+                    color:var(--or);flex-shrink:0">${esc(initial)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--tx)">${esc(r.user_name||'—')}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.user_email||'—')}</div>
         </div>
-        <div style="font-weight:600">${esc(r.place_name||'—')}</div>
-        <div>${esc(typeLabels[r.place_type]||r.place_type||'—')}</div>
-        <div style="font-family:'IBM Plex Mono',monospace;direction:ltr;text-align:right">${esc(r.phone||'—')}</div>
-        <div style="color:var(--mu)">${fmtDate(r.requested_at)}</div>
-        <div>${statusBadge}</div>
-        <div>${actions}</div>
-      </div>`;
-    }).join('')}
-  </div>`;
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${statusBadge}
+          <span style="font-size:10px;color:var(--mu)">${fmtDate(r.requested_at)}</span>
+        </div>
+      </div>
 
+      <!-- تفاصيل -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">
+        <div style="background:var(--bg4);border-radius:8px;padding:8px 12px">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📱 الواتساب</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;direction:ltr">${esc(r.phone||'—')}</span>
+            ${waLink}
+          </div>
+        </div>
+        <div style="background:var(--bg4);border-radius:8px;padding:8px 12px">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:3px">🏢 المكان</div>
+          <div style="font-size:12px;font-weight:600">${esc(r.place_name||'—')}</div>
+          ${r.place_type ? `<div style="font-size:10px;color:var(--mu);margin-top:2px">${esc(typeLabels[r.place_type]||r.place_type)}</div>` : ''}
+        </div>
+        <div style="background:var(--bg4);border-radius:8px;padding:8px 12px">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📦 الباقة المطلوبة</div>
+          ${planBadge}
+        </div>
+        ${r.notes ? `<div style="background:var(--bg4);border-radius:8px;padding:8px 12px;grid-column:1/-1">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:3px">📝 ملاحظات</div>
+          <div style="font-size:12px;color:var(--tx2)">${esc(r.notes)}</div>
+        </div>` : ''}
+      </div>
+
+      <!-- الإجراءات -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--bd);padding-top:12px">
+        ${actions}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
   setPageContent('owner-requests', html);
 }
 
-async function approveOwnerRequest(id, name) {
-  if (!confirm(`موافقة على طلب "${name}"؟\nسيتم تحويل الحساب لـ Owner بباقة Starter.`)) return;
+/* ─── تسجيل التواصل ─── */
+async function markContactedRequest(id) {
   try {
     await sbRpc('admin_manage_upgrade_request', {
-      p_request_id: id, p_action: 'approve', p_reason: null, p_secret: adminHash
+      p_request_id: id, p_action: 'mark_contacted', p_reason: null, p_secret: adminHash
     });
-    toast('✅ تمت الموافقة — تم تفعيل الحساب كصاحب مساحة', 's');
+    toast('📞 تم تسجيل التواصل مع العميل', 'i');
     await loadAll();
   } catch(e) { toast('خطأ: ' + e.message, 'e'); }
 }
 
+/* ─── موافقة مع اختيار الباقة ─── */
+function promptApproveOwnerRequest(id, name) {
+  /* نبني modal اختيار الباقة داخل confirm-modal الموجود */
+  const title = document.getElementById('confirm-title');
+  const sub   = document.getElementById('confirm-sub');
+  const ok    = document.getElementById('confirm-ok');
+
+  title.textContent = `موافقة على طلب "${name}"`;
+  sub.innerHTML = `
+    <div style="margin-bottom:12px;font-size:12px;color:var(--mu)">اختر الباقة التي ستُفعَّل للحساب:</div>
+    <select id="plan-pick" style="width:100%;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;
+            padding:9px 12px;font-size:13px;color:var(--tx);outline:none;font-family:'Cairo',sans-serif">
+      <option value="starter">🆓 Starter — مجاناً</option>
+      <option value="growth">📈 Growth — 3,000 ج/شهر</option>
+      <option value="pro">⭐ Pro — 4,500 ج/شهر</option>
+    </select>`;
+
+  ok.textContent = 'تفعيل الحساب ✅';
+  ok.className   = 'btn btn-or';
+  ok.onclick = async () => {
+    const plan = document.getElementById('plan-pick')?.value || 'starter';
+    closeConfirm();
+    try {
+      await sbRpc('admin_manage_upgrade_request', {
+        p_request_id: id, p_action: 'approve', p_reason: null,
+        p_secret: adminHash, p_plan: plan
+      });
+      toast(`✅ تمت الموافقة — تم تفعيل الحساب بباقة ${plan.charAt(0).toUpperCase()+plan.slice(1)}`, 's');
+      await loadAll();
+    } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+  };
+
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+/* ─── رفض الطلب ─── */
 function promptRejectOwnerRequest(id) {
-  const reason = prompt('سبب الرفض (اختياري):') ?? null;
-  if (reason === null) return; // المستخدم ضغط Cancel
-  doRejectOwnerRequest(id, reason.trim() || null);
-}
+  const title = document.getElementById('confirm-title');
+  const sub   = document.getElementById('confirm-sub');
+  const ok    = document.getElementById('confirm-ok');
 
-async function doRejectOwnerRequest(id, reason) {
-  try {
-    await sbRpc('admin_manage_upgrade_request', {
-      p_request_id: id, p_action: 'reject', p_reason: reason, p_secret: adminHash
-    });
-    toast('❌ تم الرفض وإبلاغ المستخدم', 'i');
-    await loadAll();
-  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+  title.textContent = 'رفض الطلب';
+  sub.innerHTML = `
+    <div style="margin-bottom:10px;font-size:12px;color:var(--mu)">سبب الرفض (اختياري — سيصل للمستخدم):</div>
+    <textarea id="reject-reason" rows="2"
+      style="width:100%;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;
+             padding:9px 12px;font-size:13px;color:var(--tx);outline:none;resize:vertical;
+             font-family:'Cairo',sans-serif"
+      placeholder="مثال: بيانات غير مكتملة، لم يتم التأكيد…"></textarea>`;
+
+  ok.textContent = 'رفض الطلب ❌';
+  ok.className   = 'btn btn-err';
+  ok.onclick = async () => {
+    const reason = document.getElementById('reject-reason')?.value.trim() || null;
+    closeConfirm();
+    try {
+      await sbRpc('admin_manage_upgrade_request', {
+        p_request_id: id, p_action: 'reject', p_reason: reason, p_secret: adminHash
+      });
+      toast('❌ تم رفض الطلب وإبلاغ المستخدم', 'i');
+      await loadAll();
+    } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+  };
+
+  document.getElementById('confirm-modal').classList.add('open');
 }
 
 /* ACTIVITIES */

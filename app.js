@@ -2431,11 +2431,11 @@ function renderUpgradeSection(profile) {
             </div>
           </div>
         </div>
-        <button id="btn-upgrade-request" onclick="requestOwnerUpgrade()"
+        <button id="btn-upgrade-request" onclick="openOwnerRequestModal()"
           style="background:var(--orange);color:#fff;border:none;padding:10px 20px;
                  border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
-          🚀 طلب ترقية الحساب
+          🏢 طلب تحويل الحساب
         </button>
       </div>`;
   }
@@ -3350,7 +3350,6 @@ function _showShareToast(msg) {
    ══════════════════════════════════════════ */
 function handleOwnerUpgradeBtn() {
   if (!currentUser) { showPage('signup'); return; }
-  if (currentProfile?.role === 'owner') { goToDashboard(); return; }
   openOwnerRequestModal();
 }
 
@@ -3362,6 +3361,8 @@ function openOwnerRequestModal() {
   });
   const typeEl = document.getElementById('oreq-place-type');
   if (typeEl) typeEl.value = '';
+  const planEl = document.getElementById('oreq-selected-plan');
+  if (planEl) planEl.value = '';
   const msgEl = document.getElementById('oreq-msg');
   if (msgEl) msgEl.style.display = 'none';
   const btn = document.getElementById('oreq-btn');
@@ -3382,21 +3383,22 @@ function closeOwnerRequestModalOnBg(e) {
 }
 
 async function submitOwnerRequest() {
-  const placeName = document.getElementById('oreq-place-name')?.value.trim() || '';
-  const placeType = document.getElementById('oreq-place-type')?.value || '';
-  const phone     = document.getElementById('oreq-phone')?.value.trim() || '';
-  const notes     = document.getElementById('oreq-notes')?.value.trim() || '';
-  const msgEl     = document.getElementById('oreq-msg');
-  const btn       = document.getElementById('oreq-btn');
+  const placeName    = document.getElementById('oreq-place-name')?.value.trim() || '';
+  const placeType    = document.getElementById('oreq-place-type')?.value || '';
+  const phone        = document.getElementById('oreq-phone')?.value.trim() || '';
+  const notes        = document.getElementById('oreq-notes')?.value.trim() || '';
+  const selectedPlan = document.getElementById('oreq-selected-plan')?.value || '';
+  const msgEl        = document.getElementById('oreq-msg');
+  const btn          = document.getElementById('oreq-btn');
 
   const showMsg = (text, isErr) => {
     if (!msgEl) return;
-    msgEl.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${isErr?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};color:${isErr?'var(--red)':'var(--green)'};border:1px solid ${isErr?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`;
+    msgEl.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${isErr?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};color:${isErr?'var(--red,#ef4444)':'var(--green,#22c55e)'};border:1px solid ${isErr?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`;
     msgEl.textContent = text;
   };
 
-  if (!placeName || !placeType || !phone) {
-    showMsg('⚠ اسم المكان ونوعه ورقم الواتساب مطلوبة', true); return;
+  if (!phone) {
+    showMsg('⚠ رقم الواتساب مطلوب', true); return;
   }
   if (!sbClient || !currentUser) {
     showMsg('⚠ خطأ في الاتصال — أعد تحميل الصفحة', true); return;
@@ -3407,14 +3409,15 @@ async function submitOwnerRequest() {
 
   try {
     const { error } = await sbClient.from('upgrade_requests').insert({
-      user_id:    currentUser.id,
-      user_email: currentUser.email,
-      user_name:  currentProfile?.full_name || currentUser.email,
-      place_name: placeName,
-      place_type: placeType,
+      user_id:       currentUser.id,
+      user_email:    currentUser.email,
+      user_name:     currentProfile?.full_name || currentUser.email,
+      place_name:    placeName   || null,
+      place_type:    placeType   || null,
       phone,
-      notes: notes || null,
-      status: 'pending',
+      notes:         notes       || null,
+      selected_plan: selectedPlan || null,
+      status:        'pending',
     });
     if (error) throw error;
     document.getElementById('owner-req-form-wrap').style.display = 'none';
