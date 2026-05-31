@@ -46,28 +46,28 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
    (بيانات تُحفظ مؤقتاً أثناء تشغيل الصفحة)
    ================================================================ */
 
-let SPACES         = [];    // قائمة المساحات المحمّلة من الشيت
-let ACTIVITIES     = [];    // قائمة الأنشطة التجارية
-let activeTab      = '';    // التبويب النشط حالياً (مول / نادي / مدرسة)
-let selectedAct    = '';    // النشاط المحدد في الفلتر
-let sbClient       = null;  // كائن Supabase يُهيَّأ عند التحميل
-let currentUser    = null;  // بيانات المستخدم المسجّل حالياً
+let SPACES = [];    // قائمة المساحات المحمّلة من الشيت
+let ACTIVITIES = [];    // قائمة الأنشطة التجارية
+let activeTab = '';    // التبويب النشط حالياً (مول / نادي / مدرسة)
+let selectedAct = '';    // النشاط المحدد في الفلتر
+let sbClient = null;  // كائن Supabase يُهيَّأ عند التحميل
+let currentUser = null;  // بيانات المستخدم المسجّل حالياً
 let currentProfile = null;  // بيانات الـ profile من قاعدة البيانات
 
 // ── متغيرات خاصة بصفحة الماركت بليس ──
-let mpPage        = 1;      // رقم الصفحة الحالية في الماركت بليس
+let mpPage = 1;      // رقم الصفحة الحالية في الماركت بليس
 const MP_PER_PAGE = 12;     // عدد المساحات في كل صفحة
-let mpFiltered    = [];     // المساحات بعد تطبيق الفلاتر
+let mpFiltered = [];     // المساحات بعد تطبيق الفلاتر
 let mpActiveTypes = [];     // أنواع المكان المفلترة حالياً (mall / club / school)
-let mpActiveActs  = [];     // الأنشطة المفلترة حالياً
+let mpActiveActs = [];     // الأنشطة المفلترة حالياً
 
 // ── متغيرات خاصة بصفحة تفاصيل المساحة ── (جديد)
 let currentSpaceDetail = null;  // المساحة الرئيسية المعروضة حالياً في صفحة التفاصيل
-let detailPrevPage     = 'market'; // الصفحة السابقة للرجوع إليها من التفاصيل
+let detailPrevPage = 'market'; // الصفحة السابقة للرجوع إليها من التفاصيل
 let currentBookingSpace = null; // المساحة المختارة في مودال الحجز (لالتقاط owner_id/space_id)
 
 // ── متغيرات خاصة بنظام البازارات ──
-let BAZAARS        = [];          // قائمة البازارات المحمّلة من الشيت / Supabase
+let BAZAARS = [];          // قائمة البازارات المحمّلة من الشيت / Supabase
 
 // ── متغيرات نظام الـ Slider (سلايدر الصور) ──
 // يُستخدم في: كروت المساحات (الهوم + الماركت) + صفحة التفاصيل
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // التنقل المباشر عبر URL parameter: /?p=market أو /?p=dashboard إلخ
   const urlPage = new URLSearchParams(window.location.search).get('p');
   if (urlPage) {
-    if (['home','how','owner','login','signup'].includes(urlPage)) {
+    if (['home', 'how', 'owner', 'login', 'signup'].includes(urlPage)) {
       showPage(urlPage);
     } else if (urlPage === 'market') {
       window.location.replace('/spaces/');
@@ -133,7 +133,7 @@ function initPathAnimation() {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('revealed'));
     return;
   }
-  
+
   // 1. مراقبة بطاقات المسارات (Path Cards)
   const pathObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
@@ -180,8 +180,8 @@ function updateMainSlider() {
   const sliderMax = document.getElementById('slider-max');
   if (!sliderMax) return;
 
-  const max        = parseInt(sliderMax.value);
-  const range      = parseInt(sliderMax.max) || 50000;
+  const max = parseInt(sliderMax.value);
+  const range = parseInt(sliderMax.max) || 50000;
   const maxPercent = (max / range) * 100;
 
   const track = document.getElementById('slider-track');
@@ -242,7 +242,7 @@ async function loadData() {
       .order('sort_order');
     if (actErr) throw actErr;
     ACTIVITIES = (activitiesData || []).map(a => ({
-      id:    a.id,
+      id: a.id,
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
 
@@ -271,36 +271,36 @@ async function loadData() {
         ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
         : [];
       return {
-        id:          row.id,
-        name:        row.name        || '',
-        loc:         row.region      || '',
-        type:        row.type        || '',
-        price:       row.min_price   || 0,
-        sizes:       sizes,
-        acts:        row.activities  || [],
-        allActs:     row.all_acts    || false,
-        badge:       row.badge       || 'متاح',
-        badgeClass:  row.badge_class || 'badge-avail',
-        season:      row.season      || '',
-        insight:     row.insight     || '',
-        image:       row.image_url   || '',
-        icon:        row.icon_emoji  || '',
-        thumbClass:  row.thumb_color || '',
+        id: row.id,
+        name: row.name || '',
+        loc: row.region || '',
+        type: row.type || '',
+        price: row.min_price || 0,
+        sizes: sizes,
+        acts: row.activities || [],
+        allActs: row.all_acts || false,
+        badge: row.badge || 'متاح',
+        badgeClass: row.badge_class || 'badge-avail',
+        season: row.season || '',
+        insight: row.insight || '',
+        image: row.image_url || '',
+        icon: row.icon_emoji || '',
+        thumbClass: row.thumb_color || '',
         extraImages: row.extra_images || [],
         description: row.description || '',
-        amenities:   row.amenities   || [],
-        planTier:    profilesMap[row.owner_id] || 'starter',
-        ownerId:     row.owner_id || null,
-        subSpaces:   (row.space_units || []).map(u => ({
-          unitId:   u.unit_id   || '',
-          name:     u.name      || '',
-          location: u.location  || '',
-          size:     u.size      || '',
-          price:    u.price     || 0,
-          status:   u.status    || 'available',
-          image:    u.image_url || '',
-          floor:    u.floor     || '',
-          notes:    u.notes     || '',
+        amenities: row.amenities || [],
+        planTier: profilesMap[row.owner_id] || 'starter',
+        ownerId: row.owner_id || null,
+        subSpaces: (row.space_units || []).map(u => ({
+          unitId: u.unit_id || '',
+          name: u.name || '',
+          location: u.location || '',
+          size: u.size || '',
+          price: u.price || 0,
+          status: u.status || 'available',
+          image: u.image_url || '',
+          floor: u.floor || '',
+          notes: u.notes || '',
         })),
       };
     });
@@ -345,35 +345,35 @@ async function fetchVisibleSpacesFromSupabase() {
       ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
       : [];
     return {
-      id:          row.id,
-      name:        row.name        || '',
-      loc:         row.region      || '',
-      type:        row.type        || '',
-      price:       row.min_price   || 0,
-      sizes:       sizes,
-      acts:        row.activities  || [],
-      allActs:     row.all_acts    || false,
-      badge:       row.badge       || 'متاح',
-      badgeClass:  row.badge_class || 'badge-avail',
-      season:      row.season      || '',
-      insight:     row.insight     || '',
-      image:       row.image_url   || '',
-      icon:        row.icon_emoji  || '',
-      thumbClass:  row.thumb_color || '',
+      id: row.id,
+      name: row.name || '',
+      loc: row.region || '',
+      type: row.type || '',
+      price: row.min_price || 0,
+      sizes: sizes,
+      acts: row.activities || [],
+      allActs: row.all_acts || false,
+      badge: row.badge || 'متاح',
+      badgeClass: row.badge_class || 'badge-avail',
+      season: row.season || '',
+      insight: row.insight || '',
+      image: row.image_url || '',
+      icon: row.icon_emoji || '',
+      thumbClass: row.thumb_color || '',
       extraImages: row.extra_images || [],
       description: row.description || '',
-      amenities:   row.amenities   || [],
-      planTier:    profilesMap[row.owner_id] || 'starter',
-      subSpaces:   (row.space_units || []).map(u => ({
-        unitId:   u.unit_id   || '',
-        name:     u.name      || '',
-        location: u.location  || '',
-        size:     u.size      || '',
-        price:    u.price     || 0,
-        status:   u.status    || 'available',
-        image:    u.image_url || '',
-        floor:    u.floor     || '',
-        notes:    u.notes     || '',
+      amenities: row.amenities || [],
+      planTier: profilesMap[row.owner_id] || 'starter',
+      subSpaces: (row.space_units || []).map(u => ({
+        unitId: u.unit_id || '',
+        name: u.name || '',
+        location: u.location || '',
+        size: u.size || '',
+        price: u.price || 0,
+        status: u.status || 'available',
+        image: u.image_url || '',
+        floor: u.floor || '',
+        notes: u.notes || '',
       })),
     };
   });
@@ -514,7 +514,7 @@ function _sortByPlan(arr) {
 /** يبني HTML لـ badge الثقة بناءً على planTier */
 function _planTrustBadgeHtml(s) {
   const tier = (s.planTier || 'starter').toLowerCase();
-  if (tier === 'pro')    return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
+  if (tier === 'pro') return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
   if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
   return '';
 }
@@ -566,8 +566,8 @@ function buildCardHtml(s, fromPage) {
 
   // 3. زرار التفاصيل + بادج الوحدات المتاحة
   const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
-                     (s.extraImages && s.extraImages.length > 0) ||
-                     s.description;
+    (s.extraImages && s.extraImages.length > 0) ||
+    s.description;
 
   const detailsBtnHtml = hasDetails
     ? `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
@@ -584,8 +584,8 @@ function buildCardHtml(s, fromPage) {
   // 4. البناء النهائي
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
-  const _trustBadge    = _planTrustBadgeHtml(s);
-  const _cardClass     = _planCardClass(s);
+  const _trustBadge = _planTrustBadgeHtml(s);
+  const _cardClass = _planCardClass(s);
 
   return `
   <div class="space-card${_cardClass}">
@@ -763,16 +763,16 @@ function openSpaceDetail(spaceId, fromPage) {
           <div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
               <h1 class="sd-name" style="margin:0">${s.name}</h1>
-              ${_planTrustBadgeHtml(s) ? `<span class="sd-trust-badge trust-${(s.planTier||'starter') === 'pro' ? 'partner' : 'verified'}">${(s.planTier||'starter') === 'pro' ? '🏆 شريك معتمد' : '✓ موثّق'}</span>` : ''}
+              ${_planTrustBadgeHtml(s) ? `<span class="sd-trust-badge trust-${(s.planTier || 'starter') === 'pro' ? 'partner' : 'verified'}">${(s.planTier || 'starter') === 'pro' ? '🏆 شريك معتمد' : '✓ موثّق'}</span>` : ''}
             </div>
             <div class="sd-meta">
               <span>📍 ${s.loc}</span>
               <span class="sd-meta-sep">·</span>
               <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
               ${s.subSpaces && s.subSpaces.length > 0
-                ? `<span class="sd-meta-sep">·</span>
+        ? `<span class="sd-meta-sep">·</span>
                    <span style="color:var(--orange);font-weight:700">${s.subSpaces.length} وحدة</span>`
-                : ''}
+        : ''}
             </div>
           </div>
           <div class="sd-price-box">
@@ -1166,9 +1166,9 @@ function _renderDetailInfo(s) {
   const actsHtml = s.allActs
     ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
     : (s.acts || []).map(id => {
-        const a = ACTIVITIES.find(x => x.id === id);
-        return a ? `<span class="act-tag">${a.label}</span>` : '';
-      }).join('');
+      const a = ACTIVITIES.find(x => x.id === id);
+      return a ? `<span class="act-tag">${a.label}</span>` : '';
+    }).join('');
 
   // ── الأحجام والأسعار ──
   const sizesHtml = (s.sizes || []).map(sz => {
@@ -1250,17 +1250,17 @@ function _renderSubSpaces(s) {
   }
 
   // ── عداد الوحدات المتاحة ──
-  const availCount  = units.filter(u => u.status === 'available' || !u.status).length;
+  const availCount = units.filter(u => u.status === 'available' || !u.status).length;
   const rentedCount = units.filter(u => u.status === 'rented').length;
 
   const statusMap = {
-    available: { label: 'متاحة',    cls: 'sub-status-available' },
-    rented:    { label: 'مؤجّرة',   cls: 'sub-status-rented'    },
-    reserved:  { label: 'محجوزة',   cls: 'sub-status-reserved'  },
+    available: { label: 'متاحة', cls: 'sub-status-available' },
+    rented: { label: 'مؤجّرة', cls: 'sub-status-rented' },
+    reserved: { label: 'محجوزة', cls: 'sub-status-reserved' },
   };
 
   const unitsHtml = units.map(unit => {
-    const st        = statusMap[unit.status] || statusMap.available;
+    const st = statusMap[unit.status] || statusMap.available;
     const isBlocked = unit.status === 'rented' || unit.status === 'reserved';
 
     // صورة الوحدة أو placeholder
@@ -1290,13 +1290,13 @@ function _renderSubSpaces(s) {
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${!isBlocked
-              ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
+        ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
                          onclick="openBookingForUnit('${s.id}','${unit.unitId}')">
                    احجز ←
                  </button>`
-              : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
-            }
-            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId||'').replace(/'/g,"\\'")}','${(unit.name||unit.unitId||'').replace(/'/g,"\\'")}');" title="مشاركة الوحدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+        : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
+      }
+            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId || '').replace(/'/g, "\\'")}','${(unit.name || unit.unitId || '').replace(/'/g, "\\'")}');" title="مشاركة الوحدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           </div>
         </div>
       </div>
@@ -1389,7 +1389,7 @@ function applyMpFilters() {
   const region = document.getElementById('mp-region')?.value || '';
   const minVal = 0; // الحد الأدنى ثابت عند الصفر دائماً
   const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-  const sort   = document.getElementById('mp-sort')?.value || 'default';
+  const sort = document.getElementById('mp-sort')?.value || 'default';
 
   let data = [...SPACES];
 
@@ -1403,20 +1403,20 @@ function applyMpFilters() {
     data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
   }
 
-  if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
+  if (sort === 'price-asc') data.sort((a, b) => a.price - b.price);
   if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
 
   mpFiltered = data;
-  mpPage     = 1;
+  mpPage = 1;
   renderMarketplace();
   updateMpChips();
 }
 
 function clearMpFilters() {
   mpActiveTypes = [];
-  mpActiveActs  = [];
+  mpActiveActs = [];
   document.querySelectorAll('.mp-type-btn').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.mp-act-btn').forEach(b  => b.classList.remove('on'));
+  document.querySelectorAll('.mp-act-btn').forEach(b => b.classList.remove('on'));
 
   const s2 = document.getElementById('mp-slider-max');
   if (s2) s2.value = parseInt(s2?.max || 50000);
@@ -1428,7 +1428,7 @@ function clearMpFilters() {
   if (mpSort) mpSort.value = 'default';
 
   mpFiltered = [...SPACES];
-  mpPage     = 1;
+  mpPage = 1;
   renderMarketplace();
   updateMpChips();
 }
@@ -1436,7 +1436,7 @@ function clearMpFilters() {
 function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
-  const chips  = [];
+  const chips = [];
   const typeMap = { mall: 'مولات', club: 'نوادي', school: 'مدارس' };
 
   mpActiveTypes.forEach(t => {
@@ -1451,13 +1451,13 @@ function updateMpChips() {
 }
 
 function renderMarketplace() {
-  const grid    = document.getElementById('mp-grid');
+  const grid = document.getElementById('mp-grid');
   const countEl = document.getElementById('mp-count');
   if (!grid) return;
 
   if (countEl) countEl.textContent = mpFiltered.length + ' مساحة';
 
-  const start    = (mpPage - 1) * MP_PER_PAGE;
+  const start = (mpPage - 1) * MP_PER_PAGE;
   const pageData = mpFiltered.slice(start, start + MP_PER_PAGE);
 
   if (!pageData.length) {
@@ -1521,9 +1521,9 @@ function updateMpSlider() {
   const s2 = document.getElementById('mp-slider-max');
   if (!s2) return;
 
-  const maxVal   = parseInt(s2.value);
+  const maxVal = parseInt(s2.value);
   const RANGE_MAX = parseInt(s2.max) || 50000;
-  const pMax     = (maxVal / RANGE_MAX) * 100;
+  const pMax = (maxVal / RANGE_MAX) * 100;
 
   const track = document.getElementById('mp-slider-track');
   if (track) {
@@ -1561,12 +1561,12 @@ function doSearch() {
 function filterAndRender() {
   let data = [...SPACES];
 
-  const reg      = document.getElementById('f-region')?.value || '';
-  const type     = document.getElementById('f-type')?.value || activeTab;
+  const reg = document.getElementById('f-region')?.value || '';
+  const type = document.getElementById('f-type')?.value || activeTab;
   const minPrice = 0; // الحد الأدنى ثابت عند الصفر
   const maxPrice = parseInt(document.getElementById('slider-max')?.value) || 50000;
 
-  if (reg)  data = data.filter(s => s.loc === reg);
+  if (reg) data = data.filter(s => s.loc === reg);
   if (type) data = data.filter(s => s.type === type);
   data = data.filter(s => {
     const price = parseInt(s.price) || 0;
@@ -1582,7 +1582,7 @@ function filterAndRender() {
 
 function showSearchChips() {
   const chips = [];
-  const r        = document.getElementById('f-region')?.value;
+  const r = document.getElementById('f-region')?.value;
   const maxPrice = parseInt(document.getElementById('slider-max')?.value) || 50000;
 
   if (r) chips.push(r);
@@ -1642,7 +1642,7 @@ function showPage(p) {
   }
 
   // حفظ الصفحة الحالية (باستثناء صفحات التفاصيل — لا نحفظها في localStorage)
-  if (['home','how','owner','pricing','market','bazaars','dashboard'].includes(p)) {
+  if (['home', 'how', 'owner', 'pricing', 'market', 'bazaars', 'dashboard'].includes(p)) {
     localStorage.setItem('lastPage', p);
   }
 
@@ -1654,11 +1654,11 @@ function showPage(p) {
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
   const links = document.querySelectorAll('.nav-links a');
-  if (p === 'home')    links[0]?.classList.add('active');
-  if (p === 'how')     links[1]?.classList.add('active');
-  if (p === 'owner')   links[2]?.classList.add('active');
+  if (p === 'home') links[0]?.classList.add('active');
+  if (p === 'how') links[1]?.classList.add('active');
+  if (p === 'owner') links[2]?.classList.add('active');
   if (p === 'pricing') links[3]?.classList.add('active');
-  if (p === 'market' || p === 'space-detail')  document.getElementById('nsb-spaces')?.classList.add('active');
+  if (p === 'market' || p === 'space-detail') document.getElementById('nsb-spaces')?.classList.add('active');
 
   // لو فتحنا الماركت بليس
   if (p === 'market') {
@@ -1711,7 +1711,7 @@ function openBooking(spaceId) {
     sizesClean.push(label);
   });
 
-  const selSize  = sizesClean[0] || '';
+  const selSize = sizesClean[0] || '';
   const selPrice = sizePrices[selSize] || s.price;
 
   document.getElementById('msi-name').textContent = s.name;
@@ -1730,10 +1730,10 @@ function openBooking(spaceId) {
   };
 
   if (currentUser) {
-    const nameEl  = document.getElementById('bk-name');
+    const nameEl = document.getElementById('bk-name');
     const phoneEl = document.getElementById('bk-phone');
     const emailEl = document.getElementById('bk-email');
-    if (nameEl)  nameEl.value  = currentProfile?.full_name || currentUser.user_metadata?.full_name || '';
+    if (nameEl) nameEl.value = currentProfile?.full_name || currentUser.user_metadata?.full_name || '';
     if (phoneEl) phoneEl.value = currentProfile?.phone || '';
     if (emailEl) emailEl.value = currentUser.email || '';
   } else {
@@ -1744,8 +1744,8 @@ function openBooking(spaceId) {
   }
 
   document.getElementById('modal-form-wrap').style.display = 'block';
-  document.getElementById('modal-success').style.display   = 'none';
-  document.getElementById('bk-error').style.display        = 'none';
+  document.getElementById('modal-success').style.display = 'none';
+  document.getElementById('bk-error').style.display = 'none';
   ['bk-other-act', 'bk-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -1783,15 +1783,15 @@ function closeModalOnBg(e) {
    ================================================================ */
 
 async function submitBooking() {
-  const name     = document.getElementById('bk-name').value.trim();
-  const phone    = document.getElementById('bk-phone').value.trim();
-  const email    = document.getElementById('bk-email').value.trim();
-  const actBtn   = document.querySelector('.act-pick-btn.on');
+  const name = document.getElementById('bk-name').value.trim();
+  const phone = document.getElementById('bk-phone').value.trim();
+  const email = document.getElementById('bk-email').value.trim();
+  const actBtn = document.querySelector('.act-pick-btn.on');
   const otherAct = document.getElementById('bk-other-act').value.trim();
-  const size     = document.getElementById('bk-size').value;
-  const dur      = document.getElementById('bk-dur').value;
-  const date     = document.getElementById('bk-date').value;
-  const notes    = document.getElementById('bk-notes').value.trim();
+  const size = document.getElementById('bk-size').value;
+  const dur = document.getElementById('bk-dur').value;
+  const date = document.getElementById('bk-date').value;
+  const notes = document.getElementById('bk-notes').value.trim();
 
   // ── Validation ──────────────────────────────────────────────
   if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
@@ -1802,33 +1802,33 @@ async function submitBooking() {
 
   document.getElementById('bk-error').style.display = 'none';
 
-  const submitBtn     = document.querySelector('#modal-form-wrap .btn-primary');
-  const origText      = submitBtn.innerHTML;
+  const submitBtn = document.querySelector('#modal-form-wrap .btn-primary');
+  const origText = submitBtn.innerHTML;
   submitBtn.innerHTML = '⏳ جاري الإرسال…';
-  submitBtn.disabled  = true;
+  submitBtn.disabled = true;
   submitBtn.style.opacity = '0.7';
 
   // ── استخراج بيانات المساحة ──────────────────────────────────
-  const spaceName  = document.getElementById('msi-name').textContent;
-  const metaText   = document.getElementById('msi-meta').textContent;
-  const locMatch   = metaText.match(/📍\s*([^·]+)/);
+  const spaceName = document.getElementById('msi-name').textContent;
+  const metaText = document.getElementById('msi-meta').textContent;
+  const locMatch = metaText.match(/📍\s*([^·]+)/);
   const priceMatch = metaText.match(/([\d,٠-٩]+\s*ج)/);
-  const spaceLoc   = locMatch   ? locMatch[1].trim() : '';
+  const spaceLoc = locMatch ? locMatch[1].trim() : '';
   const spacePrice = priceMatch ? priceMatch[1].trim() : '';
 
   // ── توليد bookingId مشترك بين الشيت و Supabase ──────────────
   const bookingId = crypto.randomUUID();
-  const now       = new Date().toISOString();
+  const now = new Date().toISOString();
 
   const payload = {
     name, phone, email,
     spaceName, spaceLoc, spacePrice,
-    activity:  actBtn?.textContent || '',
-    otherAct,  size,
-    duration:  dur,
+    activity: actBtn?.textContent || '',
+    otherAct, size,
+    duration: dur,
     startDate: date,
     notes,
-    userId:    currentUser?.id || '',
+    userId: currentUser?.id || '',
     bookingId,
   };
 
@@ -1838,35 +1838,35 @@ async function submitBooking() {
     // ✅ حذفنا no-cors عشان نعرف لو في خطأ حقيقي
     // لو الشيت Apps Script بيرفع CORS error، فعّل CORS في doPost
     let sheetOk = false;
-try {
-  await fetch(BOOKING_URL, {
-    method:  'POST',
-    mode:    'no-cors',          // ← رجّعناه
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload),
-  });
-  sheetOk = true; // no-cors دايماً بيكمّل بدون error
-} catch (sheetErr) {
-  sheetOk = true;
-}
+    try {
+      await fetch(BOOKING_URL, {
+        method: 'POST',
+        mode: 'no-cors',          // ← رجّعناه
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      sheetOk = true; // no-cors دايماً بيكمّل بدون error
+    } catch (sheetErr) {
+      sheetOk = true;
+    }
 
     // ── 2) حفظ في Supabase (لو المستخدم مسجّل) ────────────────
     if (sbClient && currentUser) {
 
       const { error: bookingError } = await sbClient.from('bookings').insert({
-        id:         bookingId,
-        user_id:    currentUser.id,
-        owner_id:   currentBookingSpace?.ownerId || null,  // ← ربط الحجز بصاحب المساحة (لنظام التقييمات)
-        space_id:   currentBookingSpace?.id || null,        // ← ربط الحجز بالمساحة
+        id: bookingId,
+        user_id: currentUser.id,
+        owner_id: currentBookingSpace?.ownerId || null,  // ← ربط الحجز بصاحب المساحة (لنظام التقييمات)
+        space_id: currentBookingSpace?.id || null,        // ← ربط الحجز بالمساحة
         space_name: spaceName,
-        space_loc:  spaceLoc,
-        price:      spacePrice,
-        activity:   payload.activity,
+        space_loc: spaceLoc,
+        price: spacePrice,
+        activity: payload.activity,
         size,
-        duration:   dur,
+        duration: dur,
         start_date: date,
         notes,
-        status:     'pending',
+        status: 'pending',
         created_at: now,
         updated_at: now,        // ← جديد: لتتبع آخر تحديث
       });
@@ -1877,9 +1877,9 @@ try {
 
       // ── 3) تحديث الـ Profile لو في بيانات ناقصة ───────────────
       const profileUpdate = {};
-      if (name  && !currentProfile?.full_name) profileUpdate.full_name = name;
-      if (phone && !currentProfile?.phone)     profileUpdate.phone     = phone;
-      if (email && !currentProfile?.email)     profileUpdate.email     = email;
+      if (name && !currentProfile?.full_name) profileUpdate.full_name = name;
+      if (phone && !currentProfile?.phone) profileUpdate.phone = phone;
+      if (email && !currentProfile?.email) profileUpdate.email = email;
 
       if (Object.keys(profileUpdate).length > 0) {
         const { error: profileError } = await sbClient
@@ -1897,12 +1897,12 @@ try {
 
     // ── عرض شاشة النجاح ────────────────────────────────────────
     document.getElementById('modal-form-wrap').style.display = 'none';
-    document.getElementById('modal-success').style.display   = 'block';
+    document.getElementById('modal-success').style.display = 'block';
 
   } catch (err) {
     console.error('❌ خطأ غير متوقع في submitBooking:', err.message);
-    submitBtn.innerHTML     = origText;
-    submitBtn.disabled      = false;
+    submitBtn.innerHTML = origText;
+    submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
     showFormError('في مشكلة في إرسال الطلب — تأكد من الاتصال بالإنترنت وحاول تاني');
   }
@@ -1912,7 +1912,7 @@ try {
 function showFormError(msg) {
   const el = document.getElementById('bk-error');
   if (!el) return;
-  el.textContent   = '⚠ ' + msg;
+  el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -1994,7 +1994,7 @@ async function initAuth() {
       }
 
     } else if (event === 'SIGNED_OUT') {
-      currentUser    = null;
+      currentUser = null;
       currentProfile = null;
       setNavUser(null, null);
     }
@@ -2002,29 +2002,29 @@ async function initAuth() {
 }
 
 function setNavUser(user, profile) {
-  const guestEl  = document.getElementById('nav-guest');
+  const guestEl = document.getElementById('nav-guest');
   const loggedEl = document.getElementById('nav-logged');
   if (!guestEl || !loggedEl) return;
 
   if (!user) {
-    guestEl.style.display  = 'flex';
+    guestEl.style.display = 'flex';
     loggedEl.style.display = 'none';
   } else {
-    const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
-    const email     = user.email || '';
-    const initial   = name.trim()[0] || '؟';
+    const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+    const email = user.email || '';
+    const initial = name.trim()[0] || '؟';
     const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
 
-    guestEl.style.display  = 'none';
+    guestEl.style.display = 'none';
     loggedEl.style.display = 'flex';
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     set('nav-av-circle', initial);
-    set('nav-av-name',   name);
-    set('nav-av-email',  email);
-    set('dd-name',       name);
-    set('dd-email',      email);
-    set('dd-role',       roleLabel);
+    set('nav-av-name', name);
+    set('nav-av-email', email);
+    set('dd-name', name);
+    set('dd-email', email);
+    set('dd-role', roleLabel);
 
     const badgeEl = document.getElementById('dd-plan-badge');
     if (badgeEl) {
@@ -2032,12 +2032,12 @@ function setNavUser(user, profile) {
         const plan = profile?.plan_tier || 'starter';
         const planBadges = {
           starter: { text: '🆓 Starter', cls: 'pb-starter' },
-          growth:  { text: '🟧 Growth',  cls: 'pb-growth'  },
-          pro:     { text: '👑 Pro',     cls: 'pb-pro'      },
+          growth: { text: '🟧 Growth', cls: 'pb-growth' },
+          pro: { text: '👑 Pro', cls: 'pb-pro' },
         };
         const b = planBadges[plan] || planBadges.starter;
         badgeEl.textContent = b.text;
-        badgeEl.className   = `plan-badge ${b.cls}`;
+        badgeEl.className = `plan-badge ${b.cls}`;
         badgeEl.style.display = 'inline-flex';
       } else {
         badgeEl.style.display = 'none';
@@ -2050,7 +2050,7 @@ function setNavUser(user, profile) {
     updateBnUser(user, profile);
   }
 
-  const bnUserIcon  = document.getElementById('bn-user-icon');
+  const bnUserIcon = document.getElementById('bn-user-icon');
   const bnUserLabel = document.getElementById('bn-user-label');
 
   if (bnUserIcon && bnUserLabel) {
@@ -2074,7 +2074,7 @@ function setNavUser(user, profile) {
 
 function toggleUserDropdown() {
   const btn = document.getElementById('nav-avatar-btn');
-  const dd  = document.getElementById('nav-dropdown');
+  const dd = document.getElementById('nav-dropdown');
   if (!btn || !dd) return;
   dd.classList.contains('open')
     ? closeUserDropdown()
@@ -2101,10 +2101,10 @@ async function doEmailLogin() {
   clearAuthAlert('login-alert');
 
   const email = document.getElementById('li-email')?.value.trim();
-  const pass  = document.getElementById('li-pass')?.value;
+  const pass = document.getElementById('li-pass')?.value;
 
   if (!email) { showAuthAlert('login-alert', 'error', 'من فضلك ادخل البريد الإلكتروني'); return; }
-  if (!pass)  { showAuthAlert('login-alert', 'error', 'من فضلك ادخل كلمة المرور'); return; }
+  if (!pass) { showAuthAlert('login-alert', 'error', 'من فضلك ادخل كلمة المرور'); return; }
 
   setBtnLoading('btn-login-submit', true);
   const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
@@ -2113,8 +2113,8 @@ async function doEmailLogin() {
   if (error) {
     const msgs = {
       'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غلط',
-      'Email not confirmed':       'لازم تأكد بريدك الإلكتروني الأول — فتش في الـ Inbox',
-      'Too many requests':         'كتر طلبات تسجيل الدخول — انتظر قليلاً وحاول تاني',
+      'Email not confirmed': 'لازم تأكد بريدك الإلكتروني الأول — فتش في الـ Inbox',
+      'Too many requests': 'كتر طلبات تسجيل الدخول — انتظر قليلاً وحاول تاني',
     };
     showAuthAlert('login-alert', 'error', msgs[error.message] || error.message);
     return;
@@ -2133,14 +2133,14 @@ async function doEmailSignup() {
   if (!sbClient) return;
   clearAuthAlert('signup-alert');
 
-  const name  = document.getElementById('su-name')?.value.trim();
+  const name = document.getElementById('su-name')?.value.trim();
   const phone = document.getElementById('su-phone')?.value.trim();
   const email = document.getElementById('su-email')?.value.trim();
-  const pass  = document.getElementById('su-pass')?.value;
-  const role  = document.getElementById('su-role')?.value;
-  const city  = document.getElementById('su-city')?.value;
+  const pass = document.getElementById('su-pass')?.value;
+  const role = document.getElementById('su-role')?.value;
+  const city = document.getElementById('su-city')?.value;
 
-  if (!name)  { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل اسمك الكريم'); return; }
+  if (!name) { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showAuthAlert('signup-alert', 'error', 'ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
@@ -2148,7 +2148,7 @@ async function doEmailSignup() {
   if (!pass || pass.length < 8) {
     showAuthAlert('signup-alert', 'error', 'كلمة المرور لازم تكون ٨ أحرف على الأقل'); return;
   }
-  if (!role)  { showAuthAlert('signup-alert', 'error', 'من فضلك اختار نوع حسابك'); return; }
+  if (!role) { showAuthAlert('signup-alert', 'error', 'من فضلك اختار نوع حسابك'); return; }
 
   setBtnLoading('btn-signup-submit', true);
 
@@ -2165,8 +2165,8 @@ async function doEmailSignup() {
 
   if (error) {
     const msgs = {
-      'User already registered':                    'البريد ده مسجّل بالفعل — سجّل دخولك',
-      'Password should be at least 6 characters':   'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
+      'User already registered': 'البريد ده مسجّل بالفعل — سجّل دخولك',
+      'Password should be at least 6 characters': 'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
     };
     showAuthAlert('signup-alert', 'error', msgs[error.message] || error.message);
     return;
@@ -2174,11 +2174,11 @@ async function doEmailSignup() {
 
   if (data.user) {
     await sbClient.from('profiles').upsert({
-      id:         data.user.id,
-      full_name:  name,
-      phone:      phone,
-      role:       role,
-      city:       city,
+      id: data.user.id,
+      full_name: name,
+      phone: phone,
+      role: role,
+      city: city,
       created_at: new Date().toISOString()
     }, { onConflict: 'id' });
   }
@@ -2217,7 +2217,7 @@ async function doLogout() {
   if (!sbClient) return;
   closeUserDropdown();
   await sbClient.auth.signOut();
-  currentUser    = null;
+  currentUser = null;
   currentProfile = null;
   localStorage.removeItem('lastPage');
   setNavUser(null, null);
@@ -2236,14 +2236,14 @@ async function loadDashboardData(user) {
     sbClient.from('profiles').select('*').eq('id', user.id).single(),
     sbClient.from('organizer_profiles').select('is_verified').eq('user_id', user.id).single(),
     sbClient.from('organizer_requests').select('status').eq('user_id', user.id)
-            .order('created_at', { ascending: false }).limit(1).single(),
+      .order('created_at', { ascending: false }).limit(1).single(),
   ]);
 
-  currentUser    = user;
+  currentUser = user;
   currentProfile = profileRes.data;
 
-  const profile   = profileRes.data;
-  const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+  const profile = profileRes.data;
+  const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
   const firstName = name.split(' ')[0];
 
   const el = document.getElementById('dash-firstname');
@@ -2256,7 +2256,7 @@ async function loadDashboardData(user) {
 
   // عرض CTA تنظيم البازار
   const isVerified = orgProfileRes.data?.is_verified === true;
-  const reqStatus  = reqRes.data?.status || null;
+  const reqStatus = reqRes.data?.status || null;
   renderBazaarCTA(isVerified, reqStatus);
 
   await loadUserBookings(user.id);
@@ -2342,7 +2342,7 @@ async function loadMyBazaars(userId) {
 
     wrap.innerHTML = bazaars.map(b => {
       const ds = b.date_start
-        ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+        ? new Date(b.date_start).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
         : '—';
       const imgHtml = b.image
         ? `<img src="${b.image}" alt="${b.name}"
@@ -2461,10 +2461,10 @@ async function requestOwnerUpgrade() {
   const { error } = await sbClient
     .from('upgrade_requests')
     .insert({
-      user_id:    currentUser.id,
+      user_id: currentUser.id,
       user_email: currentUser.email || '',
-      user_name:  currentProfile?.full_name || currentUser.email || '',
-      status:     'pending',
+      user_name: currentProfile?.full_name || currentUser.email || '',
+      status: 'pending',
     });
 
   if (error) {
@@ -2485,11 +2485,11 @@ async function loadUserBookings(userId) {
   if (!sbClient) return;
 
   const contEl = document.getElementById('dash-bookings');
-  const cntEl  = document.getElementById('dash-booking-count');
+  const cntEl = document.getElementById('dash-booking-count');
 
   try {
     if (!BAZAARS.length) {
-      try { await loadBazaars(); } catch (_) {}
+      try { await loadBazaars(); } catch (_) { }
     }
 
     const { data: spaceBookings } = await sbClient
@@ -2562,15 +2562,15 @@ async function loadUserBookings(userId) {
     }
 
     const statusMap = {
-  pending:   { label: 'قيد المراجعة ⏳', cls: 'status-pending'   },
-  confirmed: { label: 'مؤكد ✅',          cls: 'status-confirmed' },
-  cancelled: { label: 'ملغي ❌',          cls: 'status-cancelled' },
-  completed: { label: 'مكتمل 🏁',        cls: 'status-confirmed' },
-};
-     
+      pending: { label: 'قيد المراجعة ⏳', cls: 'status-pending' },
+      confirmed: { label: 'مؤكد ✅', cls: 'status-confirmed' },
+      cancelled: { label: 'ملغي ❌', cls: 'status-cancelled' },
+      completed: { label: 'مكتمل 🏁', cls: 'status-confirmed' },
+    };
+
     // بناء HTML لكل حجز
     const allCards = bookings.map(b => {
-      const st      = statusMap[b.status] || statusMap.pending;
+      const st = statusMap[b.status] || statusMap.pending;
       const dateStr = b.created_at
         ? new Date(b.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
@@ -2594,9 +2594,9 @@ async function loadUserBookings(userId) {
     });
 
     // عرض أحدث 3 فقط — والباقي مخفي
-    const visible  = allCards.slice(0, 3).join('');
-    const hidden   = allCards.slice(3).join('');
-    const hasMore  = bookings.length > 3;
+    const visible = allCards.slice(0, 3).join('');
+    const hidden = allCards.slice(3).join('');
+    const hasMore = bookings.length > 3;
     contEl.innerHTML = visible +
       (hasMore ? `<div class="bookings-extra" id="bookings-extra" style="display:none">${hidden}</div>
         <button class="booking-collapse-btn" id="bookings-toggle" onclick="toggleBookings(${bookings.length})">
@@ -2660,7 +2660,7 @@ function _subscribeBookings(userId) {
 
 function toggleBookings(total) {
   const extra = document.getElementById('bookings-extra');
-  const btn   = document.getElementById('bookings-toggle');
+  const btn = document.getElementById('bookings-toggle');
   if (!extra || !btn) return;
   const isHidden = extra.style.display === 'none';
   extra.style.display = isHidden ? '' : 'none';
@@ -2683,11 +2683,11 @@ function _escHtml(str) {
 }
 
 const REP_BADGES = {
-  excellent: { label: 'سمعة ممتازة',        emoji: '🏆', cls: 'rep-excellent' },
-  trusted:   { label: 'مستأجر موثوق',       emoji: '✅', cls: 'rep-trusted' },
-  good:      { label: 'سمعة جيدة',           emoji: '👍', cls: 'rep-good' },
-  weak:      { label: 'تحتاج لتحسين',        emoji: '⚠️', cls: 'rep-weak' },
-  new:       { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
+  excellent: { label: 'سمعة ممتازة', emoji: '🏆', cls: 'rep-excellent' },
+  trusted: { label: 'مستأجر موثوق', emoji: '✅', cls: 'rep-trusted' },
+  good: { label: 'سمعة جيدة', emoji: '👍', cls: 'rep-good' },
+  weak: { label: 'تحتاج لتحسين', emoji: '⚠️', cls: 'rep-weak' },
+  new: { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
 };
 
 /* نجوم 1-5 للعرض */
@@ -2717,7 +2717,7 @@ async function loadUserRatings(userId) {
     ]);
 
     const total = rep?.total || 0;
-    const avg   = Number(rep?.avg_overall || 0);
+    const avg = Number(rep?.avg_overall || 0);
     const badge = REP_BADGES[rep?.badge] || REP_BADGES.new;
 
     /* تحديث بطاقة الإحصائية في الأعلى */
@@ -2738,10 +2738,10 @@ async function loadUserRatings(userId) {
 
     const critRows = [
       ['⏰ الالتزام بالمواعيد', rep.avg_commitment],
-      ['🧹 نظافة المكان',        rep.avg_cleanliness],
-      ['🤝 حسن التعامل',         rep.avg_dealing],
-      ['💳 الالتزام المالي',     rep.avg_payment],
-      ['📋 احترام الشروط',       rep.avg_rules],
+      ['🧹 نظافة المكان', rep.avg_cleanliness],
+      ['🤝 حسن التعامل', rep.avg_dealing],
+      ['💳 الالتزام المالي', rep.avg_payment],
+      ['📋 احترام الشروط', rep.avg_rules],
     ].filter(r => r[1] != null);
 
     const repPanel = `
@@ -2811,8 +2811,8 @@ function setBtnLoading(id, on, orig) {
   const b = document.getElementById(id);
   if (!b) return;
   b.disabled = on;
-  if (on)         b.innerHTML = `<span class="spin-sm"></span> جاري التحميل…`;
-  else if (orig)  b.innerHTML = orig;
+  if (on) b.innerHTML = `<span class="spin-sm"></span> جاري التحميل…`;
+  else if (orig) b.innerHTML = orig;
 }
 
 function togglePassVis(id) {
@@ -2850,16 +2850,16 @@ async function handleBnUser() {
         showPage('dashboard');
         return;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   goToLogin();
 }
 
 function updateBnUser(user, profile) {
-  const icon  = document.getElementById('bn-user-icon');
+  const icon = document.getElementById('bn-user-icon');
   const label = document.getElementById('bn-user-label');
-  const desc  = document.getElementById('bn-user-desc');
+  const desc = document.getElementById('bn-user-desc');
   if (!icon || !label) return;
 
   if (user) {
@@ -2890,30 +2890,30 @@ function _normalizeBazaarRow(row) {
     }
     return null;
   };
-  const idVal = get('id','ID','رقم','No') || (Math.random() * 1e9 | 0).toString(36);
-  const tagsVal = get('tags','Tags','وسوم','تاجات') || '';
+  const idVal = get('id', 'ID', 'رقم', 'No') || (Math.random() * 1e9 | 0).toString(36);
+  const tagsVal = get('tags', 'Tags', 'وسوم', 'تاجات') || '';
   const firstTag = Array.isArray(tagsVal)
     ? tagsVal[0]
     : String(tagsVal || '').split(',').map(t => t.trim()).filter(Boolean)[0];
 
   return {
-    id:             String(idVal),
-    name:           get('name','اسم البازار','البازار','الاسم','Name')             || '—',
-    location:       get('location','venueName','venue_name','اسم المكان','الموقع','المكان','Location') || '',
-    region:         get('region','area','Area','المنطقة','Region')                               || '',
-    date_start:     get('date_start','dateStart','date_start','تاريخ البداية','تاريخ البدء','من تاريخ','Start Date') || '',
-    date_end:       get('date_end','dateEnd','date_end','تاريخ النهاية','تاريخ الانتهاء','حتى تاريخ','End Date') || '',
-    time_start:     get('time_start','وقت البداية','وقت البدء','Start Time')       || '',
-    time_end:       get('time_end','وقت النهاية','وقت الانتهاء','End Time')        || '',
-    price_per_slot: Number(get('price_per_slot','price','Price','السعر','سعر المكان') || 0),
-    available_slots:Number(get('available_slots','availSlots','avail_slots','أماكن متاحة','Available Slots') || get('total_slots','totalSlots','total_slots','إجمالي الأماكن','Total Slots') || 0),
-    total_slots:    Number(get('total_slots','totalSlots','total_slots','إجمالي الأماكن','عدد الأماكن','Total Slots') || 0),
-    image:          get('image','صورة','رابط الصورة','Image','img')                || '',
-    description:    get('description','الوصف','تفاصيل','Description')             || '',
-    category:       get('category','venueType','venue_type','الفئة','النوع','التصنيف','Category') || firstTag || '',
-    organizer:      get('organizer','المنظم','جهة التنظيم','Organizer')            || '',
-    venue_address:  get('venue_address','address','Address','عنوان المكان','العنوان','Venue') || '',
-    status:         get('status','الحالة','Status')                                || 'published',
+    id: String(idVal),
+    name: get('name', 'اسم البازار', 'البازار', 'الاسم', 'Name') || '—',
+    location: get('location', 'venueName', 'venue_name', 'اسم المكان', 'الموقع', 'المكان', 'Location') || '',
+    region: get('region', 'area', 'Area', 'المنطقة', 'Region') || '',
+    date_start: get('date_start', 'dateStart', 'date_start', 'تاريخ البداية', 'تاريخ البدء', 'من تاريخ', 'Start Date') || '',
+    date_end: get('date_end', 'dateEnd', 'date_end', 'تاريخ النهاية', 'تاريخ الانتهاء', 'حتى تاريخ', 'End Date') || '',
+    time_start: get('time_start', 'وقت البداية', 'وقت البدء', 'Start Time') || '',
+    time_end: get('time_end', 'وقت النهاية', 'وقت الانتهاء', 'End Time') || '',
+    price_per_slot: Number(get('price_per_slot', 'price', 'Price', 'السعر', 'سعر المكان') || 0),
+    available_slots: Number(get('available_slots', 'availSlots', 'avail_slots', 'أماكن متاحة', 'Available Slots') || get('total_slots', 'totalSlots', 'total_slots', 'إجمالي الأماكن', 'Total Slots') || 0),
+    total_slots: Number(get('total_slots', 'totalSlots', 'total_slots', 'إجمالي الأماكن', 'عدد الأماكن', 'Total Slots') || 0),
+    image: get('image', 'صورة', 'رابط الصورة', 'Image', 'img') || '',
+    description: get('description', 'الوصف', 'تفاصيل', 'Description') || '',
+    category: get('category', 'venueType', 'venue_type', 'الفئة', 'النوع', 'التصنيف', 'Category') || firstTag || '',
+    organizer: get('organizer', 'المنظم', 'جهة التنظيم', 'Organizer') || '',
+    venue_address: get('venue_address', 'address', 'Address', 'عنوان المكان', 'العنوان', 'Venue') || '',
+    status: get('status', 'الحالة', 'Status') || 'published',
   };
 }
 
@@ -2921,11 +2921,11 @@ function _normalizeBazaarRow(row) {
    🔍 مودال المعاينة — Inspection Modal
    ================================================================ */
 
-let _inspSpaceId   = null;
-let _inspSelDate   = null;
+let _inspSpaceId = null;
+let _inspSelDate = null;
 
-const _INSP_DAY_NAMES   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-const _INSP_MONTH_NAMES = ['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const _INSP_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const _INSP_MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 function openInspectionModal(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
@@ -2987,14 +2987,14 @@ function closeInspModalOnBg(e) {
 }
 
 function _inspGoStep(step) {
-  [1,2,3].forEach(n => {
+  [1, 2, 3].forEach(n => {
     const body = document.getElementById(`insp-step-${n}`);
-    const dot  = document.getElementById(`insp-dot-${n}`);
+    const dot = document.getElementById(`insp-dot-${n}`);
     const line = document.getElementById(`insp-line-${n}`);
     if (body) body.style.display = n === step ? 'block' : 'none';
     if (dot) {
       dot.classList.toggle('active', n === step);
-      dot.classList.toggle('done',   n <  step);
+      dot.classList.toggle('done', n < step);
     }
     if (line) line.classList.toggle('done', n < step);
   });
@@ -3020,15 +3020,15 @@ function _inspSelectDate(el, val) {
 }
 
 function _inspSubmitForm() {
-  const name     = (document.getElementById('insp-name')?.value     || '').trim();
-  const phone    = (document.getElementById('insp-phone')?.value    || '').trim();
+  const name = (document.getElementById('insp-name')?.value || '').trim();
+  const phone = (document.getElementById('insp-phone')?.value || '').trim();
   const activity = (document.getElementById('insp-activity')?.value || '').trim();
-  const errEl    = document.getElementById('insp-error');
+  const errEl = document.getElementById('insp-error');
 
-  if (!name)                         { errEl.textContent = '⚠ يرجى إدخال الاسم الكامل'; return; }
-  if (!/^01\d{9}$/.test(phone))      { errEl.textContent = '⚠ رقم الهاتف 11 رقم يبدأ بـ 01'; return; }
-  if (!activity)                     { errEl.textContent = '⚠ يرجى اختيار النشاط التجاري'; return; }
-  if (!_inspSelDate)                 { errEl.textContent = '⚠ يرجى اختيار موعد للمعاينة'; return; }
+  if (!name) { errEl.textContent = '⚠ يرجى إدخال الاسم الكامل'; return; }
+  if (!/^01\d{9}$/.test(phone)) { errEl.textContent = '⚠ رقم الهاتف 11 رقم يبدأ بـ 01'; return; }
+  if (!activity) { errEl.textContent = '⚠ يرجى اختيار النشاط التجاري'; return; }
+  if (!_inspSelDate) { errEl.textContent = '⚠ يرجى اختيار موعد للمعاينة'; return; }
   errEl.textContent = '';
 
   const s = SPACES.find(x => x.id === _inspSpaceId);
@@ -3064,10 +3064,10 @@ function _inspFlashCopy(btnId) {
 }
 
 function _inspConfirm() {
-  const name     = (document.getElementById('insp-name')?.value     || '').trim();
-  const phone    = (document.getElementById('insp-phone')?.value    || '').trim();
+  const name = (document.getElementById('insp-name')?.value || '').trim();
+  const phone = (document.getElementById('insp-phone')?.value || '').trim();
   const activity = (document.getElementById('insp-activity')?.value || '').trim();
-  const s        = SPACES.find(x => x.id === _inspSpaceId);
+  const s = SPACES.find(x => x.id === _inspSpaceId);
   const spaceName = s ? s.name : '—';
 
   const inspId = `INS-${Date.now().toString(36).toUpperCase().slice(-6)}`;
@@ -3078,9 +3078,9 @@ function _inspConfirm() {
   if (detailsEl) {
     detailsEl.innerHTML = [
       ['المساحة', spaceName],
-      ['الموعد',  _inspSelDate || '—'],
-      ['النشاط',  activity],
-    ].map(([k,v]) => `
+      ['الموعد', _inspSelDate || '—'],
+      ['النشاط', activity],
+    ].map(([k, v]) => `
       <div class="insp-detail-row">
         <span class="insp-detail-key">${k}</span>
         <span class="insp-detail-val">${v}</span>
@@ -3096,15 +3096,15 @@ function _inspConfirm() {
 
 function _inspGetWorkingDays() {
   const result = [];
-  const times  = ['11:00 ص', '11:00 ص', '2:00 م'];
+  const times = ['11:00 ص', '11:00 ص', '2:00 م'];
   const d = new Date();
   d.setDate(d.getDate() + 2);
   while (result.length < 3) {
     const dow = d.getDay();
     if (dow !== 0 && dow !== 6) {
-      const dayLabel  = _INSP_DAY_NAMES[dow];
+      const dayLabel = _INSP_DAY_NAMES[dow];
       const dateLabel = `${d.getDate()} ${_INSP_MONTH_NAMES[d.getMonth()]}`;
-      const time      = times[result.length];
+      const time = times[result.length];
       result.push({
         dayLabel,
         dateLabel,
@@ -3212,28 +3212,28 @@ async function loadBazaars() {
 
       if (!error && data && data.length > 0) {
         BAZAARS = data.map(b => ({
-          id:                   String(b.id),
-          name:                 b.name || '—',
-          location:             b.venue_name || b.location || '',
-          region:               b.region || '',
-          date_start:           b.date_start || '',
-          date_end:             b.date_end || '',
-          time_start:           b.time_start || '',
-          time_end:             b.time_end || '',
-          price_per_slot:       Number(b.price_per_slot) || 0,
-          available_slots:      Number(b.available_slots) || 0,
-          total_slots:          Number(b.total_slots) || 0,
-          image:                _toDirectImgUrl(b.image || ''),
-          description:          b.description || '',
-          category:             b.category || b.venue_type || '',
-          organizer:            b.organizer || '',
-          organizer_id:         b.organizer_id || null,
+          id: String(b.id),
+          name: b.name || '—',
+          location: b.venue_name || b.location || '',
+          region: b.region || '',
+          date_start: b.date_start || '',
+          date_end: b.date_end || '',
+          time_start: b.time_start || '',
+          time_end: b.time_end || '',
+          price_per_slot: Number(b.price_per_slot) || 0,
+          available_slots: Number(b.available_slots) || 0,
+          total_slots: Number(b.total_slots) || 0,
+          image: _toDirectImgUrl(b.image || ''),
+          description: b.description || '',
+          category: b.category || b.venue_type || '',
+          organizer: b.organizer || '',
+          organizer_id: b.organizer_id || null,
           is_organizer_verified: b.is_organizer_verified || false,
-          venue_address:        b.venue_address || b.address || '',
-          maps_link:            b.maps_link || '',
-          sketch_url:           _toDirectImgUrl(b.sketch_url || ''),
-          event_image_url:      _toDirectImgUrl(b.event_image_url || ''),
-          status:               b.status || 'published',
+          venue_address: b.venue_address || b.address || '',
+          maps_link: b.maps_link || '',
+          sketch_url: _toDirectImgUrl(b.sketch_url || ''),
+          event_image_url: _toDirectImgUrl(b.event_image_url || ''),
+          status: b.status || 'published',
         }));
         console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Supabase للصفحة الرئيسية.`);
         renderHomeBazaars();
@@ -3246,7 +3246,7 @@ async function loadBazaars() {
 
   // 2. ثانياً (Fallback): التحميل من Google Sheets
   try {
-    const res  = await fetch(BAZAAR_SHEET_URL);
+    const res = await fetch(BAZAAR_SHEET_URL);
     const text = await res.text();
 
     let json;
@@ -3258,15 +3258,15 @@ async function loadBazaars() {
       return;
     }
 
-    let rows = Array.isArray(json)              ? json
-             : Array.isArray(json.data)         ? json.data
-             : Array.isArray(json.rows)         ? json.rows
-             : Array.isArray(json.bazaars)      ? json.bazaars
-             : Array.isArray(json.result)       ? json.result
-             : Array.isArray(json.items)        ? json.items
-             : Array.isArray(json.values)       ? json.values
-             : (json.status === 'ok' && Array.isArray(json.data)) ? json.data
-             : [];
+    let rows = Array.isArray(json) ? json
+      : Array.isArray(json.data) ? json.data
+        : Array.isArray(json.rows) ? json.rows
+          : Array.isArray(json.bazaars) ? json.bazaars
+            : Array.isArray(json.result) ? json.result
+              : Array.isArray(json.items) ? json.items
+                : Array.isArray(json.values) ? json.values
+                  : (json.status === 'ok' && Array.isArray(json.data)) ? json.data
+                    : [];
 
     rows = rows.filter(r =>
       r && typeof r === 'object' &&
@@ -3336,7 +3336,7 @@ function renderHomeBazaars() {
 
   // تفاصيل البازار المتميز
   const fAvailSlots = typeof featured.available_slots === 'number' ? featured.available_slots : (featured.total_slots || 0);
-  const fIsSoldOut  = fAvailSlots === 0 && (featured.total_slots || 0) > 0;
+  const fIsSoldOut = fAvailSlots === 0 && (featured.total_slots || 0) > 0;
 
   // بناء عداد تنازلي للتميز (سندير التحديث الفعلي عبر دالة setInterval)
   const featuredHtml = `
@@ -3344,8 +3344,8 @@ function renderHomeBazaars() {
       <div class="bz-featured-card" onclick="window.location.href='bazaars/?bazaar=${featured.id}'">
         <div class="bz-featured-img-container">
           ${featured.image
-            ? `<img src="${featured.image}" alt="${featured.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
-            : `<div class="bz-mini-placeholder">🎪</div>`}
+      ? `<img src="${featured.image}" alt="${featured.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
+      : `<div class="bz-mini-placeholder">🎪</div>`}
           
           <div class="bz-featured-badges">
             <span class="bz-featured-cat">${featured.category || 'بازار قريب'}</span>
@@ -3400,17 +3400,17 @@ function renderHomeBazaars() {
   if (others.length > 0) {
     const cardsHtml = others.map(b => {
       const oDateStr = b.date_start
-        ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
+        ? new Date(b.date_start).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
         : 'قريباً';
       const oAvailSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
-      const oIsSoldOut  = oAvailSlots === 0 && (b.total_slots || 0) > 0;
-      
+      const oIsSoldOut = oAvailSlots === 0 && (b.total_slots || 0) > 0;
+
       return `
         <div class="bz-compact-card" onclick="window.location.href='bazaars/?bazaar=${b.id}'">
           <div class="bz-compact-img">
             ${b.image
-              ? `<img src="${b.image}" alt="${b.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-compact-img-placeholder\\\' >🎪</div>'">`
-              : `<div class="bz-compact-img-placeholder">🎪</div>`}
+          ? `<img src="${b.image}" alt="${b.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-compact-img-placeholder\\\' >🎪</div>'">`
+          : `<div class="bz-compact-img-placeholder">🎪</div>`}
             <div class="bz-compact-date">${oDateStr}</div>
           </div>
           <div class="bz-compact-body">
@@ -3437,14 +3437,8 @@ function renderHomeBazaars() {
       </div>
     `;
   } else {
-    othersHtml = `
-      <div class="bz-others-wrapper" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1.5px dashed rgba(255, 255, 255, 0.15); border-radius: var(--radius-xl); padding: 30px 20px; background: rgba(255, 255, 255, 0.02); text-align: center; height: 100%; box-sizing: border-box;">
-        <div style="font-size: 40px; margin-bottom: 12px;">🎪</div>
-        <h4 style="font-size: 14.5px; font-weight: 800; color: #fff; margin-bottom: 6px; font-family: var(--font-display);">تريد تنظيم بازارك الخاص؟</h4>
-        <p style="font-size: 12px; color: rgba(255, 255, 255, 0.5); line-height: 1.6; margin-bottom: 16px;">انضم إلى مئات المنظمين الناجحين وابدأ حشد العارضين والعملاء اليوم عبر أدواتنا المتكاملة.</p>
-        <button class="bz-featured-btn" onclick="window.location.href='/bazaars/verification.html'" style="padding: 8px 16px; font-size: 12px; background: var(--navy-700); box-shadow: none;">سجل كمنظّم الآن</button>
-      </div>
-    `;
+    othersHtml = ``;
+
   }
 
   // دمج التخطيط الشبكي المشترك المطور
@@ -3535,16 +3529,16 @@ async function loadMarketShowcase() {
 
     function getMarketCategoryLabel(catId) {
       const categories = [
-        { id: 'food-juice-cart',     label: 'عربية أكل / عصير' },
+        { id: 'food-juice-cart', label: 'عربية أكل / عصير' },
         { id: 'fast-food-partition', label: 'بارتشن وجبات سريعة' },
-        { id: 'beauty-partition',    label: 'بارتشن عناية شخصية' },
-        { id: 'clothing-partition',  label: 'بارتشن ملابس / بوتيك' },
-        { id: 'handmade',            label: 'هاند ميد' },
-        { id: 'phones',              label: 'تليفونات وإكسسوار' },
-        { id: 'gifts',               label: 'هدايا وديكور' },
-        { id: 'corner-space',        label: 'كورنر سبيس' },
-        { id: 'vending',             label: 'آلات بيع ذاتي' },
-        { id: 'other',               label: 'أخرى' },
+        { id: 'beauty-partition', label: 'بارتشن عناية شخصية' },
+        { id: 'clothing-partition', label: 'بارتشن ملابس / بوتيك' },
+        { id: 'handmade', label: 'هاند ميد' },
+        { id: 'phones', label: 'تليفونات وإكسسوار' },
+        { id: 'gifts', label: 'هدايا وديكور' },
+        { id: 'corner-space', label: 'كورنر سبيس' },
+        { id: 'vending', label: 'آلات بيع ذاتي' },
+        { id: 'other', label: 'أخرى' },
       ];
       const match = categories.find(c => c.id === catId);
       return match ? match.label : 'نشاط تجاري';
@@ -3554,13 +3548,13 @@ async function loadMarketShowcase() {
       const categoryLabel = getMarketCategoryLabel(l.category);
       const imgUrl = _toDirectImgUrl(l.cover_image || '');
       const priceText = l.price ? `${Number(l.price).toLocaleString('ar-EG')} ج` : 'السعر عند التواصل';
-      
+
       return `
         <div class="market-showcase-card" onclick="window.location.href='/market/?listing=${l.id}'">
           <div class="market-showcase-img-wrap">
             ${imgUrl
-              ? `<img src="${imgUrl}" alt="${l.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' style=\\\'font-size:38px\\\' >📦</div>'">`
-              : `<div class="bz-mini-placeholder" style="font-size:38px">📦</div>`}
+          ? `<img src="${imgUrl}" alt="${l.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' style=\\\'font-size:38px\\\' >📦</div>'">`
+          : `<div class="bz-mini-placeholder" style="font-size:38px">📦</div>`}
             <span class="market-showcase-cat-badge">${categoryLabel}</span>
           </div>
           <div class="market-showcase-body">
@@ -3586,22 +3580,22 @@ function shareCard(type, id, name) {
   let url, shareText;
 
   if (type === 'space') {
-    url       = base + '?space=' + id;
+    url = base + '?space=' + id;
     shareText = 'شوف المساحة دي على مكاني Spot: ' + name;
   } else if (type === 'unit') {
     const parts = String(id).split(':');
-    url       = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
+    url = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
     shareText = 'شوف الوحدة دي على مكاني Spot: ' + name;
   } else {
-    url       = base + '?bazaar=' + id;
+    url = base + '?bazaar=' + id;
     shareText = 'شوف البازار ده على مكاني Spot: ' + name;
   }
 
   if (navigator.share) {
-    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => { });
   } else {
     navigator.clipboard.writeText(url)
-      .then(()  => _showShareToast('✅ تم نسخ الرابط!'))
+      .then(() => _showShareToast('✅ تم نسخ الرابط!'))
       .catch(() => _showShareToast('📋 الرابط: ' + url));
   }
 }
@@ -3653,9 +3647,9 @@ function openOwnerRequestModal() {
   const btn = document.getElementById('oreq-btn');
   if (btn) { btn.disabled = false; btn.textContent = 'إرسال الطلب ←'; }
   const formWrap = document.getElementById('owner-req-form-wrap');
-  const success  = document.getElementById('oreq-success');
+  const success = document.getElementById('oreq-success');
   if (formWrap) formWrap.style.display = 'block';
-  if (success)  success.style.display  = 'none';
+  if (success) success.style.display = 'none';
   document.getElementById('owner-request-modal')?.classList.add('open');
 }
 
@@ -3668,17 +3662,17 @@ function closeOwnerRequestModalOnBg(e) {
 }
 
 async function submitOwnerRequest() {
-  const placeName    = document.getElementById('oreq-place-name')?.value.trim() || '';
-  const placeType    = document.getElementById('oreq-place-type')?.value || '';
-  const phone        = document.getElementById('oreq-phone')?.value.trim() || '';
-  const notes        = document.getElementById('oreq-notes')?.value.trim() || '';
+  const placeName = document.getElementById('oreq-place-name')?.value.trim() || '';
+  const placeType = document.getElementById('oreq-place-type')?.value || '';
+  const phone = document.getElementById('oreq-phone')?.value.trim() || '';
+  const notes = document.getElementById('oreq-notes')?.value.trim() || '';
   const selectedPlan = document.getElementById('oreq-selected-plan')?.value || '';
-  const msgEl        = document.getElementById('oreq-msg');
-  const btn          = document.getElementById('oreq-btn');
+  const msgEl = document.getElementById('oreq-msg');
+  const btn = document.getElementById('oreq-btn');
 
   const showMsg = (text, isErr) => {
     if (!msgEl) return;
-    msgEl.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${isErr?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)'};color:${isErr?'var(--red,#ef4444)':'var(--green,#22c55e)'};border:1px solid ${isErr?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`;
+    msgEl.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${isErr ? 'rgba(239,68,68,.1)' : 'rgba(34,197,94,.1)'};color:${isErr ? 'var(--red,#ef4444)' : 'var(--green,#22c55e)'};border:1px solid ${isErr ? 'rgba(239,68,68,.3)' : 'rgba(34,197,94,.3)'}`;
     msgEl.textContent = text;
   };
 
@@ -3694,15 +3688,15 @@ async function submitOwnerRequest() {
 
   try {
     const { error } = await sbClient.from('upgrade_requests').insert({
-      user_id:       currentUser.id,
-      user_email:    currentUser.email,
-      user_name:     currentProfile?.full_name || currentUser.email,
-      place_name:    placeName   || null,
-      place_type:    placeType   || null,
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      user_name: currentProfile?.full_name || currentUser.email,
+      place_name: placeName || null,
+      place_type: placeType || null,
       phone,
-      notes:         notes       || null,
+      notes: notes || null,
       selected_plan: selectedPlan || null,
-      status:        'pending',
+      status: 'pending',
     });
     if (error) throw error;
     document.getElementById('owner-req-form-wrap').style.display = 'none';
