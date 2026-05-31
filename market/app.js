@@ -178,6 +178,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await eqLoadListings();
     eqBindSearch();
     eqRunLifecycle();
+
+    // الربط العميق للمشروع من الرابط الرئيسي
+    const urlParams = new URLSearchParams(window.location.search);
+    const listingId = urlParams.get('listing');
+    if (listingId) {
+      setTimeout(() => {
+        eqOpenDetail(listingId);
+      }, 500);
+    }
   } catch (e) {
     eqShowError('حدث خطأ في تحميل الصفحة. حاول إعادة التحميل.');
   }

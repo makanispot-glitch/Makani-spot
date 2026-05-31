@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // تحميل البازارات من Supabase
   loadBazaars();
 
+  // تحميل المشروعات المعروضة للبيع المتميزة
+  loadMarketShowcase();
+
   // تحقق من حالة تسجيل الدخول
   initAuth();
 
@@ -3198,6 +3201,50 @@ function _toDirectImgUrl(url) {
 }
 
 async function loadBazaars() {
+  // 1. أولاً: محاولة التحميل من Supabase (المصدر الرئيسي والحديث)
+  if (sbClient) {
+    try {
+      const { data, error } = await sbClient
+        .from('bazaars')
+        .select('*')
+        .eq('status', 'published')
+        .order('date_start', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        BAZAARS = data.map(b => ({
+          id:                   String(b.id),
+          name:                 b.name || '—',
+          location:             b.venue_name || b.location || '',
+          region:               b.region || '',
+          date_start:           b.date_start || '',
+          date_end:             b.date_end || '',
+          time_start:           b.time_start || '',
+          time_end:             b.time_end || '',
+          price_per_slot:       Number(b.price_per_slot) || 0,
+          available_slots:      Number(b.available_slots) || 0,
+          total_slots:          Number(b.total_slots) || 0,
+          image:                _toDirectImgUrl(b.image || ''),
+          description:          b.description || '',
+          category:             b.category || b.venue_type || '',
+          organizer:            b.organizer || '',
+          organizer_id:         b.organizer_id || null,
+          is_organizer_verified: b.is_organizer_verified || false,
+          venue_address:        b.venue_address || b.address || '',
+          maps_link:            b.maps_link || '',
+          sketch_url:           _toDirectImgUrl(b.sketch_url || ''),
+          event_image_url:      _toDirectImgUrl(b.event_image_url || ''),
+          status:               b.status || 'published',
+        }));
+        console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Supabase للصفحة الرئيسية.`);
+        renderHomeBazaars();
+        return;
+      }
+    } catch (sbErr) {
+      console.warn('⚠️ تعذر التحميل من Supabase، سيتم الانتقال للـ fallback:', sbErr.message);
+    }
+  }
+
+  // 2. ثانياً (Fallback): التحميل من Google Sheets
   try {
     const res  = await fetch(BAZAAR_SHEET_URL);
     const text = await res.text();
@@ -3242,29 +3289,18 @@ async function loadBazaars() {
       .sort((a, b) => new Date(a.date_start || 0) - new Date(b.date_start || 0));
 
     BAZAARS = rows;
+    console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Google Sheets (Fallback).`);
     renderHomeBazaars();
 
   } catch (err) {
-    console.error('❌ خطأ في تحميل البازارات:', err.message);
+    console.error('❌ خطأ في تحميل البازارات (Sheets):', err.message);
     _renderBazaarsEmpty();
   }
 }
 
 /** Supabase fallback */
 async function _loadBazaarsFromSupabase() {
-  if (!sbClient) { _renderBazaarsEmpty(); return; }
-  try {
-    const { data, error } = await sbClient
-      .from('bazaars').select('*')
-      .eq('status', 'published')
-      .order('date_start', { ascending: true });
-    if (!error && data?.length) {
-      BAZAARS = data;
-      renderHomeBazaars();
-    } else {
-      _renderBazaarsEmpty();
-    }
-  } catch (e) { _renderBazaarsEmpty(); }
+  await loadBazaars();
 }
 
 function _renderBazaarsEmpty() {
@@ -3276,8 +3312,6 @@ function _renderBazaarsEmpty() {
       </div>`;
   }
 }
-
-
 
 function renderHomeBazaars() {
   const container = document.getElementById('bz-home-scroll');
@@ -3291,39 +3325,260 @@ function renderHomeBazaars() {
   if (!upcoming.length) {
     container.innerHTML = `
       <div class="bz-home-empty">
-        لا توجد بزارات قريبة الآن — تابعنا قريباً!
+        لا توجد بازارات قريبة الآن — تابعنا قريباً!
       </div>`;
     return;
   }
 
-  const b = upcoming[0];
-  const dateStr = b.date_start
-    ? new Date(b.date_start).toLocaleDateString('ar-EG', { weekday:'short', month:'long', day:'numeric' })
-    : 'قريباً';
-  const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
-  const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
+  // البازار الأول هو المتميز
+  const featured = upcoming[0];
+  const others = upcoming.slice(1, 3); // البازارات الـ 2 التالية
 
-  container.innerHTML = `
-    <div class="bz-mini-card bz-mini-card-featured" onclick="window.location.href='bazaars/?bazaar=${b.id}'">
-      <div class="bz-mini-img">
-        ${b.image
-          ? `<img src="${b.image}" alt="${b.name}" loading="lazy"
-                  onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
-          : `<div class="bz-mini-placeholder">🎪</div>`}
-        <div class="bz-mini-date">${dateStr}</div>
-      </div>
-      <div class="bz-mini-body">
-        <div class="bz-mini-kicker">${b.category || 'بازار قريب'}</div>
-        <div class="bz-mini-name">${b.name}</div>
-        <div class="bz-mini-loc">📍 ${b.location || b.region || 'سيتم تحديد المكان قريباً'}</div>
-        <div class="bz-mini-meta">
-          <span>${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج / مكان</span>
-          <span class="${isSoldOut ? 'is-soldout' : 'is-available'}">
-            ${isSoldOut ? 'مكتمل' : availSlots + ' مكان متاح'}
-          </span>
+  // تفاصيل البازار المتميز
+  const fAvailSlots = typeof featured.available_slots === 'number' ? featured.available_slots : (featured.total_slots || 0);
+  const fIsSoldOut  = fAvailSlots === 0 && (featured.total_slots || 0) > 0;
+
+  // بناء عداد تنازلي للتميز (سندير التحديث الفعلي عبر دالة setInterval)
+  const featuredHtml = `
+    <div class="bz-featured-wrapper">
+      <div class="bz-featured-card" onclick="window.location.href='bazaars/?bazaar=${featured.id}'">
+        <div class="bz-featured-img-container">
+          ${featured.image
+            ? `<img src="${featured.image}" alt="${featured.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
+            : `<div class="bz-mini-placeholder">🎪</div>`}
+          
+          <div class="bz-featured-badges">
+            <span class="bz-featured-cat">${featured.category || 'بازار قريب'}</span>
+            <span class="${fIsSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
+              ${fIsSoldOut ? 'مكتمل' : fAvailSlots + ' مكان متاح'}
+            </span>
+          </div>
+
+          <!-- العداد التنازلي التفاعلي المباشر -->
+          ${featured.date_start ? `
+          <div class="bz-countdown" id="bz-countdown-timer" data-date="${featured.date_start}">
+            <div class="bz-countdown-label">انطلاق</div>
+            <div class="bz-countdown-units">
+              <div class="bz-countdown-unit">
+                <span class="bz-countdown-val" id="bz-days">00</span>
+                <span class="bz-countdown-lbl">أيام</span>
+              </div>
+              <div class="bz-countdown-unit">
+                <span class="bz-countdown-val" id="bz-hours">00</span>
+                <span class="bz-countdown-lbl">ساعات</span>
+              </div>
+              <div class="bz-countdown-unit">
+                <span class="bz-countdown-val" id="bz-minutes">00</span>
+                <span class="bz-countdown-lbl">دقائق</span>
+              </div>
+              <div class="bz-countdown-unit">
+                <span class="bz-countdown-val" id="bz-seconds">00</span>
+                <span class="bz-countdown-lbl">ثواني</span>
+              </div>
+            </div>
+          </div>` : ''}
+        </div>
+
+        <div class="bz-featured-body">
+          <h3 class="bz-featured-title">${featured.name}</h3>
+          <div class="bz-featured-location">📍 ${featured.location || featured.region || 'سيتم تحديد المكان قريباً'}</div>
+          ${featured.description ? `<p class="bz-featured-desc">${featured.description}</p>` : '<p class="bz-featured-desc">لا يوجد وصف للبازار حالياً. انضم إلينا في هذه الفعالية المميزة واستكشف الأجنحة المتاحة.</p>'}
+          
+          <div class="bz-featured-footer">
+            <div class="bz-featured-price">
+              ${Number(featured.price_per_slot || 0).toLocaleString('ar-EG')} <span>ج / مكان</span>
+            </div>
+            <button class="bz-featured-btn">احجز مكانك الآن</button>
+          </div>
         </div>
       </div>
-    </div>`;
+    </div>
+  `;
+
+  // بناء قائمة البازارات الأخرى
+  let othersHtml = '';
+  if (others.length > 0) {
+    const cardsHtml = others.map(b => {
+      const oDateStr = b.date_start
+        ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
+        : 'قريباً';
+      const oAvailSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
+      const oIsSoldOut  = oAvailSlots === 0 && (b.total_slots || 0) > 0;
+      
+      return `
+        <div class="bz-compact-card" onclick="window.location.href='bazaars/?bazaar=${b.id}'">
+          <div class="bz-compact-img">
+            ${b.image
+              ? `<img src="${b.image}" alt="${b.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-compact-img-placeholder\\\' >🎪</div>'">`
+              : `<div class="bz-compact-img-placeholder">🎪</div>`}
+            <div class="bz-compact-date">${oDateStr}</div>
+          </div>
+          <div class="bz-compact-body">
+            <div class="bz-compact-kicker">${b.category || 'بازار'}</div>
+            <h4 class="bz-compact-title">${b.name}</h4>
+            <div class="bz-compact-location">📍 ${b.location || b.region || 'سيتم تحديده قريباً'}</div>
+            <div class="bz-compact-meta">
+              <span class="bz-compact-price">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</span>
+              <span class="bz-compact-slots" style="color: ${oIsSoldOut ? 'var(--red)' : 'var(--green)'}">
+                ${oIsSoldOut ? 'مكتمل' : oAvailSlots + ' متاح'}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    othersHtml = `
+      <div class="bz-others-wrapper">
+        <h4 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0 0 12px; font-family: var(--font-display);">🗓️ فعاليات قادمة أخرى</h4>
+        <div class="bz-others-list">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  } else {
+    othersHtml = `
+      <div class="bz-others-wrapper" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1.5px dashed rgba(255, 255, 255, 0.15); border-radius: var(--radius-xl); padding: 30px 20px; background: rgba(255, 255, 255, 0.02); text-align: center; height: 100%; box-sizing: border-box;">
+        <div style="font-size: 40px; margin-bottom: 12px;">🎪</div>
+        <h4 style="font-size: 14.5px; font-weight: 800; color: #fff; margin-bottom: 6px; font-family: var(--font-display);">تريد تنظيم بازارك الخاص؟</h4>
+        <p style="font-size: 12px; color: rgba(255, 255, 255, 0.5); line-height: 1.6; margin-bottom: 16px;">انضم إلى مئات المنظمين الناجحين وابدأ حشد العارضين والعملاء اليوم عبر أدواتنا المتكاملة.</p>
+        <button class="bz-featured-btn" onclick="window.location.href='/bazaars/verification.html'" style="padding: 8px 16px; font-size: 12px; background: var(--navy-700); box-shadow: none;">سجل كمنظّم الآن</button>
+      </div>
+    `;
+  }
+
+  // دمج التخطيط الشبكي المشترك المطور
+  container.innerHTML = `
+    <div class="bz-home-split-grid">
+      ${featuredHtml}
+      ${othersHtml}
+    </div>
+  `;
+
+  // تشغيل مؤقت العداد التنازلي التفاعلي المباشر
+  initBazaarCountdown();
+}
+
+let _bzCountdownInterval = null;
+function initBazaarCountdown() {
+  if (_bzCountdownInterval) clearInterval(_bzCountdownInterval);
+
+  const timerEl = document.getElementById('bz-countdown-timer');
+  if (!timerEl) return;
+
+  const targetDateStr = timerEl.dataset.date;
+  if (!targetDateStr) return;
+
+  const targetDate = new Date(targetDateStr + 'T10:00:00');
+
+  function updateTimer() {
+    const now = new Date();
+    const diff = targetDate - now;
+
+    if (diff <= 0) {
+      clearInterval(_bzCountdownInterval);
+      timerEl.innerHTML = `<span style="font-size:13px;font-weight:900;color:var(--orange);font-family:var(--font-display);">🔥 الفعالية بدأت الآن!</span>`;
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const daysEl = document.getElementById('bz-days');
+    const hoursEl = document.getElementById('bz-hours');
+    const minutesEl = document.getElementById('bz-minutes');
+    const secondsEl = document.getElementById('bz-seconds');
+
+    if (daysEl) daysEl.textContent = pad(days);
+    if (hoursEl) hoursEl.textContent = pad(hours);
+    if (minutesEl) minutesEl.textContent = pad(minutes);
+    if (secondsEl) secondsEl.textContent = pad(seconds);
+  }
+
+  updateTimer();
+  _bzCountdownInterval = setInterval(updateTimer, 1000);
+}
+
+async function loadMarketShowcase() {
+  const container = document.getElementById('market-home-showcase');
+  if (!container) return;
+
+  if (!sbClient) {
+    container.innerHTML = `<div class="bz-home-empty">تعذر الاتصال بقاعدة البيانات لتحميل المشاريع.</div>`;
+    return;
+  }
+
+  try {
+    const { data: listings, error } = await sbClient
+      .from('listings')
+      .select('id, title, description, category, price, cover_image, region, expires_at, status')
+      .eq('status', 'approved')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (error) throw error;
+
+    if (!listings || listings.length === 0) {
+      container.innerHTML = `
+        <div class="bz-home-empty" style="grid-column: 1/-1; text-align: center; padding: 40px 20px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">🛍️</div>
+          <div style="font-weight: 700; color: var(--ink2); font-size: 14px;">لا توجد مشاريع معروضة للبيع حالياً</div>
+          <div style="font-size: 12px; color: var(--ink3); margin-top: 4px;">تابعنا للاطلاع على الفرص الجديدة قريباً!</div>
+        </div>`;
+      return;
+    }
+
+    function getMarketCategoryLabel(catId) {
+      const categories = [
+        { id: 'food-juice-cart',     label: 'عربية أكل / عصير' },
+        { id: 'fast-food-partition', label: 'بارتشن وجبات سريعة' },
+        { id: 'beauty-partition',    label: 'بارتشن عناية شخصية' },
+        { id: 'clothing-partition',  label: 'بارتشن ملابس / بوتيك' },
+        { id: 'handmade',            label: 'هاند ميد' },
+        { id: 'phones',              label: 'تليفونات وإكسسوار' },
+        { id: 'gifts',               label: 'هدايا وديكور' },
+        { id: 'corner-space',        label: 'كورنر سبيس' },
+        { id: 'vending',             label: 'آلات بيع ذاتي' },
+        { id: 'other',               label: 'أخرى' },
+      ];
+      const match = categories.find(c => c.id === catId);
+      return match ? match.label : 'نشاط تجاري';
+    }
+
+    container.innerHTML = listings.map(l => {
+      const categoryLabel = getMarketCategoryLabel(l.category);
+      const imgUrl = _toDirectImgUrl(l.cover_image || '');
+      const priceText = l.price ? `${Number(l.price).toLocaleString('ar-EG')} ج` : 'السعر عند التواصل';
+      
+      return `
+        <div class="market-showcase-card" onclick="window.location.href='/market/?listing=${l.id}'">
+          <div class="market-showcase-img-wrap">
+            ${imgUrl
+              ? `<img src="${imgUrl}" alt="${l.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' style=\\\'font-size:38px\\\' >📦</div>'">`
+              : `<div class="bz-mini-placeholder" style="font-size:38px">📦</div>`}
+            <span class="market-showcase-cat-badge">${categoryLabel}</span>
+          </div>
+          <div class="market-showcase-body">
+            <h3 class="market-showcase-title">${l.title || 'مشروع للبيع'}</h3>
+            <p class="market-showcase-desc">${l.description || 'لا يوجد وصف متاح للمشروع حالياً.'}</p>
+            <div class="market-showcase-meta">
+              <span>📍 ${l.region || 'مصر'}</span>
+              <span class="market-showcase-price">${priceText}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('❌ خطأ في تحميل مشاريع الماركت:', err.message);
+    container.innerHTML = `<div class="bz-home-empty">تعذر تحميل المشروعات للبيع حالياً — يرجى المحاولة لاحقاً.</div>`;
+  }
 }
 
 function shareCard(type, id, name) {
