@@ -214,6 +214,32 @@
   background: var(--red-light); border: 1.5px solid #fca5a5; border-radius: var(--radius-lg);
   padding: 14px 18px; font-size: 13px; color: var(--red);
 }
+
+/* Visual uploads */
+.org-upload-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface2);
+  padding: 16px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.org-upload-box:hover { border-color: var(--orange); background: var(--surface); }
+.org-upload-box.has-img { border-color: #86efac; background: #f0fdf4; }
+.org-upload-ico { font-size: 30px; margin-bottom: 5px; }
+.org-upload-lbl { font-size: 12px; font-weight: 800; color: var(--ink2); }
+.org-upload-preview {
+  display: none;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  border: 1px solid var(--border);
+}
+.org-upload-status { min-height: 18px; font-size: 11px; color: var(--ink3); margin-top: 5px; }
+.org-upload-url { margin-top: 8px; }
 </style>
 </head>
 <body class="org-page">
@@ -314,22 +340,34 @@
       </div>
 
       <div class="org-fg full">
-        <label>🗺️ رابط خريطة / اسكتش البازار</label>
-        <input type="url" id="o-sketch" placeholder="https://drive.google.com/file/d/..." dir="ltr">
+        <label>🗺️ خريطة / اسكتش البازار</label>
+        <div class="org-upload-box" id="o-sketch-box" onclick="document.getElementById('o-sketch-file').click()">
+          <div class="org-upload-ico" id="o-sketch-ico">🗺️</div>
+          <div class="org-upload-lbl" id="o-sketch-lbl">اضغط لرفع الاسكتش — يُضغط ويُرفع إلى R2 تلقائياً</div>
+          <img class="org-upload-preview" id="o-sketch-preview" alt="">
+        </div>
+        <input type="file" id="o-sketch-file" accept="image/*" style="display:none" onchange="handleOrgImageUpload('sketch', this)">
+        <div class="org-upload-status" id="o-sketch-status"></div>
+        <input class="org-upload-url" type="url" id="o-sketch" placeholder="أو الصق رابط مباشر..." dir="ltr">
         <div class="org-hint" style="line-height:1.8;margin-top:5px">
           ارسم اسكتش يوضّح توزيع الأماكن وأرقامها (برنامج الرسام، Canva، أي برنامج تصميم)،
-          ثم ارفع الصورة على <strong>Google Drive</strong>:
-          اضغط «مشاركة» ← «أي شخص لديه الرابط» ← «ناسخ الرابط» — والصق الرابط هنا.
+          ثم ارفعه هنا ليتم ضغطه وتخزينه على Cloudflare R2، أو الصق رابطاً مباشراً كبديل.
           <br>يساعد العارضين على معرفة مكانهم بالضبط داخل البازار قبل تأكيد الحجز.
         </div>
       </div>
 
       <div class="org-fg full">
-        <label>📸 رابط صورة واقعية للمكان أو الحدث</label>
-        <input type="url" id="o-event-image" placeholder="https://drive.google.com/file/d/..." dir="ltr">
+        <label>📸 صورة واقعية للمكان أو الحدث</label>
+        <div class="org-upload-box" id="o-event-image-box" onclick="document.getElementById('o-event-image-file').click()">
+          <div class="org-upload-ico" id="o-event-image-ico">📸</div>
+          <div class="org-upload-lbl" id="o-event-image-lbl">اضغط لرفع الصورة — تُضغط وتُرفع إلى R2 تلقائياً</div>
+          <img class="org-upload-preview" id="o-event-image-preview" alt="">
+        </div>
+        <input type="file" id="o-event-image-file" accept="image/*" style="display:none" onchange="handleOrgImageUpload('event', this)">
+        <div class="org-upload-status" id="o-event-image-status"></div>
+        <input class="org-upload-url" type="url" id="o-event-image" placeholder="أو الصق رابط مباشر..." dir="ltr">
         <div class="org-hint" style="line-height:1.8;margin-top:5px">
-          صورة حقيقية للمكان أو لأحد بازاراتك السابقة. ارفعها على <strong>Google Drive</strong>:
-          اضغط «مشاركة» ← «أي شخص لديه الرابط» ← «نسخ الرابط» — والصق الرابط هنا.
+          صورة حقيقية للمكان أو لأحد بازاراتك السابقة. ارفعها هنا ليتم ضغطها وتخزينها على Cloudflare R2، أو الصق رابطاً مباشراً كبديل.
         </div>
       </div>
 
@@ -427,7 +465,7 @@
 
 </div><!-- /org-form-wrap -->
 
-<script src="organize.js?v=202605300420" defer></script>
+<script src="../media-handler.js" defer></script>
+<script src="organize.js?v=2026060901" defer></script>
 </body>
 </html>
-

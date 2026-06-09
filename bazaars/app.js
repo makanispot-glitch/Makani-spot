@@ -290,7 +290,7 @@ async function loadBazaars() {
       venue_address:        b.venue_address || b.address || '',
       maps_link:            b.maps_link || '',
       sketch_url:           _toDirectImgUrl(b.sketch_url || ''),
-      event_image_url:      _toDirectImgUrl(b.event_image_url || ''),
+      event_image_url:      _toDirectImgUrl(b.event_image_url || b.image || ''),
       status:               b.status || 'published',
     }));
 

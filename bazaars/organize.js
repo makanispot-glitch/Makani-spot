@@ -13,6 +13,10 @@ let sbClient    = null;
 let currentUser = null;
 let orgProfile  = null;   // organizer_profiles row
 let currentStep = 1;
+let orgVisualUploads = {
+  sketch: { url: null, promise: null },
+  event:  { url: null, promise: null },
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -162,6 +166,91 @@ function _focusErr(id, msg) {
   alert(msg);
 }
 
+async function handleOrgImageUpload(kind, inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+
+  const ids = _orgVisualIds(kind);
+  const statusEl = document.getElementById(ids.status);
+  const previewEl = document.getElementById(ids.preview);
+  const boxEl = document.getElementById(ids.box);
+  const labelEl = document.getElementById(ids.label);
+  const iconEl = document.getElementById(ids.icon);
+  const urlEl = document.getElementById(ids.urlInput);
+
+  if (!currentUser || !sbClient) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">يجب تسجيل الدخول قبل رفع الصورة</span>';
+    return;
+  }
+
+  if (previewEl) {
+    previewEl.src = URL.createObjectURL(file);
+    previewEl.style.display = 'block';
+  }
+  if (boxEl) boxEl.classList.add('has-img');
+  if (iconEl) iconEl.style.display = 'none';
+  if (labelEl) labelEl.textContent = 'جارٍ الضغط والرفع إلى Cloudflare R2...';
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ ضغط ورفع الصورة...</span>';
+
+  const uploadPromise = _uploadOrgVisual(file, kind)
+    .then(url => {
+      orgVisualUploads[kind].url = url;
+      if (urlEl) urlEl.value = url;
+      if (labelEl) labelEl.textContent = 'تم الرفع بنجاح — اضغط لتغيير الصورة';
+      if (statusEl) statusEl.innerHTML = '<span style="color:#15803d">✅ تم الضغط والرفع إلى R2</span>';
+      return url;
+    })
+    .catch(err => {
+      orgVisualUploads[kind].url = null;
+      if (labelEl) labelEl.textContent = 'تعذّر الرفع — اضغط للمحاولة مرة أخرى';
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ ${err.message}</span>`;
+      throw err;
+    })
+    .finally(() => {
+      orgVisualUploads[kind].promise = null;
+    });
+
+  orgVisualUploads[kind].promise = uploadPromise;
+}
+
+function _orgVisualIds(kind) {
+  const prefix = kind === 'sketch' ? 'o-sketch' : 'o-event-image';
+  return {
+    box: `${prefix}-box`,
+    icon: `${prefix}-ico`,
+    label: `${prefix}-lbl`,
+    preview: `${prefix}-preview`,
+    status: `${prefix}-status`,
+    fileInput: `${prefix}-file`,
+    urlInput: prefix,
+  };
+}
+
+async function _uploadOrgVisual(file, kind) {
+  if (typeof uploadSingleImageToR2 !== 'function') {
+    throw new Error('خدمة رفع الصور غير محملة. حدّث الصفحة وحاول مرة أخرى.');
+  }
+
+  const { data: { session } } = await sbClient.auth.getSession();
+  const authToken = session?.access_token;
+  if (!authToken) throw new Error('انتهت الجلسة، أعد تسجيل الدخول');
+
+  const safeKind = kind === 'sketch' ? 'sketch' : 'event';
+  const path = `bazaars/${currentUser.id}/${safeKind}-${Date.now()}.webp`;
+  return uploadSingleImageToR2(file, path, authToken);
+}
+
+async function _getOrgVisualUrl(kind) {
+  const state = orgVisualUploads[kind];
+  if (state?.promise) {
+    return await state.promise;
+  }
+  if (state?.url) return state.url;
+
+  const ids = _orgVisualIds(kind);
+  return document.getElementById(ids.urlInput)?.value.trim() || null;
+}
+
 /* ──────────────────────────────────────────────────────
    ملخص التسعير (خطوة 2)
 ────────────────────────────────────────────────────── */
@@ -250,8 +339,8 @@ async function orgSubmit() {
     const dep2     = Number(document.getElementById('o-dep2').value) || 0;
     const contract = Number(document.getElementById('o-contract').value) || 0;
     const notes    = document.getElementById('o-notes').value.trim() || null;
-    const sketch   = document.getElementById('o-sketch')?.value.trim() || null;
-    const eventImg = document.getElementById('o-event-image')?.value.trim() || null;
+    const sketch   = await _getOrgVisualUrl('sketch');
+    const eventImg = await _getOrgVisualUrl('event');
 
     const displayName = orgProfile?.full_name
       || (await sbClient.from('profiles').select('full_name').eq('id', currentUser.id).single()).data?.full_name
@@ -274,9 +363,8 @@ async function orgSubmit() {
       deposit_final:          dep2,
       total_contract_price:   contract || null,
       contact_phone:          phone,
-      organizer_notes:        notes,
-      sketch_url:             sketch,
-      event_image_url:        eventImg,
+      organizer_notes:        _combineOrganizerNotes(notes, sketch),
+      image:                  eventImg,
       status:                 'pending_review',
     };
 
@@ -297,9 +385,25 @@ async function orgSubmit() {
     document.querySelector('#org-panel-3 .org-nav-back').style.display = 'none';
 
   } catch (err) {
+    const msg = _formatSubmitError(err);
     document.getElementById('org-result').innerHTML = `
-      <div class="org-err">❌ تعذّر إرسال الطلب: ${err.message}</div>`;
+      <div class="org-err">❌ تعذّر إرسال الطلب: ${msg}</div>`;
     btn.disabled = false;
     btn.textContent = 'إعادة المحاولة';
   }
+}
+
+function _formatSubmitError(err) {
+  const message = err?.message || String(err || '');
+  if (message.includes('schema cache') || message.includes('Could not find')) {
+    return 'حدث عدم تطابق بين حقول النموذج وجدول Supabase. حدّث الصفحة وحاول مرة أخرى.';
+  }
+  return message;
+}
+
+function _combineOrganizerNotes(notes, sketchUrl) {
+  const parts = [];
+  if (notes) parts.push(notes);
+  if (sketchUrl) parts.push(`رابط خريطة / اسكتش البازار: ${sketchUrl}`);
+  return parts.length ? parts.join('\n\n') : null;
 }
