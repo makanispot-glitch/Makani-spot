@@ -2817,7 +2817,22 @@ async function loadSupportOrganizers() {
     const reqMap = {};
     (reqRes.data || []).forEach(r => { reqMap[r.user_id] = r; });
 
-    _supportOrganizers = (profRes.data || []).map(p => ({
+    /* المنظمون من organizer_profiles مع is_verified */
+    const profUserIds = new Set((profRes.data || []).map(p => p.user_id));
+
+    /* إضافة أي منظم مقبول في organizer_requests لكن غائب عن organizer_profiles
+       (حالة فشل الـ upsert قديماً) */
+    const orphanedApproved = (reqRes.data || []).filter(r => !profUserIds.has(r.user_id));
+    const orphanProfiles   = orphanedApproved.map(r => ({
+      user_id:    r.user_id,
+      is_verified: true,
+      full_name:  r.full_name,
+      whatsapp:   r.phone,
+      region:     r.region,
+      _orphaned:  true,
+    }));
+
+    _supportOrganizers = [...(profRes.data || []), ...orphanProfiles].map(p => ({
       ...p,
       bazaar_count:  bzCount[p.user_id]   || 0,
       pending_count: bzPending[p.user_id] || 0,
@@ -2886,6 +2901,7 @@ function renderSupportOrganizers() {
         <div style="font-size:14px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:7px;flex-wrap:wrap">
           ${name}
           <span style="background:rgba(34,197,94,.12);color:var(--gr);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px">✓ موثّق</span>
+          ${org._orphaned ? `<span style="background:rgba(245,158,11,.15);color:var(--yw);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px" title="السجل غائب عن organizer_profiles — اضغط مزامنة لإصلاحه">⚠️ يحتاج مزامنة</span>` : ''}
         </div>
         <div style="font-size:11px;color:var(--mu);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
           <span>📞 ${phone}</span>
@@ -2912,10 +2928,35 @@ function renderSupportOrganizers() {
         <button class="btn btn-or btn-sm" onclick="openCreateBazaarForOrg('${escHtml(org.user_id)}')">
           ➕ إنشاء بازار بالنيابة
         </button>
+        ${(org._orphaned || (!org.full_name && org.req_info)) ? `
+        <button class="btn btn-gh btn-sm" title="مزامنة الاسم والهاتف من الطلب الأصلي وإصلاح السجل"
+                onclick="syncOrgProfileFromRequest('${escHtml(org.user_id)}')">
+          🔄 مزامنة البيانات
+        </button>` : ''}
         ${waNum ? `<a href="https://wa.me/${waNum}" target="_blank" class="btn btn-gh btn-sm">📱 واتساب</a>` : ''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function syncOrgProfileFromRequest(userId) {
+  const org = _supportOrganizers.find(o => o.user_id === userId);
+  const src = org?.req_info || org; // المصدر: الطلب أو البيانات المحلية للمنظم اليتيم
+  if (!src) { toast('لا توجد بيانات للمزامنة', 'e'); return; }
+  try {
+    const { error } = await db.from('organizer_profiles').upsert({
+      user_id:     userId,
+      is_verified: true,
+      full_name:   src.full_name || org?.full_name,
+      whatsapp:    src.phone     || org?.whatsapp,
+      region:      src.region    || org?.region,
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    toast('✅ تمت مزامنة البيانات وإصلاح السجل بنجاح', 's');
+    loadSupportOrganizers();
+  } catch(e) {
+    toast('❌ فشلت المزامنة: ' + e.message, 'e');
+  }
 }
 
 function openCreateBazaarForOrg(userId) {
@@ -3278,8 +3319,18 @@ async function approveOrgVerRequest(reqId, userId) {
   const tag = document.getElementById(`orv-ast-${reqId}`);
   if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
   try {
+    // نسخ بيانات الطلب (الاسم، الهاتف، المنطقة) إلى organizer_profiles
+    const req = _orgVerRequests.find(r => r.id === reqId);
+    const profilePayload = {
+      user_id:     userId,
+      is_verified: true,
+      ...(req?.full_name && { full_name: req.full_name }),
+      ...(req?.phone     && { whatsapp:  req.phone }),
+      ...(req?.region    && { region:    req.region }),
+    };
+
     const updates = [db.from('organizer_requests').update({ status: 'approved' }).eq('id', reqId)];
-    if (userId) updates.push(db.from('organizer_profiles').upsert({ user_id: userId, is_verified: true }, { onConflict: 'user_id' }));
+    if (userId) updates.push(db.from('organizer_profiles').upsert(profilePayload, { onConflict: 'user_id' }));
     const results = await Promise.all(updates);
     for (const r of results) if (r.error) throw r.error;
     toast('✅ تم قبول الطلب وتفعيل حساب المنظّم', 's');
