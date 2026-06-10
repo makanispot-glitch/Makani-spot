@@ -1195,6 +1195,7 @@ function renderSlotMap(slots) {
   if (!el) return;
 
   const availCount    = slots.filter(s => s.status === 'available').length;
+  const pendingCount  = slots.filter(s => s.status === 'pending').length;
   const bookedCount   = slots.filter(s => s.status === 'booked').length;
   const featuredCount = slots.filter(s =>
     s.is_featured == true || s.is_featured === 'true' ||
@@ -1238,14 +1239,16 @@ function renderSlotMap(slots) {
       <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
       <div class="sd-units-summary">
         <span class="sd-units-avail">${availCount} متاح</span>
-        ${bookedCount   > 0 ? `<span class="sd-units-rented">${bookedCount} محجوز</span>` : ''}
+        ${pendingCount  > 0 ? `<span class="sd-units-avail" style="color:#b45309;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)">⏳ ${pendingCount} حجز مبدئي</span>` : ''}
+        ${bookedCount   > 0 ? `<span class="sd-units-rented">${bookedCount} محجوز مؤكد</span>` : ''}
         ${featuredCount > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">⭐ ${featuredCount} مميز</span>` : ''}
       </div>
     </div>
 
     <div class="bz-legend">
       <span class="bz-legend-item"><span class="bz-legend-dot available"></span> متاح — اضغط للحجز</span>
-      <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> محجوز</span>
+      ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending"></span> حجز مبدئي ⏳</span>` : ''}
+      <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> محجوز مؤكد</span>
       <span class="bz-legend-item"><span class="bz-legend-dot selected"></span> مختارك</span>
       ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> مكان مميز ⭐</span>` : ''}
     </div>
@@ -1258,13 +1261,14 @@ function renderSlotMap(slots) {
 }
 
 function _buildSlotHtml(slot, index = 0) {
+  const isPending   = slot.status === 'pending';
   const isBooked    = slot.status === 'booked';
-  const isAvailable = !isBooked;
+  const isAvailable = !isBooked && !isPending;
   const isFeatured  = slot.is_featured == true || slot.is_featured === 'true'
                    || slot.is_featured === 1   || slot.is_featured === '1'
                    || slot.is_featured === 'yes';
 
-  let cls = isBooked ? 'booked' : 'available';
+  let cls = isBooked ? 'booked' : isPending ? 'pending' : 'available';
   if (isFeatured) cls += ' featured';
 
   const displayLabel = (slot.row_label || '') + (slot.slot_number || '');
@@ -1273,10 +1277,13 @@ function _buildSlotHtml(slot, index = 0) {
     ? `onclick="selectSlot('${slot.id}','${displayLabel || slot.id}')"`
     : '';
 
-  const bookedLabel = isFeatured ? `محجوز (مميز ⭐)` : `محجوز`;
-  const availLabel  = isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`;
-  const titleAttr   = isBooked
+  const bookedLabel  = isFeatured ? `محجوز مؤكد (مميز ⭐)` : `محجوز مؤكد`;
+  const pendingLabel = isFeatured ? `حجز مبدئي ⏳ (مميز ⭐)` : `حجز مبدئي ⏳`;
+  const availLabel   = isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`;
+  const titleAttr    = isBooked
     ? `title="مكان ${displayLabel} — ${bookedLabel}"`
+    : isPending
+    ? `title="مكان ${displayLabel} — ${pendingLabel}"`
     : `title="مكان ${displayLabel} — ${availLabel}"`;
 
   const delay       = Math.min(index * 0.028, 0.55).toFixed(3);
@@ -1367,6 +1374,7 @@ async function submitBazaarBooking() {
   const phone    = document.getElementById('bzb-phone')?.value.trim();
   const email    = document.getElementById('bzb-email')?.value.trim();
   const business = document.getElementById('bzb-business')?.value.trim();
+  const activity = document.getElementById('bzb-activity')?.value.trim() || null;
   const notes    = document.getElementById('bzb-notes')?.value.trim();
 
   const errorEl = document.getElementById('bzb-error');
@@ -1382,6 +1390,7 @@ async function submitBazaarBooking() {
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showBzbError('ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
+  if (!activity) { showBzbError('من فضلك اختر نوع النشاط'); return; }
   if (!business) { showBzbError('من فضلك اكتب اسم نشاطك أو مشروعك'); return; }
   if (!sbClient) {
     showBzbError('في مشكلة في الاتصال — حاول تاني'); return;
@@ -1397,16 +1406,16 @@ async function submitBazaarBooking() {
   try {
     const now = new Date().toISOString();
 
-    /* قفل الوحدة — نقرأ الصفوف المُحدَّثة للتحقق من عدم سبق الحجز */
+    /* قفل الوحدة بحجز مبدئي — pending */
     const { data: lockedRows, error: lockErr } = await sbClient
       .from('bazaar_slots')
-      .update({ status: 'booked' })
+      .update({ status: 'pending' })
       .eq('id', selectedSlotId)
       .eq('status', 'available')
       .select('id');
 
     if (lockErr) throw new Error('تعذّر حجز المكان: ' + lockErr.message);
-    if (!lockedRows || lockedRows.length === 0) throw new Error('تعذّر حجز المكان');
+    if (!lockedRows || lockedRows.length === 0) throw new Error('تعذّر حجز المكان — ربما تم الحجز للتو من شخص آخر');
 
     // حفظ الحجز
     const { error: bookingErr } = await sbClient
@@ -1419,6 +1428,7 @@ async function submitBazaarBooking() {
         user_phone:    phone,
         user_email:    email || null,
         business_name: business,
+        activity:      activity,
         notes:         notes || null,
         status:        'pending',
         created_at:    now,
@@ -1443,9 +1453,9 @@ async function submitBazaarBooking() {
     const slotEl = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`);
     if (slotEl) {
       slotEl.classList.remove('selected', 'available');
-      slotEl.classList.add('booked');
+      slotEl.classList.add('pending');
       slotEl.onclick = null;
-      slotEl.title   = `مكان ${slotEl.textContent.trim()} — محجوز`;
+      slotEl.title   = `مكان ${slotEl.textContent.trim()} — حجز مبدئي ⏳ بانتظار تأكيد الأدمن`;
     }
 
     if (typeof currentBazaar.available_slots === 'number') {

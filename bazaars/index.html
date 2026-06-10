@@ -443,8 +443,48 @@
             <input type="email" id="bzb-email" placeholder="email@example.com" dir="ltr">
           </div>
           <div class="afg">
-            <label>اسم النشاط / المشروع *</label>
-            <input type="text" id="bzb-business" placeholder="مثال: عربية كنافة، مجوهرات يدوية، ملابس أطفال…">
+            <label>نوع النشاط / التخصص *</label>
+            <select id="bzb-activity" style="width:100%;padding:10px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface2);color:var(--ink);font-size:14px;font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);outline:none;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:left 12px center;padding-left:32px">
+              <option value="">— اختر نوع النشاط —</option>
+              <optgroup label="🍽️ طعام وشراب">
+                <option value="أكل">أكل ومشروبات</option>
+                <option value="حلويات">حلويات</option>
+              </optgroup>
+              <optgroup label="👗 أزياء وإكسسوارات">
+                <option value="ملابس">ملابس</option>
+                <option value="إكسسوارات">إكسسوارات</option>
+                <option value="موضة">موضة</option>
+                <option value="مجوهرات">مجوهرات</option>
+                <option value="ساعات">ساعات</option>
+              </optgroup>
+              <optgroup label="🎁 هدايا وديكور">
+                <option value="هدايا">هدايا</option>
+                <option value="ديكور">ديكور</option>
+                <option value="مستلزمات منزلية">مستلزمات منزلية</option>
+              </optgroup>
+              <optgroup label="✋ حرف وفنون">
+                <option value="حرف يدوية">حرف يدوية</option>
+                <option value="عطور">عطور</option>
+                <option value="عناية شخصية">عناية شخصية</option>
+              </optgroup>
+              <optgroup label="📚 كتب وتقنية">
+                <option value="كتب">كتب</option>
+                <option value="إلكترونيات">إلكترونيات</option>
+                <option value="تقنية">تقنية</option>
+              </optgroup>
+              <optgroup label="👶 أطفال">
+                <option value="ألعاب أطفال">ألعاب أطفال</option>
+              </optgroup>
+              <optgroup label="🏪 أخرى">
+                <option value="بيع بالجملة">بيع بالجملة</option>
+                <option value="خدمات">خدمات</option>
+                <option value="متنوع">متنوع</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="afg">
+            <label>اسم المشروع / النشاط *</label>
+            <input type="text" id="bzb-business" placeholder="مثال: عربية كنافة الست سميرة، مجوهرات نور…">
           </div>
           <div class="afg">
             <label>ملاحظات (اختياري)</label>
@@ -472,10 +512,10 @@
           <button class="btn btn-primary" onclick="submitBazaarBooking()"
                   style="width:100%;padding:14px;font-size:15px;margin-top:10px;
                          justify-content:center;border-radius:var(--radius-lg)">
-            ادفع العربون بأمان ←
+            ⏳ أرسل طلب الحجز المبدئي
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:8px">
-            الحجز مؤكد فور الإرسال — هنتواصل معاك لتأكيد التفاصيل
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:8px;line-height:1.6">
+            سيُحجز المكان مبدئياً — هيتواصل معاك الفريق لتأكيد الحجز النهائي ودفع العربون
           </div>
         </div>
 

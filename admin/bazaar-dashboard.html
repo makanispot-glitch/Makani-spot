@@ -425,22 +425,37 @@ tbody tr:hover .row-acts{opacity:1}
   <!-- ═══ SLOTS ═══ -->
   <div class="pg" id="pg-sl">
     <div class="sh">
-      <div class="st">📦 الوحدات <span>الفرعية</span></div>
+      <div class="st">
+        📦 الوحدات <span>الفرعية</span>
+        <span class="nb" id="sl-pending-badge" style="display:none;background:rgba(245,158,11,.2);color:#b45309;border:1px solid rgba(245,158,11,.4)">0</span>
+      </div>
       <button class="btn btn-or btn-sm" onclick="gp('add-sl')">➕ إضافة وحدات</button>
     </div>
+
+    <!-- شريط تصفية -->
     <div class="fbar">
-      <div class="sw"><span class="si">🔍</span><input type="text" id="sl-q" placeholder="ابحث..." oninput="renderSlots()"></div>
+      <div class="sw"><span class="si">🔍</span><input type="text" id="sl-q" placeholder="ابحث بالاسم أو النشاط..." oninput="renderSlots()"></div>
       <select class="fc-s" id="sl-fbz" onchange="renderSlots()"><option value="">كل البازارات</option></select>
       <select class="fc-s" id="sl-fst" onchange="renderSlots()">
         <option value="">كل الحالات</option>
+        <option value="pending">⏳ حجز مبدئي</option>
         <option value="available">✅ متاح</option>
-        <option value="booked">🔴 محجوز</option>
-        <option value="reserved">🟡 محجوز مبدئي</option>
+        <option value="booked">🔴 محجوز مؤكد</option>
       </select>
     </div>
+
     <div class="tw">
       <table>
-        <thead><tr><th>رقم الوحدة</th><th>البازار</th><th>الصف</th><th>السعر</th><th>الحالة</th><th>التاجر</th><th>النشاط</th><th>ملاحظات</th><th></th></tr></thead>
+        <thead><tr>
+          <th>الوحدة</th>
+          <th>البازار</th>
+          <th>السعر</th>
+          <th>الحالة / التاجر</th>
+          <th>الحالة</th>
+          <th>النشاط</th>
+          <th>إجراء / ملاحظات</th>
+          <th></th>
+        </tr></thead>
         <tbody id="sl-tb"></tbody>
       </table>
     </div>
@@ -1354,43 +1369,150 @@ function renderBazaars() {
    SLOTS
 ══════════════════════════════════════════ */
 function renderSlots() {
-  const q=document.getElementById('sl-q').value.toLowerCase();
-  const bz=document.getElementById('sl-fbz').value;
-  const st=document.getElementById('sl-fst').value;
-  fSl=SLOTS.filter(s=>
-    (!q||s.slotId.toLowerCase().includes(q)||(s.traderName||'').toLowerCase().includes(q))&&
-    (!bz||s.bazaarId===bz)&&(!st||s.status===st)
+  const q   = document.getElementById('sl-q').value.toLowerCase();
+  const bz  = document.getElementById('sl-fbz').value;
+  const st  = document.getElementById('sl-fst').value;
+
+  fSl = SLOTS.filter(s =>
+    (!q  || s.slotId.toLowerCase().includes(q) || (s.traderName||'').toLowerCase().includes(q) || (s.activity||'').toLowerCase().includes(q)) &&
+    (!bz || s.bazaarId === bz) &&
+    (!st || s.status === st)
   );
-  slPg=1;
-  const pg=fSl.slice(0,PER);
-  const bzMap=Object.fromEntries(BAZAARS.map(b=>[b.id,b.name]));
-  document.getElementById('sl-tb').innerHTML=pg.length?pg.map(s=>{
-    const scls={available:'ba-av',booked:'ba-bk',reserved:'ba-rs'};
-    const slbl={available:'متاح',booked:'محجوز',reserved:'محجوز مبدئي'};
+  slPg = 1;
+  const pg     = fSl.slice(0, PER);
+  const bzMap  = Object.fromEntries(BAZAARS.map(b => [b.id, b.name]));
+  const bkMap  = {};
+  BOOKINGS.forEach(b => { if (b.slotId) bkMap[b.slotId] = b; });
+
+  /* إحصائيات سريعة */
+  const pendingSlots = SLOTS.filter(s => s.status === 'pending').length;
+  document.getElementById('sl-pending-badge').textContent = pendingSlots || 0;
+  document.getElementById('sl-pending-badge').style.display = pendingSlots ? '' : 'none';
+
+  const cont = document.getElementById('sl-tb');
+  if (!pg.length) {
+    cont.innerHTML = '<tr><td colspan="9"><div class="empty"><div class="ei">📦</div>لا نتائج</div></td></tr>';
+    renderPag('sl-pg', fSl.length, slPg, p=>{slPg=p;renderSlots();});
+    return;
+  }
+
+  cont.innerHTML = pg.map(s => {
+    const bzName  = bzMap[s.bazaarId] || s.bazaarId;
+    const bk      = bkMap[s.slotId];
+    const isPend  = s.status === 'pending';
+    const isBook  = s.status === 'booked';
+    const waPhone = (bk?.phone || '').replace(/\D/g,'');
+    const waLink  = waPhone ? `https://wa.me/${waPhone.startsWith('0') ? '2'+waPhone : waPhone}` : null;
+
+    const statusBadge = isPend
+      ? `<span class="ba" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.3)">⏳ حجز مبدئي</span>`
+      : isBook
+      ? `<span class="ba ba-bk">🔴 محجوز مؤكد</span>`
+      : `<span class="ba ba-av">✅ متاح</span>`;
+
+    /* بطاقة الحجز المبدئي — موسّعة */
+    if (isPend && bk) {
+      return `<tr style="background:rgba(245,158,11,.04);border-right:3px solid rgba(245,158,11,.6)">
+        <td><code style="color:var(--or);font-size:11px">${s.rowLabel}${s.slotNumber}</code><br>
+            <code style="color:var(--mu);font-size:9px">${s.slotId.slice(0,8)}…</code></td>
+        <td style="font-size:11.5px">${escHtml(bzName)}</td>
+        <td colspan="2">
+          <div style="font-size:13px;font-weight:700;color:var(--tx)">${escHtml(bk.vendorName||'—')}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
+            <span dir="ltr">${escHtml(bk.phone||'—')}</span>
+            ${bk.activity ? `<span>·</span><span style="color:var(--or)">${escHtml(bk.activity)}</span>` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--mu)">🏪 ${escHtml(bk.email||'')}</div>
+        </td>
+        <td>${statusBadge}<br><span class="pr" style="font-size:11px">${fmt(s.price||0)} ج</span></td>
+        <td>
+          <select class="ie-sel" onchange="changeSlotTrader('${s.slotId}','activity',this.value)">
+            <option value="">— النشاط —</option>
+            ${ACTIVITIES.map(a=>`<option value="${a}" ${(s.activity||bk.activity)===a?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </td>
+        <td style="min-width:160px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-or btn-sm" onclick="confirmSlotBooking('${s.slotId}')" title="تأكيد الحجز">✅ تأكيد</button>
+            <button class="btn btn-rd btn-sm" onclick="cancelSlotBooking('${s.slotId}')" title="إلغاء وإعادة الإتاحة">✕ إلغاء</button>
+            ${waLink ? `<a href="${waLink}" target="_blank" class="btn btn-gh btn-sm" title="تواصل واتساب">📱 واتساب</a>` : ''}
+          </div>
+        </td>
+        <td><button class="btn btn-gh btn-sm" onclick="openSlotMap('${s.bazaarId}')">🗺️</button></td>
+      </tr>`;
+    }
+
+    /* صف عادي */
     return `<tr>
-      <td><code style="color:var(--or);font-size:11px">${s.slotId}</code></td>
-      <td style="font-size:11.5px;color:var(--mu)">${bzMap[s.bazaarId]||s.bazaarId}</td>
-      <td style="font-weight:700;color:var(--bl)">${s.rowLabel}${s.slotNumber}</td>
-      <td><span class="pr">${fmt(s.price||0)} ج</span></td>
+      <td><code style="color:var(--or);font-size:11px">${s.rowLabel}${s.slotNumber}</code></td>
+      <td style="font-size:11.5px;color:var(--mu)">${escHtml(bzName)}</td>
+      <td style="font-weight:700;color:var(--bl)">${fmt(s.price||0)} ج ${s.is_featured ? '<span style="color:var(--yw)">⭐</span>' : ''}</td>
+      <td>${statusBadge}</td>
       <td>
         <select class="ie-sel" onchange="changeSlotStatus('${s.slotId}',this.value)">
           <option value="available" ${s.status==='available'?'selected':''}>✅ متاح</option>
-          <option value="booked" ${s.status==='booked'?'selected':''}>🔴 محجوز</option>
-          <option value="reserved" ${s.status==='reserved'?'selected':''}>🟡 محجوز مبدئي</option>
+          <option value="pending"   ${s.status==='pending'  ?'selected':''}>⏳ حجز مبدئي</option>
+          <option value="booked"    ${s.status==='booked'   ?'selected':''}>🔴 محجوز مؤكد</option>
         </select>
       </td>
-      <td><input class="ie-inp" value="${s.traderName||''}" placeholder="اسم التاجر" onchange="changeSlotTrader('${s.slotId}','traderName',this.value)" style="width:110px"></td>
+      <td><input class="ie-inp" value="${escHtml(s.traderName||bk?.vendorName||'')}" placeholder="اسم التاجر"
+                 onchange="changeSlotTrader('${s.slotId}','traderName',this.value)" style="width:100px"></td>
       <td>
         <select class="ie-sel" onchange="changeSlotTrader('${s.slotId}','activity',this.value)">
-          <option value="">— اختر —</option>
+          <option value="">— النشاط —</option>
           ${ACTIVITIES.map(a=>`<option value="${a}" ${s.activity===a?'selected':''}>${a}</option>`).join('')}
         </select>
       </td>
-      <td><input class="ie-inp" value="${s.notes||''}" placeholder="ملاحظة" onchange="changeSlotTrader('${s.slotId}','notes',this.value)" style="width:90px"></td>
-      <td><div class="row-acts"><button class="btn btn-gh btn-sm" onclick="openSlotMap('${s.bazaarId}')">🗺️</button></div></td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <input class="ie-inp" value="${escHtml(s.notes||'')}" placeholder="ملاحظة"
+                 onchange="changeSlotTrader('${s.slotId}','notes',this.value)" style="width:80px">
+          ${isBook && bk && (bk.phone||'').replace(/\D/g,'') ?
+            `<a href="https://wa.me/${bk.phone.replace(/\D/g,'').startsWith('0')? '2'+bk.phone.replace(/\D/g,''):bk.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-gh btn-sm" title="واتساب">📱</a>` : ''}
+        </div>
+      </td>
+      <td><button class="btn btn-gh btn-sm" onclick="openSlotMap('${s.bazaarId}')">🗺️</button></td>
     </tr>`;
-  }).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">📦</div>لا نتائج</div></td></tr>';
-  renderPag('sl-pg',fSl.length,slPg,p=>{slPg=p;renderSlots();});
+  }).join('');
+  renderPag('sl-pg', fSl.length, slPg, p=>{slPg=p;renderSlots();});
+}
+
+async function confirmSlotBooking(slotId) {
+  const s  = SLOTS.find(x => x.slotId === slotId);
+  if (!s) return;
+  const bk = BOOKINGS.find(b => b.slotId === slotId && b.bookStatus !== 'cancelled');
+  if (!confirm(`تأكيد حجز المكان ${s.rowLabel}${s.slotNumber}${bk ? ' للتاجر ' + bk.vendorName : ''}؟`)) return;
+
+  try {
+    await db.from('bazaar_slots').update({ status: 'booked' }).eq('id', s._dbId);
+    if (bk) await db.from('bazaar_bookings').update({ status: 'confirmed' }).eq('id', bk._dbId);
+    s.status = 'booked';
+    if (bk) bk.bookStatus = 'confirmed';
+    renderSlots(); renderBookings(); updateStats();
+    toast('✅ تم تأكيد الحجز', 's');
+  } catch(e) { toast('❌ ' + e.message, 'e'); }
+}
+
+async function cancelSlotBooking(slotId) {
+  const s  = SLOTS.find(x => x.slotId === slotId);
+  if (!s) return;
+  const bk = BOOKINGS.find(b => b.slotId === slotId && b.bookStatus !== 'cancelled');
+  if (!confirm(`إلغاء الحجز المبدئي للمكان ${s.rowLabel}${s.slotNumber}؟\nسيصبح المكان متاحاً مجدداً.`)) return;
+
+  try {
+    await db.from('bazaar_slots').update({ status: 'available' }).eq('id', s._dbId);
+    if (bk) await db.from('bazaar_bookings').update({ status: 'cancelled' }).eq('id', bk._dbId);
+    s.status = 'available';
+    if (bk) bk.bookStatus = 'cancelled';
+    /* إعادة available_slots */
+    const baz = BAZAARS.find(b => b.id === s.bazaarId);
+    if (baz) {
+      baz.availSlots = (baz.availSlots || 0) + 1;
+      await db.from('bazaars').update({ available_slots: baz.availSlots }).eq('id', baz._dbId || baz.id);
+    }
+    renderSlots(); renderBookings(); updateStats();
+    toast('تم إلغاء الحجز — المكان متاح الآن', 'i');
+  } catch(e) { toast('❌ ' + e.message, 'e'); }
 }
 
 /* ══════════════════════════════════════════

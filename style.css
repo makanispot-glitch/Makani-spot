@@ -8395,7 +8395,21 @@ footer {
   box-shadow: 0 3px 12px rgba(34, 197, 94, 0.25);
 }
 
-/* محجوز */
+/* حجز مبدئي — pending */
+.bz-slot.pending {
+  background: rgba(245, 158, 11, 0.13);
+  border: 1.5px dashed rgba(245, 158, 11, 0.7);
+  color: #b45309;
+  cursor: not-allowed;
+  animation: pendingPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes pendingPulse {
+  0%, 100% { border-color: rgba(245,158,11,.5); background: rgba(245,158,11,.10); }
+  50%       { border-color: rgba(245,158,11,.9); background: rgba(245,158,11,.20); }
+}
+
+/* محجوز مؤكد */
 .bz-slot.booked {
   background: rgba(156, 163, 175, 0.16);
   border: 1.5px solid rgba(156, 163, 175, 0.32);
@@ -8447,6 +8461,11 @@ footer {
 .bz-legend-dot.available {
   background: rgba(34, 197, 94, 0.16);
   border: 1.5px solid rgba(34, 197, 94, 0.55);
+}
+
+.bz-legend-dot.pending {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1.5px dashed rgba(245, 158, 11, 0.7);
 }
 
 .bz-legend-dot.booked {
