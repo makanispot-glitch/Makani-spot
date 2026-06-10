@@ -2326,7 +2326,7 @@ async function loadMyBazaars(userId) {
   try {
     const { data: bazaars } = await sbClient
       .from('bazaars')
-      .select('id,name,date_start,location,image,status')
+      .select('id,name,date_start,date_end,location,image,status')
       .eq('organizer_id', userId)
       .order('date_start', { ascending: false });
 
@@ -2350,7 +2350,12 @@ async function loadMyBazaars(userId) {
                 onerror="this.style.display='none'">`
         : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);
                        display:flex;align-items:center;justify-content:center;font-size:18px">🎪</div>`;
-      const statusBadge = b.status === 'published'
+      const _today = new Date().toISOString().split('T')[0];
+      const _end   = b.date_end || b.date_start;
+      const _expired = _end && _end < _today;
+      const statusBadge = _expired
+        ? `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:700">انتهى</span>`
+        : b.status === 'published'
         ? `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#16a34a;font-weight:700">منشور</span>`
         : `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--ink3);font-weight:700">${b.status || 'مسودة'}</span>`;
       return `
@@ -3206,8 +3211,9 @@ async function loadBazaars() {
     try {
       const { data, error } = await sbClient
         .from('bazaars')
-        .select('*')
+        .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price')
         .eq('status', 'published')
+        .eq('is_archived', false)
         .order('date_start', { ascending: true });
 
       if (!error && data && data.length > 0) {

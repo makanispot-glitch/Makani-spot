@@ -82,6 +82,7 @@ function _showForm() {
   document.getElementById('org-guard').style.display = 'none';
   document.getElementById('org-steps').style.display = 'flex';
   document.getElementById('org-panel-1').classList.add('active');
+  setTimeout(() => { _orgRestoreDraft(); _attachDraftListeners(); }, 60);
 }
 
 /* ──────────────────────────────────────────────────────
@@ -138,6 +139,16 @@ function _validateStep2() {
   const price = Number(document.getElementById('o-price').value);
   if (!slots || slots < 1) { _focusErr('o-slots', 'يجب إدخال عدد الوحدات (1 على الأقل)'); return false; }
   if (!price || price < 0) { _focusErr('o-price', 'يجب إدخال سعر الوحدة'); return false; }
+
+  const hasPremium = document.getElementById('o-has-premium')?.checked;
+  if (hasPremium) {
+    const premiumSlots = Number(document.getElementById('o-premium-slots').value) || 0;
+    const premiumPrice = Number(document.getElementById('o-premium-price').value) || 0;
+    if (premiumSlots < 1) { _focusErr('o-premium-slots', 'يجب إدخال عدد الوحدات المميزة (1 على الأقل)'); return false; }
+    if (premiumSlots >= slots) { _focusErr('o-premium-slots', `عدد الوحدات المميزة (${premiumSlots}) يجب أن يكون أقل من إجمالي الوحدات (${slots})`); return false; }
+    if (premiumPrice <= 0) { _focusErr('o-premium-price', 'يجب إدخال سعر الوحدة المميزة'); return false; }
+    if (premiumPrice <= price) { _focusErr('o-premium-price', `سعر الوحدة المميزة (${premiumPrice}) يجب أن يكون أعلى من سعر الوحدة العادية (${price})`); return false; }
+  }
   return true;
 }
 
@@ -151,11 +162,37 @@ function _focusErr(id, msg) {
 }
 
 /* ──────────────────────────────────────────────────────
+   التحقق من صلاحية ملف الصورة قبل الرفع
+────────────────────────────────────────────────────── */
+const _IMG_MAX_BYTES  = 8 * 1024 * 1024; // 8 ميجابايت
+const _IMG_ALLOWED    = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+function _validateImgFile(file, statusElId) {
+  const statusEl = statusElId ? document.getElementById(statusElId) : null;
+  const showErr  = msg => {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red);font-size:12px">❌ ${msg}</span>`;
+    else alert(msg);
+  };
+
+  if (!_IMG_ALLOWED.includes((file.type || '').toLowerCase())) {
+    showErr('نوع الملف غير مدعوم — يُسمح فقط بـ JPG، PNG، WEBP');
+    return false;
+  }
+  if (file.size > _IMG_MAX_BYTES) {
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    showErr(`حجم الصورة كبير (${mb} MB) — الحد الأقصى 8 MB`);
+    return false;
+  }
+  return true;
+}
+
+/* ──────────────────────────────────────────────────────
    رفع صورة الغلاف
 ────────────────────────────────────────────────────── */
 async function handleCoverImageUpload(inputEl) {
   const file = inputEl?.files?.[0];
   if (!file) return;
+  if (!_validateImgFile(file, 'o-cover-status')) { inputEl.value = ''; return; }
   await _handleSingleUpload(file, 'cover', {
     box:     'o-cover-box',
     ico:     'o-cover-ico',
@@ -171,6 +208,7 @@ async function handleCoverImageUpload(inputEl) {
 async function handleSketchImageUpload(inputEl) {
   const file = inputEl?.files?.[0];
   if (!file) return;
+  if (!_validateImgFile(file, 'o-sketch-status')) { inputEl.value = ''; return; }
   await _handleSingleUpload(file, 'sketch', {
     box:     'o-sketch-box',
     ico:     'o-sketch-ico',
@@ -186,6 +224,7 @@ async function handleSketchImageUpload(inputEl) {
 async function handleExtraImageUpload(idx, inputEl) {
   const file = inputEl?.files?.[0];
   if (!file) return;
+  if (!_validateImgFile(file, `o-extra-${idx}-status`)) { inputEl.value = ''; return; }
   await _handleSingleUpload(file, `extra-${idx}`, {
     box:     `o-extra-${idx}-box`,
     ico:     `o-extra-${idx}-ico`,
@@ -454,6 +493,8 @@ async function orgSubmit() {
     const { error } = await sbClient.from('bazaars').insert(payload);
     if (error) throw new Error(error.message);
 
+    _orgClearDraft();
+
     document.getElementById('org-result').innerHTML = `
       <div class="org-ok">
         <div class="org-ok-ico">🎉</div>
@@ -487,4 +528,93 @@ function _buildNotes(notes, sketchUrl) {
   if (notes) parts.push(notes);
   if (sketchUrl) parts.push(`رابط خريطة / اسكتش البازار: ${sketchUrl}`);
   return parts.length ? parts.join('\n\n') : null;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   💾 حفظ المسودة تلقائياً في localStorage
+══════════════════════════════════════════════════════ */
+
+const _ORG_DRAFT_FIELDS = [
+  'o-name','o-venue','o-addr','o-ds','o-de','o-maps','o-desc',
+  'o-slots','o-price','o-dep1','o-dep2','o-contract',
+  'o-premium-slots','o-premium-price',
+  'o-phone','o-notes','o-sketch-url',
+];
+
+function _orgDraftKey() {
+  return `mkspot:org-draft:${currentUser?.id || 'anon'}`;
+}
+
+function _orgSaveDraft() {
+  if (!currentUser) return;
+  const data = {};
+  _ORG_DRAFT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.value;
+  });
+  const prem = document.getElementById('o-has-premium');
+  if (prem) data['o-has-premium'] = prem.checked;
+  try {
+    localStorage.setItem(_orgDraftKey(), JSON.stringify({ ...data, _ts: Date.now() }));
+  } catch(_) {}
+}
+
+function _orgRestoreDraft() {
+  if (!currentUser) return;
+  let draft;
+  try {
+    const raw = localStorage.getItem(_orgDraftKey());
+    draft = raw ? JSON.parse(raw) : null;
+  } catch(_) { return; }
+  if (!draft) return;
+
+  _ORG_DRAFT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && draft[id] !== undefined) el.value = draft[id];
+  });
+
+  const prem = document.getElementById('o-has-premium');
+  if (prem && draft['o-has-premium'] !== undefined) {
+    prem.checked = !!draft['o-has-premium'];
+    const premSection = document.getElementById('org-premium-fields');
+    if (premSection) premSection.style.display = prem.checked ? '' : 'none';
+  }
+
+  const banner = document.getElementById('org-draft-banner');
+  if (banner) {
+    const mins = Math.round((Date.now() - (draft._ts || 0)) / 60000);
+    const ageStr = mins < 1 ? 'للتو' : mins < 60 ? `منذ ${mins} دقيقة` : `من قبل`;
+    const ageEl = banner.querySelector('.org-draft-age');
+    if (ageEl) ageEl.textContent = ageStr;
+    banner.style.display = 'flex';
+  }
+}
+
+function _orgClearDraft() {
+  try { localStorage.removeItem(_orgDraftKey()); } catch(_) {}
+  const banner = document.getElementById('org-draft-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+function orgDiscardDraft() {
+  _orgClearDraft();
+  _ORG_DRAFT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const prem = document.getElementById('o-has-premium');
+  if (prem) { prem.checked = false; }
+  const premSection = document.getElementById('org-premium-fields');
+  if (premSection) premSection.style.display = 'none';
+}
+
+let _draftListenersAttached = false;
+function _attachDraftListeners() {
+  if (_draftListenersAttached) return;
+  _draftListenersAttached = true;
+  _ORG_DRAFT_FIELDS.forEach(id => {
+    document.getElementById(id)?.addEventListener('input', _orgSaveDraft);
+  });
+  document.getElementById('o-has-premium')?.addEventListener('change', _orgSaveDraft);
 }

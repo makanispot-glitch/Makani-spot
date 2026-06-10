@@ -389,6 +389,15 @@
     </div>
   </div>
 
+  <!-- بانر استعادة المسودة -->
+  <div id="org-draft-banner" class="org-draft-banner">
+    <span class="org-draft-banner-ico">💾</span>
+    <span class="org-draft-banner-txt">
+      استُعيدت مسودة سابقة <span class="org-draft-age"></span> — يمكنك المتابعة من حيث توقفت
+    </span>
+    <button class="org-draft-discard" onclick="orgDiscardDraft()">مسح المسودة</button>
+  </div>
+
   <!-- ══════════════════════════════════════════
        Step 1: معلومات الفعالية
   ══════════════════════════════════════════ -->
@@ -442,7 +451,7 @@
         <div class="org-media-header-ico">🖼️</div>
         <div class="org-media-header-text">
           <div class="org-media-header-title">مواد بصرية للبازار</div>
-          <div class="org-media-header-sub">تساعد العارضين على معرفة شكل الحدث — تُضغط تلقائياً وتُرفع إلى Cloudflare R2 (اختياري)</div>
+          <div class="org-media-header-sub">تساعد العارضين على معرفة شكل الحدث — الصور اختيارية لكنها تزيد من جاذبية البازار</div>
         </div>
       </div>
       <div class="org-media-body">
@@ -452,7 +461,7 @@
           <div class="org-cover-label">🏷️ صورة الغلاف الرئيسية</div>
           <div class="org-cover-box" id="o-cover-box" onclick="document.getElementById('o-cover-file').click()">
             <div class="org-cover-ico" id="o-cover-ico">📷</div>
-            <div class="org-cover-lbl" id="o-cover-lbl">اضغط لرفع صورة الغلاف — تُضغط تلقائياً وتُرفع إلى R2</div>
+            <div class="org-cover-lbl" id="o-cover-lbl">اضغط لاختيار صورة الغلاف</div>
             <img class="org-cover-preview" id="o-cover-preview" alt="صورة الغلاف">
           </div>
           <input type="file" id="o-cover-file" accept="image/*" style="display:none" onchange="handleCoverImageUpload(this)">
@@ -512,7 +521,7 @@
             </div>
 
           </div>
-          <div class="org-hint" style="margin-top:6px">صور إضافية للمكان أو لأحد بازاراتك السابقة — تُضغط وتُرفع إلى R2 تلقائياً</div>
+          <div class="org-hint" style="margin-top:6px">صور إضافية للمكان أو من بازاراتك السابقة (اختياري)</div>
         </div>
 
         <!-- اسكتش البازار -->
