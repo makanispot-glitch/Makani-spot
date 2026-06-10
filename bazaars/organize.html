@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -26,13 +26,14 @@
 .bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--orange); }
 .bz-nav-title {
   font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2);
-  padding: 4px 12px; background: var(--orange-ultra); border-radius: var(--radius-pill); white-space: nowrap;
+  padding: 4px 12px; background: var(--orange-ultra); border-radius: var(--radius-pill);
 }
 .bz-nav-right { display: flex; align-items: center; gap: 12px; }
 .bz-nav-back {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 16px; border-radius: var(--radius-pill);
-  font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2); text-decoration: none;
+  font-size: 13px; font-weight: 700; font-family: var(--font-display);
+  color: var(--ink2); text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
 }
 .bz-nav-back:hover { color: var(--orange); }
@@ -41,7 +42,7 @@
   .bz-nav-title { display: none; }
 }
 
-/* ── صفحة التنظيم ── */
+/* ── Page ── */
 .org-page { min-height: 100vh; background: var(--surface2); padding-bottom: 80px; }
 
 /* Hero */
@@ -139,7 +140,132 @@
   border-color: var(--orange); background: var(--surface); box-shadow: var(--ring-focus);
 }
 .org-fg textarea { resize: vertical; min-height: 80px; }
-.org-hint { font-size: 11px; color: var(--ink3); }
+.org-hint { font-size: 11px; color: var(--ink3); line-height: 1.7; }
+
+/* ── قسم الصور ── */
+.org-media-section {
+  margin-top: 24px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+.org-media-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  background: rgba(243,100,24,0.06);
+  border-bottom: 1.5px solid var(--border);
+}
+.org-media-header-ico { font-size: 18px; }
+.org-media-header-text { flex: 1; }
+.org-media-header-title { font-size: 13px; font-weight: 900; color: var(--dark); }
+.org-media-header-sub   { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+.org-media-body { padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+
+/* ── صورة الغلاف (كبيرة) ── */
+.org-cover-wrap { display: flex; flex-direction: column; gap: 6px; }
+.org-cover-label { font-size: 13px; font-weight: 800; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+.org-cover-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface2);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out);
+  min-height: 140px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  text-align: center; padding: 18px 14px;
+}
+.org-cover-box:hover { border-color: var(--orange); }
+.org-cover-box.has-img { border-style: solid; border-color: #86efac; background: #f0fdf4; padding: 0; }
+.org-cover-box.uploading { border-color: var(--orange); animation: orgPulse 1.2s ease-in-out infinite; }
+@keyframes orgPulse { 0%,100%{opacity:1} 50%{opacity:.75} }
+.org-cover-ico { font-size: 32px; }
+.org-cover-lbl { font-size: 12px; font-weight: 800; color: var(--ink2); }
+.org-cover-preview {
+  width: 100%; max-height: 220px; object-fit: cover;
+  display: none; border-radius: calc(var(--radius-lg) - 2px);
+}
+.org-cover-box.has-img .org-cover-preview { display: block; }
+.org-cover-box.has-img .org-cover-ico,
+.org-cover-box.has-img .org-cover-lbl   { display: none; }
+.org-cover-status { font-size: 11px; color: var(--ink3); min-height: 16px; }
+
+/* ── الصور الإضافية (شبكة 4) ── */
+.org-extra-label { font-size: 13px; font-weight: 800; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+.org-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 480px) { .org-extra-grid { grid-template-columns: repeat(2, 1fr); } }
+.org-extra-slot { position: relative; }
+.org-extra-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface2);
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  position: relative; overflow: hidden;
+}
+.org-extra-box:hover { border-color: var(--orange); background: var(--surface); }
+.org-extra-box.has-img { border-style: solid; border-color: #86efac; background: #f0fdf4; }
+.org-extra-box.uploading { border-color: var(--orange); animation: orgPulse 1.2s ease-in-out infinite; }
+.org-extra-ico { font-size: 22px; }
+.org-extra-preview {
+  width: 100%; height: 100%; object-fit: cover;
+  display: none; border-radius: calc(var(--radius-lg) - 2px);
+  position: absolute; inset: 0;
+}
+.org-extra-box.has-img .org-extra-ico    { display: none; }
+.org-extra-box.has-img .org-extra-preview { display: block; }
+.org-extra-status {
+  font-size: 10px; color: var(--ink3);
+  min-height: 14px; text-align: center; margin-top: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.org-extra-remove {
+  position: absolute; top: 4px; left: 4px; z-index: 10;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(220,38,38,0.88); color: #fff; border: none;
+  font-size: 13px; font-weight: 900; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  line-height: 1; transition: background var(--dur-fast);
+}
+.org-extra-remove:hover { background: #dc2626; }
+
+/* ── اسكتش البازار (صغير/مُخصّص) ── */
+.org-sketch-wrap { display: flex; flex-direction: column; gap: 6px; }
+.org-sketch-label { font-size: 13px; font-weight: 800; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+.org-sketch-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: start; }
+@media (max-width: 480px) { .org-sketch-row { grid-template-columns: 1fr; } }
+.org-sketch-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface2);
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  cursor: pointer; text-align: center; padding: 10px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+  position: relative; overflow: hidden;
+}
+.org-sketch-box:hover { border-color: var(--orange); }
+.org-sketch-box.has-img { border-style: solid; border-color: #86efac; background: #f0fdf4; }
+.org-sketch-box.uploading { border-color: var(--orange); animation: orgPulse 1.2s ease-in-out infinite; }
+.org-sketch-ico { font-size: 24px; }
+.org-sketch-lbl { font-size: 11px; font-weight: 700; color: var(--ink2); }
+.org-sketch-preview {
+  width: 100%; height: 100%; object-fit: contain;
+  display: none; position: absolute; inset: 0;
+  border-radius: calc(var(--radius-lg) - 2px);
+}
+.org-sketch-box.has-img .org-sketch-ico,
+.org-sketch-box.has-img .org-sketch-lbl { display: none; }
+.org-sketch-box.has-img .org-sketch-preview { display: block; }
+.org-sketch-meta { display: flex; flex-direction: column; gap: 6px; }
+.org-sketch-status { font-size: 11px; color: var(--ink3); min-height: 16px; }
 
 /* Price summary box */
 .org-price-box {
@@ -152,7 +278,7 @@
 .org-price-row span:first-child { color: var(--ink2); }
 .org-price-row span:last-child  { color: var(--orange); font-weight: 700; }
 
-/* Consent checkbox */
+/* Consent */
 .org-consent {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 14px 16px; background: var(--surface2);
@@ -170,7 +296,7 @@
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 12px; padding: 16px 18px; margin-bottom: 18px;
 }
-.org-summary-title { font-size: 13px; font-weight: 900; color: var(--ink2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.org-summary-title { font-size: 13px; font-weight: 900; color: var(--ink2); margin-bottom: 12px; }
 .org-sum-row { display: flex; gap: 10px; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
 .org-sum-row:last-child { border-bottom: none; }
 .org-sum-lbl { color: var(--ink3); flex-shrink: 0; width: 120px; }
@@ -207,39 +333,13 @@
   background: #f0fdf4; border: 1.5px solid #86efac; border-radius: var(--radius-xl);
   padding: 20px 24px; text-align: center;
 }
-.org-ok-ico  { font-size: 40px; margin-bottom: 10px; }
+.org-ok-ico   { font-size: 40px; margin-bottom: 10px; }
 .org-ok-title { font-size: 18px; font-weight: 900; color: #15803d; margin-bottom: 6px; }
 .org-ok-desc  { font-size: 13px; color: #166534; line-height: 1.7; }
 .org-err {
   background: var(--red-light); border: 1.5px solid #fca5a5; border-radius: var(--radius-lg);
   padding: 14px 18px; font-size: 13px; color: var(--red);
 }
-
-/* Visual uploads */
-.org-upload-box {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface2);
-  padding: 16px 14px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-}
-.org-upload-box:hover { border-color: var(--orange); background: var(--surface); }
-.org-upload-box.has-img { border-color: #86efac; background: #f0fdf4; }
-.org-upload-ico { font-size: 30px; margin-bottom: 5px; }
-.org-upload-lbl { font-size: 12px; font-weight: 800; color: var(--ink2); }
-.org-upload-preview {
-  display: none;
-  width: 100%;
-  max-height: 180px;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  margin-top: 10px;
-  border: 1px solid var(--border);
-}
-.org-upload-status { min-height: 18px; font-size: 11px; color: var(--ink3); margin-top: 5px; }
-.org-upload-url { margin-top: 8px; }
 </style>
 </head>
 <body class="org-page">
@@ -265,7 +365,7 @@
 <!-- ── FORM AREA ── -->
 <div class="org-form-wrap">
 
-  <!-- حراسة الوصول: تظهر إذا لم يكن المستخدم موثّقاً -->
+  <!-- حراسة الوصول -->
   <div id="org-guard" style="display:none">
     <div class="guard-ico" id="guard-ico">🔒</div>
     <h2 id="guard-title">التحقق من صلاحيات الوصول…</h2>
@@ -289,7 +389,9 @@
     </div>
   </div>
 
-  <!-- ── Step 1: معلومات الفعالية ── -->
+  <!-- ══════════════════════════════════════════
+       Step 1: معلومات الفعالية
+  ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-1" style="margin-top:22px">
     <div class="org-panel-title">🗓 معلومات الفعالية</div>
     <div class="org-grid">
@@ -330,55 +432,128 @@
         <textarea id="o-desc" placeholder="اكتب وصفاً مختصراً عن الفعالية وما يميّزها…" rows="3"></textarea>
       </div>
 
-      <!-- ─── تفاصيل إضافية بصرية ─── -->
-      <div class="org-fg full" style="margin-top:6px">
-        <div style="font-size:12px;font-weight:900;color:var(--ink2);padding:10px 14px;
-                    background:rgba(243,100,24,0.07);border-radius:var(--radius-md);
-                    margin-bottom:14px;border-right:3px solid var(--orange)">
-          🖼️ مواد بصرية للبازار — تساعد العارضين على معرفة شكل الحدث قبل الحجز (اختياري)
-        </div>
-      </div>
-
-      <div class="org-fg full">
-        <label>🗺️ خريطة / اسكتش البازار</label>
-        <div class="org-upload-box" id="o-sketch-box" onclick="document.getElementById('o-sketch-file').click()">
-          <div class="org-upload-ico" id="o-sketch-ico">🗺️</div>
-          <div class="org-upload-lbl" id="o-sketch-lbl">اضغط لرفع الاسكتش — يُضغط ويُرفع إلى R2 تلقائياً</div>
-          <img class="org-upload-preview" id="o-sketch-preview" alt="">
-        </div>
-        <input type="file" id="o-sketch-file" accept="image/*" style="display:none" onchange="handleOrgImageUpload('sketch', this)">
-        <div class="org-upload-status" id="o-sketch-status"></div>
-        <input class="org-upload-url" type="url" id="o-sketch" placeholder="أو الصق رابط مباشر..." dir="ltr">
-        <div class="org-hint" style="line-height:1.8;margin-top:5px">
-          ارسم اسكتش يوضّح توزيع الأماكن وأرقامها (برنامج الرسام، Canva، أي برنامج تصميم)،
-          ثم ارفعه هنا ليتم ضغطه وتخزينه على Cloudflare R2، أو الصق رابطاً مباشراً كبديل.
-          <br>يساعد العارضين على معرفة مكانهم بالضبط داخل البازار قبل تأكيد الحجز.
-        </div>
-      </div>
-
-      <div class="org-fg full">
-        <label>📸 صورة واقعية للمكان أو الحدث</label>
-        <div class="org-upload-box" id="o-event-image-box" onclick="document.getElementById('o-event-image-file').click()">
-          <div class="org-upload-ico" id="o-event-image-ico">📸</div>
-          <div class="org-upload-lbl" id="o-event-image-lbl">اضغط لرفع الصورة — تُضغط وتُرفع إلى R2 تلقائياً</div>
-          <img class="org-upload-preview" id="o-event-image-preview" alt="">
-        </div>
-        <input type="file" id="o-event-image-file" accept="image/*" style="display:none" onchange="handleOrgImageUpload('event', this)">
-        <div class="org-upload-status" id="o-event-image-status"></div>
-        <input class="org-upload-url" type="url" id="o-event-image" placeholder="أو الصق رابط مباشر..." dir="ltr">
-        <div class="org-hint" style="line-height:1.8;margin-top:5px">
-          صورة حقيقية للمكان أو لأحد بازاراتك السابقة. ارفعها هنا ليتم ضغطها وتخزينها على Cloudflare R2، أو الصق رابطاً مباشراً كبديل.
-        </div>
-      </div>
-
     </div>
+
+    <!-- ════════════════════════════════
+         قسم الصور
+    ════════════════════════════════ -->
+    <div class="org-media-section">
+      <div class="org-media-header">
+        <div class="org-media-header-ico">🖼️</div>
+        <div class="org-media-header-text">
+          <div class="org-media-header-title">مواد بصرية للبازار</div>
+          <div class="org-media-header-sub">تساعد العارضين على معرفة شكل الحدث — تُضغط تلقائياً وتُرفع إلى Cloudflare R2 (اختياري)</div>
+        </div>
+      </div>
+      <div class="org-media-body">
+
+        <!-- صورة الغلاف -->
+        <div class="org-cover-wrap">
+          <div class="org-cover-label">🏷️ صورة الغلاف الرئيسية</div>
+          <div class="org-cover-box" id="o-cover-box" onclick="document.getElementById('o-cover-file').click()">
+            <div class="org-cover-ico" id="o-cover-ico">📷</div>
+            <div class="org-cover-lbl" id="o-cover-lbl">اضغط لرفع صورة الغلاف — تُضغط تلقائياً وتُرفع إلى R2</div>
+            <img class="org-cover-preview" id="o-cover-preview" alt="صورة الغلاف">
+          </div>
+          <input type="file" id="o-cover-file" accept="image/*" style="display:none" onchange="handleCoverImageUpload(this)">
+          <div class="org-cover-status" id="o-cover-status"></div>
+          <div class="org-hint">الصورة الرئيسية التي تظهر في كرت البازار وعلى صفحة التفاصيل — يُفضَّل 16:9 أو مستطيل أفقي</div>
+        </div>
+
+        <!-- الصور الإضافية -->
+        <div>
+          <div class="org-extra-label" style="margin-bottom:10px">
+            📸 صور إضافية للمكان <span style="font-weight:400;color:var(--ink3);font-size:11px">(حتى 4 صور)</span>
+          </div>
+          <div class="org-extra-grid">
+
+            <!-- Slot 0 -->
+            <div class="org-extra-slot">
+              <div class="org-extra-box" id="o-extra-0-box" onclick="document.getElementById('o-extra-0-file').click()">
+                <div class="org-extra-ico" id="o-extra-0-ico">+</div>
+                <img class="org-extra-preview" id="o-extra-0-preview" alt="">
+              </div>
+              <input type="file" id="o-extra-0-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(0, this)">
+              <button class="org-extra-remove" id="o-extra-0-remove" onclick="removeExtraImage(0)" title="حذف الصورة">×</button>
+              <div class="org-extra-status" id="o-extra-0-status"></div>
+            </div>
+
+            <!-- Slot 1 -->
+            <div class="org-extra-slot">
+              <div class="org-extra-box" id="o-extra-1-box" onclick="document.getElementById('o-extra-1-file').click()">
+                <div class="org-extra-ico" id="o-extra-1-ico">+</div>
+                <img class="org-extra-preview" id="o-extra-1-preview" alt="">
+              </div>
+              <input type="file" id="o-extra-1-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(1, this)">
+              <button class="org-extra-remove" id="o-extra-1-remove" onclick="removeExtraImage(1)" title="حذف الصورة">×</button>
+              <div class="org-extra-status" id="o-extra-1-status"></div>
+            </div>
+
+            <!-- Slot 2 -->
+            <div class="org-extra-slot">
+              <div class="org-extra-box" id="o-extra-2-box" onclick="document.getElementById('o-extra-2-file').click()">
+                <div class="org-extra-ico" id="o-extra-2-ico">+</div>
+                <img class="org-extra-preview" id="o-extra-2-preview" alt="">
+              </div>
+              <input type="file" id="o-extra-2-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(2, this)">
+              <button class="org-extra-remove" id="o-extra-2-remove" onclick="removeExtraImage(2)" title="حذف الصورة">×</button>
+              <div class="org-extra-status" id="o-extra-2-status"></div>
+            </div>
+
+            <!-- Slot 3 -->
+            <div class="org-extra-slot">
+              <div class="org-extra-box" id="o-extra-3-box" onclick="document.getElementById('o-extra-3-file').click()">
+                <div class="org-extra-ico" id="o-extra-3-ico">+</div>
+                <img class="org-extra-preview" id="o-extra-3-preview" alt="">
+              </div>
+              <input type="file" id="o-extra-3-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(3, this)">
+              <button class="org-extra-remove" id="o-extra-3-remove" onclick="removeExtraImage(3)" title="حذف الصورة">×</button>
+              <div class="org-extra-status" id="o-extra-3-status"></div>
+            </div>
+
+          </div>
+          <div class="org-hint" style="margin-top:6px">صور إضافية للمكان أو لأحد بازاراتك السابقة — تُضغط وتُرفع إلى R2 تلقائياً</div>
+        </div>
+
+        <!-- اسكتش البازار -->
+        <div class="org-sketch-wrap">
+          <div class="org-sketch-label">🗺️ خريطة / اسكتش البازار</div>
+          <div class="org-sketch-row">
+            <div>
+              <div class="org-sketch-box" id="o-sketch-box" onclick="document.getElementById('o-sketch-file').click()">
+                <div class="org-sketch-ico" id="o-sketch-ico">🗺️</div>
+                <div class="org-sketch-lbl" id="o-sketch-lbl">ارفع الاسكتش</div>
+                <img class="org-sketch-preview" id="o-sketch-preview" alt="اسكتش">
+              </div>
+              <input type="file" id="o-sketch-file" accept="image/*" style="display:none" onchange="handleSketchImageUpload(this)">
+              <div class="org-sketch-status" id="o-sketch-status"></div>
+            </div>
+            <div class="org-sketch-meta">
+              <div class="org-hint" style="line-height:1.8">
+                ارسم مخطط توزيع الأماكن وأرقامها (برنامج الرسام، Canva…) ثم ارفعه —
+                يساعد العارضين على معرفة موقعهم بالضبط داخل البازار.
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:4px">أو الصق رابطاً مباشراً:</div>
+              <input type="url" id="o-sketch-url" placeholder="https://..." dir="ltr"
+                style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-md);
+                       font-size:13px;color:var(--ink);background:var(--surface2);width:100%;box-sizing:border-box;
+                       outline:none;font-family:var(--font-body)">
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /org-media-body -->
+    </div><!-- /org-media-section -->
+
     <div class="org-nav">
       <span></span>
       <button class="org-nav-next" onclick="orgNext(1)">التالي — التسعير →</button>
     </div>
-  </div>
+  </div><!-- /panel-1 -->
 
-  <!-- ── Step 2: التسعير والوحدات ── -->
+  <!-- ══════════════════════════════════════════
+       Step 2: التسعير والوحدات
+  ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-2" style="margin-top:22px">
     <div class="org-panel-title">💰 التسعير والوحدات</div>
     <div class="org-grid">
@@ -413,25 +588,55 @@
 
     </div>
 
-    <!-- ملخص تسعير تلقائي -->
-    <div class="org-price-box" id="org-price-preview" style="display:none">
+    <!-- ⭐ أماكن مميزة -->
+    <div style="margin-top:18px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;background:var(--surface2);user-select:none">
+        <input type="checkbox" id="o-has-premium" onchange="orgTogglePremium()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--orange)">
+        <span style="font-size:13.5px;font-weight:700;color:var(--dark)">⭐ هل هناك أماكن مميزة بسعر إضافي؟</span>
+        <span style="font-size:11px;color:var(--ink3);margin-right:auto">اضغط لتفعيل</span>
+      </label>
+
+      <div id="org-premium-fields" style="display:none;padding:16px;background:rgba(245,158,11,.04);border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.55">
+          الأماكن المميزة تظهر بلون مختلف في خريطة البازار مع علامة ⭐ وسعر أعلى من باقي الوحدات.
+          <br>مثال: الأماكن الأمامية أو ذات المساحة الأكبر.
+        </div>
+        <div class="org-grid">
+          <div class="org-fg">
+            <label>عدد الأماكن المميزة <span class="req">*</span></label>
+            <input type="number" id="o-premium-slots" placeholder="مثال: 5" min="1" max="200" oninput="orgUpdatePrice()">
+            <div class="org-hint">يجب أن يكون أقل من إجمالي الوحدات</div>
+          </div>
+          <div class="org-fg">
+            <label>سعر المكان المميز (جنيه) <span class="req">*</span></label>
+            <input type="number" id="o-premium-price" placeholder="مثال: 1500" min="0" oninput="orgUpdatePrice()">
+            <div class="org-hint">سيظهر هذا السعر للعارضين عند اختيار مكان مميز</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="org-price-box" id="org-price-preview" style="display:none;margin-top:16px">
       <div class="org-price-box-title">📊 ملخص الإيراد المتوقع</div>
-      <div class="org-price-row"><span>عدد الوحدات</span><span id="pp-slots">—</span></div>
-      <div class="org-price-row"><span>سعر الوحدة</span><span id="pp-price">—</span></div>
+      <div class="org-price-row"><span>وحدات عادية</span><span id="pp-slots">—</span></div>
+      <div class="org-price-row"><span>سعر الوحدة العادية</span><span id="pp-price">—</span></div>
+      <div id="pp-premium-row" class="org-price-row" style="display:none"><span>وحدات مميزة ⭐</span><span id="pp-premium-slots">—</span></div>
+      <div id="pp-premium-price-row" class="org-price-row" style="display:none"><span>سعر المكان المميز</span><span id="pp-premium-price">—</span></div>
       <div class="org-price-row"><span>الإيراد الإجمالي المتوقع</span><span id="pp-total">—</span></div>
     </div>
 
     <div class="org-nav">
       <button class="org-nav-back" onclick="orgBack(2)">← الفعالية</button>
-      <button class="org-nav-next" onclick="orgNext(2)">التالي — التواصل →</button>
+      <button class="org-nav-next" onclick="orgNext(2)">التالي — التأكيد →</button>
     </div>
-  </div>
+  </div><!-- /panel-2 -->
 
-  <!-- ── Step 3: التواصل والتأكيد ── -->
+  <!-- ══════════════════════════════════════════
+       Step 3: مراجعة وتأكيد
+  ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-3" style="margin-top:22px">
     <div class="org-panel-title">📋 مراجعة وتأكيد الطلب</div>
 
-    <!-- ملخص البيانات -->
     <div class="org-summary" id="org-summary-box"></div>
 
     <div class="org-grid">
@@ -461,11 +666,11 @@
       <button class="org-nav-back" onclick="orgBack(3)">← التسعير</button>
       <button class="org-nav-next" id="org-submit-btn" onclick="orgSubmit()">إرسال الطلب ✓</button>
     </div>
-  </div>
+  </div><!-- /panel-3 -->
 
 </div><!-- /org-form-wrap -->
 
 <script src="../media-handler.js" defer></script>
-<script src="organize.js?v=2026060901" defer></script>
+<script src="organize.js?v=2026061001" defer></script>
 </body>
 </html>

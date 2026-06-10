@@ -9,19 +9,21 @@
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
+const MAX_EXTRA_IMAGES = 4;
+
 let sbClient    = null;
 let currentUser = null;
-let orgProfile  = null;   // organizer_profiles row
+let orgProfile  = null;
 let currentStep = 1;
-let orgVisualUploads = {
-  sketch: { url: null, promise: null },
-  event:  { url: null, promise: null },
-};
+
+// حالة رفع الصور
+let coverUpload = { url: null, promise: null };
+let sketchUpload = { url: null, promise: null };
+let extraUploads = Array.from({ length: MAX_EXTRA_IMAGES }, () => ({ url: null, promise: null }));
 
 document.addEventListener('DOMContentLoaded', async () => {
   sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // تحقق من تسجيل الدخول والتوثيق
   const { data: { session } } = await sbClient.auth.getSession();
   currentUser = session?.user || null;
 
@@ -34,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // جلب بيانات organizer_profiles للتحقق من is_verified
   const { data: prof } = await sbClient
     .from('organizer_profiles')
     .select('*')
@@ -55,38 +56,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // المستخدم موثّق — اعرض النموذج
   _showForm();
 
-  // تعبئة تليفون من البروفايل إن وُجد
   const phoneEl = document.getElementById('o-phone');
-  if (phoneEl && prof.whatsapp) {
-    phoneEl.value = prof.whatsapp;
-  }
+  if (phoneEl && prof.whatsapp) phoneEl.value = prof.whatsapp;
 });
 
 /* ──────────────────────────────────────────────────────
    حراسة الوصول
 ────────────────────────────────────────────────────── */
 function _showGuard(ico, title, desc, actionsHtml) {
-  const guard   = document.getElementById('org-guard');
-  const steps   = document.getElementById('org-steps');
-  const panels  = document.querySelectorAll('.org-panel');
-  const icoMap  = { lock: '🔒', star: '⭐', ok: '✅' };
-
+  const icoMap = { lock: '🔒', star: '⭐', ok: '✅' };
   document.getElementById('guard-ico').textContent   = icoMap[ico] || '🔒';
   document.getElementById('guard-title').textContent = title;
   document.getElementById('guard-desc').textContent  = desc;
   document.getElementById('guard-actions').innerHTML = actionsHtml || '';
 
-  guard.style.display  = 'block';
+  document.getElementById('org-guard').style.display  = 'block';
+  const steps = document.getElementById('org-steps');
   if (steps) steps.style.display = 'none';
-  panels.forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.org-panel').forEach(p => p.style.display = 'none');
 }
 
 function _showForm() {
-  document.getElementById('org-guard').style.display   = 'none';
-  document.getElementById('org-steps').style.display   = 'flex';
+  document.getElementById('org-guard').style.display = 'none';
+  document.getElementById('org-steps').style.display = 'flex';
   document.getElementById('org-panel-1').classList.add('active');
 }
 
@@ -96,12 +90,8 @@ function _showForm() {
 function orgNext(fromStep) {
   if (fromStep === 1 && !_validateStep1()) return;
   if (fromStep === 2 && !_validateStep2()) return;
-
   _setStep(fromStep + 1);
-
-  if (fromStep + 1 === 3) {
-    _buildSummary();
-  }
+  if (fromStep + 1 === 3) _buildSummary();
 }
 
 function orgBack(fromStep) {
@@ -110,21 +100,16 @@ function orgBack(fromStep) {
 
 function _setStep(n) {
   currentStep = n;
-
-  // panels
   document.querySelectorAll('.org-panel').forEach((p, i) => {
     p.classList.toggle('active', i + 1 === n);
   });
-
-  // step dots
   for (let i = 1; i <= 3; i++) {
     const dot = document.getElementById(`step-dot-${i}`);
     if (!dot) continue;
     dot.classList.remove('active', 'done');
-    if (i < n)  dot.classList.add('done');
+    if (i < n) dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -151,7 +136,6 @@ function _validateStep1() {
 function _validateStep2() {
   const slots = Number(document.getElementById('o-slots').value);
   const price = Number(document.getElementById('o-price').value);
-
   if (!slots || slots < 1) { _focusErr('o-slots', 'يجب إدخال عدد الوحدات (1 على الأقل)'); return false; }
   if (!price || price < 0) { _focusErr('o-price', 'يجب إدخال سعر الوحدة'); return false; }
   return true;
@@ -166,103 +150,171 @@ function _focusErr(id, msg) {
   alert(msg);
 }
 
-async function handleOrgImageUpload(kind, inputEl) {
+/* ──────────────────────────────────────────────────────
+   رفع صورة الغلاف
+────────────────────────────────────────────────────── */
+async function handleCoverImageUpload(inputEl) {
   const file = inputEl?.files?.[0];
   if (!file) return;
+  await _handleSingleUpload(file, 'cover', {
+    box:     'o-cover-box',
+    ico:     'o-cover-ico',
+    lbl:     'o-cover-lbl',
+    preview: 'o-cover-preview',
+    status:  'o-cover-status',
+  }, coverUpload, 'cover');
+}
 
-  const ids = _orgVisualIds(kind);
-  const statusEl = document.getElementById(ids.status);
-  const previewEl = document.getElementById(ids.preview);
-  const boxEl = document.getElementById(ids.box);
-  const labelEl = document.getElementById(ids.label);
-  const iconEl = document.getElementById(ids.icon);
-  const urlEl = document.getElementById(ids.urlInput);
+/* ──────────────────────────────────────────────────────
+   رفع اسكتش البازار
+────────────────────────────────────────────────────── */
+async function handleSketchImageUpload(inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  await _handleSingleUpload(file, 'sketch', {
+    box:     'o-sketch-box',
+    ico:     'o-sketch-ico',
+    lbl:     'o-sketch-lbl',
+    preview: 'o-sketch-preview',
+    status:  'o-sketch-status',
+  }, sketchUpload, 'sketch');
+}
+
+/* ──────────────────────────────────────────────────────
+   رفع صورة إضافية (0..MAX_EXTRA_IMAGES-1)
+────────────────────────────────────────────────────── */
+async function handleExtraImageUpload(idx, inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  await _handleSingleUpload(file, `extra-${idx}`, {
+    box:     `o-extra-${idx}-box`,
+    ico:     `o-extra-${idx}-ico`,
+    lbl:     null,
+    preview: `o-extra-${idx}-preview`,
+    status:  `o-extra-${idx}-status`,
+  }, extraUploads[idx], `extra${idx}`);
+  // تحديث المرجع في الـ state
+  // (لأن extraUploads[idx] object يتشارك المرجع، التعديل عليه مباشرة صحيح)
+}
+
+function removeExtraImage(idx) {
+  extraUploads[idx] = { url: null, promise: null };
+  const box     = document.getElementById(`o-extra-${idx}-box`);
+  const preview = document.getElementById(`o-extra-${idx}-preview`);
+  const status  = document.getElementById(`o-extra-${idx}-status`);
+  const ico     = document.getElementById(`o-extra-${idx}-ico`);
+  const rmBtn   = document.getElementById(`o-extra-${idx}-remove`);
+  const fileInp = document.getElementById(`o-extra-${idx}-file`);
+
+  if (box) { box.classList.remove('has-img'); box.classList.remove('uploading'); }
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (status) status.innerHTML = '';
+  if (ico) ico.style.display = '';
+  if (rmBtn) rmBtn.style.display = 'none';
+  if (fileInp) fileInp.value = '';
+}
+
+/* ──────────────────────────────────────────────────────
+   معالج رفع موحّد
+────────────────────────────────────────────────────── */
+async function _handleSingleUpload(file, kind, ids, stateObj, r2Kind) {
+  const boxEl     = ids.box     ? document.getElementById(ids.box)     : null;
+  const icoEl     = ids.ico     ? document.getElementById(ids.ico)     : null;
+  const lblEl     = ids.lbl     ? document.getElementById(ids.lbl)     : null;
+  const previewEl = ids.preview ? document.getElementById(ids.preview) : null;
+  const statusEl  = ids.status  ? document.getElementById(ids.status)  : null;
 
   if (!currentUser || !sbClient) {
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">يجب تسجيل الدخول قبل رفع الصورة</span>';
     return;
   }
 
-  if (previewEl) {
-    previewEl.src = URL.createObjectURL(file);
-    previewEl.style.display = 'block';
-  }
-  if (boxEl) boxEl.classList.add('has-img');
-  if (iconEl) iconEl.style.display = 'none';
-  if (labelEl) labelEl.textContent = 'جارٍ الضغط والرفع إلى Cloudflare R2...';
-  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ ضغط ورفع الصورة...</span>';
+  if (previewEl) { previewEl.src = URL.createObjectURL(file); previewEl.style.display = 'block'; }
+  if (boxEl) { boxEl.classList.add('has-img'); boxEl.classList.add('uploading'); }
+  if (icoEl) icoEl.style.display = 'none';
+  if (lblEl) lblEl.textContent = '⏳ جارٍ الضغط والرفع…';
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ ضغط ورفع الصورة…</span>';
 
-  const uploadPromise = _uploadOrgVisual(file, kind)
+  const uploadPromise = _uploadBazaarImage(file, r2Kind)
     .then(url => {
-      orgVisualUploads[kind].url = url;
-      if (urlEl) urlEl.value = url;
-      if (labelEl) labelEl.textContent = 'تم الرفع بنجاح — اضغط لتغيير الصورة';
-      if (statusEl) statusEl.innerHTML = '<span style="color:#15803d">✅ تم الضغط والرفع إلى R2</span>';
+      stateObj.url = url;
+      if (boxEl) boxEl.classList.remove('uploading');
+      if (lblEl) lblEl.textContent = '✅ تم — اضغط لتغيير الصورة';
+      if (statusEl) statusEl.innerHTML = '<span style="color:#15803d">✅ تم الرفع إلى R2</span>';
+      // إظهار زر الحذف للصور الإضافية
+      const match = kind.match(/^extra-(\d+)$/);
+      if (match) {
+        const rmBtnEl = document.getElementById(`o-extra-${match[1]}-remove`);
+        if (rmBtnEl) rmBtnEl.style.display = 'flex';
+      }
       return url;
     })
     .catch(err => {
-      orgVisualUploads[kind].url = null;
-      if (labelEl) labelEl.textContent = 'تعذّر الرفع — اضغط للمحاولة مرة أخرى';
+      stateObj.url = null;
+      if (boxEl) boxEl.classList.remove('has-img', 'uploading');
+      if (lblEl) lblEl.textContent = '❌ فشل — اضغط للمحاولة مرة أخرى';
       if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ ${err.message}</span>`;
       throw err;
     })
-    .finally(() => {
-      orgVisualUploads[kind].promise = null;
-    });
+    .finally(() => { stateObj.promise = null; });
 
-  orgVisualUploads[kind].promise = uploadPromise;
+  stateObj.promise = uploadPromise;
 }
 
-function _orgVisualIds(kind) {
-  const prefix = kind === 'sketch' ? 'o-sketch' : 'o-event-image';
-  return {
-    box: `${prefix}-box`,
-    icon: `${prefix}-ico`,
-    label: `${prefix}-lbl`,
-    preview: `${prefix}-preview`,
-    status: `${prefix}-status`,
-    fileInput: `${prefix}-file`,
-    urlInput: prefix,
-  };
-}
-
-async function _uploadOrgVisual(file, kind) {
+async function _uploadBazaarImage(file, kind) {
   if (typeof uploadSingleImageToR2 !== 'function') {
-    throw new Error('خدمة رفع الصور غير محملة. حدّث الصفحة وحاول مرة أخرى.');
+    throw new Error('خدمة رفع الصور غير محملة — حدّث الصفحة وحاول مرة أخرى');
   }
-
   const { data: { session } } = await sbClient.auth.getSession();
   const authToken = session?.access_token;
   if (!authToken) throw new Error('انتهت الجلسة، أعد تسجيل الدخول');
-
-  const safeKind = kind === 'sketch' ? 'sketch' : 'event';
-  const path = `bazaars/${currentUser.id}/${safeKind}-${Date.now()}.webp`;
+  const path = `bazaars/${currentUser.id}/${kind}-${Date.now()}.webp`;
   return uploadSingleImageToR2(file, path, authToken);
 }
 
-async function _getOrgVisualUrl(kind) {
-  const state = orgVisualUploads[kind];
-  if (state?.promise) {
-    return await state.promise;
-  }
-  if (state?.url) return state.url;
-
-  const ids = _orgVisualIds(kind);
-  return document.getElementById(ids.urlInput)?.value.trim() || null;
+async function _resolveUploadUrl(stateObj) {
+  if (stateObj.promise) return stateObj.promise;
+  return stateObj.url || null;
 }
 
 /* ──────────────────────────────────────────────────────
    ملخص التسعير (خطوة 2)
 ────────────────────────────────────────────────────── */
+function orgTogglePremium() {
+  const checked = document.getElementById('o-has-premium').checked;
+  document.getElementById('org-premium-fields').style.display = checked ? '' : 'none';
+  if (!checked) {
+    document.getElementById('o-premium-slots').value = '';
+    document.getElementById('o-premium-price').value = '';
+  }
+  orgUpdatePrice();
+}
+
 function orgUpdatePrice() {
-  const slots = Number(document.getElementById('o-slots').value) || 0;
-  const price = Number(document.getElementById('o-price').value) || 0;
-  const box   = document.getElementById('org-price-preview');
+  const slots        = Number(document.getElementById('o-slots').value) || 0;
+  const price        = Number(document.getElementById('o-price').value) || 0;
+  const hasPremium   = document.getElementById('o-has-premium')?.checked;
+  const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
+  const premiumPrice = hasPremium ? (Number(document.getElementById('o-premium-price').value) || 0) : 0;
+  const box          = document.getElementById('org-price-preview');
 
   if (slots > 0 && price > 0) {
-    document.getElementById('pp-slots').textContent = slots + ' وحدة';
+    const regularSlots = Math.max(0, slots - premiumSlots);
+    const totalRev     = (regularSlots * price) + (premiumSlots * premiumPrice);
+
+    document.getElementById('pp-slots').textContent = regularSlots + ' وحدة';
     document.getElementById('pp-price').textContent = price.toLocaleString('ar-EG') + ' جنيه';
-    document.getElementById('pp-total').textContent = (slots * price).toLocaleString('ar-EG') + ' جنيه';
+    document.getElementById('pp-total').textContent = totalRev.toLocaleString('ar-EG') + ' جنيه';
+
+    const premRow  = document.getElementById('pp-premium-row');
+    const premPRow = document.getElementById('pp-premium-price-row');
+    if (hasPremium && premiumSlots > 0 && premiumPrice > 0) {
+      if (premRow)  { premRow.style.display  = '';  document.getElementById('pp-premium-slots').textContent = premiumSlots + ' وحدة مميزة ⭐'; }
+      if (premPRow) { premPRow.style.display = '';  document.getElementById('pp-premium-price').textContent = premiumPrice.toLocaleString('ar-EG') + ' جنيه'; }
+    } else {
+      if (premRow)  premRow.style.display  = 'none';
+      if (premPRow) premPRow.style.display = 'none';
+    }
     box.style.display = 'block';
   } else {
     box.style.display = 'none';
@@ -273,35 +325,48 @@ function orgUpdatePrice() {
    بناء ملخص البيانات (خطوة 3)
 ────────────────────────────────────────────────────── */
 function _buildSummary() {
-  const ds       = document.getElementById('o-ds').value;
-  const de       = document.getElementById('o-de').value;
-  const slots    = Number(document.getElementById('o-slots').value);
-  const price    = Number(document.getElementById('o-price').value);
-  const dep1     = Number(document.getElementById('o-dep1').value) || 0;
-  const dep2     = Number(document.getElementById('o-dep2').value) || 0;
-  const sketch   = document.getElementById('o-sketch')?.value.trim() || '';
-  const eventImg = document.getElementById('o-event-image')?.value.trim() || '';
+  const ds    = document.getElementById('o-ds').value;
+  const de    = document.getElementById('o-de').value;
+  const slots = Number(document.getElementById('o-slots').value);
+  const price = Number(document.getElementById('o-price').value);
+  const dep1  = Number(document.getElementById('o-dep1').value) || 0;
+  const dep2  = Number(document.getElementById('o-dep2').value) || 0;
+
+  const hasCover   = !!coverUpload.url;
+  const hasSketch  = !!(sketchUpload.url || document.getElementById('o-sketch-url')?.value.trim());
+  const extraCount = extraUploads.filter(u => u.url).length;
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '—';
   const fmtNum  = n => n ? n.toLocaleString('ar-EG') + ' جنيه' : '—';
 
+  const hasPremium   = document.getElementById('o-has-premium')?.checked;
+  const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
+  const premiumPrice = hasPremium ? (Number(document.getElementById('o-premium-price').value) || 0) : 0;
+  const regularSlots = Math.max(0, slots - premiumSlots);
+  const totalRev     = (regularSlots * price) + (premiumSlots * premiumPrice);
+
   const rows = [
-    ['اسم البازار',    document.getElementById('o-name').value.trim()],
-    ['المكان',         document.getElementById('o-venue').value.trim()],
-    ['العنوان',        document.getElementById('o-addr').value.trim() || '—'],
-    ['تاريخ البداية',  fmtDate(ds)],
-    ['تاريخ النهاية',  fmtDate(de)],
-    ['عدد الوحدات',    slots + ' وحدة'],
-    ['سعر الوحدة',     fmtNum(price)],
-    ['الإيراد المتوقع', fmtNum(slots * price)],
-    ['العربون الأولي', dep1 > 0 ? fmtNum(dep1) : '—'],
-    ['العربون النهائي', dep2 > 0 ? fmtNum(dep2) : '—'],
-    ...(sketch   ? [['خريطة / اسكتش', '✅ رابط مضاف']] : []),
-    ...(eventImg ? [['صورة واقعية',   '✅ رابط مضاف']] : []),
+    ['اسم البازار',        document.getElementById('o-name').value.trim()],
+    ['المكان',             document.getElementById('o-venue').value.trim()],
+    ['العنوان',            document.getElementById('o-addr').value.trim() || '—'],
+    ['تاريخ البداية',      fmtDate(ds)],
+    ['تاريخ النهاية',      fmtDate(de)],
+    ['وحدات عادية',        regularSlots + ' وحدة'],
+    ['سعر الوحدة',         fmtNum(price)],
+    ...(hasPremium && premiumSlots > 0 ? [
+      ['وحدات مميزة ⭐',   premiumSlots + ' وحدة'],
+      ['سعر المميزة',      fmtNum(premiumPrice)],
+    ] : []),
+    ['إجمالي الوحدات',     slots + ' وحدة'],
+    ['الإيراد المتوقع',    fmtNum(totalRev)],
+    ...(dep1 > 0 ? [['العربون الأولي',  fmtNum(dep1)]] : []),
+    ...(dep2 > 0 ? [['العربون النهائي', fmtNum(dep2)]] : []),
+    ['صورة الغلاف',        hasCover  ? '✅ تم الرفع' : '—'],
+    ['خريطة / اسكتش',      hasSketch ? '✅ مضاف'     : '—'],
+    ...(extraCount > 0 ? [[`صور إضافية`, `${extraCount} صورة`]] : []),
   ];
 
-  const box = document.getElementById('org-summary-box');
-  box.innerHTML = `
+  document.getElementById('org-summary-box').innerHTML = `
     <div class="org-summary-title">📋 ملخص طلبك</div>
     ${rows.map(([lbl, val]) => `
       <div class="org-sum-row">
@@ -338,9 +403,23 @@ async function orgSubmit() {
     const dep1     = Number(document.getElementById('o-dep1').value) || 0;
     const dep2     = Number(document.getElementById('o-dep2').value) || 0;
     const contract = Number(document.getElementById('o-contract').value) || 0;
-    const notes    = document.getElementById('o-notes').value.trim() || null;
-    const sketch   = await _getOrgVisualUrl('sketch');
-    const eventImg = await _getOrgVisualUrl('event');
+    const notes        = document.getElementById('o-notes').value.trim() || null;
+    const hasPremium   = document.getElementById('o-has-premium')?.checked;
+    const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
+    const premiumPrice = hasPremium ? (Number(document.getElementById('o-premium-price').value) || 0) : 0;
+
+    // جمع روابط الصور مع انتظار أي رفع جارٍ
+    const [coverUrl, sketchUrl, ...extraUrls] = await Promise.all([
+      _resolveUploadUrl(coverUpload),
+      _resolveUploadUrl(sketchUpload),
+      ...extraUploads.map(_resolveUploadUrl),
+    ]);
+
+    // الصور الإضافية (بدون null)
+    const validExtras = extraUrls.filter(Boolean);
+    // رابط اسكتش يدوي كـ fallback
+    const manualSketch = document.getElementById('o-sketch-url')?.value.trim() || null;
+    const finalSketch  = sketchUrl || manualSketch;
 
     const displayName = orgProfile?.full_name
       || (await sbClient.from('profiles').select('full_name').eq('id', currentUser.id).single()).data?.full_name
@@ -348,30 +427,33 @@ async function orgSubmit() {
 
     const payload = {
       name,
-      organizer:              displayName,
-      organizer_id:           currentUser.id,
-      is_organizer_verified:  true,
-      venue_name:             venue,
-      venue_address:          addr,
-      date_start:             ds,
-      date_end:               de,
-      maps_link:              maps,
-      description:            desc,
-      total_slots:            slots,
-      price_per_slot:         price,
-      deposit_initial:        dep1,
-      deposit_final:          dep2,
-      total_contract_price:   contract || null,
-      contact_phone:          phone,
-      organizer_notes:        _combineOrganizerNotes(notes, sketch),
-      image:                  eventImg,
-      status:                 'pending_review',
+      organizer:             displayName,
+      organizer_id:          currentUser.id,
+      is_organizer_verified: true,
+      venue_name:            venue,
+      venue_address:         addr,
+      date_start:            ds,
+      date_end:              de,
+      maps_link:             maps,
+      description:           desc,
+      total_slots:           slots,
+      price_per_slot:        price,
+      deposit_initial:       dep1,
+      deposit_final:         dep2,
+      total_contract_price:  contract || null,
+      contact_phone:         phone,
+      organizer_notes:       _buildNotes(notes, finalSketch),
+      image:                 coverUrl,
+      event_image_url:       coverUrl,
+      extra_images:          validExtras.length > 0 ? validExtras : null,
+      premium_slots:         premiumSlots || null,
+      premium_price:         premiumPrice || null,
+      status:                'pending_review',
     };
 
     const { error } = await sbClient.from('bazaars').insert(payload);
     if (error) throw new Error(error.message);
 
-    // نجح الإرسال
     document.getElementById('org-result').innerHTML = `
       <div class="org-ok">
         <div class="org-ok-ico">🎉</div>
@@ -385,23 +467,22 @@ async function orgSubmit() {
     document.querySelector('#org-panel-3 .org-nav-back').style.display = 'none';
 
   } catch (err) {
-    const msg = _formatSubmitError(err);
     document.getElementById('org-result').innerHTML = `
-      <div class="org-err">❌ تعذّر إرسال الطلب: ${msg}</div>`;
+      <div class="org-err">❌ تعذّر إرسال الطلب: ${_fmtErr(err)}</div>`;
     btn.disabled = false;
     btn.textContent = 'إعادة المحاولة';
   }
 }
 
-function _formatSubmitError(err) {
-  const message = err?.message || String(err || '');
-  if (message.includes('schema cache') || message.includes('Could not find')) {
-    return 'حدث عدم تطابق بين حقول النموذج وجدول Supabase. حدّث الصفحة وحاول مرة أخرى.';
+function _fmtErr(err) {
+  const msg = err?.message || String(err || '');
+  if (msg.includes('schema cache') || msg.includes('Could not find')) {
+    return 'تعذّر مطابقة حقول النموذج — يرجى تحديث الصفحة والمحاولة مرة أخرى.';
   }
-  return message;
+  return msg;
 }
 
-function _combineOrganizerNotes(notes, sketchUrl) {
+function _buildNotes(notes, sketchUrl) {
   const parts = [];
   if (notes) parts.push(notes);
   if (sketchUrl) parts.push(`رابط خريطة / اسكتش البازار: ${sketchUrl}`);

@@ -3234,6 +3234,7 @@ async function loadBazaars() {
           sketch_url: _toDirectImgUrl(b.sketch_url || ''),
           event_image_url: _toDirectImgUrl(b.event_image_url || b.image || ''),
           status: b.status || 'published',
+          is_featured: !!b.is_featured,
         }));
         console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Supabase للصفحة الرئيسية.`);
         renderHomeBazaars();
@@ -3330,23 +3331,21 @@ function renderHomeBazaars() {
     return;
   }
 
-  // البازار الأول هو المتميز
-  const featured = upcoming[0];
-  const others = upcoming.slice(1, 3); // البازارات الـ 2 التالية
+  // البازار المميّز (is_featured) أولاً، fallback لأقرب قادم
+  const featured = BAZAARS.find(b => b.is_featured) || upcoming[0];
 
   // تفاصيل البازار المتميز
   const fAvailSlots = typeof featured.available_slots === 'number' ? featured.available_slots : (featured.total_slots || 0);
   const fIsSoldOut = fAvailSlots === 0 && (featured.total_slots || 0) > 0;
 
-  // بناء عداد تنازلي للتميز (سندير التحديث الفعلي عبر دالة setInterval)
   const featuredHtml = `
-    <div class="bz-featured-wrapper">
+    <div class="bz-featured-wrapper" style="width:100%">
       <div class="bz-featured-card" onclick="window.location.href='bazaars/?bazaar=${featured.id}'">
         <div class="bz-featured-img-container">
           ${featured.image
       ? `<img src="${featured.image}" alt="${featured.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
       : `<div class="bz-mini-placeholder">🎪</div>`}
-          
+
           <div class="bz-featured-badges">
             <span class="bz-featured-cat">${featured.category || 'بازار قريب'}</span>
             <span class="${fIsSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
@@ -3354,7 +3353,6 @@ function renderHomeBazaars() {
             </span>
           </div>
 
-          <!-- العداد التنازلي التفاعلي المباشر -->
           ${featured.date_start ? `
           <div class="bz-countdown" id="bz-countdown-timer" data-date="${featured.date_start}">
             <div class="bz-countdown-label">انطلاق</div>
@@ -3383,7 +3381,7 @@ function renderHomeBazaars() {
           <h3 class="bz-featured-title">${featured.name}</h3>
           <div class="bz-featured-location">📍 ${featured.location || featured.region || 'سيتم تحديد المكان قريباً'}</div>
           ${featured.description ? `<p class="bz-featured-desc">${featured.description}</p>` : '<p class="bz-featured-desc">لا يوجد وصف للبازار حالياً. انضم إلينا في هذه الفعالية المميزة واستكشف الأجنحة المتاحة.</p>'}
-          
+
           <div class="bz-featured-footer">
             <div class="bz-featured-price">
               ${Number(featured.price_per_slot || 0).toLocaleString('ar-EG')} <span>ج / مكان</span>
@@ -3395,57 +3393,10 @@ function renderHomeBazaars() {
     </div>
   `;
 
-  // بناء قائمة البازارات الأخرى
-  let othersHtml = '';
-  if (others.length > 0) {
-    const cardsHtml = others.map(b => {
-      const oDateStr = b.date_start
-        ? new Date(b.date_start).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
-        : 'قريباً';
-      const oAvailSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
-      const oIsSoldOut = oAvailSlots === 0 && (b.total_slots || 0) > 0;
-
-      return `
-        <div class="bz-compact-card" onclick="window.location.href='bazaars/?bazaar=${b.id}'">
-          <div class="bz-compact-img">
-            ${b.image
-          ? `<img src="${b.image}" alt="${b.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-compact-img-placeholder\\\' >🎪</div>'">`
-          : `<div class="bz-compact-img-placeholder">🎪</div>`}
-            <div class="bz-compact-date">${oDateStr}</div>
-          </div>
-          <div class="bz-compact-body">
-            <div class="bz-compact-kicker">${b.category || 'بازار'}</div>
-            <h4 class="bz-compact-title">${b.name}</h4>
-            <div class="bz-compact-location">📍 ${b.location || b.region || 'سيتم تحديده قريباً'}</div>
-            <div class="bz-compact-meta">
-              <span class="bz-compact-price">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</span>
-              <span class="bz-compact-slots" style="color: ${oIsSoldOut ? 'var(--red)' : 'var(--green)'}">
-                ${oIsSoldOut ? 'مكتمل' : oAvailSlots + ' متاح'}
-              </span>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    othersHtml = `
-      <div class="bz-others-wrapper">
-        <h4 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0 0 12px; font-family: var(--font-display);">🗓️ فعاليات قادمة أخرى</h4>
-        <div class="bz-others-list">
-          ${cardsHtml}
-        </div>
-      </div>
-    `;
-  } else {
-    othersHtml = ``;
-
-  }
-
-  // دمج التخطيط الشبكي المشترك المطور
+  // بازار واحد فقط في الصفحة الرئيسية
   container.innerHTML = `
-    <div class="bz-home-split-grid">
+    <div class="bz-home-split-grid bz-home-single">
       ${featuredHtml}
-      ${othersHtml}
     </div>
   `;
 

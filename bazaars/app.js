@@ -1287,6 +1287,7 @@ function _buildSlotHtml(slot, index = 0) {
   return `<div class="bz-slot ${cls}"
               data-slot-id="${slot.id}"
               data-featured="${isFeatured}"
+              data-price="${Number(slot.price || 0)}"
               style="animation-delay:${delay}s"
               ${clickAttr} ${titleAttr}>
     ${displayLabel}
@@ -1315,9 +1316,11 @@ function selectSlot(slotId, slotLabel) {
 
   const slotInfoEl = document.getElementById('bzd-slot-info');
   if (slotInfoEl && currentBazaar) {
-    const price       = Number(currentBazaar.price_per_slot || 0).toLocaleString('ar-EG');
+    const slotPrice = Number(slotEl?.dataset?.price || 0);
+    const displayPrice = slotPrice > 0 ? slotPrice : Number(currentBazaar.price_per_slot || 0);
+    const priceStr  = displayPrice.toLocaleString('ar-EG');
     const featuredTag = isFeatured ? ' ⭐ مميز' : '';
-    slotInfoEl.textContent = `مكان رقم ${slotLabel}${featuredTag} · ${price} ج`;
+    slotInfoEl.textContent = `مكان رقم ${slotLabel}${featuredTag} · ${priceStr} ج`;
   }
 
   if (currentUser) {

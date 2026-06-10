@@ -12357,6 +12357,41 @@ footer {
   margin-top: 18px;
 }
 
+/* بازار واحد — تخطيط أفقي ممتد */
+.bz-home-single .bz-featured-wrapper {
+  width: 100%;
+}
+
+.bz-home-single .bz-featured-card {
+  flex-direction: row;
+  max-height: 340px;
+}
+
+.bz-home-single .bz-featured-img-container {
+  width: 42%;
+  flex-shrink: 0;
+  height: auto;
+  min-height: 260px;
+}
+
+.bz-home-single .bz-featured-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (max-width: 780px) {
+  .bz-home-single .bz-featured-card {
+    flex-direction: column;
+    max-height: none;
+  }
+  .bz-home-single .bz-featured-img-container {
+    width: 100%;
+    min-height: 200px;
+  }
+}
+
 /* البازار المتميز (Featured Bazaar Card) */
 .bz-featured-wrapper {
   display: flex;

@@ -332,6 +332,14 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
     <div class="ni" onclick="gp('req')" id="ni-req"><span class="ic">📬</span>طلبات التنظيم<span class="nb" id="nb-req" style="display:none">0</span></div>
     <div class="ni" onclick="gp('org-ver')" id="ni-org-ver"><span class="ic">🎪</span>طلبات التوثيق<span class="nb" id="nb-org-ver" style="display:none">0</span></div>
+
+    <div class="nl">الواجهة</div>
+    <div class="ni" onclick="gp('featured')" id="ni-featured"><span class="ic">⭐</span>البازار المميّز
+      <span class="nb" id="nb-featured" style="display:none;background:var(--yw);color:#000">1</span>
+    </div>
+
+    <div class="nl">الدعم</div>
+    <div class="ni" onclick="gp('org-support')" id="ni-org-support"><span class="ic">🛡️</span>دعم المنظّمين<span class="nb g" id="nb-org-support" style="display:none">0</span></div>
   </nav>
   <div class="sb-api" style="display:none"></div>
 </aside>
@@ -711,6 +719,80 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+
+  <!-- ═══ FEATURED BAZAAR ═══ -->
+  <div class="pg" id="pg-featured">
+    <div class="sh">
+      <div class="st">⭐ البازار <span>المميّز على الرئيسية</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadFeaturedPage()">🔄 تحديث</button>
+    </div>
+
+    <!-- توضيح -->
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:var(--tx);line-height:1.6">
+      <strong style="color:var(--yw)">⭐ البازار المميّز</strong> هو البازار الوحيد الذي يظهر في بانر الصفحة الرئيسية.
+      اختر بازاراً واحداً فقط — سيُلغى تمييز البقية تلقائياً.
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="sc" style="margin-bottom:18px">
+      <div class="sc-card">
+        <div class="sc-val" id="feat-s-total">0</div>
+        <div class="sc-lbl">إجمالي البازارات</div>
+      </div>
+      <div class="sc-card" style="border-color:rgba(245,158,11,.4)">
+        <div class="sc-val" style="color:var(--yw)" id="feat-s-current">—</div>
+        <div class="sc-lbl">المميّز الحالي</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-val" id="feat-s-published">0</div>
+        <div class="sc-lbl">منشور</div>
+      </div>
+    </div>
+
+    <!-- البازار المميّز الحالي (معاينة) -->
+    <div id="feat-current-preview" style="margin-bottom:20px"></div>
+
+    <!-- قائمة البازارات للاختيار -->
+    <div class="sh" style="margin-bottom:10px">
+      <div class="st" style="font-size:13px">📋 اختر البازار المميّز</div>
+      <div class="sw" style="max-width:240px">
+        <span class="si">🔍</span>
+        <input type="text" id="feat-q" placeholder="ابحث بالاسم…" oninput="renderFeaturedList()">
+      </div>
+    </div>
+    <div id="feat-list">
+      <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+  </div>
+
+  <!-- ═══ ORGANIZER SUPPORT ═══ -->
+  <div class="pg" id="pg-org-support">
+    <div class="sh">
+      <div class="st">🛡️ دعم <span>حسابات المنظّمين</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadSupportOrganizers()">🔄 تحديث</button>
+    </div>
+    <div class="hint" style="margin-bottom:16px">
+      جميع المنظّمين الموثّقين الذين حصلوا على باج تنظيم البازارات — يمكنك إنشاء بازار بالنيابة عن أي منظّم وسيظهر على الموقع باسمه.
+    </div>
+
+    <!-- Stats -->
+    <div class="sg sg-3" style="margin-bottom:18px">
+      <div class="scard"><div class="sc-ico">🎪</div><div class="sc-lbl">المنظّمون الموثّقون</div><div class="sc-val" id="sup-s-total" style="color:var(--or)">—</div></div>
+      <div class="scard"><div class="sc-ico">🛍️</div><div class="sc-lbl">مجموع بازاراتهم</div><div class="sc-val" id="sup-s-bazaars" style="color:var(--gr)">—</div></div>
+      <div class="scard"><div class="sc-ico">⏳</div><div class="sc-lbl">طلبات قيد المراجعة</div><div class="sc-val" id="sup-s-pending" style="color:var(--yw)">—</div></div>
+    </div>
+
+    <!-- Search -->
+    <div class="fbar">
+      <div class="sw"><span class="si">🔍</span><input type="text" id="sup-q" placeholder="ابحث بالاسم أو الهاتف..." oninput="renderSupportOrganizers()"></div>
+    </div>
+
+    <!-- List -->
+    <div id="sup-org-list">
+      <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+  </div>
+
 </main>
 
 <!-- ═══ MODALS ═══ -->
@@ -834,6 +916,98 @@ tbody tr:hover .row-acts{opacity:1}
         <button class="btn btn-gh" onclick="closeModal('modal-add-cost')">إلغاء</button>
       </div>
       <div id="add-cost-res"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORT: CREATE BAZAAR FOR ORGANIZER MODAL -->
+<div class="mov" id="modal-sup-create">
+  <div class="mod mod-lg">
+    <div class="mhd">
+      <div class="mtt">🛍️ إنشاء بازار بالنيابة عن — <span id="sup-modal-orgname" style="color:var(--or)"></span></div>
+      <button class="mx" onclick="closeModal('modal-sup-create')">✕</button>
+    </div>
+    <div class="mbd">
+
+      <!-- Info bar -->
+      <div id="sup-modal-orginfo" style="background:rgba(255,107,0,.07);border:1px solid var(--bdo);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:var(--or)"></div>
+
+      <div class="fgrid">
+        <div>
+          <div class="fg"><label>اسم البازار <span class="rq">*</span></label><input type="text" class="fc" id="sup-nb-name" placeholder="مثال: بازار الربيع 2025"></div>
+          <div class="fg"><label>الوصف</label><textarea class="fc" id="sup-nb-desc" placeholder="وصف مختصر للبازار..."></textarea></div>
+          <div class="fr2">
+            <div class="fg">
+              <label>نوع المكان</label>
+              <select class="fc" id="sup-nb-vtype">
+                <option value="مول">🏬 مول</option>
+                <option value="نادي">⚽ نادي</option>
+                <option value="مدرسة">🏫 مدرسة</option>
+                <option value="شارع">🏘️ شارع</option>
+                <option value="فندق">🏨 فندق</option>
+              </select>
+            </div>
+            <div class="fg"><label>اسم المكان</label><input type="text" class="fc" id="sup-nb-vname" placeholder="مثال: مول مصر"></div>
+          </div>
+          <div class="fr2">
+            <div class="fg"><label>المنطقة</label><input type="text" class="fc" id="sup-nb-area" placeholder="مثال: 6 أكتوبر"></div>
+            <div class="fg"><label>العنوان التفصيلي</label><input type="text" class="fc" id="sup-nb-addr" placeholder="مثال: طريق الواحات"></div>
+          </div>
+          <div class="fr2">
+            <div class="fg"><label>تاريخ البداية <span class="rq">*</span></label><input type="date" class="fc" id="sup-nb-ds"></div>
+            <div class="fg"><label>تاريخ النهاية <span class="rq">*</span></label><input type="date" class="fc" id="sup-nb-de"></div>
+          </div>
+          <div class="fr2">
+            <div class="fg"><label>سعر الوحدة (ج) <span class="rq">*</span></label><input type="number" class="fc" id="sup-nb-price" placeholder="500" min="0"></div>
+            <div class="fg"><label>إجمالي الوحدات</label><input type="number" class="fc" id="sup-nb-slots" placeholder="20" min="1"></div>
+          </div>
+          <div class="fg"><label>رابط Google Maps</label><input type="url" class="fc" id="sup-nb-maps" placeholder="https://maps.google.com/..."></div>
+        </div>
+        <div>
+          <div class="fg">
+            <label>صورة الغلاف</label>
+            <div id="sup-nb-img-box" style="border:2px dashed var(--bd);border-radius:10px;padding:14px 10px;cursor:pointer;text-align:center;background:var(--bg3);transition:border-color .2s"
+                 onclick="document.getElementById('sup-nb-img-input').click()"
+                 onmouseenter="this.style.borderColor='var(--or)'" onmouseleave="this.style.borderColor='var(--bd)'">
+              <div id="sup-nb-img-ico" style="font-size:28px;margin-bottom:4px">🖼️</div>
+              <div id="sup-nb-img-lbl" style="font-size:11.5px;color:var(--mu)">اضغط لرفع صورة — WebP مضغوط</div>
+              <img id="sup-nb-img-prev" src="" alt="" style="display:none;width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-top:8px">
+            </div>
+            <input type="file" id="sup-nb-img-input" accept="image/*" style="display:none" onchange="handleSupNbImgUpload(this)">
+            <input type="text" class="fc" id="sup-nb-img" placeholder="أو الصق رابط مباشر…" style="margin-top:6px;font-size:11.5px">
+            <div id="sup-nb-img-status" class="hint" style="min-height:16px"></div>
+          </div>
+          <div class="fg">
+            <label>حالة النشر</label>
+            <select class="fc" id="sup-nb-st">
+              <option value="published">✅ منشور مباشرة</option>
+              <option value="pending">⏳ بانتظار المراجعة</option>
+              <option value="draft">📝 مسودة</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>ملاحظة داخلية</label>
+            <textarea class="fc" id="sup-nb-notes" placeholder="ملاحظات داخلية للفريق (لن تظهر للعارضين)..." rows="2"></textarea>
+          </div>
+          <!-- Organizer card (readonly) -->
+          <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:13px 15px;margin-top:4px">
+            <div style="font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:9px;display:flex;align-items:center;gap:5px">
+              🎪 معلومات المنظّم <span style="background:rgba(34,197,94,.12);color:var(--gr);font-size:9px;padding:1px 5px;border-radius:4px">✓ موثّق</span>
+            </div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--or);margin-bottom:4px" id="sup-modal-orgname2">—</div>
+            <div style="font-size:12px;color:var(--mu);direction:ltr;text-align:right" id="sup-modal-orgphone">—</div>
+            <div style="font-size:9.5px;color:var(--mu2);font-family:'Space Mono',monospace;margin-top:5px;word-break:break-all" id="sup-modal-orgid">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-or" id="sup-submit-btn" onclick="submitBazaarForOrg()">✅ إنشاء البازار بالنيابة</button>
+        <button class="btn btn-gh" onclick="closeModal('modal-sup-create')">إلغاء</button>
+        <span id="sup-submit-status" style="font-size:11px;color:var(--mu);margin-right:auto"></span>
+      </div>
+      <div id="sup-submit-res"></div>
+
     </div>
   </div>
 </div>
@@ -1025,8 +1199,11 @@ function mapBazaar(b) {
     organizer:    b.organizer || '',
     organizer_id: b.organizer_id || '',
     is_organizer_verified: b.is_organizer_verified || false,
-    time_start:   b.time_start || '',
-    time_end:     b.time_end || '',
+    time_start:    b.time_start    || '',
+    time_end:      b.time_end      || '',
+    is_featured:   !!b.is_featured,
+    premium_slots: b.premium_slots || 0,
+    premium_price: Number(b.premium_price) || 0,
   };
 }
 function mapSlot(s) {
@@ -1376,7 +1553,33 @@ async function dbUpdateBookingStatus(dbId, field, value) {
 function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;dbUpdateBazaarStatus(b._dbId,val);renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
 function changeSlotStatus(id,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s.status=val;dbUpdateSlotStatus(s._dbId,val);renderSlots();updateAll();toast('تم تحديث الوحدة','s');}}
 function changeSlotTrader(id,field,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s[field]=val;dbUpdateSlotField(s._dbId,field,val);}}
-function changeBkStatus(id,field,val){const b=BOOKINGS.find(x=>x.bookingId===id);if(b){b[field]=val;dbUpdateBookingStatus(b._dbId,field,val);renderBookings();renderFinancial();updateStats();toast('تم تحديث الحجز','s');}}
+function changeBkStatus(id, field, val) {
+  const b = BOOKINGS.find(x => x.bookingId === id);
+  if (!b) return;
+  b[field] = val;
+  dbUpdateBookingStatus(b._dbId, field, val);
+
+  /* مزامنة حالة المكان عند تأكيد/إلغاء الحجز */
+  if (field === 'bookStatus' && b.slotId) {
+    if (val === 'confirmed') {
+      db.from('bazaar_slots').update({ status: 'booked' }).eq('id', b.slotId);
+    } else if (val === 'cancelled') {
+      db.from('bazaar_slots').update({ status: 'available' }).eq('id', b.slotId);
+      /* إعادة المكان المتاح للبازار */
+      const bz = BAZAARS.find(x => x.id === b.bazaarId);
+      if (bz) {
+        bz.availSlots = (bz.availSlots || 0) + 1;
+        db.from('bazaars').update({ available_slots: bz.availSlots }).eq('id', b.bazaarId);
+      }
+      /* تحديث SLOTS محلياً */
+      const slot = SLOTS.find(s => s._dbId === b.slotId || s.id === b.slotId);
+      if (slot) slot.status = 'available';
+    }
+  }
+
+  renderBookings(); renderFinancial(); updateStats();
+  toast('تم تحديث الحجز', 's');
+}
 function changeCostPaid(localIdx,val){const c=fCs[localIdx];if(c){const ri=COSTS.indexOf(c);if(ri>=0){COSTS[ri].paid=val;renderCosts();}}}
 function deleteCost(i){if(confirm('حذف هذا البند؟')){COSTS.splice(i,1);renderCosts();toast('تم حذف البند','i');}}
 function updateStats(){
@@ -1907,18 +2110,65 @@ function openOrgReqModal(id) {
 }
 
 async function approveOrgRequest(id, name, totalSlots, fromModal) {
-  if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار منشوراً ومرئياً في صفحة البازارات فوراً.`)) return;
+  if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار منشوراً وستُنشأ خريطة الأماكن تلقائياً.`)) return;
   if (fromModal) closeModal('modal-org-req');
   try {
+    /* جلب بيانات البازار الكاملة */
+    const { data: bz, error: bzErr } = await db.from('bazaars').select('*').eq('id', id).single();
+    if (bzErr) throw bzErr;
+
+    const total        = bz.total_slots    || 0;
+    const pricePerSlot = bz.price_per_slot || 0;
+    const premiumSlots = bz.premium_slots  || 0;
+    const premiumPrice = bz.premium_price  || 0;
+
+    /* نشر البازار */
     const { error } = await db.from('bazaars').update({
-      status:           'published',
-      available_slots:  totalSlots || 0,
+      status:          'published',
+      available_slots: total,
     }).eq('id', id);
     if (error) throw error;
-    toast('✅ تم القبول — البازار منشور الآن في صفحة البازارات', 's');
+
+    /* توليد خريطة الأماكن إذا لم تكن موجودة */
+    const { data: existing } = await db.from('bazaar_slots').select('id').eq('bazaar_id', id).limit(1);
+    if (!existing?.length && total > 0) {
+      await _generateBazaarSlots(id, total, pricePerSlot, premiumSlots, premiumPrice);
+      toast('✅ تم القبول والنشر · تم إنشاء ' + total + ' مكان في الخريطة', 's');
+    } else {
+      toast('✅ تم القبول — البازار منشور الآن', 's');
+    }
+
     loadOrgRequests();
     loadData();
   } catch(e) { toast('❌ ' + e.message, 'e'); }
+}
+
+async function _generateBazaarSlots(bazaarId, totalSlots, regularPrice, premiumCount, premiumPrice) {
+  const ROWS = 'ABCDEFGHIJKLMNOP'.split('');
+  const slotsToInsert = [];
+  let c = 0;
+  const regularCount = Math.max(0, totalSlots - premiumCount);
+
+  for (const r of ROWS) {
+    for (let n = 1; n <= 5; n++) {
+      if (c >= totalSlots) break;
+      const isPremium = c >= regularCount;
+      slotsToInsert.push({
+        bazaar_id:   bazaarId,
+        row_label:   r,
+        slot_number: String(n),
+        col:         n,
+        price:       isPremium ? (premiumPrice || regularPrice) : regularPrice,
+        status:      'available',
+        is_featured: isPremium,
+      });
+      c++;
+    }
+    if (c >= totalSlots) break;
+  }
+
+  const { error } = await db.from('bazaar_slots').insert(slotsToInsert);
+  if (error) throw error;
 }
 
 async function rejectOrgRequest(id, name, fromModal) {
@@ -1945,8 +2195,463 @@ function gp(tab){
   document.getElementById('pg-'+tab).classList.add('active');
   const ni=document.querySelector(`.ni[onclick*="'${tab}'"]`);
   if(ni)ni.classList.add('active');
-  if(tab==='req')     loadOrgRequests();
-  if(tab==='org-ver') loadOrgVerRequests();
+  if(tab==='req')         loadOrgRequests();
+  if(tab==='org-ver')     loadOrgVerRequests();
+  if(tab==='org-support') loadSupportOrganizers();
+  if(tab==='featured')    loadFeaturedPage();
+}
+
+/* ══════════════════════════════════════════
+   ⭐  FEATURED BAZAAR — البازار المميّز
+══════════════════════════════════════════ */
+let _featBazaars = [];
+
+async function loadFeaturedPage() {
+  const listEl = document.getElementById('feat-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+
+  try {
+    const { data, error } = await db
+      .from('bazaars')
+      .select('id,name,image,date_start,date_end,status,organizer,region,is_featured,available_slots,total_slots,category')
+      .in('status', ['published', 'pending_review', 'draft'])
+      .order('date_start', { ascending: true });
+    if (error) throw error;
+
+    _featBazaars = data || [];
+
+    /* إحصائيات */
+    const published   = _featBazaars.filter(b => b.status === 'published').length;
+    const currentFeat = _featBazaars.find(b => b.is_featured);
+    document.getElementById('feat-s-total').textContent     = _featBazaars.length;
+    document.getElementById('feat-s-published').textContent = published;
+    document.getElementById('feat-s-current').textContent   = currentFeat ? (currentFeat.name.length > 16 ? currentFeat.name.slice(0,16)+'…' : currentFeat.name) : 'لا يوجد';
+
+    /* معاينة المميّز الحالي */
+    const prevEl = document.getElementById('feat-current-preview');
+    if (currentFeat) {
+      const ds = currentFeat.date_start
+        ? new Date(currentFeat.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric'})
+        : '—';
+      prevEl.innerHTML = `
+        <div style="border:2px solid var(--yw);border-radius:var(--r);padding:14px 16px;background:rgba(245,158,11,.06);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          ${currentFeat.image
+            ? `<img src="${currentFeat.image}" alt="" style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+            : `<div style="width:60px;height:60px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🎪</div>`}
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:11px;color:var(--yw);font-weight:700;margin-bottom:3px">⭐ المميّز الحالي على الصفحة الرئيسية</div>
+            <div style="font-size:14px;font-weight:800;color:var(--tx)">${escHtml(currentFeat.name)}</div>
+            <div style="font-size:11px;color:var(--mu);margin-top:2px">📅 ${ds} &nbsp;·&nbsp; 📍 ${escHtml(currentFeat.region||'—')}</div>
+          </div>
+          <button class="btn btn-rd btn-sm" onclick="clearFeaturedBazaar('${currentFeat.id}')">✕ إلغاء التمييز</button>
+        </div>`;
+    } else {
+      prevEl.innerHTML = `<div style="border:1px dashed var(--bd);border-radius:var(--r);padding:14px;text-align:center;color:var(--mu);font-size:12px">لا يوجد بازار مميّز حالياً — اختر أحدها من القائمة أدناه</div>`;
+    }
+
+    /* شارة sidebar */
+    const badge = document.getElementById('nb-featured');
+    if (badge) { badge.textContent = currentFeat ? '⭐' : ''; badge.style.display = currentFeat ? '' : 'none'; }
+
+    renderFeaturedList();
+  } catch(e) {
+    listEl.innerHTML = `<div style="color:var(--rd);padding:16px">❌ ${escHtml(e.message)}</div>`;
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+function renderFeaturedList() {
+  const q     = (document.getElementById('feat-q')?.value || '').trim().toLowerCase();
+  const listEl = document.getElementById('feat-list');
+  if (!listEl) return;
+
+  const list = q
+    ? _featBazaars.filter(b => b.name.toLowerCase().includes(q))
+    : _featBazaars;
+
+  if (!list.length) {
+    listEl.innerHTML = '<div class="empty"><div class="ei">🎪</div>لا توجد بازارات</div>';
+    return;
+  }
+
+  listEl.innerHTML = list.map(b => {
+    const isFeat = !!b.is_featured;
+    const ds = b.date_start
+      ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
+      : 'قريباً';
+    const statusBadge = b.status === 'published'
+      ? `<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:#dcfce7;color:#16a34a;font-weight:700">منشور</span>`
+      : `<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--mu);font-weight:700">${b.status}</span>`;
+    const avail = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
+
+    return `
+    <div id="feat-row-${b.id}"
+         style="background:${isFeat ? 'rgba(245,158,11,.07)' : 'var(--bg2)'};
+                border:${isFeat ? '2px solid var(--yw)' : '1px solid var(--bd)'};
+                border-radius:var(--r);padding:12px 14px;margin-bottom:8px;
+                display:flex;align-items:center;gap:12px;flex-wrap:wrap;transition:all .2s"
+         onmouseenter="if(!${isFeat})this.style.borderColor='var(--bdo)'"
+         onmouseleave="if(!${isFeat})this.style.borderColor='var(--bd)'">
+
+      <!-- صورة -->
+      ${b.image
+        ? `<img src="${b.image}" alt="" style="width:50px;height:50px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:50px;height:50px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎪</div>`}
+
+      <!-- معلومات -->
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${isFeat ? '<span style="color:var(--yw)">⭐</span>' : ''}
+          ${escHtml(b.name)}
+          ${statusBadge}
+        </div>
+        <div style="font-size:11px;color:var(--mu);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
+          <span>📅 ${ds}</span>
+          <span>📍 ${escHtml(b.region||'—')}</span>
+          <span>🏷️ ${escHtml(b.category||'—')}</span>
+          <span style="color:${avail > 0 ? 'var(--gr)' : 'var(--rd)'}">
+            ${avail > 0 ? avail + ' متاح' : 'مكتمل'}
+          </span>
+        </div>
+      </div>
+
+      <!-- زر -->
+      <div style="flex-shrink:0">
+        ${isFeat
+          ? `<button class="btn btn-gh btn-sm" onclick="clearFeaturedBazaar('${b.id}')">✕ إلغاء</button>`
+          : `<button class="btn btn-or btn-sm" onclick="setFeaturedBazaar('${b.id}')">⭐ تمييز على الرئيسية</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setFeaturedBazaar(id) {
+  const b = _featBazaars.find(x => x.id === id);
+  if (!b) return;
+  if (!confirm(`تمييز "${b.name}" كبازار رئيسي على الصفحة الرئيسية؟\nسيُلغى تمييز أي بازار آخر تلقائياً.`)) return;
+
+  try {
+    /* إلغاء تمييز الكل أولاً */
+    const { error: e1 } = await db.from('bazaars').update({ is_featured: false }).neq('id', '00000000-0000-0000-0000-000000000000');
+    if (e1) throw e1;
+
+    /* تمييز المختار */
+    const { error: e2 } = await db.from('bazaars').update({ is_featured: true }).eq('id', id);
+    if (e2) throw e2;
+
+    toast('⭐ تم تمييز البازار على الصفحة الرئيسية', 's');
+    await loadFeaturedPage();
+  } catch(e) {
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+async function clearFeaturedBazaar(id) {
+  if (!confirm('إلغاء تمييز هذا البازار من الصفحة الرئيسية؟')) return;
+  try {
+    const { error } = await db.from('bazaars').update({ is_featured: false }).eq('id', id);
+    if (error) throw error;
+    toast('✅ تم إلغاء التمييز', 's');
+    await loadFeaturedPage();
+  } catch(e) {
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+/* ══════════════════════════════════════════
+   🛡️  ORGANIZER SUPPORT — دعم المنظّمين
+══════════════════════════════════════════ */
+let _supportOrganizers = [];
+let _supSelectedOrg    = null;
+let _supImgUrl         = '';
+
+async function loadSupportOrganizers() {
+  const cont = document.getElementById('sup-org-list');
+  if (!cont) return;
+  cont.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+
+  try {
+    const [profRes, bzRes, reqRes] = await Promise.all([
+      db.from('organizer_profiles').select('*').eq('is_verified', true).order('created_at', { ascending: false }),
+      db.from('bazaars').select('id,organizer_id,status'),
+      db.from('organizer_requests').select('user_id,full_name,phone,region,status').eq('status','approved'),
+    ]);
+    if (profRes.error) throw profRes.error;
+
+    /* عدد البازارات والمعلّق منها لكل منظّم */
+    const bzCount = {}, bzPending = {};
+    (bzRes.data || []).forEach(b => {
+      if (!b.organizer_id) return;
+      bzCount[b.organizer_id]   = (bzCount[b.organizer_id]   || 0) + 1;
+      if (b.status === 'pending_review')
+        bzPending[b.organizer_id] = (bzPending[b.organizer_id] || 0) + 1;
+    });
+
+    /* ربط بيانات organizer_requests */
+    const reqMap = {};
+    (reqRes.data || []).forEach(r => { reqMap[r.user_id] = r; });
+
+    _supportOrganizers = (profRes.data || []).map(p => ({
+      ...p,
+      bazaar_count:  bzCount[p.user_id]   || 0,
+      pending_count: bzPending[p.user_id] || 0,
+      req_info:      reqMap[p.user_id]    || null,
+    })).sort((a, b) => b.bazaar_count - a.bazaar_count);
+
+    /* تحديث شارة الـ sidebar */
+    const badge = document.getElementById('nb-org-support');
+    if (badge) {
+      badge.textContent = _supportOrganizers.length;
+      badge.style.display = _supportOrganizers.length ? '' : 'none';
+    }
+
+    /* إحصائيات */
+    const totalBz   = Object.values(bzCount).reduce((s,v)=>s+v, 0);
+    const totalPend = Object.values(bzPending).reduce((s,v)=>s+v, 0);
+    const s = id => document.getElementById(id);
+    if(s('sup-s-total'))   s('sup-s-total').textContent   = _supportOrganizers.length;
+    if(s('sup-s-bazaars')) s('sup-s-bazaars').textContent = totalBz;
+    if(s('sup-s-pending')) s('sup-s-pending').textContent = totalPend;
+
+    renderSupportOrganizers();
+  } catch(e) {
+    cont.innerHTML = `<div style="color:var(--rd);padding:16px">❌ فشل التحميل: ${escHtml(e.message)}</div>`;
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+function renderSupportOrganizers() {
+  const q    = (document.getElementById('sup-q')?.value || '').trim().toLowerCase();
+  const cont = document.getElementById('sup-org-list');
+  if (!cont) return;
+
+  const list = q
+    ? _supportOrganizers.filter(o => {
+        const name  = (o.full_name  || o.req_info?.full_name || '').toLowerCase();
+        const phone = (o.whatsapp   || o.req_info?.phone     || '').toLowerCase();
+        return name.includes(q) || phone.includes(q);
+      })
+    : _supportOrganizers;
+
+  if (!list.length) {
+    cont.innerHTML = '<div class="empty"><div class="ei">🎪</div>' +
+      (q ? 'لا نتائج للبحث' : 'لا يوجد منظّمون موثّقون حالياً') + '</div>';
+    return;
+  }
+
+  cont.innerHTML = list.map(org => {
+    const name   = escHtml(org.full_name  || org.req_info?.full_name || 'منظّم');
+    const phone  = escHtml(org.whatsapp   || org.req_info?.phone     || '—');
+    const region = escHtml(org.region     || org.req_info?.region    || '—');
+    const uid    = escHtml(org.user_id    || '');
+    const waNum  = (org.whatsapp || org.req_info?.phone || '').replace(/\D/g,'');
+
+    return `
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;
+                margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;transition:border-color .2s"
+         onmouseenter="this.style.borderColor='var(--bdo)'" onmouseleave="this.style.borderColor='var(--bd)'">
+
+      <!-- Avatar -->
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--org);border:2px solid var(--bdo);
+                  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎪</div>
+
+      <!-- Info -->
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:14px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          ${name}
+          <span style="background:rgba(34,197,94,.12);color:var(--gr);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px">✓ موثّق</span>
+        </div>
+        <div style="font-size:11px;color:var(--mu);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
+          <span>📞 ${phone}</span>
+          <span>📍 ${region}</span>
+          <span style="font-family:'Space Mono',monospace;font-size:9.5px">${uid.slice(0,8)}…</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <div style="text-align:center;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:6px 13px">
+          <div style="font-size:18px;font-weight:900;color:var(--or)">${org.bazaar_count}</div>
+          <div style="font-size:9px;color:var(--mu);font-weight:600">بازار</div>
+        </div>
+        ${org.pending_count > 0 ? `
+        <div style="text-align:center;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:6px 13px">
+          <div style="font-size:18px;font-weight:900;color:var(--yw)">${org.pending_count}</div>
+          <div style="font-size:9px;color:var(--mu);font-weight:600">معلّق</div>
+        </div>` : ''}
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap">
+        <button class="btn btn-or btn-sm" onclick="openCreateBazaarForOrg('${escHtml(org.user_id)}')">
+          ➕ إنشاء بازار بالنيابة
+        </button>
+        ${waNum ? `<a href="https://wa.me/${waNum}" target="_blank" class="btn btn-gh btn-sm">📱 واتساب</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCreateBazaarForOrg(userId) {
+  const org = _supportOrganizers.find(o => o.user_id === userId);
+  if (!org) { toast('لم يُعثر على بيانات المنظّم', 'e'); return; }
+
+  _supSelectedOrg = org;
+  _supImgUrl = '';
+
+  const name  = org.full_name  || org.req_info?.full_name || 'منظّم';
+  const phone = org.whatsapp   || org.req_info?.phone     || '—';
+
+  /* تعبئة معلومات المنظّم في المودال */
+  document.getElementById('sup-modal-orgname').textContent  = name;
+  document.getElementById('sup-modal-orgname2').textContent = name;
+  document.getElementById('sup-modal-orgphone').textContent = phone;
+  document.getElementById('sup-modal-orgid').textContent    = 'User ID: ' + userId;
+  document.getElementById('sup-modal-orginfo').innerHTML    =
+    `🎪 إنشاء بازار بالنيابة عن <strong>${escHtml(name)}</strong> — سيظهر على الموقع باسمه مع شارة المنظّم الموثّق ✓
+     &nbsp;·&nbsp; عدد بازاراته الحالية: <strong style="color:var(--or)">${org.bazaar_count}</strong>`;
+
+  /* إعادة ضبط الفورم */
+  ['sup-nb-name','sup-nb-desc','sup-nb-vname','sup-nb-addr','sup-nb-area',
+   'sup-nb-ds','sup-nb-de','sup-nb-price','sup-nb-slots','sup-nb-maps','sup-nb-img','sup-nb-notes']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('sup-nb-st').value    = 'published';
+  document.getElementById('sup-nb-vtype').value = 'مول';
+  document.getElementById('sup-submit-res').innerHTML      = '';
+  document.getElementById('sup-submit-status').textContent = '';
+
+  /* إعادة ضبط الصورة */
+  const prev = document.getElementById('sup-nb-img-prev');
+  const lbl  = document.getElementById('sup-nb-img-lbl');
+  const ico  = document.getElementById('sup-nb-img-ico');
+  const st   = document.getElementById('sup-nb-img-status');
+  const inp  = document.getElementById('sup-nb-img-input');
+  if(prev){prev.style.display='none';prev.src='';}
+  if(lbl) lbl.style.display='';
+  if(ico) ico.style.display='';
+  if(st)  st.innerHTML='';
+  if(inp) inp.value='';
+
+  openModal('modal-sup-create');
+}
+
+async function handleSupNbImgUpload(inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  const statusEl = document.getElementById('sup-nb-img-status');
+  const lbl      = document.getElementById('sup-nb-img-lbl');
+  const prev     = document.getElementById('sup-nb-img-prev');
+  const ico      = document.getElementById('sup-nb-img-ico');
+
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--or)">⏳ ضغط ورفع الصورة…</span>';
+  if (lbl) lbl.style.display = 'none';
+  if (ico) ico.style.display = 'none';
+
+  try {
+    const blob   = await _compressToWebP(file);
+    const rand   = Math.random().toString(36).slice(2, 6);
+    const r2Path = `bazaars/admin-support/${Date.now()}_${rand}.webp`;
+    const form   = new FormData();
+    form.append('file', new File([blob], 'image.webp', { type: 'image/webp' }));
+    form.append('path', r2Path);
+
+    const res  = await fetch('/upload', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body:    form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'فشل الرفع');
+
+    _supImgUrl = data.url;
+    document.getElementById('sup-nb-img').value = data.url;
+    if (prev) { prev.src = data.url; prev.style.display = 'block'; }
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gr)">✅ تم الرفع — WebP مضغوط</span>';
+  } catch(err) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--rd)">❌ ${escHtml(err.message)}</span>`;
+    if (lbl) lbl.style.display = '';
+    if (ico) ico.style.display = '';
+    _supImgUrl = '';
+  }
+}
+
+async function submitBazaarForOrg() {
+  if (!_supSelectedOrg) { toast('لم يُحدَّد منظّم', 'e'); return; }
+
+  const name = document.getElementById('sup-nb-name').value.trim();
+  if (!name)  { toast('اسم البازار مطلوب', 'e'); return; }
+  const ds   = document.getElementById('sup-nb-ds').value;
+  const de   = document.getElementById('sup-nb-de').value;
+  if (!ds || !de) { toast('يجب تحديد تاريخي البداية والنهاية', 'e'); return; }
+  const price = Number(document.getElementById('sup-nb-price').value) || 0;
+  if (!price) { toast('سعر الوحدة مطلوب', 'e'); return; }
+
+  const orgName    = _supSelectedOrg.full_name || _supSelectedOrg.req_info?.full_name || 'منظّم';
+  const totalSlots = Number(document.getElementById('sup-nb-slots').value) || 0;
+  const imgUrl     = document.getElementById('sup-nb-img').value.trim() || _supImgUrl || null;
+  const days       = Math.round((new Date(de) - new Date(ds)) / 86400000) + 1;
+  const notes      = document.getElementById('sup-nb-notes').value.trim();
+
+  const btn    = document.getElementById('sup-submit-btn');
+  const statEl = document.getElementById('sup-submit-status');
+  btn.disabled = true; btn.textContent = '⏳ جارٍ الإنشاء…';
+  if (statEl) { statEl.textContent = ''; statEl.style.color = 'var(--mu)'; }
+
+  try {
+    const payload = {
+      name,
+      description:           document.getElementById('sup-nb-desc').value.trim()    || null,
+      venue_type:            document.getElementById('sup-nb-vtype').value,
+      venue_name:            document.getElementById('sup-nb-vname').value.trim()   || null,
+      venue_address:         document.getElementById('sup-nb-addr').value.trim()    || null,
+      address:               document.getElementById('sup-nb-addr').value.trim()    || null,
+      region:                document.getElementById('sup-nb-area').value.trim()    || null,
+      date_start:            ds || null,
+      date_end:              de || null,
+      days_count:            days,
+      total_slots:           totalSlots,
+      available_slots:       totalSlots,
+      price_per_slot:        price,
+      min_space:             2,
+      image:                 imgUrl,
+      event_image_url:       imgUrl,
+      maps_link:             document.getElementById('sup-nb-maps').value.trim()    || null,
+      status:                document.getElementById('sup-nb-st').value,
+      organizer:             orgName,
+      organizer_id:          _supSelectedOrg.user_id,
+      is_organizer_verified: true,
+      organizer_notes:       notes
+        ? '[دعم أدمن] ' + notes
+        : '[أُنشئ بواسطة فريق مكاني Spot بالنيابة عن المنظّم]',
+    };
+
+    const { data, error } = await db.from('bazaars').insert(payload).select().single();
+    if (error) throw error;
+
+    /* تحديث الذاكرة المحلية */
+    BAZAARS.unshift(mapBazaar(data));
+    updateAll();
+
+    document.getElementById('sup-submit-res').innerHTML = `
+      <div class="rok" style="margin-top:10px">
+        ✅ تم إنشاء البازار بنجاح بالنيابة عن <strong>${escHtml(orgName)}</strong><br>
+        <span style="font-size:11px;color:var(--mu)">ID: ${data.id} · الحالة: ${data.status}</span>
+      </div>`;
+    if (statEl) { statEl.textContent = '✅ تم بنجاح'; statEl.style.color = 'var(--gr)'; }
+    toast('✅ تم إنشاء البازار بالنيابة عن ' + orgName, 's');
+
+    /* تحديث إحصائيات قسم الدعم */
+    loadSupportOrganizers();
+
+    setTimeout(() => closeModal('modal-sup-create'), 1800);
+  } catch(e) {
+    document.getElementById('sup-submit-res').innerHTML = `<div class="rer">❌ ${escHtml(e.message)}</div>`;
+    if (statEl) { statEl.textContent = '❌ فشل الإنشاء'; statEl.style.color = 'var(--rd)'; }
+    toast('❌ ' + e.message, 'e');
+  }
+  btn.disabled = false; btn.textContent = '✅ إنشاء البازار بالنيابة';
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
