@@ -2868,9 +2868,11 @@ function renderSupportOrganizers() {
 
   const list = q
     ? _supportOrganizers.filter(o => {
-        const name  = (o.full_name  || o.req_info?.full_name || '').toLowerCase();
-        const phone = (o.whatsapp   || o.req_info?.phone     || '').toLowerCase();
-        return name.includes(q) || phone.includes(q);
+        // البحث في اسم البروفايل + اسم الطلب معاً (قد يختلفان)
+        const profileName = (o.full_name            || '').toLowerCase();
+        const reqName     = (o.req_info?.full_name  || '').toLowerCase();
+        const phone       = (o.whatsapp || o.req_info?.phone || '').toLowerCase();
+        return profileName.includes(q) || reqName.includes(q) || phone.includes(q);
       })
     : _supportOrganizers;
 
@@ -2881,11 +2883,17 @@ function renderSupportOrganizers() {
   }
 
   cont.innerHTML = list.map(org => {
-    const name   = escHtml(org.full_name  || org.req_info?.full_name || 'منظّم');
+    const profileName = org.full_name || '';
+    const reqName     = org.req_info?.full_name || '';
+    // الاسم المعروض = اسم البروفايل أو اسم الطلب
+    const name   = escHtml(profileName || reqName || 'منظّم');
     const phone  = escHtml(org.whatsapp   || org.req_info?.phone     || '—');
     const region = escHtml(org.region     || org.req_info?.region    || '—');
     const uid    = escHtml(org.user_id    || '');
     const waNum  = (org.whatsapp || org.req_info?.phone || '').replace(/\D/g,'');
+    // هل الاسمان مختلفان؟ (مثلاً: بروفايل = "graffiti workspace" وطلب = "Maram Magdy")
+    const namesDiffer = profileName && reqName && profileName.trim().toLowerCase() !== reqName.trim().toLowerCase();
+    const needsSync   = org._orphaned || namesDiffer || (!profileName && reqName);
 
     return `
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;
@@ -2903,6 +2911,7 @@ function renderSupportOrganizers() {
           <span style="background:rgba(34,197,94,.12);color:var(--gr);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px">✓ موثّق</span>
           ${org._orphaned ? `<span style="background:rgba(245,158,11,.15);color:var(--yw);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px" title="السجل غائب عن organizer_profiles — اضغط مزامنة لإصلاحه">⚠️ يحتاج مزامنة</span>` : ''}
         </div>
+        ${namesDiffer ? `<div style="font-size:11px;color:var(--yw);margin-top:2px">📋 اسم الطلب: <strong>${escHtml(reqName)}</strong></div>` : ''}
         <div style="font-size:11px;color:var(--mu);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
           <span>📞 ${phone}</span>
           <span>📍 ${region}</span>
@@ -2928,7 +2937,7 @@ function renderSupportOrganizers() {
         <button class="btn btn-or btn-sm" onclick="openCreateBazaarForOrg('${escHtml(org.user_id)}')">
           ➕ إنشاء بازار بالنيابة
         </button>
-        ${(org._orphaned || (!org.full_name && org.req_info)) ? `
+        ${needsSync ? `
         <button class="btn btn-gh btn-sm" title="مزامنة الاسم والهاتف من الطلب الأصلي وإصلاح السجل"
                 onclick="syncOrgProfileFromRequest('${escHtml(org.user_id)}')">
           🔄 مزامنة البيانات
