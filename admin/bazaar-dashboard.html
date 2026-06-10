@@ -1223,7 +1223,7 @@ async function loadData() {
     _refreshArchiveBadge();
 
     // تنظيف الإشعارات القديمة + الحجوزات المنتهية في الخلفية
-    db.rpc('cleanup_old_notifications').catch(() => {});
+    db.rpc('cleanup_old_notifications').then(null, () => {});
     db.rpc('cleanup_expired_bookings')
       .then(({ data }) => {
         if (data) {
@@ -2403,7 +2403,7 @@ async function deleteBazaar(id, name) {
     if (slDel.error) throw slDel.error;
 
     // حذف إشعارات المنظم المرتبطة بهذا البازار
-    await db.from('organizer_notifications').delete().eq('bazaar_id', String(id)).catch(() => {});
+    await db.from('organizer_notifications').delete().eq('bazaar_id', String(id)).then(null, () => {});
 
     const bzDel = await db.from('bazaars').delete().eq('id', id);
     if (bzDel.error) throw bzDel.error;

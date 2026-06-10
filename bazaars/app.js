@@ -1878,7 +1878,7 @@ async function submitBazaarBooking() {
         bazaar_id:    String(currentBazaar.id),
       }).then(() => {
         // تنظيف الإشعارات القديمة في الخلفية
-        sbClient.rpc('cleanup_old_notifications').catch(() => {});
+        sbClient.rpc('cleanup_old_notifications').then(null, () => {});
       }).catch(() => {});
     }
 
