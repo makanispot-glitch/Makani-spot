@@ -2374,7 +2374,7 @@ async function loadSupportOrganizers() {
 
   try {
     const [profRes, bzRes, reqRes] = await Promise.all([
-      db.from('organizer_profiles').select('*').eq('is_verified', true).order('created_at', { ascending: false }),
+      db.from('organizer_profiles').select('*').eq('is_verified', true).order('joined_at', { ascending: false }),
       db.from('bazaars').select('id,organizer_id,status'),
       db.from('organizer_requests').select('user_id,full_name,phone,region,status').eq('status','approved'),
     ]);
