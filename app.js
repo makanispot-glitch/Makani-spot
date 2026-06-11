@@ -53,6 +53,9 @@ let selectedAct = '';    // النشاط المحدد في الفلتر
 let sbClient = null;  // كائن Supabase يُهيَّأ عند التحميل
 let currentUser = null;  // بيانات المستخدم المسجّل حالياً
 let currentProfile = null;  // بيانات الـ profile من قاعدة البيانات
+let _authRedirect = false; // هل وصلنا من redirect مصادقة (Google OAuth / تأكيد بريد)؟
+//   يُلتقط من الـ URL عند التحميل — هو الحالة الوحيدة التي يُسمح فيها
+//   بالتحويل التلقائي للداشبورد دون فعل صريح من المستخدم
 
 // ── متغيرات خاصة بصفحة الماركت بليس ──
 let mpPage = 1;      // رقم الصفحة الحالية في الماركت بليس
@@ -92,6 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn('⚠️ Supabase غير محمّل بعد — تأكد من تضمين مكتبته قبل app.js');
   }
 
+  // التقاط العودة من redirect مصادقة قبل أن تستهلك مكتبة Supabase بيانات الـ URL
+  // (implicit flow يستخدم #access_token، و PKCE flow يستخدم ?code=)
+  _authRedirect = (window.location.hash || '').includes('access_token') ||
+    new URLSearchParams(window.location.search).has('code');
+
   // تحميل بيانات المساحات من Google Sheets
   loadData();
   subscribeSpacesRealtime();
@@ -111,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // التنقل المباشر عبر URL parameter: /?p=market أو /?p=dashboard إلخ
   const urlPage = new URLSearchParams(window.location.search).get('p');
   if (urlPage) {
-    if (['home', 'how', 'owner', 'login', 'signup'].includes(urlPage)) {
+    if (['home', 'how', 'owner', 'pricing', 'login', 'signup'].includes(urlPage)) {
       showPage(urlPage);
     } else if (urlPage === 'market') {
       window.location.replace('/spaces/');
@@ -1641,23 +1649,18 @@ function showPage(p) {
     return;
   }
 
-  // حفظ الصفحة الحالية (باستثناء صفحات التفاصيل — لا نحفظها في localStorage)
-  if (['home', 'how', 'owner', 'pricing', 'market', 'bazaars', 'dashboard'].includes(p)) {
-    localStorage.setItem('lastPage', p);
-  }
-
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('pg-' + p);
   if (target) target.classList.add('active');
 
   // تحديث الرابط النشط في الـ Nav
+  // ⚠️ المحدد يستثني أزرار الأقسام (.nav-section-btn) — وإلا تُظلَّل بالخطأ
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
-  const links = document.querySelectorAll('.nav-links a');
+  const links = document.querySelectorAll('.nav-links a:not(.nav-section-btn)');
   if (p === 'home') links[0]?.classList.add('active');
   if (p === 'how') links[1]?.classList.add('active');
   if (p === 'owner') links[2]?.classList.add('active');
-  if (p === 'pricing') links[3]?.classList.add('active');
   if (p === 'market' || p === 'space-detail') document.getElementById('nsb-spaces')?.classList.add('active');
 
   // لو فتحنا الماركت بليس
@@ -1672,6 +1675,9 @@ function showPage(p) {
   if (p === 'pricing') {
     setTimeout(initPricingAnimations, 80);
   }
+
+  // مزامنة شريط التنقل السفلي (موبايل) مع الصفحة النشطة
+  updateBottomNav(p === 'home' ? 'home' : p === 'dashboard' ? 'user' : '');
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1933,46 +1939,42 @@ async function initAuth() {
       currentProfile = profile;
       setNavUser(session.user, profile);
 
-      // URL param له أولوية على lastPage
+      // يُفتح الداشبورد تلقائياً في حالتين صريحتين فقط:
+      //   1) رابط مباشر /?p=dashboard (من الصفحات الفرعية)
+      //   2) العودة من redirect مصادقة (Google OAuth / تأكيد بريد)
+      // فيما عدا ذلك تبقى الصفحة الافتراضية (الرئيسية) كما هي
       const urlPage = new URLSearchParams(window.location.search).get('p');
-      if (urlPage === 'dashboard') {
+      if (urlPage === 'dashboard' || _authRedirect) {
+        _authRedirect = false;
         await loadDashboardData(session.user);
         showPage('dashboard');
-      } else {
-        const lastPage = localStorage.getItem('lastPage');
-        if (lastPage && lastPage !== 'home') {
-          document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-          const target = document.getElementById('pg-' + lastPage);
-          if (target) target.classList.add('active');
-
-          if (lastPage === 'dashboard') {
-            await loadDashboardData(session.user);
-          }
-          if (lastPage === 'market') {
-            setTimeout(initMpSlider, 120);
-            if (SPACES.length && !mpFiltered.length) {
-              mpFiltered = [...SPACES];
-              renderMarketplace();
-            }
-          }
-        }
       }
     } else {
-      localStorage.removeItem('lastPage');
       setNavUser(null, null);
     }
+
+    // تنظيف مفتاح قديم لم يعد مستخدماً (كان يسبب فتح الداشبورد بدل الرئيسية)
+    localStorage.removeItem('lastPage');
   } catch (_) {
     setNavUser(null, null);
   }
 
-  // ✅ [تعديل 3] إصلاح onAuthStateChange — الداشبورد يظهر فوراً بدون Refresh
+  // ⚠️ ملاحظة مهمة: Supabase يطلق حدث SIGNED_IN ليس فقط عند تسجيل دخول جديد،
+  // بل أيضاً عند تجديد الـ token وعند العودة للتبويب (tab focus).
+  // لذلك لا نحوّل للداشبورد إلا عند تسجيل دخول فعلي من صفحة login/signup
+  // أو عند العودة من redirect مصادقة — وإلا تُترك صفحة المستخدم الحالية كما هي.
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
+      const sameUser = currentUser && currentUser.id === session.user.id;
       currentUser = session.user;
-      const { data: profile } = await sbClient
-        .from('profiles').select('*').eq('id', session.user.id).single();
-      currentProfile = profile;
-      setNavUser(session.user, profile);
+
+      // لا داعي لإعادة جلب الـ profile عند كل تجديد token
+      if (!sameUser || !currentProfile) {
+        const { data: profile } = await sbClient
+          .from('profiles').select('*').eq('id', session.user.id).single();
+        currentProfile = profile;
+      }
+      setNavUser(session.user, currentProfile);
 
       // تحديد الصفحة النشطة حالياً
       const activePage = document.querySelector('.page.active')?.id || '';
@@ -1980,18 +1982,16 @@ async function initAuth() {
         id => document.getElementById(id)?.classList.contains('active')
       );
 
-      if (isOnAuthPage) {
-        // جاي من صفحة login أو signup — روّح للداشبورد مباشرة
+      if (isOnAuthPage || _authRedirect) {
+        // تسجيل دخول فعلي (من صفحة الدخول أو عائد من OAuth) — روّح للداشبورد
+        _authRedirect = false;
         await loadDashboardData(session.user);
         showPage('dashboard');
-      } else if (activePage === 'pg-dashboard') {
-        // الصفحة الحالية هي الداشبورد (مثلاً بعد Google OAuth) — حمّل البيانات فقط
+      } else if (activePage === 'pg-dashboard' && !sameUser) {
+        // مستخدم جديد والصفحة المعروضة هي الداشبورد — حمّل بياناته فقط
         await loadDashboardData(session.user);
-      } else {
-        // Google OAuth redirect للـ home أو أي صفحة تانية — روّح للداشبورد
-        await loadDashboardData(session.user);
-        showPage('dashboard');
       }
+      // غير ذلك: تجديد جلسة/عودة للتبويب — لا نغيّر الصفحة إطلاقاً
 
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;

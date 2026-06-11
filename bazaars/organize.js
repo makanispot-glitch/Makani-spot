@@ -482,6 +482,7 @@ async function orgSubmit() {
       total_contract_price:  contract || null,
       contact_phone:         phone,
       organizer_notes:       _buildNotes(notes, finalSketch),
+      sketch_url:            finalSketch,
       image:                 coverUrl,
       event_image_url:       coverUrl,
       extra_images:          validExtras.length > 0 ? validExtras : null,
