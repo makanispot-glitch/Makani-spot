@@ -666,12 +666,46 @@ tbody tr:hover .row-acts{opacity:1}
         </select>
       </div>
       <div class="fr2">
-        <div class="fg"><label>عدد الوحدات <span class="rq">*</span></label><input type="number" class="fc" id="asl-count" value="20" min="1" max="50" oninput="updateSlotPreview()"></div>
-        <div class="fg"><label>سعر الوحدة (ج) <span class="rq">*</span></label><input type="number" class="fc" id="asl-price" placeholder="500" oninput="updateSlotPreview()"></div>
+        <div class="fg"><label>عدد الوحدات الإجمالي <span class="rq">*</span></label><input type="number" class="fc" id="asl-count" value="20" min="1" max="200" oninput="updateSlotPreview()"></div>
+        <div class="fg"><label>سعر الوحدة العادية (ج) <span class="rq">*</span></label><input type="number" class="fc" id="asl-price" placeholder="500" oninput="updateSlotPreview()"></div>
       </div>
+
+      <!-- ⭐ أماكن مميزة -->
+      <div style="background:rgba(250,200,30,.08);border:1px solid rgba(245,180,0,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:0">
+          <input type="checkbox" id="asl-has-featured" onchange="updateSlotPreview()" style="width:16px;height:16px;accent-color:#c47800;cursor:pointer">
+          <span>⭐ تضمين أماكن مميزة</span>
+          <span style="font-size:11px;font-weight:400;color:var(--mu)">ستظهر بشكل مميز على المنصة</span>
+        </label>
+        <div id="asl-featured-opts" style="display:none;margin-top:12px">
+          <div class="fr2">
+            <div class="fg" style="margin-bottom:0">
+              <label>عدد الأماكن المميزة <span class="rq">*</span></label>
+              <input type="number" class="fc" id="asl-feat-count" value="3" min="1" oninput="updateSlotPreview()">
+              <div class="hint" style="margin-top:4px">ستكون الوحدات الأولى في الخريطة</div>
+            </div>
+            <div class="fg" style="margin-bottom:0">
+              <label>سعر المكان المميز (ج)</label>
+              <input type="number" class="fc" id="asl-feat-price" placeholder="نفس السعر العادي" oninput="updateSlotPreview()">
+              <div class="hint" style="margin-top:4px">اتركه فارغاً لنفس السعر</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- SLOT PREVIEW GRID -->
       <div class="fg">
-        <label>معاينة الوحدات</label>
+        <label style="display:flex;align-items:center;gap:10px">
+          معاينة الوحدات
+          <span style="display:flex;gap:8px;font-size:11px;font-weight:400">
+            <span style="display:flex;align-items:center;gap:4px">
+              <span style="width:11px;height:11px;border-radius:3px;background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.5);display:inline-block"></span> عادي
+            </span>
+            <span id="asl-feat-legend" style="display:none;align-items:center;gap:4px">
+              <span style="width:11px;height:11px;border-radius:3px;background:rgba(250,200,30,.2);border:1px solid rgba(245,180,0,.5);display:inline-block"></span> ⭐ مميز
+            </span>
+          </span>
+        </label>
         <div class="slots-grid-wrap">
           <div id="slot-preview-grid" style="display:flex;flex-wrap:wrap;gap:5px;padding:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;min-height:60px"></div>
         </div>
@@ -913,6 +947,7 @@ tbody tr:hover .row-acts{opacity:1}
         <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,197,94,.2);border:1px solid var(--gr);display:inline-block"></span>متاح</span>
         <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,.2);border:1px solid var(--rd);display:inline-block"></span>محجوز</span>
         <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,.2);border:1px solid var(--yw);display:inline-block"></span>محجوز مبدئي</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(250,200,30,.2);outline:1.5px solid rgba(245,180,0,.7);display:inline-block"></span>⭐ مميز</span>
       </div>
       <div id="slots-map-container" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
@@ -1846,28 +1881,58 @@ function openSlotMap(bzId){
   document.getElementById('msm-name').textContent=bz.name;
   const slBz=SLOTS.filter(s=>s.bazaarId===bzId);
   const rows=[...new Set(slBz.map(s=>s.rowLabel))].sort();
+  const featTotal = slBz.filter(s=>s.is_featured).length;
   const cont=document.getElementById('slots-map-container');
-  cont.innerHTML=rows.map(r=>{
-    const rowSlots=slBz.filter(s=>s.rowLabel===r).sort((a,b)=>a.slotNumber-b.slotNumber);
-    return `<div>
-      <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px">صف ${r}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${rowSlots.map(s=>`
-          <div class="slot-cell ${s.status==='available'?'av':s.status==='booked'?'bk':'rs'}"
-               onclick="quickEditSlot('${s.slotId}')"
-               title="${s.traderName?'التاجر: '+s.traderName+'\n':''}${s.activity?'النشاط: '+s.activity:''}">
-            <div class="slot-id">${s.slotId.split('-').pop()}</div>
-            <div class="slot-st">${s.status==='available'?'✓':s.status==='booked'?'●':'◐'}</div>
-            ${s.traderName?`<div style="font-size:7px;color:inherit;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${s.traderName.split(' ')[0]}</div>`:''}
-          </div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  cont.innerHTML=
+    // شرح التحكم
+    `<div style="font-size:11px;color:var(--mu);margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+      <span>انقر على الوحدة لتغيير حالتها · <strong>انقر مطوّلاً (أو Ctrl+click)</strong> لتبديل التمييز ⭐</span>
+      ${featTotal > 0 ? `<span style="color:#c47800;font-weight:700">⭐ ${featTotal} مميزة حالياً</span>` : ''}
+    </div>` +
+    rows.map(r=>{
+      const rowSlots=slBz.filter(s=>s.rowLabel===r).sort((a,b)=>a.slotNumber-b.slotNumber);
+      return `<div>
+        <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px">صف ${r}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${rowSlots.map(s=>{
+            const featStyle = s.is_featured
+              ? 'outline:2px solid rgba(245,180,0,.8);outline-offset:1px'
+              : '';
+            return `<div class="slot-cell ${s.status==='available'?'av':s.status==='booked'?'bk':'rs'}"
+                 style="${featStyle}"
+                 onclick="quickEditSlot('${s.slotId}',event)"
+                 title="انقر: تغيير الحالة | Ctrl+انقر: تبديل التمييز&#10;${s.traderName?'التاجر: '+s.traderName+'&#10;':''}${s.activity?'النشاط: '+s.activity:''}">
+              ${s.is_featured ? '<div style="position:absolute;top:1px;right:2px;font-size:8px;line-height:1">⭐</div>' : ''}
+              <div class="slot-id">${s.rowLabel}${s.slotNumber}</div>
+              <div class="slot-st">${s.status==='available'?'✓':s.status==='booked'?'●':'◐'}</div>
+              ${s.traderName?`<div style="font-size:7px;color:inherit;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${s.traderName.split(' ')[0]}</div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
   openModal('modal-sl-map');
 }
 
-function quickEditSlot(slotId){
+function quickEditSlot(slotId, event){
   const s=SLOTS.find(x=>x.slotId===slotId); if(!s) return;
+
+  // Ctrl+click أو click مطوّل → تبديل التمييز ⭐
+  if (event?.ctrlKey || event?.metaKey) {
+    event.preventDefault();
+    const newFeat = !s.is_featured;
+    s.is_featured = newFeat;
+    db.from('bazaar_slots').update({ is_featured: newFeat }).eq('id', s._dbId)
+      .then(({ error }) => {
+        if (error) { toast('❌ فشل التحديث: ' + error.message, 'e'); s.is_featured = !newFeat; }
+        else { toast(`${s.rowLabel}${s.slotNumber} ${newFeat ? '⭐ أصبح مميزاً' : 'أُلغي تمييزه'}`, 'i'); }
+        openSlotMap(s.bazaarId);
+      });
+    openSlotMap(s.bazaarId);
+    return;
+  }
+
+  // Click عادي → تغيير الحالة
   const opts=['available','booked','reserved'];
   const cur=opts.indexOf(s.status);
   const nxt=opts[(cur+1)%opts.length];
@@ -1875,7 +1940,7 @@ function quickEditSlot(slotId){
   dbUpdateSlotStatus(s._dbId,nxt);
   openSlotMap(s.bazaarId);
   renderSlots();
-  toast(`${slotId} → ${nxt}`,'i');
+  toast(`${s.rowLabel}${s.slotNumber} → ${nxt}`,'i');
 }
 
 /* ══════════════════════════════════════════
@@ -2039,56 +2104,112 @@ function clearBzForm(){
    ADD SLOTS
 ══════════════════════════════════════════ */
 function updateSlotPreview(){
-  const bzId=document.getElementById('asl-bz').value;
-  const count=Number(document.getElementById('asl-count').value)||0;
-  const price=Number(document.getElementById('asl-price').value)||0;
-  const bz=BAZAARS.find(x=>x.id===bzId);
-  const cont=document.getElementById('slot-preview-grid');
-  const info=document.getElementById('slot-preview-info');
-  if(!bzId||!count){cont.innerHTML='';info.textContent='اختر بازار وعدد وحدات';return;}
-  const rows='ABCDEFGHIJ'.split('');
-  let cells=[];let c=0;
-  for(const r of rows){for(let n=1;n<=5;n++){if(c>=count)break;cells.push(`<div style="width:40px;height:40px;border-radius:7px;background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--gr)">${r}${n}</div>`);c++;}if(c>=count)break;}
-  cont.innerHTML=cells.join('');
-  info.innerHTML=`<span style="color:var(--or);font-weight:700">${count}</span> وحدة · سعر الوحدة: <span style="color:var(--or);font-weight:700">${fmt(price)}</span> ج · إجمالي: <span style="color:var(--or);font-weight:700">${fmt(price*count)}</span> ج`;
+  const bzId       = document.getElementById('asl-bz').value;
+  const count      = Number(document.getElementById('asl-count').value) || 0;
+  const price      = Number(document.getElementById('asl-price').value) || 0;
+  const hasFeat    = document.getElementById('asl-has-featured')?.checked || false;
+  const featCount  = hasFeat ? (Number(document.getElementById('asl-feat-count')?.value) || 0) : 0;
+  const featPriceRaw = document.getElementById('asl-feat-price')?.value;
+  const featPrice  = featPriceRaw ? Number(featPriceRaw) : price;
+
+  // إظهار/إخفاء خيارات الأماكن المميزة
+  const featOpts   = document.getElementById('asl-featured-opts');
+  const featLegend = document.getElementById('asl-feat-legend');
+  if (featOpts)   featOpts.style.display   = hasFeat ? '' : 'none';
+  if (featLegend) featLegend.style.display  = hasFeat ? 'flex' : 'none';
+
+  const cont = document.getElementById('slot-preview-grid');
+  const info = document.getElementById('slot-preview-info');
+  if (!bzId || !count) { cont.innerHTML = ''; info.textContent = 'اختر بازار وعدد وحدات'; return; }
+
+  const rows = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  let cells = []; let c = 0;
+  outer: for (const r of rows) {
+    for (let n = 1; n <= 10; n++) {
+      if (c >= count) break outer;
+      const isFeat = hasFeat && c < featCount;
+      const style  = isFeat
+        ? 'background:rgba(250,200,30,.18);border:1.5px solid rgba(245,180,0,.6);color:#b07800'
+        : 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.3);color:var(--gr)';
+      cells.push(
+        `<div style="width:40px;height:40px;border-radius:7px;${style};display:flex;flex-direction:column;` +
+        `align-items:center;justify-content:center;font-size:8.5px;font-weight:700;position:relative" title="${isFeat ? 'مميز ⭐' : 'عادي'}">` +
+        (isFeat ? `<span style="font-size:9px;line-height:1">⭐</span>` : '') +
+        `<span>${r}${n}</span></div>`
+      );
+      c++;
+    }
+  }
+  cont.innerHTML = cells.join('');
+
+  const regularCount = count - featCount;
+  const totalIncome  = (featCount * featPrice) + (regularCount * price);
+  let infoHtml = `إجمالي: <strong style="color:var(--or)">${count}</strong> وحدة`;
+  if (hasFeat && featCount > 0) {
+    infoHtml += ` · منها <strong style="color:#c47800">${featCount} ⭐ مميزة</strong> بـ${fmt(featPrice)} ج`;
+    infoHtml += ` + <strong>${regularCount}</strong> عادية بـ${fmt(price)} ج`;
+  } else {
+    infoHtml += ` · سعر الوحدة: <strong style="color:var(--or)">${fmt(price)}</strong> ج`;
+  }
+  infoHtml += ` · إيراد متوقع: <strong style="color:var(--or)">${fmt(totalIncome)}</strong> ج`;
+  info.innerHTML = infoHtml;
 }
 
 async function submitSlots(){
-  const bzId= document.getElementById('asl-bz').value;
-  const count=Number(document.getElementById('asl-count').value)||0;
-  const price=Number(document.getElementById('asl-price').value)||0;
-  if(!bzId){toast('اختر بازار','e');return;}
-  if(!count||!price){toast('أدخل عدد الوحدات والسعر','e');return;}
+  const bzId      = document.getElementById('asl-bz').value;
+  const count     = Number(document.getElementById('asl-count').value) || 0;
+  const price     = Number(document.getElementById('asl-price').value) || 0;
+  const hasFeat   = document.getElementById('asl-has-featured')?.checked || false;
+  const featCount = hasFeat ? (Number(document.getElementById('asl-feat-count')?.value) || 0) : 0;
+  const featPriceRaw = document.getElementById('asl-feat-price')?.value;
+  const featPrice = featPriceRaw ? Number(featPriceRaw) : price;
 
-  const rows='ABCDEFGHIJ'.split('');
-  const slotsToInsert=[];
-  let c=0;
-  for(const r of rows){
-    for(let n=1;n<=5;n++){
-      if(c>=count)break;
-      slotsToInsert.push({bazaar_id:bzId,row_label:r,slot_number:n,col:n,price,status:'available',is_featured:false});
+  if (!bzId)           { toast('اختر بازار', 'e'); return; }
+  if (!count || !price){ toast('أدخل عدد الوحدات والسعر', 'e'); return; }
+  if (hasFeat && featCount >= count) { toast('عدد الأماكن المميزة يجب أن يكون أقل من الإجمالي', 'e'); return; }
+  if (hasFeat && featCount < 1)      { toast('أدخل عدداً صحيحاً للأماكن المميزة', 'e'); return; }
+
+  const rows = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const slotsToInsert = [];
+  let c = 0;
+  outer: for (const r of rows) {
+    for (let n = 1; n <= 10; n++) {
+      if (c >= count) break outer;
+      const isFeat = hasFeat && c < featCount;
+      slotsToInsert.push({
+        bazaar_id:   bzId,
+        row_label:   r,
+        slot_number: n,
+        col:         n,
+        price:       isFeat ? (featPrice || price) : price,
+        status:      'available',
+        is_featured: isFeat,
+      });
       c++;
     }
-    if(c>=count)break;
   }
 
-  const btn=document.getElementById('btn-add-sl');
-  btn.disabled=true; btn.textContent='⏳ جارٍ الإنشاء...';
+  const btn = document.getElementById('btn-add-sl');
+  btn.disabled = true; btn.textContent = '⏳ جارٍ الإنشاء...';
 
   const { data, error } = await db.from('bazaar_slots').insert(slotsToInsert).select();
 
-  if(error){
-    toast('خطأ: '+error.message,'e');
-  }else{
-    await db.from('bazaars').update({available_slots:count,total_slots:count}).eq('id',bzId);
-    data.forEach(s=>SLOTS.push(mapSlot(s)));
-    const bz=BAZAARS.find(x=>x.id===bzId);
-    if(bz){bz.totalSlots=count;bz.availSlots=count;}
+  if (error) {
+    toast('خطأ: ' + error.message, 'e');
+  } else {
+    await db.from('bazaars').update({ available_slots: count, total_slots: count }).eq('id', bzId);
+    data.forEach(s => SLOTS.push(mapSlot(s)));
+    const bz = BAZAARS.find(x => x.id === bzId);
+    if (bz) { bz.totalSlots = count; bz.availSlots = count; }
     updateAll();
-    document.getElementById('add-sl-res').innerHTML=`<div class="rok">✅ تم إنشاء ${count} وحدة في Supabase</div>`;
-    toast('✅ تم إنشاء الوحدات','s');
+    const featMsg = hasFeat && featCount > 0
+      ? ` (منها <strong style="color:#c47800">${featCount} ⭐ مميزة</strong>)`
+      : '';
+    document.getElementById('add-sl-res').innerHTML =
+      `<div class="rok">✅ تم إنشاء ${count} وحدة${featMsg} في Supabase</div>`;
+    toast(`✅ تم إنشاء ${count} وحدة` + (hasFeat && featCount ? ` (${featCount} مميزة)` : ''), 's');
   }
-  btn.disabled=false; btn.textContent='✅ إنشاء الوحدات';
+  btn.disabled = false; btn.textContent = '✅ إنشاء الوحدات';
 }
 
 /* ══════════════════════════════════════════

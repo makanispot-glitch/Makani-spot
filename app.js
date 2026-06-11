@@ -3359,10 +3359,16 @@ function renderHomeBazaars() {
             </span>
           </div>
 
-          ${featured.date_start ? `
-          <div class="bz-countdown" id="bz-countdown-timer" data-date="${featured.date_start}">
-            <div class="bz-countdown-label">انطلاق</div>
-            <div class="bz-countdown-units">
+          ${featured.date_start ? (() => {
+            const tStart = featured.time_start ? featured.time_start.substring(0,5) : '10:00';
+            const endDay = featured.date_end || featured.date_start;
+            const tEnd   = featured.time_end  ? featured.time_end.substring(0,5)  : '23:59';
+            return `
+          <div class="bz-countdown" id="bz-countdown-timer"
+               data-start="${featured.date_start}T${tStart}"
+               data-end="${endDay}T${tEnd}">
+            <div class="bz-countdown-label" id="bz-countdown-label">انطلاق</div>
+            <div class="bz-countdown-units" id="bz-countdown-units">
               <div class="bz-countdown-unit">
                 <span class="bz-countdown-val" id="bz-days">00</span>
                 <span class="bz-countdown-lbl">أيام</span>
@@ -3380,7 +3386,8 @@ function renderHomeBazaars() {
                 <span class="bz-countdown-lbl">ثواني</span>
               </div>
             </div>
-          </div>` : ''}
+          </div>`;
+          })() : ''}
         </div>
 
         <div class="bz-featured-body">
@@ -3417,37 +3424,52 @@ function initBazaarCountdown() {
   const timerEl = document.getElementById('bz-countdown-timer');
   if (!timerEl) return;
 
-  const targetDateStr = timerEl.dataset.date;
-  if (!targetDateStr) return;
+  // قراءة وقت البداية والنهاية من الـ data attributes
+  const startStr = timerEl.dataset.start;
+  const endStr   = timerEl.dataset.end;
+  if (!startStr) return;
 
-  const targetDate = new Date(targetDateStr + 'T10:00:00');
+  const startDate = new Date(startStr);
+  const endDate   = endStr ? new Date(endStr) : null;
+
+  const pad = n => String(n).padStart(2, '0');
 
   function updateTimer() {
     const now = new Date();
-    const diff = targetDate - now;
 
-    if (diff <= 0) {
+    // ━━ الحالة 1: البازار انتهى ━━
+    if (endDate && now > endDate) {
       clearInterval(_bzCountdownInterval);
-      timerEl.innerHTML = `<span style="font-size:13px;font-weight:900;color:var(--orange);font-family:var(--font-display);">🔥 الفعالية بدأت الآن!</span>`;
+      timerEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#9ca3af;font-family:var(--font-display)">🏁 انتهى البازار</span>`;
       return;
     }
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    // ━━ الحالة 2: البازار جارٍ الآن ━━
+    if (now >= startDate) {
+      clearInterval(_bzCountdownInterval);
+      timerEl.innerHTML = `<span style="font-size:14px;font-weight:900;color:var(--orange);font-family:var(--font-display);animation:pulse 1.2s infinite">🔥 جارٍ الآن!</span>`;
+      return;
+    }
+
+    // ━━ الحالة 3: لم يبدأ بعد — عداد تنازلي ━━
+    const diff    = startDate - now;
+    const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    const pad = (num) => String(num).padStart(2, '0');
+    const d = document.getElementById('bz-days');
+    const h = document.getElementById('bz-hours');
+    const m = document.getElementById('bz-minutes');
+    const s = document.getElementById('bz-seconds');
+    if (d) d.textContent = pad(days);
+    if (h) h.textContent = pad(hours);
+    if (m) m.textContent = pad(minutes);
+    if (s) s.textContent = pad(seconds);
 
-    const daysEl = document.getElementById('bz-days');
-    const hoursEl = document.getElementById('bz-hours');
-    const minutesEl = document.getElementById('bz-minutes');
-    const secondsEl = document.getElementById('bz-seconds');
-
-    if (daysEl) daysEl.textContent = pad(days);
-    if (hoursEl) hoursEl.textContent = pad(hours);
-    if (minutesEl) minutesEl.textContent = pad(minutes);
-    if (secondsEl) secondsEl.textContent = pad(seconds);
+    // تغيير النص "انطلاق" أو "ينتهي بعد" حسب الحالة
+    const lbl = document.getElementById('bz-countdown-label');
+    if (lbl) lbl.textContent = days === 0 ? 'ينطلق خلال' : 'انطلاق';
   }
 
   updateTimer();

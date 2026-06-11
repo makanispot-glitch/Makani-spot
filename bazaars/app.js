@@ -509,7 +509,7 @@ function buildBazaarCard(b) {
 
   const orgHtml = orgName ? `
   <div class="bz-card-organizer" ${orgProfileHref ? `style="cursor:pointer" onclick="event.stopPropagation();window.location.href='${orgProfileHref}'"` : ''}>
-    <div class="bz-org-avatar">${orgInitial}</div>
+    <div class="bz-org-avatar" data-org-id="${b.organizer_id || ''}" data-initial="${_esc(orgInitial)}">${orgInitial}</div>
     <div class="bz-org-info">
       <div class="bz-org-name">🎪 ${orgName}</div>
       <div class="bz-org-sub">${orgSubText}</div>
@@ -628,6 +628,7 @@ function renderBazaarCards() {
 
   grid.innerHTML = pageData.map(b => buildBazaarCard(b)).join('');
   renderBzPagination();
+  _loadOrgAvatarsForCards(pageData);
 }
 
 function renderBzPagination() {
@@ -1385,6 +1386,54 @@ function openBazaarMap(type) {
 /* Cache لبيانات المنظمين — يتجنب 3 queries في كل فتح تفاصيل */
 const _orgCardCache = new Map(); // userId → { data, ts }
 const _ORG_CARD_TTL = 5 * 60 * 1000; // 5 دقائق
+
+/* cache للأفاتار في الكروت: userId → avatarUrl | null */
+const _orgAvatarCache = new Map();
+
+async function _loadOrgAvatarsForCards(bazaars) {
+  if (!sbClient) return;
+  const orgIds = [...new Set(bazaars.filter(b => b.organizer_id).map(b => b.organizer_id))];
+  if (!orgIds.length) return;
+
+  // استخدام cache موجود (من _orgCardCache أو _orgAvatarCache)
+  const toFetch = orgIds.filter(id => {
+    if (_orgAvatarCache.has(id)) return false;
+    const cached = _orgCardCache.get(id);
+    if (cached) {
+      const url = cached.data?.org?.avatar_url || cached.data?.org?.logo || null;
+      _orgAvatarCache.set(id, url);
+      return false;
+    }
+    return true;
+  });
+
+  if (toFetch.length) {
+    try {
+      const { data } = await sbClient
+        .from('organizer_profiles')
+        .select('user_id, avatar_url, logo')
+        .in('user_id', toFetch);
+      toFetch.forEach(id => _orgAvatarCache.set(id, null)); // null إذا لم يُرجع نتيجة
+      (data || []).forEach(p => {
+        _orgAvatarCache.set(p.user_id, p.avatar_url || p.logo || null);
+      });
+    } catch (_) {
+      toFetch.forEach(id => _orgAvatarCache.set(id, null));
+    }
+  }
+
+  // تحديث DOM
+  orgIds.forEach(id => {
+    const url = _orgAvatarCache.get(id);
+    if (!url) return;
+    document.querySelectorAll(`.bz-org-avatar[data-org-id="${id}"]`).forEach(el => {
+      const ini = el.dataset.initial || '🎪';
+      el.innerHTML = `<img src="${url}" alt="منظّم"
+        style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+        onerror="this.parentElement.innerHTML=this.parentElement.dataset.initial">`;
+    });
+  });
+}
 
 async function _loadOrganizerCard(userId, fallbackName) {
   const el = document.getElementById('bzd-organizer-card');
