@@ -128,9 +128,9 @@ async function loadData() {
     if (ownerIds.length > 0) {
       const { data: profiles } = await sbClient
         .from('profiles')
-        .select('id, plan_tier')
+        .select('id, plan_tier, full_name, avatar_url')
         .in('id', ownerIds);
-      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+      (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
 
     SPACES = (spacesData || []).map(row => mapSupabaseToSpaceObject(row, profilesMap));
@@ -156,6 +156,8 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
   const sizes = row.sizes_prices
     ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
     : [];
+  const ownerProfile = (row.owner_id && profilesMap[row.owner_id]) || {};
+  const isBroker = row.is_broker || false;
   return {
     id:          row.id,
     ownerId:     row.owner_id    || null,
@@ -176,7 +178,10 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
     extraImages: row.extra_images || [],
     description: row.description || '',
     amenities:   row.amenities   || [],
-    planTier:    profilesMap[row.owner_id] || 'starter',
+    isBroker:    isBroker,
+    ownerName:   isBroker ? 'مكاني سبوت' : (ownerProfile.full_name || null),
+    ownerAvatar: isBroker ? null : (ownerProfile.avatar_url || null),
+    planTier:    isBroker ? 'broker' : (ownerProfile.plan_tier || 'starter'),
     subSpaces:   (row.space_units || []).map(u => ({
       unitId:   u.unit_id   || '',
       name:     u.name      || '',
@@ -237,8 +242,8 @@ async function silentRefreshSpaces() {
     let profilesMap = {};
     if (ownerIds.length) {
       const { data: profiles } = await sbClient
-        .from('profiles').select('id, plan_tier').in('id', ownerIds);
-      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
+        .from('profiles').select('id, plan_tier, full_name, avatar_url').in('id', ownerIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
 
     SPACES = spacesData.map(row => mapSupabaseToSpaceObject(row, profilesMap));
@@ -324,6 +329,7 @@ function _sortByPlan(arr) {
 }
 
 function _planTrustBadgeHtml(s) {
+  if (s.isBroker) return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
   const tier = (s.planTier || 'starter').toLowerCase();
   if (tier === 'pro')    return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
   if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
@@ -727,6 +733,30 @@ function _renderDetailInfo(s) {
           ${s.insight ? `<div style="font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.7">${s.insight}</div>` : ''}
         </div>
       </div>` : ''}
+
+      ${(s.isBroker || s.ownerName) ? (() => {
+        const isBroker = s.isBroker;
+        const name     = isBroker ? 'مكاني سبوت' : (s.ownerName || 'صاحب المساحة');
+        const roleLabel = isBroker
+          ? 'بروكر معتمد'
+          : (s.planTier === 'pro' ? 'شريك معتمد' : s.planTier === 'growth' ? 'صاحب مساحة موثّق' : 'صاحب المساحة');
+        const badgeCls  = isBroker ? 'trust-broker' : s.planTier === 'pro' ? 'trust-partner' : s.planTier === 'growth' ? 'trust-verified' : '';
+        const badgeHtml = badgeCls ? `<span class="sd-trust-badge ${badgeCls}" style="margin-top:4px">${roleLabel}</span>` : `<span class="sd-owner-role">${roleLabel}</span>`;
+        const avatarHtml = s.ownerAvatar
+          ? `<img src="${s.ownerAvatar}" alt="${name}" class="sd-owner-avatar" onerror="this.outerHTML='<div class=sd-owner-avatar-placeholder${isBroker?' broker':''}>${name[0]}</div>'">`
+          : `<div class="sd-owner-avatar-placeholder${isBroker ? ' broker' : ''}">${isBroker ? '🏛️' : name[0]}</div>`;
+        return `
+      <div class="sd-info-card sd-info-full">
+        <div class="sd-info-title">👤 صاحب المساحة</div>
+        <div class="sd-owner-card" style="margin-top:10px">
+          ${avatarHtml}
+          <div class="sd-owner-info">
+            <div class="sd-owner-name">${name}</div>
+            ${badgeHtml}
+          </div>
+        </div>
+      </div>`;
+      })() : ''}
     </div>`;
 }
 

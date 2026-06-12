@@ -107,11 +107,17 @@ input,select,textarea{font-family:inherit;color:var(--tx)}
 .b-activated {background:rgba(52,211,153,.15);color:#34D399;border:1px solid rgba(52,211,153,.3)}
 .b-active  {background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.3)}
 .b-hidden  {background:rgba(107,107,138,.15);color:#6b6b8a;border:1px solid rgba(107,107,138,.3)}
+.b-broker  {background:rgba(96,165,250,.12);color:#60a5fa;border:1px solid rgba(96,165,250,.35)}
 .b-pro     {background:rgba(251,191,36,.15);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
 .b-growth  {background:rgba(52,211,153,.15);color:#34D399;border:1px solid rgba(52,211,153,.3)}
 .b-starter {background:rgba(107,107,138,.12);color:#6b6b8a;border:1px solid rgba(107,107,138,.25)}
 .b-dormant {background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.25)}
 .b-ok      {background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.25)}
+.b-sub-ok  {background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.28)}
+.b-sub-warn{background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.28)}
+.b-sub-exp {background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.28)}
+.b-sub-none{background:rgba(107,107,138,.10);color:#6b6b8a;border:1px solid rgba(107,107,138,.22)}
+.b-suspended{background:rgba(239,68,68,.18);color:#EF4444;border:1px solid rgba(239,68,68,.4)}
 
 /* ── Tables ── */
 .t-wrap{overflow-x:auto}
@@ -184,6 +190,76 @@ textarea.fc{resize:vertical;min-height:72px}
 .pick-chip input{accent-color:var(--or)}
 .pick-chip:has(input:checked){background:var(--org);border-color:var(--bdo);color:var(--or)}
 .form-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* ── Bulk action bar ── */
+.bulk-bar{position:sticky;top:57px;z-index:20;background:var(--or);color:#fff;border-radius:var(--r);padding:9px 16px;display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(255,107,0,.4);animation:toastIn .2s ease}
+.bulk-bar .btn{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);font-size:11px}
+.bulk-bar .btn:hover{background:rgba(255,255,255,.32)}
+/* ── Sortable columns ── */
+.t th.sortable{cursor:pointer;user-select:none;transition:color .15s;white-space:nowrap}
+.t th.sortable:hover{color:var(--or)}
+.t th.sort-asc::after{content:' ▲';font-size:8px;opacity:.8}
+.t th.sort-desc::after{content:' ▼';font-size:8px;opacity:.8}
+/* ── Pagination bar ── */
+.pg-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 0;font-size:12px;border-top:1px solid var(--bd)}
+/* ── SLA badges ── */
+.sla-late{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.sla-warn{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.sla-ok{font-size:10px;color:var(--mu)}
+/* ── Audit log ── */
+.audit-row{display:grid;grid-template-columns:130px 80px 1fr 140px;gap:10px;padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;align-items:center}
+.audit-row:hover{background:rgba(255,107,0,.03)}
+/* ── Form validation ── */
+.fc.fc-warn{border-color:var(--yw)!important}
+.fc.fc-err{border-color:var(--rd)!important}
+.f-warn-msg{font-size:11px;color:var(--yw);margin-top:4px;display:flex;align-items:center;gap:4px}
+.f-err-msg{font-size:11px;color:var(--rd);margin-top:4px}
+.f-ok-msg{font-size:11px;color:var(--gr);margin-top:4px}
+/* sizes preview chips */
+.size-chip{padding:3px 9px;border-radius:7px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.size-chip-ok {background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.25)}
+.size-chip-err{background:rgba(239,68,68,.12);color:var(--rd);border:1px solid rgba(239,68,68,.25)}
+/* region chips in activities page */
+.region-chip{background:var(--bg4);border:1px solid var(--bd);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.region-chip-dup{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+/* ── Finance section ── */
+.fin-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.fin-kpi{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:18px 20px}
+.fin-kpi-val{font-size:26px;font-weight:900;line-height:1;margin-bottom:4px}
+.fin-kpi-lbl{font-size:11px;color:var(--mu);font-weight:600}
+.fin-kpi-sub{font-size:10px;color:var(--mu2);margin-top:3px}
+.fin-kpi.accent{border-color:rgba(255,107,0,.3);background:rgba(255,107,0,.06)}
+.fin-kpi.green {border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.fin-kpi.yellow{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.fin-kpi.red   {border-color:rgba(239,68,68,.3) ;background:rgba(239,68,68,.06) }
+.chart-wrap{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:18px}
+.chart-title{font-size:13px;font-weight:800;margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--mu);margin-bottom:14px}
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px}
+.expiry-row{display:grid;grid-template-columns:1fr 90px 70px 90px;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.expiry-row:hover{background:rgba(255,107,0,.03)}
+.cron-status{background:var(--bg4);border:1px solid var(--bd);border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;gap:14px;font-size:12px}
+@media(max-width:900px){.fin-kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}}
+/* ── Bookings section ── */
+.bk-row{display:grid;grid-template-columns:130px 1fr 120px 90px 110px 110px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.bk-row:hover{background:rgba(255,107,0,.03)}
+.bk-row-hd{background:var(--bg4);color:var(--mu);font-size:11px;font-weight:800;border-radius:var(--r) var(--r) 0 0}
+.b-bk-pending{background:rgba(245,158,11,.13);color:var(--yw);border:1px solid rgba(245,158,11,.3)}
+.b-bk-viewing{background:rgba(99,102,241,.13);color:#818cf8;border:1px solid rgba(99,102,241,.3)}
+.b-bk-confirmed{background:rgba(34,197,94,.13);color:var(--gr);border:1px solid rgba(34,197,94,.3)}
+.b-bk-completed{background:rgba(107,107,138,.13);color:var(--mu);border:1px solid rgba(107,107,138,.28)}
+.b-bk-cancelled{background:rgba(239,68,68,.13);color:var(--rd);border:1px solid rgba(239,68,68,.3)}
+/* ── Bulk notif section ── */
+.notif-target-btn{background:var(--bg4);border:1.5px solid var(--bd);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .18s;font-size:12px;font-weight:700;color:var(--tx2);text-align:center}
+.notif-target-btn:hover{border-color:var(--or);color:var(--or)}
+.notif-target-btn.sel{background:var(--org);border-color:var(--bdo);color:var(--or)}
+.notif-hist-row{display:grid;grid-template-columns:120px 80px 1fr 90px;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;align-items:center}
+.notif-hist-row:hover{background:rgba(255,107,0,.03)}
+/* ── Export section ── */
+.export-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:22px;display:flex;flex-direction:column;gap:14px}
+.export-card-title{font-size:15px;font-weight:800;margin-bottom:4px}
+.export-col-list{display:flex;flex-wrap:wrap;gap:8px}
+.export-col-item{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;user-select:none}
+.export-col-item input{accent-color:var(--or)}
 .activity-row{display:grid;grid-template-columns:90px 1fr 90px 90px 130px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
 .activity-row:hover{background:rgba(255,107,0,.03)}
 .activity-row-hd{background:var(--bg4);color:var(--mu);font-size:11px;font-weight:800;border-radius:var(--r) var(--r) 0 0}
@@ -198,10 +274,21 @@ textarea.fc{resize:vertical;min-height:72px}
 .unit-form-title{font-size:12px;font-weight:700;color:var(--or)}
 
 /* ── Owner list card ── */
-.owner-row{display:grid;grid-template-columns:40px 1fr 140px 100px 100px 90px 100px 100px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;transition:background .15s}
+.owner-row{display:grid;grid-template-columns:40px 1fr 90px 130px 60px 90px 130px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;transition:background .15s}
 .owner-row:hover{background:rgba(255,107,0,.03)}
 .owner-row-hd{background:var(--bg4);font-weight:700;color:var(--mu);font-size:11px;border-radius:var(--r) var(--r) 0 0}
-.owner-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--or)}
+.owner-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--or);overflow:hidden;flex-shrink:0}
+.owner-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+/* owner detail expand */
+.owner-detail-wrap{background:var(--bg2);border-bottom:1px solid rgba(255,107,0,.12);display:none}
+.owner-detail-wrap.open{display:block}
+.owner-detail-inner{padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.od-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px}
+.od-box-title{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.od-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;gap:8px}
+.od-row:last-child{border-bottom:none}
+.od-key{color:var(--mu);flex-shrink:0}
+.od-val{color:var(--tx);font-weight:600;text-align:left;word-break:break-word}
 
 /* ── Recent list ── */
 .recent-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -252,6 +339,7 @@ textarea.fc{resize:vertical;min-height:72px}
   .page{padding:14px}
   .owner-row{grid-template-columns:36px 1fr 90px 80px}
   .owner-row>*:nth-child(n+5){display:none}
+  .owner-detail-inner{grid-template-columns:1fr}
   .topbar{padding:10px 14px}
 }
 </style>
@@ -306,6 +394,20 @@ textarea.fc{resize:vertical;min-height:72px}
         <span class="sb-ico">🏷️</span> الأنشطة
       </div>
       <div class="sb-sep"></div>
+      <div class="sb-item" id="sbi-finance" onclick="gp('finance',this)">
+        <span class="sb-ico">💰</span> المالية
+      </div>
+      <div class="sb-item" id="sbi-bookings" onclick="gp('bookings',this)">
+        <span class="sb-ico">📅</span> الحجوزات
+        <span id="bookings-badge" class="sb-badge" style="display:none">0</span>
+      </div>
+      <div class="sb-item" id="sbi-notif" onclick="gp('notif',this)">
+        <span class="sb-ico">📣</span> إشعارات جماعية
+      </div>
+      <div class="sb-item" id="sbi-export" onclick="gp('export',this)">
+        <span class="sb-ico">📤</span> تصدير
+      </div>
+      <div class="sb-sep"></div>
       <div class="sb-item" id="sbi-add" onclick="openAddForm()">
         <span class="sb-ico">➕</span> إضافة مساحة
       </div>
@@ -329,13 +431,17 @@ textarea.fc{resize:vertical;min-height:72px}
     </div>
 
     <div class="page-body">
-      <div id="pg-overview" class="page active"></div>
-      <div id="pg-spaces"   class="page"></div>
-      <div id="pg-pending"  class="page"></div>
-      <div id="pg-owners"   class="page"></div>
+      <div id="pg-overview"  class="page active"></div>
+      <div id="pg-spaces"    class="page"></div>
+      <div id="pg-pending"   class="page"></div>
+      <div id="pg-owners"    class="page"></div>
       <div id="pg-owner-requests" class="page"></div>
       <div id="pg-activities" class="page"></div>
-      <div id="pg-form"     class="page"></div>
+      <div id="pg-finance"   class="page"></div>
+      <div id="pg-bookings"  class="page"></div>
+      <div id="pg-notif"     class="page"></div>
+      <div id="pg-export"    class="page"></div>
+      <div id="pg-form"      class="page"></div>
     </div>
   </div>
 </div>
@@ -363,7 +469,7 @@ const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',form:'إضافة / تعديل مساحة'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',form:'إضافة / تعديل مساحة'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
@@ -385,6 +491,28 @@ let fltStatus = '', fltType = '', fltSearch = '';
 let ownerSearch    = '';
 let activitySearch = '';
 let oreqFilter     = 'pending';
+
+/* spaces table state */
+let spacesPage     = 1;
+let spacesSortCol  = '';
+let spacesSortDir  = 1;
+let selectedSpaceIds = new Set();
+const SPACES_PAGE_SIZE = 50;
+
+/* form state */
+let formBypassWarnings = false;
+
+/* bookings state */
+let bookingsData    = [];
+let bookingsTotal   = 0;
+let bookingsPage    = 1;
+let bookingsStatus  = '';
+let bookingsSearch  = '';
+const BK_PAGE_SIZE  = 50;
+
+/* bulk notif state */
+let notifTarget     = 'all';   /* 'all' | 'active_sub' | 'expired_sub' | 'specific' */
+let notifPickedIds  = new Set();
 
 /* ═══════════════════════════════
    LOGIN
@@ -469,6 +597,8 @@ function updatePendingBadge() {
   const nr = allOwnerRequests.filter(r=>r.status==='pending'||r.status==='contacted').length;
   const br = document.getElementById('oreq-badge');
   if (br) { br.textContent = nr; br.style.display = nr > 0 ? 'inline' : 'none'; }
+
+  /* bookings badge updates when the bookings page is opened (renderBookings) */
 }
 
 async function loadSpaceDetail(id) {
@@ -522,6 +652,10 @@ function renderCurrentPage() {
     case 'owners':         renderOwners();         break;
     case 'owner-requests': renderOwnerRequests();  break;
     case 'activities':     renderActivities();     break;
+    case 'finance':        renderFinance();        break;
+    case 'bookings':       renderBookings();       break;
+    case 'notif':          renderBulkNotif();      break;
+    case 'export':         renderExport();         break;
     case 'form':     /* rendered by editSpace/openAddForm */ break;
   }
 }
@@ -600,7 +734,7 @@ function renderOverview() {
         <div class="recent-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
         <div class="recent-info">
           <div class="recent-name">${esc(s.name)}</div>
-          <div class="recent-meta">📍 ${esc(s.region||'—')} · ${typeLabel(s.type)} · 👤 ${esc(s.owner_name||'—')} · ${fmtDate(s.created_at)}</div>
+          <div class="recent-meta">📍 ${esc(s.region||'—')} · ${typeLabel(s.type)} · ${s.is_broker?'🏛️ بروكر':'👤 '+esc(s.owner_name||'—')} · ${fmtDate(s.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅ قبول</button>
@@ -629,9 +763,56 @@ function renderOverview() {
       <div class="ov-box-title">👥 توزيع الأصحاب</div>
       ${ownerDistChart(proOwners, growthOwners, totalOwners-proOwners-growthOwners, activeOwners, dormantOwners)}
     </div>
+  </div>
+
+  <div id="overview-charts" style="margin-top:20px"></div>
+
+  <div class="ov-box" style="margin-top:16px">
+    <div class="ov-box-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>📋 سجل الإجراءات الأخيرة</span>
+      <button class="btn btn-neu" style="font-size:11px;padding:4px 10px" onclick="loadAndRenderAuditSection(document.getElementById('audit-log-box'))">🔄 تحديث</button>
+    </div>
+    <div id="audit-log-box" style="margin-top:4px">
+      <div style="color:var(--mu);font-size:12px;padding:12px">اضغط تحديث لتحميل السجل…</div>
+    </div>
   </div>`;
 
   setPageContent('overview', html);
+  /* auto-load audit log then trend charts */
+  requestAnimationFrame(()=>{
+    const box = document.getElementById('audit-log-box');
+    if (box) loadAndRenderAuditSection(box);
+  });
+  /* load trend charts async — non-blocking */
+  loadOverviewCharts();
+}
+
+async function loadOverviewCharts() {
+  const placeholder = document.getElementById('overview-charts');
+  if (!placeholder) return;
+  placeholder.innerHTML = `<div style="color:var(--mu);font-size:11px;padding:16px;text-align:center">⏳ جارٍ تحميل الرسوم البيانية…</div>`;
+  try {
+    const monthly   = await sbRpc('admin_get_monthly_stats', { p_secret: adminHash, p_months: 12 });
+    const months12  = last12Months();
+    const spData    = fillMonthSeries(monthly.spaces,   months12);
+    const bkData    = fillMonthSeries(monthly.bookings, months12);
+    placeholder.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="chart-wrap">
+          <div class="chart-title">🏢 مساحات جديدة / شهر</div>
+          ${buildLineChartSVG(spData.map(d=>d.count), months12, {color:'#22C55E', height:90})}
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">📅 حجوزات / شهر</div>
+          ${buildBarChartSVG(bkData.map(d=>d.count), months12, {color:'#F59E0B', height:90})}
+        </div>
+      </div>
+      <div style="text-align:left;margin-top:8px">
+        <button class="btn btn-neu" style="font-size:11px" onclick="gp('finance',document.getElementById('sbi-finance'))">📊 النظرة المالية الكاملة ←</button>
+      </div>`;
+  } catch(e) {
+    placeholder.innerHTML = `<div style="font-size:11px;color:var(--mu);padding:8px">تعذّر تحميل الرسوم البيانية</div>`;
+  }
 }
 
 function sc(ico, lbl, val, color) {
@@ -660,6 +841,36 @@ function ownerDistChart(pro, growth, starter, active, dormant) {
 /* ═══════════════════════════════
    PAGE: ALL SPACES
 ═══════════════════════════════ */
+function setSpacesSort(col) {
+  if (spacesSortCol === col) spacesSortDir = -spacesSortDir;
+  else { spacesSortCol = col; spacesSortDir = 1; }
+  renderSpaces();
+}
+function toggleSpaceSelect(id, checked) {
+  checked ? selectedSpaceIds.add(id) : selectedSpaceIds.delete(id);
+  /* update checkboxes without full re-render */
+  const allChk = document.getElementById('sp-chk-all');
+  if (allChk) {
+    const rows = [...document.querySelectorAll('.sp-chk')];
+    allChk.checked = rows.length > 0 && rows.every(c=>c.checked);
+    allChk.indeterminate = !allChk.checked && rows.some(c=>c.checked);
+  }
+  const bulkEl = document.getElementById('bulk-action-bar');
+  if (bulkEl) bulkEl.style.display = selectedSpaceIds.size > 0 ? 'flex' : 'none';
+  const cntEl = document.getElementById('bulk-count');
+  if (cntEl) cntEl.textContent = selectedSpaceIds.size + ' محددة';
+}
+function togglePageSelect(checked) {
+  document.querySelectorAll('.sp-chk').forEach(c => {
+    c.checked = checked;
+    checked ? selectedSpaceIds.add(c.dataset.id) : selectedSpaceIds.delete(c.dataset.id);
+  });
+  const bulkEl = document.getElementById('bulk-action-bar');
+  if (bulkEl) bulkEl.style.display = selectedSpaceIds.size > 0 ? 'flex' : 'none';
+  const cntEl = document.getElementById('bulk-count');
+  if (cntEl) cntEl.textContent = selectedSpaceIds.size + ' محددة';
+}
+
 function renderSpaces() {
   let filtered = [...allSpaces];
   if (fltStatus) filtered = filtered.filter(s=>s.status===fltStatus);
@@ -673,10 +884,35 @@ function renderSpaces() {
     );
   }
 
+  /* sort */
+  if (spacesSortCol) {
+    filtered.sort((a,b)=>{
+      let va = a[spacesSortCol] ?? '', vb = b[spacesSortCol] ?? '';
+      if (typeof va === 'string') { va = va.toLowerCase(); vb = String(vb).toLowerCase(); }
+      if (va < vb) return -spacesSortDir;
+      if (va > vb) return spacesSortDir;
+      return 0;
+    });
+  }
+
   const approved = allSpaces.filter(s=>s.status==='approved').length;
   const pending  = allSpaces.filter(s=>s.status==='pending').length;
   const rejected = allSpaces.filter(s=>s.status==='rejected').length;
   const active   = allSpaces.filter(s=>s.is_active).length;
+
+  /* pagination */
+  const totalPages = Math.max(1, Math.ceil(filtered.length / SPACES_PAGE_SIZE));
+  if (spacesPage > totalPages) spacesPage = totalPages;
+  if (spacesPage < 1) spacesPage = 1;
+  const pageStart = (spacesPage - 1) * SPACES_PAGE_SIZE;
+  const pageItems = filtered.slice(pageStart, pageStart + SPACES_PAGE_SIZE);
+  const allPageSel = pageItems.length > 0 && pageItems.every(s => selectedSpaceIds.has(s.id));
+
+  function thSort(col, label, extraStyle='') {
+    const isActive = spacesSortCol === col;
+    const cls = isActive ? (spacesSortDir===1 ? 'sort-asc' : 'sort-desc') : '';
+    return `<th class="sortable ${cls}" style="${extraStyle}" onclick="setSpacesSort('${col}')">${label}</th>`;
+  }
 
   let html = `
   <div class="stats-bar">
@@ -688,43 +924,62 @@ function renderSpaces() {
   </div>
   <div class="filter-bar">
     <input class="f-inp" placeholder="🔍 بحث…" value="${esc(fltSearch)}"
-           oninput="fltSearch=this.value;renderSpaces()" style="min-width:200px">
-    <select class="f-sel" onchange="fltStatus=this.value;renderSpaces()">
+           oninput="fltSearch=this.value;spacesPage=1;renderSpaces()" style="min-width:200px">
+    <select class="f-sel" onchange="fltStatus=this.value;spacesPage=1;renderSpaces()">
       <option value="" ${!fltStatus?'selected':''}>جميع الحالات</option>
       <option value="approved" ${fltStatus==='approved'?'selected':''}>✅ معتمد</option>
       <option value="pending"  ${fltStatus==='pending' ?'selected':''}>⏳ انتظار</option>
       <option value="rejected" ${fltStatus==='rejected'?'selected':''}>❌ مرفوض</option>
     </select>
-    <select class="f-sel" onchange="fltType=this.value;renderSpaces()">
+    <select class="f-sel" onchange="fltType=this.value;spacesPage=1;renderSpaces()">
       <option value="" ${!fltType?'selected':''}>جميع الأنواع</option>
       <option value="mall"   ${fltType==='mall'  ?'selected':''}>🏬 مول</option>
       <option value="club"   ${fltType==='club'  ?'selected':''}>⚽ نادي</option>
       <option value="school" ${fltType==='school'?'selected':''}>🏫 مدرسة</option>
     </select>
-    <button class="btn btn-neu" onclick="fltStatus='';fltType='';fltSearch='';renderSpaces()">× مسح</button>
+    <button class="btn btn-neu" onclick="fltStatus='';fltType='';fltSearch='';spacesPage=1;renderSpaces()">× مسح</button>
     <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div>
+  </div>
+
+  <div class="bulk-bar" id="bulk-action-bar" style="display:${selectedSpaceIds.size>0?'flex':'none'}">
+    <span id="bulk-count">${selectedSpaceIds.size} محددة</span>
+    <button class="btn" onclick="bulkApprove()">✅ قبول</button>
+    <button class="btn" onclick="bulkToggle()">⏸ تبديل الظهور</button>
+    <button class="btn" style="background:rgba(239,68,68,.35)" onclick="bulkDelete()">🗑 حذف</button>
+    <button class="btn" style="margin-right:auto" onclick="selectedSpaceIds.clear();renderSpaces()">× إلغاء التحديد</button>
   </div>`;
 
-  if (!filtered.length) {
+  if (!pageItems.length) {
     html += `<div class="empty-state"><div class="empty-ico">🔍</div><div class="empty-title">لا توجد نتائج</div></div>`;
     setPageContent('spaces', html); return;
   }
 
   html += `<div class="t-wrap"><table class="t"><thead><tr>
+    <th style="width:32px;padding:10px 8px"><input type="checkbox" id="sp-chk-all" ${allPageSel?'checked':''} onchange="togglePageSelect(this.checked)"></th>
     <th style="width:24px"></th>
-    <th>المساحة</th><th>النوع</th><th>المنطقة</th>
-    <th style="text-align:center">وحدات</th>
-    <th>الحالة</th><th>الظهور</th><th>الباقة</th><th>الصاحب</th>
+    ${thSort('name','المساحة')}
+    ${thSort('type','النوع')}
+    ${thSort('region','المنطقة')}
+    ${thSort('units_count','وحدات','text-align:center')}
+    ${thSort('status','الحالة')}
+    <th>الظهور</th>
+    ${thSort('owner_plan','الباقة')}
+    <th>الصاحب</th>
     <th>الإجراءات</th>
   </tr></thead><tbody>`;
 
-  filtered.forEach(s => {
+  pageItems.forEach(s => {
     const stCls = statusCls(s.status);
     const acLbl = s.is_active
       ? '<span class="badge b-active">ظاهر</span>'
       : '<span class="badge b-hidden">مخفي</span>';
+    const isChecked = selectedSpaceIds.has(s.id) ? 'checked' : '';
     html += `
     <tr class="sp-row" id="srow-${s.id}" onclick="toggleSpaceRow('${s.id}')">
+      <td onclick="event.stopPropagation()" style="padding:10px 8px">
+        <input type="checkbox" class="sp-chk" data-id="${s.id}" ${isChecked}
+               onchange="toggleSpaceSelect('${s.id}',this.checked)">
+      </td>
       <td><span class="exp-ico" id="exp-${s.id}">▶</span></td>
       <td>
         <div style="display:flex;align-items:center;gap:8px">
@@ -740,7 +995,11 @@ function renderSpaces() {
       <td><span class="badge ${stCls}">${statusLbl(s.status)}</span></td>
       <td>${acLbl}</td>
       <td><span class="badge ${planCls(s.owner_plan)}">${planLbl(s.owner_plan)}</span></td>
-      <td style="font-size:11px;color:var(--mu);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.owner_name||'—')}</td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${s.is_broker
+          ? `<span style="color:#60a5fa;font-weight:700">🏛️ بروكر</span>`
+          : `<span style="color:var(--mu)">${esc(s.owner_name||'—')}</span>`}
+      </td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px;flex-wrap:wrap">
           ${s.status!=='approved'?`<button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅</button>`:''}
@@ -751,12 +1010,22 @@ function renderSpaces() {
         </div>
       </td>
     </tr>
-    <tr id="detail-row-${s.id}" style="display:none"><td colspan="10" style="padding:0">
+    <tr id="detail-row-${s.id}" style="display:none"><td colspan="11" style="padding:0">
       <div id="detail-panel-${s.id}" class="detail-panel"></div>
     </td></tr>`;
   });
 
   html += `</tbody></table></div>`;
+
+  if (totalPages > 1) {
+    html += `<div class="pg-bar">
+      <button class="btn btn-neu" ${spacesPage<=1?'disabled':''} onclick="spacesPage--;renderSpaces()">‹ السابق</button>
+      <span style="color:var(--mu);font-family:'IBM Plex Mono',monospace;font-size:13px">${spacesPage} / ${totalPages}</span>
+      <span style="font-size:11px;color:var(--mu)">(${filtered.length} نتيجة)</span>
+      <button class="btn btn-neu" ${spacesPage>=totalPages?'disabled':''} onclick="spacesPage++;renderSpaces()">التالي ›</button>
+    </div>`;
+  }
+
   setPageContent('spaces', html);
 }
 
@@ -810,7 +1079,15 @@ function buildDetailHtml(sp, units, owner) {
             <td>${esc(u.floor||'—')}</td>
             <td>${esc(u.size||'—')}</td>
             <td style="font-family:'IBM Plex Mono',monospace">${u.price?u.price.toLocaleString('ar-EG')+' ج':'—'}</td>
-            <td><span class="badge ${u.status==='available'?'b-approved':u.status==='rented'?'b-rejected':'b-pending'}">${unitStatusLbl(u.status)}</span></td>
+            <td>
+              <select onchange="changeUnitStatus('${u.id}','${sp.id}',this.value,this)"
+                      style="background:var(--bg4);color:var(--tx);border:1px solid var(--mu2);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer">
+                <option value="available"   ${u.status==='available'  ?'selected':''}>✅ متاحة</option>
+                <option value="rented"      ${u.status==='rented'     ?'selected':''}>🔴 مؤجّرة</option>
+                <option value="reserved"    ${u.status==='reserved'   ?'selected':''}>⏳ محجوزة</option>
+                <option value="maintenance" ${u.status==='maintenance'?'selected':''}>🔧 صيانة</option>
+              </select>
+            </td>
             <td style="font-size:10px;color:var(--mu)">${esc(u.location||'—')}</td>
             <td><button class="btn btn-err" style="font-size:10px;padding:3px 7px" onclick="doDeleteUnit('${u.id}','${sp.id}')">🗑</button></td>
           </tr>`).join('')}
@@ -840,17 +1117,26 @@ function renderPending() {
     setPageContent('pending', html); return;
   }
 
-  html += pending.map(s=>`
+  html += pending.map(s=>{
+    const daysWaiting = s.created_at ? Math.floor((Date.now()-new Date(s.created_at))/(1000*86400)) : 0;
+    const slaBadge = daysWaiting >= 7
+      ? `<span class="sla-late">⚠ منذ ${daysWaiting} يوم</span>`
+      : daysWaiting >= 3
+        ? `<span class="sla-warn">⏰ منذ ${daysWaiting} يوم</span>`
+        : `<span class="sla-ok">منذ ${daysWaiting} يوم</span>`;
+    return `
   <div class="p-card" id="pcard-${s.id}">
     <div class="p-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
     <div class="p-info">
-      <div class="p-name">${esc(s.name)}</div>
+      <div class="p-name" style="display:flex;align-items:center;gap:8px">${esc(s.name)} ${slaBadge}</div>
       <div class="p-meta">
         📍 <b>${esc(s.region||'—')}</b> &nbsp;·&nbsp;
         ${typeLabel(s.type)} &nbsp;·&nbsp;
-        👤 <b>${esc(s.owner_name||'—')}</b> (${esc(s.owner_email||s.owner_name||'—')}) &nbsp;·&nbsp;
+        ${s.is_broker
+          ? `🏛️ <b style="color:#60a5fa">مكاني سبوت — بروكر</b>`
+          : `👤 <b>${esc(s.owner_name||'—')}</b> (${esc(s.owner_email||s.owner_name||'—')})`} &nbsp;·&nbsp;
         📦 ${s.units_count||0} وحدة &nbsp;·&nbsp;
-        🏷 <span class="badge ${planCls(s.owner_plan)}">${planLbl(s.owner_plan)}</span> &nbsp;·&nbsp;
+        🏷 <span class="badge ${s.is_broker?'b-broker':planCls(s.owner_plan)}">${s.is_broker?'بروكر':planLbl(s.owner_plan)}</span> &nbsp;·&nbsp;
         🕐 ${fmtDate(s.created_at)}
       </div>
       <div class="p-actions">
@@ -865,7 +1151,8 @@ function renderPending() {
       </div>
       <div id="pdetail-${s.id}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px"></div>
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
 
   setPageContent('pending', html);
 }
@@ -896,44 +1183,65 @@ async function togglePendingDetail(id) {
    PAGE: OWNERS
 ═══════════════════════════════ */
 function renderOwners() {
-  const activeOwnerIds = new Set(
-    allSpaces.filter(s=>s.status==='approved'&&s.is_active).map(s=>s.owner_id).filter(Boolean)
-  );
   const ownerSpaceCount = {};
-  allSpaces.forEach(s => {
-    if (s.owner_id) ownerSpaceCount[s.owner_id] = (ownerSpaceCount[s.owner_id]||0) + 1;
-  });
   const ownerApprovedCount = {};
-  allSpaces.filter(s=>s.status==='approved').forEach(s => {
-    if (s.owner_id) ownerApprovedCount[s.owner_id] = (ownerApprovedCount[s.owner_id]||0) + 1;
+  allSpaces.forEach(s => {
+    if (s.owner_id) {
+      ownerSpaceCount[s.owner_id] = (ownerSpaceCount[s.owner_id]||0) + 1;
+      if (s.status==='approved') ownerApprovedCount[s.owner_id] = (ownerApprovedCount[s.owner_id]||0) + 1;
+    }
   });
 
-  const total   = allOwners.length;
-  const active  = allOwners.filter(o=>activeOwnerIds.has(o.id)).length;
-  const dormant = total - active;
-  const pro     = allOwners.filter(o=>o.plan_tier==='pro').length;
-  const growth  = allOwners.filter(o=>o.plan_tier==='growth').length;
+  const total     = allOwners.length;
+  const suspended = allOwners.filter(o=>o.is_suspended).length;
+  const active    = allOwners.filter(o=>!o.is_suspended && (ownerApprovedCount[o.id]||0)>0).length;
+  const pro       = allOwners.filter(o=>o.plan_tier==='pro').length;
+  const growth    = allOwners.filter(o=>o.plan_tier==='growth').length;
 
   let filtered = [...allOwners];
   if (ownerSearch) {
     const q = ownerSearch.toLowerCase();
     filtered = filtered.filter(o=>
       (o.full_name||o.name||'').toLowerCase().includes(q)||
-      (o.email||'').toLowerCase().includes(q)
+      (o.email||'').toLowerCase().includes(q)||
+      (o.phone||'').includes(q)
     );
+  }
+
+  function subBadgeHtml(o) {
+    if (!o.sub_status || o.sub_status === 'none') return `<span class="badge b-sub-none">بدون اشتراك</span>`;
+    if (o.sub_status === 'active') {
+      if (o.sub_ends) {
+        const dl = Math.ceil((new Date(o.sub_ends) - Date.now())/(1000*86400));
+        if (dl < 0)   return `<span class="badge b-sub-exp">منتهي</span>`;
+        if (dl <= 30) return `<span class="badge b-sub-warn">⚠ ${dl}د</span>`;
+        return `<span class="badge b-sub-ok">✓ ${fmtDate(o.sub_ends)}</span>`;
+      }
+      return `<span class="badge b-sub-ok">✓ نشط</span>`;
+    }
+    if (o.sub_status === 'expired') return `<span class="badge b-sub-exp">منتهي</span>`;
+    return `<span class="badge b-sub-none">${esc(o.sub_status)}</span>`;
+  }
+
+  function statusBadgeHtml(o) {
+    if (o.is_suspended) return `<span class="badge b-suspended">🚫 موقوف</span>`;
+    return (ownerApprovedCount[o.id]||0) > 0
+      ? `<span class="badge b-ok">🟢 نشط</span>`
+      : `<span class="badge b-dormant">🔴 خامل</span>`;
   }
 
   let html = `
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${total}</span> إجمالي</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> نشط</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${dormant}</span> خامل</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${suspended}</span> موقوف</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pro}</span> Pro</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--tl)">${growth}</span> Growth</div>
   </div>
   <div class="filter-bar">
-    <input class="f-inp" placeholder="🔍 بحث بالاسم أو الإيميل…" value="${esc(ownerSearch)}"
+    <input class="f-inp" placeholder="🔍 بحث بالاسم أو الإيميل أو الهاتف…" value="${esc(ownerSearch)}"
            oninput="ownerSearch=this.value;renderOwners()" style="min-width:220px">
+    <button class="btn btn-bl" onclick="promptPromoteOwner()" style="font-size:11px;padding:6px 14px">👤+ ترقية مستخدم</button>
     <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} صاحب</div>
   </div>`;
 
@@ -946,63 +1254,251 @@ function renderOwners() {
     <div class="owner-row owner-row-hd">
       <div></div>
       <div>الصاحب</div>
-      <div>البريد</div>
       <div>الباقة</div>
-      <div>المساحات</div>
+      <div>الاشتراك</div>
+      <div style="text-align:center">مساحات</div>
       <div>الحالة</div>
-      <div>انضم</div>
-      <div>إجراء</div>
+      <div>إجراءات</div>
     </div>
-    ${filtered.map((o,i)=>{
-      const name = o.full_name || o.name || '—';
-      const isActive = activeOwnerIds.has(o.id);
-      const spCount  = ownerSpaceCount[o.id] || 0;
-      const apCount  = ownerApprovedCount[o.id] || 0;
-      const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '؟';
+    ${filtered.map(o => {
+      const name     = o.full_name || o.name || '—';
+      const initials = name.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '?';
+      const avatarHtml = o.avatar_url
+        ? `<div class="owner-avatar"><img src="${esc(o.avatar_url)}" alt="${esc(initials)}"></div>`
+        : `<div class="owner-avatar">${esc(initials)}</div>`;
+      const spCount = ownerSpaceCount[o.id] || 0;
+      const apCount = ownerApprovedCount[o.id] || 0;
       return `
-      <div class="owner-row">
-        <div><div class="owner-avatar">${initials}</div></div>
+      <div class="owner-row" id="orow-${esc(o.id)}">
+        ${avatarHtml}
         <div>
-          <div style="font-weight:700;font-size:12px">${esc(name)}</div>
+          <div style="font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(name)}</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.email||'—')}</div>
         </div>
-        <div style="font-size:11px;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.email||'—')}</div>
         <div><span class="badge ${planCls(o.plan_tier)}">${planLbl(o.plan_tier)}</span></div>
-        <div style="font-size:11px;text-align:center">
-          <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--tx)">${spCount}</span>
-          <span style="color:var(--mu)"> كل · </span>
-          <span style="color:var(--gr)">${apCount}</span>
-          <span style="color:var(--mu)"> معتمد</span>
+        <div>${subBadgeHtml(o)}</div>
+        <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700">
+          <span style="color:var(--tx)">${spCount}</span><span style="color:var(--mu);font-size:10px">/</span><span style="color:var(--gr)">${apCount}</span>
         </div>
-        <div><span class="badge ${isActive?'b-ok':'b-dormant'}">${isActive?'🟢 نشط':'🔴 خامل'}</span></div>
-        <div style="font-size:11px;color:var(--mu)">${fmtDate(o.created_at)}</div>
-        <div>
-          <select onchange="changeOwnerPlan('${o.id}',this.value,this)"
-                  style="background:var(--bg4);color:var(--tx);border:1px solid var(--mu2);border-radius:6px;padding:3px 6px;font-size:11px;cursor:pointer">
-            <option value="starter" ${(o.plan_tier||'starter')==='starter'?'selected':''}>Starter</option>
-            <option value="growth"  ${o.plan_tier==='growth' ?'selected':''}>Growth</option>
-            <option value="pro"     ${o.plan_tier==='pro'    ?'selected':''}>Pro</option>
-          </select>
+        <div>${statusBadgeHtml(o)}</div>
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-neu" style="font-size:10px;padding:4px 8px" title="تفاصيل" onclick="toggleOwnerDetail('${esc(o.id)}')">📋</button>
+          <button class="btn btn-yw" style="font-size:10px;padding:4px 8px" title="تغيير الباقة" onclick="promptChangePlan('${esc(o.id)}','${esc(o.plan_tier||'starter')}','${esc(name)}')">💳</button>
+          ${o.is_suspended
+            ? `<button class="btn btn-ok" style="font-size:10px;padding:4px 8px" onclick="unsuspendOwner('${esc(o.id)}','${esc(name)}')">✓ رفع</button>`
+            : `<button class="btn btn-err" style="font-size:10px;padding:4px 8px" title="إيقاف الحساب" onclick="suspendOwner('${esc(o.id)}','${esc(name)}')">🚫</button>`
+          }
         </div>
-      </div>`}).join('')}
+      </div>
+      <div class="owner-detail-wrap" id="odetail-${esc(o.id)}">
+        <div class="owner-detail-inner">${buildOwnerDetailHtml(o, ownerSpaceCount, ownerApprovedCount)}</div>
+      </div>`;
+    }).join('')}
   </div>`;
 
   setPageContent('owners', html);
 }
 
-async function changeOwnerPlan(ownerId, newPlan, selectEl) {
-  const prev = allOwners.find(o=>o.id===ownerId)?.plan_tier || 'starter';
-  if (newPlan === prev) return;
-  selectEl.disabled = true;
-  try {
-    await sbRpc('admin_set_plan_tier', {p_owner_id: ownerId, p_plan_tier: newPlan, p_secret: adminHash});
-    const o = allOwners.find(o=>o.id===ownerId);
-    if (o) o.plan_tier = newPlan;
-    toast(`✅ تم تغيير الباقة إلى ${planLbl(newPlan)}`, 's');
-  } catch(e) {
-    selectEl.value = prev;
-    toast('خطأ: ' + e.message, 'e');
-  }
-  selectEl.disabled = false;
+function toggleOwnerDetail(id) {
+  const el = document.getElementById('odetail-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+function buildOwnerDetailHtml(o, spaceCount, approvedCount) {
+  const ownerSpaces = allSpaces.filter(s => s.owner_id === o.id);
+
+  let subStatus = '—', subStatusCls = 'b-sub-none';
+  if (o.sub_status === 'active') {
+    if (o.sub_ends) {
+      const dl = Math.ceil((new Date(o.sub_ends) - Date.now())/(1000*86400));
+      if (dl < 0)        { subStatus = 'منتهي';              subStatusCls = 'b-sub-exp';  }
+      else if (dl <= 30) { subStatus = `ينتهي خلال ${dl} يوم`; subStatusCls = 'b-sub-warn'; }
+      else               { subStatus = 'نشط';                 subStatusCls = 'b-sub-ok';   }
+    } else { subStatus = 'نشط (بلا تاريخ)'; subStatusCls = 'b-sub-ok'; }
+  } else if (o.sub_status === 'expired') { subStatus = 'منتهي'; subStatusCls = 'b-sub-exp'; }
+  else if (o.sub_status && o.sub_status !== 'none') { subStatus = esc(o.sub_status); }
+
+  const phone  = o.phone ? o.phone.replace(/\D/g,'') : null;
+  const waLink = phone ? `https://wa.me/${phone}` : null;
+
+  const contactBox = `<div class="od-box">
+    <div class="od-box-title">📞 التواصل</div>
+    <div class="od-row"><span class="od-key">الإيميل</span><span class="od-val" style="font-size:10px">${esc(o.email||'—')}</span></div>
+    <div class="od-row"><span class="od-key">الهاتف</span><span class="od-val">${esc(o.phone||'—')}</span></div>
+    <div class="od-row"><span class="od-key">انضم</span><span class="od-val">${fmtDate(o.created_at)}</span></div>
+    ${waLink ? `<a href="${esc(waLink)}" target="_blank" rel="noopener" class="btn btn-ok" style="display:inline-block;margin-top:8px;text-decoration:none;font-size:11px;padding:5px 14px">💬 واتساب</a>` : ''}
+  </div>`;
+
+  const subBox = `<div class="od-box">
+    <div class="od-box-title">💳 الاشتراك</div>
+    <div class="od-row"><span class="od-key">الباقة</span><span class="od-val"><span class="badge ${planCls(o.plan_tier)}">${planLbl(o.plan_tier)}</span></span></div>
+    <div class="od-row"><span class="od-key">الحالة</span><span class="od-val"><span class="badge ${subStatusCls}">${subStatus}</span></span></div>
+    <div class="od-row"><span class="od-key">تنتهي</span><span class="od-val">${fmtDate(o.sub_ends)}</span></div>
+    <div class="od-row"><span class="od-key">تجديد تلقائي</span><span class="od-val">${o.auto_renew ? '✅ نعم' : '❌ لا'}</span></div>
+    ${o.sub_notes ? `<div class="od-row"><span class="od-key">ملاحظات</span><span class="od-val" style="font-size:10px">${esc(o.sub_notes)}</span></div>` : ''}
+  </div>`;
+
+  const spacesBox = `<div class="od-box">
+    <div class="od-box-title">🏢 المساحات (${ownerSpaces.length})</div>
+    ${ownerSpaces.length === 0
+      ? `<div style="color:var(--mu);font-size:11px">لا توجد مساحات مسجّلة</div>`
+      : ownerSpaces.slice(0,6).map(s=>`
+        <div class="od-row">
+          <span class="od-key" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name||'—')}</span>
+          <span class="od-val"><span class="badge ${statusCls(s.status)}" style="font-size:9px">${statusLbl(s.status)}</span></span>
+        </div>`).join('') +
+        (ownerSpaces.length > 6 ? `<div style="color:var(--mu);font-size:10px;margin-top:6px">+${ownerSpaces.length-6} أخرى</div>` : '')
+    }
+  </div>`;
+
+  return contactBox + subBox + spacesBox;
+}
+
+function promptChangePlan(ownerId, currentPlan, ownerName) {
+  const existing = document.getElementById('plan-change-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'plan-change-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">💳 تغيير الباقة</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:20px">${esc(ownerName)}</div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="fl">الباقة</label>
+        <select id="pcm-plan" class="fc">
+          <option value="starter" ${currentPlan==='starter'?'selected':''}>Starter</option>
+          <option value="growth"  ${currentPlan==='growth' ?'selected':''}>Growth</option>
+          <option value="pro"     ${currentPlan==='pro'    ?'selected':''}>Pro</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="fl">تاريخ انتهاء الاشتراك (اختياري)</label>
+        <input id="pcm-ends" class="fc" type="date">
+      </div>
+      <div class="fg" style="margin-bottom:20px">
+        <label class="fl">ملاحظات (اختياري)</label>
+        <textarea id="pcm-notes" class="fc" rows="2" placeholder="سبب التغيير أو أي ملاحظة…"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('plan-change-modal').remove()">إلغاء</button>
+        <button class="btn btn-or" id="pcm-ok">✅ تأكيد التغيير</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('pcm-ok').onclick = async () => {
+    const newPlan = document.getElementById('pcm-plan').value;
+    const endsAt  = document.getElementById('pcm-ends').value || null;
+    const notes   = document.getElementById('pcm-notes').value.trim() || null;
+    const btn     = document.getElementById('pcm-ok');
+    btn.disabled  = true; btn.textContent = '⏳…';
+    try {
+      await sbRpc('admin_set_plan_tier', {
+        p_owner_id: ownerId, p_plan_tier: newPlan, p_secret: adminHash,
+        p_ends_at: endsAt, p_notes: notes
+      });
+      const o = allOwners.find(x=>x.id===ownerId);
+      if (o) { o.plan_tier = newPlan; if (endsAt) o.sub_ends = endsAt; o.sub_status = 'active'; if (notes) o.sub_notes = notes; }
+      modal.remove();
+      toast(`✅ تم تغيير الباقة إلى ${planLbl(newPlan)}`, 's');
+      renderOwners();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '✅ تأكيد التغيير';
+      toast('خطأ: ' + e.message, 'e');
+    }
+  };
+
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+async function suspendOwner(id, name) {
+  showConfirm(
+    `🚫 إيقاف الحساب`,
+    `هل تريد إيقاف حساب "${name}"؟ لن يتمكن من تسجيل الدخول.`,
+    async () => {
+      try {
+        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: true, p_secret: adminHash});
+        const o = allOwners.find(x=>x.id===id);
+        if (o) o.is_suspended = true;
+        toast(`🚫 تم إيقاف حساب "${name}"`, 'i');
+        renderOwners();
+      } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+    }
+  );
+}
+
+async function unsuspendOwner(id, name) {
+  showConfirm(
+    `✅ رفع الإيقاف`,
+    `هل تريد رفع الإيقاف عن حساب "${name}"؟`,
+    async () => {
+      try {
+        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: false, p_secret: adminHash});
+        const o = allOwners.find(x=>x.id===id);
+        if (o) o.is_suspended = false;
+        toast(`✅ تم رفع الإيقاف عن "${name}"`, 's');
+        renderOwners();
+      } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+    }
+  );
+}
+
+function promptPromoteOwner() {
+  const existing = document.getElementById('promote-owner-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'promote-owner-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:400px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">👤 ترقية مستخدم إلى صاحب مساحة</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:20px">أدخل إيميل المستخدم المسجّل في المنصة</div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="fl">البريد الإلكتروني <span class="rq">*</span></label>
+        <input id="pom-email" class="fc" type="email" placeholder="user@example.com" dir="ltr">
+      </div>
+      <div class="fg" style="margin-bottom:20px">
+        <label class="fl">الباقة الابتدائية</label>
+        <select id="pom-plan" class="fc">
+          <option value="starter">Starter</option>
+          <option value="growth">Growth</option>
+          <option value="pro">Pro</option>
+        </select>
+      </div>
+      <div id="pom-err" style="font-size:12px;color:var(--rd);margin-bottom:12px;min-height:16px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('promote-owner-modal').remove()">إلغاء</button>
+        <button class="btn btn-or" id="pom-ok">👤 ترقية</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('pom-ok').onclick = async () => {
+    const email = document.getElementById('pom-email').value.trim();
+    const plan  = document.getElementById('pom-plan').value;
+    const errEl = document.getElementById('pom-err');
+    const btn   = document.getElementById('pom-ok');
+    if (!email) { errEl.textContent = 'أدخل البريد الإلكتروني'; return; }
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = '⏳…';
+    try {
+      await sbRpc('admin_promote_to_owner', {p_email: email, p_plan_tier: plan, p_secret: adminHash});
+      modal.remove();
+      toast(`✅ تمت ترقية ${email} إلى صاحب مساحة`, 's');
+      await loadAll();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '👤 ترقية';
+      errEl.textContent = e.message;
+    }
+  };
+
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  setTimeout(() => { const el = document.getElementById('pom-email'); if (el) el.focus(); }, 50);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1262,14 +1758,52 @@ function renderActivities() {
     const q = activitySearch.toLowerCase();
     filtered = filtered.filter(a => (a.id||'').toLowerCase().includes(q) || (a.name_ar||'').toLowerCase().includes(q));
   }
-  const active = allActivities.filter(a=>a.is_active!==false).length;
+  const active   = allActivities.filter(a=>a.is_active!==false).length;
   const inactive = allActivities.length - active;
+
+  /* region usage map — sorted by count desc */
+  const regionMap = {};
+  allSpaces.forEach(s => { if (s.region) regionMap[s.region] = (regionMap[s.region]||0) + 1; });
+  const regionEntries  = Object.entries(regionMap).sort((a,b)=>b[1]-a[1]);
+  const nonStandard    = regionEntries.filter(([r])=>!REGION_PRESETS.includes(r));
+  const regionSectionHtml = regionEntries.length ? `
+  <div class="form-sec" style="margin-bottom:12px">
+    <div class="form-sec-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between"
+         onclick="const b=document.getElementById('region-hub-body');b.style.display=b.style.display==='none'?'block':'none'">
+      <span>🗺 إدارة المناطق
+        <span style="font-size:11px;font-weight:400;color:var(--mu)">
+          (${regionEntries.length} منطقة${nonStandard.length ? ` · <span style="color:var(--yw)">${nonStandard.length} غير موحدة</span>` : ''})
+        </span>
+      </span>
+      <span style="font-size:11px;color:var(--mu)">▼</span>
+    </div>
+    <div id="region-hub-body" style="display:none;padding-top:10px">
+      ${nonStandard.length ? `<div style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.7;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:8px 12px">
+        ⚠ المناطق المميزة بالأصفر غير موجودة في القائمة المعتمدة — قد تكون أخطاء إملائية أو تكرارات.
+        استخدم <b>دمج</b> لتوحيدها مع المنطقة الصحيحة (يُحدِّث جميع المساحات دفعةً واحدة).
+      </div>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${regionEntries.map(([r, cnt]) => {
+          const std = REGION_PRESETS.includes(r);
+          return `<div style="display:flex;align-items:center;gap:0;background:${std?'var(--bg4)':'rgba(245,158,11,.1)'};border:1px solid ${std?'var(--bd)':'rgba(245,158,11,.35)'};border-radius:20px;padding:4px 4px 4px 12px">
+            <span style="font-size:12px;font-weight:700;color:${std?'var(--tx)':'var(--yw)'};margin-left:6px">${esc(r)}</span>
+            <span style="font-size:10px;color:var(--mu);background:var(--bg3);border-radius:10px;padding:1px 8px;margin-left:6px">${cnt}</span>
+            ${!std ? `<button class="btn btn-yw" style="font-size:10px;padding:2px 8px;border-radius:14px" onclick="promptMergeRegion('${esc(r)}')">دمج ←</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${regionEntries.length === 0 ? '<div style="font-size:12px;color:var(--mu);text-align:center;padding:12px">لا توجد مساحات بعد</div>' : ''}
+    </div>
+  </div>` : '';
+
   const html = `
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${allActivities.length}</span> إجمالي الأنشطة</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> مفعلة</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${inactive}</span> مخفية</div>
+    ${nonStandard.length ? `<div class="stat-chip" style="cursor:pointer" onclick="const b=document.getElementById('region-hub-body');if(b){b.style.display='block';b.scrollIntoView({behavior:'smooth',block:'start'})}"><span class="stat-num" style="color:var(--yw)">${nonStandard.length}</span> منطقة غير موحدة ⚠</div>` : ''}
   </div>
+  ${regionSectionHtml}
   <div class="form-sec">
     <div class="form-sec-title">➕ إضافة / تعديل نشاط</div>
     <div class="fg3">
@@ -1292,7 +1826,793 @@ function clearActivityForm(){['act-id','act-name','act-emoji','act-order'].forEa
 function fillActivity(id){const a=allActivities.find(x=>x.id===id);if(!a)return;document.getElementById('act-id').value=a.id;document.getElementById('act-name').value=a.name_ar||'';document.getElementById('act-emoji').value=a.emoji||'';document.getElementById('act-order').value=a.sort_order??0;document.getElementById('act-active').value=String(a.is_active!==false);}
 async function saveActivity(){const id=(document.getElementById('act-id')?.value||'').trim().toLowerCase().replace(/\s+/g,'-');const name=(document.getElementById('act-name')?.value||'').trim();if(!id||!name){toast('اكتب ID واسم النشاط','e');return;}const payload={id,name_ar:name,emoji:(document.getElementById('act-emoji')?.value||'').trim()||null,sort_order:parseInt(document.getElementById('act-order')?.value||'0')||0,is_active:document.getElementById('act-active')?.value!=='false'};try{const exists=allActivities.some(a=>a.id===id);await sbTable(exists?'PATCH':'POST','space_activities',exists?payload:[payload],exists?`?id=eq.${encodeURIComponent(id)}`:'');allActivities=await fetchActivities();clearActivityForm();renderActivities();toast('تم حفظ النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
 async function toggleActivity(id,isActive){try{await sbTable('PATCH','space_activities',{is_active:!isActive},`?id=eq.${encodeURIComponent(id)}`);allActivities=await fetchActivities();renderActivities();toast('تم تحديث النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
-async function deleteActivity(id){if(!confirm('حذف هذا النشاط؟ سيبقى اسم النشاط داخل المساحات التي استخدمته مسبقًا.'))return;try{await sbTable('DELETE','space_activities',null,`?id=eq.${encodeURIComponent(id)}`);allActivities=await fetchActivities();renderActivities();toast('تم حذف النشاط','s');}catch(e){toast('خطأ: '+e.message,'e');}}
+function deleteActivity(id) {
+  const act = allActivities.find(a => a.id === id);
+  const actName = act ? `${act.emoji||''} ${act.name_ar||id}`.trim() : id;
+  const affected = allSpaces.filter(s => Array.isArray(s.activities) && s.activities.includes(id));
+  const existing = document.getElementById('del-act-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'del-act-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(239,68,68,.4);border-radius:var(--r2);padding:28px;max-width:440px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:26px;text-align:center;margin-bottom:10px">🗑️</div>
+      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف النشاط</div>
+      <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:12px">${esc(actName)}</div>
+      ${affected.length ? `
+        <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--yw);line-height:1.8">
+          ⚠ هذا النشاط مرتبط بـ <b>${affected.length}</b> مساحة.
+          إذا حذفت فقط، سيبقى ID النشاط داخل تلك المساحات ولن يظهر بشكل صحيح.
+        </div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:6px">المساحات المتأثرة:</div>
+        <div style="max-height:100px;overflow-y:auto;margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
+          ${affected.map(s=>`<div style="font-size:11px;background:var(--bg4);border-radius:6px;padding:4px 8px;color:var(--tx)">${esc(s.name||s.id)}</div>`).join('')}
+        </div>
+      ` : `<div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:16px">لا توجد مساحات تستخدم هذا النشاط حالياً.</div>`}
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn btn-neu" onclick="document.getElementById('del-act-modal').remove()">إلغاء</button>
+        ${affected.length ? `<button class="btn btn-yw" id="del-act-only">حذف النشاط فقط</button>` : ''}
+        <button class="btn btn-err" id="del-act-clean">${affected.length ? 'حذف وتنظيف المساحات' : 'حذف النشاط'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+
+  async function doDelete(cleanup) {
+    const btns = modal.querySelectorAll('button');
+    btns.forEach(b=>b.disabled=true);
+    try {
+      await sbTable('DELETE','space_activities',null,`?id=eq.${encodeURIComponent(id)}`);
+      if (cleanup && affected.length) {
+        await sbRpc('admin_remove_activity_from_spaces',{p_activity_id:id,p_secret:adminHash});
+      }
+      modal.remove();
+      allActivities = await fetchActivities();
+      if (cleanup && affected.length) await loadAll();
+      renderActivities();
+      toast(cleanup ? '🗑 تم حذف النشاط وتنظيف المساحات' : '🗑 تم حذف النشاط', 's');
+    } catch(e) {
+      btns.forEach(b=>b.disabled=false);
+      toast('خطأ: '+e.message,'e');
+    }
+  }
+
+  const btnOnly  = modal.querySelector('#del-act-only');
+  const btnClean = modal.querySelector('#del-act-clean');
+  if (btnOnly)  btnOnly.onclick  = () => doDelete(false);
+  if (btnClean) btnClean.onclick = () => doDelete(affected.length > 0);
+}
+
+/* ═══════════════════════════════
+   CHART HELPERS
+═══════════════════════════════ */
+function buildBarChartSVG(series, months, opts = {}) {
+  const { color = '#FF6B00', height = 110, label = '' } = opts;
+  if (!series.length) return `<div style="color:var(--mu);font-size:11px;text-align:center;padding:20px">لا توجد بيانات</div>`;
+  const maxVal = Math.max(...series, 1);
+  const W = 400, H = height, pad = { t: 10, b: 22, l: 28, r: 8 };
+  const cw  = (W - pad.l - pad.r) / series.length;
+  const bars = series.map((v, i) => {
+    const bh = ((v / maxVal) * (H - pad.t - pad.b)) || 1;
+    const x  = pad.l + i * cw + cw * 0.12;
+    const y  = H - pad.b - bh;
+    const bw = cw * 0.76;
+    const mLabel = months[i] ? months[i].slice(5) : '';
+    const showLabel = i === 0 || i === series.length - 1 || i % Math.max(1, Math.floor(series.length / 5)) === 0;
+    return `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${color}" opacity="0.85">
+        <title>${mLabel}: ${v}</title></rect>
+      ${showLabel ? `<text x="${x + bw/2}" y="${H - pad.b + 14}" text-anchor="middle" font-size="8.5" fill="#888">${mLabel}</text>` : ''}
+      ${v > 0 && bh > 14 ? `<text x="${x + bw/2}" y="${y + 11}" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">${v}</text>` : ''}`;
+  }).join('');
+  const ySteps = [0, Math.round(maxVal / 2), maxVal].map((v, i) => {
+    const y = H - pad.b - (v / maxVal) * (H - pad.t - pad.b);
+    return `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <text x="${pad.l - 3}" y="${y + 4}" text-anchor="end" font-size="8.5" fill="#666">${v}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${height}px;display:block">${ySteps}${bars}</svg>`;
+}
+
+function buildLineChartSVG(series, months, opts = {}) {
+  const { color = '#FF6B00', height = 110 } = opts;
+  if (series.length < 2) return buildBarChartSVG(series, months, opts);
+  const maxVal = Math.max(...series, 1);
+  const W = 400, H = height, pad = { t: 10, b: 22, l: 28, r: 8 };
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const pts = series.map((v, i) => ({
+    x: pad.l + (i / (series.length - 1)) * iw,
+    y: pad.t + ih - (v / maxVal) * ih,
+    v, m: months[i] ? months[i].slice(5) : ''
+  }));
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaD = pathD + ` L${pts[pts.length-1].x.toFixed(1)},${H-pad.b} L${pad.l},${H-pad.b} Z`;
+  const dots  = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${color}"><title>${p.m}: ${p.v}</title></circle>`).join('');
+  const xLbls = pts.filter((_, i) => i === 0 || i === pts.length-1 || i % Math.max(1, Math.floor(pts.length/5)) === 0)
+    .map(p => `<text x="${p.x.toFixed(1)}" y="${H-pad.b+14}" text-anchor="middle" font-size="8.5" fill="#888">${p.m}</text>`).join('');
+  const yLbls = [0, Math.round(maxVal/2), maxVal].map((v, i) => {
+    const y = pad.t + ih - (v / maxVal) * ih;
+    return `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.06)"/>
+      <text x="${pad.l-3}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#666">${v}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${height}px;display:block">
+    <defs><linearGradient id="lcg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0.03"/>
+    </linearGradient></defs>
+    ${yLbls}
+    <path d="${areaD}" fill="url(#lcg)"/>
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${dots}${xLbls}
+  </svg>`;
+}
+
+/* fill a 12-month skeleton so missing months show as zero */
+function fillMonthSeries(data, months12) {
+  const map = {};
+  (data || []).forEach(d => { map[d.month] = d; });
+  return months12.map(m => map[m] || { month: m, count: 0, confirmed: 0, mrr_added: 0 });
+}
+
+function last12Months() {
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - i);
+    months.push(d.toISOString().slice(0, 7));
+  }
+  return months;
+}
+
+/* ═══════════════════════════════
+   FINANCE PAGE
+═══════════════════════════════ */
+async function renderFinance() {
+  setPageContent('finance', loading());
+  let fin = null, monthly = null;
+  try {
+    [fin, monthly] = await Promise.all([
+      sbRpc('admin_get_financial_stats', { p_secret: adminHash }),
+      sbRpc('admin_get_monthly_stats',   { p_secret: adminHash, p_months: 12 }),
+    ]);
+  } catch(e) {
+    setPageContent('finance', `<div class="empty-state">خطأ: ${esc(e.message)}</div>`);
+    return;
+  }
+
+  const mrr    = fin.mrr    || 0;
+  const arr    = fin.arr    || 0;
+  const growth = fin.active_growth || 0;
+  const pro    = fin.active_pro    || 0;
+  const exp7   = fin.expiring_7d   || [];
+  const exp30  = fin.expiring_30d  || 0;
+  const newS   = fin.new_subs_30d  || 0;
+  const churn  = fin.churned_30d   || 0;
+
+  const months12 = last12Months();
+  const spData   = fillMonthSeries(monthly.spaces,   months12);
+  const owData   = fillMonthSeries(monthly.owners,   months12);
+  const bkData   = fillMonthSeries(monthly.bookings, months12);
+  const rvData   = fillMonthSeries(monthly.revenue,  months12);
+
+  const mrrChart = buildBarChartSVG(rvData.map(d => d.mrr_added || 0), months12, { color: '#FF6B00' });
+  const spChart  = buildLineChartSVG(spData.map(d => d.count), months12, { color: '#22C55E' });
+  const owChart  = buildLineChartSVG(owData.map(d => d.count), months12, { color: '#818cf8' });
+  const bkChart  = buildBarChartSVG(bkData.map(d => d.count), months12, { color: '#F59E0B' });
+
+  const expiryRows = exp7.length
+    ? exp7.map(s => {
+        const days = Math.ceil((new Date(s.ends_at) - Date.now()) / 86400000);
+        const planLbl = s.plan === 'pro' ? 'Pro' : 'Growth';
+        const urgency = days <= 2 ? 'color:var(--rd)' : days <= 5 ? 'color:var(--yw)' : '';
+        return `<div class="expiry-row">
+          <div>
+            <div style="font-weight:700">${esc(s.full_name || '—')}</div>
+            <div style="font-size:10px;color:var(--mu)">${esc(s.email || '')}</div>
+          </div>
+          <div><span class="badge ${planLbl === 'Pro' ? 'b-sub-ok' : 'b-sub-warn'}">${planLbl}</span></div>
+          <div style="font-weight:800;${urgency}">${days}د</div>
+          <div style="display:flex;gap:5px">
+            ${s.auto_renew ? '<span style="font-size:10px;color:var(--gr)">↻ تجديد تلقائي</span>' :
+              `<button class="btn btn-yw" style="font-size:10px;padding:2px 8px"
+                onclick="promptChangePlan('${esc(s.user_id)}','${esc(s.plan)}','${esc(s.full_name||'')}')">تجديد</button>`}
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty-state" style="padding:20px">لا اشتراكات تنتهي هذا الأسبوع 🎉</div>';
+
+  const html = `
+  <!-- KPI row -->
+  <div class="fin-kpi-grid">
+    <div class="fin-kpi accent">
+      <div class="fin-kpi-val" style="color:var(--or)">${mrr.toLocaleString('ar-EG')} ج</div>
+      <div class="fin-kpi-lbl">MRR — الإيراد الشهري المتكرر</div>
+      <div class="fin-kpi-sub">Growth ×${growth} + Pro ×${pro}</div>
+    </div>
+    <div class="fin-kpi">
+      <div class="fin-kpi-val">${arr.toLocaleString('ar-EG')} ج</div>
+      <div class="fin-kpi-lbl">ARR — الإيراد السنوي المتوقع</div>
+      <div class="fin-kpi-sub">MRR × 12</div>
+    </div>
+    <div class="fin-kpi green">
+      <div class="fin-kpi-val" style="color:var(--gr)">+${newS}</div>
+      <div class="fin-kpi-lbl">اشتراكات جديدة — 30 يوم</div>
+    </div>
+    <div class="fin-kpi ${churn > 0 ? 'red' : ''}">
+      <div class="fin-kpi-val" style="color:${churn > 0 ? 'var(--rd)' : 'var(--mu)'}">-${churn}</div>
+      <div class="fin-kpi-lbl">إلغاءات / انتهاء — 30 يوم</div>
+    </div>
+  </div>
+
+  <!-- Expiring this week -->
+  <div class="form-sec" style="margin-bottom:16px">
+    <div class="form-sec-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>⏰ اشتراكات تنتهي هذا الأسبوع
+        ${exp7.length ? `<span style="background:rgba(239,68,68,.15);color:var(--rd);border-radius:10px;font-size:10px;padding:1px 8px;margin-right:8px">${exp7.length}</span>` : ''}
+      </span>
+      <span style="font-size:11px;color:var(--mu)">${exp30} تنتهي هذا الشهر</span>
+    </div>
+    ${exp7.length ? `<div style="background:var(--bg4);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
+      <div class="expiry-row" style="background:var(--bg3);color:var(--mu);font-size:11px;font-weight:800">
+        <div>المالك</div><div>الباقة</div><div>الأيام</div><div>الإجراء</div>
+      </div>
+      ${expiryRows}
+    </div>` : expiryRows}
+  </div>
+
+  <!-- Revenue breakdown -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="fin-kpi" style="display:flex;align-items:center;gap:16px">
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">Growth — 3,000 ج/شهر</div>
+        <div style="font-size:22px;font-weight:900">${growth} <span style="font-size:13px;color:var(--mu)">مالك</span></div>
+        <div style="font-size:12px;color:var(--or);font-weight:700">${(growth * 3000).toLocaleString('ar-EG')} ج/شهر</div>
+      </div>
+    </div>
+    <div class="fin-kpi" style="display:flex;align-items:center;gap:16px">
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">Pro — 4,500 ج/شهر</div>
+        <div style="font-size:22px;font-weight:900">${pro} <span style="font-size:13px;color:var(--mu)">مالك</span></div>
+        <div style="font-size:12px;color:var(--or);font-weight:700">${(pro * 4500).toLocaleString('ar-EG')} ج/شهر</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-wrap" style="margin-bottom:16px">
+    <div class="chart-title">💰 MRR المضاف شهرياً</div>
+    <div class="chart-sub">إجمالي قيمة الاشتراكات الجديدة كل شهر (12 شهراً)</div>
+    ${mrrChart}
+  </div>
+  <div class="chart-grid">
+    <div class="chart-wrap">
+      <div class="chart-title">🏢 مساحات جديدة / شهر</div>
+      <div class="chart-sub">إجمالي المساحات المضافة</div>
+      ${spChart}
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">👥 ملّاك جدد / شهر</div>
+      <div class="chart-sub">حسابات owner مسجّلة</div>
+      ${owChart}
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">📅 حجوزات / شهر</div>
+      <div class="chart-sub">كل الحجوزات والمعاينات</div>
+      ${bkChart}
+    </div>
+    <div class="chart-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="chart-title" style="margin-bottom:0">⚙️ الأتمتة — تجديد الاشتراكات</div>
+      </div>
+      <div class="chart-sub">pg_cron يعمل يومياً 00:05 — يُنزّل الباقة تلقائياً عند انتهاء ends_at ويُرسل إشعاراً للمالك</div>
+      <div class="cron-status" style="margin-top:10px">
+        <span style="font-size:20px">🤖</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:12px">auto-expire-subscriptions</div>
+          <div style="font-size:10px;color:var(--mu)">يعمل كل يوم الساعة 00:05 · يُنزّل إلى starter · يُرسل إشعار subscription_expired</div>
+        </div>
+        <button class="btn btn-neu" style="font-size:11px;padding:5px 12px" id="cron-trigger-btn"
+                onclick="triggerExpireCheck()">▶ تشغيل الآن</button>
+      </div>
+    </div>
+  </div>`;
+
+  setPageContent('finance', html);
+}
+
+async function triggerExpireCheck() {
+  const btn = document.getElementById('cron-trigger-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
+  try {
+    const res = await sbRpc('admin_trigger_expire_check', { p_secret: adminHash });
+    const n = res?.expired ?? 0;
+    toast(n > 0 ? `✅ تم تنزيل ${n} اشتراك منتهي وإرسال الإشعارات` : '✅ لا اشتراكات منتهية حالياً', 's');
+    if (n > 0) { await loadAll(); renderFinance(); } else {
+      if (btn) { btn.disabled = false; btn.textContent = '▶ تشغيل الآن'; }
+    }
+  } catch(e) {
+    toast('خطأ: ' + e.message, 'e');
+    if (btn) { btn.disabled = false; btn.textContent = '▶ تشغيل الآن'; }
+  }
+}
+
+/* ═══════════════════════════════
+   BOOKINGS & VIEWING REQUESTS
+═══════════════════════════════ */
+async function renderBookings() {
+  setPageContent('bookings', loading());
+  try {
+    const res = await sbRpc('admin_get_bookings', {
+      p_secret: adminHash,
+      p_status: bookingsStatus || null,
+      p_search: bookingsSearch || null,
+      p_limit:  BK_PAGE_SIZE,
+      p_offset: (bookingsPage - 1) * BK_PAGE_SIZE,
+    });
+    bookingsData  = res.rows  || [];
+    bookingsTotal = res.total || 0;
+  } catch(e) {
+    setPageContent('bookings', `<div class="empty-state">خطأ في تحميل الحجوزات: ${esc(e.message)}</div>`);
+    return;
+  }
+
+  const statusMap = {
+    pending:        { lbl:'حجز معلق',   cls:'b-bk-pending'   },
+    viewing_pending:{ lbl:'معاينة معلقة',cls:'b-bk-viewing'  },
+    confirmed:      { lbl:'مؤكد',        cls:'b-bk-confirmed' },
+    completed:      { lbl:'مكتمل',       cls:'b-bk-completed' },
+    cancelled:      { lbl:'ملغي',        cls:'b-bk-cancelled' },
+  };
+  const sLbl = s => statusMap[s]?.lbl || s;
+  const sCls = s => statusMap[s]?.cls || '';
+
+  const pendingCount  = bookingsStatus === '' ? (bookingsData.filter(b=>b.status==='pending').length + bookingsData.filter(b=>b.status==='viewing_pending').length) : 0;
+  const totalPages = Math.ceil(bookingsTotal / BK_PAGE_SIZE);
+
+  const html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${bookingsTotal}</span> إجمالي</div>
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='pending';bookingsPage=1;renderBookings()">
+      <span class="stat-num" style="color:var(--yw)">${bookingsData.filter(b=>b.status==='pending').length}</span> حجوزات معلقة
+    </div>
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='viewing_pending';bookingsPage=1;renderBookings()">
+      <span class="stat-num" style="color:#818cf8">${bookingsData.filter(b=>b.status==='viewing_pending').length}</span> معاينات معلقة
+    </div>
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='confirmed';bookingsPage=1;renderBookings()">
+      <span class="stat-num" style="color:var(--gr)">${bookingsData.filter(b=>b.status==='confirmed').length}</span> مؤكدة
+    </div>
+    ${bookingsStatus ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 10px" onclick="bookingsStatus='';bookingsPage=1;renderBookings()">✕ إلغاء الفلتر</button>` : ''}
+  </div>
+
+  <div class="filter-bar" style="gap:10px">
+    <input class="f-inp" style="max-width:260px" placeholder="🔎 بحث باسم المساحة..."
+           value="${esc(bookingsSearch)}"
+           oninput="bookingsSearch=this.value;bookingsPage=1;renderBookings()">
+    <select class="fc" style="width:160px;padding:7px 10px;font-size:12px"
+            onchange="bookingsStatus=this.value;bookingsPage=1;renderBookings()">
+      <option value="" ${!bookingsStatus?'selected':''}>كل الحالات</option>
+      <option value="pending"         ${bookingsStatus==='pending'?'selected':''}>حجز معلق</option>
+      <option value="viewing_pending" ${bookingsStatus==='viewing_pending'?'selected':''}>معاينة معلقة</option>
+      <option value="confirmed"       ${bookingsStatus==='confirmed'?'selected':''}>مؤكد</option>
+      <option value="completed"       ${bookingsStatus==='completed'?'selected':''}>مكتمل</option>
+      <option value="cancelled"       ${bookingsStatus==='cancelled'?'selected':''}>ملغي</option>
+    </select>
+    <div style="margin-right:auto;font-size:12px;color:var(--mu)">${bookingsTotal} نتيجة</div>
+  </div>
+
+  <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+    <div class="bk-row bk-row-hd">
+      <div>التاريخ</div><div>المساحة</div><div>المالك</div><div>النوع</div><div>الحالة</div><div>الإجراءات</div>
+    </div>
+    ${bookingsData.length ? bookingsData.map(b => {
+      const isViewing = b.status === 'viewing_pending' || b.activity === 'معاينة';
+      const typeLabel = isViewing ? '👁 معاينة' : '📅 حجز';
+      const date = b.start_date ? fmtDate(b.start_date) : fmtDate(b.created_at);
+      const isPending = b.status === 'pending' || b.status === 'viewing_pending';
+      return `<div class="bk-row">
+        <div style="color:var(--mu);font-size:11px">${date}</div>
+        <div>
+          <div style="font-weight:700">${esc(b.space_name||'—')}</div>
+          ${b.space_loc ? `<div style="font-size:10px;color:var(--mu)">${esc(b.space_loc)}</div>` : ''}
+          ${b.size ? `<div style="font-size:10px;color:var(--mu)">${esc(b.size)}</div>` : ''}
+        </div>
+        <div style="font-size:11px">${esc(b.owner_name||'—')}</div>
+        <div><span style="font-size:11px;color:var(--mu)">${typeLabel}</span></div>
+        <div><span class="badge ${sCls(b.status)}">${sLbl(b.status)}</span></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${isPending ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','confirmed',this)">✓ تأكيد</button>` : ''}
+          ${b.status==='confirmed' ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','completed',this)">✅ إكمال</button>` : ''}
+          ${b.status!=='cancelled'&&b.status!=='completed' ? `<button class="btn btn-err" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','cancelled',this)">✕ إلغاء</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty-state" style="padding:32px">لا توجد حجوزات</div>`}
+  </div>
+
+  ${totalPages > 1 ? `<div class="pg-bar">
+    <button class="btn btn-neu" ${bookingsPage<=1?'disabled':''} onclick="bookingsPage--;renderBookings()">→</button>
+    <span style="font-size:12px;color:var(--mu)">${bookingsPage} / ${totalPages}</span>
+    <button class="btn btn-neu" ${bookingsPage>=totalPages?'disabled':''} onclick="bookingsPage++;renderBookings()">←</button>
+  </div>` : ''}`;
+
+  setPageContent('bookings', html);
+
+  /* update sidebar badge with live pending count */
+  const badge = document.getElementById('bookings-badge');
+  if (badge) {
+    const total = bookingsData.filter(b=>b.status==='pending'||b.status==='viewing_pending').length;
+    badge.textContent = total;
+    badge.style.display = total ? 'inline-block' : 'none';
+  }
+}
+
+async function doBookingStatus(bookingId, newStatus, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳'; }
+  try {
+    await sbRpc('admin_update_booking_status', {p_secret:adminHash, p_booking_id:bookingId, p_status:newStatus});
+    addAuditEntry('تحديث حجز', bookingId, newStatus);
+    await renderBookings();
+  } catch(e) {
+    toast('خطأ: '+e.message, 'e');
+    if (btnEl) { btnEl.disabled = false; }
+  }
+}
+
+/* ═══════════════════════════════
+   BULK NOTIFICATIONS
+═══════════════════════════════ */
+const NOTIF_HIST_KEY = 'mkspot_notif_hist_v1';
+
+function getNotifHistory() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_HIST_KEY)||'[]'); } catch{ return []; }
+}
+function saveNotifHistory(entry) {
+  const hist = getNotifHistory();
+  hist.unshift(entry);
+  if (hist.length > 20) hist.length = 20;
+  localStorage.setItem(NOTIF_HIST_KEY, JSON.stringify(hist));
+}
+
+function renderBulkNotif() {
+  const targets = [
+    { key:'all',         icon:'👥', label:'كل الأصحاب',       count: allOwners.length },
+    { key:'active_sub',  icon:'✅', label:'اشتراك نشط',        count: allOwners.filter(o=>o.sub_status==='active').length },
+    { key:'expired_sub', icon:'⏰', label:'اشتراك منتهي',      count: allOwners.filter(o=>o.sub_status==='expired').length },
+    { key:'specific',    icon:'🎯', label:'ملّاك محددون',       count: notifPickedIds.size },
+  ];
+
+  const pickedOwners = allOwners.filter(o => notifPickedIds.has(o.id));
+  const hist = getNotifHistory();
+
+  const html = `
+  <div style="display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Target -->
+      <div class="form-sec">
+        <div class="form-sec-title">👥 الجمهور المستهدف</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:${notifTarget==='specific'?'14px':'0'}">
+          ${targets.map(t=>`
+            <div class="notif-target-btn ${notifTarget===t.key?'sel':''}" onclick="notifTarget='${t.key}';renderBulkNotif()">
+              <div style="font-size:18px;margin-bottom:4px">${t.icon}</div>
+              <div>${t.label}</div>
+              <div style="font-size:11px;opacity:.7;margin-top:2px">${t.count} مالك</div>
+            </div>`).join('')}
+        </div>
+        ${notifTarget==='specific' ? `
+        <div class="fg" style="margin-top:12px">
+          <label class="fl">ابحث واختر الملّاك</label>
+          <input class="fc" id="notif-owner-search" placeholder="ابحث بالاسم أو البريد..."
+                 oninput="renderNotifOwnerPicker(this.value)">
+        </div>
+        <div id="notif-owner-picker" style="max-height:200px;overflow-y:auto;border:1px solid var(--bd);border-radius:var(--r);margin-top:6px;background:var(--bg4)"></div>
+        ${notifPickedIds.size ? `
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px" id="notif-picked-chips">
+          ${pickedOwners.map(o=>`
+            <span style="background:var(--org);color:var(--or);border:1px solid var(--bdo);border-radius:14px;padding:3px 10px 3px 6px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px">
+              ${esc(o.display_name||o.email||o.id)}
+              <span style="cursor:pointer;opacity:.7" onclick="notifPickedIds.delete('${esc(o.id)}');renderBulkNotif()">✕</span>
+            </span>`).join('')}
+        </div>` : ''}` : ''}
+      </div>
+
+      <!-- Compose -->
+      <div class="form-sec">
+        <div class="form-sec-title">✍️ الرسالة</div>
+        <div class="fg">
+          <label class="fl">نوع الإشعار</label>
+          <select class="fc" id="notif-type">
+            <option value="admin_announcement">📢 إعلان عام</option>
+            <option value="subscription_reminder">💳 تذكير اشتراك</option>
+            <option value="platform_maintenance">🔧 صيانة المنصة</option>
+            <option value="space_approved">✅ مساحة مقبولة</option>
+            <option value="space_rejected">❌ مساحة مرفوضة</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">العنوان</label>
+          <input class="fc" id="notif-title" placeholder="مثال: تجديد الاشتراك قبل انتهائه">
+        </div>
+        <div class="fg">
+          <label class="fl">نص الرسالة</label>
+          <textarea class="fc" id="notif-body" rows="4"
+                    placeholder="اكتب نص الإشعار هنا..." style="resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar: preview + send + history -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Preview -->
+      <div class="form-sec">
+        <div class="form-sec-title">👁 المعاينة</div>
+        <div style="background:var(--bg4);border-radius:var(--r);padding:14px;border:1px solid var(--bd)">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:6px">كيف سيراه المالك في لوحته:</div>
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="font-size:20px">📢</div>
+            <div>
+              <div style="font-size:13px;font-weight:800" id="notif-preview-title">العنوان</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:4px;line-height:1.6" id="notif-preview-body">نص الرسالة</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--mu);text-align:center">
+          سيستقبله
+          <b style="color:var(--or);font-size:16px">${notifTarget==='specific'?notifPickedIds.size:targets.find(t=>t.key===notifTarget)?.count||0}</b>
+          مالك
+        </div>
+        <button class="btn btn-or" style="width:100%;margin-top:10px" onclick="sendBulkNotif()">
+          📣 إرسال الإشعار
+        </button>
+      </div>
+
+      <!-- History -->
+      ${hist.length ? `<div class="form-sec">
+        <div class="form-sec-title">📋 آخر الإرسالات</div>
+        <div style="display:flex;flex-direction:column;gap:0;background:var(--bg4);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
+          <div class="notif-hist-row" style="background:var(--bg3);font-weight:800;color:var(--mu)">
+            <div>الوقت</div><div>المستهدف</div><div>العنوان</div><div>الوصول</div>
+          </div>
+          ${hist.map(h=>`<div class="notif-hist-row">
+            <div style="color:var(--mu)">${fmtDate(h.at)}</div>
+            <div>${esc(h.targetLabel||'—')}</div>
+            <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.title)}</div>
+            <div style="color:var(--gr);font-weight:800">${h.sent}</div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  setPageContent('notif', html);
+
+  /* wire up live preview */
+  const tInp = document.getElementById('notif-title');
+  const bInp = document.getElementById('notif-body');
+  const pT   = document.getElementById('notif-preview-title');
+  const pB   = document.getElementById('notif-preview-body');
+  if (tInp && pT) tInp.addEventListener('input', ()=>{ pT.textContent = tInp.value||'العنوان'; });
+  if (bInp && pB) bInp.addEventListener('input', ()=>{ pB.textContent = bInp.value||'نص الرسالة'; });
+
+  if (notifTarget === 'specific') renderNotifOwnerPicker('');
+}
+
+function renderNotifOwnerPicker(q) {
+  const wrap = document.getElementById('notif-owner-picker');
+  if (!wrap) return;
+  const filtered = q
+    ? allOwners.filter(o => (o.display_name||'').toLowerCase().includes(q.toLowerCase()) || (o.email||'').toLowerCase().includes(q.toLowerCase()))
+    : allOwners;
+  wrap.innerHTML = filtered.slice(0, 30).map(o => {
+    const picked = notifPickedIds.has(o.id);
+    return `<div onclick="notifPickedIds.${picked?'delete':'add'}('${esc(o.id)}');renderBulkNotif()"
+               style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04);${picked?'background:rgba(255,107,0,.08)':''}">
+              <span style="font-size:14px">${picked?'☑':'☐'}</span>
+              <div>
+                <div style="font-size:12px;font-weight:700">${esc(o.display_name||o.email||o.id)}</div>
+                <div style="font-size:10px;color:var(--mu)">${esc(o.email||'')} · ${o.plan_tier||'starter'}</div>
+              </div>
+            </div>`;
+  }).join('');
+}
+
+async function sendBulkNotif() {
+  const title = document.getElementById('notif-title')?.value.trim();
+  const body  = document.getElementById('notif-body')?.value.trim();
+  const type  = document.getElementById('notif-type')?.value || 'admin_announcement';
+  if (!title) { toast('أدخل عنوان الإشعار','e'); return; }
+  if (!body)  { toast('أدخل نص الرسالة','e'); return; }
+
+  let ownerIds = null;
+  if (notifTarget === 'specific') {
+    if (!notifPickedIds.size) { toast('اختر مالكاً واحداً على الأقل','e'); return; }
+    ownerIds = [...notifPickedIds];
+  } else if (notifTarget === 'active_sub') {
+    ownerIds = allOwners.filter(o=>o.sub_status==='active').map(o=>o.id);
+  } else if (notifTarget === 'expired_sub') {
+    ownerIds = allOwners.filter(o=>o.sub_status==='expired').map(o=>o.id);
+  }
+  /* 'all' → ownerIds stays null → RPC inserts for all */
+
+  const btn = document.querySelector('#pg-notif .btn-or');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الإرسال...'; }
+  try {
+    const res = await sbRpc('admin_send_bulk_notification', {
+      p_secret:    adminHash,
+      p_title:     title,
+      p_body:      body,
+      p_type:      type,
+      p_owner_ids: ownerIds,
+    });
+    const sent = res?.sent ?? 0;
+    const targetLabels = {all:'كل الأصحاب',active_sub:'اشتراك نشط',expired_sub:'اشتراك منتهي',specific:'محددون'};
+    saveNotifHistory({ at: new Date().toISOString(), title, targetLabel: targetLabels[notifTarget]||notifTarget, sent });
+    toast(`✅ تم إرسال الإشعار لـ ${sent} مالك`, 's');
+    document.getElementById('notif-title').value = '';
+    document.getElementById('notif-body').value  = '';
+    renderBulkNotif();
+  } catch(e) {
+    toast('خطأ: '+e.message, 'e');
+    if (btn) { btn.disabled = false; btn.textContent = '📣 إرسال الإشعار'; }
+  }
+}
+
+/* ═══════════════════════════════
+   EXPORT
+═══════════════════════════════ */
+function renderExport() {
+  const html = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+    <!-- Spaces -->
+    <div class="export-card">
+      <div>
+        <div class="export-card-title">🏢 تصدير المساحات</div>
+        <div style="font-size:12px;color:var(--mu)">${allSpaces.length} مساحة في قاعدة البيانات</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:8px;font-weight:700">اختر الأعمدة:</div>
+        <div class="export-col-list" id="spaces-col-list">
+          ${[
+            ['id','المعرف'],['name','الاسم'],['region','المنطقة'],['type','النوع'],
+            ['status','الحالة'],['is_active','مفعل؟'],['owner_id','ID المالك'],
+            ['sizes_prices','الأحجام والأسعار'],['min_price','أقل سعر'],
+            ['description','الوصف'],['created_at','تاريخ الإضافة'],
+          ].map(([k,l])=>`<label class="export-col-item">
+            <input type="checkbox" value="${k}" checked> ${l}
+          </label>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px;font-weight:700">فلتر الحالة:</div>
+        <select class="fc" id="spaces-export-status" style="font-size:12px;padding:6px 10px">
+          <option value="">كل المساحات</option>
+          <option value="approved">مقبولة فقط</option>
+          <option value="pending">قيد المراجعة</option>
+          <option value="rejected">مرفوضة</option>
+        </select>
+      </div>
+      <button class="btn btn-or" onclick="exportSpacesCSV()">⬇ تنزيل CSV</button>
+    </div>
+
+    <!-- Owners -->
+    <div class="export-card">
+      <div>
+        <div class="export-card-title">👥 تصدير الأصحاب</div>
+        <div style="font-size:12px;color:var(--mu)">${allOwners.length} مالك مسجل</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:8px;font-weight:700">اختر الأعمدة:</div>
+        <div class="export-col-list" id="owners-col-list">
+          ${[
+            ['id','المعرف'],['display_name','الاسم'],['email','البريد'],
+            ['plan_tier','الباقة'],['sub_status','حالة الاشتراك'],
+            ['sub_ends','تاريخ انتهاء الاشتراك'],['is_suspended','موقوف؟'],
+            ['spaces_count','عدد المساحات'],['approved_count','مساحات مقبولة'],
+          ].map(([k,l])=>`<label class="export-col-item">
+            <input type="checkbox" value="${k}" checked> ${l}
+          </label>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px;font-weight:700">فلتر الحالة:</div>
+        <select class="fc" id="owners-export-filter" style="font-size:12px;padding:6px 10px">
+          <option value="">كل الأصحاب</option>
+          <option value="active_sub">اشتراك نشط</option>
+          <option value="expired_sub">اشتراك منتهي</option>
+          <option value="suspended">موقوفون</option>
+        </select>
+      </div>
+      <button class="btn btn-or" onclick="exportOwnersCSV()">⬇ تنزيل CSV</button>
+    </div>
+
+  </div>
+
+  <div class="form-sec" style="margin-top:18px">
+    <div class="form-sec-title">📋 ملاحظات</div>
+    <ul style="font-size:12px;color:var(--mu);line-height:2;padding-right:18px">
+      <li>الملفات بصيغة CSV مشفرة UTF-8 — افتح Excel بـ "From Text/CSV" لعرض العربية صحيحاً</li>
+      <li>الأعمدة المحسوبة (عدد المساحات) تُحسب من البيانات المحملة حالياً</li>
+      <li>للتأكد من أحدث بيانات، أعد تحميل الصفحة قبل التصدير</li>
+    </ul>
+  </div>`;
+  setPageContent('export', html);
+}
+
+function getCheckedCols(listId) {
+  return [...document.querySelectorAll(`#${listId} input[type=checkbox]:checked`)].map(c=>c.value);
+}
+
+function csvEsc(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+function downloadCSV(filename, rows) {
+  const bom   = '﻿';
+  const csv   = bom + rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href      = url;
+  a.download  = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportSpacesCSV() {
+  const cols   = getCheckedCols('spaces-col-list');
+  if (!cols.length) { toast('اختر عموداً واحداً على الأقل','e'); return; }
+  const filter = document.getElementById('spaces-export-status')?.value || '';
+  const spaceCountByOwner = {};
+  const approvedByOwner   = {};
+  allSpaces.forEach(s => {
+    spaceCountByOwner[s.owner_id] = (spaceCountByOwner[s.owner_id]||0) + 1;
+    if (s.status === 'approved') approvedByOwner[s.owner_id] = (approvedByOwner[s.owner_id]||0) + 1;
+  });
+
+  const rows = allSpaces
+    .filter(s => !filter || s.status === filter)
+    .map(s => cols.map(c => {
+      if (c === 'is_active') return s.is_active ? 'نعم' : 'لا';
+      return s[c] ?? '';
+    }));
+
+  const colLabels = {id:'المعرف',name:'الاسم',region:'المنطقة',type:'النوع',status:'الحالة',is_active:'مفعل؟',owner_id:'ID المالك',sizes_prices:'الأحجام والأسعار',min_price:'أقل سعر',description:'الوصف',created_at:'تاريخ الإضافة'};
+  downloadCSV(`spaces-${new Date().toISOString().slice(0,10)}.csv`, [cols.map(c=>colLabels[c]||c), ...rows]);
+  toast(`✅ تم تصدير ${rows.length} مساحة`,'s');
+}
+
+function exportOwnersCSV() {
+  const cols   = getCheckedCols('owners-col-list');
+  if (!cols.length) { toast('اختر عموداً واحداً على الأقل','e'); return; }
+  const filter = document.getElementById('owners-export-filter')?.value || '';
+
+  const spaceCountByOwner   = {};
+  const approvedCountByOwner = {};
+  allSpaces.forEach(s => {
+    spaceCountByOwner[s.owner_id]    = (spaceCountByOwner[s.owner_id]||0) + 1;
+    if (s.status === 'approved') approvedCountByOwner[s.owner_id] = (approvedCountByOwner[s.owner_id]||0) + 1;
+  });
+
+  let owners = allOwners;
+  if (filter === 'active_sub')  owners = owners.filter(o=>o.sub_status==='active');
+  if (filter === 'expired_sub') owners = owners.filter(o=>o.sub_status==='expired');
+  if (filter === 'suspended')   owners = owners.filter(o=>o.is_suspended);
+
+  const rows = owners.map(o => cols.map(c => {
+    if (c === 'is_suspended')   return o.is_suspended ? 'نعم' : 'لا';
+    if (c === 'spaces_count')   return spaceCountByOwner[o.id] || 0;
+    if (c === 'approved_count') return approvedCountByOwner[o.id] || 0;
+    if (c === 'email')          return o.email || o.user_email || '';
+    return o[c] ?? '';
+  }));
+
+  const colLabels = {id:'المعرف',display_name:'الاسم',email:'البريد',plan_tier:'الباقة',sub_status:'حالة الاشتراك',sub_ends:'تاريخ انتهاء الاشتراك',is_suspended:'موقوف؟',spaces_count:'عدد المساحات',approved_count:'مساحات مقبولة'};
+  downloadCSV(`owners-${new Date().toISOString().slice(0,10)}.csv`, [cols.map(c=>colLabels[c]||c), ...rows]);
+  toast(`✅ تم تصدير ${rows.length} مالك`,'s');
+}
 
 /* ═══════════════════════════════
    SPACE ACTIONS
@@ -1300,28 +2620,58 @@ async function deleteActivity(id){if(!confirm('حذف هذا النشاط؟ سي
 async function doApprove(id) {
   try {
     await sbRpc('admin_manage_space',{p_space_id:id,p_action:'approve',p_reason:null,p_secret:adminHash});
+    addAuditEntry('قبول', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast('✅ تمت الموافقة — تم إرسال إشعار للصاحب','s');
     invalidateDetailCache(id);
     await loadAll();
   } catch(e) { toast('خطأ: '+e.message,'e'); }
 }
 
-async function doReject(id) {
-  const reason = document.getElementById('rreason-'+id)?.value.trim()||'';
+async function doReject(id, reason) {
+  /* reason can be passed directly (from spaces table modal) or read from DOM (pending page) */
+  const r = reason !== undefined ? reason : (document.getElementById('rreason-'+id)?.value.trim()||'');
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'reject',p_reason:reason||null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'reject',p_reason:r||null,p_secret:adminHash});
+    addAuditEntry('رفض', id, r||'—');
     toast('❌ تم الرفض — تم إرسال إشعار للصاحب','s');
     await loadAll();
   } catch(e) { toast('خطأ: '+e.message,'e'); }
 }
 
 function promptReject(id, name) {
-  showConfirm(`رفض مساحة "${name}"`, 'سيُرسل إشعار لصاحب المساحة وستتغير حالتها إلى مرفوض.', ()=>doReject(id));
+  /* Opens a proper modal with reason input — fixes the bug where rreason-{id} only exists in pending page */
+  const existing = document.getElementById('reject-reason-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'reject-reason-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:400px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">❌ رفض المساحة</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:16px">${esc(name)}</div>
+      <div class="fg" style="margin-bottom:20px">
+        <label class="fl">سبب الرفض (سيُرسل للمالك)</label>
+        <input id="rr-inp" class="fc" type="text" placeholder="سبب الرفض (اختياري)…">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('reject-reason-modal').remove()">إلغاء</button>
+        <button class="btn btn-err" id="rr-ok">❌ تأكيد الرفض</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('rr-ok').onclick = async () => {
+    const reason = document.getElementById('rr-inp').value.trim();
+    modal.remove();
+    await doReject(id, reason);
+  };
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+  setTimeout(()=>document.getElementById('rr-inp')?.focus(), 50);
 }
 
 async function doToggle(id, isActive) {
   try {
     await sbRpc('admin_manage_space',{p_space_id:id,p_action:'toggle_active',p_reason:null,p_secret:adminHash});
+    addAuditEntry(isActive?'إخفاء':'إظهار', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast(isActive?'⏸ تم إخفاء المساحة':'▶ تم إظهار المساحة','i');
     invalidateDetailCache(id);
     await loadAll();
@@ -1329,13 +2679,47 @@ async function doToggle(id, isActive) {
 }
 
 function promptDelete(id, name) {
-  showConfirm(`حذف مساحة "${name}"`, '⚠️ سيُحذف السجل نهائياً مع جميع وحداته الفرعية. لا يمكن التراجع!', async ()=>{
+  const existing = document.getElementById('delete-space-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'delete-space-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(239,68,68,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:28px;text-align:center;margin-bottom:10px">⚠️</div>
+      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف نهائي لا يمكن التراجع عنه</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:16px;text-align:center;line-height:1.7">
+        سيُحذف <b style="color:var(--tx)">"${esc(name)}"</b> مع جميع وحداته الفرعية من قاعدة البيانات نهائياً.
+      </div>
+      <div class="fg" style="margin-bottom:20px">
+        <label class="fl">اكتب اسم المساحة للتأكيد: <b style="color:var(--rd)">${esc(name)}</b></label>
+        <input id="del-inp" class="fc" type="text" placeholder="${esc(name)}" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('delete-space-modal').remove()">إلغاء</button>
+        <button class="btn btn-err" id="del-ok" disabled>🗑 حذف نهائي</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const inp = modal.querySelector('#del-inp');
+  const btn = modal.querySelector('#del-ok');
+  inp.addEventListener('input', ()=>{ btn.disabled = inp.value.trim() !== name; });
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = '⏳…';
     try {
       await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null,p_secret:adminHash});
-      toast('🗑 تم الحذف','s');
+      addAuditEntry('حذف', id, name);
+      modal.remove();
+      toast('🗑 تم الحذف نهائياً','s');
+      selectedSpaceIds.delete(id);
       await loadAll();
-    } catch(e) { toast('خطأ: '+e.message,'e'); }
-  });
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '🗑 حذف نهائي';
+      toast('خطأ: '+e.message,'e');
+    }
+  };
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+  setTimeout(()=>inp.focus(), 50);
 }
 
 async function doDeleteUnit(unitId, spaceId) {
@@ -1361,6 +2745,165 @@ function invalidateDetailCache(id) {
   const p2 = document.getElementById('pdetail-'+id);
   if (p1) delete p1.dataset.loaded;
   if (p2) delete p2.dataset.loaded;
+}
+
+/* ═══════════════════════════════
+   UNIT STATUS INLINE CHANGE
+═══════════════════════════════ */
+async function changeUnitStatus(unitId, spaceId, newStatus, selectEl) {
+  const prev = selectEl.dataset.prev || selectEl.value;
+  selectEl.dataset.prev = selectEl.value;
+  selectEl.disabled = true;
+  try {
+    await sbRpc('admin_update_unit_status', {p_unit_id: unitId, p_status: newStatus, p_secret: adminHash});
+    selectEl.dataset.prev = newStatus;
+    toast('✅ تم تحديث حالة الوحدة', 's');
+    invalidateDetailCache(spaceId);
+  } catch(e) {
+    selectEl.value = prev;
+    toast('خطأ: ' + e.message, 'e');
+  }
+  selectEl.disabled = false;
+}
+
+/* ═══════════════════════════════
+   BULK ACTIONS
+═══════════════════════════════ */
+async function bulkApprove() {
+  const ids = [...selectedSpaceIds];
+  if (!ids.length) return;
+  showConfirm(`قبول ${ids.length} مساحة`, 'سيتم قبول جميع المساحات المحددة وإرسال إشعار لأصحابها.', async () => {
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      try {
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'approve',p_reason:null,p_secret:adminHash});
+        ok++;
+      } catch(e) { fail++; }
+    }
+    addAuditEntry('قبول جماعي', '', `${ok} مساحة`);
+    selectedSpaceIds.clear();
+    toast(`✅ تم قبول ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'s':'e');
+    await loadAll();
+  });
+}
+
+async function bulkToggle() {
+  const ids = [...selectedSpaceIds];
+  if (!ids.length) return;
+  showConfirm(`تبديل ظهور ${ids.length} مساحة`, 'سيتم تبديل حالة الظهور لجميع المساحات المحددة.', async () => {
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      try {
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'toggle_active',p_reason:null,p_secret:adminHash});
+        ok++;
+      } catch(e) { fail++; }
+    }
+    addAuditEntry('تبديل ظهور جماعي', '', `${ok} مساحة`);
+    selectedSpaceIds.clear();
+    toast(`⏸ تم تحديث ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'i':'e');
+    await loadAll();
+  });
+}
+
+function bulkDelete() {
+  const ids = [...selectedSpaceIds];
+  if (!ids.length) return;
+  const names = ids.map(id => allSpaces.find(s=>s.id===id)?.name||id).slice(0,5).join('، ')
+    + (ids.length > 5 ? ` … (+${ids.length-5})` : '');
+  const existing = document.getElementById('bulk-del-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'bulk-del-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(239,68,68,.4);border-radius:var(--r2);padding:28px;max-width:440px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:28px;text-align:center;margin-bottom:10px">⚠️</div>
+      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف ${ids.length} مساحة نهائياً</div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:16px;line-height:1.8">${esc(names)}</div>
+      <div class="fg" style="margin-bottom:20px">
+        <label class="fl">اكتب <b style="color:var(--rd)">حذف</b> للتأكيد</label>
+        <input id="bd-inp" class="fc" type="text" placeholder="حذف" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('bulk-del-modal').remove()">إلغاء</button>
+        <button class="btn btn-err" id="bd-ok" disabled>🗑 حذف ${ids.length} مساحة</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const inp = modal.querySelector('#bd-inp');
+  const btn = modal.querySelector('#bd-ok');
+  inp.addEventListener('input', ()=>{ btn.disabled = inp.value.trim() !== 'حذف'; });
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = '⏳…';
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      try {
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null,p_secret:adminHash});
+        ok++;
+      } catch(e) { fail++; }
+    }
+    addAuditEntry('حذف جماعي', '', `${ok} مساحة من أصل ${ids.length}`);
+    selectedSpaceIds.clear();
+    modal.remove();
+    toast(`🗑 تم حذف ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'s':'e');
+    await loadAll();
+  };
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+  setTimeout(()=>inp.focus(), 50);
+}
+
+/* ═══════════════════════════════
+   AUDIT LOG (DB + localStorage fallback)
+═══════════════════════════════ */
+const AUDIT_LS_KEY = 'mkspot_audit_v1';
+
+function addAuditEntry(action, targetId, detail) {
+  /* Write to DB asynchronously — don't await, failures are silent */
+  if (adminHash) {
+    sbRpc('admin_log_action', {
+      p_action: action, p_target_id: String(targetId||''),
+      p_target_name: detail||'', p_detail: '',
+      p_secret: adminHash
+    }).catch(()=>{});
+  }
+  /* Also keep a local copy for instant display */
+  try {
+    const log = JSON.parse(localStorage.getItem(AUDIT_LS_KEY)||'[]');
+    log.unshift({ts: new Date().toISOString(), action, targetId, detail});
+    localStorage.setItem(AUDIT_LS_KEY, JSON.stringify(log.slice(0,100)));
+  } catch(e) {}
+}
+
+async function loadAndRenderAuditSection(containerEl) {
+  containerEl.innerHTML = `<span class="spin">⏳</span>`;
+  let entries = [];
+  try {
+    entries = await sbRpc('admin_get_audit_log', {p_secret: adminHash, p_limit: 50});
+  } catch(e) {
+    /* Fallback to localStorage */
+    try { entries = JSON.parse(localStorage.getItem(AUDIT_LS_KEY)||'[]')
+      .map(e=>({action:e.action, target_name:e.detail, created_at:e.ts})); } catch(_) {}
+  }
+  if (!entries || !entries.length) {
+    containerEl.innerHTML = `<div style="color:var(--mu);font-size:12px;padding:12px">لا توجد إجراءات مسجّلة بعد</div>`;
+    return;
+  }
+  const actionColor = a => ({
+    'قبول':'var(--gr)','رفض':'var(--rd)','حذف':'var(--rd)',
+    'إخفاء':'var(--mu)','إظهار':'var(--bl)',
+    'قبول جماعي':'var(--gr)','حذف جماعي':'var(--rd)','تبديل ظهور جماعي':'var(--mu)',
+  }[a] || 'var(--tx2)');
+  containerEl.innerHTML = `
+    <div class="audit-row" style="background:var(--bg4);font-weight:700;font-size:10px;color:var(--mu);border-radius:var(--r) var(--r) 0 0">
+      <div>التاريخ والوقت</div><div>الإجراء</div><div>التفاصيل</div><div></div>
+    </div>
+    ${entries.map(e=>`
+    <div class="audit-row">
+      <div style="color:var(--mu);font-size:10px">${fmtDate(e.created_at)}</div>
+      <div><span style="font-weight:700;color:${actionColor(e.action)}">${esc(e.action)}</span></div>
+      <div style="color:var(--tx2)">${esc(e.target_name||e.detail||'—')}</div>
+      <div></div>
+    </div>`).join('')}`;
 }
 
 /* ═══════════════════════════════
@@ -1424,8 +2967,12 @@ function renderFormPage(sp, units) {
           <option value="school" ${sp.type==='school'?'selected':''}>🏫 مدرسة</option>
         </select></div>
       <div class="fg"><label class="fl">المنطقة / الموقع <span class="rq">*</span></label>
-        <input class="fc" id="f-region" value="${esc(sp.region||'')}" list="region-presets" placeholder="اختر أو اكتب المنطقة">
-        <datalist id="region-presets">${REGION_PRESETS.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></div>
+        <input class="fc" id="f-region" value="${esc(sp.region||'')}" list="region-presets"
+               placeholder="اختر أو اكتب المنطقة" oninput="checkRegionKnown(this.value)">
+        <datalist id="region-presets">${getKnownRegions().map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist>
+        <div id="f-region-warn" class="f-warn-msg" style="display:${(sp.region&&!getKnownRegions().includes(sp.region))?'flex':'none'}">
+          ⚠ منطقة غير موجودة في القائمة — تحقق من الإملاء لتجنب التكرار
+        </div></div>
       <div class="fg"><label class="fl">أيقونة</label>
         <input class="fc" id="f-icon" value="${esc(sp.icon_emoji||'🏪')}" placeholder="🏬"></div>
       <div class="fg"><label class="fl">الترتيب (رقم أقل = يظهر أولاً)</label>
@@ -1437,39 +2984,59 @@ function renderFormPage(sp, units) {
           <option value="thumb-school" ${sp.thumb_color==='thumb-school'?'selected':''}>مدرسة (أخضر)</option>
         </select></div>
     </div>
-    ${!isEdit?`
     <div class="fg2" style="margin-top:12px">
-      <div class="fg"><label class="fl">صاحب المساحة (Owner)</label>
-        <select class="fc" id="f-owner">
-          <option value="">— بدون مالك (إضافة مباشرة) —</option>
-          ${allOwners.map(o=>`<option value="${o.id}">${esc(o.full_name||o.name||o.email)}</option>`).join('')}
-        </select></div>
+      <div class="fg">
+        <label class="fl">صاحب المساحة (Owner)</label>
+        <select class="fc" id="f-owner" onchange="onOwnerSelectChange(this)">
+          <option value=""          ${!isEdit&&!sp.is_broker&&!sp.owner_id?'selected':''}>— بدون مالك (مساحة مباشرة) —</option>
+          <option value="__broker__" ${sp.is_broker?'selected':''}>🏛️ مكاني سبوت (بروكر)</option>
+          ${allOwners.map(o=>`<option value="${esc(o.id)}" ${sp.owner_id===o.id?'selected':''}>${esc(o.full_name||o.name||o.email||o.id)} — ${esc(o.plan_tier||'starter')}</option>`).join('')}
+        </select>
+        <div id="f-owner-note" style="font-size:11px;color:var(--bl);margin-top:5px;display:${sp.is_broker?'block':'none'}">
+          🏛️ سيظهر بادج <b>بروكر</b> على هذه المساحة في الموقع
+        </div>
+      </div>
+      ${!isEdit?`
       <div class="fg"><label class="fl">الحالة الابتدائية</label>
         <select class="fc" id="f-status">
           <option value="approved" selected>✅ معتمد (يظهر فوراً)</option>
           <option value="pending">⏳ انتظار</option>
-        </select></div>
-    </div>` : `
-    <div class="fg2" style="margin-top:12px">
-      <div class="fg"><label class="fl">الحالة</label>
+        </select></div>` : `
+      <div class="fg">
+        <label class="fl">الحالة</label>
         <select class="fc" id="f-status">
           <option value="approved" ${sp.status==='approved'?'selected':''}>✅ معتمد</option>
           <option value="pending"  ${sp.status==='pending' ?'selected':''}>⏳ انتظار</option>
           <option value="rejected" ${sp.status==='rejected'?'selected':''}>❌ مرفوض</option>
-        </select></div>
+        </select>
+      </div>`}
+    </div>
+    ${isEdit?`
+    <div class="fg2" style="margin-top:8px">
       <div class="fg"><label class="fl">الظهور على الموقع</label>
         <select class="fc" id="f-active">
           <option value="true"  ${sp.is_active!==false?'selected':''}>👁 ظاهر</option>
           <option value="false" ${sp.is_active===false?'selected':''}>🙈 مخفي</option>
         </select></div>
-    </div>`}
+    </div>`:''}
   </div>
 
   <div class="form-sec">
     <div class="form-sec-title">💰 الأسعار والأنشطة</div>
     <div class="fg2">
-      <div class="fg"><label class="fl">الأحجام والأسعار (حجم:سعر · حجم:سعر)</label>
-        <input class="fc" id="f-sizes" value="${esc(sp.sizes_prices||'')}" placeholder="مثال: ١×١م:4500 · ١×٢م:7500"></div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;justify-content:space-between">
+          <span>الأحجام والأسعار (حجم:سعر · حجم:سعر)</span>
+          <button type="button" class="btn btn-neu" style="font-size:10px;padding:2px 8px"
+                  onclick="insertSizeSep()">أدخل ·</button>
+        </label>
+        <input class="fc" id="f-sizes" value="${esc(sp.sizes_prices||'')}"
+               placeholder="مثال: ١×١م:4500 · ١×٢م:7500"
+               oninput="updateSizesPreview(this.value)">
+        <div id="f-sizes-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          ${sp.sizes_prices ? buildSizesPreviewHtml(sp.sizes_prices) : ''}
+        </div>
+      </div>
       <div class="fg"><label class="fl">أدنى سعر (ج.م.)</label>
         <input class="fc" type="number" id="f-price" value="${sp.min_price||''}" placeholder="0" min="0"></div>
       <div class="fg"><label class="fl">الأنشطة (مفصولة بـ · )</label>
@@ -1775,12 +3342,67 @@ async function submitSpaceForm() {
   const region = get('f-region');
   if (!name || !region) { showFormMsg('error','اسم المساحة والمنطقة مطلوبان'); return; }
 
+  /* ── Hard block: sizes format ── */
+  const sizesVal = get('f-sizes');
+  if (sizesVal) {
+    const badEntries = sizesVal.split(/[|·]/).map(e=>e.trim()).filter(e=>e && !e.includes(':'));
+    if (badEntries.length) {
+      showFormMsg('error', `خطأ في حقل الأحجام — كل إدخال يجب أن يحتوي على ":" مثل "١×١م:4500". إدخالات خاطئة: ${badEntries.slice(0,3).map(e=>`"${e}"`).join('، ')}`);
+      document.getElementById('f-sizes')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+  }
+
+  /* ── Soft warnings (skip once if user bypassed) ── */
+  if (!formBypassWarnings) {
+    const warnings = [];
+    if (!fMainImgUrl) warnings.push({ icon:'🖼', text:'لا توجد صورة رئيسية — ستظهر المساحة بدون صورة على الماركت' });
+    if (!get('f-desc'))  warnings.push({ icon:'📝', text:'لا يوجد وصف — العملاء لن يعرفوا تفاصيل المساحة' });
+    if (!get('f-price') && !sizesVal) warnings.push({ icon:'💰', text:'لا يوجد سعر أو أحجام — يصعب على العملاء اتخاذ القرار' });
+    if (warnings.length) {
+      const existing = document.getElementById('form-warn-modal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.id = 'form-warn-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+      modal.innerHTML = `
+        <div style="background:var(--bg3);border:1.5px solid rgba(245,158,11,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+          <div style="font-size:26px;text-align:center;margin-bottom:8px">⚠️</div>
+          <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:6px">المساحة ناقصة بيانات</div>
+          <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:16px">ستظهر على المنصة بدون:</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">
+            ${warnings.map(w=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:9px 12px">
+              <span style="font-size:16px">${w.icon}</span>
+              <span style="font-size:12px;color:var(--yw);line-height:1.5">${w.text}</span>
+            </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button class="btn btn-or" id="fw-save-anyway">احفظ على أي حال</button>
+            <button class="btn btn-neu" id="fw-back">عودة للتعديل</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#fw-back').onclick  = () => modal.remove();
+      modal.querySelector('#fw-save-anyway').onclick = () => {
+        modal.remove();
+        formBypassWarnings = true;
+        submitSpaceForm();
+      };
+      modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+      return;
+    }
+  }
+  formBypassWarnings = false;
+
   const acts = getPickedValues('.act-pick', 'f-acts-custom');
   const amen = getPickedValues('.amen-pick', 'f-amen-custom');
 
+  const ownerVal = get('f-owner');
+  const isBroker = ownerVal === '__broker__';
   const spaceData = {
     ...(editingId?{id:editingId}:{}),
-    ...(!editingId && get('f-owner')?{owner_id:get('f-owner')}:{}),
+    ...(ownerVal && !isBroker ? {owner_id: ownerVal} : {owner_id: ''}),
+    is_broker: isBroker,
     name, region,
     type:         get('f-type'),
     icon_emoji:   get('f-icon')||'🏪',
@@ -1834,6 +3456,106 @@ async function submitSpaceForm() {
     showFormMsg('error','خطأ: '+e.message);
   }
   setFormSaving(false);
+}
+
+function onOwnerSelectChange(sel) {
+  const isBroker = sel.value === '__broker__';
+  const note = document.getElementById('f-owner-note');
+  if (note) note.style.display = isBroker ? 'block' : 'none';
+}
+
+/* ── Region helpers ── */
+function getKnownRegions() {
+  const fromSpaces = allSpaces.map(s=>s.region).filter(Boolean);
+  return [...new Set([...REGION_PRESETS, ...fromSpaces])].sort((a,b)=>a.localeCompare(b,'ar'));
+}
+
+function checkRegionKnown(val) {
+  const warn = document.getElementById('f-region-warn');
+  if (!warn) return;
+  const known = getKnownRegions();
+  warn.style.display = (val.trim() && !known.includes(val.trim())) ? 'flex' : 'none';
+}
+
+/* ── Sizes/prices helpers ── */
+function buildSizesPreviewHtml(val) {
+  if (!val || !val.trim()) return '';
+  return val.split(/[|·]/).map(e=>e.trim()).filter(Boolean).map(e => {
+    if (!e.includes(':'))
+      return `<span class="size-chip size-chip-err" title="يجب أن يحتوي على ':' بين الحجم والسعر">⚠ ${esc(e)}</span>`;
+    const [sz, pr] = e.split(':');
+    return `<span class="size-chip size-chip-ok">${esc(sz.trim())} <span style="opacity:.6">→</span> ${esc(pr.trim())} ج</span>`;
+  }).join('');
+}
+
+function updateSizesPreview(val) {
+  const prev = document.getElementById('f-sizes-preview');
+  if (prev) prev.innerHTML = buildSizesPreviewHtml(val);
+  /* live error border */
+  const inp = document.getElementById('f-sizes');
+  if (!inp || !val.trim()) { inp?.classList.remove('fc-err','fc-warn'); return; }
+  const hasError = val.split(/[|·]/).map(e=>e.trim()).filter(Boolean).some(e=>!e.includes(':'));
+  inp.classList.toggle('fc-err', hasError);
+  inp.classList.toggle('fc-warn', false);
+}
+
+function insertSizeSep() {
+  const inp = document.getElementById('f-sizes');
+  if (!inp) return;
+  const pos = inp.selectionStart;
+  const v   = inp.value;
+  inp.value = v.slice(0, pos) + ' · ' + v.slice(pos);
+  inp.setSelectionRange(pos + 3, pos + 3);
+  inp.focus();
+  updateSizesPreview(inp.value);
+}
+
+/* ── Region merge modal ── */
+function promptMergeRegion(oldRegion) {
+  const existing = document.getElementById('merge-region-modal');
+  if (existing) existing.remove();
+  const affected = allSpaces.filter(s => s.region === oldRegion).length;
+  const modal = document.createElement('div');
+  modal.id = 'merge-region-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(245,158,11,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:24px;text-align:center;margin-bottom:8px">🗺</div>
+      <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:6px">دمج منطقة</div>
+      <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:16px">
+        دمج <b style="color:var(--yw)">"${esc(oldRegion)}"</b> — <b>${affected}</b> مساحة ستُحدَّث
+      </div>
+      <div class="fg" style="margin-bottom:16px">
+        <label class="fl">المنطقة الموحدة الجديدة</label>
+        <input id="merge-region-inp" class="fc" list="merge-region-opts" placeholder="اختر من القائمة أو اكتب...">
+        <datalist id="merge-region-opts">
+          ${REGION_PRESETS.filter(r=>r!==oldRegion).map(r=>`<option value="${esc(r)}"></option>`).join('')}
+        </datalist>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-neu" onclick="document.getElementById('merge-region-modal').remove()">إلغاء</button>
+        <button class="btn btn-or" id="merge-ok-btn">دمج وتحديث ${affected} مساحة</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  const btn = modal.querySelector('#merge-ok-btn');
+  btn.onclick = async () => {
+    const newRegion = document.getElementById('merge-region-inp')?.value.trim();
+    if (!newRegion || newRegion === oldRegion) { toast('اختر منطقة مختلفة','e'); return; }
+    btn.disabled = true; btn.textContent = '⏳…';
+    try {
+      await sbTable('PATCH','spaces',{region:newRegion},`?region=eq.${encodeURIComponent(oldRegion)}`);
+      modal.remove();
+      await loadAll();
+      renderActivities();
+      toast(`✅ تم دمج "${oldRegion}" في "${newRegion}"`, 's');
+    } catch(e) {
+      btn.disabled = false; btn.textContent = `دمج وتحديث ${affected} مساحة`;
+      toast('خطأ: '+e.message,'e');
+    }
+  };
+  setTimeout(()=>modal.querySelector('#merge-region-inp')?.focus(), 50);
 }
 
 function setFormSaving(on) {
