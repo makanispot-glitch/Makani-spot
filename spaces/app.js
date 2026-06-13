@@ -1278,10 +1278,16 @@ function openBooking(spaceId) {
     });
   }
 
+  /* ── اكتشاف امتلاء المساحة → وضع قائمة الانتظار ── */
+  const availCount = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
+  const isFull     = (s.subSpaces || []).length > 0 && availCount === 0;
+  bookingSpace.isWaitlist = isFull;
+  _applyWaitlistMode(isFull);
+
   document.getElementById('modal-form-wrap').style.display = 'block';
   document.getElementById('modal-success').style.display   = 'none';
   document.getElementById('bk-error').style.display        = 'none';
-  ['bk-other-act', 'bk-notes'].forEach(id => {
+  ['bk-other-act', 'bk-notes', 'bk-profile-link'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1302,6 +1308,23 @@ function closeModal() {
 
 function closeModalOnBg(e) {
   if (e.target === document.getElementById('booking-modal')) closeModal();
+}
+
+/* تبديل واجهة المودال بين الحجز العادي وقائمة الانتظار */
+function _applyWaitlistMode(isWaitlist) {
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? 'block' : 'none'; };
+  const set  = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+
+  show('bk-waitlist-banner', isWaitlist);
+  show('bk-profile-wrap',    isWaitlist);
+
+  set('bk-modal-title', isWaitlist ? 'انضم لقائمة الانتظار ⏳' : 'احجز مساحتك');
+  set('bk-modal-sub',   isWaitlist
+        ? 'كل الوحدات محجوزة — سيتواصل معك المالك فور توفّر وحدة'
+        : 'سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات');
+
+  const btn = document.getElementById('bk-submit-btn');
+  if (btn) btn.innerHTML = isWaitlist ? 'سجّلني في قائمة الانتظار ←' : 'ابعت طلب الحجز ←';
 }
 
 /* ================================================================
@@ -1437,6 +1460,8 @@ async function submitBooking() {
   const dur      = document.getElementById('bk-dur').value;
   const date     = document.getElementById('bk-date').value;
   const notes    = document.getElementById('bk-notes').value.trim();
+  const isWaitlist  = !!bookingSpace?.isWaitlist;
+  const profileLink = (document.getElementById('bk-profile-link')?.value || '').trim();
 
   if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
@@ -1470,6 +1495,8 @@ async function submitBooking() {
     duration:  dur,
     startDate: date,
     notes,
+    isWaitlist,
+    profileLink,
     userId:    currentUser?.id || '',
     bookingId,
   };
@@ -1486,21 +1513,23 @@ async function submitBooking() {
 
     if (sbClient && currentUser) {
       await sbClient.from('bookings').insert({
-        id:         bookingId,
-        user_id:    currentUser.id,
-        owner_id:   bookingSpace?.ownerId || null,   // ربط بصاحب المساحة (نظام التقييمات)
-        space_id:   bookingSpace?.id || null,         // ربط بالمساحة
-        space_name: spaceName,
-        space_loc:  spaceLoc,
-        price:      spacePrice,
-        activity:   payload.activity,
+        id:           bookingId,
+        user_id:      currentUser.id,
+        owner_id:     bookingSpace?.ownerId || null,   // ربط بصاحب المساحة (نظام التقييمات)
+        space_id:     bookingSpace?.id || null,         // ربط بالمساحة
+        space_name:   spaceName,
+        space_loc:    spaceLoc,
+        price:        spacePrice,
+        activity:     payload.activity,
         size,
-        duration:   dur,
-        start_date: date,
+        duration:     dur,
+        start_date:   date,
         notes,
-        status:     'pending',
-        created_at: now,
-        updated_at: now,
+        is_waitlist:  isWaitlist,                       // قائمة انتظار عند امتلاء المساحة
+        profile_link: profileLink || null,              // رابط بروفايل النشاط (اختياري)
+        status:       'pending',
+        created_at:   now,
+        updated_at:   now,
       });
 
       const profileUpdate = {};
@@ -1516,6 +1545,17 @@ async function submitBooking() {
           currentProfile = { ...currentProfile, ...profileUpdate };
         }
       }
+    }
+
+    /* رسالة نجاح مخصّصة لقائمة الانتظار */
+    const sTitle = document.getElementById('bk-success-title');
+    const sBody  = document.getElementById('bk-success-body');
+    if (isWaitlist) {
+      if (sTitle) sTitle.innerHTML = 'تم تسجيلك في <span>قائمة الانتظار!</span>';
+      if (sBody)  sBody.innerHTML  = 'سيتواصل معك صاحب المكان فور توفّر وحدة مناسبة.<br>طلبك محفوظ ضمن قائمة انتظار <strong>' + (spaceName || 'المساحة') + '</strong>.';
+    } else {
+      if (sTitle) sTitle.innerHTML = 'اتبعت طلبك <span>بنجاح!</span>';
+      if (sBody)  sBody.innerHTML  = 'شكراً ليك — اتستلم طلب الحجز.<br>فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong style="color:var(--orange)">٢٤ ساعة</strong>.';
     }
 
     document.getElementById('modal-form-wrap').style.display = 'none';

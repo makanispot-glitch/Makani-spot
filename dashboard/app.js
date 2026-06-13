@@ -10,74 +10,11 @@
 const BOOKING_URL    = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec";
 
-const ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة"
+let ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة" (تُحدَّث من إعدادات المالك)
+let currentPeriod = 'month'; // نطاق الفترة في النظرة العامة: month | quarter | year
 
-/* ══════════════════════════════════════════
-   🔐  OWNERS — Hardcoded (الخيار الأسرع)
-   لإضافة owner جديد: أضف سطراً وأعد النشر
-   ══════════════════════════════════════════ */
-const OWNERS = {
-  "owner1":         { password: "makani123", name: "محمد أحمد",    id: "owner1",     initial: "م", place: "مول مدينة نصر",  phone: "01012345678" },
-  "mall_admin":     { password: "admin2025", name: "هناء خالد",    id: "mall_admin", initial: "ه", place: "نادي الجزيرة",   phone: "01098765432" },
-  "mall_citystars": { password: "cs2026",    name: "سيتي ستارز",   id: "citystars",  initial: "س", place: "مول سيتي ستارز", phone: "01000000001" },
-  "club_wadi":      { password: "wadi99",    name: "وادي دجلة",    id: "wadi",       initial: "و", place: "نادي وادي دجلة", phone: "01000000002" },
-};
-
-/* ══════════════════════════════════════════
-   📦  بيانات تجريبية — مرتبطة بكل owner
-   🔗 DB-LINK: سيتم الجلب من Google Sheets (حقل ownerId)
-   ══════════════════════════════════════════ */
-const DEMO_SPACES = {
-  "owner1": [
-    { code:"A-12", loc:"مدخل رئيسي",       size:"١×١ م", act:"قهوة",       rent:4200, status:"rented",      tenant:"أحمد محمد",  score:9.2, daysEmpty:0,  floor:1 },
-    { code:"A-05", loc:"الدور الأرضي",     size:"٢×١ م", act:"مشروبات",    rent:6500, status:"rented",      tenant:"نور خالد",   score:6.9, daysEmpty:0,  floor:1 },
-    { code:"B-03", loc:"أمام المصعد",      size:"١×٢ م", act:"إكسسوار",    rent:5800, status:"rented",      tenant:"سارة علي",   score:8.7, daysEmpty:0,  floor:2 },
-    { code:"C-07", loc:"ممر الأسواق",      size:"١×١ م", act:"حلويات",     rent:3900, status:"rented",      tenant:"محمد حسن",   score:7.4, daysEmpty:0,  floor:1 },
-    { code:"D-02", loc:"الدور الثاني",     size:"٢×٢ م", act:"فاست فود",   rent:7200, status:"rented",      tenant:"خالد سمير",  score:4.2, daysEmpty:0,  floor:2 },
-    { code:"D-08", loc:"الدور الثاني",     size:"١×١ م", act:null,         rent:null, status:"available",   tenant:null,         score:null,daysEmpty:45, floor:2 },
-    { code:"E-01", loc:"المدخل الخلفي",   size:"١×٢ م", act:null,         rent:null, status:"available",   tenant:null,         score:null,daysEmpty:0,  floor:1, isNew:true },
-    { code:"F-11", loc:"بجوار المطعم",    size:"٢×٢ م", act:null,         rent:null, status:"maintenance", tenant:null,         score:null,daysEmpty:0,  floor:2 },
-  ],
-  "mall_admin": [
-    { code:"J-01", loc:"بوابة النادي",     size:"١×١ م", act:"عصائر",      rent:3500, status:"rented",      tenant:"عمر فتحي",   score:8.1, daysEmpty:0,  floor:0 },
-    { code:"J-02", loc:"حوض السباحة",      size:"١×٢ م", act:null,         rent:null, status:"available",   tenant:null,         score:null,daysEmpty:60, floor:0 },
-    { code:"J-03", loc:"الملاعب",          size:"٢×١ م", act:"وجبات خفيفة",rent:4100, status:"rented",      tenant:"لمياء رشاد", score:7.9, daysEmpty:0,  floor:0 },
-    { code:"J-04", loc:"بجوار الكافيتريا",size:"١×١ م", act:null,         rent:null, status:"available",   tenant:null,         score:null,daysEmpty:35, floor:0 },
-  ],
-  "citystars": [],
-  "wadi":      [],
-};
-
-const DEMO_TENANTS = {
-  "owner1": [
-    { id:1, name:"أحمد محمد",  act:"☕ قهوة",         space:"A-12", score:9.2, trend:"up",   statusLbl:"ممتاز", icon:"☕", contract:"٣١ مارس ٢٠٢٥",  daysLeft:35 },
-    { id:2, name:"سارة علي",   act:"💎 إكسسوار",      space:"B-03", score:8.7, trend:"up",   statusLbl:"ممتاز", icon:"💎", contract:"١٥ مارس ٢٠٢٥",  daysLeft:21 },
-    { id:3, name:"محمد حسن",   act:"🍬 حلويات",        space:"C-07", score:7.4, trend:"down", statusLbl:"جيد",   icon:"🍬", contract:"١ مايو ٢٠٢٥",    daysLeft:66 },
-    { id:4, name:"نور خالد",   act:"🥤 مشروبات",       space:"A-05", score:6.9, trend:"flat", statusLbl:"متوسط", icon:"🥤", contract:"١٥ أبريل ٢٠٢٥", daysLeft:50 },
-    { id:5, name:"خالد سمير",  act:"🍔 فاست فود",      space:"D-02", score:4.2, trend:"down", statusLbl:"ضعيف",  icon:"🍔", contract:"٢٨ مارس ٢٠٢٥",  daysLeft:42 },
-  ],
-  "mall_admin": [
-    { id:1, name:"عمر فتحي",   act:"🍹 عصائر",         space:"J-01", score:8.1, trend:"up",   statusLbl:"جيد",   icon:"🍹", contract:"١ يونيو ٢٠٢٥",   daysLeft:90 },
-    { id:2, name:"لمياء رشاد", act:"🥗 وجبات خفيفة",  space:"J-03", score:7.9, trend:"flat", statusLbl:"جيد",   icon:"🥗", contract:"١ أبريل ٢٠٢٥",   daysLeft:55 },
-  ],
-  "citystars": [],
-  "wadi":      [],
-};
-
-const DEMO_CONTRACTS = {
-  "owner1": [
-    { name:"أحمد محمد",  space:"A-12", rent:"٤,٢٠٠", start:"1 نوفمبر ٢٠٢٤",   end:"٣١ مارس ٢٠٢٥",  daysLeft:35, status:"سارية" },
-    { name:"سارة علي",   space:"B-03", rent:"٥,٨٠٠", start:"15 أغسطس ٢٠٢٤",   end:"١٥ مارس ٢٠٢٥",  daysLeft:21, status:"تنتهي قريباً" },
-    { name:"محمد حسن",   space:"C-07", rent:"٣,٩٠٠", start:"1 مارس ٢٠٢٤",     end:"١ مايو ٢٠٢٥",   daysLeft:66, status:"سارية" },
-    { name:"خالد سمير",  space:"D-02", rent:"٧,٢٠٠", start:"28 سبتمبر ٢٠٢٤",  end:"٢٨ مارس ٢٠٢٥",  daysLeft:42, status:"للمراجعة" },
-  ],
-  "mall_admin": [
-    { name:"عمر فتحي",   space:"J-01", rent:"٣,٥٠٠", start:"1 ديسمبر ٢٠٢٤",   end:"١ يونيو ٢٠٢٥",  daysLeft:90, status:"سارية" },
-    { name:"لمياء رشاد", space:"J-03", rent:"٤,١٠٠", start:"1 أكتوبر ٢٠٢٤",   end:"١ أبريل ٢٠٢٥",  daysLeft:55, status:"سارية" },
-  ],
-  "citystars": [],
-  "wadi":      [],
-};
+/* ملاحظة: لا توجد حسابات owner مبرمجة ولا بيانات تجريبية —
+   كل الوصول عبر Supabase Auth (role=owner)، وكل البيانات من Supabase. */
 
 /* ══════════════════════════════════════════
    🗂️  STATE
@@ -89,43 +26,147 @@ let ownerContracts = [];
 let ownerAuthChecked = false;
 
 /* ══════════════════════════════════════════
-   📋  CONTRACTS & RATINGS — localStorage DB
+   📋  CONTRACTS / PAYMENTS / VIOLATIONS / RATINGS
+   كل البيانات في Supabase — هذه مصفوفات كاش في الذاكرة
+   تُملأ عبر loaders غير متزامنة وتُستخدم في دوال العرض كما هي.
    ══════════════════════════════════════════ */
-const LS_CONTRACTS = 'ms_contracts_';
-const LS_RATINGS   = 'ms_ratings_';
+let contractsList     = [];
+let ratingsList       = [];
+let paymentsList      = [];
+let violationsList    = [];
+let bookingsList      = [];   /* طلبات الحجز الواردة من الموقع العام */
+let ownerSettings     = null;
+let editingContractId = null;
 
-let contractsList      = [];
-let ratingsList        = [];
-let editingContractId  = null;
+/* ── mappers: صف قاعدة البيانات → شكل الذاكرة (يحافظ على شكل العروض القديم) ── */
+function mapContractRow(r) {
+  return enrichContract({
+    id:          r.id,
+    tenantName:  r.tenant_name,
+    tenantPhone: r.tenant_phone || '',
+    spaceCode:   r.space_code || '',
+    unitId:      r.unit_id  || null,
+    spaceId:     r.space_id || null,
+    activity:    r.activity || '',
+    rent:        r.rent || 0,
+    startDate:   r.start_date || '',
+    endDate:     r.end_date || '',
+    notes:       r.notes || '',
+    endedEarly:  !!r.ended_early,
+    endedAt:     r.ended_at || null,
+    createdAt:   r.created_at || '',
+  });
+}
+function mapRatingRow(r) {
+  return {
+    id: r.id, contractId: r.contract_id, month: r.month,
+    commitment: r.commitment || 0, cleanliness: r.cleanliness || 0,
+    dealing: r.dealing || 0, payment: r.payment || 0, rules: r.rules || 0,
+    avgScore: r.avg_score != null ? parseFloat(r.avg_score) : 0,
+    comment: r.comment || '', createdAt: r.created_at || '',
+  };
+}
+function mapPaymentRow(r) {
+  return {
+    id: r.id, contractId: r.contract_id, tenantName: r.tenant_name || '—',
+    spaceCode: r.space_code || '—', amount: parseFloat(r.amount) || 0,
+    month: r.month || '', paidDate: r.paid_date || '', status: r.status || 'paid',
+    notes: r.notes || '', createdAt: r.created_at || '',
+    invoiceNumber: r.invoice_number || '',
+  };
+}
+function mapViolationRow(r) {
+  return {
+    id: r.id, contractId: r.contract_id, tenantName: r.tenant_name || '—',
+    spaceCode: r.space_code || '—', type: r.type || '—', category: r.category || 'other',
+    severity: r.severity || 'medium', date: r.vdate || '', notes: r.notes || '',
+    createdAt: r.created_at || '',
+  };
+}
 
-function contractsKey() { return LS_CONTRACTS + (currentOwner?.id || 'guest'); }
-function ratingsKey()   { return LS_RATINGS   + (currentOwner?.id || 'guest'); }
-
-/* ── تحميل العقود من localStorage ── */
-function loadContractsLocal() {
+/* ── async loaders من Supabase ── */
+async function loadContractsRemote() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { contractsList = []; return; }
+  const { data, error } = await sb.from('owner_contracts').select('*')
+    .eq('owner_id', currentOwner.id).order('created_at', { ascending: false });
+  if (error) console.warn('[Makani] contracts load:', error.message);
+  contractsList = (error || !data) ? [] : data.map(mapContractRow);
+}
+async function loadRatingsRemote() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { ratingsList = []; return; }
+  const { data, error } = await sb.from('owner_tenant_ratings').select('*')
+    .eq('owner_id', currentOwner.id).order('month', { ascending: false });
+  if (error) console.warn('[Makani] ratings load:', error.message);
+  ratingsList = (error || !data) ? [] : data.map(mapRatingRow);
+}
+async function loadPaymentsRemote() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { paymentsList = []; return; }
+  const { data, error } = await sb.from('owner_payments').select('*')
+    .eq('owner_id', currentOwner.id).order('created_at', { ascending: false });
+  if (error) console.warn('[Makani] payments load:', error.message);
+  paymentsList = (error || !data) ? [] : data.map(mapPaymentRow);
+}
+async function loadViolationsRemote() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { violationsList = []; return; }
+  const { data, error } = await sb.from('owner_violations').select('*')
+    .eq('owner_id', currentOwner.id).order('created_at', { ascending: false });
+  if (error) console.warn('[Makani] violations load:', error.message);
+  violationsList = (error || !data) ? [] : data.map(mapViolationRow);
+}
+async function loadOwnerSettings() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
   try {
-    const raw = localStorage.getItem(contractsKey());
-    contractsList = raw ? JSON.parse(raw) : [];
-  } catch { contractsList = []; }
-  contractsList = contractsList.map(enrichContract);
+    const { data } = await sb.from('owner_settings').select('*')
+      .eq('owner_id', currentOwner.id).maybeSingle();
+    ownerSettings = data || null;
+    if (ownerSettings?.abandoned_threshold) ABANDONED_THRESHOLD = ownerSettings.abandoned_threshold;
+    applyNotifPrefsToUI();
+  } catch { /* الجدول اختياري */ }
 }
 
-/* ── تحميل التقييمات من localStorage ── */
-function loadRatingsLocal() {
+async function loadBookingsRemote() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { bookingsList = []; return; }
   try {
-    const raw = localStorage.getItem(ratingsKey());
-    ratingsList = raw ? JSON.parse(raw) : [];
-  } catch { ratingsList = []; }
-}
-
-/* ── حفظ العقود ── */
-function saveContracts() {
-  localStorage.setItem(contractsKey(), JSON.stringify(contractsList));
-}
-
-/* ── حفظ التقييمات ── */
-function saveRatings() {
-  localStorage.setItem(ratingsKey(), JSON.stringify(ratingsList));
+    /* نجلب الحجوزات النشطة (pending + confirmed + viewing_pending) مع بيانات الحاجز من profiles */
+    const { data, error } = await sb
+      .from('bookings')
+      .select('*, profiles!bookings_user_id_fkey(full_name, phone, email)')
+      .eq('owner_id', currentOwner.id)
+      .in('status', ['pending', 'confirmed', 'viewing_pending'])
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    bookingsList = (data || []).map(b => ({
+      id:         b.id,
+      userId:     b.user_id,
+      spaceId:    b.space_id,
+      spaceName:  b.space_name  || '—',
+      spaceLoc:   b.space_loc   || '—',
+      price:      b.price       || '—',
+      activity:   b.activity    || '—',
+      size:       b.size        || '—',
+      duration:   b.duration    || '—',
+      startDate:  b.start_date  || '',
+      notes:      b.notes       || '',
+      status:     b.status      || 'pending',
+      createdAt:  b.created_at  || '',
+      isWaitlist:  !!b.is_waitlist,
+      profileLink: b.profile_link || '',
+      bookerName:  b.profiles?.full_name || '—',
+      bookerPhone: b.profiles?.phone     || '—',
+      bookerEmail: b.profiles?.email     || '—',
+    }));
+    updateBookingsBadge();
+  } catch (e) {
+    console.warn('[Makani] bookings load:', e.message);
+    bookingsList = [];
+  }
 }
 
 /* ── إثراء العقد بالحقول المحسوبة ── */
@@ -134,6 +175,7 @@ function enrichContract(c) {
   const end      = c.endDate ? new Date(c.endDate) : null;
   const daysLeft = end ? Math.ceil((end - now) / 86400000) : 0;
   let status = 'active';
+  if (c.endedEarly)         { return { ...c, daysLeft: 0, status: 'expired' }; }
   if (!end || daysLeft < 0) status = 'expired';
   else if (daysLeft <= 14)  status = 'renewal';
   else if (daysLeft <= 30)  status = 'expiring';
@@ -230,57 +272,116 @@ function syncDataFromContracts() {
 /* ══════════════════════════════════════════
    📋  CONTRACTS CRUD
    ══════════════════════════════════════════ */
-function submitContract(e) {
+/* تداخل فترتين زمنيتين (تاريخ مفقود = مفتوح) */
+function _datesOverlap(aStart, aEnd, bStart, bEnd) {
+  const s1 = aStart ? new Date(aStart) : new Date(-8640000000000000);
+  const e1 = aEnd   ? new Date(aEnd)   : new Date( 8640000000000000);
+  const s2 = bStart ? new Date(bStart) : new Date(-8640000000000000);
+  const e2 = bEnd   ? new Date(bEnd)   : new Date( 8640000000000000);
+  return s1 <= e2 && s2 <= e1;
+}
+
+async function submitContract(e) {
   e.preventDefault();
   const get = id => document.getElementById(id)?.value?.trim();
-  const tenantName = get('cf-tenant');
-  const spaceCode  = get('cf-space');
-  const activity   = get('cf-activity');
-  const rent       = parseFloat(get('cf-rent')) || 0;
-  const startDate  = get('cf-start');
-  const endDate    = get('cf-end');
-  const notes      = get('cf-notes');
+  const tenantName  = get('cf-tenant');
+  const unitVal     = get('cf-space');     /* uuid للوحدة أو نص حر */
+  const activity    = get('cf-activity');
+  const rent        = parseFloat(get('cf-rent')) || 0;
+  const startDate   = get('cf-start');
+  const endDate     = get('cf-end');
+  const notes       = get('cf-notes');
+  const tenantPhone = get('cf-phone') || '';
 
+  if (!tenantName) { showContractMsg('danger', 'اسم المستأجر مطلوب.'); return; }
   if (endDate && startDate && endDate < startDate) {
     showContractMsg('danger', 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية.');
     return;
   }
 
-  const existing = editingContractId ? contractsList.find(c => c.id === editingContractId) : null;
-  const contract = enrichContract({
-    id:         editingContractId || genId(),
-    tenantName, spaceCode, activity, rent, startDate, endDate, notes,
-    createdAt:  existing?.createdAt || new Date().toISOString(),
-  });
+  /* حلّ الوحدة المختارة من المساحات الحقيقية */
+  const unit      = ownerSpaces.find(s => s.unitDbId && s.unitDbId === unitVal);
+  const unitId    = unit ? unit.unitDbId : null;
+  const spaceId   = unit ? (unit.spaceId || null) : null;
+  const spaceCode = unit ? unit.code : (unitVal || '');
 
-  if (editingContractId) {
-    contractsList = contractsList.map(c => c.id === editingContractId ? contract : c);
-  } else {
-    contractsList.push(contract);
+  /* تحقق من تعارض الوحدة — منع عقدين فعّالين على نفس الوحدة بفترة متداخلة */
+  if (unitId) {
+    const conflict = contractsList.find(c =>
+      c.id !== editingContractId && c.unitId === unitId && c.status !== 'expired' &&
+      _datesOverlap(startDate, endDate, c.startDate, c.endDate));
+    if (conflict) {
+      showContractMsg('danger', `الوحدة ${spaceCode} مرتبطة بعقد فعّال آخر (${conflict.tenantName}) في نفس الفترة.`);
+      return;
+    }
   }
 
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { showContractMsg('danger', 'تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
+
+  const payload = {
+    owner_id:     currentOwner.id,
+    space_id:     spaceId,
+    unit_id:      unitId,
+    space_code:   spaceCode || null,
+    tenant_name:  tenantName,
+    tenant_phone: tenantPhone || null,
+    activity:     activity || null,
+    rent:         rent || null,
+    start_date:   startDate || null,
+    end_date:     endDate || null,
+    notes:        notes || null,
+  };
+
+  const btn = document.getElementById('contract-submit-btn');
+  if (btn) btn.disabled = true;
   const wasEditing = !!editingContractId;
-  saveContracts();
-  syncDataFromContracts();
-  renderAll();
-
-  document.getElementById('contract-form')?.reset();
-  cancelEditContract();
-  showContractMsg('success', wasEditing ? '✅ تم تحديث العقد بنجاح.' : '✅ تمت إضافة العقد — يظهر المستأجر الآن في القائمة.');
-
-  /* تحديث التنبيهات */
-  updateNotifBadge();
+  try {
+    if (editingContractId) {
+      const { error } = await sb.from('owner_contracts').update(payload)
+        .eq('id', editingContractId).eq('owner_id', currentOwner.id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('owner_contracts').insert(payload);
+      if (error) throw error;
+    }
+    await loadContractsRemote();
+    syncDataFromContracts();
+    renderAll();
+    syncUnitStatusToSupabase(); /* مزامنة حالة الوحدة (non-blocking) */
+    document.getElementById('contract-form')?.reset();
+    cancelEditContract();
+    showContractMsg('success', wasEditing
+      ? '✅ تم تحديث العقد بنجاح.'
+      : '✅ تمت إضافة العقد — يظهر المستأجر الآن في القائمة.');
+    updateNotifBadge();
+  } catch (err) {
+    const msg = err.message || '';
+    /* DB trigger يرفع استثناء يبدأ بـ unit_overlap */
+    const userMsg = msg.startsWith('unit_overlap')
+      ? `الوحدة ${spaceCode} مرتبطة بعقد فعّال في نفس الفترة — لا يمكن إضافة عقد متداخل.`
+      : 'تعذّر حفظ العقد: ' + (msg || 'خطأ غير معروف');
+    showContractMsg('danger', userMsg);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
-function deleteContract(id) {
-  if (!confirm('هل تريد حذف هذا العقد؟\nسيُزال المستأجر من القوائم ولا يمكن استرجاع العقد.')) return;
-  contractsList = contractsList.filter(c => c.id !== id);
-  /* احذف التقييمات المرتبطة أيضاً */
-  ratingsList = ratingsList.filter(r => r.contractId !== id);
-  saveContracts();
-  saveRatings();
+async function deleteContract(id) {
+  if (!confirm('هل تريد حذف هذا العقد؟\nسيُزال المستأجر من القوائم وتُحذف معه مدفوعاته ومخالفاته وتقييماته. لا يمكن التراجع.')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    const { error } = await sb.from('owner_contracts').delete()
+      .eq('id', id).eq('owner_id', currentOwner.id);   /* cascade يحذف المدفوعات/المخالفات/التقييمات */
+    if (error) { alert('تعذّر حذف العقد: ' + error.message); return; }
+  }
+  contractsList  = contractsList.filter(c => c.id !== id);
+  ratingsList    = ratingsList.filter(r => r.contractId !== id);
+  paymentsList   = paymentsList.filter(p => p.contractId !== id);
+  violationsList = violationsList.filter(v => v.contractId !== id);
   syncDataFromContracts();
   renderAll();
+  syncUnitStatusToSupabase(); /* الوحدة المُحرَّرة → available في Supabase (non-blocking) */
 }
 
 function startEditContract(id) {
@@ -289,7 +390,9 @@ function startEditContract(id) {
   editingContractId = id;
   const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
   set('cf-tenant',   c.tenantName);
-  set('cf-space',    c.spaceCode);
+  populateContractSpaceSelect();          /* تأكد من امتلاء القائمة قبل الاختيار */
+  set('cf-space',    c.unitId || '');
+  set('cf-phone',    c.tenantPhone);
   set('cf-activity', c.activity);
   set('cf-rent',     c.rent);
   set('cf-start',    c.startDate);
@@ -324,16 +427,7 @@ function showContractMsg(type, text) {
   setTimeout(() => { if (msg) msg.style.display = 'none'; }, 4000);
 }
 
-/* ══════════════════════════════════════════
-   ⭐  RATINGS CRUD
-   ══════════════════════════════════════════ */
-function deleteRating(id) {
-  if (!confirm('هل تريد حذف هذا التقييم؟')) return;
-  ratingsList = ratingsList.filter(r => r.id !== id);
-  saveRatings();
-  syncDataFromContracts();
-  renderAll();
-}
+/* ملاحظة: deleteRating مُعرّفة في قسم التقييمات (Supabase) أسفل الملف. */
 
 /* ══════════════════════════════════════════
    🔐  SUPABASE — إعداد العميل
@@ -480,6 +574,17 @@ async function checkRoleAndProceed(user) {
     return;
   }
 
+  /* ❌ حساب موقوف من الأدمن */
+  if (profile.is_suspended) {
+    showOwnerAccessGate(
+      'danger',
+      'تم إيقاف هذا الحساب مؤقتاً',
+      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.'
+    );
+    setLoginLoading(false);
+    return;
+  }
+
   /* ✅ role = owner → نبني currentOwner ونفتح الداشبورد */
   const displayName = profile.full_name || user.email || 'صاحب المساحة';
   currentOwner = {
@@ -596,18 +701,12 @@ function initDashboard() {
   _lockNav('nav-bazaar',     'pro');
   _lockNav('nav-reports',    'pro');
 
-  /* تحميل العقود والتقييمات والمساحات المعلقة من localStorage */
-  loadContractsLocal();
-  loadRatingsLocal();
-  loadPendingSpaces();
-  loadPaymentsLocal();
-  loadViolationsLocal();
-  syncDataFromContracts(); /* يُشتق منها ownerTenants و ownerContracts */
-
-  loadOwnerData();
-  loadOwnerRatings();          /* المستأجرون القابلون للتقييم + سجل التقييمات من Supabase */
+  /* كل البيانات من Supabase: loadOwnerData يحمّل المساحات + العقود + المدفوعات
+     + المخالفات + التقييمات + الإعدادات + الحجوزات، ثم يحسب الفراغ ويرسم كل شيء. */
+  loadOwnerData().then(() => loadOwnerRatings());
   loadNotifications();
   subscribeNotificationsRealtime();
+  cleanupOldNotifications(); /* حذف الإشعارات المقروءة الأقدم من 30 يوم */
 
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('visible');
@@ -621,13 +720,13 @@ function initDashboard() {
    ══════════════════════════════════════════ */
 async function loadOwnerData() {
   const sb = getSB();
-  if (!sb || !currentOwner?.id) { applyDemoData(); return; }
+  if (!sb || !currentOwner?.id) { applyEmptyData(); return; }
 
   try {
     /* مساحات مفعّلة + وحداتها */
     const { data: spacesData, error: spacesErr } = await sb
       .from('spaces')
-      .select('id, name, type, region, sort_order, space_units(unit_id, name, floor, size, price, status, location, notes, image_url)')
+      .select('id, name, type, region, sort_order, space_units(id, unit_id, name, floor, size, price, status, location, notes, image_url, created_at)')
       .eq('owner_id', currentOwner.id)
       .eq('status', 'approved')
       .eq('is_active', true)
@@ -640,18 +739,25 @@ async function loadOwnerData() {
     (spacesData || []).forEach(space => {
       (space.space_units || []).forEach(u => {
         ownerSpaces.push({
+          unitDbId:  u.id,
           code:      u.unit_id || '—',
+          uname:     u.name || '',
+          unitNotes: u.notes || '',
+          unitLoc:   u.location || '',
           loc:       u.location || space.region || '—',
           size:      u.size || '—',
           act:       null,
           rent:      u.price || null,
           status:    u.status || 'available',
+          baseStatus: u.status || 'available',
+          basePrice:  u.price || null,
           tenant:    null,
           score:     null,
           daysEmpty: 0,
           floor:     u.floor || '',
           spaceId:   space.id,
           spaceName: space.name,
+          createdAt: u.created_at || null,
         });
       });
     });
@@ -659,7 +765,7 @@ async function loadOwnerData() {
     /* مساحات معلقة / مرفوضة */
     const { data: pendingData } = await sb
       .from('spaces')
-      .select('id, name, type, region, min_price, sizes_prices, status, created_at')
+      .select('id, name, type, region, min_price, sizes_prices, status, reject_reason, created_at')
       .eq('owner_id', currentOwner.id)
       .in('status', ['pending', 'rejected'])
       .order('created_at', { ascending: false });
@@ -673,41 +779,134 @@ async function loadOwnerData() {
       price:       s.min_price || 0,
       subCount:    0,
       status:      s.status,
+      rejectReason: s.reject_reason || '',
       submittedAt: s.created_at,
     }));
 
-    /* العقود والمستأجرون من localStorage (لم تُنقل بعد) */
-    if (contractsList.length > 0) {
-      syncDataFromContracts();
-    } else {
-      ownerTenants   = DEMO_TENANTS[currentOwner.id]   || DEMO_TENANTS[currentOwner.username] || [];
-      ownerContracts = DEMO_CONTRACTS[currentOwner.id] || DEMO_CONTRACTS[currentOwner.username] || [];
-    }
+    /* كل البيانات التشغيلية من Supabase */
+    await Promise.all([
+      loadContractsRemote(),
+      loadPaymentsRemote(),
+      loadViolationsRemote(),
+      loadRatingsRemote(),
+      loadOwnerSettings(),
+      loadBookingsRemote(),
+    ]);
 
+    /* 🔒 تحقق من انتهاء الاشتراك — حتى لو لم يعمل auto_expire_subscriptions بعد */
+    try {
+      const { data: effectivePlan } = await sb.rpc('get_my_effective_plan');
+      if (effectivePlan && effectivePlan !== currentOwner.planTier) {
+        currentOwner.planTier = effectivePlan;
+        sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+        const badge = document.getElementById('sb-plan-badge');
+        if (badge) badge.innerHTML = _planBadgeHtml(effectivePlan);
+      }
+    } catch { /* silent — إذا لم تكن الدالة موجودة بعد نكمل بالقيمة الحالية */ }
+
+    computeDaysEmpty();        /* مدة الفراغ الحقيقية + ربط العقود بالوحدات */
+    syncDataFromContracts();
     renderAll();
+    syncUnitStatusToSupabase(); /* مزامنة available↔rented إلى Supabase (non-blocking) */
   } catch (err) {
     console.warn('[Makani] loadOwnerData error:', err.message);
-    applyDemoData();
+    applyEmptyData();
   }
 }
 
-function applyDemoData() {
-  const id = currentOwner.id;
-  /* المساحات: من البيانات التجريبية دائماً */
-  ownerSpaces = DEMO_SPACES[id] || DEMO_SPACES[currentOwner.username] || [];
-
-  /* المستأجرون والعقود: من contractsList إن وُجدت، وإلا demo */
-  if (contractsList.length > 0) {
-    syncDataFromContracts(); /* يعيد حساب ownerTenants و ownerContracts */
-  } else {
-    ownerTenants   = DEMO_TENANTS[id]   || DEMO_TENANTS[currentOwner.username] || [];
-    ownerContracts = DEMO_CONTRACTS[id] || DEMO_CONTRACTS[currentOwner.username] || [];
-  }
-
+/* حالة فارغة نظيفة عند تعذّر الاتصال — لا بيانات وهمية */
+function applyEmptyData() {
+  ownerSpaces = []; ownerPendingSpaces = [];
+  contractsList = []; paymentsList = []; violationsList = []; ratingsList = [];
+  bookingsList = [];
+  syncDataFromContracts();
   renderAll();
 }
 
+/* حساب مدة الفراغ الحقيقية لكل وحدة + ربط الإشغال بالعقود الفعلية */
+function computeDaysEmpty() {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const daysSince = d => d ? Math.max(0, Math.round((now - new Date(d)) / 86400000)) : 0;
+
+  ownerSpaces.forEach(u => {
+    /* أعد الضبط من الحالة الأصلية في كل تشغيل (idempotent) */
+    u.status    = u.baseStatus || u.status || 'available';
+    u.rent      = u.basePrice;
+    u.tenant    = null;
+    u.score     = null;
+    u.act       = null;
+    u.isNew     = false;
+    u.daysEmpty = 0;
+
+    const unitContracts = contractsList.filter(c => c.unitId && c.unitId === u.unitDbId);
+    const activeOnUnit  = unitContracts.find(c => c.status !== 'expired');
+
+    if (activeOnUnit) {
+      u.daysEmpty = 0;
+      u.status    = 'rented';                 /* مؤجَّرة فعلياً بعقد نشط */
+      u.tenant    = activeOnUnit.tenantName;
+      u.act       = activeOnUnit.activity || u.act;
+      if (activeOnUnit.rent) u.rent = activeOnUnit.rent;
+      const trs   = ratingsList.filter(r => r.contractId === activeOnUnit.id);
+      u.score     = trs.length ? parseFloat((trs.reduce((s, r) => s + r.avgScore, 0) / trs.length).toFixed(1)) : null;
+      return;
+    }
+
+    /* لا يوجد عقد نشط — لو كانت الوحدة مسجّلة في DB كـ 'rented' فهي فعلياً متاحة الآن */
+    if (u.baseStatus === 'rented') {
+      u.status = 'available';
+    }
+
+    if (u.status !== 'available') { u.daysEmpty = 0; return; }
+
+    /* آخر عقد منتهٍ على الوحدة → الفراغ منذ نهايته، وإلا منذ إنشاء الوحدة */
+    const ended = unitContracts
+      .filter(c => c.endDate)
+      .sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
+    if (ended) {
+      u.daysEmpty = daysSince(ended.endDate);
+    } else {
+      u.daysEmpty = daysSince(u.createdAt);
+      if (u.daysEmpty <= 14) u.isNew = true;
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   🔄  SYNC UNIT STATUS — مزامنة حالة الوحدات إلى Supabase
+   يُشغَّل بعد computeDaysEmpty() فقط عند تغيُّر حقيقي
+   (available ↔ rented) لتجنّب طلبات غير ضرورية.
+   لا يمسّ حالة 'maintenance' أو أي حالة يدوية أخرى.
+   ═══════════════════════════════════════════════════ */
+async function syncUnitStatusToSupabase() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+
+  /* فقط الوحدات التي تغيّرت بين الحالتين التلقائيتين */
+  const toUpdate = ownerSpaces.filter(u =>
+    u.unitDbId &&
+    u.status !== u.baseStatus &&
+    (u.status === 'available'   || u.status === 'rented') &&
+    (u.baseStatus === 'available' || u.baseStatus === 'rented')
+  );
+
+  if (!toUpdate.length) return;
+
+  await Promise.all(toUpdate.map(async u => {
+    const { error } = await sb
+      .from('space_units')
+      .update({ status: u.status })
+      .eq('id', u.unitDbId);
+    if (!error) {
+      u.baseStatus = u.status; /* تحديث الـ cache المحلي — يمنع إعادة الـ sync في renderAll() التالي */
+    } else {
+      console.warn('[Makani] syncUnitStatus:', u.code, error.message);
+    }
+  }));
+}
+
 function renderAll() {
+  computeDaysEmpty();   /* يُحدّث إشغال الوحدات ومدة الفراغ من أحدث العقود/التقييمات */
   renderKPIs();
   renderOverview();
   renderSpaces();
@@ -721,6 +920,7 @@ function renderAll() {
   renderPayments();
   renderViolations();
   renderReports();
+  renderBookings();
   populateSelects();
 }
 
@@ -728,48 +928,60 @@ function renderAll() {
    💰  REVENUE VIEW — ديناميكي من ownerSpaces
    ══════════════════════════════════════════ */
 function renderRevenue() {
-  const active  = contractsList.filter(c => c.status !== 'expired');
-  const monthly = active.reduce((sum, c) => sum + (parseFloat(c.rent) || 0), 0);
-  const quarterly = monthly * 3;
-  const yearly    = monthly * 12;
-  const forecast  = Math.round(monthly * 1.05);
+  const now       = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const active    = contractsList.filter(c => c.status !== 'expired');
+  const expected  = active.reduce((sum, c) => sum + (parseFloat(c.rent) || 0), 0);
 
-  const fmt = n => n ? n.toLocaleString('ar-EG') + ' ج' : '—';
-  setTxt('rev-monthly',   fmt(monthly));
-  setTxt('rev-quarterly', fmt(quarterly));
-  setTxt('rev-yearly',    fmt(yearly));
-  setTxt('rev-forecast',  fmt(forecast));
+  /* المحصّل الفعلي هذا الشهر لكل عقد (من جدول المدفوعات) */
+  const collectedFor = id => paymentsList
+    .filter(p => p.contractId === id && p.month === thisMonth && (p.status === 'paid' || p.status === 'partial'))
+    .reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+  const hasLate = id => paymentsList.some(p => p.contractId === id && p.month === thisMonth && p.status === 'late');
+
+  const collected = active.reduce((s, c) => s + collectedFor(c.id), 0);
+  const due       = Math.max(0, expected - collected);
+  const rate      = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+
+  const fmt = n => n ? Math.round(n).toLocaleString('ar-EG') + ' ج' : '—';
+  setTxt('rev-expected',  fmt(expected));
+  setTxt('rev-collected', fmt(collected));
+  setTxt('rev-rate',      rate + '%');
+  setTxt('rev-due',       fmt(due));
+  setTxt('rev-expected-sub', `${active.length} عقد نشط`);
+  const rateBar = document.getElementById('rev-rate-bar');
+  if (rateBar) {
+    rateBar.style.width = Math.min(100, rate) + '%';
+    rateBar.className = 'prog-fill ' + (rate >= 80 ? 'green' : rate >= 40 ? 'yellow' : 'red');
+  }
+  const dueEl = document.getElementById('rev-due');
+  if (dueEl) dueEl.style.color = due > 0 ? 'var(--red)' : 'var(--green)';
 
   const tbody = document.getElementById('revenue-tbody');
   if (!tbody) return;
 
   if (!active.length) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">
-      لا توجد عقود نشطة بعد — <button class="btn btn-primary btn-sm" onclick="goTo('contracts',document.querySelector('[data-view=contracts]'))">أضف عقداً ➕</button>
+      لا توجد عقود نشطة بعد — <button class="btn btn-primary btn-sm" onclick="goTo('contracts',document.querySelector('[onclick*=contracts]'))">أضف عقداً ➕</button>
     </td></tr>`;
     return;
   }
 
-  const total = monthly || 1;
   tbody.innerHTML = active.map(c => {
     const rent = parseFloat(c.rent) || 0;
-    const pct  = Math.round((rent / total) * 100);
-    let statusBadge = '';
-    if (c.status === 'renewal')       statusBadge = `<span class="badge badge-red">تجديد عاجل</span>`;
-    else if (c.status === 'expiring') statusBadge = `<span class="badge badge-yellow">ينتهي قريباً</span>`;
-    else                              statusBadge = `<span class="badge badge-green">نشط</span>`;
+    const got  = collectedFor(c.id);
+    let badge;
+    if (got >= rent && rent > 0)  badge = `<span class="badge badge-green">مدفوع بالكامل</span>`;
+    else if (got > 0)             badge = `<span class="badge badge-yellow">جزئي (${Math.round((got/(rent||1))*100)}%)</span>`;
+    else if (hasLate(c.id))       badge = `<span class="badge badge-red">متأخر</span>`;
+    else                          badge = `<span class="badge" style="background:var(--bg3);color:var(--text3)">غير محصّل</span>`;
     return `
       <tr>
-        <td style="font-family:'Space Mono',monospace;color:var(--orange)">${c.spaceCode}</td>
+        <td style="font-family:'Space Mono',monospace;color:var(--orange)">${c.spaceCode || '—'}</td>
         <td>${c.tenantName}</td>
         <td style="font-family:'Space Mono',monospace">${rent.toLocaleString('ar-EG')} ج</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:${pct}%"></div></div>
-            <span style="font-size:11px;color:var(--text3)">${pct}%</span>
-          </div>
-        </td>
-        <td>${statusBadge}</td>
+        <td style="font-family:'Space Mono',monospace;color:${got>=rent&&rent>0?'var(--green)':got>0?'var(--yellow)':'var(--text3)'}">${got ? got.toLocaleString('ar-EG')+' ج' : '—'}</td>
+        <td>${badge}</td>
       </tr>`;
   }).join('');
 }
@@ -892,31 +1104,33 @@ function renderRatingsHistory() {
   const tbody = document.getElementById('ratings-history-tbody');
   if (!tbody) return;
 
-  if (!sbOwnerRatings.length) {
+  if (!ratingsList.length) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">لا توجد تقييمات بعد — قيّم أول مستأجر من النموذج المجاور</td></tr>`;
     return;
   }
 
-  /* خريطة booking_id → بيانات المستأجر/المساحة من قائمة القابلين للتقييم */
-  const nameMap = {};
-  sbRateableTenants.forEach(t => { nameMap[t.booking_id] = t; });
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const cMap = {};
+  contractsList.forEach(c => { cMap[c.id] = c; });
 
-  tbody.innerHTML = sbOwnerRatings.map(r => {
-    const t      = nameMap[r.booking_id] || {};
-    const name   = _escR(t.tenant_name || 'مستأجر');
-    const space  = _escR(t.space_name || r.context_name || '—');
-    const ov     = parseInt(r.overall) || 0;
-    const col    = ov >= 4 ? 'var(--green)' : ov >= 3 ? 'var(--yellow)' : 'var(--red)';
-    const stars  = '★'.repeat(ov) + '☆'.repeat(Math.max(0, 5 - ov));
-    const date   = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '—';
-    const hidden = r.status === 'hidden';
+  tbody.innerHTML = ratingsList.map(r => {
+    const c      = cMap[r.contractId] || {};
+    const name   = _escR(c.tenantName || 'مستأجر');
+    const space  = _escR(c.spaceCode || '—');
+    const sc     = r.avgScore || 0;                       /* 0-10 */
+    const col    = sc >= 8 ? 'var(--green)' : sc >= 6 ? 'var(--yellow)' : 'var(--red)';
+    const fullStars = Math.round(sc / 2);
+    const stars  = '★'.repeat(fullStars) + '☆'.repeat(Math.max(0, 5 - fullStars));
+    const [yr, mo] = (r.month || '').split('-');
+    const mLbl   = mo ? `${MONTHS_AR[parseInt(mo,10)-1] || mo} ${yr}` : '—';
     return `
-      <tr style="${hidden ? 'opacity:.5' : ''}">
+      <tr>
         <td style="font-weight:700">${name}</td>
         <td style="font-size:12px;color:var(--text3)">${space}</td>
-        <td><span style="color:${col};letter-spacing:2px">${stars}</span> <strong style="color:${col};font-family:'Space Mono',monospace">${ov}</strong></td>
+        <td><span style="color:${col};letter-spacing:2px">${stars}</span> <strong style="color:${col};font-family:'Space Mono',monospace">${sc}</strong></td>
         <td style="font-size:11px;color:var(--text3);max-width:220px">${r.comment ? _escR(r.comment) : '—'}</td>
-        <td style="font-size:11px;color:var(--text3)">${hidden ? '🚫 مخفي' : date}</td>
+        <td style="font-size:11px;color:var(--text3)">${mLbl} <button class="btn btn-sm" style="background:none;border:1px solid rgba(255,77,77,.25);color:var(--red);font-size:10px;padding:2px 7px;margin-right:6px" onclick="deleteRating('${r.id}')">🗑️</button></td>
       </tr>`;
   }).join('');
 }
@@ -1005,7 +1219,10 @@ function renderPayments() {
                     <td style="font-size:11px;color:var(--text3)">${formatDate(p.paidDate)}</td>
                     <td><span class="badge ${st.cls}">${st.lbl}</span></td>
                     <td style="font-size:11px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.notes||'—'}</td>
-                    <td><button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:11px;padding:3px 10px" onclick="deletePayment('${p.id}')">🗑️</button></td>
+                    <td style="white-space:nowrap">
+                      <button class="btn btn-sm" style="font-size:11px;padding:3px 8px;margin-left:4px;color:var(--text2)" onclick="printInvoice('${p.id}')" title="طباعة فاتورة">🖨️</button>
+                      <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:11px;padding:3px 10px" onclick="deletePayment('${p.id}')">🗑️</button>
+                    </td>
                   </tr>`;
                 }).join('')
             }
@@ -1014,7 +1231,10 @@ function renderPayments() {
       </div>
     </div>`;
 
-  const activeForSelect = contractsList.filter(c => c.status !== 'expired');
+  /* عقود نشطة + منتهية حديثاً (آخر 90 يوم) — للسماح بتسجيل دفعة متأخرة */
+  const _expCutoff = new Date(); _expCutoff.setDate(_expCutoff.getDate() - 90);
+  const activeForSelect = contractsList.filter(c =>
+    c.status !== 'expired' || (c.endDate && new Date(c.endDate) >= _expCutoff));
   const formHtml = `
     <div class="pcard">
       <div class="pcard-head">
@@ -1069,6 +1289,264 @@ function renderPayments() {
   container.innerHTML = kpiHtml + tableHtml + formHtml;
 }
 
+/* ══════════════════════════════════════════
+   🖨️  INVOICES — فواتير وإيصالات الإيجار
+   طباعة من المتصفح، بدون تخزين PDF في DB
+   ══════════════════════════════════════════ */
+
+/* CSS مشترك لنافذة الطباعة */
+function _invoiceCss() {
+  return `
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',Tahoma,Arial,sans-serif; background:#f2f2f2; color:#1a1a1a; }
+    .page { width:210mm; min-height:297mm; margin:10mm auto; background:#fff; padding:16mm 14mm; position:relative; }
+    .inv-hdr { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; margin-bottom:18px; border-bottom:3px solid #ff6b00; }
+    .inv-logo-wrap { display:flex; align-items:center; gap:12px; }
+    .inv-logo { width:46px; height:46px; background:#ff6b00; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:21px; font-weight:900; }
+    .inv-brand-name { font-size:19px; font-weight:900; color:#ff6b00; line-height:1; }
+    .inv-brand-sub  { font-size:10px; color:#999; direction:ltr; margin-top:2px; }
+    .inv-hdr-right  { text-align:left; }
+    .inv-doc-title  { font-size:22px; font-weight:900; line-height:1; }
+    .inv-doc-num    { font-family:monospace; font-size:13px; color:#ff6b00; font-weight:700; margin-top:4px; direction:ltr; }
+    .inv-doc-date   { font-size:11px; color:#888; margin-top:3px; direction:ltr; }
+    .inv-info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+    .inv-info-box   { background:#f8f8f8; border:1px solid #ebebeb; border-radius:8px; padding:12px 14px; }
+    .inv-info-box.owner  { border-right:4px solid #ff6b00; }
+    .inv-info-box.tenant { border-right:4px solid #3b82f6; }
+    .inv-info-ttl   { font-size:10px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+    .inv-irow       { display:flex; gap:8px; margin-bottom:5px; font-size:12.5px; }
+    .inv-ilbl       { color:#999; min-width:62px; flex-shrink:0; }
+    .inv-ival       { font-weight:600; }
+    .inv-sec-ttl    { font-size:12px; font-weight:800; padding:7px 11px; background:#fff5ed; border-radius:6px; border-right:3px solid #ff6b00; margin-bottom:10px; }
+    .inv-table      { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:12px; }
+    .inv-table thead th { background:#1a1a1a; color:#fff; padding:9px 11px; text-align:right; font-weight:700; }
+    .inv-table tbody td { padding:9px 11px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .inv-table tbody tr:nth-child(even) { background:#fafafa; }
+    .sbadge         { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; }
+    .sbadge.paid    { background:#dcfce7; color:#15803d; }
+    .sbadge.partial { background:#fef9c3; color:#854d0e; }
+    .sbadge.late    { background:#fee2e2; color:#991b1b; }
+    .inv-totals     { margin-bottom:22px; }
+    .inv-totals-box { background:#fff5ed; border:2px solid #ff6b00; border-radius:10px; padding:14px 22px; display:inline-block; min-width:250px; }
+    .inv-trow       { display:flex; justify-content:space-between; align-items:center; gap:32px; font-size:12.5px; margin-bottom:7px; }
+    .inv-trow.grand { font-size:17px; font-weight:900; color:#ff6b00; padding-top:8px; border-top:2px solid #ffcca0; margin-top:3px; }
+    .inv-tlbl       { color:#666; }
+    .inv-tval       { font-family:monospace; font-weight:700; }
+    .inv-sig-grid   { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-bottom:22px; }
+    .inv-sig-box    { border:1px dashed #d0d0d0; border-radius:8px; padding:14px; text-align:center; min-height:84px; display:flex; flex-direction:column; }
+    .inv-sig-ttl    { font-size:11px; color:#aaa; font-weight:700; margin-bottom:auto; }
+    .inv-sig-line   { border-top:2px solid #d0d0d0; margin:16px 10px 0; padding-top:5px; font-size:11px; color:#777; }
+    .inv-footer     { text-align:center; font-size:10px; color:#bbb; border-top:1px solid #eee; padding-top:12px; }
+    .inv-wm         { position:absolute; bottom:25mm; left:50%; transform:translateX(-50%) rotate(-25deg); font-size:72px; font-weight:900; color:rgba(255,107,0,0.035); white-space:nowrap; pointer-events:none; user-select:none; }
+    @media print { body { background:#fff; } .page { margin:0; padding:12mm 13mm; box-shadow:none; } }`;
+}
+
+/* رقم فاتورة: يستخدم DB column إن وُجد، وإلا يُولِّد client-side */
+function _buildInvoiceNumber(payment) {
+  if (payment.invoiceNumber) return payment.invoiceNumber;
+  const dateStr = payment.createdAt || payment.paidDate || new Date().toISOString();
+  const ym      = dateStr.substring(0, 7).replace('-', '');
+  const shortId = payment.id ? payment.id.replace(/-/g, '').substring(0, 6).toUpperCase() : '000000';
+  return `INV-${ym}-${shortId}`;
+}
+
+/* فتح نافذة الطباعة */
+function _openPrintWindow(html) {
+  const win = window.open('', '_blank', 'width=920,height=750');
+  if (!win) { alert('تم حجب النافذة المنبثقة — الرجاء السماح بها من إعدادات المتصفح.'); return; }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+/* ── طباعة فاتورة دفعة واحدة ── */
+function printInvoice(paymentId) {
+  const payment = paymentsList.find(p => p.id === paymentId);
+  if (!payment) { alert('لم يتم العثور على بيانات الدفعة.'); return; }
+  _openPrintWindow(_generateSingleInvoiceHTML(payment));
+}
+
+function _generateSingleInvoiceHTML(payment) {
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const contract  = contractsList.find(c => c.id === payment.contractId);
+  const invNum    = _buildInvoiceNumber(payment);
+  const issueDate = new Date().toLocaleDateString('ar-EG-u-nu-latn', { day:'2-digit', month:'long', year:'numeric' });
+  const [yr, mo]  = (payment.month || '').split('-');
+  const monthLabel = MONTHS_AR[parseInt(mo, 10) - 1]
+    ? `${MONTHS_AR[parseInt(mo, 10) - 1]} ${yr}` : (payment.month || '—');
+  const stLbl = { paid:'مدفوع بالكامل', partial:'دفع جزئي', late:'متأخر' }[payment.status] || payment.status;
+  const ow = currentOwner || {};
+
+  return `<!DOCTYPE html><html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><title>فاتورة ${invNum}</title>
+<style>${_invoiceCss()}</style></head>
+<body><div class="page">
+  <div class="inv-hdr">
+    <div class="inv-logo-wrap">
+      <div class="inv-logo">م</div>
+      <div><div class="inv-brand-name">مكاني Spot</div><div class="inv-brand-sub">makanispot.com</div></div>
+    </div>
+    <div class="inv-hdr-right">
+      <div class="inv-doc-title">فاتورة إيجار</div>
+      <div class="inv-doc-num">${invNum}</div>
+      <div class="inv-doc-date">تاريخ الإصدار: ${issueDate}</div>
+    </div>
+  </div>
+  <div class="inv-info-grid">
+    <div class="inv-info-box owner">
+      <div class="inv-info-ttl">المؤجّر</div>
+      ${ow.name  ? '<div class="inv-irow"><span class="inv-ilbl">الاسم</span><span class="inv-ival">' + ow.name  + '</span></div>' : ''}
+      ${ow.phone ? '<div class="inv-irow"><span class="inv-ilbl">الهاتف</span><span class="inv-ival" dir="ltr">' + ow.phone + '</span></div>' : ''}
+      ${ow.email ? '<div class="inv-irow"><span class="inv-ilbl">البريد</span><span class="inv-ival" dir="ltr" style="font-size:11px">' + ow.email + '</span></div>' : ''}
+      ${ow.place ? '<div class="inv-irow"><span class="inv-ilbl">الموقع</span><span class="inv-ival">' + ow.place + '</span></div>' : ''}
+    </div>
+    <div class="inv-info-box tenant">
+      <div class="inv-info-ttl">المستأجر</div>
+      <div class="inv-irow"><span class="inv-ilbl">الاسم</span><span class="inv-ival">${payment.tenantName}</span></div>
+      ${(contract && contract.tenantPhone) ? '<div class="inv-irow"><span class="inv-ilbl">الهاتف</span><span class="inv-ival" dir="ltr">' + contract.tenantPhone + '</span></div>' : ''}
+      <div class="inv-irow"><span class="inv-ilbl">المساحة</span><span class="inv-ival" style="color:#ff6b00;font-family:monospace">${payment.spaceCode}</span></div>
+      ${(contract && contract.activity) ? '<div class="inv-irow"><span class="inv-ilbl">النشاط</span><span class="inv-ival">' + contract.activity + '</span></div>' : ''}
+      ${contract ? '<div class="inv-irow"><span class="inv-ilbl">فترة العقد</span><span class="inv-ival" style="font-size:11px">' + formatDate(contract.startDate) + ' — ' + formatDate(contract.endDate) + '</span></div>' : ''}
+    </div>
+  </div>
+  <div class="inv-sec-ttl">تفاصيل الدفعة</div>
+  <table class="inv-table">
+    <thead><tr><th>البند</th><th>الشهر</th><th>تاريخ الدفع</th><th>الحالة</th><th>المبلغ (ج.م.)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>إيجار ${(contract && contract.activity) ? contract.activity : 'مساحة'} — ${payment.spaceCode}</td>
+        <td style="font-weight:700">${monthLabel}</td>
+        <td style="font-size:11px">${formatDate(payment.paidDate)}</td>
+        <td><span class="sbadge ${payment.status}">${stLbl}</span></td>
+        <td style="font-family:monospace;font-weight:800;font-size:14px">${parseFloat(payment.amount).toLocaleString('ar-EG')}</td>
+      </tr>
+      ${payment.notes ? '<tr><td colspan="5" style="font-size:11px;color:#999;background:#fafafa;font-style:italic">ملاحظة: ' + payment.notes + '</td></tr>' : ''}
+    </tbody>
+  </table>
+  <div class="inv-totals">
+    <div class="inv-totals-box">
+      ${(contract && contract.rent) ? '<div class="inv-trow"><span class="inv-tlbl">الإيجار الشهري المتفق عليه</span><span class="inv-tval">' + parseFloat(contract.rent).toLocaleString('ar-EG') + ' ج</span></div>' : ''}
+      <div class="inv-trow grand"><span class="inv-tlbl">إجمالي المدفوع</span><span class="inv-tval">${parseFloat(payment.amount).toLocaleString('ar-EG')} ج.م.</span></div>
+    </div>
+  </div>
+  <div class="inv-sig-grid">
+    <div class="inv-sig-box">
+      <div class="inv-sig-ttl">توقيع وختم المؤجّر</div>
+      <div class="inv-sig-line">${ow.name || ''}</div>
+    </div>
+    <div class="inv-sig-box">
+      <div class="inv-sig-ttl">توقيع المستأجر</div>
+      <div class="inv-sig-line">${payment.tenantName}</div>
+    </div>
+  </div>
+  <div class="inv-footer">صدرت هذه الفاتورة إلكترونياً عبر منصة مكاني Spot · ${issueDate} · جميع المبالغ بالجنيه المصري (ج.م.)</div>
+  <div class="inv-wm">مكاني Spot</div>
+</div>
+<script>window.onload = function() { window.print(); };<\/script>
+</body></html>`;
+}
+
+/* ── طباعة كشف حساب عقد كامل ── */
+function printContractStatement(contractId) {
+  const contract = contractsList.find(c => c.id === contractId);
+  if (!contract) return;
+  const payments = [...paymentsList]
+    .filter(p => p.contractId === contractId)
+    .sort((a, b) => a.month.localeCompare(b.month));
+  _openPrintWindow(_generateStatementHTML(contract, payments));
+}
+
+function _generateStatementHTML(contract, payments) {
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const mLbl = function(m) {
+    const parts = (m || '').split('-');
+    return (MONTHS_AR[parseInt(parts[1], 10) - 1] || parts[1]) + ' ' + parts[0];
+  };
+  const total     = payments.reduce(function(s, p) { return s + parseFloat(p.amount || 0); }, 0);
+  const expected  = payments.length * parseFloat(contract.rent || 0);
+  const remaining = Math.max(0, expected - total);
+  const issueDate = new Date().toLocaleDateString('ar-EG-u-nu-latn', { day:'2-digit', month:'long', year:'numeric' });
+  const ow = currentOwner || {};
+  const stData = {
+    paid:    ['مدفوع ✅', '#dcfce7', '#15803d'],
+    partial: ['جزئي ⚡',  '#fef9c3', '#854d0e'],
+    late:    ['متأخر ⏰', '#fee2e2', '#991b1b'],
+  };
+
+  const rowsHtml = payments.map(function(p, i) {
+    const sd = stData[p.status] || ['—', '#f0f0f0', '#555'];
+    return '<tr>'
+      + '<td style="color:#bbb;font-size:11px">' + (i + 1) + '</td>'
+      + '<td style="font-weight:700">' + mLbl(p.month) + '</td>'
+      + '<td style="font-family:monospace;font-size:10.5px;color:#aaa">' + _buildInvoiceNumber(p) + '</td>'
+      + '<td style="font-size:11px;color:#888">' + formatDate(p.paidDate) + '</td>'
+      + '<td><span class="sbadge" style="background:' + sd[1] + ';color:' + sd[2] + '">' + sd[0] + '</span></td>'
+      + '<td style="font-size:11px;color:#aaa;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (p.notes || '—') + '</td>'
+      + '<td style="font-family:monospace;font-weight:700;text-align:left">' + parseFloat(p.amount).toLocaleString('ar-EG') + '</td>'
+      + '</tr>';
+  }).join('');
+
+  return `<!DOCTYPE html><html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><title>كشف حساب — ${contract.tenantName}</title>
+<style>${_invoiceCss()}</style></head>
+<body><div class="page">
+  <div class="inv-hdr">
+    <div class="inv-logo-wrap">
+      <div class="inv-logo">م</div>
+      <div><div class="inv-brand-name">مكاني Spot</div><div class="inv-brand-sub">makanispot.com</div></div>
+    </div>
+    <div class="inv-hdr-right">
+      <div class="inv-doc-title">كشف حساب — سجل الدفعات</div>
+      <div class="inv-doc-date">تاريخ الإصدار: ${issueDate}</div>
+    </div>
+  </div>
+  <div class="inv-info-grid">
+    <div class="inv-info-box owner">
+      <div class="inv-info-ttl">المؤجّر</div>
+      ${ow.name  ? '<div class="inv-irow"><span class="inv-ilbl">الاسم</span><span class="inv-ival">' + ow.name  + '</span></div>' : ''}
+      ${ow.phone ? '<div class="inv-irow"><span class="inv-ilbl">الهاتف</span><span class="inv-ival" dir="ltr">' + ow.phone + '</span></div>' : ''}
+      ${ow.place ? '<div class="inv-irow"><span class="inv-ilbl">الموقع</span><span class="inv-ival">' + ow.place + '</span></div>' : ''}
+    </div>
+    <div class="inv-info-box tenant">
+      <div class="inv-info-ttl">المستأجر</div>
+      <div class="inv-irow"><span class="inv-ilbl">الاسم</span><span class="inv-ival">${contract.tenantName}</span></div>
+      ${contract.tenantPhone ? '<div class="inv-irow"><span class="inv-ilbl">الهاتف</span><span class="inv-ival" dir="ltr">' + contract.tenantPhone + '</span></div>' : ''}
+      <div class="inv-irow"><span class="inv-ilbl">المساحة</span><span class="inv-ival" style="color:#ff6b00;font-family:monospace">${contract.spaceCode}</span></div>
+      ${contract.activity ? '<div class="inv-irow"><span class="inv-ilbl">النشاط</span><span class="inv-ival">' + contract.activity + '</span></div>' : ''}
+      <div class="inv-irow"><span class="inv-ilbl">فترة العقد</span><span class="inv-ival" style="font-size:11px">${formatDate(contract.startDate)} — ${formatDate(contract.endDate)}</span></div>
+      ${contract.rent ? '<div class="inv-irow"><span class="inv-ilbl">الإيجار</span><span class="inv-ival" style="font-family:monospace">' + parseFloat(contract.rent).toLocaleString('ar-EG') + ' ج/شهر</span></div>' : ''}
+    </div>
+  </div>
+  <div class="inv-sec-ttl">سجل الدفعات الكامل</div>
+  ${!payments.length
+    ? '<div style="text-align:center;padding:28px;color:#aaa;font-size:13px">لم تُسجَّل أي دفعات لهذا العقد بعد</div>'
+    : '<table class="inv-table"><thead><tr><th>#</th><th>الشهر</th><th>رقم الفاتورة</th><th>تاريخ الدفع</th><th>الحالة</th><th>ملاحظات</th><th>المبلغ (ج.م.)</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>'
+  }
+  <div class="inv-totals">
+    <div class="inv-totals-box">
+      <div class="inv-trow"><span class="inv-tlbl">عدد الدفعات المسجّلة</span><span class="inv-tval">${payments.length} دفعة</span></div>
+      ${(contract.rent && payments.length) ? '<div class="inv-trow"><span class="inv-tlbl">إجمالي المتوقع (' + payments.length + ' × ' + parseFloat(contract.rent).toLocaleString('ar-EG') + ' ج)</span><span class="inv-tval">' + expected.toLocaleString('ar-EG') + ' ج</span></div>' : ''}
+      ${remaining > 0 ? '<div class="inv-trow" style="color:#dc2626"><span class="inv-tlbl">متبقي غير محصّل</span><span class="inv-tval">' + remaining.toLocaleString('ar-EG') + ' ج</span></div>' : ''}
+      <div class="inv-trow grand"><span class="inv-tlbl">إجمالي المحصّل</span><span class="inv-tval">${total.toLocaleString('ar-EG')} ج.م.</span></div>
+    </div>
+  </div>
+  <div class="inv-sig-grid">
+    <div class="inv-sig-box">
+      <div class="inv-sig-ttl">توقيع وختم المؤجّر</div>
+      <div class="inv-sig-line">${ow.name || ''}</div>
+    </div>
+    <div class="inv-sig-box">
+      <div class="inv-sig-ttl">توقيع المستأجر</div>
+      <div class="inv-sig-line">${contract.tenantName}</div>
+    </div>
+  </div>
+  <div class="inv-footer">صدر هذا الكشف إلكترونياً عبر منصة مكاني Spot · ${issueDate} · جميع المبالغ بالجنيه المصري (ج.م.)</div>
+  <div class="inv-wm">مكاني Spot</div>
+</div>
+<script>window.onload = function() { window.print(); };<\/script>
+</body></html>`;
+}
+
 function submitPayment(e) {
   e.preventDefault();
   const get = id => document.getElementById(id)?.value?.trim();
@@ -1092,32 +1570,42 @@ function submitPayment(e) {
   if (!month)      { showMsg('danger','حدد الشهر أولاً.'); return; }
   if (!amount||amount<=0) { showMsg('danger','أدخل مبلغاً صحيحاً.'); return; }
 
-  const contract = contractsList.find(c => c.id === contractId);
-  paymentsList.push({
-    id:         genId(),
-    contractId,
-    tenantName: contract?.tenantName || '—',
-    spaceCode:  contract?.spaceCode  || '—',
-    amount,
-    month,
-    paidDate,
-    status,
-    notes,
-    createdAt:  new Date().toISOString(),
-  });
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { showMsg('danger','تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
 
-  savePayments();
-  renderPayments();
-  renderKPIs(); /* تحديث KPI الإيراد */
-  document.getElementById('payment-form')?.reset();
-  showMsg('success', `تم تسجيل دفعة ${amount.toLocaleString('ar-EG')} ج بنجاح ✅`);
+  const contract = contractsList.find(c => c.id === contractId);
+  const payload = {
+    owner_id:    currentOwner.id,
+    contract_id: contractId,
+    tenant_name: contract?.tenantName || '—',
+    space_code:  contract?.spaceCode  || '—',
+    amount, month, paid_date: paidDate || null, status, notes: notes || null,
+  };
+  (async () => {
+    try {
+      const { error } = await sb.from('owner_payments').insert(payload);
+      if (error) throw error;
+      await loadPaymentsRemote();
+      renderPayments();
+      renderKPIs();
+      document.getElementById('payment-form')?.reset();
+      showMsg('success', `تم تسجيل دفعة ${amount.toLocaleString('ar-EG')} ج بنجاح ✅`);
+    } catch (err) {
+      showMsg('danger', 'تعذّر تسجيل الدفعة: ' + (err.message || 'خطأ'));
+    }
+  })();
 }
 
-function deletePayment(id) {
+async function deletePayment(id) {
   if (!confirm('هل تريد حذف هذه الدفعة؟')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    const { error } = await sb.from('owner_payments').delete().eq('id', id).eq('owner_id', currentOwner.id);
+    if (error) { alert('تعذّر الحذف: ' + error.message); return; }
+  }
   paymentsList = paymentsList.filter(p => p.id !== id);
-  savePayments();
   renderPayments();
+  renderKPIs();
 }
 
 /* ══════════════════════════════════════════
@@ -1133,7 +1621,10 @@ function renderViolations() {
   }
 
   const sortedV = [...violationsList].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-  const activeContracts = contractsList.filter(c => c.status !== 'expired');
+  /* عقود نشطة + منتهية حديثاً (آخر 90 يوم) — للسماح بتسجيل مخالفة على عقد انتهى قريباً */
+  const _vExpCutoff = new Date(); _vExpCutoff.setDate(_vExpCutoff.getDate() - 90);
+  const activeContracts = contractsList.filter(c =>
+    c.status !== 'expired' || (c.endDate && new Date(c.endDate) >= _vExpCutoff));
 
   const sevCounts = { high:0, medium:0, low:0 };
   violationsList.forEach(v => { if (sevCounts[v.severity] !== undefined) sevCounts[v.severity]++; });
@@ -1242,6 +1733,15 @@ function renderViolations() {
             </div>
           </div>
           <div class="form-group" style="margin-top:12px">
+            <label>تصنيف المخالفة</label>
+            <select id="vf-category">
+              <option value="financial">💳 مالية</option>
+              <option value="behavioral">🧹 سلوكية</option>
+              <option value="contractual" selected>📄 عقدية</option>
+              <option value="other">📋 أخرى</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:12px">
             <label>تفاصيل وملاحظات</label>
             <textarea id="vf-notes" placeholder="اشرح المخالفة بالتفصيل للتوثيق الرسمي…" style="min-height:68px"></textarea>
           </div>
@@ -1260,6 +1760,7 @@ function submitViolation(e) {
   const date       = get('vf-date');
   const type       = get('vf-type');
   const severity   = get('vf-severity') || 'medium';
+  const category   = get('vf-category') || 'other';
   const notes      = get('vf-notes');
   const msgEl      = document.getElementById('violation-msg');
 
@@ -1275,29 +1776,39 @@ function submitViolation(e) {
   if (!date)       { showMsg('danger','حدد تاريخ المخالفة.'); return; }
   if (!type)       { showMsg('danger','اختر نوع المخالفة.'); return; }
 
-  const contract = contractsList.find(c => c.id === contractId);
-  violationsList.push({
-    id:         genId(),
-    contractId,
-    tenantName: contract?.tenantName || '—',
-    spaceCode:  contract?.spaceCode  || '—',
-    type,
-    severity,
-    date,
-    notes,
-    createdAt:  new Date().toISOString(),
-  });
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { showMsg('danger','تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
 
-  saveViolations();
-  renderViolations();
-  document.getElementById('violation-form')?.reset();
-  showMsg('success','تم تسجيل المخالفة بنجاح في سجل التوثيق.');
+  const contract = contractsList.find(c => c.id === contractId);
+  const payload = {
+    owner_id:    currentOwner.id,
+    contract_id: contractId,
+    tenant_name: contract?.tenantName || '—',
+    space_code:  contract?.spaceCode  || '—',
+    type, category, severity, vdate: date, notes: notes || null,
+  };
+  (async () => {
+    try {
+      const { error } = await sb.from('owner_violations').insert(payload);
+      if (error) throw error;
+      await loadViolationsRemote();
+      renderViolations();
+      document.getElementById('violation-form')?.reset();
+      showMsg('success','تم تسجيل المخالفة بنجاح في سجل التوثيق.');
+    } catch (err) {
+      showMsg('danger', 'تعذّر تسجيل المخالفة: ' + (err.message || 'خطأ'));
+    }
+  })();
 }
 
-function deleteViolation(id) {
+async function deleteViolation(id) {
   if (!confirm('هل تريد حذف هذه المخالفة من السجل؟')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    const { error } = await sb.from('owner_violations').delete().eq('id', id).eq('owner_id', currentOwner.id);
+    if (error) { alert('تعذّر الحذف: ' + error.message); return; }
+  }
   violationsList = violationsList.filter(v => v.id !== id);
-  saveViolations();
   renderViolations();
 }
 
@@ -1322,7 +1833,7 @@ function renderReports() {
   const activeContracts = contractsList.filter(c => c.status !== 'expired');
   const expiring  = activeContracts.filter(c => c.status==='expiring'||c.status==='renewal');
   const monthly   = activeContracts.reduce((s,c)=>s+(parseFloat(c.rent)||0),0);
-  const collected = paymentsList.filter(p=>p.month===thisMonth&&p.status==='paid').reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
+  const collected = paymentsList.filter(p=>p.month===thisMonth&&(p.status==='paid'||p.status==='partial')).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
   const rented    = ownerSpaces.filter(s=>s.status==='rented');
   const occ       = ownerSpaces.length ? Math.round((rented.length/ownerSpaces.length)*100) : 0;
   const scoredT   = ownerTenants.filter(t=>t.score!==null);
@@ -1347,6 +1858,7 @@ function renderReports() {
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn" onclick="window.print()" style="gap:6px;background:var(--panel2)">🖨️ طباعة PDF</button>
+        <button class="btn" onclick="exportToExcel('full')" style="gap:6px;background:var(--panel2)">📊 تصدير Excel</button>
         <button class="btn btn-primary btn-sm" onclick="renderReports()">🔄 تحديث</button>
       </div>
     </div>
@@ -1483,11 +1995,167 @@ function renderReports() {
       </div>
     </div>` : ''}
 
+    <!-- بطاقة تصدير البيانات -->
+    <div class="pcard" style="margin-top:20px;border-color:rgba(255,107,0,0.20)">
+      <div class="pcard-head" style="background:rgba(255,107,0,0.03)">
+        <div>
+          <div class="pcard-title">⬇️ تصدير البيانات</div>
+          <div class="pcard-sub">Excel حقيقي متعدد الـ sheets — عربي Unicode بدون مشاكل ترميز</div>
+        </div>
+        <span class="db-tag">XLSX</span>
+      </div>
+      <div class="pcard-body">
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+          <div class="form-group" style="margin:0;min-width:150px">
+            <label style="font-size:11px;color:var(--text3)">من تاريخ</label>
+            <input type="date" id="exp-from" style="font-size:12px;padding:6px 10px">
+          </div>
+          <div class="form-group" style="margin:0;min-width:150px">
+            <label style="font-size:11px;color:var(--text3)">إلى تاريخ</label>
+            <input type="date" id="exp-to" style="font-size:12px;padding:6px 10px">
+          </div>
+          <button class="btn btn-sm" onclick="document.getElementById('exp-from').value='';document.getElementById('exp-to').value=''" style="padding:6px 12px;font-size:11px;color:var(--text3)">✖ مسح الفلتر</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" onclick="exportToExcel('contracts',{from:document.getElementById('exp-from')?.value,to:document.getElementById('exp-to')?.value})" style="background:var(--panel2);gap:6px">⬇️ عقود</button>
+          <button class="btn" onclick="exportToExcel('payments',{from:document.getElementById('exp-from')?.value,to:document.getElementById('exp-to')?.value})" style="background:var(--panel2);gap:6px">⬇️ مدفوعات</button>
+          <button class="btn" onclick="exportToExcel('violations',{from:document.getElementById('exp-from')?.value,to:document.getElementById('exp-to')?.value})" style="background:var(--panel2);gap:6px">⬇️ مخالفات</button>
+          <button class="btn btn-primary" onclick="exportToExcel('full',{from:document.getElementById('exp-from')?.value,to:document.getElementById('exp-to')?.value})" style="gap:6px">⬇️ تصدير كامل (3 sheets)</button>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text3);line-height:1.6">
+          💡 الفلتر اختياري — بدونه يُصدَّر كل السجلات. العقود تُفلتر بتاريخ البداية، المدفوعات بتاريخ الاستلام، المخالفات بتاريخ التسجيل.
+        </div>
+      </div>
+    </div>
+
     <!-- Print footer -->
     <div style="margin-top:28px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3)">
       <span>🏢 مكاني Spot — نظام إدارة المساحات الصغيرة</span>
       <span>${monthLabel} · تم الإنشاء: ${new Date().toLocaleDateString('ar-EG')}</span>
     </div>`;
+}
+
+/* ══════════════════════════════════════════
+   📊  تصدير البيانات — Excel حقيقي متعدد الـ sheets
+   SheetJS (XLSX) — عربي Unicode بدون مشاكل encoding
+   ══════════════════════════════════════════ */
+
+/* نقطة الدخول الوحيدة: type = 'contracts' | 'payments' | 'violations' | 'full' */
+function exportToExcel(type, opts) {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة Excel لم تُحمَّل بعد — انتظر ثوانٍ ثم حاول مجدداً.');
+    return;
+  }
+  opts = opts || {};
+  const dateFrom = opts.from ? new Date(opts.from) : null;
+  const dateTo   = opts.to   ? new Date(opts.to + 'T23:59:59') : null;
+
+  /* فلتر التاريخ العام */
+  function filterDates(list, field) {
+    if (!dateFrom && !dateTo) return list;
+    return list.filter(function(item) {
+      const d = item[field] ? new Date(item[field]) : null;
+      if (!d) return true;
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo   && d > dateTo)   return false;
+      return true;
+    });
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  if (type === 'contracts' || type === 'full') {
+    const ws = XLSX.utils.aoa_to_sheet(_buildContractsSheet(filterDates(contractsList, 'startDate')));
+    _styleExcelSheet(ws, 10);
+    XLSX.utils.book_append_sheet(wb, ws, 'العقود');
+  }
+  if (type === 'payments' || type === 'full') {
+    const ws = XLSX.utils.aoa_to_sheet(_buildPaymentsSheet(filterDates(paymentsList, 'paidDate')));
+    _styleExcelSheet(ws, 7);
+    XLSX.utils.book_append_sheet(wb, ws, 'المدفوعات');
+  }
+  if (type === 'violations' || type === 'full') {
+    const ws = XLSX.utils.aoa_to_sheet(_buildViolationsSheet(filterDates(violationsList, 'date')));
+    _styleExcelSheet(ws, 7);
+    XLSX.utils.book_append_sheet(wb, ws, 'المخالفات');
+  }
+
+  const now = new Date();
+  const dateStr  = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  const typeName = { contracts:'عقود', payments:'مدفوعات', violations:'مخالفات', full:'كامل' }[type] || type;
+  XLSX.writeFile(wb, 'makani-' + typeName + '-' + dateStr + '.xlsx');
+}
+
+/* ضبط عرض الأعمدة تلقائياً */
+function _styleExcelSheet(ws, colCount) {
+  const cols = [];
+  for (let i = 0; i < colCount; i++) cols.push({ wch: 22 });
+  ws['!cols'] = cols;
+}
+
+/* ── sheet العقود ── */
+function _buildContractsSheet(list) {
+  const stLbl = function(s) {
+    return s === 'active' ? 'سارية' : s === 'expiring' ? 'تنتهي قريباً' : s === 'renewal' ? 'للتجديد' : 'منتهية';
+  };
+  const headers = ['رقم الوحدة','اسم المستأجر','الهاتف','النشاط','الإيجار الشهري (ج)','تاريخ البداية','تاريخ النهاية','الأيام المتبقية','الحالة','ملاحظات'];
+  const rows = list.map(function(c) {
+    return [
+      c.spaceCode,
+      c.tenantName,
+      c.tenantPhone || '—',
+      c.activity    || '—',
+      parseFloat(c.rent) || 0,
+      c.startDate,
+      c.endDate,
+      c.daysLeft > 0 ? c.daysLeft : 0,
+      stLbl(c.status),
+      c.notes || '',
+    ];
+  });
+  return [headers].concat(rows);
+}
+
+/* ── sheet المدفوعات ── */
+function _buildPaymentsSheet(list) {
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const stLbl = { paid:'مدفوع', partial:'دفع جزئي', late:'متأخر' };
+  const mLbl = function(m) {
+    const parts = (m || '').split('-');
+    return (MONTHS_AR[parseInt(parts[1], 10) - 1] || parts[1] || '') + ' ' + (parts[0] || '');
+  };
+  const headers = ['رقم الوحدة','اسم المستأجر','شهر الإيجار','المبلغ (ج)','الحالة','تاريخ الاستلام','ملاحظات'];
+  const rows = list.map(function(p) {
+    return [
+      p.spaceCode,
+      p.tenantName,
+      mLbl(p.month),
+      parseFloat(p.amount) || 0,
+      stLbl[p.status] || p.status,
+      p.paidDate || '',
+      p.notes    || '',
+    ];
+  });
+  return [headers].concat(rows);
+}
+
+/* ── sheet المخالفات ── */
+function _buildViolationsSheet(list) {
+  const sevLbl = { high:'خطيرة', medium:'متوسطة', low:'خفيفة' };
+  const catLbl = { financial:'مالية', behavioral:'سلوكية', contractual:'عقدية', other:'أخرى' };
+  const headers = ['رقم الوحدة','اسم المستأجر','تاريخ المخالفة','نوع المخالفة','التصنيف','الخطورة','ملاحظات'];
+  const rows = list.map(function(v) {
+    return [
+      v.spaceCode,
+      v.tenantName,
+      v.date   || '',
+      v.type   || '—',
+      catLbl[v.category] || v.category || '—',
+      sevLbl[v.severity] || v.severity || '—',
+      v.notes  || '',
+    ];
+  });
+  return [headers].concat(rows);
 }
 
 /* ══════════════════════════════════════════
@@ -1658,51 +2326,10 @@ function renderOverview() {
     }
   }
 
-  /* ── 3. التنبيهات المختصرة (أحدث 3) ────────────────────────────── */
+  /* ── 3. التنبيهات المختصرة (أحدث 3 — مع احترام الإخفاء والتفضيلات) */
   const alertsList = document.getElementById('overview-alerts-list');
   if (alertsList) {
-    const previewAlerts = [];
-
-    /* مستأجرون ضعيف أداؤهم */
-    ownerTenants
-      .filter(t => t.score !== null && t.score < 5 && t.trend === 'down')
-      .slice(0, 1)
-      .forEach(t => previewAlerts.push({
-        cls: 'danger', ico: '📉',
-        title: `تقييم ${t.name} منخفض (${t.score}/10)`,
-        body:  `مستمر في التراجع — يُنصح بمراجعة الوضع.`,
-      }));
-
-    /* عقود تنتهي قريباً */
-    contractsList
-      .filter(c => c.status !== 'expired' && c.daysLeft >= 0 && c.daysLeft <= 30)
-      .slice(0, 2)
-      .forEach(c => previewAlerts.push({
-        cls: c.daysLeft <= 14 ? 'danger' : 'warning', ico: '📅',
-        title: `عقد ${c.tenantName} ينتهي خلال ${c.daysLeft} يوم`,
-        body:  `المساحة ${c.spaceCode} — تواصل للتجديد أو ابحث عن بديل.`,
-      }));
-
-    /* مساحات مهملة */
-    ownerSpaces
-      .filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD)
-      .slice(0, 2)
-      .forEach(s => previewAlerts.push({
-        cls: 'info', ico: '💡',
-        title: `المساحة ${s.code} فارغة منذ ${s.daysEmpty} يوم`,
-        body:  `${s.loc} — راجع السعر أو أوسع نطاق الأنشطة المسموحة.`,
-      }));
-
-    /* مساحات في الصيانة */
-    ownerSpaces
-      .filter(s => s.status === 'maintenance')
-      .slice(0, 1)
-      .forEach(s => previewAlerts.push({
-        cls: 'warning', ico: '🔧',
-        title: `المساحة ${s.code} في الصيانة`,
-        body:  `${s.loc} — تأكد من انتهاء أعمال الصيانة في أقرب وقت.`,
-      }));
-
+    const previewAlerts = _buildLocalAlerts().slice(0, 3);
     if (!previewAlerts.length) {
       alertsList.innerHTML = `
         <div class="alert-item success">
@@ -1710,8 +2337,8 @@ function renderOverview() {
           <div class="alert-text"><strong>لا توجد تنبيهات عاجلة حالياً</strong>كل شيء يسير بشكل جيد.</div>
         </div>`;
     } else {
-      alertsList.innerHTML = previewAlerts.slice(0, 3).map(a => `
-        <div class="alert-item ${a.cls}">
+      alertsList.innerHTML = previewAlerts.map(a => `
+        <div class="alert-item ${a.type}">
           <span class="alert-ico">${a.ico}</span>
           <div class="alert-text"><strong>${a.title}</strong> ${a.body}</div>
         </div>`).join('');
@@ -1723,7 +2350,9 @@ function renderOverview() {
   if (chartEl) {
     const now    = new Date();
     const months = [];
-    for (let i = 5; i >= 0; i--) {
+    /* عدد الأشهر حسب الفترة المختارة: شهري=٦ · ربع=٣ · سنوي=١٢ */
+    const monthsCount = currentPeriod === 'year' ? 12 : currentPeriod === 'quarter' ? 3 : 6;
+    for (let i = monthsCount - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
         key:   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
@@ -1751,11 +2380,11 @@ function renderOverview() {
     const lastIdx  = months.length - 1;
 
     if (months.every(m => m.total === 0)) {
-      /* لا توجد عقود — عرض أعمدة placeholder */
-      const pHts = [40, 55, 35, 70, 50, 80];
-      chartEl.innerHTML = pHts.map((h, i) => `
-        <div class="bar${i === lastIdx ? ' high' : ''}" style="height:${h}%;opacity:0.18">
-          <span class="bar-label">${months[i].label}</span>
+      /* لا توجد عقود — عرض أعمدة placeholder بنمط ثابت */
+      const pHts = [40, 55, 35, 70, 50, 80, 45, 60, 38, 72, 52, 66];
+      chartEl.innerHTML = months.map((m, i) => `
+        <div class="bar${i === lastIdx ? ' high' : ''}" style="height:${pHts[i % pHts.length]}%;opacity:0.18">
+          <span class="bar-label">${m.label}</span>
           <span class="bar-val">—</span>
         </div>`).join('');
     } else {
@@ -1834,6 +2463,7 @@ const VIEW_TITLES = {
   'overview':   'نظرة عامة',
   'tenants':    'المستأجرون',
   'spaces':     'المساحات',
+  'bookings':   'طلبات الحجز',
   'contracts':  'العقود',
   'ratings':    'التقييمات',
   'revenue':    'الإيرادات',
@@ -1864,12 +2494,15 @@ function goTo(viewId, navEl) {
   if (viewId === 'alerts')     { renderAlerts(); setTimeout(markNotificationsRead, 1500); }
   if (viewId === 'add-bazaar') renderAddBazaarView();
   if (viewId === 'ratings')    loadOwnerRatings();   /* تحديث القائمة والسجل من Supabase */
+  if (viewId === 'bookings')   { loadBookingsRemote().then(renderBookings); }
 }
 
 function setPeriod(p, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  /* 🔗 DB-LINK: أعد جلب البيانات حسب الفترة من الشيت */
+  if (btn) btn.classList.add('on');
+  currentPeriod = p || 'month';
+  /* الفترة تتحكّم في نافذة الرسم البياني في النظرة العامة وتعيد الحساب */
+  renderOverview();
 }
 
 /* ══════════════════════════════════════════
@@ -1961,6 +2594,7 @@ function renderSpaces() {
     const statusMap = {
       rented:      { cls:'badge-green',  lbl:'مؤجّرة' },
       available:   { cls:'badge-yellow', lbl:'متاحة' },
+      reserved:    { cls:'badge-blue',   lbl:'محجوزة' },
       maintenance: { cls:'badge-red',    lbl:'صيانة' },
     };
     const st          = statusMap[s.status] || { cls:'badge-blue', lbl:s.status };
@@ -1981,9 +2615,12 @@ function renderSpaces() {
           ${isAbandoned ? `<span style="font-size:10px;color:var(--red);display:block;margin-top:3px;font-family:'Space Mono',monospace">${s.daysEmpty}d فارغة</span>` : ''}
         </td>
         <td>
-          ${s.score
-            ? `<div class="prog-bar" style="width:80px"><div class="prog-fill ${progCls}" style="width:${progPct}%"></div></div>`
-            : '<span style="color:var(--text3);font-size:11px">—</span>'}
+          <div style="display:flex;align-items:center;gap:8px">
+            ${s.score
+              ? `<div class="prog-bar" style="width:64px"><div class="prog-fill ${progCls}" style="width:${progPct}%"></div></div>`
+              : '<span style="color:var(--text3);font-size:11px">—</span>'}
+            ${s.unitDbId ? `<button class="btn btn-sm" style="font-size:11px;padding:3px 9px" onclick="openUnitEdit('${s.unitDbId}')">✏️ تعديل</button>` : ''}
+          </div>
         </td>
       </tr>`;
   }).join('');
@@ -1997,11 +2634,17 @@ function renderTenants() {
   if (!tbody) return;
 
   if (!ownerTenants.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">لا يوجد مستأجرون حتى الآن</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">لا يوجد مستأجرون حتى الآن — أضف عقداً من صفحة العقود</td></tr>';
     return;
   }
 
-  tbody.innerHTML = ownerTenants.map(t => {
+  /* فرز حسب اختيار المستخدم */
+  const sorted = [...ownerTenants];
+  if (_tenantSort === 'score-asc')       sorted.sort((a, b) => (a.score ?? 99) - (b.score ?? 99));
+  else if (_tenantSort === 'recent')     sorted.sort((a, b) => (b.daysLeft ?? 0) - (a.daysLeft ?? 0));
+  else                                   sorted.sort((a, b) => (b.score ?? -1) - (a.score ?? -1)); /* score-desc */
+
+  tbody.innerHTML = sorted.map(t => {
     const col   = t.score >= 8 ? 'var(--green)' : t.score >= 6 ? 'var(--yellow)' : 'var(--red)';
     const arrow = t.trend === 'up' ? '↑' : t.trend === 'down' ? '↓' : '→';
     const tCls  = t.trend === 'up' ? 'up' : t.trend === 'down' ? 'down' : 'flat';
@@ -2041,46 +2684,75 @@ function renderTenants() {
   }).join('');
 }
 
+let _currentTenantDetailId = null;
+
 function showTenantDetail(id) {
   const t = ownerTenants.find(x => x.id === id);
   if (!t) return;
+  _currentTenantDetailId = id;
 
-  setTxt('td-name',  t.name + ' — ' + t.act);
+  setTxt('td-name',  t.name + (t.act && t.act !== '—' ? ' — ' + t.act : ''));
   setTxt('td-space', 'المساحة: ' + t.space + ' · العقد حتى: ' + t.contract);
 
-  const criteria = [
-    { label:'⏰ الالتزام بالمواعيد', score: clamp(Math.round(t.score * 0.9  + jitter())) },
-    { label:'🧹 نظافة المكان',        score: clamp(Math.round(t.score * 1.0  + jitter(0.5))) },
-    { label:'🎨 شكل البراند',         score: clamp(Math.round(t.score * 0.85 + jitter())) },
-    { label:'🤝 تعامل مع العملاء',    score: clamp(Math.round(t.score * 1.1)) },
-    { label:'💼 الالتزام بالعقد',     score: clamp(Math.round(t.score * 0.95 + jitter(0.5))) },
-  ];
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
+  /* التقييمات الحقيقية لهذا العقد مرتّبة بالشهر */
+  const ratings = ratingsList.filter(r => r.contractId === id)
+    .sort((a, b) => (a.month || '').localeCompare(b.month || ''));
+  const latest = ratings[ratings.length - 1];
+
+  /* تفصيل المعايير من آخر تقييم فعلي (لا أرقام عشوائية) */
   const scoresEl = document.getElementById('td-scores');
   if (scoresEl) {
-    scoresEl.innerHTML = criteria.map(c => {
-      const cls = c.score >= 8 ? 'green' : c.score >= 6 ? 'yellow' : 'red';
-      return `
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px">
-            <span>${c.label}</span><strong style="font-family:'Space Mono',monospace">${c.score}/10</strong>
-          </div>
-          <div class="prog-bar"><div class="prog-fill ${cls}" style="width:${c.score*10}%"></div></div>
-        </div>`;
-    }).join('');
+    if (!latest) {
+      scoresEl.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px 0">لا يوجد تقييم بعد لهذا المستأجر — قيّمه من صفحة التقييمات.</div>`;
+    } else {
+      const crit = [
+        { label:'⏰ الالتزام بالمواعيد', v: latest.commitment },
+        { label:'🧹 نظافة المكان',        v: latest.cleanliness },
+        { label:'🤝 حسن التعامل',         v: latest.dealing },
+        { label:'💳 الالتزام المالي',     v: latest.payment },
+        { label:'📋 احترام الشروط',       v: latest.rules },
+      ];
+      scoresEl.innerHTML = crit.map(c => {
+        const s10 = (c.v || 0) * 2;          /* نجوم ١-٥ → مقياس ١٠ */
+        const cls = s10 >= 8 ? 'green' : s10 >= 6 ? 'yellow' : 'red';
+        return `
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px">
+              <span>${c.label}</span><strong style="font-family:'Space Mono',monospace">${c.v ? s10 + '/10' : '—'}</strong>
+            </div>
+            <div class="prog-bar"><div class="prog-fill ${cls}" style="width:${s10*10}%"></div></div>
+          </div>`;
+      }).join('');
+    }
   }
 
-  const months = ['أكت','نوف','ديس','يناير','فبراير'];
-  const scores = months.map((_, i) => clamp(t.score + jitter(2) - (i === 4 ? 0 : 0.2 * (4 - i))));
-  const maxS   = Math.max(...scores);
-
+  /* تطور التقييم شهرياً — من التقييمات الفعلية */
   const chartEl = document.getElementById('td-chart');
   if (chartEl) {
-    chartEl.innerHTML = scores.map((s, i) => {
-      const h   = Math.round((s / maxS) * 100);
-      const cls = i === scores.length - 1 ? 'high' : '';
-      return `<div class="bar ${cls}" style="height:${h}%"><span class="bar-label">${months[i]}</span><span class="bar-val">${s.toFixed(1)}</span></div>`;
-    }).join('');
+    const last = ratings.slice(-5);
+    if (!last.length) {
+      chartEl.innerHTML = `<div style="color:var(--text3);font-size:11px;padding:8px 0">لا توجد بيانات شهرية بعد</div>`;
+    } else {
+      const maxS = Math.max(...last.map(r => r.avgScore || 0), 1);
+      chartEl.innerHTML = last.map((r, i) => {
+        const s   = r.avgScore || 0;
+        const h   = Math.max(8, Math.round((s / maxS) * 100));
+        const mo  = (r.month || '').split('-')[1];
+        const lbl = MONTHS_AR[parseInt(mo, 10) - 1]?.slice(0, 3) || (r.month || '');
+        const cls = i === last.length - 1 ? 'high' : '';
+        return `<div class="bar ${cls}" style="height:${h}%"><span class="bar-label">${lbl}</span><span class="bar-val">${s.toFixed(1)}</span></div>`;
+      }).join('');
+    }
+  }
+
+  /* ملاحظات المستأجر = ملاحظات العقد */
+  const notesEl = document.getElementById('td-notes');
+  if (notesEl) {
+    const contract = contractsList.find(c => c.id === id);
+    notesEl.value = contract?.notes || '';
   }
 
   const detail = document.getElementById('tenant-detail');
@@ -2090,8 +2762,41 @@ function showTenantDetail(id) {
   }
 }
 
-const clamp  = v => Math.min(10, Math.max(1, v));
-const jitter = (r = 1) => (Math.random() - 0.5) * r;
+/* حفظ ملاحظات المستأجر في العقد (Supabase) */
+async function saveTenantNotes() {
+  if (!_currentTenantDetailId) { alert('اختر مستأجراً أولاً.'); return; }
+  const notes = document.getElementById('td-notes')?.value.trim() || '';
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { alert('تعذّر الاتصال.'); return; }
+  const btn = document.getElementById('td-save-notes-btn');
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('owner_contracts').update({ notes })
+    .eq('id', _currentTenantDetailId).eq('owner_id', currentOwner.id);
+  if (btn) btn.disabled = false;
+  if (error) { alert('تعذّر حفظ الملاحظات: ' + error.message); return; }
+  const c = contractsList.find(x => x.id === _currentTenantDetailId);
+  if (c) c.notes = notes;
+  if (btn) { btn.textContent = '✅ تم الحفظ'; setTimeout(() => { btn.textContent = '💾 حفظ الملاحظات'; }, 2000); }
+  renderContracts();
+}
+
+/* فتح صفحة العقود لإضافة مستأجر جديد (المستأجر = عقد) */
+function addTenant() {
+  cancelEditContract();
+  const nav = document.querySelector('[onclick*="contracts"]');
+  goTo('contracts', nav);
+  setTimeout(() => {
+    document.getElementById('contract-form')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    document.getElementById('cf-tenant')?.focus();
+  }, 200);
+}
+
+/* فرز المستأجرين */
+let _tenantSort = 'score-desc';
+function sortTenants(mode) {
+  _tenantSort = mode || 'score-desc';
+  renderTenants();
+}
 
 /* ══════════════════════════════════════════
    📄  CONTRACTS VIEW — من contractsList الحقيقي
@@ -2163,6 +2868,7 @@ function renderContracts() {
         ${c.notes ? `<div style="font-size:11px;color:var(--text3);margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:6px">📝 ${c.notes}</div>` : ''}
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn btn-sm" onclick="startEditContract('${c.id}')">✏️ تعديل</button>
+          <button class="btn btn-sm" style="color:var(--orange);border-color:rgba(255,107,0,0.25)" onclick="printContractStatement('${c.id}')">📋 كشف</button>
           <button class="btn btn-sm" style="color:var(--red);border-color:rgba(255,77,77,0.25)" onclick="deleteContract('${c.id}')">🗑️ حذف</button>
         </div>
       </div>`;
@@ -2213,77 +2919,117 @@ function renderBestTenant() {
 /* ══════════════════════════════════════════
    🚨  ALERTS — محسوبة من البيانات + Supabase
    ══════════════════════════════════════════ */
+/* تفضيل تنبيه (افتراضياً مفعّل) */
+function _notifPref(key) {
+  if (!ownerSettings) return true;
+  return ownerSettings[key] !== false;
+}
+/* مجموعة التنبيهات المحلية المُستبعَدة (محفوظة في owner_settings.extra) */
+function _dismissedSet() {
+  return new Set((ownerSettings?.extra?.dismissed_alerts) || []);
+}
+async function _persistDismissed(set) {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const extra = { ...(ownerSettings?.extra || {}), dismissed_alerts: [...set] };
+  ownerSettings = { ...(ownerSettings || { owner_id: currentOwner.id }), extra };
+  try { await sb.from('owner_settings').upsert({ owner_id: currentOwner.id, extra }, { onConflict: 'owner_id' }); }
+  catch (e) { console.warn('[Makani] persist dismissed:', e.message); }
+}
+
+/* يبني التنبيهات المحلية (المحسوبة) مع مفاتيح ثابتة + احترام التفضيلات + استبعاد المُلغاة */
+function _buildLocalAlerts() {
+  const out = [];
+  const dismissed = _dismissedSet();
+  const push = a => { if (!dismissed.has(a.key)) out.push(a); };
+
+  /* مساحات مهملة */
+  if (_notifPref('notify_abandoned_space')) {
+    ownerSpaces
+      .filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD)
+      .forEach(s => push({
+        key: 'sp:' + (s.unitDbId || s.code), type: 'danger', ico: '🏚️',
+        title: `المساحة ${s.code} مهملة منذ ${s.daysEmpty} يوم`,
+        body:  `${s.loc} (${s.size}) — لم تُؤجَّر منذ فترة. راجع السعر أو وسّع الأنشطة المسموحة.`,
+      }));
+  }
+
+  /* تقييمات منخفضة ومتراجعة */
+  if (_notifPref('notify_low_rating')) {
+    ownerTenants
+      .filter(t => t.score !== null && t.score < 5 && t.trend === 'down')
+      .forEach(t => push({
+        key: 'lr:' + t.id, type: 'danger', ico: '📉',
+        title: `تقييم ${t.name} منخفض باستمرار`,
+        body:  `التقييم الحالي ${t.score}/10 ومتراجع. العقد ينتهي بعد ${t.daysLeft} يوم — يُنصح بمراجعة الوضع.`,
+      }));
+  }
+
+  /* عقود تنتهي قريباً — مستويا ٧ و ٣٠ يوم */
+  if (_notifPref('notify_contract_expiry')) {
+    contractsList
+      .filter(c => c.status !== 'expired' && c.daysLeft >= 0 && c.daysLeft <= 30)
+      .forEach(c => {
+        const urgent = c.daysLeft <= 7;
+        push({
+          key: 'ce:' + c.id, type: urgent ? 'danger' : 'warning', ico: urgent ? '⏰' : '📅',
+          title: `عقد ${c.tenantName} ينتهي خلال ${c.daysLeft} يوم${urgent ? ' — عاجل' : ''}`,
+          body:  `المساحة ${c.spaceCode || '—'} — ${urgent ? 'تواصل فوراً مع المستأجر للتجديد.' : 'ابدأ ترتيب التجديد أو ابحث عن بديل.'}`,
+        });
+      });
+  }
+
+  /* دفعات متأخرة فعلية (من سجل المدفوعات) */
+  if (_notifPref('notify_payment_due')) {
+    paymentsList
+      .filter(p => p.status === 'late')
+      .forEach(p => push({
+        key: 'pl:' + p.id, type: 'warning', ico: '💳',
+        title: `دفعة متأخرة — ${p.tenantName}`,
+        body:  `المساحة ${p.spaceCode} — دفعة شهر ${p.month} مسجّلة كمتأخرة. تابع التحصيل.`,
+      }));
+  }
+
+  /* لا مساحات مضافة */
+  if (!ownerSpaces.length && !dismissed.has('no-spaces')) {
+    out.push({ key: 'no-spaces', type: 'info', ico: '💡', title: 'لم تُضَف مساحات بعد', body: 'ابدأ بإضافة مساحاتك ليراها المستأجرون على المنصة.' });
+  }
+  return out;
+}
+
+let _lastLocalAlertKeys = [];
+
 function renderAlerts() {
   const list = document.getElementById('alerts-list');
   if (!list) return;
 
-  const alerts = [];
+  const NOTIF_MAP = {
+    'space_submitted': { type:'info',    ico:'📋', title:'طلب إضافة مساحة جديدة',      body:'تم إرسال طلب إضافة المساحة — في انتظار المراجعة.' },
+    'space_approved':  { type:'success', ico:'✅', title:'تمت الموافقة على المساحة',    body:'تمت الموافقة على مساحتك وهي الآن قيد الإعداد للنشر.' },
+    'space_published': { type:'success', ico:'🚀', title:'تم نشر المساحة على المنصة',  body:'مساحتك أصبحت مرئية للمستأجرين على منصة مكاني Spot.' },
+    'space_rejected':  { type:'danger',  ico:'❌', title:'تم رفض طلب المساحة',         body:'راجع بيانات المساحة وأعد تقديم الطلب.' },
+    'bazaar_submitted':{ type:'info',    ico:'🎪', title:'طلب تنظيم بازار قيد المراجعة',body:'تم استلام طلب البازار وسيتم الرد خلال 24 ساعة.' },
+    'bazaar_approved': { type:'success', ico:'🎉', title:'تمت الموافقة على البازار',     body:'تمت الموافقة على بازارك وسيُنشر على المنصة قريباً.' },
+    'bazaar_rejected': { type:'danger',  ico:'⚠️', title:'مراجعة مطلوبة على طلب البازار', body:'يوجد ملاحظات على طلب البازار — تواصل مع الإدارة.' },
+    'bazaar_updated':  { type:'warning', ico:'🔄', title:'تحديث على حالة البازار',       body:'حدث تغيير في حالة طلب البازار — راجع التفاصيل.' },
+    'booking_request': { type:'info',    ico:'📬', title:'طلب حجز جديد',                 body:'وصلك طلب حجز جديد — راجعه في صندوق طلبات الحجز.' },
+    'waitlist_request':{ type:'warning', ico:'⏳', title:'طلب قائمة انتظار جديد',         body:'انضم عميل لقائمة انتظار إحدى مساحاتك — راجعه في تبويب قائمة الانتظار.' },
+  };
 
-  /* ── تنبيهات Supabase (مساحات + بازارات) ── */
-  supabaseNotifications.forEach(n => {
-    const typeMap = {
-      'space_submitted': { type:'info',    ico:'📋', title:'طلب إضافة مساحة جديدة',      body: n.body || 'تم إرسال طلب إضافة المساحة — في انتظار المراجعة.' },
-      'space_approved':  { type:'success', ico:'✅', title:'تمت الموافقة على المساحة',    body: n.body || 'تمت الموافقة على مساحتك وهي الآن قيد الإعداد للنشر.' },
-      'space_published': { type:'success', ico:'🚀', title:'تم نشر المساحة على المنصة',  body: n.body || 'مساحتك أصبحت مرئية للمستأجرين على منصة مكاني Spot.' },
-      'space_rejected':  { type:'danger',  ico:'❌', title:'تم رفض طلب المساحة',         body: n.body || 'راجع بيانات المساحة وأعد تقديم الطلب.' },
-      'bazaar_submitted':{ type:'info',    ico:'🎪', title:'طلب تنظيم بازار قيد المراجعة',body: n.body || 'تم استلام طلب البازار وسيتم الرد خلال 24 ساعة.' },
-      'bazaar_approved': { type:'success', ico:'🎉', title:'تمت الموافقة على البازار',     body: n.body || 'تمت الموافقة على بازارك وسيُنشر على المنصة قريباً.' },
-      'bazaar_rejected': { type:'danger',  ico:'⚠️', title:'مراجعة مطلوبة على طلب البازار', body: n.body || 'يوجد ملاحظات على طلب البازار — تواصل مع الإدارة لمعرفة التفاصيل.' },
-      'bazaar_updated':  { type:'warning', ico:'🔄', title:'تحديث على حالة البازار',       body: n.body || 'حدث تغيير في حالة طلب البازار — راجع التفاصيل.' },
-    };
-    const mapped = typeMap[n.type] || { type:'info', ico:'🔔', title: n.title || 'إشعار جديد', body: n.body || '' };
-    alerts.push(mapped);
+  /* تنبيهات Supabase (قابلة للحذف الفعلي) */
+  const sbAlerts = supabaseNotifications.map(n => {
+    const m = NOTIF_MAP[n.type] || { type:'info', ico:'🔔', title: n.title || 'إشعار جديد', body: n.body || '' };
+    return { nid: n.id, type: m.type, ico: m.ico, title: n.title || m.title, body: n.body || m.body };
   });
 
-  /* ── تنبيهات محلية: مساحات مهملة ── */
-  ownerSpaces
-    .filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD)
-    .forEach(s => alerts.push({
-      type:  'danger',
-      ico:   '🏚️',
-      title: `المساحة ${s.code} مهملة منذ ${s.daysEmpty} يوم`,
-      body:  `${s.loc} (${s.size}) — لم تُؤجَّر منذ فترة. مكاني Spot تستطيع مساعدتك في إيجاد مستأجر مناسب.`,
-    }));
+  /* تنبيهات محلية محسوبة (قابلة للإخفاء/المسح) */
+  const localAlerts = _buildLocalAlerts();
+  _lastLocalAlertKeys = localAlerts.map(a => a.key);
 
-  /* ── تقييمات منخفضة ومتراجعة ── */
-  ownerTenants
-    .filter(t => t.score < 5 && t.trend === 'down')
-    .forEach(t => alerts.push({
-      type:  'danger',
-      ico:   '📉',
-      title: `تقييم ${t.name} منخفض باستمرار`,
-      body:  `التقييم الحالي ${t.score}/10 ومتراجع. العقد ينتهي بعد ${t.daysLeft} يوم — يُنصح بمراجعة الوضع.`,
-    }));
-
-  /* ── عقود تنتهي قريباً ── */
-  ownerContracts
-    .filter(c => c.daysLeft <= 30)
-    .forEach(c => alerts.push({
-      type:  'warning',
-      ico:   '📅',
-      title: `عقد ${c.name} ينتهي خلال ${c.daysLeft} يوم`,
-      body:  `المساحة ${c.space} — تواصل مع المستأجر للتجديد أو ابدأ البحث عن بديل.`,
-    }));
-
-  /* ── دفعات متأخرة ── */
-  ownerTenants
-    .filter(t => t.score < 5)
-    .forEach(t => alerts.push({
-      type:  'warning',
-      ico:   '💳',
-      title: `تحقق من دفعات ${t.name}`,
-      body:  `المستأجر يعاني من أداء ضعيف — تأكد من انتظام الدفع.`,
-    }));
-
-  /* ── لا مساحات مضافة ── */
-  if (!ownerSpaces.length) {
-    alerts.push({ type:'info', ico:'💡', title:'لم تُضَف مساحات بعد', body:'ابدأ بإضافة مساحاتك ليراها المستأجرون على المنصة.' });
-  }
-
-  /* تحديث badge الجرس بعد بناء القائمة */
   updateNotifBadge();
 
-  if (!alerts.length) {
+  const total = sbAlerts.length + localAlerts.length;
+  if (!total) {
     list.innerHTML = `<div class="alert-item success">
       <span class="alert-ico">✅</span>
       <div class="alert-text"><strong>لا توجد تنبيهات حالياً</strong>كل شيء يسير بشكل ممتاز.</div>
@@ -2291,11 +3037,407 @@ function renderAlerts() {
     return;
   }
 
-  list.innerHTML = alerts.map(a => `
-    <div class="alert-item ${a.type}">
+  const closeBtn = (handler) =>
+    `<button title="حذف التنبيه" onclick="${handler}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;margin-inline-start:auto;flex-shrink:0">✕</button>`;
+
+  const toolbar = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:12px;color:var(--text3)">${total} تنبيه</span>
+      <button class="btn btn-ghost btn-sm" onclick="clearAllAlerts()" style="font-size:12px">🗑️ مسح الكل</button>
+    </div>`;
+
+  const rowsSb = sbAlerts.map(a => `
+    <div class="alert-item ${a.type}" style="display:flex;align-items:flex-start;gap:10px">
       <span class="alert-ico">${a.ico}</span>
-      <div class="alert-text"><strong>${a.title}</strong>${a.body}</div>
+      <div class="alert-text" style="flex:1"><strong>${a.title}</strong>${a.body}</div>
+      ${closeBtn(`deleteNotification('${a.nid}')`)}
     </div>`).join('');
+
+  const rowsLocal = localAlerts.map(a => `
+    <div class="alert-item ${a.type}" style="display:flex;align-items:flex-start;gap:10px">
+      <span class="alert-ico">${a.ico}</span>
+      <div class="alert-text" style="flex:1"><strong>${a.title}</strong>${a.body}</div>
+      ${closeBtn(`dismissAlert('${a.key}')`)}
+    </div>`).join('');
+
+  list.innerHTML = toolbar + rowsSb + rowsLocal;
+}
+
+/* حذف تنبيه Supabase فعلياً */
+async function deleteNotification(nid) {
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    try { await sb.from('notifications').delete().eq('id', nid).eq('owner_id', currentOwner.id); }
+    catch (e) { console.warn('[Makani] delete notif:', e.message); }
+  }
+  supabaseNotifications = supabaseNotifications.filter(n => n.id !== nid);
+  renderAlerts();
+  updateNotifBadge();
+}
+
+/* إخفاء تنبيه محلي محسوب (يُحفظ في الإعدادات) */
+async function dismissAlert(key) {
+  const set = _dismissedSet();
+  set.add(key);
+  await _persistDismissed(set);
+  renderAlerts();
+  updateNotifBadge();
+}
+
+/* مسح كل التنبيهات: حذف إشعارات Supabase + إخفاء كل المحلية الظاهرة */
+async function clearAllAlerts() {
+  if (!confirm('مسح كل التنبيهات الحالية؟')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id && supabaseNotifications.length) {
+    const ids = supabaseNotifications.map(n => n.id).filter(Boolean);
+    if (ids.length) {
+      try { await sb.from('notifications').delete().in('id', ids).eq('owner_id', currentOwner.id); }
+      catch (e) { console.warn('[Makani] clear notifs:', e.message); }
+    }
+    supabaseNotifications = [];
+  }
+  const set = _dismissedSet();
+  _lastLocalAlertKeys.forEach(k => set.add(k));
+  await _persistDismissed(set);
+  renderAlerts();
+  updateNotifBadge();
+}
+
+/* ══════════════════════════════════════════
+   📬  BOOKINGS — طلبات الحجز الواردة
+   ══════════════════════════════════════════ */
+
+/* تحديث بادج "طلبات الحجز" في السايدبار */
+function updateBookingsBadge() {
+  /* العدّاد = الطلبات المعلّقة (عدا قوائم الانتظار، لها تبويبها الخاص) + قوائم الانتظار */
+  const pending = bookingsList.filter(b =>
+    (b.status === 'pending' || b.status === 'viewing_pending') || b.isWaitlist).length;
+  const badge = document.getElementById('nb-bookings');
+  if (!badge) return;
+  if (pending > 0) {
+    badge.textContent = String(pending);
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* عرض قسم طلبات الحجز */
+function renderBookings() {
+  const wrap = document.getElementById('bookings-list');
+  if (!wrap) return;
+  updateBookingsBadge();
+
+  /* فصل قوائم الانتظار عن الحجوزات العادية */
+  const waitlist = bookingsList.filter(b => b.isWaitlist);
+  const normal   = bookingsList.filter(b => !b.isWaitlist);
+
+  /* KPI cards في رأس الصفحة — عن الحجوزات العادية */
+  const pending   = normal.filter(b => b.status === 'pending' || b.status === 'viewing_pending').length;
+  const confirmed = normal.filter(b => b.status === 'confirmed').length;
+  const setKpi = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setKpi('bk-kpi-pending',   pending);
+  setKpi('bk-kpi-confirmed', confirmed);
+  setKpi('bk-kpi-total',     normal.length);
+
+  const statusMap = {
+    pending:         { lbl: '⏳ معلق',    cls: 'badge-yellow' },
+    viewing_pending: { lbl: '👁 معاينة',  cls: 'badge-purple' },
+    confirmed:       { lbl: '✅ مؤكد',    cls: 'badge-green'  },
+    cancelled:       { lbl: '❌ ملغي',    cls: 'badge-red'    },
+    completed:       { lbl: '🏁 مكتمل',   cls: 'badge-blue'   },
+  };
+
+  /* filter tab — نُخزّن الاختيار في العنصر نفسه */
+  const activeFilter = wrap.dataset.filter || 'pending';
+
+  /* تبويب قائمة الانتظار منفصل تماماً عن باقي التبويبات */
+  const filtered = activeFilter === 'waitlist'
+    ? waitlist
+    : activeFilter === 'all'
+      ? normal
+      : normal.filter(b => {
+          if (activeFilter === 'pending') return b.status === 'pending' || b.status === 'viewing_pending';
+          return b.status === activeFilter;
+        });
+
+  const pendingCount   = normal.filter(b => b.status === 'pending' || b.status === 'viewing_pending').length;
+  const confirmedCount = normal.filter(b => b.status === 'confirmed').length;
+  const waitlistCount  = waitlist.length;
+
+  const tabBtn = (val, label, count) => {
+    const on = activeFilter === val ? ' bk-tab-on' : '';
+    return `<button class="bk-tab${on}" onclick="setBkFilter('${val}')">${label}${count ? ` <span class="bk-tab-cnt">${count}</span>` : ''}</button>`;
+  };
+
+  const tabsHtml = `
+    <div class="bk-tabs">
+      ${tabBtn('pending',   'معلقة',         pendingCount)}
+      ${tabBtn('confirmed', 'مؤكدة',         confirmedCount)}
+      ${tabBtn('waitlist',  '⏳ قائمة الانتظار', waitlistCount)}
+      ${tabBtn('all',       'الكل',          normal.length)}
+    </div>`;
+
+  if (!bookingsList.length) {
+    wrap.innerHTML = `
+      ${tabsHtml}
+      <div class="empty-hint">
+        <div style="font-size:36px;margin-bottom:12px">📬</div>
+        <div style="font-weight:700;margin-bottom:6px">لا توجد طلبات حجز حالياً</div>
+        <div style="font-size:12px;color:var(--text3)">عندما يحجز أحدهم مساحتك من الموقع ستجد الطلب هنا فوراً.</div>
+      </div>`;
+    return;
+  }
+
+  /* بطاقات قائمة الانتظار لها شكل وإجراءات مختلفة */
+  if (activeFilter === 'waitlist') {
+    wrap.innerHTML = tabsHtml + renderWaitlistCards(waitlist);
+    return;
+  }
+
+  const rows = filtered.length
+    ? filtered.map(b => {
+        const st = statusMap[b.status] || { lbl: b.status, cls: 'badge-gray' };
+        const isPending = b.status === 'pending' || b.status === 'viewing_pending';
+        const dateStr = b.createdAt ? new Date(b.createdAt).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' }) : '—';
+        const startStr = b.startDate || '—';
+        return `
+        <div class="bk-card">
+          <div class="bk-card-head">
+            <div>
+              <div class="bk-card-space">${_escBk(b.spaceName)}</div>
+              <div class="bk-card-loc">📍 ${_escBk(b.spaceLoc)} ${b.size !== '—' ? '· ' + _escBk(b.size) : ''}</div>
+            </div>
+            <span class="badge ${st.cls}">${st.lbl}</span>
+          </div>
+          <div class="bk-card-body">
+            <div class="bk-info-grid">
+              <span class="bk-lbl">👤 الحاجز</span><span class="bk-val">${_escBk(b.bookerName)}</span>
+              <span class="bk-lbl">📞 الهاتف</span><span class="bk-val">${b.bookerPhone !== '—' ? `<a href="tel:${_escBk(b.bookerPhone)}" style="color:var(--accent)">${_escBk(b.bookerPhone)}</a>` : '—'}</span>
+              <span class="bk-lbl">🏷️ النشاط</span><span class="bk-val">${_escBk(b.activity)}</span>
+              <span class="bk-lbl">📅 التاريخ المطلوب</span><span class="bk-val">${_escBk(startStr)}</span>
+              <span class="bk-lbl">⏱ المدة</span><span class="bk-val">${_escBk(b.duration)}</span>
+              <span class="bk-lbl">💰 السعر</span><span class="bk-val">${_escBk(b.price)}</span>
+              ${b.notes ? `<span class="bk-lbl">📝 ملاحظات</span><span class="bk-val">${_escBk(b.notes)}</span>` : ''}
+              <span class="bk-lbl">🕐 استلمنا الطلب</span><span class="bk-val">${dateStr}</span>
+            </div>
+          </div>
+          <div class="bk-card-actions">
+            ${isPending ? `
+              <button class="btn btn-primary btn-sm" onclick="acceptBooking('${b.id}')">✅ قبول</button>
+              <button class="btn btn-sm" style="background:rgba(255,77,77,.15);color:var(--red);border-color:rgba(255,77,77,.3)" onclick="rejectBooking('${b.id}')">❌ رفض</button>
+              <button class="btn btn-ghost btn-sm" onclick="convertBookingToContract('${b.id}')">📄 تحويل لعقد</button>` : ''}
+            ${b.status === 'confirmed' ? `
+              <button class="btn btn-ghost btn-sm" onclick="convertBookingToContract('${b.id}')">📄 إنشاء عقد</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="rejectBooking('${b.id}')">🚫 إلغاء</button>` : ''}
+            ${b.bookerPhone && b.bookerPhone !== '—' ? `
+              <a href="https://wa.me/2${b.bookerPhone.replace(/\D/g,'')}" target="_blank" rel="noopener"
+                 class="btn btn-ghost btn-sm" style="text-decoration:none">💬 واتساب</a>` : ''}
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="empty-hint" style="padding:24px">لا توجد طلبات بهذا الفلتر.</div>`;
+
+  wrap.innerHTML = tabsHtml + `<div class="bk-cards">${rows}</div>`;
+}
+
+/* بطاقات قائمة الانتظار — تعرض رابط البروفايل وإجراءات خاصة */
+function renderWaitlistCards(list) {
+  if (!list.length) {
+    return `<div class="empty-hint" style="padding:32px">
+      <div style="font-size:32px;margin-bottom:8px">⏳</div>
+      <div style="font-weight:700;margin-bottom:6px">لا أحد في قائمة الانتظار حالياً</div>
+      <div style="font-size:12px;color:var(--text3)">عند امتلاء كل وحداتك، من يطلب الحجز يدخل هنا تلقائياً.</div>
+    </div>`;
+  }
+  const cards = list.map(b => {
+    const dateStr  = b.createdAt ? new Date(b.createdAt).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const phoneOk  = b.bookerPhone && b.bookerPhone !== '—';
+    const profileLink = b.profileLink
+      ? `<span class="bk-lbl">📁 البروفايل</span><span class="bk-val"><a href="${_escBk(b.profileLink)}" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:underline">فتح ملف النشاط ↗</a></span>`
+      : `<span class="bk-lbl">📁 البروفايل</span><span class="bk-val" style="color:var(--text3)">لم يُرفق</span>`;
+    return `
+    <div class="bk-card" style="border-color:rgba(255,184,0,.30)">
+      <div class="bk-card-head">
+        <div>
+          <div class="bk-card-space">${_escBk(b.spaceName)}</div>
+          <div class="bk-card-loc">📍 ${_escBk(b.spaceLoc)} ${b.size !== '—' ? '· ' + _escBk(b.size) : ''}</div>
+        </div>
+        <span class="badge badge-yellow">⏳ قائمة انتظار</span>
+      </div>
+      <div class="bk-card-body">
+        <div class="bk-info-grid">
+          <span class="bk-lbl">👤 المهتم</span><span class="bk-val">${_escBk(b.bookerName)}</span>
+          <span class="bk-lbl">📞 الهاتف</span><span class="bk-val">${phoneOk ? `<a href="tel:${_escBk(b.bookerPhone)}" style="color:var(--orange)">${_escBk(b.bookerPhone)}</a>` : '—'}</span>
+          <span class="bk-lbl">🏷️ النشاط</span><span class="bk-val">${_escBk(b.activity)}</span>
+          ${profileLink}
+          ${b.notes ? `<span class="bk-lbl">📝 ملاحظات</span><span class="bk-val">${_escBk(b.notes)}</span>` : ''}
+          <span class="bk-lbl">🕐 انضم بتاريخ</span><span class="bk-val">${dateStr}</span>
+        </div>
+      </div>
+      <div class="bk-card-actions">
+        <button class="btn btn-primary btn-sm" onclick="approveWaitlist('${b.id}')" title="تأكيد توفّر وحدة وقبول الطلب">✅ توفّرت وحدة — قبول</button>
+        <button class="btn btn-ghost btn-sm" onclick="promoteWaitlist('${b.id}')" title="إنشاء عقد مباشرة">📄 تحويل لعقد</button>
+        <button class="btn btn-sm" style="background:rgba(255,77,77,.15);color:var(--red);border-color:rgba(255,77,77,.3)" onclick="rejectWaitlist('${b.id}')">❌ إزالة</button>
+        ${phoneOk ? `<a href="https://wa.me/2${b.bookerPhone.replace(/\D/g,'')}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="text-decoration:none">💬 واتساب</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="bk-cards">${cards}</div>`;
+}
+
+/* مساعد escape لـ bookings */
+function _escBk(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* تغيير فلتر الحجوزات */
+function setBkFilter(val) {
+  const wrap = document.getElementById('bookings-list');
+  if (wrap) { wrap.dataset.filter = val; renderBookings(); }
+}
+
+/* قبول الحجز */
+async function acceptBooking(bookingId) {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('owner_update_booking_status', {
+      p_booking_id: bookingId,
+      p_status:     'confirmed',
+    });
+    if (error) throw error;
+    /* تحديث محلي فوري */
+    const bk = bookingsList.find(b => b.id === bookingId);
+    if (bk) bk.status = 'confirmed';
+    renderBookings();
+    updateBookingsBadge();
+  } catch (e) {
+    alert('تعذّر قبول الحجز: ' + e.message);
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* رفض / إلغاء الحجز */
+async function rejectBooking(bookingId) {
+  if (!confirm('هل تريد رفض هذا الطلب؟')) return;
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  try {
+    const { error } = await sb.rpc('owner_update_booking_status', {
+      p_booking_id: bookingId,
+      p_status:     'cancelled',
+    });
+    if (error) throw error;
+    bookingsList = bookingsList.filter(b => b.id !== bookingId);
+    renderBookings();
+    updateBookingsBadge();
+  } catch (e) {
+    alert('تعذّر رفض الحجز: ' + e.message);
+  }
+}
+
+/* ── قائمة الانتظار: قبول (توفّرت وحدة) ── */
+async function approveWaitlist(bookingId) {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('owner_promote_waitlist', { p_booking_id: bookingId });
+    if (error) throw error;
+    /* صار حجزاً مؤكداً عادياً */
+    const bk = bookingsList.find(b => b.id === bookingId);
+    if (bk) { bk.isWaitlist = false; bk.status = 'confirmed'; }
+    renderBookings();
+    updateBookingsBadge();
+  } catch (e) {
+    alert('تعذّر قبول الطلب: ' + e.message);
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* ── قائمة الانتظار: إزالة / إلغاء ── */
+async function rejectWaitlist(bookingId) {
+  if (!confirm('هل تريد إزالة هذا الطلب من قائمة الانتظار؟')) return;
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  try {
+    const { error } = await sb.rpc('owner_update_booking_status', {
+      p_booking_id: bookingId,
+      p_status:     'cancelled',
+    });
+    if (error) throw error;
+    bookingsList = bookingsList.filter(b => b.id !== bookingId);
+    renderBookings();
+    updateBookingsBadge();
+  } catch (e) {
+    alert('تعذّر إزالة الطلب: ' + e.message);
+  }
+}
+
+/* ── قائمة الانتظار: تحويل مباشر لعقد ── */
+async function promoteWaitlist(bookingId) {
+  const sb = getSB();
+  const bk = bookingsList.find(b => b.id === bookingId);
+  if (!bk) return;
+  /* أخرِجه من قائمة الانتظار أولاً (يصبح حجزاً مؤكداً) ثم افتح نموذج العقد */
+  if (sb && currentOwner?.id) {
+    try {
+      await sb.rpc('owner_promote_waitlist', { p_booking_id: bookingId });
+      bk.isWaitlist = false; bk.status = 'confirmed';
+    } catch (e) {
+      alert('تعذّر تحويل الطلب: ' + e.message);
+      return;
+    }
+  }
+  updateBookingsBadge();
+  convertBookingToContract(bookingId);
+}
+
+/* تحويل الحجز لعقد — ينتقل لصفحة العقود مع ملء البيانات مسبقاً */
+function convertBookingToContract(bookingId) {
+  const bk = bookingsList.find(b => b.id === bookingId);
+  if (!bk) return;
+
+  /* انتقل لصفحة العقود أولاً */
+  const contractsNav = document.querySelector('[onclick*="contracts"]');
+  goTo('contracts', contractsNav);
+
+  /* أعطِ الـ DOM ثانية لتحميل الصفحة ثم املأ البيانات */
+  setTimeout(() => {
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set('cf-tenant',   bk.bookerName !== '—' ? bk.bookerName : '');
+    set('cf-phone',    bk.bookerPhone !== '—' ? bk.bookerPhone : '');
+    set('cf-activity', bk.activity !== '—' ? bk.activity : '');
+    set('cf-start',    bk.startDate || '');
+    /* اختر الوحدة المطابقة لو وُجدت */
+    populateContractSpaceSelect();
+    if (bk.spaceId) {
+      const spaceSelect = document.getElementById('cf-space');
+      if (spaceSelect) {
+        const matchingUnit = ownerSpaces.find(s => s.spaceId === bk.spaceId);
+        if (matchingUnit) spaceSelect.value = matchingUnit.unitDbId || '';
+      }
+    }
+    /* أضف ملاحظة تربطه بالحجز */
+    const notesEl = document.getElementById('cf-notes');
+    if (notesEl && !notesEl.value) {
+      notesEl.value = `محوَّل من طلب حجز — ${bk.spaceName}`;
+    }
+  }, 300);
+}
+
+/* حذف الإشعارات المقروءة الأقدم من 30 يوم */
+async function cleanupOldNotifications() {
+  const sb = getSB();
+  if (!sb) return;
+  try {
+    await sb.rpc('cleanup_old_notifications', { p_days: 30 });
+  } catch { /* صامت — الدالة اختيارية */ }
 }
 
 /* ══════════════════════════════════════════
@@ -2315,6 +3457,76 @@ async function removePendingSpace(id) {
   }
   ownerPendingSpaces = ownerPendingSpaces.filter(p => p.id !== id);
   renderSpaces();
+}
+
+/* ══════════════════════════════════════════
+   ✏️  تعديل وحدة مساحة معتمدة (UPDATE space_units)
+   ══════════════════════════════════════════ */
+function openUnitEdit(unitDbId) {
+  const u = ownerSpaces.find(s => s.unitDbId === unitDbId);
+  if (!u) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val ?? ''); };
+  set('ue-id',     u.unitDbId);
+  set('ue-code',   u.code && u.code !== '—' ? u.code : '');
+  set('ue-name',   u.uname);
+  set('ue-floor',  u.floor);
+  set('ue-size',   u.size && u.size !== '—' ? u.size : '');
+  set('ue-price',  u.basePrice ?? '');
+  set('ue-status', u.baseStatus || 'available');
+  set('ue-loc',    u.unitLoc);
+  set('ue-notes',  u.unitNotes);
+  setTxt('ue-title', `✏️ تعديل الوحدة ${u.code || ''}`);
+  if (u.spaceName) setTxt('ue-sub', `داخل: ${u.spaceName} — تُحفظ مباشرة دون إعادة مراجعة`);
+  const msg = document.getElementById('ue-msg'); if (msg) msg.style.display = 'none';
+  const modal = document.getElementById('unit-edit-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeUnitEdit() {
+  const modal = document.getElementById('unit-edit-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitUnitEdit() {
+  const get = id => document.getElementById(id)?.value?.trim();
+  const id   = get('ue-id');
+  const code = get('ue-code');
+  const msg  = document.getElementById('ue-msg');
+  const showMsg = (type, text) => {
+    if (!msg) return;
+    msg.className = `alert-item ${type}`;
+    msg.style.display = 'flex';
+    msg.innerHTML = `<span class="alert-ico">${type==='success'?'✅':'❌'}</span><div class="alert-text"><strong>${text}</strong></div>`;
+  };
+  if (!id)   { showMsg('danger', 'تعذّر تحديد الوحدة.'); return; }
+  if (!code) { showMsg('danger', 'كود الوحدة مطلوب.'); return; }
+
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { showMsg('danger', 'تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
+
+  const payload = {
+    unit_id:  code,
+    name:     get('ue-name') || null,
+    floor:    get('ue-floor') || null,
+    size:     get('ue-size') || null,
+    price:    parseInt(get('ue-price')) || null,
+    status:   get('ue-status') || 'available',
+    location: get('ue-loc') || null,
+    notes:    get('ue-notes') || null,
+  };
+
+  const btn = document.getElementById('ue-save-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.from('space_units').update(payload).eq('id', id);
+    if (error) throw error;
+    await loadOwnerData();          /* إعادة تحميل المساحات + إعادة الحساب */
+    closeUnitEdit();
+  } catch (err) {
+    showMsg('danger', 'تعذّر حفظ التعديلات: ' + (err.message || 'خطأ'));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -2685,15 +3897,41 @@ function collectSubUnits() {
    🔗 DB-LINK: يرسل للـ Apps Script → يحفظ في الشيت
    ══════════════════════════════════════════ */
 function populateSelects() {
-  const available = ownerSpaces.filter(s => s.status === 'available');
+  populateContractSpaceSelect();
+}
 
-  /* قائمة المساحات الفارغة في نموذج العقد */
-  document.querySelectorAll('.select-available-space').forEach(sel => {
-    sel.innerHTML = available.map(s => `<option value="${s.code}">${s.code} — ${s.loc}</option>`).join('');
-  });
+/* قائمة وحدات المالك الحقيقية في نموذج العقد (مرتبطة بـ space_units) */
+function populateContractSpaceSelect() {
+  let el = document.getElementById('cf-space');
+  if (!el) return;
 
-  /* ملاحظة: قائمة المستأجرين في نموذج التقييم تُملأ من Supabase عبر
-     populateRateTenantSelect() داخل loadOwnerRatings() — وليست من العقود المحلية. */
+  if (!ownerSpaces.length) {
+    /* لا توجد وحدات معتمدة — اعرض حقل نصي للإدخال اليدوي */
+    if (el.tagName === 'SELECT') {
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = 'cf-space'; inp.required = true;
+      inp.placeholder = 'رمز الوحدة أو المساحة (يدوي — مساحتك قيد المراجعة)';
+      el.parentNode.replaceChild(inp, el);
+    }
+    return;
+  }
+
+  /* توجد وحدات معتمدة — تأكد أن العنصر select */
+  if (el.tagName !== 'SELECT') {
+    const sel = document.createElement('select');
+    sel.id = 'cf-space'; sel.required = true;
+    el.parentNode.replaceChild(sel, el);
+    el = sel;
+  }
+
+  const prev = el.value;
+  const stLbl = { rented: '🔴 مؤجّرة', available: '🟢 متاحة', reserved: '🟡 محجوزة', maintenance: '🔧 صيانة' };
+  el.innerHTML = '<option value="">اختر الوحدة</option>' +
+    ownerSpaces.map(s => {
+      const label = `${s.code}${s.loc && s.loc !== '—' ? ' — ' + s.loc : ''}${s.spaceName ? ' (' + s.spaceName + ')' : ''} · ${stLbl[s.status] || s.status}`;
+      return `<option value="${s.unitDbId || ''}">${label}</option>`;
+    }).join('');
+  if (prev) el.value = prev;
 }
 
 async function submitAddSpace(e) {
@@ -3161,58 +4399,52 @@ function updateAvgRating() {
 /* القديمة — لم تعد مستخدمة (نتركها للتوافق مع أي استدعاء قديم) */
 function updateRVal() { updateAvgRating(); }
 
-/* تحميل المستأجرين القابلين للتقييم + سجل تقييمات المالك من Supabase */
+/* الشهر الحالي بصيغة YYYY-MM */
+function _currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/* تحميل تقييمات المالك (owner_tenant_ratings) + تعبئة الفورم والسجل */
 async function loadOwnerRatings() {
-  const sb = getSB();
-  if (!sb || !currentOwner?.id) { renderRateStars(); renderRatingsHistory(); return; }
-  try {
-    const [{ data: rateable, error: e1 }, { data: mine, error: e2 }] = await Promise.all([
-      sb.rpc('owner_list_rateable_tenants'),
-      sb.from('user_ratings').select('*')
-        .eq('rater_id', currentOwner.id).eq('context_type', 'space')
-        .order('created_at', { ascending: false }),
-    ]);
-    if (e1) console.error('[loadOwnerRatings] rateable:', JSON.stringify(e1));
-    if (e2) console.error('[loadOwnerRatings] mine:', JSON.stringify(e2));
-    sbRateableTenants = rateable || [];
-    sbOwnerRatings    = mine || [];
-  } catch (e) {
-    console.error('[loadOwnerRatings]', e);
-    sbRateableTenants = []; sbOwnerRatings = [];
-  }
+  await loadRatingsRemote();
+  const monthEl = document.getElementById('rate-month');
+  if (monthEl && !monthEl.value) monthEl.value = _currentMonth();
   populateRateTenantSelect();
   renderRateStars();
   renderRatingsHistory();
 }
 
+/* قائمة المستأجرين = العقود الفعّالة (مصدر موحّد مع باقي اللوحة) */
 function populateRateTenantSelect() {
   const sel = document.getElementById('rate-tenant');
   if (!sel) return;
-  if (!sbRateableTenants.length) {
-    sel.innerHTML = '<option value="">لا يوجد مستأجرون عبر المنصة بعد</option>';
+  const prev   = sel.value;
+  const active = contractsList.filter(c => c.status !== 'expired');
+  if (!active.length) {
+    sel.innerHTML = '<option value="">لا توجد عقود — أضف عقداً أولاً من صفحة العقود</option>';
     return;
   }
   sel.innerHTML = '<option value="">اختر المستأجر</option>' +
-    sbRateableTenants.map(t => {
-      const mark = t.rating_id ? ' ✓' : '';
-      return `<option value="${t.booking_id}">${_escR(t.tenant_name)} — ${_escR(t.space_name || 'مساحة')}${mark}</option>`;
-    }).join('');
+    active.map(c => `<option value="${c.id}">${_escR(c.tenantName)} — ${_escR(c.spaceCode || 'مساحة')}</option>`).join('');
+  if (prev) sel.value = prev;
 }
 
-/* عند اختيار مستأجر: اعرض سياق الحجز + عبّئ تقييماً سابقاً إن وُجد (تعديل) */
+/* عند اختيار مستأجر/شهر: اعرض السياق + عبّئ تقييماً سابقاً إن وُجد (تعديل) */
 function onRateTenantChange() {
-  const sel       = document.getElementById('rate-tenant');
-  const bookingId = sel?.value;
-  const ctxEl     = document.getElementById('rate-context');
-  const t         = sbRateableTenants.find(x => x.booking_id === bookingId);
+  const sel        = document.getElementById('rate-tenant');
+  const contractId = sel?.value;
+  const ctxEl      = document.getElementById('rate-context');
+  const month      = document.getElementById('rate-month')?.value || _currentMonth();
+  const c          = contractsList.find(x => x.id === contractId);
 
   if (ctxEl) {
-    ctxEl.textContent = t
-      ? `🏬 ${t.space_name || 'مساحة'}${t.activity ? ' · ' + t.activity : ''}${t.start_date ? ' · يبدأ ' + t.start_date : ''}`
+    ctxEl.textContent = c
+      ? `🏬 ${c.spaceCode || 'مساحة'}${c.activity ? ' · ' + c.activity : ''}`
       : '';
   }
 
-  const prev = sbOwnerRatings.find(r => r.booking_id === bookingId);
+  const prev = ratingsList.find(r => r.contractId === contractId && r.month === month);
   rateVals = {
     commitment:  prev?.commitment  || 0,
     cleanliness: prev?.cleanliness || 0,
@@ -3227,10 +4459,11 @@ function onRateTenantChange() {
 }
 
 async function submitRating() {
-  const sel       = document.getElementById('rate-tenant');
-  const bookingId = sel?.value;
-  const msgEl     = document.getElementById('rate-msg');
-  const btn       = document.getElementById('btn-submit-rating');
+  const sel        = document.getElementById('rate-tenant');
+  const contractId = sel?.value;
+  const msgEl      = document.getElementById('rate-msg');
+  const btn        = document.getElementById('btn-submit-rating');
+  const month      = document.getElementById('rate-month')?.value || _currentMonth();
 
   const showMsg = (type, text) => {
     if (!msgEl) return;
@@ -3241,38 +4474,42 @@ async function submitRating() {
     if (type === 'success') setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
   };
 
-  if (!bookingId) { showMsg('danger', 'اختر المستأجر أولاً.'); return; }
+  if (!contractId) { showMsg('danger', 'اختر المستأجر أولاً.'); return; }
 
   const set = _rateValsArray();
   if (!set.length) { showMsg('danger', 'قيّم معياراً واحداً على الأقل بالنجوم.'); return; }
 
-  const overall = Math.max(1, Math.min(5, Math.round(set.reduce((a, b) => a + b, 0) / set.length)));
-  const notes   = document.getElementById('rate-notes')?.value.trim() || '';
-  const nn      = v => (v && v > 0 ? v : null);
+  /* المتوسط على مقياس ١٠ = متوسط النجوم (١-٥) × ٢ */
+  const avg10 = parseFloat((set.reduce((a, b) => a + b, 0) / set.length * 2).toFixed(1));
+  const notes = document.getElementById('rate-notes')?.value.trim() || '';
+  const nn    = v => (v && v > 0 ? v : null);
 
   const sb = getSB();
-  if (!sb) { showMsg('danger', 'تعذّر الاتصال بالخادم.'); return; }
+  if (!sb || !currentOwner?.id) { showMsg('danger', 'تعذّر الاتصال بالخادم.'); return; }
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ…'; }
-
   try {
-    const { error } = await sb.rpc('rate_tenant', {
-      p_booking_id:   bookingId,
-      p_context_type: 'space',
-      p_overall:      overall,
-      p_commitment:   nn(rateVals.commitment),
-      p_cleanliness:  nn(rateVals.cleanliness),
-      p_dealing:      nn(rateVals.dealing),
-      p_payment:      nn(rateVals.payment),
-      p_rules:        nn(rateVals.rules),
-      p_comment:      notes || null,
-    });
+    const payload = {
+      owner_id:    currentOwner.id,
+      contract_id: contractId,
+      month,
+      commitment:  nn(rateVals.commitment),
+      cleanliness: nn(rateVals.cleanliness),
+      dealing:     nn(rateVals.dealing),
+      payment:     nn(rateVals.payment),
+      rules:       nn(rateVals.rules),
+      avg_score:   avg10,
+      comment:     notes || null,
+    };
+    const { error } = await sb.from('owner_tenant_ratings')
+      .upsert(payload, { onConflict: 'contract_id,month' });
     if (error) throw error;
 
-    showMsg('success', `تم حفظ التقييم! التقييم العام: ${overall}/5 ⭐`);
-    await loadOwnerRatings();
+    showMsg('success', `تم حفظ التقييم! المتوسط: ${avg10}/10 ⭐`);
+    await loadRatingsRemote();
+    syncDataFromContracts();
+    renderAll();
 
-    /* تصفير الفورم */
     if (sel) sel.value = '';
     rateVals = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
     const ctxEl = document.getElementById('rate-context'); if (ctxEl) ctxEl.textContent = '';
@@ -3280,17 +4517,23 @@ async function submitRating() {
     renderRateStars();
     updateAvgRating();
   } catch (e) {
-    const map = {
-      not_authorized_booking: 'لا يمكنك تقييم هذا الحجز — ليس ضمن مساحاتك.',
-      cannot_rate_self:       'لا يمكنك تقييم نفسك.',
-      invalid_overall:        'قيمة التقييم غير صحيحة.',
-      no_registered_user:     'هذا الحجز غير مرتبط بحساب مستخدم مسجّل.',
-      unauthorized:           'انتهت الجلسة — سجّل الدخول من جديد.',
-    };
-    showMsg('danger', map[e?.message] || ('تعذّر حفظ التقييم: ' + (e?.message || 'خطأ غير معروف')));
+    showMsg('danger', 'تعذّر حفظ التقييم: ' + (e?.message || 'خطأ غير معروف'));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '⭐ حفظ التقييم'; }
   }
+}
+
+/* حذف تقييم */
+async function deleteRating(id) {
+  if (!confirm('هل تريد حذف هذا التقييم؟')) return;
+  const sb = getSB();
+  if (sb && currentOwner?.id) {
+    const { error } = await sb.from('owner_tenant_ratings').delete().eq('id', id).eq('owner_id', currentOwner.id);
+    if (error) { alert('تعذّر الحذف: ' + error.message); return; }
+  }
+  ratingsList = ratingsList.filter(r => r.id !== id);
+  syncDataFromContracts();
+  renderAll();
 }
 
 /* ══════════════════════════════════════════
@@ -3329,6 +4572,54 @@ async function saveSettings() {
 }
 
 /* ══════════════════════════════════════════
+   🔔  تفضيلات التنبيهات — owner_settings
+   ══════════════════════════════════════════ */
+function applyNotifPrefsToUI() {
+  if (!ownerSettings) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  set('st-notif-expiry',    ownerSettings.notify_contract_expiry);
+  set('st-notif-rating',    ownerSettings.notify_low_rating);
+  set('st-notif-abandoned', ownerSettings.notify_abandoned_space);
+  set('st-notif-report',    ownerSettings.extra && ownerSettings.extra.monthly_report);
+}
+
+async function saveNotifPrefs() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const get = id => document.getElementById(id)?.checked || false;
+  const payload = {
+    owner_id:               currentOwner.id,
+    notify_contract_expiry: get('st-notif-expiry'),
+    notify_low_rating:      get('st-notif-rating'),
+    notify_abandoned_space: get('st-notif-abandoned'),
+    extra:                  { monthly_report: get('st-notif-report') },
+  };
+  ownerSettings = { ...(ownerSettings || {}), ...payload };
+  const { error } = await sb.from('owner_settings').upsert(payload, { onConflict: 'owner_id' });
+  if (error) console.warn('[Makani] notif prefs save:', error.message);
+  const hint = document.getElementById('notif-prefs-hint');
+  if (hint) { hint.textContent = '✅ تم الحفظ'; setTimeout(() => { hint.textContent = ''; }, 2000); }
+}
+
+/* ══════════════════════════════════════════
+   🗑️  آلية التفريغ — حذف بيانات المالك التشغيلية
+   ══════════════════════════════════════════ */
+async function clearMyData() {
+  if (!confirm('⚠️ سيتم حذف جميع العقود والمدفوعات والمخالفات والتقييمات نهائياً.\nالمساحات وبياناتك الشخصية لن تتأثر.\n\nهل أنت متأكد؟')) return;
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { alert('تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
+  const btn = document.getElementById('btn-clear-data');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التفريغ…'; }
+  const { data, error } = await sb.rpc('clear_owner_data');
+  if (btn) { btn.disabled = false; btn.textContent = '🗑️ تفريغ بياناتي'; }
+  if (error) { alert('تعذّر التفريغ: ' + error.message); return; }
+  await loadOwnerData();
+  loadOwnerRatings();
+  const d = data || {};
+  alert(`تم التفريغ بنجاح ✅\nعقود: ${d.contracts||0} · مدفوعات: ${d.payments||0} · مخالفات: ${d.violations||0} · تقييمات: ${d.ratings||0}`);
+}
+
+/* ══════════════════════════════════════════
    🔔  NOTIFICATIONS — جلب من Supabase + badge
    ══════════════════════════════════════════ */
 
@@ -3344,23 +4635,7 @@ let asSizeRowCount   = 0;     /* عداد صفوف الأحجام */
 let asUnitCounter    = 0;     /* عداد الوحدات الفرعية */
 let ownerPendingSpaces = [];  /* مساحات معلقة — تُجلب من Supabase */
 
-/* ── state: الدفعات والمخالفات ── */
-let paymentsList   = [];
-let violationsList = [];
-const LS_PAYMENTS   = 'ms_payments_';
-const LS_VIOLATIONS = 'ms_violations_';
-
-function paymentsKey()   { return LS_PAYMENTS   + (currentOwner?.id || 'guest'); }
-function violationsKey() { return LS_VIOLATIONS + (currentOwner?.id || 'guest'); }
-
-function loadPaymentsLocal() {
-  try { paymentsList = JSON.parse(localStorage.getItem(paymentsKey()) || '[]'); } catch { paymentsList = []; }
-}
-function loadViolationsLocal() {
-  try { violationsList = JSON.parse(localStorage.getItem(violationsKey()) || '[]'); } catch { violationsList = []; }
-}
-function savePayments()   { localStorage.setItem(paymentsKey(),   JSON.stringify(paymentsList)); }
-function saveViolations() { localStorage.setItem(violationsKey(), JSON.stringify(violationsList)); }
+/* ملاحظة: paymentsList / violationsList معرّفة أعلى الملف وتُحمَّل من Supabase. */
 
 async function loadNotifications() {
   const sb = getSB();
@@ -3385,34 +4660,58 @@ async function loadNotifications() {
   }
 }
 
-/* ── Supabase Realtime — تنبيهات فورية ── */
-let _notifChannel = null;
+/* ── Supabase Realtime — تنبيهات + حجوزات فورية ── */
+let _notifChannel   = null;
+let _bookingChannel = null;
+let _notifInterval  = null;
+
 function subscribeNotificationsRealtime() {
   const sb = getSB();
   if (!sb || !currentOwner?.id) return;
-  if (_notifChannel) return; /* تأكد من عدم الاشتراك مرتين */
 
-  _notifChannel = sb.channel('notif-live-' + currentOwner.id.slice(0, 8))
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'notifications',
-      filter: `owner_id=eq.${currentOwner.id}`,
-    }, payload => {
-      if (!payload.new) return;
-      /* أضف التنبيه الجديد في أول القائمة */
-      supabaseNotifications.unshift(payload.new);
-      updateNotifBadge();
-      renderAlerts();
-      /* إذا وافق أو رفض الأدمن على المساحة → أعد تحميل المساحات تلقائياً */
-      if (['space_approved', 'space_rejected'].includes(payload.new.type)) {
-        loadOwnerData();
-      }
-    })
-    .subscribe();
+  /* ── قناة التنبيهات ── */
+  if (!_notifChannel) {
+    _notifChannel = sb.channel('notif-live-' + currentOwner.id.slice(0, 8))
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `owner_id=eq.${currentOwner.id}`,
+      }, payload => {
+        if (!payload.new) return;
+        supabaseNotifications.unshift(payload.new);
+        updateNotifBadge();
+        renderAlerts();
+        if (['space_approved', 'space_rejected'].includes(payload.new.type)) {
+          loadOwnerData();
+        }
+        /* حجز جديد أو طلب قائمة انتظار → أعد تحميل صندوق الحجوزات */
+        if (payload.new.type === 'booking_request' || payload.new.type === 'waitlist_request') {
+          loadBookingsRemote().then(renderBookings);
+        }
+      })
+      .subscribe();
+  }
 
-  /* Fallback: استعلام دوري كل دقيقتين لو انقطع الـ Realtime */
-  setInterval(() => { if (!document.hidden) loadNotifications(); }, 120000);
+  /* ── قناة الحجوزات (INSERT مباشر) ── */
+  if (!_bookingChannel) {
+    _bookingChannel = sb.channel('bookings-live-' + currentOwner.id.slice(0, 8))
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+        filter: `owner_id=eq.${currentOwner.id}`,
+      }, () => {
+        /* أي تغيير على حجوزات هذا المالك → أعد التحميل */
+        loadBookingsRemote().then(renderBookings);
+      })
+      .subscribe();
+  }
+
+  /* Fallback: استعلام دوري كل دقيقتين لو انقطع الـ Realtime — guard يمنع تراكم الـ intervals */
+  if (!_notifInterval) {
+    _notifInterval = setInterval(() => { if (!document.hidden) loadNotifications(); }, 120000);
+  }
 }
 
 /* ── تعليم التنبيهات كمقروءة ── */
@@ -3458,12 +4757,7 @@ function updateNotifBadge() {
 }
 
 function countLocalAlerts() {
-  let count = 0;
-  count += ownerSpaces.filter(s => s.status === 'available' && s.daysEmpty >= ABANDONED_THRESHOLD).length;
-  count += ownerTenants.filter(t => t.score < 5 && t.trend === 'down').length;
-  count += ownerContracts.filter(c => c.daysLeft <= 30).length;
-  if (!ownerSpaces.length) count += 1;
-  return count;
+  return _buildLocalAlerts().length;
 }
 
 /* ══════════════════════════════════════════
@@ -3525,6 +4819,17 @@ async function checkSessionOnLoad() {
       'danger',
       'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
       `حسابك الحالي ${profile?.role ? `مسجل كـ "${profile.role}"` : 'لم يتم العثور على صلاحية Owner له'}. بعد تحويله إلى Owner ستدخل للوحة مباشرة من المنصة.`
+    );
+    return;
+  }
+
+  /* ❌ حساب موقوف من الأدمن */
+  if (profile.is_suspended) {
+    sessionStorage.removeItem('ms_owner');
+    showOwnerAccessGate(
+      'danger',
+      'تم إيقاف هذا الحساب مؤقتاً',
+      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.'
     );
     return;
   }

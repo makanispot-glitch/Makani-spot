@@ -884,6 +884,30 @@ body {
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: rgba(255,255,255,0.02); }
 
+/* ── Booking Cards (view-bookings) ── */
+.bk-tabs { display:flex; gap:6px; padding:14px 16px 0; flex-wrap:wrap; }
+.bk-tab  { background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:8px;
+           padding:6px 14px; font-size:12px; font-weight:700; color:var(--text2); cursor:pointer; transition:all .18s; }
+.bk-tab:hover    { border-color:var(--orange); color:var(--orange); }
+.bk-tab.bk-tab-on{ background:var(--orange-pale); border-color:var(--orange); color:var(--orange); }
+.bk-tab-cnt { background:var(--orange); color:#fff; border-radius:10px; font-size:10px;
+              padding:1px 6px; margin-right:4px; }
+.bk-cards { display:flex; flex-direction:column; gap:0; padding:10px; }
+.bk-card  { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:12px;
+            margin-bottom:10px; overflow:hidden; transition:border-color .18s; }
+.bk-card:hover { border-color:rgba(255,255,255,.12); }
+.bk-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+                padding:14px 16px 10px; }
+.bk-card-space { font-size:14px; font-weight:800; color:var(--text); }
+.bk-card-loc   { font-size:11px; color:var(--text3); margin-top:2px; }
+.bk-card-body  { padding:0 16px 10px; }
+.bk-info-grid  { display:grid; grid-template-columns:auto 1fr; gap:4px 16px; font-size:12px; }
+.bk-lbl { color:var(--text3); white-space:nowrap; }
+.bk-val { color:var(--text); font-weight:600; }
+.bk-card-actions { display:flex; gap:8px; flex-wrap:wrap; padding:10px 16px 14px;
+                   border-top:1px solid rgba(255,255,255,.05); }
+.empty-hint { text-align:center; padding:40px 20px; color:var(--text3); font-size:13px; }
+
 /* Chart bars (CSS only) */
 .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding: 0 4px; }
 .bar {
@@ -1278,6 +1302,10 @@ body {
         <span class="nav-item-ico">👥</span> المستأجرون
         <span class="nav-item-badge" id="nb-tenants">8</span>
       </button>
+      <button class="nav-item" onclick="goTo('bookings', this)">
+        <span class="nav-item-ico">📬</span> طلبات الحجز
+        <span class="nav-item-badge" id="nb-bookings" style="background:var(--orange);display:none"></span>
+      </button>
       <button class="nav-item" onclick="goTo('spaces', this)">
         <span class="nav-item-ico">📍</span> المساحات
       </button>
@@ -1509,12 +1537,12 @@ body {
             <div class="section-label">إدارة المستأجرين</div>
           </div>
           <div style="display:flex;gap:10px">
-            <select style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;color:var(--text2);font-family:'Cairo',sans-serif;font-size:13px;outline:none;cursor:pointer">
-              <option>ترتيب: التقييم الأعلى</option>
-              <option>ترتيب: التقييم الأدنى</option>
-              <option>ترتيب: تاريخ الانضمام</option>
+            <select onchange="sortTenants(this.value)" style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;color:var(--text2);font-family:'Cairo',sans-serif;font-size:13px;outline:none;cursor:pointer">
+              <option value="score-desc">ترتيب: التقييم الأعلى</option>
+              <option value="score-asc">ترتيب: التقييم الأدنى</option>
+              <option value="recent">ترتيب: مدة العقد المتبقية</option>
             </select>
-            <button class="btn btn-primary btn-sm">+ إضافة مستأجر</button>
+            <button class="btn btn-primary btn-sm" onclick="addTenant()">+ إضافة مستأجر</button>
           </div>
         </div>
 
@@ -1524,7 +1552,7 @@ body {
           <div style="color:var(--text2);font-size:13px">قم بتقييم مستأجريك من صفحة التقييمات ليظهر أفضلهم هنا.</div>
         </div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:20px;padding-right:8px;font-style:italic">
-          * يُحدَّث هذا القسم تلقائياً بناءً على متوسط تقييماتك الشهرية للمستأجرين — هذا المثال توضيحي.
+          * يُحدَّث هذا القسم تلقائياً بناءً على متوسط تقييماتك الشهرية للمستأجرين.
         </div>
 
         <!-- Tenants Full Table -->
@@ -1585,11 +1613,89 @@ body {
                 <label>ملاحظات إضافية</label>
                 <textarea id="td-notes" placeholder="اكتب ملاحظاتك على هذا المستأجر…"></textarea>
               </div>
-              <button class="btn btn-primary btn-sm">💾 حفظ الملاحظات</button>
+              <button class="btn btn-primary btn-sm" id="td-save-notes-btn" onclick="saveTenantNotes()">💾 حفظ الملاحظات</button>
             </div>
           </div>
         </div>
       </div><!-- end tenants -->
+
+      <!-- ============================================================
+           VIEW: BOOKINGS — طلبات الحجز الواردة من الموقع العام
+           🔗 DB-LINK: جدول bookings (owner_id = currentOwner.id)
+           ============================================================ -->
+      <div class="view" id="view-bookings">
+        <div class="section-label">طلبات الحجز الواردة</div>
+
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card">
+            <div class="kpi-ico">📬</div>
+            <div class="kpi-label">طلبات معلقة</div>
+            <div class="kpi-value" id="bk-kpi-pending">—</div>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">تنتظر قرارك</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">✅</div>
+            <div class="kpi-label">طلبات مؤكدة</div>
+            <div class="kpi-value" id="bk-kpi-confirmed">—</div>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">قبلتها مسبقاً</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📊</div>
+            <div class="kpi-label">إجمالي الطلبات</div>
+            <div class="kpi-value" id="bk-kpi-total">—</div>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">هذا الشهر</div>
+          </div>
+        </div>
+
+        <div class="pcard">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">📬 صندوق طلبات الحجز</div>
+              <div class="pcard-sub">الطلبات الواردة من الموقع — اقبل أو ارفض أو حوّل لعقد</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadBookingsRemote().then(renderBookings)" title="تحديث">🔄 تحديث</button>
+          </div>
+          <div class="pcard-body" style="padding:0">
+            <!-- يُملأ ديناميكياً من renderBookings() -->
+            <div id="bookings-list" data-filter="pending">
+              <div class="empty-hint" style="padding:32px">
+                <div style="font-size:32px;margin-bottom:8px">⏳</div>
+                <div>جارٍ تحميل طلبات الحجز…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pcard" style="margin-top:16px">
+          <div class="pcard-head">
+            <div class="pcard-title">💡 كيف تعمل طلبات الحجز؟</div>
+          </div>
+          <div class="pcard-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+              <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;margin-bottom:6px">1️⃣</div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:4px">عميل يحجز</div>
+                <div style="font-size:11px;color:var(--text3)">من صفحة المساحة على الموقع يرسل طلب حجز</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;margin-bottom:6px">2️⃣</div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:4px">إشعار فوري</div>
+                <div style="font-size:11px;color:var(--text3)">تصلك تنبيه في قسم التنبيهات هنا فوراً</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;margin-bottom:6px">3️⃣</div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:4px">قبول أو رفض</div>
+                <div style="font-size:11px;color:var(--text3)">تقبل الطلب أو ترفضه، أو تحوّله لعقد مباشرة</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;margin-bottom:6px">4️⃣</div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:4px">تحويل لعقد</div>
+                <div style="font-size:11px;color:var(--text3)">بضغطة واحدة ينتقل الطلب لنموذج العقد جاهزاً للحفظ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end bookings -->
 
       <!-- ============================================================
            VIEW: SPACES
@@ -1670,16 +1776,60 @@ body {
                 </tr>
               </thead>
               <tbody id="spaces-tbody">
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-12</td><td>مدخل رئيسي</td><td>١×١ م</td><td><span class="badge badge-orange">قهوة</span></td><td style="font-family:'Space Mono',monospace">٤,٢٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:92%"></div></div></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">A-05</td><td>الدور الأرضي</td><td>٢×١ م</td><td><span class="badge badge-blue">مشروبات</span></td><td style="font-family:'Space Mono',monospace">٦,٥٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:69%"></div></div></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">B-03</td><td>أمام المصعد</td><td>١×٢ م</td><td><span class="badge badge-blue">إكسسوار</span></td><td style="font-family:'Space Mono',monospace">٥,٨٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill green" style="width:87%"></div></div></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">C-07</td><td>ممر الأسواق</td><td>١×١ م</td><td><span class="badge badge-yellow">حلويات</span></td><td style="font-family:'Space Mono',monospace">٣,٩٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill yellow" style="width:74%"></div></div></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--orange)">D-02</td><td>الدور الثاني</td><td>٢×٢ م</td><td><span class="badge badge-red">فاست فود</span></td><td style="font-family:'Space Mono',monospace">٧,٢٠٠ ج</td><td><span class="badge badge-green">مؤجّرة</span></td><td><div class="prog-bar" style="width:80px"><div class="prog-fill red" style="width:42%"></div></div></td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">D-08</td><td>الدور الثاني</td><td>١×١ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-yellow">متاحة</span></td><td style="color:var(--text3);font-size:11px">غير مؤجّرة (45 يوم)</td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">E-01</td><td>المدخل الخلفي</td><td>١×٢ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-yellow">متاحة</span></td><td style="color:var(--text3);font-size:11px">جديدة — لم تؤجّر</td></tr>
-                <tr><td style="font-family:'Space Mono',monospace;color:var(--text3)">F-11</td><td>بجوار المطعم</td><td>٢×٢ م</td><td style="color:var(--text3)">—</td><td style="font-family:'Space Mono',monospace;color:var(--text3)">—</td><td><span class="badge badge-red">صيانة</span></td><td style="color:var(--text3);font-size:11px">مغلقة للصيانة</td></tr>
+                <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">⏳ جاري تحميل المساحات…</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Unit Edit Modal -->
+        <div id="unit-edit-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:18px">
+          <div class="pcard" style="max-width:560px;width:100%;max-height:90vh;overflow:auto">
+            <div class="pcard-head">
+              <div>
+                <div class="pcard-title" id="ue-title">✏️ تعديل الوحدة</div>
+                <div class="pcard-sub" id="ue-sub">عدّل بيانات الوحدة — تُحفظ مباشرة دون الحاجة لإعادة مراجعة</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="closeUnitEdit()">✕ إغلاق</button>
+            </div>
+            <div class="pcard-body">
+              <div id="ue-msg" class="alert-item" style="display:none;margin-bottom:12px"></div>
+              <input type="hidden" id="ue-id">
+              <div class="form-row">
+                <div class="form-group" style="margin:0"><label>كود الوحدة *</label><input type="text" id="ue-code"></div>
+                <div class="form-group" style="margin:0"><label>اسم الوحدة</label><input type="text" id="ue-name"></div>
+              </div>
+              <div class="form-row" style="margin-top:12px;grid-template-columns:1fr 1fr 1fr">
+                <div class="form-group" style="margin:0">
+                  <label>الدور</label>
+                  <select id="ue-floor">
+                    <option value="">—</option><option value="أرضي">أرضي</option><option value="أول">أول</option>
+                    <option value="ثاني">ثاني</option><option value="ثالث">ثالث</option><option value="بدروم">بدروم</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0"><label>المساحة</label><input type="text" id="ue-size" placeholder="مثال: ١×١ م"></div>
+                <div class="form-group" style="margin:0"><label>السعر/شهر</label><input type="number" id="ue-price" min="0" style="font-family:'Space Mono',monospace"></div>
+              </div>
+              <div class="form-row" style="margin-top:12px">
+                <div class="form-group" style="margin:0">
+                  <label>الحالة</label>
+                  <select id="ue-status">
+                    <option value="available">🟢 متاحة</option>
+                    <option value="rented">🔴 مؤجّرة</option>
+                    <option value="reserved">🟡 محجوزة</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0"><label>الموقع داخل المساحة</label><input type="text" id="ue-loc" placeholder="مثال: أمام المصعد"></div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
+                <label>ملاحظات</label>
+                <textarea id="ue-notes" style="min-height:54px"></textarea>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:8px">
+                <button class="btn btn-primary" id="ue-save-btn" onclick="submitUnitEdit()">💾 حفظ التعديلات</button>
+                <button class="btn btn-ghost" onclick="closeUnitEdit()">إلغاء</button>
+              </div>
+            </div>
           </div>
         </div>
       </div><!-- end spaces -->
@@ -1747,11 +1897,18 @@ body {
                   <input type="text" id="cf-tenant" placeholder="مثال: أحمد محمد" required>
                 </div>
                 <div class="form-group" style="margin:0">
-                  <label>كود / رقم المساحة *</label>
-                  <input type="text" id="cf-space" placeholder="مثال: A-12، G-05" required>
+                  <label>الوحدة / المساحة *</label>
+                  <select id="cf-space" required>
+                    <option value="">اختر الوحدة</option>
+                  </select>
+                  <div style="font-size:10px;color:var(--text3);margin-top:4px">تظهر هنا وحداتك المعتمدة فقط — أضف مساحة أولاً إن لم تجد وحداتك.</div>
                 </div>
               </div>
-              <div class="form-row" style="margin-top:12px">
+              <div class="form-row" style="margin-top:12px;grid-template-columns:1fr 1fr 1fr">
+                <div class="form-group" style="margin:0">
+                  <label>رقم هاتف المستأجر</label>
+                  <input type="tel" id="cf-phone" dir="ltr" placeholder="مثال: 01012345678">
+                </div>
                 <div class="form-group" style="margin:0">
                   <label>نوع النشاط</label>
                   <input type="text" id="cf-activity" placeholder="مثال: قهوة، إكسسوار، حلويات">
@@ -1794,10 +1951,10 @@ body {
           <div>
             <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">كيف تعمل صفحة التقييمات؟</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              ① اختر المستأجر من قائمة حجوزات منصتك الحقيقية &nbsp;·&nbsp;
+              ① اختر المستأجر من عقودك المسجّلة وحدّد الشهر &nbsp;·&nbsp;
               ② قيّم تعامله على ٥ معايير (نجوم من ١ إلى ٥) &nbsp;·&nbsp;
               ③ أضف ملاحظة إن أردت &nbsp;·&nbsp;
-              ④ احفظ — يظهر التقييم في سمعة المستأجر على حسابه فوراً.
+              ④ احفظ — يُحدَّث تقييم المستأجر في كل صفحات لوحتك فوراً.
             </div>
           </div>
         </div>
@@ -1810,14 +1967,20 @@ body {
               <span class="db-tag">DB: ratings</span>
             </div>
             <div class="pcard-body">
-              <!-- 🔗 المستأجرون يُجلبون من حجوزات المنصة الحقيقية عبر owner_list_rateable_tenants() -->
-              <div class="form-group">
-                <label>المستأجر (من حجوزات منصتك)</label>
-                <select id="rate-tenant" class="select-tenant" onchange="onRateTenantChange()">
-                  <option value="">جاري التحميل…</option>
-                </select>
-                <div id="rate-context" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
+              <!-- المستأجرون = عقودك المسجّلة (مصدر موحّد مع باقي اللوحة) -->
+              <div class="form-row">
+                <div class="form-group" style="margin:0">
+                  <label>المستأجر (من عقودك)</label>
+                  <select id="rate-tenant" class="select-tenant" onchange="onRateTenantChange()">
+                    <option value="">جاري التحميل…</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label>شهر التقييم</label>
+                  <input type="month" id="rate-month" onchange="onRateTenantChange()">
+                </div>
               </div>
+              <div id="rate-context" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
 
               <div class="section-label" style="margin-top:16px">معايير التقييم (كل معيار من ١ إلى ٥ نجوم)</div>
 
@@ -1872,17 +2035,17 @@ body {
           <div>
             <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:4px">صفحة الإيرادات — كيف تعمل؟</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              <strong style="color:var(--text)">ماذا ستجد هنا؟</strong> إجمالي الإيجارات الشهرية والسنوية محسوبة تلقائياً من العقود التي سجّلتها.
-              <br><strong style="color:var(--text)">ماذا يجب أن تفعل؟</strong> أضف عقودك من صفحة العقود — كل عقد يضيف إيراده تلقائياً في هذه الصفحة.
+              <strong style="color:var(--text)">ماذا ستجد هنا؟</strong> مقارنة بين الإيجار <strong>المتوقع</strong> من عقودك و<strong>المحصّل فعلياً</strong> من الدفعات التي سجّلتها — مع نسبة التحصيل والمتبقّي.
+              <br><strong style="color:var(--text)">ماذا يجب أن تفعل؟</strong> أضف عقودك، ثم سجّل كل دفعة من صفحة المدفوعات لترى التحصيل الحقيقي هنا.
             </div>
           </div>
         </div>
 
         <div class="kpi-row">
-          <div class="kpi-card"><div class="kpi-ico">💰</div><div class="kpi-label">هذا الشهر</div><div class="kpi-value" id="rev-monthly">—</div></div>
-          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">هذا الربع (تقدير)</div><div class="kpi-value" id="rev-quarterly">—</div></div>
-          <div class="kpi-card"><div class="kpi-ico">📆</div><div class="kpi-label">هذا العام (تقدير)</div><div class="kpi-value" id="rev-yearly">—</div></div>
-          <div class="kpi-card"><div class="kpi-ico">🏦</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-value" id="rev-forecast">—</div></div>
+          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">المتوقع هذا الشهر</div><div class="kpi-value" id="rev-expected">—</div><div style="margin-top:4px;font-size:10px;color:var(--text3)" id="rev-expected-sub"></div></div>
+          <div class="kpi-card"><div class="kpi-ico">✅</div><div class="kpi-label">المحصّل فعلياً</div><div class="kpi-value" style="color:var(--green)" id="rev-collected">—</div></div>
+          <div class="kpi-card"><div class="kpi-ico">📊</div><div class="kpi-label">نسبة التحصيل</div><div class="kpi-value" id="rev-rate">—</div><div style="margin-top:7px"><div class="prog-bar"><div class="prog-fill green" id="rev-rate-bar" style="width:0%"></div></div></div></div>
+          <div class="kpi-card"><div class="kpi-ico">⏳</div><div class="kpi-label">متبقٍّ غير محصّل</div><div class="kpi-value" id="rev-due">—</div></div>
         </div>
 
         <div class="pcard">
@@ -1893,7 +2056,7 @@ body {
           <div class="pcard-body" style="padding:0">
             <!-- 🔗 DB-LINK: يُحدَّث من renderRevenue() في makani-dashboard-app.js -->
             <table class="data-table">
-              <thead><tr><th>المساحة</th><th>المستأجر</th><th>الإيجار الشهري</th><th>نسبة من الإجمالي</th><th>حالة الدفع</th></tr></thead>
+              <thead><tr><th>المساحة</th><th>المستأجر</th><th>الإيجار المتوقع</th><th>المحصّل هذا الشهر</th><th>حالة الدفع</th></tr></thead>
               <tbody id="revenue-tbody">
                 <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">⏳ جاري التحميل…</td></tr>
               </tbody>
@@ -2433,27 +2596,45 @@ body {
           <div class="pcard">
             <div class="pcard-head">
               <div class="pcard-title">🔔 إعدادات التنبيهات</div>
+              <span class="db-tag" id="notif-prefs-hint" style="color:var(--green)"></span>
             </div>
             <div class="pcard-body">
               <div style="display:flex;flex-direction:column;gap:14px">
                 <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
                   <span style="font-size:13px;color:var(--text2)">تنبيه قبل انتهاء العقد (بـ 30 يوم)</span>
-                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                  <input type="checkbox" id="st-notif-expiry" checked onchange="saveNotifPrefs()" style="accent-color:var(--orange);width:18px;height:18px">
                 </label>
                 <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
                   <span style="font-size:13px;color:var(--text2)">تنبيه لو تقييم نزل لأقل من 5</span>
-                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                  <input type="checkbox" id="st-notif-rating" checked onchange="saveNotifPrefs()" style="accent-color:var(--orange);width:18px;height:18px">
                 </label>
                 <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
                   <span style="font-size:13px;color:var(--text2)">تنبيه لو مساحة فاضية أكتر من 30 يوم</span>
-                  <input type="checkbox" checked style="accent-color:var(--orange);width:18px;height:18px">
+                  <input type="checkbox" id="st-notif-abandoned" checked onchange="saveNotifPrefs()" style="accent-color:var(--orange);width:18px;height:18px">
                 </label>
                 <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">
                   <span style="font-size:13px;color:var(--text2)">تقرير شهري تلقائي</span>
-                  <input type="checkbox" style="accent-color:var(--orange);width:18px;height:18px">
+                  <input type="checkbox" id="st-notif-report" onchange="saveNotifPrefs()" style="accent-color:var(--orange);width:18px;height:18px">
                 </label>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- منطقة الخطر: تفريغ البيانات -->
+        <div class="pcard" style="margin-top:0;border-color:rgba(255,77,77,0.25)">
+          <div class="pcard-head" style="background:rgba(255,77,77,0.04)">
+            <div>
+              <div class="pcard-title" style="color:var(--red)">🗑️ تفريغ البيانات</div>
+              <div class="pcard-sub">يحذف جميع عقودك ومدفوعاتك ومخالفاتك وتقييماتك نهائياً. المساحات وبياناتك الشخصية لا تتأثر.</div>
+            </div>
+          </div>
+          <div class="pcard-body">
+            <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:14px">
+              استخدم هذا الخيار لإعادة البدء من سجل نظيف — مفيد عند انتهاء موسم أو رغبتك في إزالة بيانات تجريبية أدخلتها. <strong style="color:var(--red)">لا يمكن التراجع.</strong>
+            </div>
+            <button class="btn" id="btn-clear-data" onclick="clearMyData()"
+                    style="background:var(--red);border-color:var(--red);color:#fff">🗑️ تفريغ بياناتي</button>
           </div>
         </div>
 
@@ -2528,12 +2709,14 @@ body {
 
 <!-- Supabase Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=202606112252"></script>
+<script src="../media-handler.js?v=202606140600"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="app.js?v=202606112252"></script>
+<script src="app.js?v=202606140600"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>

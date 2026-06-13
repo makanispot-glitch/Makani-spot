@@ -618,6 +618,7 @@ let bookingsTotal   = 0;
 let bookingsPage    = 1;
 let bookingsStatus  = '';
 let bookingsSearch  = '';
+let bookingsWaitlist = null;   /* null=الكل · true=قوائم انتظار فقط · false=حجوزات فقط */
 const BK_PAGE_SIZE  = 50;
 
 /* bulk notif state */
@@ -2457,15 +2458,23 @@ async function triggerExpireCheck() {
 /* ═══════════════════════════════
    BOOKINGS & VIEWING REQUESTS
 ═══════════════════════════════ */
+function setBookingFilter(val) {
+  if (val === '__waitlist__') { bookingsWaitlist = true;  bookingsStatus = ''; }
+  else                        { bookingsWaitlist = null;  bookingsStatus = val; }
+  bookingsPage = 1;
+  renderBookings();
+}
+
 async function renderBookings() {
   setPageContent('bookings', loading());
   try {
     const res = await sbRpc('admin_get_bookings', {
-      p_secret: adminHash,
-      p_status: bookingsStatus || null,
-      p_search: bookingsSearch || null,
-      p_limit:  BK_PAGE_SIZE,
-      p_offset: (bookingsPage - 1) * BK_PAGE_SIZE,
+      p_secret:   adminHash,
+      p_status:   bookingsStatus || null,
+      p_search:   bookingsSearch || null,
+      p_limit:    BK_PAGE_SIZE,
+      p_offset:   (bookingsPage - 1) * BK_PAGE_SIZE,
+      p_waitlist: bookingsWaitlist,
     });
     bookingsData  = res.rows  || [];
     bookingsTotal = res.total || 0;
@@ -2490,16 +2499,19 @@ async function renderBookings() {
   const html = `
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${bookingsTotal}</span> إجمالي</div>
-    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='pending';bookingsPage=1;renderBookings()">
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='pending';bookingsWaitlist=null;bookingsPage=1;renderBookings()">
       <span class="stat-num" style="color:var(--yw)">${bookingsData.filter(b=>b.status==='pending').length}</span> حجوزات معلقة
     </div>
-    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='viewing_pending';bookingsPage=1;renderBookings()">
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='viewing_pending';bookingsWaitlist=null;bookingsPage=1;renderBookings()">
       <span class="stat-num" style="color:#818cf8">${bookingsData.filter(b=>b.status==='viewing_pending').length}</span> معاينات معلقة
     </div>
-    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='confirmed';bookingsPage=1;renderBookings()">
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='confirmed';bookingsWaitlist=null;bookingsPage=1;renderBookings()">
       <span class="stat-num" style="color:var(--gr)">${bookingsData.filter(b=>b.status==='confirmed').length}</span> مؤكدة
     </div>
-    ${bookingsStatus ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 10px" onclick="bookingsStatus='';bookingsPage=1;renderBookings()">✕ إلغاء الفلتر</button>` : ''}
+    <div class="stat-chip" style="cursor:pointer" onclick="bookingsStatus='';bookingsWaitlist=true;bookingsPage=1;renderBookings()">
+      <span class="stat-num" style="color:var(--yw)">${bookingsData.filter(b=>b.is_waitlist).length}</span> ⏳ قوائم انتظار
+    </div>
+    ${(bookingsStatus||bookingsWaitlist!==null) ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 10px" onclick="bookingsStatus='';bookingsWaitlist=null;bookingsPage=1;renderBookings()">✕ إلغاء الفلتر</button>` : ''}
   </div>
 
   <div class="filter-bar" style="gap:10px">
@@ -2507,8 +2519,9 @@ async function renderBookings() {
            value="${esc(bookingsSearch)}"
            oninput="bookingsSearch=this.value;bookingsPage=1;renderBookings()">
     <select class="fc" style="width:160px;padding:7px 10px;font-size:12px"
-            onchange="bookingsStatus=this.value;bookingsPage=1;renderBookings()">
-      <option value="" ${!bookingsStatus?'selected':''}>كل الحالات</option>
+            onchange="setBookingFilter(this.value)">
+      <option value=""                ${(!bookingsStatus&&bookingsWaitlist===null)?'selected':''}>كل الحالات</option>
+      <option value="__waitlist__"    ${bookingsWaitlist===true?'selected':''}>⏳ قوائم الانتظار</option>
       <option value="pending"         ${bookingsStatus==='pending'?'selected':''}>حجز معلق</option>
       <option value="viewing_pending" ${bookingsStatus==='viewing_pending'?'selected':''}>معاينة معلقة</option>
       <option value="confirmed"       ${bookingsStatus==='confirmed'?'selected':''}>مؤكد</option>
@@ -2524,18 +2537,22 @@ async function renderBookings() {
     </div>
     ${bookingsData.length ? bookingsData.map(b => {
       const isViewing = b.status === 'viewing_pending' || b.activity === 'معاينة';
-      const typeLabel = isViewing ? '👁 معاينة' : '📅 حجز';
+      const typeLabel = b.is_waitlist ? '⏳ قائمة انتظار' : isViewing ? '👁 معاينة' : '📅 حجز';
       const date = b.start_date ? fmtDate(b.start_date) : fmtDate(b.created_at);
       const isPending = b.status === 'pending' || b.status === 'viewing_pending';
-      return `<div class="bk-row">
+      const profileLinkHtml = b.profile_link
+        ? `<div style="font-size:10px"><a href="${esc(b.profile_link)}" target="_blank" rel="noopener" style="color:var(--or)">📁 بروفايل النشاط ↗</a></div>`
+        : '';
+      return `<div class="bk-row"${b.is_waitlist?' style="background:rgba(255,184,0,.05)"':''}>
         <div style="color:var(--mu);font-size:11px">${date}</div>
         <div>
           <div style="font-weight:700">${esc(b.space_name||'—')}</div>
           ${b.space_loc ? `<div style="font-size:10px;color:var(--mu)">${esc(b.space_loc)}</div>` : ''}
           ${b.size ? `<div style="font-size:10px;color:var(--mu)">${esc(b.size)}</div>` : ''}
+          ${profileLinkHtml}
         </div>
         <div style="font-size:11px">${esc(b.owner_name||'—')}</div>
-        <div><span style="font-size:11px;color:var(--mu)">${typeLabel}</span></div>
+        <div><span style="font-size:11px;color:${b.is_waitlist?'var(--yw)':'var(--mu)'}">${typeLabel}</span></div>
         <div><span class="badge ${sCls(b.status)}">${sLbl(b.status)}</span></div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           ${isPending ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','confirmed',this)">✓ تأكيد</button>` : ''}

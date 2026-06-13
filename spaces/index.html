@@ -700,8 +700,8 @@
           <div class="modal-header-inner">
             <div class="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
             <div>
-              <div class="modal-title">احجز مساحتك</div>
-              <div class="modal-sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
+              <div class="modal-title" id="bk-modal-title">احجز مساحتك</div>
+              <div class="modal-sub" id="bk-modal-sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
             </div>
           </div>
           <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز">×</button>
@@ -710,6 +710,10 @@
           <div class="space-info-box">
             <div class="space-info-name" id="msi-name">—</div>
             <div class="space-info-meta" id="msi-meta">—</div>
+          </div>
+          <div id="bk-waitlist-banner" style="display:none;background:rgba(255,184,0,.10);border:1px solid rgba(255,184,0,.35);border-radius:var(--radius-lg,12px);padding:12px 14px;margin-bottom:14px">
+            <div style="font-weight:800;color:#b9860b;font-size:13px;margin-bottom:3px">⏳ كل وحدات هذه المساحة محجوزة حالياً</div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.6">سجّل في قائمة الانتظار، وسيتواصل معك صاحب المكان فور توفّر وحدة. أرفِق رابط بروفايل نشاطك ليطّلع عليه.</div>
           </div>
           <div class="mfg-2" style="gap:10px;margin-bottom:15px">
             <div class="mfg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="bk-name"
@@ -747,12 +751,17 @@
             <label>تاريخ البدء المقترح</label>
             <input type="date" id="bk-date">
           </div>
+          <div class="mfg" id="bk-profile-wrap" style="margin-top:4px;display:none">
+            <label>رابط بروفايل نشاطك (Google Drive / PDF) — اختياري</label>
+            <input type="url" id="bk-profile-link" dir="ltr" placeholder="https://drive.google.com/...">
+            <div style="font-size:11px;color:var(--ink2);margin-top:5px">ضع رابطاً لصور منتجاتك أو ملفك التعريفي — يساعد صاحب المكان على تقييم طلبك أسرع.</div>
+          </div>
           <div class="mfg" style="margin-top:4px">
             <label>ملاحظات أو أسئلة</label>
             <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
           </div>
           <div class="form-error" id="bk-error"></div>
-          <button class="btn btn-primary" onclick="submitBooking()"
+          <button class="btn btn-primary" id="bk-submit-btn" onclick="submitBooking()"
             style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)">
             ابعت طلب الحجز ←
           </button>
@@ -763,8 +772,8 @@
       </div>
       <div class="modal-success" id="modal-success">
         <div class="success-circle">✓</div>
-        <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
-        <div class="success-body">
+        <div class="success-title" id="bk-success-title">اتبعت طلبك <span>بنجاح!</span></div>
+        <div class="success-body" id="bk-success-body">
           شكراً ليك — اتستلم طلب الحجز.<br>
           فريق <strong>مكاني Spot</strong> هيتواصل معاك في
           <strong style="color:var(--orange)">٢٤ ساعة</strong>.
