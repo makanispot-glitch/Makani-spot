@@ -407,6 +407,9 @@ textarea.fc{resize:vertical;min-height:72px}
       <div class="sb-item" id="sbi-export" onclick="gp('export',this)">
         <span class="sb-ico">📤</span> تصدير
       </div>
+      <div class="sb-item" id="sbi-maintenance" onclick="gp('maintenance',this)">
+        <span class="sb-ico">🔧</span> صيانة DB
+      </div>
       <div class="sb-sep"></div>
       <div class="sb-item" id="sbi-add" onclick="openAddForm()">
         <span class="sb-ico">➕</span> إضافة مساحة
@@ -440,8 +443,9 @@ textarea.fc{resize:vertical;min-height:72px}
       <div id="pg-finance"   class="page"></div>
       <div id="pg-bookings"  class="page"></div>
       <div id="pg-notif"     class="page"></div>
-      <div id="pg-export"    class="page"></div>
-      <div id="pg-form"      class="page"></div>
+      <div id="pg-export"       class="page"></div>
+      <div id="pg-maintenance"  class="page"></div>
+      <div id="pg-form"         class="page"></div>
     </div>
   </div>
 </div>
@@ -469,7 +473,7 @@ const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',form:'إضافة / تعديل مساحة'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
@@ -656,6 +660,7 @@ function renderCurrentPage() {
     case 'bookings':       renderBookings();       break;
     case 'notif':          renderBulkNotif();      break;
     case 'export':         renderExport();         break;
+    case 'maintenance':    renderMaintenance();    break;
     case 'form':     /* rendered by editSpace/openAddForm */ break;
   }
 }
@@ -1684,34 +1689,70 @@ async function markContactedRequest(id) {
   } catch(e) { toast('خطأ: ' + e.message, 'e'); }
 }
 
-/* ─── موافقة مع اختيار الباقة ─── */
+/* ─── موافقة مع اختيار الباقة وتاريخ الانتهاء ─── */
 function promptApproveOwnerRequest(id, name) {
-  /* نبني modal اختيار الباقة داخل confirm-modal الموجود */
   const title = document.getElementById('confirm-title');
   const sub   = document.getElementById('confirm-sub');
   const ok    = document.getElementById('confirm-ok');
 
-  title.textContent = `موافقة على طلب "${name}"`;
+  /* default ends_at: سنة من اليوم */
+  const d1y = new Date(); d1y.setFullYear(d1y.getFullYear()+1);
+  const defaultDate = d1y.toISOString().split('T')[0];
+
+  const inp = (style='') => `style="width:100%;background:var(--bg4);border:1.5px solid var(--mu2);
+    border-radius:8px;padding:9px 12px;font-size:13px;color:var(--tx);outline:none;
+    font-family:'Cairo',sans-serif;box-sizing:border-box;${style}"`;
+
+  title.textContent = `موافقة على طلب: ${name}`;
   sub.innerHTML = `
-    <div style="margin-bottom:12px;font-size:12px;color:var(--mu)">اختر الباقة التي ستُفعَّل للحساب:</div>
-    <select id="plan-pick" style="width:100%;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;
-            padding:9px 12px;font-size:13px;color:var(--tx);outline:none;font-family:'Cairo',sans-serif">
-      <option value="growth" selected>📈 Growth — 3,000 ج/شهر</option>
-      <option value="pro">⭐ Pro — 4,500 ج/شهر</option>
-      <option value="starter">🆓 Starter — مجاناً (محدود)</option>
-    </select>`;
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:5px">الباقة المُفعَّلة</div>
+        <select id="plan-pick" ${inp()}>
+          <option value="growth" selected>📈 Growth — 3,000 ج / شهر</option>
+          <option value="pro">⭐ Pro — 4,500 ج / شهر</option>
+          <option value="starter">🆓 Starter — مجاناً (محدود)</option>
+        </select>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:5px">
+          تاريخ انتهاء الاشتراك <span style="color:var(--rd)">*</span>
+        </div>
+        <input type="date" id="plan-ends" value="${defaultDate}" ${inp()}>
+        <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">
+          ${[['شهر',1,'m'],['3 أشهر',3,'m'],['6 أشهر',6,'m'],['سنة',1,'y']].map(([lbl,n,u])=>`
+          <button onclick="(()=>{const d=new Date();
+            ${u==='y'?`d.setFullYear(d.getFullYear()+${n})`:`d.setMonth(d.getMonth()+${n})`};
+            document.getElementById('plan-ends').value=d.toISOString().split('T')[0]})()"
+            style="background:var(--bg5);border:1px solid var(--mu2);border-radius:6px;
+                   padding:4px 10px;font-size:11px;color:var(--tx);cursor:pointer;
+                   font-family:'Cairo',sans-serif">${lbl}</button>`).join('')}
+        </div>
+      </div>
+
+      <div style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.35);
+                  border-radius:8px;padding:9px 12px;font-size:12px;color:var(--gn)">
+        ✅ سيتم تفعيل دور المالك + تحديث الباقة + إنشاء سجل اشتراك + إرسال إشعار للحساب
+      </div>
+    </div>`;
 
   ok.textContent = 'تفعيل الحساب ✅';
   ok.className   = 'btn btn-or';
   ok.onclick = async () => {
-    const plan = document.getElementById('plan-pick')?.value || 'starter';
+    const plan    = document.getElementById('plan-pick')?.value || 'growth';
+    const endsVal = document.getElementById('plan-ends')?.value;
+    if (!endsVal) { toast('اختر تاريخ انتهاء الاشتراك', 'w'); return; }
+    const endsAt  = new Date(endsVal + 'T23:59:59').toISOString();
     closeConfirm();
     try {
       await sbRpc('admin_manage_upgrade_request', {
         p_request_id: id, p_action: 'approve', p_reason: null,
-        p_secret: adminHash, p_plan: plan
+        p_secret: adminHash, p_plan: plan, p_ends_at: endsAt
       });
-      toast(`✅ تمت الموافقة — تم تفعيل الحساب بباقة ${plan.charAt(0).toUpperCase()+plan.slice(1)}`, 's');
+      const planLabel = plan==='growth'?'Growth':plan==='pro'?'Pro':'Starter';
+      toast(`✅ تمت الموافقة — تم تفعيل الحساب بباقة ${planLabel} حتى ${endsVal}`, 's');
       await loadAll();
     } catch(e) { toast('خطأ: ' + e.message, 'e'); }
   };
@@ -2223,6 +2264,7 @@ async function renderBookings() {
           ${isPending ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','confirmed',this)">✓ تأكيد</button>` : ''}
           ${b.status==='confirmed' ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','completed',this)">✅ إكمال</button>` : ''}
           ${b.status!=='cancelled'&&b.status!=='completed' ? `<button class="btn btn-err" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','cancelled',this)">✕ إلغاء</button>` : ''}
+          ${b.status==='cancelled'||b.status==='completed' ? `<button class="btn btn-err" style="font-size:10px;padding:3px 8px;opacity:.7" onclick="doDeleteBooking('${esc(b.id)}')">🗑</button>` : ''}
         </div>
       </div>`;
     }).join('') : `<div class="empty-state" style="padding:32px">لا توجد حجوزات</div>`}
@@ -2615,6 +2657,259 @@ function exportOwnersCSV() {
 }
 
 /* ═══════════════════════════════
+   DATABASE MAINTENANCE
+═══════════════════════════════ */
+async function renderMaintenance() {
+  setPageContent('maintenance', loading());
+  let stats = null;
+  try {
+    stats = await sbRpc('admin_get_db_stats', {p_secret: adminHash});
+  } catch(e) {
+    setPageContent('maintenance', `<div class="empty-state">خطأ في تحميل إحصاءات قاعدة البيانات: ${esc(e.message)}</div>`);
+    return;
+  }
+
+  const tables   = Array.isArray(stats?.tables) ? stats.tables : [];
+  const bkStats  = stats?.bookings    || {};
+  const nfStats  = stats?.notifications || {};
+
+  const totalLive = tables.reduce((s,t)=>s+(t.live_rows||0),0);
+  const totalDead = tables.reduce((s,t)=>s+(t.dead_rows||0),0);
+
+  function deadColor(p) { return p>=25?'var(--rd)':p>=10?'var(--yw)':'var(--gn)'; }
+  function deadLabel(p) { return p>=25?'⚠ عالي':p>=10?'تحذير':'جيد'; }
+
+  const tableCards = tables.map(t => {
+    const d = +(t.dead_pct||0);
+    const lastVac = t.last_autovacuum ? fmtDate(t.last_autovacuum) : '—';
+    return `<div style="background:var(--bg3);border:1.5px solid ${d>=25?'var(--rd)':d>=10?'rgba(234,179,8,.4)':'var(--bd)'};
+                 border-radius:var(--r1);padding:11px 13px;font-size:11px">
+      <div style="font-weight:700;font-size:12px;color:var(--tx);margin-bottom:8px;
+                  border-bottom:1px solid var(--bd);padding-bottom:5px;
+                  display:flex;justify-content:space-between;align-items:center">
+        <span>${esc(t.table_name)}</span>
+        <span style="font-size:10px;color:${deadColor(d)}">${deadLabel(d)}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--mu)">الحجم</span>
+          <span style="font-weight:600">${esc(t.total_size||'—')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--mu)">صفوف نشطة</span>
+          <span style="color:var(--gn);font-weight:600">${t.live_rows||0}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--mu)">dead rows</span>
+          <span style="color:${deadColor(d)};font-weight:600">${t.dead_rows||0} (${d}%)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--mu)">آخر vacuum</span>
+          <span style="color:var(--mu)">${lastVac}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+    <!-- Table health -->
+    <div class="form-sec" style="grid-column:1/-1">
+      <div class="form-sec-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>📊 صحة الجداول</span>
+        <span style="font-size:11px;font-weight:400;color:var(--mu)">
+          ${tables.length} جدول · ${totalLive} صف نشط · ${totalDead} dead row يحتاج تنظيف
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-top:12px">
+        ${tableCards}
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--mu);background:var(--bg2);
+                  border-radius:8px;padding:9px 13px;line-height:1.7">
+        💡 <b>Dead rows</b> تنشأ من UPDATE/DELETE ويُنظِّفها PostgreSQL تلقائياً (autovacuum).
+        نسبة <b style="color:var(--rd)">أكثر من 25%</b> تعني استهلاكاً زائداً للمساحة — يُشغَّل VACUUM تلقائياً كل أحد 4 ص (UTC).
+      </div>
+    </div>
+
+    <!-- Bookings cleanup -->
+    <div class="form-sec">
+      <div class="form-sec-title">🗑 حذف الحجوزات القديمة</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div class="stat-chip">
+          <span class="stat-num" style="color:var(--rd)">${bkStats.old_cancelled||0}</span>
+          ملغي قديم (+90 يوم)
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num" style="color:var(--mu)">${bkStats.old_completed||0}</span>
+          مكتمل قديم (+90 يوم)
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.6">
+        الحجوزات الملغاة والمكتملة القديمة لا تُضيف قيمة تشغيلية — احذفها نهائياً لتوفير المساحة.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:6px">الحالات المستهدفة</div>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="maint-bk-cancelled" checked> ملغاة (cancelled)
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">
+            <input type="checkbox" id="maint-bk-completed"> مكتملة (completed)
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--mu)">أقدم من</div>
+          <input type="number" class="fc" id="maint-bk-days" value="90" min="7" max="3650"
+                 style="width:80px;padding:6px 10px">
+          <span style="font-size:12px;color:var(--mu)">يوم</span>
+        </div>
+        <div id="maint-bk-preview" style="min-height:20px;font-size:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-neu" onclick="doCleanupBookings(true)">🔍 معاينة</button>
+          <button class="btn btn-err" id="maint-bk-del-btn" onclick="doCleanupBookings(false)" disabled
+                  style="opacity:.5">🗑 حذف نهائي</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications cleanup -->
+    <div class="form-sec">
+      <div class="form-sec-title">🔔 حذف الإشعارات المقروءة</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div class="stat-chip">
+          <span class="stat-num">${nfStats.total||0}</span> إجمالي
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num" style="color:var(--rd)">${nfStats.old_read||0}</span>
+          مقروء قديم (+60 يوم)
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.6">
+        الإشعارات المقروءة القديمة لا قيمة تشغيلية لها — حذفها يُخفِّف ضغط الجدول مع تزايد المستخدمين.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--mu)">أقدم من</div>
+          <input type="number" class="fc" id="maint-notif-days" value="60" min="7" max="3650"
+                 style="width:80px;padding:6px 10px">
+          <span style="font-size:12px;color:var(--mu)">يوم</span>
+        </div>
+        <div id="maint-notif-preview" style="min-height:20px;font-size:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-neu" onclick="doCleanupNotifications(true)">🔍 معاينة</button>
+          <button class="btn btn-err" id="maint-notif-del-btn" onclick="doCleanupNotifications(false)" disabled
+                  style="opacity:.5">🗑 حذف نهائي</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- pg_cron auto jobs -->
+    <div class="form-sec" style="grid-column:1/-1">
+      <div class="form-sec-title">⚙️ مهام التنظيف التلقائي (pg_cron)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px">
+        ${[
+          ['🗑 حجوزات ملغاة قديمة',  'كل أحد — 03:00 ص UTC', 'حذف الحجوزات الملغاة/المكتملة أقدم من 90 يوم','auto-cleanup-bookings'],
+          ['🔔 إشعارات مقروءة قديمة','كل أحد — 03:15 ص UTC', 'حذف الإشعارات المقروءة أقدم من 60 يوم','auto-cleanup-notifications'],
+          ['🧹 VACUUM الحجوزات',      'كل أحد — 04:00 ص UTC', 'VACUUM ANALYZE على جدول bookings','auto-vacuum-bookings'],
+          ['🧹 VACUUM الإشعارات',     'كل أحد — 04:05 ص UTC', 'VACUUM ANALYZE على جدول notifications','auto-vacuum-notifications'],
+          ['🧹 VACUUM الملفات',       'كل أحد — 04:10 ص UTC', 'VACUUM ANALYZE على جدول profiles','auto-vacuum-profiles'],
+          ['💳 انتهاء الاشتراكات',    'يومياً — 00:05 ص UTC', 'تنزيل الاشتراكات المنتهية وإرسال إشعارات','auto-expire-subscriptions'],
+        ].map(([name,sched,desc])=>`
+          <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r1);padding:12px">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px">${name}</div>
+            <div style="font-size:11px;color:var(--mu);margin-bottom:8px;line-height:1.5">${desc}</div>
+            <div style="font-size:10px;background:var(--bg2);border-radius:5px;padding:4px 8px;
+                        color:var(--bl);font-family:monospace;letter-spacing:.02em">${sched}</div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--mu);background:var(--bg2);
+                  border-radius:8px;padding:9px 13px">
+        ✅ جميع المهام مُجدوَلة ونشطة في Supabase pg_cron — تعمل بشكل تلقائي بدون تدخل يدوي.
+      </div>
+    </div>
+
+  </div>`;
+
+  setPageContent('maintenance', html);
+}
+
+async function doCleanupBookings(dryRun) {
+  const cancelled = document.getElementById('maint-bk-cancelled')?.checked;
+  const completed = document.getElementById('maint-bk-completed')?.checked;
+  const days      = parseInt(document.getElementById('maint-bk-days')?.value||'90', 10);
+  const statuses  = [cancelled&&'cancelled', completed&&'completed'].filter(Boolean);
+  if (!statuses.length) { toast('اختر حالة واحدة على الأقل', 'w'); return; }
+
+  const prev   = document.getElementById('maint-bk-preview');
+  const delBtn = document.getElementById('maint-bk-del-btn');
+  if (prev) prev.innerHTML = '<span style="color:var(--mu)">⏳ جاري...</span>';
+
+  try {
+    const res = await sbRpc('admin_cleanup_bookings', {
+      p_secret: adminHash, p_older_than_days: days,
+      p_statuses: statuses, p_dry_run: dryRun
+    });
+    if (dryRun) {
+      const n = res.would_delete || 0;
+      if (prev) prev.innerHTML = n > 0
+        ? `<span style="color:var(--rd)">⚠ <b>${n}</b> حجز سيُحذف نهائياً — تأكد قبل المتابعة</span>`
+        : `<span style="color:var(--gn)">✓ لا توجد حجوزات تستوفي شروط الحذف</span>`;
+      if (delBtn) { delBtn.disabled = n===0; delBtn.style.opacity = n===0?'.5':'1'; }
+    } else {
+      const n = res.deleted || 0;
+      toast(`✅ تم حذف ${n} حجز نهائياً من قاعدة البيانات`, 's');
+      renderMaintenance();
+    }
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+async function doCleanupNotifications(dryRun) {
+  const days   = parseInt(document.getElementById('maint-notif-days')?.value||'60', 10);
+  const prev   = document.getElementById('maint-notif-preview');
+  const delBtn = document.getElementById('maint-notif-del-btn');
+  if (prev) prev.innerHTML = '<span style="color:var(--mu)">⏳ جاري...</span>';
+
+  try {
+    const res = await sbRpc('admin_cleanup_notifications', {
+      p_secret: adminHash, p_older_than_days: days, p_dry_run: dryRun
+    });
+    if (dryRun) {
+      const n = res.would_delete || 0;
+      if (prev) prev.innerHTML = n > 0
+        ? `<span style="color:var(--rd)">⚠ <b>${n}</b> إشعار سيُحذف نهائياً</span>`
+        : `<span style="color:var(--gn)">✓ لا توجد إشعارات تستوفي شروط الحذف</span>`;
+      if (delBtn) { delBtn.disabled = n===0; delBtn.style.opacity = n===0?'.5':'1'; }
+    } else {
+      const n = res.deleted || 0;
+      toast(`✅ تم حذف ${n} إشعار نهائياً من قاعدة البيانات`, 's');
+      renderMaintenance();
+    }
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+async function doDeleteBooking(bookingId) {
+  const title = document.getElementById('confirm-title');
+  const sub   = document.getElementById('confirm-sub');
+  const ok    = document.getElementById('confirm-ok');
+  title.textContent = 'حذف الحجز نهائياً';
+  sub.innerHTML = `<div style="font-size:13px;color:var(--mu);line-height:1.6">
+    سيُحذف هذا الحجز نهائياً من قاعدة البيانات ولا يمكن التراجع عن هذا الإجراء.
+  </div>`;
+  ok.textContent = 'حذف نهائي 🗑';
+  ok.className   = 'btn btn-err';
+  ok.onclick = async () => {
+    closeConfirm();
+    try {
+      await sbRpc('admin_delete_booking', {p_secret: adminHash, p_booking_id: bookingId});
+      toast('✅ تم حذف الحجز نهائياً', 's');
+      await renderBookings();
+    } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+  };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+/* ═══════════════════════════════
    SPACE ACTIONS
 ═══════════════════════════════ */
 async function doApprove(id) {
@@ -2986,14 +3281,27 @@ function renderFormPage(sp, units) {
     </div>
     <div class="fg2" style="margin-top:12px">
       <div class="fg">
-        <label class="fl">صاحب المساحة (Owner)</label>
+        <label class="fl" style="display:flex;align-items:center;gap:6px">
+          🛡️ ربط المساحة بصاحب حساب
+          <span style="font-size:10px;font-weight:400;color:var(--mu)">— إضافة نيابةً عن المالك</span>
+        </label>
+        <input class="fc" id="f-owner-search" placeholder="🔍 ابحث باسم المالك أو بريده..."
+               oninput="filterOwnerSelect(this.value)"
+               style="margin-bottom:6px;font-size:12px">
         <select class="fc" id="f-owner" onchange="onOwnerSelectChange(this)">
-          <option value=""          ${!isEdit&&!sp.is_broker&&!sp.owner_id?'selected':''}>— بدون مالك (مساحة مباشرة) —</option>
+          <option value=""          ${!sp.owner_id&&!sp.is_broker?'selected':''}>— بدون مالك (مساحة مباشرة) —</option>
           <option value="__broker__" ${sp.is_broker?'selected':''}>🏛️ مكاني سبوت (بروكر)</option>
           ${allOwners.map(o=>`<option value="${esc(o.id)}" ${sp.owner_id===o.id?'selected':''}>${esc(o.full_name||o.name||o.email||o.id)} — ${esc(o.plan_tier||'starter')}</option>`).join('')}
         </select>
         <div id="f-owner-note" style="font-size:11px;color:var(--bl);margin-top:5px;display:${sp.is_broker?'block':'none'}">
           🏛️ سيظهر بادج <b>بروكر</b> على هذه المساحة في الموقع
+        </div>
+        <div id="f-owner-behalf" style="display:${(sp.owner_id&&!sp.is_broker)?'flex':'none'};
+             background:rgba(255,160,0,.1);border:1.5px solid var(--or);border-radius:8px;
+             padding:9px 13px;margin-top:7px;font-size:12px;color:var(--or);
+             align-items:center;gap:9px;line-height:1.5">
+          <span style="font-size:18px;flex-shrink:0">🛡️</span>
+          <span>أنت تضيف هذه المساحة <b>نيابةً عن المالك</b> — ستُربط بحسابه وتظهر في لوحة تحكمه</span>
         </div>
       </div>
       ${!isEdit?`
@@ -3460,8 +3768,21 @@ async function submitSpaceForm() {
 
 function onOwnerSelectChange(sel) {
   const isBroker = sel.value === '__broker__';
-  const note = document.getElementById('f-owner-note');
-  if (note) note.style.display = isBroker ? 'block' : 'none';
+  const isOwner  = sel.value && !isBroker;
+  const note   = document.getElementById('f-owner-note');
+  const behalf = document.getElementById('f-owner-behalf');
+  if (note)   note.style.display   = isBroker ? 'block' : 'none';
+  if (behalf) behalf.style.display = isOwner  ? 'flex'  : 'none';
+}
+
+function filterOwnerSelect(q) {
+  const sel = document.getElementById('f-owner');
+  if (!sel) return;
+  const ql = q.toLowerCase().trim();
+  Array.from(sel.options).forEach(opt => {
+    if (!opt.value || opt.value === '__broker__') return;
+    opt.hidden = ql ? !opt.text.toLowerCase().includes(ql) : false;
+  });
 }
 
 /* ── Region helpers ── */
