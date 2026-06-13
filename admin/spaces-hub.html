@@ -341,7 +341,61 @@ textarea.fc{resize:vertical;min-height:72px}
   .owner-row>*:nth-child(n+5){display:none}
   .owner-detail-inner{grid-template-columns:1fr}
   .topbar{padding:10px 14px}
+  .sub-kpi-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ══ Subscription Management ══ */
+.sub-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:1100px){.sub-kpi-grid{grid-template-columns:repeat(3,1fr)}}
+.sub-kpi-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 18px;transition:border-color .2s,transform .2s}
+.sub-kpi-card:hover{border-color:var(--bdo);transform:translateY(-2px)}
+.sub-kpi-ico{font-size:20px;margin-bottom:8px}
+.sub-kpi-val{font-size:30px;font-weight:900;font-family:'IBM Plex Mono',monospace;line-height:1}
+.sub-kpi-lbl{font-size:11px;font-weight:700;color:var(--mu);margin-top:5px;text-transform:uppercase;letter-spacing:.5px}
+.sub-kpi-sub{font-size:10px;color:var(--mu2);margin-top:2px}
+.kv-starter .sub-kpi-val{color:var(--mu)}
+.kv-growth  .sub-kpi-val{color:var(--tl)}
+.kv-pro     .sub-kpi-val{color:var(--or)}
+.kv-expiring .sub-kpi-val{color:var(--rd)}
+.kv-total   .sub-kpi-val{color:var(--gr)}
+.sub-table{width:100%;border-collapse:collapse;font-size:12px}
+.sub-table th{background:var(--bg4);padding:10px 12px;text-align:right;font-weight:700;color:var(--mu);border-bottom:1px solid var(--bd);white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.sub-table td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.sub-table tr:hover td{background:rgba(255,107,0,.03)}
+.sub-table tr:last-child td{border-bottom:none}
+/* Sub Modal */
+.sub-modal-ov{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:16px}
+.sub-modal-ov.open{display:flex}
+.sub-modal-box{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);width:100%;max-width:500px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:mPopSub .22s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+.sub-modal-box::before{content:'';position:absolute;top:0;right:0;left:0;height:2px;background:linear-gradient(90deg,transparent,var(--or),transparent)}
+@keyframes mPopSub{from{opacity:0;transform:scale(.92) translateY(-12px)}}
+.sub-toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--bg3);border-radius:8px}
+.sub-toggle-sw{position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer}
+.sub-toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.sub-toggle-sl{position:absolute;cursor:pointer;inset:0;background:var(--mu2);border-radius:24px;transition:.2s}
+.sub-toggle-sl::before{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;bottom:3px;right:3px;transition:.2s}
+.sub-toggle-sw input:checked+.sub-toggle-sl{background:var(--or)}
+.sub-toggle-sw input:checked+.sub-toggle-sl::before{transform:translateX(-20px)}
+/* Sub Modal inner */
+.sub-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd)}
+.sub-modal-header span{font-weight:700;font-size:15px}
+.sub-modal-close{background:none;border:none;color:var(--mu);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s}
+.sub-modal-close:hover{color:var(--tx)}
+.sub-modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.sub-modal-footer{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--bd)}
+.form-row{display:flex;flex-direction:column;gap:6px}
+.form-row label{font-size:12px;font-weight:700;color:var(--mu)}
+.form-row input,.form-row select,.form-row textarea{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:9px 12px;color:var(--tx);font-size:13px;font-family:inherit;direction:rtl}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--or)}
+/* Sub status badges */
+.sub-status-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.sub-badge-active{background:rgba(34,197,94,.15);color:#4ade80}
+.sub-badge-trial{background:rgba(96,165,250,.15);color:#60a5fa}
+.sub-badge-cancelled{background:rgba(239,68,68,.12);color:#f87171}
+.sub-badge-expired{background:rgba(156,163,175,.12);color:var(--mu)}
+/* Sub renew badges */
+.sub-renew-on{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.12);color:#4ade80}
+.sub-renew-off{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(156,163,175,.08);color:var(--mu)}
 </style>
 </head>
 <body>
@@ -389,6 +443,9 @@ textarea.fc{resize:vertical;min-height:72px}
       <div class="sb-item" id="sbi-owner-requests" onclick="gp('owner-requests',this)">
         <span class="sb-ico">📋</span> طلبات التحويل
         <span id="oreq-badge" class="sb-badge" style="display:none">0</span>
+      </div>
+      <div class="sb-item" id="sbi-subscriptions" onclick="gp('subscriptions',this)">
+        <span class="sb-ico">💳</span> الاشتراكات
       </div>
       <div class="sb-item" id="sbi-activities" onclick="gp('activities',this)">
         <span class="sb-ico">🏷️</span> الأنشطة
@@ -439,6 +496,7 @@ textarea.fc{resize:vertical;min-height:72px}
       <div id="pg-pending"   class="page"></div>
       <div id="pg-owners"    class="page"></div>
       <div id="pg-owner-requests" class="page"></div>
+      <div id="pg-subscriptions" class="page"></div>
       <div id="pg-activities" class="page"></div>
       <div id="pg-finance"   class="page"></div>
       <div id="pg-bookings"  class="page"></div>
@@ -446,6 +504,51 @@ textarea.fc{resize:vertical;min-height:72px}
       <div id="pg-export"       class="page"></div>
       <div id="pg-maintenance"  class="page"></div>
       <div id="pg-form"         class="page"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Subscription Edit Modal -->
+<div id="sub-edit-modal" class="sub-modal-ov" onclick="if(event.target===this)closeSubEditModal()">
+  <div class="sub-modal-box">
+    <div class="sub-modal-header">
+      <span>تعديل اشتراك: <strong id="sub-edit-name"></strong></span>
+      <button class="sub-modal-close" onclick="closeSubEditModal()">✕</button>
+    </div>
+    <div class="sub-modal-body">
+      <div class="form-row">
+        <label>الباقة</label>
+        <select id="sub-edit-plan">
+          <option value="starter">مبتدئ</option>
+          <option value="growth">نمو</option>
+          <option value="pro">محترف</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>حالة الاشتراك</label>
+        <select id="sub-edit-status">
+          <option value="active">نشط</option>
+          <option value="trial">تجريبي</option>
+          <option value="cancelled">ملغى</option>
+          <option value="expired">منتهي</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>تاريخ الانتهاء</label>
+        <input type="date" id="sub-edit-ends">
+      </div>
+      <div class="form-row" style="align-items:center;gap:10px">
+        <label style="margin:0">تجديد تلقائي</label>
+        <input type="checkbox" id="sub-edit-renew" style="width:18px;height:18px;cursor:pointer">
+      </div>
+      <div class="form-row">
+        <label>ملاحظات</label>
+        <textarea id="sub-edit-notes" rows="3" placeholder="ملاحظات اختيارية..." style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="sub-modal-footer">
+      <button class="btn btn-ghost" onclick="closeSubEditModal()">إلغاء</button>
+      <button id="sub-save-btn" class="btn btn-pri" onclick="saveSubEditData()">حفظ</button>
     </div>
   </div>
 </div>
@@ -473,7 +576,7 @@ const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
@@ -483,6 +586,9 @@ let allSpaces   = [];
 let allOwners   = [];
 let allActivities    = [];
 let allOwnerRequests = [];
+/* Subscription management state */
+let subSearch = '', subPlanFilter = 'all', subStatusFilter = 'all', subExpiringOnly = false;
+let editingSubOwner = null;
 let currentPage = 'overview';
 let editingId   = null;
 let fMainImgUrl   = null;
@@ -655,6 +761,7 @@ function renderCurrentPage() {
     case 'pending':        renderPending();        break;
     case 'owners':         renderOwners();         break;
     case 'owner-requests': renderOwnerRequests();  break;
+    case 'subscriptions':  renderSubscriptions();  break;
     case 'activities':     renderActivities();     break;
     case 'finance':        renderFinance();        break;
     case 'bookings':       renderBookings();       break;
@@ -1790,6 +1897,176 @@ function promptRejectOwnerRequest(id) {
   };
 
   document.getElementById('confirm-modal').classList.add('open');
+}
+
+/* ═══════════════════════════════
+   PAGE: SUBSCRIPTIONS
+═══════════════════════════════ */
+function renderSubscriptions() {
+  const now = Date.now(), in7 = now + 7 * 86400000;
+  let starter = 0, growth = 0, pro = 0, expiring = 0;
+  allOwners.forEach(o => {
+    const p = (o.plan_tier || 'starter').toLowerCase();
+    if (p === 'starter') starter++;
+    else if (p === 'growth') growth++;
+    else if (p === 'pro') pro++;
+    if (o.sub_ends) {
+      const t = new Date(o.sub_ends).getTime();
+      if (t > now && t <= in7) expiring++;
+    }
+  });
+
+  let filtered = allOwners.filter(o => {
+    const plan = (o.plan_tier || 'starter').toLowerCase();
+    const status = (o.sub_status || 'active').toLowerCase();
+    if (subPlanFilter !== 'all' && plan !== subPlanFilter) return false;
+    if (subStatusFilter !== 'all' && status !== subStatusFilter) return false;
+    if (subExpiringOnly) {
+      if (!o.sub_ends) return false;
+      const t = new Date(o.sub_ends).getTime();
+      if (!(t > now && t <= in7)) return false;
+    }
+    if (subSearch) {
+      const q = subSearch.toLowerCase();
+      if (!(o.name || '').toLowerCase().includes(q) && !(o.email || '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const rows = filtered.map(o => {
+    const plan = (o.plan_tier || 'starter').toLowerCase();
+    const status = o.sub_status || 'active';
+    const started = o.sub_started ? fmtDate(o.sub_started) : '—';
+    const ends = o.sub_ends ? fmtDate(o.sub_ends) : '—';
+    const renew = o.sub_renew ? '<span class="sub-renew-on">تلقائي</span>' : '<span class="sub-renew-off">لا</span>';
+    return `<tr>
+      <td>${esc(o.name || o.email || '—')}</td>
+      <td>${esc(o.email || '—')}</td>
+      <td><span class="plan-badge ${planCls(plan)}">${planLbl(plan)}</span></td>
+      <td>${subStatusBadge(status)}</td>
+      <td>${started}</td>
+      <td>${ends}</td>
+      <td>${renew}</td>
+      <td><button class="btn btn-sm" onclick="openSubEditModal('${esc(o.id)}')">تعديل</button></td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+  <div class="sub-kpi-grid">
+    <div class="sub-kpi-card kv-starter"><div class="sub-kpi-val">${starter}</div><div class="sub-kpi-lbl">مبتدئ</div></div>
+    <div class="sub-kpi-card kv-growth"><div class="sub-kpi-val">${growth}</div><div class="sub-kpi-lbl">نمو</div></div>
+    <div class="sub-kpi-card kv-pro"><div class="sub-kpi-val">${pro}</div><div class="sub-kpi-lbl">محترف</div></div>
+    <div class="sub-kpi-card kv-expiring"><div class="sub-kpi-val">${expiring}</div><div class="sub-kpi-lbl">تنتهي خلال 7 أيام</div></div>
+  </div>
+  <div class="filter-bar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <input type="text" placeholder="بحث باسم أو بريد..." value="${esc(subSearch)}"
+      oninput="subSearch=this.value;renderSubscriptions()" style="flex:1;min-width:160px">
+    <select onchange="subPlanFilter=this.value;renderSubscriptions()">
+      <option value="all" ${subPlanFilter==='all'?'selected':''}>كل الباقات</option>
+      <option value="starter" ${subPlanFilter==='starter'?'selected':''}>مبتدئ</option>
+      <option value="growth" ${subPlanFilter==='growth'?'selected':''}>نمو</option>
+      <option value="pro" ${subPlanFilter==='pro'?'selected':''}>محترف</option>
+    </select>
+    <select onchange="subStatusFilter=this.value;renderSubscriptions()">
+      <option value="all" ${subStatusFilter==='all'?'selected':''}>كل الحالات</option>
+      <option value="active" ${subStatusFilter==='active'?'selected':''}>نشط</option>
+      <option value="cancelled" ${subStatusFilter==='cancelled'?'selected':''}>ملغى</option>
+      <option value="trial" ${subStatusFilter==='trial'?'selected':''}>تجريبي</option>
+      <option value="expired" ${subStatusFilter==='expired'?'selected':''}>منتهي</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" ${subExpiringOnly?'checked':''} onchange="subExpiringOnly=this.checked;renderSubscriptions()">
+      <span>ينتهي قريباً</span>
+    </label>
+    <span style="color:var(--mu);font-size:13px;align-self:center">${filtered.length} من ${allOwners.length}</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="sub-table">
+      <thead><tr>
+        <th>الاسم</th><th>البريد</th><th>الباقة</th><th>الحالة</th>
+        <th>بدأ</th><th>ينتهي</th><th>تجديد تلقائي</th><th>إجراء</th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--mu);padding:24px">لا توجد نتائج</td></tr>'}</tbody>
+    </table>
+  </div>`;
+  setPageContent('subscriptions', html);
+}
+
+function subStatusBadge(s) {
+  const map = {
+    active:    ['sub-badge-active',    'نشط'],
+    trial:     ['sub-badge-trial',     'تجريبي'],
+    cancelled: ['sub-badge-cancelled', 'ملغى'],
+    expired:   ['sub-badge-expired',   'منتهي'],
+  };
+  const [cls, lbl] = map[s] || ['sub-badge-active', s || 'نشط'];
+  return `<span class="sub-status-badge ${cls}">${lbl}</span>`;
+}
+
+function openSubEditModal(ownerId) {
+  editingSubOwner = allOwners.find(o => o.id === ownerId);
+  if (!editingSubOwner) return;
+  const o = editingSubOwner;
+  document.getElementById('sub-edit-name').textContent = o.name || o.email || ownerId;
+  document.getElementById('sub-edit-plan').value = (o.plan_tier || 'starter').toLowerCase();
+  document.getElementById('sub-edit-status').value = o.sub_status || 'active';
+  const endsVal = o.sub_ends ? o.sub_ends.slice(0, 10) : '';
+  document.getElementById('sub-edit-ends').value = endsVal;
+  document.getElementById('sub-edit-renew').checked = !!o.sub_renew;
+  document.getElementById('sub-edit-notes').value = o.sub_notes || '';
+  document.getElementById('sub-edit-modal').classList.add('open');
+}
+
+function closeSubEditModal() {
+  document.getElementById('sub-edit-modal').classList.remove('open');
+  editingSubOwner = null;
+}
+
+async function saveSubEditData() {
+  if (!editingSubOwner) return;
+  const o = editingSubOwner;
+  const newPlan   = document.getElementById('sub-edit-plan').value;
+  const newStatus = document.getElementById('sub-edit-status').value;
+  const endsRaw   = document.getElementById('sub-edit-ends').value;
+  const endsAt    = endsRaw ? endsRaw + 'T23:59:59+00:00' : null;
+  const autoRenew = document.getElementById('sub-edit-renew').checked;
+  const notes     = document.getElementById('sub-edit-notes').value.trim() || null;
+
+  const btn = document.getElementById('sub-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الحفظ...';
+  try {
+    await sbRpc('admin_set_plan_tier', {
+      p_owner_id:  o.id,
+      p_plan_tier: newPlan,
+      p_secret:    adminHash,
+      p_ends_at:   endsAt,
+      p_notes:     notes,
+    });
+    await sbRpc('admin_upsert_subscription', {
+      p_secret:     adminHash,
+      p_user_id:    o.id,
+      p_plan:       newPlan,
+      p_status:     newStatus,
+      p_started_at: o.sub_started || new Date().toISOString(),
+      p_ends_at:    endsAt,
+      p_auto_renew: autoRenew,
+      p_notes:      notes,
+    });
+    o.plan_tier   = newPlan;
+    o.sub_status  = newStatus;
+    o.sub_ends    = endsRaw ? endsAt : null;
+    o.sub_renew   = autoRenew;
+    o.sub_notes   = notes;
+    closeSubEditModal();
+    renderSubscriptions();
+    toast('✅ تم حفظ الاشتراك بنجاح', 'i');
+  } catch(e) {
+    toast('خطأ: ' + e.message, 'e');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'حفظ';
+  }
 }
 
 /* ACTIVITIES */

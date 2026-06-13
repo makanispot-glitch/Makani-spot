@@ -685,14 +685,17 @@ async function saveSub() {
   const notes     = document.getElementById('m-notes').value.trim();
 
   try {
-    // 1. تحديث plan_tier في profiles
+    // 1. تحديث plan_tier + subscription في خطوة واحدة
+    // نمرر p_ends_at و p_notes لضمان استدعاء النسخة الصحيحة من الـ RPC (5 params)
     await sbRpc('admin_set_plan_tier', {
       p_owner_id:  editingOwner.id,
       p_plan_tier: newPlan,
       p_secret:    adminHash,
+      p_ends_at:   endVal ? endVal + 'T23:59:59+00:00' : null,
+      p_notes:     notes || null,
     });
 
-    // 2. Upsert في subscriptions عبر RPC آمن
+    // 2. Upsert في subscriptions لتحديث الحالة والتجديد التلقائي
     await sbRpc('admin_upsert_subscription', {
       p_secret:     adminHash,
       p_user_id:    editingOwner.id,
