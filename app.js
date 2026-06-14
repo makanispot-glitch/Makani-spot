@@ -79,6 +79,17 @@ const _sliders = {};  // يحفظ حالة كل سلايدر { index, images, au
 
 
 /* ================================================================
+   📊 القسم 2.5: Google Analytics 4 — تتبع الأحداث
+   ================================================================ */
+
+function trackEvent(eventName, params = {}) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', eventName, params);
+  }
+}
+
+
+/* ================================================================
    🚀 القسم الثالث: نقطة البداية (تشغيل الموقع)
    ================================================================ */
 
@@ -1380,6 +1391,7 @@ function openBookingForUnit(spaceId, unitId) {
  * يوجّه المستخدم لصفحة المساحات المستقلة
  */
 function goToMarketplace() {
+  trackEvent('marketplace_opened');
   window.location.href = '/spaces/';
 }
 
@@ -1570,6 +1582,9 @@ function setTab(el, type) {
 }
 
 function doSearch() {
+  const region = document.getElementById('f-region')?.value || '';
+  const activity = selectedAct || '';
+  trackEvent('search', { region, activity });
   filterAndRender();
   showSearchChips();
 }
@@ -1714,6 +1729,7 @@ function openBooking(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
   currentBookingSpace = s;   /* لالتقاط owner_id/space_id عند الإرسال */
+  trackEvent('booking_button_clicked', { space_id: spaceId, space_name: s.name });
 
   const sizePrices = {};
   const sizesClean = [];
@@ -1910,6 +1926,7 @@ async function submitBooking() {
     }
 
     // ── عرض شاشة النجاح ────────────────────────────────────────
+    trackEvent('booking_submitted', { space_id: currentBookingSpace?.id, space_name: currentBookingSpace?.name });
     document.getElementById('modal-form-wrap').style.display = 'none';
     document.getElementById('modal-success').style.display = 'block';
 
@@ -2128,6 +2145,7 @@ async function doEmailLogin() {
     return;
   }
 
+  trackEvent('login', { method: 'email' });
   await loadDashboardData(data.user);
   showPage('dashboard');
 }
@@ -2140,6 +2158,7 @@ async function doEmailLogin() {
 async function doEmailSignup() {
   if (!sbClient) return;
   clearAuthAlert('signup-alert');
+  trackEvent('signup_started', { method: 'email' });
 
   const name = document.getElementById('su-name')?.value.trim();
   const phone = document.getElementById('su-phone')?.value.trim();
@@ -2191,6 +2210,7 @@ async function doEmailSignup() {
     }, { onConflict: 'id' });
   }
 
+  trackEvent('signup_completed', { method: 'email' });
   const addrEl = document.getElementById('confirm-em-addr');
   if (addrEl) addrEl.textContent = email;
   showPage('confirm');
@@ -2203,6 +2223,7 @@ async function doEmailSignup() {
 
 async function authWithGoogle() {
   if (!sbClient) return;
+  trackEvent('signup_started', { method: 'google' });
 
   const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',

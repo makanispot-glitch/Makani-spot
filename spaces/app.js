@@ -56,6 +56,17 @@ const SD_AUTO_DELAY = 4500;
 
 
 /* ================================================================
+   📊 Google Analytics 4 — تتبع الأحداث
+   ================================================================ */
+
+function trackEvent(eventName, params = {}) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', eventName, params);
+  }
+}
+
+
+/* ================================================================
    🚀 القسم الثالث: نقطة البداية
    ================================================================ */
 
@@ -1406,6 +1417,7 @@ function openBooking(spaceId) {
   }
 
   bookingSpace = s;   // ربط الحجز بالمساحة وصاحبها (نظام التقييمات)
+  trackEvent('booking_button_clicked', { space_id: spaceId, space_name: s.name });
 
   const sizePrices = {};
   const sizesClean = [];
@@ -1745,6 +1757,7 @@ async function submitBooking() {
       if (sBody)  sBody.innerHTML  = 'شكراً ليك — اتستلم طلب الحجز.<br>فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong style="color:var(--orange)">٢٤ ساعة</strong>.';
     }
 
+    trackEvent('booking_submitted', { space_id: bookingSpace?.id, space_name: bookingSpace?.name });
     document.getElementById('modal-form-wrap').style.display = 'none';
     document.getElementById('modal-success').style.display   = 'block';
 
@@ -1945,6 +1958,7 @@ async function doEmailLogin() {
     return;
   }
 
+  trackEvent('login', { method: 'email' });
   // بعد تسجيل الدخول، ارجع للماركت
   showPage('market');
 }
@@ -1957,6 +1971,7 @@ async function doEmailLogin() {
 async function doEmailSignup() {
   if (!sbClient) return;
   clearAuthAlert('signup-alert');
+  trackEvent('signup_started', { method: 'email' });
 
   const name  = document.getElementById('su-name')?.value.trim();
   const phone = document.getElementById('su-phone')?.value.trim();
@@ -2008,6 +2023,7 @@ async function doEmailSignup() {
     }, { onConflict: 'id' });
   }
 
+  trackEvent('signup_completed', { method: 'email' });
   const addrEl = document.getElementById('confirm-em-addr');
   if (addrEl) addrEl.textContent = email;
   showPage('confirm');
@@ -2020,6 +2036,7 @@ async function doEmailSignup() {
 
 async function authWithGoogle() {
   if (!sbClient) return;
+  trackEvent('signup_started', { method: 'google' });
 
   const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',

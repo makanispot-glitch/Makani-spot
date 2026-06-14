@@ -194,6 +194,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 /* ================================================================
+   📊 Google Analytics 4 — تتبع الأحداث
+   ================================================================ */
+
+function trackEvent(eventName, params = {}) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', eventName, params);
+  }
+}
+
+
+/* ================================================================
    🔐 القسم 14: المصادقة (مشتركة مع المنصة الرئيسية)
    ================================================================ */
 
@@ -1057,6 +1068,7 @@ async function eqOpenDetail(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
 
+  trackEvent('listing_viewed', { listing_id: id, category: listing.category });
   eqIncrementView(id);
 
   const imgs   = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
@@ -1199,6 +1211,7 @@ window.addEventListener('beforeunload', _eqFlushViews);
 async function eqIncrementContact(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
+  trackEvent('listing_contact', { listing_id: id, category: listing.category });
   listing.contact_count = (listing.contact_count || 0) + 1;
   const { error } = await eqSb.rpc('increment_contact_count', { listing_id: id });
   if (error) console.warn('[contact_count RPC]', error.message);
