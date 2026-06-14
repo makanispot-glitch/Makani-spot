@@ -727,7 +727,9 @@
           </div>
           <div class="mfg" style="margin-top:4px">
             <label>نوع نشاطك التجاري *</label>
-            <div class="act-picker" id="modal-act-picker"></div>
+            <select id="bk-activity" onchange="onActivityChange(this)" style="width:100%;padding:11px 13px;border-radius:var(--radius-lg,12px);border:1.5px solid var(--border,#e2e8f0);background:var(--surface,#fff);font-family:inherit;font-size:14px;color:inherit;direction:rtl">
+              <option value="">— اختر نوع نشاطك —</option>
+            </select>
           </div>
           <div class="mfg" id="other-act-wrap" style="display:none">
             <label>اذكر نشاطك</label>
@@ -751,12 +753,27 @@
             <label>تاريخ البدء المقترح</label>
             <input type="date" id="bk-date">
           </div>
-          <div class="mfg" id="bk-profile-wrap" style="margin-top:4px;display:none">
-            <label>رابط بروفايل نشاطك (Google Drive / PDF) — اختياري</label>
-            <input type="url" id="bk-profile-link" dir="ltr" placeholder="https://drive.google.com/...">
-            <div style="font-size:11px;color:var(--ink2);margin-top:5px">ضع رابطاً لصور منتجاتك أو ملفك التعريفي — يساعد صاحب المكان على تقييم طلبك أسرع.</div>
+          <!-- ── حقل صورة المشروع (اختياري) ── -->
+          <div class="mfg" style="margin-top:12px">
+            <label>📸 صورة من شكل مشروعك <span style="font-weight:400;color:var(--ink2)">(اختياري)</span></label>
+            <input type="url" id="bk-project-image" dir="ltr" placeholder="https://drive.google.com/file/d/...">
+            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7">
+              ضع رابط Google Drive لصورة توضح شكل مشروعك أو ديكورك — يساعدنا في تجهيز المساحة المناسبة لك.<br>
+              <strong style="color:var(--ink3)">خطوات نشر الرابط:</strong> افتح الصورة في Drive ← اضغط مشاركة ← اختر "أي شخص لديه الرابط" ← انسخ الرابط وضعه هنا.
+            </div>
           </div>
-          <div class="mfg" style="margin-top:4px">
+
+          <!-- ── حقل بروفايل العلامة التجارية (اختياري) ── -->
+          <div class="mfg" style="margin-top:12px">
+            <label>🏷 بروفايل علامتك التجارية <span style="font-weight:400;color:var(--ink2)">(اختياري)</span></label>
+            <input type="url" id="bk-profile-link" dir="ltr" placeholder="https://drive.google.com/drive/folders/...">
+            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7">
+              شارك رابط Google Drive يحتوي على صور براندك أو هويتك التجارية — تأكد إن الرابط مفتوح للعرض.<br>
+              <strong style="color:var(--ink3)">خطوات نشر الرابط:</strong> افتح المجلد في Drive ← اضغط مشاركة ← اختر "أي شخص لديه الرابط يمكنه العرض" ← انسخ الرابط وضعه هنا.
+            </div>
+          </div>
+
+          <div class="mfg" style="margin-top:12px">
             <label>ملاحظات أو أسئلة</label>
             <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
           </div>

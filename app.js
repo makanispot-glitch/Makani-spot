@@ -519,11 +519,24 @@ function _sortByPlan(arr) {
   return arr;
 }
 
+/** يحلّ قيمة النشاط (مُعرّف أو اسم عربي) إلى تسمية للعرض */
+function _resolveActLabel(val) {
+  if (!val) return '';
+  const a = (ACTIVITIES || []).find(x =>
+    x.id === val ||
+    x.label === val ||
+    x.label.replace(/^[^؀-ۿ]+/, '').trim() === String(val).trim()
+  );
+  return a ? a.label : val;
+}
+
 /** يبني HTML لـ badge الثقة بناءً على planTier */
 function _planTrustBadgeHtml(s) {
+  if (s.isBroker) return `<span class="card-trust-badge trust-makani">🏠 مكاني Spot</span>`;
   const tier = (s.planTier || 'starter').toLowerCase();
-  if (tier === 'pro') return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
-  if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
+  if (tier === 'broker')  return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
+  if (tier === 'pro')     return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
+  if (tier === 'growth')  return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
   return '';
 }
 
@@ -556,7 +569,7 @@ function buildCardHtml(s, fromPage) {
   }
 
   // 2. منطق الأنشطة والأسعار (الذي أرسلته أنت)
-  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${id}</span>`).join('');
+  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -577,12 +590,11 @@ function buildCardHtml(s, fromPage) {
     (s.extraImages && s.extraImages.length > 0) ||
     s.description;
 
-  const detailsBtnHtml = hasDetails
-    ? `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
-              onclick="event.stopPropagation();openSpaceDetail('${s.id}','${fromPage}')">
+  // التفاصيل والحجز يتمّان في صفحة المساحات الرسمية (/spaces/) لتوحيد التجربة
+  const detailsBtnHtml = `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
+              onclick="event.stopPropagation();window.location.href='/spaces/?space=${s.id}'">
          تفاصيل ←
-       </button>`
-    : '';
+       </button>`;
 
   const availableUnits = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
   const unitsBadgeHtml = s.subSpaces && s.subSpaces.length > 0
@@ -613,10 +625,8 @@ function buildCardHtml(s, fromPage) {
         <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${detailsBtnHtml}
-          <button class="btn btn-ghost btn-insp"
-                  onclick="event.stopPropagation();openInspectionModal('${s.id}')">🔍 معاينة</button>
           <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="openBooking('${s.id}')">احجز ←</button>
+                  onclick="event.stopPropagation();window.location.href='/spaces/?space=${s.id}&book=1'">احجز دلوقتي ←</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `
@@ -787,10 +797,8 @@ function openSpaceDetail(spaceId, fromPage) {
             <div class="sd-price-val">${Number(s.price).toLocaleString('ar-EG')} ج</div>
             <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
             <div style="display:flex;gap:8px;margin-top:10px">
-              <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
-                      onclick="openInspectionModal('${s.id}')">🔍 معاينة</button>
-              <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:13px;padding:9px 10px"
-                      onclick="openBooking('${s.id}')">احجز ←</button>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:9px 10px"
+                      onclick="openBooking('${s.id}')">احجز دلوقتي ←</button>
             </div>
           </div>
         </div>
@@ -2502,14 +2510,14 @@ async function loadUserBookings(userId) {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(250);
 
     const { data: bazaarBookings } = await sbClient
       .from('bazaar_bookings')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(250);
 
     const localBazaarBookings = _loadLocalBazaarBookings(userId);
     const bazaarById = new Map();

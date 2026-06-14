@@ -35,6 +35,9 @@ let ratingsList       = [];
 let paymentsList      = [];
 let violationsList    = [];
 let bookingsList      = [];   /* طلبات الحجز الواردة من الموقع العام */
+let bookingsHasMore   = false;
+let _bookingsOffset   = 0;
+const BOOKINGS_BATCH  = 50;
 let ownerSettings     = null;
 let editingContractId = null;
 
@@ -129,43 +132,88 @@ async function loadOwnerSettings() {
   } catch { /* الجدول اختياري */ }
 }
 
+/* يحوّل صف booking من Supabase إلى شكل الذاكرة — مع عرض السعر بشكل صحيح (#12) */
+function _mapBookingRow(b) {
+  const rawPrice = b.price;
+  let priceDisplay;
+  if (rawPrice === null || rawPrice === undefined || rawPrice === '') {
+    priceDisplay = '—';
+  } else {
+    const num = Number(rawPrice);
+    priceDisplay = !isNaN(num) && String(rawPrice).replace(/[^\d.]/g, '') !== ''
+      ? num.toLocaleString('ar-EG') + ' ج'
+      : String(rawPrice);  // قديم: نص مثل "1,500 ج"
+  }
+  return {
+    id:          b.id,
+    userId:      b.user_id,
+    spaceId:     b.space_id,
+    spaceName:   b.space_name   || '—',
+    spaceLoc:    b.space_loc    || '—',
+    price:       priceDisplay,
+    activity:    b.activity     || '—',
+    size:        b.size         || '—',
+    duration:    b.duration     || '—',
+    startDate:   b.start_date   || '',
+    notes:       b.notes        || '',
+    status:      b.status       || 'pending',
+    createdAt:   b.created_at   || '',
+    isWaitlist:  !!b.is_waitlist,
+    profileLink: b.profile_link || '',
+    bookerName:  b.profiles?.full_name || '—',
+    bookerPhone: b.profiles?.phone     || '—',
+    bookerEmail: b.profiles?.email     || '—',
+  };
+}
+
 async function loadBookingsRemote() {
   const sb = getSB();
   if (!sb || !currentOwner?.id) { bookingsList = []; return; }
   try {
-    /* نجلب الحجوزات النشطة (pending + confirmed + viewing_pending) مع بيانات الحاجز من profiles */
+    /* نجلب الحجوزات النشطة — 50 في المرة الأولى (#11) */
     const { data, error } = await sb
       .from('bookings')
       .select('*, profiles!bookings_user_id_fkey(full_name, phone, email)')
       .eq('owner_id', currentOwner.id)
       .in('status', ['pending', 'confirmed', 'viewing_pending'])
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(0, BOOKINGS_BATCH - 1);
     if (error) throw error;
-    bookingsList = (data || []).map(b => ({
-      id:         b.id,
-      userId:     b.user_id,
-      spaceId:    b.space_id,
-      spaceName:  b.space_name  || '—',
-      spaceLoc:   b.space_loc   || '—',
-      price:      b.price       || '—',
-      activity:   b.activity    || '—',
-      size:       b.size        || '—',
-      duration:   b.duration    || '—',
-      startDate:  b.start_date  || '',
-      notes:      b.notes       || '',
-      status:     b.status      || 'pending',
-      createdAt:  b.created_at  || '',
-      isWaitlist:  !!b.is_waitlist,
-      profileLink: b.profile_link || '',
-      bookerName:  b.profiles?.full_name || '—',
-      bookerPhone: b.profiles?.phone     || '—',
-      bookerEmail: b.profiles?.email     || '—',
-    }));
+    _bookingsOffset = 0;
+    bookingsHasMore = (data || []).length === BOOKINGS_BATCH;
+    bookingsList = (data || []).map(_mapBookingRow);
     updateBookingsBadge();
   } catch (e) {
     console.warn('[Makani] bookings load:', e.message);
     bookingsList = [];
+  }
+}
+
+/* تحميل الدفعة التالية من الحجوزات (#11) */
+async function loadMoreBookings() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id || !bookingsHasMore) return;
+  const btn = document.getElementById('bk-load-more-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحميل…'; }
+
+  const nextOffset = _bookingsOffset + BOOKINGS_BATCH;
+  try {
+    const { data, error } = await sb
+      .from('bookings')
+      .select('*, profiles!bookings_user_id_fkey(full_name, phone, email)')
+      .eq('owner_id', currentOwner.id)
+      .in('status', ['pending', 'confirmed', 'viewing_pending'])
+      .order('created_at', { ascending: false })
+      .range(nextOffset, nextOffset + BOOKINGS_BATCH - 1);
+    if (error) throw error;
+    _bookingsOffset = nextOffset;
+    bookingsHasMore = (data || []).length === BOOKINGS_BATCH;
+    bookingsList = [...bookingsList, ...(data || []).map(_mapBookingRow)];
+    updateBookingsBadge();
+    renderBookings();
+  } catch (e) {
+    console.warn('[Makani] load more bookings:', e.message);
+    if (btn) { btn.disabled = false; btn.textContent = `⬇ تحميل ${BOOKINGS_BATCH} طلب إضافي`; }
   }
 }
 
@@ -3237,7 +3285,16 @@ function renderBookings() {
       }).join('')
     : `<div class="empty-hint" style="padding:24px">لا توجد طلبات بهذا الفلتر.</div>`;
 
-  wrap.innerHTML = tabsHtml + `<div class="bk-cards">${rows}</div>`;
+  /* زر تحميل المزيد — يظهر فقط لو في حجوزات إضافية من الخادم (#11) */
+  const loadMoreHtml = bookingsHasMore && activeFilter !== 'waitlist'
+    ? `<div style="text-align:center;padding:16px 0">
+         <button id="bk-load-more-btn" class="btn" style="min-width:220px"
+                 onclick="loadMoreBookings()">
+           ⬇ تحميل ${BOOKINGS_BATCH} طلب إضافي
+         </button>
+       </div>`
+    : '';
+  wrap.innerHTML = tabsHtml + `<div class="bk-cards">${rows}</div>` + loadMoreHtml;
 }
 
 /* بطاقات قائمة الانتظار — تعرض رابط البروفايل وإجراءات خاصة */

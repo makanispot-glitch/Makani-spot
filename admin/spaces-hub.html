@@ -3587,8 +3587,8 @@ function renderFormPage(sp, units) {
           <option value="__broker__" ${sp.is_broker?'selected':''}>🏛️ مكاني سبوت (بروكر)</option>
           ${allOwners.map(o=>`<option value="${esc(o.id)}" ${sp.owner_id===o.id?'selected':''}>${esc(o.full_name||o.name||o.email||o.id)} — ${esc(o.plan_tier||'starter')}</option>`).join('')}
         </select>
-        <div id="f-owner-note" style="font-size:11px;color:var(--bl);margin-top:5px;display:${sp.is_broker?'block':'none'}">
-          🏛️ سيظهر بادج <b>بروكر</b> على هذه المساحة في الموقع
+        <div id="f-owner-note" style="font-size:11px;color:var(--or);margin-top:5px;display:${sp.is_broker?'block':'none'}">
+          🏠 سيظهر بادج <b>مكاني Spot</b> على هذه المساحة في الموقع وفي صفحة التفاصيل
         </div>
         <div id="f-owner-behalf" style="display:${(sp.owner_id&&!sp.is_broker)?'flex':'none'};
              background:rgba(255,160,0,.1);border:1.5px solid var(--or);border-radius:8px;

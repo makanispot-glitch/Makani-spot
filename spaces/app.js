@@ -37,6 +37,11 @@ let mpFiltered    = [];
 let mpActiveTypes = [];
 let mpActiveActs  = [];
 
+// ── Pagination الخادمي — يحمي من تحميل آلاف المساحات دفعة واحدة ──
+const SPACES_FETCH_SIZE = 100;
+let spacesOffset  = 0;
+let spacesHasMore = false;
+
 // ── متغيرات صفحة تفاصيل المساحة ──
 let currentSpaceDetail = null;
 let detailPrevPage     = 'market';
@@ -73,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const params  = new URLSearchParams(window.location.search);
   const spaceId = params.get('space');
   const unitId  = params.get('unit');
+  const autoBook = params.get('book') === '1';   // قادم من زر «احجز» في الصفحة الرئيسية
   if (spaceId) {
     // ننتظر تحميل البيانات ثم نفتح التفاصيل
     const _tryOpen = setInterval(() => {
@@ -86,6 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (notesEl) notesEl.value = `الوحدة المطلوبة: ${unitId}`;
           }, 600);
         }
+        // فتح نموذج الحجز مباشرة (يطبّق بوابة الدخول داخلياً إن لم يكن مسجلاً)
+        if (autoBook) setTimeout(() => openBooking(s.id), 650);
       }
     }, 300);
     // وقف الانتظار بعد 8 ثواني إذا لم تُحمَّل البيانات
@@ -113,13 +121,14 @@ async function loadData() {
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
 
-    // تحميل المساحات المعتمدة مع وحداتها الفرعية
+    // تحميل المساحات المعتمدة — أول 100 فقط (pagination خادمي)
     const { data: spacesData, error: spacesErr } = await sbClient
       .from('spaces')
       .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
       .eq('status', 'approved')
       .eq('is_active', true)
-      .order('sort_order');
+      .order('sort_order')
+      .range(0, SPACES_FETCH_SIZE - 1);
     if (spacesErr) throw spacesErr;
 
     // تحميل باقات أصحاب المساحات
@@ -135,6 +144,8 @@ async function loadData() {
 
     SPACES = (spacesData || []).map(row => mapSupabaseToSpaceObject(row, profilesMap));
     _sortByPlan(SPACES);
+    spacesOffset  = 0;
+    spacesHasMore = (spacesData || []).length === SPACES_FETCH_SIZE;
 
     buildModalActivityPicker();
     buildMpActivityFilters();
@@ -144,7 +155,7 @@ async function loadData() {
     setTimeout(() => csInitAll(), 120);
 
     const counter = document.getElementById('mp-count');
-    if (counter) counter.textContent = SPACES.length + ' مساحة';
+    if (counter) counter.textContent = SPACES.length + (spacesHasMore ? '+' : '') + ' مساحة';
 
   } catch (err) {
     showLoadingState('mp-grid', true, err.message || 'خطأ في تحميل البيانات');
@@ -223,8 +234,8 @@ function showLoadingState(gridId, isError, msg) {
    ================================================================ */
 
 /**
- * تحديث صامت للمساحات — بدون spinner وبدون إعادة ضبط الصفحة الحالية
- * يُستدعى من Realtime ومن الـ polling الاحتياطي
+ * تحديث صامت للمساحات — بدون spinner وبدون إعادة ضبط الصفحة الحالية.
+ * يُستدعى من polling الاحتياطي (كل 5 دقائق) ويحترم الـ pagination الخادمي.
  */
 async function silentRefreshSpaces() {
   if (document.hidden || !sbClient) return;
@@ -234,10 +245,10 @@ async function silentRefreshSpaces() {
       .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
       .eq('status', 'approved')
       .eq('is_active', true)
-      .order('sort_order');
+      .order('sort_order')
+      .range(0, spacesOffset + SPACES_FETCH_SIZE - 1);
     if (error || !spacesData) return;
 
-    /* باقات الأصحاب */
     const ownerIds = [...new Set(spacesData.map(s => s.owner_id).filter(Boolean))];
     let profilesMap = {};
     if (ownerIds.length) {
@@ -248,29 +259,7 @@ async function silentRefreshSpaces() {
 
     SPACES = spacesData.map(row => mapSupabaseToSpaceObject(row, profilesMap));
     _sortByPlan(SPACES);
-
-    /* أعد تطبيق الفلاتر الحالية بدون إعادة ضبط الصفحة */
-    const region = document.getElementById('mp-region')?.value  || '';
-    const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-    const sort   = document.getElementById('mp-sort')?.value    || 'default';
-    let data = [...SPACES];
-    if (region) data = data.filter(s => s.loc === region);
-    if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
-    data = data.filter(s => (parseInt(s.price) || 0) <= maxVal);
-    if (mpActiveActs.length) {
-      data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
-    }
-    if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
-    if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
-    mpFiltered = data;
-
-    /* احتفظ بالصفحة الحالية — فقط صحّح لو أصبحت خارج النطاق */
-    const maxPage = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
-    if (mpPage > maxPage) mpPage = maxPage;
-
-    renderMarketplace();
-    const counter = document.getElementById('mp-count');
-    if (counter) counter.textContent = SPACES.length + ' مساحة';
+    _applyCurrentFilters();
   } catch { /* صامت — لو الشبكة منقطعة */ }
 }
 
@@ -278,17 +267,141 @@ function subscribeSpacesRealtime() {
   if (!sbClient) return;
   let debounce = null;
   sbClient.channel('spaces-public-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, (payload) => {
       clearTimeout(debounce);
-      debounce = setTimeout(silentRefreshSpaces, 1500);
+      debounce = setTimeout(() => _handleSpaceRealtime(payload), 1500);
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'space_units' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'space_units' }, (payload) => {
       clearTimeout(debounce);
-      debounce = setTimeout(silentRefreshSpaces, 1500);
+      const spaceId = payload?.new?.space_id || payload?.old?.space_id;
+      debounce = setTimeout(
+        spaceId ? () => _refreshSingleSpace(spaceId) : silentRefreshSpaces,
+        1500
+      );
     })
     .subscribe();
   /* Fallback polling كل 5 دقائق — لو انقطع الـ Realtime */
   setInterval(silentRefreshSpaces, 300000);
+}
+
+/* ── يطبّق الفلاتر الحالية بدون إعادة ضبط الصفحة — مشترك بين silentRefresh والـ Realtime ── */
+function _applyCurrentFilters() {
+  const region = document.getElementById('mp-region')?.value  || '';
+  const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
+  const sort   = document.getElementById('mp-sort')?.value    || 'default';
+  let data = [...SPACES];
+  if (region) data = data.filter(s => s.loc === region);
+  if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
+  data = data.filter(s => (parseInt(s.price) || 0) <= maxVal);
+  if (mpActiveActs.length) {
+    data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
+  }
+  if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
+  if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
+  mpFiltered = data;
+  const maxPage = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
+  if (mpPage > maxPage) mpPage = maxPage;
+  renderMarketplace();
+  const counter = document.getElementById('mp-count');
+  if (counter) counter.textContent = SPACES.length + (spacesHasMore ? '+' : '') + ' مساحة';
+}
+
+/* ── يتعامل مع حدث Realtime لمساحة محددة بدل إعادة تحميل الكل ── */
+async function _handleSpaceRealtime(payload) {
+  const eventType = payload?.eventType;
+  const record    = payload?.new   || {};
+  const oldRec    = payload?.old   || {};
+
+  if (eventType === 'DELETE') {
+    const id = oldRec.id;
+    if (id) { SPACES = SPACES.filter(s => s.id !== id); _applyCurrentFilters(); }
+    return;
+  }
+
+  if (record.status === 'approved' && record.is_active) {
+    await _refreshSingleSpace(record.id);
+  } else {
+    const id = record.id || oldRec.id;
+    if (id) { SPACES = SPACES.filter(s => s.id !== id); _applyCurrentFilters(); }
+  }
+}
+
+/* ── يُعيد تحميل مساحة واحدة من Supabase ويُحدّث مصفوفة SPACES ── */
+async function _refreshSingleSpace(spaceId) {
+  if (!sbClient || !spaceId) return;
+  try {
+    const { data, error } = await sbClient
+      .from('spaces')
+      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+      .eq('id', spaceId)
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      SPACES = SPACES.filter(s => s.id !== spaceId);
+      _applyCurrentFilters();
+      return;
+    }
+
+    let profilesMap = {};
+    if (data.owner_id) {
+      const { data: profiles } = await sbClient
+        .from('profiles').select('id, plan_tier, full_name, avatar_url').eq('id', data.owner_id);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+    }
+
+    const updated = mapSupabaseToSpaceObject(data, profilesMap);
+    const idx = SPACES.findIndex(s => s.id === spaceId);
+    if (idx >= 0) {
+      SPACES[idx] = updated;
+    } else {
+      SPACES.push(updated);
+      _sortByPlan(SPACES);
+    }
+    if (currentSpaceDetail?.id === spaceId) currentSpaceDetail = updated;
+    _applyCurrentFilters();
+  } catch { /* صامت */ }
+}
+
+/* ── تحميل الدفعة التالية من المساحات (#9) ── */
+async function loadMoreSpaces() {
+  if (!sbClient || !spacesHasMore) return;
+  const btn = document.getElementById('mp-load-more-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحميل…'; }
+
+  const nextOffset = spacesOffset + SPACES_FETCH_SIZE;
+  try {
+    const { data: spacesData, error } = await sbClient
+      .from('spaces')
+      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .order('sort_order')
+      .range(nextOffset, nextOffset + SPACES_FETCH_SIZE - 1);
+
+    if (error || !spacesData) {
+      if (btn) { btn.disabled = false; btn.textContent = '⬇ تحميل المزيد'; }
+      return;
+    }
+
+    const ownerIds = [...new Set(spacesData.map(s => s.owner_id).filter(Boolean))];
+    let profilesMap = {};
+    if (ownerIds.length) {
+      const { data: profiles } = await sbClient
+        .from('profiles').select('id, plan_tier, full_name, avatar_url').in('id', ownerIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+    }
+
+    const newSpaces = spacesData.map(row => mapSupabaseToSpaceObject(row, profilesMap));
+    SPACES = [...SPACES, ...newSpaces];
+    _sortByPlan(SPACES);
+    spacesOffset  = nextOffset;
+    spacesHasMore = spacesData.length === SPACES_FETCH_SIZE;
+    _applyCurrentFilters();
+  } catch {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ تحميل المزيد'; }
+  }
 }
 
 
@@ -297,18 +410,16 @@ function subscribeSpacesRealtime() {
    ================================================================ */
 
 function buildModalActivityPicker() {
-  const picker = document.getElementById('modal-act-picker');
-  if (!picker) return;
-  picker.innerHTML = ACTIVITIES.map(a =>
-    `<button class="act-pick-btn" data-id="${a.id}" onclick="toggleModalAct('${a.id}',this)">${a.label}</button>`
-  ).join('');
+  const sel = document.getElementById('bk-activity');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— اختر نوع نشاطك —</option>' +
+    ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('') +
+    '<option value="other">✏️ أخرى (اذكرها)</option>';
 }
 
-function toggleModalAct(id, el) {
-  document.querySelectorAll('.act-pick-btn').forEach(b => b.classList.remove('on'));
-  el.classList.add('on');
+function onActivityChange(sel) {
   const wrap = document.getElementById('other-act-wrap');
-  if (wrap) wrap.style.display = (id === 'other') ? 'block' : 'none';
+  if (wrap) wrap.style.display = (sel.value === 'other') ? 'block' : 'none';
 }
 
 function buildMpActivityFilters() {
@@ -328,11 +439,26 @@ function _sortByPlan(arr) {
   return arr;
 }
 
+/* يحلّ قيمة النشاط المخزّنة (مُعرّف مثل coffee أو اسم عربي) إلى تسمية للعرض.
+   يطابق بالمُعرّف أو الاسم العربي أو التسمية الكاملة — وإلا يعيد القيمة كما هي. */
+function _resolveActLabel(val) {
+  if (!val) return '';
+  const a = (ACTIVITIES || []).find(x =>
+    x.id === val ||
+    x.label === val ||
+    x.label.replace(/^[^؀-ۿ]+/, '').trim() === String(val).trim()
+  );
+  return a ? a.label : val;
+}
+
 function _planTrustBadgeHtml(s) {
-  if (s.isBroker) return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
+  // مساحة نشرتها مكاني Spot مباشرةً (is_broker = true في لوحة الأدمن)
+  if (s.isBroker) return `<span class="card-trust-badge trust-makani">🏠 مكاني Spot</span>`;
   const tier = (s.planTier || 'starter').toLowerCase();
-  if (tier === 'pro')    return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
-  if (tier === 'growth') return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
+  // صاحب مساحة نوعه بروكر (plan_tier = broker في بروفايله)
+  if (tier === 'broker')  return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
+  if (tier === 'pro')     return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
+  if (tier === 'growth')  return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
   return '';
 }
 
@@ -367,7 +493,7 @@ function buildCardHtml(s, fromPage) {
     thumbHtml = `<img src="${s.image || ''}" alt="${s.name}" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder\\'>🏪</div>'">`;
   }
 
-  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${id}</span>`).join('');
+  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -681,8 +807,8 @@ function _renderDetailInfo(s) {
   const actsHtml = s.allActs
     ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
     : (s.acts || []).map(id => {
-        const a = ACTIVITIES.find(x => x.id === id);
-        return a ? `<span class="act-tag">${a.label}</span>` : '';
+        const label = _resolveActLabel(id);
+        return label ? `<span class="act-tag">${label}</span>` : '';
       }).join('');
 
   const sizesHtml = (s.sizes || []).map(sz => {
@@ -734,20 +860,51 @@ function _renderDetailInfo(s) {
         </div>
       </div>` : ''}
 
-      ${(s.isBroker || s.ownerName) ? (() => {
-        const isBroker = s.isBroker;
-        const name     = isBroker ? 'مكاني سبوت' : (s.ownerName || 'صاحب المساحة');
+      ${(() => {
+        const isBroker  = s.isBroker;
+        const hasOwner  = !isBroker && !!s.ownerName;
+
+        // الناشر: إما مكاني Spot (is_broker أو بدون مالك) أو صاحب مساحة معيّن
+        const name      = hasOwner ? s.ownerName : 'مكاني Spot';
+        const tier      = s.planTier || 'starter';
+
         const roleLabel = isBroker
-          ? 'بروكر معتمد'
-          : (s.planTier === 'pro' ? 'شريك معتمد' : s.planTier === 'growth' ? 'صاحب مساحة موثّق' : 'صاحب المساحة');
-        const badgeCls  = isBroker ? 'trust-broker' : s.planTier === 'pro' ? 'trust-partner' : s.planTier === 'growth' ? 'trust-verified' : '';
-        const badgeHtml = badgeCls ? `<span class="sd-trust-badge ${badgeCls}" style="margin-top:4px">${roleLabel}</span>` : `<span class="sd-owner-role">${roleLabel}</span>`;
-        const avatarHtml = s.ownerAvatar
-          ? `<img src="${s.ownerAvatar}" alt="${name}" class="sd-owner-avatar" onerror="this.outerHTML='<div class=sd-owner-avatar-placeholder${isBroker?' broker':''}>${name[0]}</div>'">`
-          : `<div class="sd-owner-avatar-placeholder${isBroker ? ' broker' : ''}">${isBroker ? '🏛️' : name[0]}</div>`;
+          ? 'ناشر المنصة — مكاني Spot'
+          : hasOwner
+            ? (tier === 'broker'  ? 'بروكر معتمد'
+             : tier === 'pro'     ? 'شريك معتمد'
+             : tier === 'growth'  ? 'صاحب مساحة موثّق'
+             : 'صاحب المساحة')
+          : 'ناشر المنصة — مكاني Spot';
+
+        const badgeCls  = isBroker || !hasOwner
+          ? 'trust-makani'
+          : (tier === 'broker' ? 'trust-broker'
+           : tier === 'pro'    ? 'trust-partner'
+           : tier === 'growth' ? 'trust-verified'
+           : '');
+
+        const badgeHtml = badgeCls
+          ? `<span class="sd-trust-badge ${badgeCls}" style="margin-top:4px">${roleLabel}</span>`
+          : `<span class="sd-owner-role">${roleLabel}</span>`;
+
+        // الأفاتار: مكاني Spot يعرض الشعار، المالك يعرض صورته أو الحرف الأول
+        let avatarHtml;
+        if (!hasOwner) {
+          // مكاني Spot — نعرض الشعار
+          avatarHtml = `<div class="sd-owner-avatar-placeholder makani-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
+          </div>`;
+        } else if (s.ownerAvatar) {
+          avatarHtml = `<img src="${s.ownerAvatar}" alt="${name}" class="sd-owner-avatar"
+            onerror="this.outerHTML='<div class=\\'sd-owner-avatar-placeholder\\'>${name[0]}</div>'">`;
+        } else {
+          avatarHtml = `<div class="sd-owner-avatar-placeholder">${name[0]}</div>`;
+        }
+
         return `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">👤 صاحب المساحة</div>
+        <div class="sd-info-title">🏠 ناشر المساحة</div>
         <div class="sd-owner-card" style="margin-top:10px">
           ${avatarHtml}
           <div class="sd-owner-info">
@@ -756,7 +913,7 @@ function _renderDetailInfo(s) {
           </div>
         </div>
       </div>`;
-      })() : ''}
+      })()}
     </div>`;
 }
 
@@ -767,15 +924,7 @@ function _renderSubSpaces(s) {
   const units = s.subSpaces || [];
 
   if (!units.length) {
-    subEl.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:var(--ink3)">
-        <div style="font-size:36px;margin-bottom:10px">🏪</div>
-        <div style="font-size:14px">لا توجد وحدات مفصّلة لهذا المكان بعد</div>
-        <div style="font-size:12px;margin-top:6px">يمكنك الحجز مباشرة وسيتواصل معك فريقنا</div>
-        <button class="btn btn-primary" style="margin-top:16px" onclick="openBooking('${s.id}')">
-          احجز دلوقتي ←
-        </button>
-      </div>`;
+    subEl.innerHTML = '';
     return;
   }
 
@@ -1010,21 +1159,27 @@ function renderMpPagination() {
   const cont = document.getElementById('mp-pagination');
   if (!cont) return;
 
-  const totalPages = Math.ceil(mpFiltered.length / MP_PER_PAGE);
-  if (totalPages <= 1) { cont.innerHTML = ''; return; }
-
+  const totalPages = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
   let html = '';
-  if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">السابق</button>`;
 
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || Math.abs(i - mpPage) <= 2) {
-      html += `<button class="pg-btn${i === mpPage ? ' on' : ''}" onclick="mpGoPage(${i})">${i}</button>`;
-    } else if (Math.abs(i - mpPage) === 3) {
-      html += `<span class="pg-dots">…</span>`;
+  if (totalPages > 1) {
+    if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">السابق</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || Math.abs(i - mpPage) <= 2) {
+        html += `<button class="pg-btn${i === mpPage ? ' on' : ''}" onclick="mpGoPage(${i})">${i}</button>`;
+      } else if (Math.abs(i - mpPage) === 3) {
+        html += `<span class="pg-dots">…</span>`;
+      }
     }
+    if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">التالي</button>`;
   }
 
-  if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">التالي</button>`;
+  /* زر تحميل المزيد من الخادم — يظهر فقط على آخر صفحة وعندما يوجد مزيد (#9) */
+  if (spacesHasMore && mpPage === totalPages) {
+    html += `<button id="mp-load-more-btn" class="pg-btn" style="background:var(--orange);color:#fff;border-color:var(--orange)"
+                     onclick="loadMoreSpaces()">⬇ تحميل المزيد</button>`;
+  }
+
   cont.innerHTML = html;
 }
 
@@ -1234,6 +1389,13 @@ function _sdCleanup(id) {
 function openBooking(spaceId) {
   const s = SPACES.find(x => x.id === spaceId);
   if (!s) return;
+
+  // بوابة الدخول — لا حجز بدون تسجيل (لضمان ربط الحجز بالمستخدم وصاحب المساحة)
+  if (!currentUser) {
+    _showSpaceLoginGate(s, detailPrevPage || 'market');
+    return;
+  }
+
   bookingSpace = s;   // ربط الحجز بالمساحة وصاحبها (نظام التقييمات)
 
   const sizePrices = {};
@@ -1287,15 +1449,16 @@ function openBooking(spaceId) {
   document.getElementById('modal-form-wrap').style.display = 'block';
   document.getElementById('modal-success').style.display   = 'none';
   document.getElementById('bk-error').style.display        = 'none';
-  ['bk-other-act', 'bk-notes', 'bk-profile-link'].forEach(id => {
+  ['bk-other-act', 'bk-notes', 'bk-profile-link', 'bk-project-image'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  const durEl = document.getElementById('bk-dur');
+  const durEl      = document.getElementById('bk-dur');
   if (durEl) durEl.value = '';
-  const otherWrap = document.getElementById('other-act-wrap');
+  const actSel     = document.getElementById('bk-activity');
+  if (actSel) actSel.value = '';
+  const otherWrap  = document.getElementById('other-act-wrap');
   if (otherWrap) otherWrap.style.display = 'none';
-  document.querySelectorAll('.act-pick-btn').forEach(b => b.classList.remove('on'));
 
   document.getElementById('booking-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1316,7 +1479,7 @@ function _applyWaitlistMode(isWaitlist) {
   const set  = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
 
   show('bk-waitlist-banner', isWaitlist);
-  show('bk-profile-wrap',    isWaitlist);
+  // الحقلان الاختياريان يظهران دائماً (ليس فقط في وضع الانتظار)
 
   set('bk-modal-title', isWaitlist ? 'انضم لقائمة الانتظار ⏳' : 'احجز مساحتك');
   set('bk-modal-sub',   isWaitlist
@@ -1428,6 +1591,8 @@ async function submitViewing() {
       await sbClient.from('bookings').insert({
         id:         payload.viewingId,
         user_id:    currentUser.id,
+        owner_id:   s?.ownerId || null,   // ربط طلب المعاينة بصاحب المساحة → يظهر في لوحة الملاك
+        space_id:   s?.id || null,         // ربط بالمساحة
         space_name: payload.spaceName,
         space_loc:  payload.spaceLoc,
         activity:   'معاينة',
@@ -1451,23 +1616,30 @@ async function submitViewing() {
 }
 
 async function submitBooking() {
-  const name     = document.getElementById('bk-name').value.trim();
-  const phone    = document.getElementById('bk-phone').value.trim();
-  const email    = document.getElementById('bk-email').value.trim();
-  const actBtn   = document.querySelector('.act-pick-btn.on');
-  const otherAct = document.getElementById('bk-other-act').value.trim();
-  const size     = document.getElementById('bk-size').value;
-  const dur      = document.getElementById('bk-dur').value;
-  const date     = document.getElementById('bk-date').value;
-  const notes    = document.getElementById('bk-notes').value.trim();
-  const isWaitlist  = !!bookingSpace?.isWaitlist;
-  const profileLink = (document.getElementById('bk-profile-link')?.value || '').trim();
+  const name         = document.getElementById('bk-name').value.trim();
+  const phone        = document.getElementById('bk-phone').value.trim();
+  const email        = document.getElementById('bk-email').value.trim();
+  const actSel       = document.getElementById('bk-activity');
+  const actId        = actSel ? actSel.value : '';
+  const otherAct     = document.getElementById('bk-other-act').value.trim();
+  const size         = document.getElementById('bk-size').value;
+  const dur          = document.getElementById('bk-dur').value;
+  const date         = document.getElementById('bk-date').value;
+  const notes        = document.getElementById('bk-notes').value.trim();
+  const isWaitlist   = !!bookingSpace?.isWaitlist;
+  const profileLink  = (document.getElementById('bk-profile-link')?.value || '').trim();
+  const projectImage = (document.getElementById('bk-project-image')?.value || '').trim();
+
+  // نوع النشاط من الـ dropdown
+  const actLabel = actId === 'other'
+    ? (otherAct || 'أخرى')
+    : (ACTIVITIES.find(a => String(a.id) === String(actId))?.label || actId);
 
   if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
-  if (!actBtn) { showFormError('من فضلك اختار نوع نشاطك التجاري'); return; }
+  if (!actId) { showFormError('من فضلك اختار نوع نشاطك التجاري'); return; }
 
   document.getElementById('bk-error').style.display = 'none';
 
@@ -1487,17 +1659,23 @@ async function submitBooking() {
   const bookingId = crypto.randomUUID();
   const now       = new Date().toISOString();
 
+  // دمج روابط المشروع والبراند في الملاحظات إذا وُجدت
+  let fullNotes = notes;
+  if (projectImage) fullNotes += (fullNotes ? '\n' : '') + `📸 صورة المشروع: ${projectImage}`;
+  if (profileLink)  fullNotes += (fullNotes ? '\n' : '') + `🏷 بروفايل البراند: ${profileLink}`;
+
   const payload = {
     name, phone, email,
     spaceName, spaceLoc, spacePrice,
-    activity:  actBtn?.textContent || '',
-    otherAct,  size,
-    duration:  dur,
-    startDate: date,
-    notes,
+    activity:     actLabel,
+    otherAct,     size,
+    duration:     dur,
+    startDate:    date,
+    notes:        fullNotes,
     isWaitlist,
     profileLink,
-    userId:    currentUser?.id || '',
+    projectImage,
+    userId:       currentUser?.id || '',
     bookingId,
   };
 
@@ -1515,18 +1693,18 @@ async function submitBooking() {
       await sbClient.from('bookings').insert({
         id:           bookingId,
         user_id:      currentUser.id,
-        owner_id:     bookingSpace?.ownerId || null,   // ربط بصاحب المساحة (نظام التقييمات)
-        space_id:     bookingSpace?.id || null,         // ربط بالمساحة
+        owner_id:     bookingSpace?.ownerId || null,
+        space_id:     bookingSpace?.id || null,
         space_name:   spaceName,
         space_loc:    spaceLoc,
-        price:        spacePrice,
-        activity:     payload.activity,
+        price:        _parsePrice(spacePrice),
+        activity:     actLabel,
         size,
         duration:     dur,
         start_date:   date,
-        notes,
-        is_waitlist:  isWaitlist,                       // قائمة انتظار عند امتلاء المساحة
-        profile_link: profileLink || null,              // رابط بروفايل النشاط (اختياري)
+        notes:        fullNotes,
+        is_waitlist:  isWaitlist,
+        profile_link: profileLink || null,
         status:       'pending',
         created_at:   now,
         updated_at:   now,
@@ -1575,6 +1753,13 @@ function showFormError(msg) {
   el.textContent   = '⚠ ' + msg;
   el.style.display = 'block';
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* يحوّل نص السعر ("1,500 ج") إلى رقم — يُخزَّن numeric في Supabase (#12) */
+function _parsePrice(str) {
+  if (!str && str !== 0) return null;
+  const num = parseFloat(String(str).replace(/[^\d.]/g, ''));
+  return isNaN(num) ? null : num;
 }
 
 

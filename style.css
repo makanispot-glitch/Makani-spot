@@ -2079,7 +2079,20 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-/* بروكر (مكاني سبوت) — أزرق مميز */
+/* مكاني Spot — ناشر المنصة مباشرةً (is_broker=true) — برتقالي مميز */
+.trust-makani {
+  background: rgba(243, 100, 24, 0.15);
+  color: #F36418;
+  border: 1px solid rgba(243, 100, 24, 0.35);
+  box-shadow: 0 0 8px rgba(243, 100, 24, 0.18);
+}
+.sd-trust-badge.trust-makani {
+  background: rgba(243, 100, 24, 0.08);
+  color: #F36418;
+  border: 1px solid rgba(243, 100, 24, 0.25);
+}
+
+/* بروكر طرف ثالث — أزرق مميز */
 .trust-broker {
   background: rgba(96, 165, 250, 0.18);
   color: #60a5fa;
@@ -2128,6 +2141,12 @@ body {
 .sd-owner-avatar-placeholder.broker {
   background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   border-color: rgba(96, 165, 250, 0.3);
+}
+/* أفاتار مكاني Spot — لون برتقالي المنصة */
+.sd-owner-avatar-placeholder.makani-logo {
+  background: linear-gradient(135deg, #F36418 0%, #ff8c3a 100%);
+  border-color: rgba(243, 100, 24, 0.35);
+  color: #fff;
 }
 .sd-owner-info { flex: 1; min-width: 0; }
 .sd-owner-name {
