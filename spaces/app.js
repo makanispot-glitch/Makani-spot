@@ -265,16 +265,17 @@ async function silentRefreshSpaces() {
 
 function subscribeSpacesRealtime() {
   if (!sbClient) return;
-  let debounce = null;
+  let spacesDebounce = null;
+  let unitsDebounce  = null;
   sbClient.channel('spaces-public-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'spaces' }, (payload) => {
-      clearTimeout(debounce);
-      debounce = setTimeout(() => _handleSpaceRealtime(payload), 1500);
+      clearTimeout(spacesDebounce);
+      spacesDebounce = setTimeout(() => _handleSpaceRealtime(payload), 1500);
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'space_units' }, (payload) => {
-      clearTimeout(debounce);
+      clearTimeout(unitsDebounce);
       const spaceId = payload?.new?.space_id || payload?.old?.space_id;
-      debounce = setTimeout(
+      unitsDebounce = setTimeout(
         spaceId ? () => _refreshSingleSpace(spaceId) : silentRefreshSpaces,
         1500
       );
@@ -309,38 +310,46 @@ function _applyCurrentFilters() {
 /* ── يتعامل مع حدث Realtime لمساحة محددة بدل إعادة تحميل الكل ── */
 async function _handleSpaceRealtime(payload) {
   const eventType = payload?.eventType;
-  const record    = payload?.new   || {};
-  const oldRec    = payload?.old   || {};
+  const record    = payload?.new || {};
+  const oldRec    = payload?.old || {};
 
   if (eventType === 'DELETE') {
+    // DELETE وحده نثق فيه للحذف الفوري
     const id = oldRec.id;
     if (id) { SPACES = SPACES.filter(s => s.id !== id); _applyCurrentFilters(); }
     return;
   }
 
-  if (record.status === 'approved' && record.is_active) {
-    await _refreshSingleSpace(record.id);
-  } else {
-    const id = record.id || oldRec.id;
-    if (id) { SPACES = SPACES.filter(s => s.id !== id); _applyCurrentFilters(); }
-  }
+  // INSERT / UPDATE — نتحقق دائمًا من الحالة الفعلية في DB
+  // لا نحذف مباشرةً بناءً على الـ payload — قد يكون ناقصًا أو يصل قبل اكتمال العملية
+  const id = record.id || oldRec.id;
+  if (id) await _refreshSingleSpace(id);
 }
 
-/* ── يُعيد تحميل مساحة واحدة من Supabase ويُحدّث مصفوفة SPACES ── */
+/* ── يُعيد تحميل مساحة واحدة من Supabase ويُحدّث مصفوفة SPACES بأمان ── */
 async function _refreshSingleSpace(spaceId) {
   if (!sbClient || !spaceId) return;
   try {
+    // maybeSingle() بدلاً من single() — لا يُرجع خطأ لو 0 صفوف، يُرجع data=null فقط
     const { data, error } = await sbClient
       .from('spaces')
       .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
       .eq('id', spaceId)
       .eq('status', 'approved')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      SPACES = SPACES.filter(s => s.id !== spaceId);
-      _applyCurrentFilters();
+    if (error) {
+      // خطأ حقيقي (شبكة، صلاحيات) — لا نلمس المصفوفة المحلية، الـ polling سيعوّض
+      return;
+    }
+
+    if (!data) {
+      // المساحة غير موجودة بشكل نظيف (رُفضت أو أُخفيت) — نحذفها فقط لو كانت موجودة
+      if (SPACES.some(s => s.id === spaceId)) {
+        SPACES = SPACES.filter(s => s.id !== spaceId);
+        _applyCurrentFilters();
+      }
       return;
     }
 
@@ -361,7 +370,7 @@ async function _refreshSingleSpace(spaceId) {
     }
     if (currentSpaceDetail?.id === spaceId) currentSpaceDetail = updated;
     _applyCurrentFilters();
-  } catch { /* صامت */ }
+  } catch { /* صامت — خطأ غير متوقع، الـ polling سيعوّض */ }
 }
 
 /* ── تحميل الدفعة التالية من المساحات (#9) ── */

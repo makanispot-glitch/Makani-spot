@@ -8336,6 +8336,19 @@ footer {
 .bz-notif-item-time  { font-size: 11px; color: var(--ink3); margin-top: 4px; }
 .bz-notif-empty      { padding: 24px 16px; text-align: center; font-size: 13px; color: var(--ink3); }
 
+@media (max-width: 768px) {
+  .bz-notif-panel {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, calc(100vw - 32px));
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
 .org-draft-banner {
   display: none;
   align-items: center;

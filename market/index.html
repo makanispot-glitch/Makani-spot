@@ -760,7 +760,7 @@ body.lightbox-open { overflow: hidden; }
     font-size: 22px;
   }
   .eq-fab-tooltip { display: none; }
-  .eq-notif-panel { left: auto; right: 0; transform: none; width: 290px; }
+  .eq-notif-panel { position: fixed; top: 78px; left: 50%; right: auto; transform: translateX(-50%); width: min(320px, calc(100vw - 32px)); }
   .eq-sub-filters { gap: 8px; }
   .eq-sub-filters select { flex: 1; min-width: 0; }
   .eq-price-wrap { width: 100%; }
