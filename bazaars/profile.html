@@ -265,15 +265,54 @@
   display: inline-flex; align-items: center; gap: 4px;
 }
 
-/* WhatsApp */
-.op-wa-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: var(--radius-pill);
-  background: #25D366; color: #fff; text-decoration: none;
-  font-family: var(--font-display); font-size: 13px; font-weight: 700;
-  transition: opacity var(--dur-fast) var(--ease-out);
+/* ══════════════════════════════════════════════════
+   COVER / BANNER
+══════════════════════════════════════════════════ */
+.op-cover-section {
+  margin: -26px -28px 20px;
+  height: 170px;
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F47432 0%, #e8580a 60%, #c44a00 100%);
+  position: relative;
+  flex-shrink: 0;
 }
-.op-wa-btn:hover { opacity: .9; }
+.op-cover-section img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.op-cover-upload-btn {
+  position: absolute; bottom: 10px; left: 10px;
+  background: rgba(0,0,0,.42); backdrop-filter: blur(8px);
+  color: #fff; border: 1px solid rgba(255,255,255,.22);
+  border-radius: 20px; padding: 5px 12px; font-size: 11px;
+  font-family: var(--font-display); font-weight: 700; cursor: pointer;
+  transition: background .18s; display: flex; align-items: center; gap: 5px;
+}
+.op-cover-upload-btn:hover { background: rgba(0,0,0,.62); }
+
+/* ══════════════════════════════════════════════════
+   BIO
+══════════════════════════════════════════════════ */
+.op-bio {
+  font-size: 13.5px; color: var(--ink2); line-height: 1.8;
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 11px 14px; border-right: 3px solid var(--orange);
+  margin: 10px 0 4px;
+}
+
+/* ══════════════════════════════════════════════════
+   SOCIAL LINKS
+══════════════════════════════════════════════════ */
+.op-social-links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+.op-social-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  color: #fff; text-decoration: none;
+  transition: opacity .18s, transform .18s; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.op-social-link:hover { opacity: .85; transform: scale(1.1); }
+.op-social-link.fb { background: #1877F2; }
+.op-social-link.ig { background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+.op-social-link.tt { background: #010101; }
 
 /* Bazaar items */
 .op-bazaar-item {
@@ -413,6 +452,92 @@
 .vr-fg input:focus, .vr-fg select:focus { border-color: var(--orange); box-shadow: var(--ring-focus); }
 
 /* ══════════════════════════════════════════════════
+   EDIT MODAL — SECTIONS
+══════════════════════════════════════════════════ */
+.edit-section { margin-bottom: 22px; }
+.edit-section:last-of-type { margin-bottom: 4px; }
+.edit-section-hd {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 900; color: var(--ink);
+  margin-bottom: 14px; padding-bottom: 9px;
+  border-bottom: 1.5px solid var(--border);
+}
+.edit-section-icon { font-size: 15px; line-height: 1; }
+.edit-section-tip {
+  margin-right: auto;
+  font-size: 10px; color: var(--orange); font-weight: 700;
+  background: var(--orange-ultra); border-radius: 6px; padding: 2px 8px;
+}
+
+/* ── photo thumbnails ── */
+.edit-photos-row { display: flex; gap: 12px; align-items: flex-end; }
+.edit-cover-thumb {
+  flex: 1; height: 78px; border-radius: 12px; overflow: hidden; cursor: pointer;
+  background: linear-gradient(135deg, #F47432 0%, #c44a00 100%);
+  position: relative;
+}
+.edit-cover-thumb img { width:100%;height:100%;object-fit:cover;border-radius:12px; }
+.edit-avatar-thumb {
+  width: 66px; height: 66px; border-radius: 50%; overflow: hidden; cursor: pointer;
+  background: var(--orange); position: relative; flex-shrink: 0;
+  border: 3px solid var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.edit-avatar-thumb img { width:100%;height:100%;object-fit:cover; }
+.edit-avatar-thumb-init {
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size: 26px; font-weight: 900; color: #fff; font-family: var(--font-display);
+}
+.edit-photo-overlay {
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.38);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;gap:4px;
+  opacity:0;transition:.18s;
+}
+.edit-cover-thumb:hover .edit-photo-overlay,
+.edit-avatar-thumb:hover .edit-photo-overlay { opacity:1; }
+
+/* ── save button states ── */
+#edit-save-btn { display:inline-flex;align-items:center;gap:6px; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+#edit-save-spinner { animation:spin .75s linear infinite; flex-shrink:0; }
+
+/* ── success toast ── */
+#edit-success-toast {
+  display:none; position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(0);
+  background:#059669; color:#fff; font-weight:800; font-size:14px; font-family:var(--font-display);
+  padding:13px 30px; border-radius:50px; z-index:9999;
+  box-shadow:0 6px 28px rgba(5,150,105,.35);
+}
+@keyframes toastIn {
+  from{opacity:0;transform:translateX(-50%) translateY(14px)}
+  to  {opacity:1;transform:translateX(-50%) translateY(0)}
+}
+
+/* ── profile completion card ── */
+.op-completion-card {
+  background:var(--surface); border-radius:var(--radius-xl);
+  border:1.5px solid var(--border); padding:18px 20px; margin-bottom:16px;
+}
+.op-completion-bar-bg {
+  height:8px;background:var(--surface2);border-radius:50px;overflow:hidden;margin:10px 0 16px;
+}
+.op-completion-bar-fill {
+  height:100%;border-radius:50px;transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+.op-completion-tip {
+  display:flex;align-items:center;gap:9px;font-size:12.5px;
+  padding:8px 10px;border-radius:10px;cursor:pointer;
+  transition:background .15s;
+}
+.op-completion-tip:hover { background:var(--surface2); }
+.op-completion-pts {
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;flex-shrink:0;
+}
+
+/* ══════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -493,67 +618,157 @@
 <div class="op-modal" id="edit-profile-modal">
   <div class="op-modal-card">
     <div class="op-modal-header">
-      <span class="op-modal-title">✍️ تعديل بيانات الحساب</span>
+      <span class="op-modal-title">✍️ تعديل الملف الشخصي</span>
       <button class="op-modal-close" onclick="closeEditModal()">×</button>
     </div>
     <div class="op-modal-body">
 
-      <div class="op-modal-section-label">البيانات الشخصية</div>
-      <div class="vr-fg">
-        <label>الاسم الكامل *</label>
-        <input type="text" id="edit-name" placeholder="اسمك الكريم">
-      </div>
-      <div class="vr-fg">
-        <label>رقم الموبايل</label>
-        <input type="tel" id="edit-phone" placeholder="01xxxxxxxxx" dir="ltr">
-      </div>
-      <div class="vr-fg">
-        <label>المدينة</label>
-        <select id="edit-city">
-          <option value="">اختر مدينتك</option>
-          <option>القاهرة</option>
-          <option>الجيزة</option>
-          <option>الإسكندرية</option>
-          <option>المنصورة</option>
-          <option>أسيوط</option>
-          <option>طنطا</option>
-          <option>الشرقية</option>
-          <option>بورسعيد</option>
-          <option>أخرى</option>
-        </select>
-      </div>
-
-      <div class="op-modal-section-label" style="margin-top:6px">بيانات المنظّم (إن وُجدت)</div>
-      <div class="vr-fg">
-        <label>رقم الواتساب</label>
-        <input type="tel" id="edit-whatsapp" placeholder="01xxxxxxxxx" dir="ltr">
-      </div>
-      <div class="vr-fg">
-        <label>المنطقة / المحافظة</label>
-        <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة">
+      <!-- ── الصورة والغلاف ── -->
+      <div class="edit-section">
+        <div class="edit-section-hd">
+          <span class="edit-section-icon">📸</span>
+          الصورة والغلاف
+          <span class="edit-section-tip">تحسّن ظهور ملفك +40%</span>
+        </div>
+        <div class="edit-photos-row">
+          <div class="edit-cover-thumb" onclick="triggerCoverUpload()" title="تغيير صورة الغلاف">
+            <div id="edit-cover-thumb-inner" style="width:100%;height:100%"></div>
+            <div class="edit-photo-overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>تغيير الغلاف</span>
+            </div>
+          </div>
+          <div class="edit-avatar-thumb" onclick="triggerAvatarUpload()" title="تغيير الصورة الشخصية">
+            <div id="edit-avatar-thumb-inner" style="width:100%;height:100%"></div>
+            <div class="edit-photo-overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:10.5px;color:var(--ink3);margin-top:7px">اضغط على أي صورة لتغييرها · تُضغط تلقائياً وتُرفع بأمان</div>
       </div>
 
-      <div class="op-modal-section-label" style="margin-top:6px">تغيير كلمة المرور</div>
-      <div class="vr-fg">
-        <label>كلمة المرور الجديدة <span style="font-size:10px;opacity:.5;font-weight:400">(اتركها فارغة إن لم تريد التغيير)</span></label>
-        <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
+      <!-- ── البيانات الأساسية ── -->
+      <div class="edit-section">
+        <div class="edit-section-hd">
+          <span class="edit-section-icon">👤</span>
+          البيانات الأساسية
+        </div>
+        <div class="vr-fg">
+          <label>الاسم الكامل *</label>
+          <input type="text" id="edit-name" placeholder="اسمك الكريم">
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>رقم الموبايل</label>
+          <input type="tel" id="edit-phone" placeholder="01xxxxxxxxx" dir="ltr">
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>المدينة</label>
+          <select id="edit-city">
+            <option value="">اختر مدينتك</option>
+            <option>القاهرة</option>
+            <option>الجيزة</option>
+            <option>الإسكندرية</option>
+            <option>المنصورة</option>
+            <option>أسيوط</option>
+            <option>طنطا</option>
+            <option>الشرقية</option>
+            <option>بورسعيد</option>
+            <option>أخرى</option>
+          </select>
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>المنطقة / المحافظة</label>
+          <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة">
+        </div>
       </div>
-      <div class="vr-fg">
-        <label>تأكيد كلمة المرور</label>
-        <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
+
+      <!-- ── نبذة شخصية ── -->
+      <div class="edit-section">
+        <div class="edit-section-hd">
+          <span class="edit-section-icon">✍️</span>
+          نبذة شخصية
+          <span class="edit-section-tip">يزيد ثقة العارضين بك</span>
+        </div>
+        <textarea id="edit-bio" rows="3" maxlength="200"
+          placeholder="مثال: منظم بازارات متخصص في الفعاليات التجارية بالقاهرة…"
+          oninput="document.getElementById('edit-bio-count').textContent=this.value.length+' / 200'"
+          style="padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-body);font-size:13px;color:var(--ink);background:var(--surface2);outline:none;width:100%;box-sizing:border-box;resize:vertical;transition:border-color var(--dur-fast);line-height:1.7"
+          onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <div id="edit-bio-count" style="font-size:10.5px;color:var(--ink3);text-align:left;margin-top:3px">0 / 200</div>
+      </div>
+
+      <!-- ── روابط التواصل ── -->
+      <div class="edit-section">
+        <div class="edit-section-hd">
+          <span class="edit-section-icon">📱</span>
+          روابط التواصل الاجتماعي
+          <span class="edit-section-tip">تعزّز مصداقيتك مع المولات</span>
+        </div>
+        <div class="vr-fg">
+          <label>
+            <svg viewBox="0 0 24 24" fill="#1877F2" width="13" height="13" style="vertical-align:middle;margin-left:4px"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            Facebook
+          </label>
+          <input type="url" id="edit-facebook" placeholder="https://facebook.com/yourpage" dir="ltr" autocomplete="off">
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#ig-grad2)" stroke-width="2" width="13" height="13" style="vertical-align:middle;margin-left:4px">
+              <defs><linearGradient id="ig-grad2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+            Instagram
+          </label>
+          <input type="url" id="edit-instagram" placeholder="https://instagram.com/youraccount" dir="ltr" autocomplete="off">
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>
+            <svg viewBox="0 0 24 24" fill="#010101" width="13" height="13" style="vertical-align:middle;margin-left:4px"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.75a4.86 4.86 0 0 1-1-.06z"/></svg>
+            TikTok
+          </label>
+          <input type="url" id="edit-tiktok" placeholder="https://tiktok.com/@youraccount" dir="ltr" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- ── الأمان ── -->
+      <div class="edit-section">
+        <div class="edit-section-hd">
+          <span class="edit-section-icon">🔒</span>
+          تغيير كلمة المرور
+          <span style="margin-right:auto;font-size:10.5px;color:var(--ink3);font-weight:400">اتركها فارغة إن لم تريد التغيير</span>
+        </div>
+        <div class="vr-fg">
+          <label>كلمة المرور الجديدة</label>
+          <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
+        </div>
+        <div class="vr-fg" style="margin-top:10px">
+          <label>تأكيد كلمة المرور</label>
+          <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
+        </div>
       </div>
 
       <div id="edit-error" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
     </div>
     <div class="op-modal-footer">
       <button class="btn" style="padding:8px 18px;border-radius:50px;font-size:13px" onclick="closeEditModal()">إلغاء</button>
-      <button class="btn btn-primary" style="padding:8px 22px;border-radius:50px;font-size:13px" id="edit-save-btn" onclick="saveProfileDetails()">حفظ التعديلات</button>
+      <button class="btn btn-primary" style="padding:8px 22px;border-radius:50px;font-size:13px" id="edit-save-btn" onclick="saveProfileDetails()">
+        <span id="edit-save-label">حفظ التعديلات</span>
+        <svg id="edit-save-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             width="14" height="14" style="display:none">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- hidden file input -->
+<!-- Success Toast -->
+<div id="edit-success-toast">✅ تم حفظ التعديلات بنجاح!</div>
+
+<!-- hidden file inputs -->
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
+<input type="file" id="cover-file-input"  accept="image/*" style="display:none" onchange="uploadCoverImage(this)">
 
 <script src="/media-handler.js" defer></script>
 <script src="profile.js?v=202606112252" defer></script>

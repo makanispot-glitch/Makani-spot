@@ -296,6 +296,18 @@
 <div id="pg-bazaars" class="page active">
   <div class="bz-page">
 
+    <!-- ── M9: تنبيهات التأجيل المعلّقة ── -->
+    <div id="bz-postpone-alert" style="display:none;max-width:900px;margin:16px auto 0;padding:0 20px">
+      <div style="background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:20px">📅</span>
+          <span style="font-size:14px;font-weight:900;color:#7c2d12">بازارات تم تأجيلها — يرجى الرد</span>
+          <span id="bz-postpone-count" style="background:#f97316;color:#fff;font-size:11px;font-weight:900;padding:2px 8px;border-radius:50px;margin-right:auto"></span>
+        </div>
+        <div id="bz-postpone-items" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+
     <!-- هيرو البازارات -->
     <div class="bz-market-hero">
       <div class="bz-market-hero-bg"></div>
@@ -460,6 +472,9 @@
         <!-- يُملأ تلقائياً من app.js بعد تحميل الـ slots -->
       </div>
     </div>
+
+    <!-- M11: Update History Timeline -->
+    <div id="bzd-timeline" style="display:none"></div>
 
     <!-- بانل الحجز — يظهر عند اختيار مكان من الخريطة -->
     <div id="bzd-booking-panel" class="bz-booking-panel" style="display:none">

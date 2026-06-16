@@ -59,6 +59,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   // تحميل البازارات
   await loadBazaars();
 
+  // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
+  if (currentUser) bzLoadPostponeAlerts();
+
+  // M14: تحميل إشعارات البازار
+  if (currentUser) bzLoadNotifications();
+
   // التنقل عبر URL parameter: /bazaars/?detail=ID
   const urlParams = new URLSearchParams(window.location.search);
   const bazaarId  = urlParams.get('bazaar');
@@ -398,9 +404,10 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price')
       .eq('status', 'published')
       .eq('is_archived', false)
+      .eq('is_deleted', false)
       .order('date_start', { ascending: true });
 
     if (error) throw new Error(error.message);
@@ -427,6 +434,7 @@ async function loadBazaars() {
       category:             b.category || b.venue_type || '',
       organizer:            b.organizer || '',
       organizer_id:         b.organizer_id || null,
+      organizer_avatar_url: _toDirectImgUrl(b.organizer_avatar_url || ''),
       is_organizer_verified: b.is_organizer_verified || false,
       venue_address:        b.venue_address || b.address || '',
       maps_link:            b.maps_link || '',
@@ -507,9 +515,16 @@ function buildBazaarCard(b) {
     ? `/bazaars/profile.html?organizer=${b.organizer_id}`
     : null;
 
+  /* أفاتار المنظم: صورة حقيقية إن وُجدت، وإلا الحرف الأول */
+  const orgAvatarInner = b.organizer_avatar_url
+    ? `<img src="${b.organizer_avatar_url}" alt="${_esc(orgName)}"
+           style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+           onerror="this.outerHTML='${_esc(orgInitial)}'">`
+    : orgInitial;
+
   const orgHtml = orgName ? `
   <div class="bz-card-organizer" ${orgProfileHref ? `style="cursor:pointer" onclick="event.stopPropagation();window.location.href='${orgProfileHref}'"` : ''}>
-    <div class="bz-org-avatar" data-org-id="${b.organizer_id || ''}" data-initial="${_esc(orgInitial)}">${orgInitial}</div>
+    <div class="bz-org-avatar" data-org-id="${b.organizer_id || ''}" data-initial="${_esc(orgInitial)}">${orgAvatarInner}</div>
     <div class="bz-org-info">
       <div class="bz-org-name">🎪 ${orgName}</div>
       <div class="bz-org-sub">${orgSubText}</div>
@@ -1199,6 +1214,11 @@ function _renderBazaarInfo(b) {
   } else if (b.organizer) {
     _renderOrganizerCardBasic(b.organizer, b.is_organizer_verified);
   }
+
+  /* M11: تحميل سجل التحديثات */
+  const timelineEl = document.getElementById('bzd-timeline');
+  if (timelineEl) { timelineEl.style.display = 'none'; timelineEl.innerHTML = ''; }
+  if (sbClient && b.id) _loadBazaarTimeline(b.id);
 }
 
 function closeBazaarDetail() {
@@ -1452,7 +1472,7 @@ async function _loadOrganizerCard(userId, fallbackName) {
     const [orgRes, reviewsRes, bazaarsRes] = await Promise.all([
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('rating, comment, reviewer_name, created_at').eq('organizer_id', userId).order('created_at', { ascending: false }).limit(3),
-      sbClient.from('bazaars').select('id, status').eq('organizer_id', userId),
+      sbClient.from('bazaars').select('id, status').eq('organizer_id', userId).eq('is_deleted', false),
     ]);
 
     const org     = orgRes.data;
@@ -2120,6 +2140,448 @@ function bzUpdateBnUser() {
     icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
     label.textContent = 'دخول';
     if (desc) desc.textContent = 'سجّل أو ادخل';
+  }
+}
+
+
+/* ================================================================
+   📅 القسم 17: M9 — استجابة الحاجز بعد التأجيل
+   ================================================================ */
+
+async function bzLoadPostponeAlerts() {
+  if (!currentUser || !sbClient) return;
+
+  const userId = String(currentUser.id);
+
+  const { data: bookings, error } = await sbClient
+    .from('bazaar_bookings')
+    .select('id,status,postponement_deadline,bazaar_id,slot_id')
+    .eq('user_id', userId)
+    .eq('status', 'pending_after_postponement');
+
+  if (error || !bookings?.length) return;
+
+  // جلب تفاصيل البازارات
+  const bazaarIds = [...new Set(bookings.map(b => b.bazaar_id))];
+  const { data: bazaarsData } = await sbClient
+    .from('bazaars')
+    .select('id,name as title,date_start as start_date,date_end as end_date,location')
+    .in('id', bazaarIds);
+
+  const bazaarMap = {};
+  (bazaarsData || []).forEach(b => { bazaarMap[b.id] = b; });
+
+  // جلب آخر تأجيل لكل بازار
+  const { data: postponements } = await sbClient
+    .from('bazaar_postponements')
+    .select('bazaar_id,old_start_date,old_end_date,new_start_date,new_end_date,reason,created_at')
+    .in('bazaar_id', bazaarIds)
+    .order('created_at', { ascending: false });
+
+  const lastPostponement = {};
+  (postponements || []).forEach(p => {
+    if (!lastPostponement[p.bazaar_id]) lastPostponement[p.bazaar_id] = p;
+  });
+
+  // render
+  const alertEl = document.getElementById('bz-postpone-alert');
+  const itemsEl = document.getElementById('bz-postpone-items');
+  const countEl = document.getElementById('bz-postpone-count');
+  if (!alertEl || !itemsEl) return;
+
+  countEl.textContent = bookings.length + ' معلّق';
+
+  itemsEl.innerHTML = bookings.map(booking => {
+    const bz   = bazaarMap[booking.bazaar_id] || {};
+    const post = lastPostponement[booking.bazaar_id] || {};
+    const deadline = booking.postponement_deadline
+      ? new Date(booking.postponement_deadline).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+      : null;
+    const isExpired = booking.postponement_deadline && new Date(booking.postponement_deadline) < new Date();
+
+    return `
+<div id="bz-pa-${booking.id}" style="background:#fff;border:1px solid #fdba74;border-radius:12px;padding:14px 16px">
+  <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:6px">🎪 ${_bzEsc(bz.title || 'بازار')}</div>
+  ${post.old_start_date ? `
+  <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="text-decoration:line-through;color:#dc2626">${_bzFmtDate(post.old_start_date)} — ${_bzFmtDate(post.old_end_date)}</span>
+    <span>→</span>
+    <span style="color:#047857;font-weight:800">${_bzFmtDate(post.new_start_date)} — ${_bzFmtDate(post.new_end_date)}</span>
+  </div>` : ''}
+  ${post.reason ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">السبب: ${_bzEsc(post.reason)}</div>` : ''}
+  ${deadline ? `<div style="font-size:11px;color:${isExpired ? '#dc2626' : '#c2410c'};margin-bottom:10px">⏰ المهلة: ${deadline}${isExpired ? ' — انتهت المهلة' : ''}</div>` : ''}
+  ${isExpired ? `
+  <div style="font-size:12px;color:var(--ink3);background:var(--surface2);padding:8px 12px;border-radius:8px">انتهت مهلة الرد — تواصل مع المنظم مباشرة</div>` : `
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="bzRespondPostpone('${booking.id}','accepted')"
+      style="padding:8px 18px;border-radius:50px;background:linear-gradient(180deg,#22c55e,#16a34a);color:#fff;border:none;font-size:13px;font-weight:800;font-family:var(--font-display);cursor:pointer;box-shadow:0 2px 8px rgba(34,197,94,.25)">
+      ✅ قبول التأجيل
+    </button>
+    <button onclick="bzRespondPostpone('${booking.id}','cancelled')"
+      style="padding:8px 18px;border-radius:50px;background:var(--surface);color:#dc2626;border:1.5px solid #fca5a5;font-size:13px;font-weight:800;font-family:var(--font-display);cursor:pointer">
+      ❌ إلغاء حجزي
+    </button>
+  </div>`}
+</div>`;
+  }).join('');
+
+  alertEl.style.display = 'block';
+}
+
+async function bzRespondPostpone(bookingId, response) {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.disabled    = true;
+  btn.textContent = '⏳…';
+
+  const { data, error } = await sbClient.rpc('respond_to_postponement', {
+    p_booking_id: bookingId,
+    p_response:   response,
+  });
+
+  if (error || !data?.success) {
+    const msgs = {
+      booking_not_found:     'الحجز غير موجود',
+      not_authorized:        'غير مصرح',
+      not_pending_response:  'الحجز لا ينتظر رداً',
+      deadline_passed:       'انتهت مهلة الرد',
+    };
+    const err = data?.error || error?.message || 'خطأ';
+    btn.disabled    = false;
+    btn.textContent = orig;
+    alert(msgs[err] || err);
+    return;
+  }
+
+  // إخفاء بطاقة هذا الحجز
+  const card = document.getElementById(`bz-pa-${bookingId}`);
+  if (card) {
+    const msg = response === 'accepted'
+      ? '✅ تم قبول التأجيل — حجزك مؤكّد على الموعد الجديد'
+      : '❌ تم إلغاء حجزك بنجاح';
+    card.innerHTML = `<div style="font-size:13px;font-weight:700;color:${response==='accepted'?'#047857':'#dc2626'};padding:10px">${msg}</div>`;
+    setTimeout(() => {
+      card.style.transition = 'opacity .4s';
+      card.style.opacity    = '0';
+      setTimeout(() => {
+        card.remove();
+        // إخفاء القسم إذا لم تتبق بطاقات
+        const remaining = document.querySelectorAll('[id^="bz-pa-"]');
+        if (!remaining.length) {
+          const alertEl = document.getElementById('bz-postpone-alert');
+          if (alertEl) alertEl.style.display = 'none';
+        } else {
+          const countEl = document.getElementById('bz-postpone-count');
+          if (countEl) countEl.textContent = remaining.length + ' معلّق';
+        }
+      }, 450);
+    }, 2000);
+  }
+}
+
+function _bzFmtDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return `${parseInt(day)} ${months[parseInt(m)-1]}`;
+}
+
+function _bzEsc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+/* ================================================================
+   📋 القسم 18: M11 — سجل التحديثات (Update History Timeline)
+   ================================================================ */
+
+const _BZ_CHANGE_LABELS = {
+  cancel:          { ico: '🚫', label: 'تم إلغاء البازار' },
+  postpone:        { ico: '📅', label: 'تم تأجيل موعد البازار' },
+  edit_info:       { ico: '✏️', label: 'تم تعديل معلومات البازار' },
+  edit_slots_count:{ ico: '🔢', label: 'تم تعديل عدد الأماكن' },
+  reserve_slot:    { ico: '🔒', label: 'تم حجز مكان داخلياً' },
+  unreserve_slot:  { ico: '🔓', label: 'تم تحرير حجز داخلي' },
+};
+
+async function _loadBazaarTimeline(bazaarId) {
+  if (!sbClient || !bazaarId) return;
+
+  const [logRes, postponeRes] = await Promise.all([
+    sbClient
+      .from('bazaar_change_log')
+      .select('id,change_type,change_data,note,created_at')
+      .eq('bazaar_id', bazaarId)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    sbClient
+      .from('bazaar_postponements')
+      .select('id,old_start_date,old_end_date,new_start_date,new_end_date,reason,created_at')
+      .eq('bazaar_id', bazaarId)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  const logs        = logRes.data || [];
+  const postpones   = postponeRes.data || [];
+  const timelineEl  = document.getElementById('bzd-timeline');
+  if (!timelineEl) return;
+
+  // دمج السجلَّين في timeline موحّدة مرتّبة زمنياً
+  const events = [
+    ...logs.map(l => ({ ...l, _type: 'log', _time: new Date(l.created_at) })),
+    ...postpones.map(p => ({ ...p, _type: 'postpone', _time: new Date(p.created_at) })),
+  ].sort((a, b) => b._time - a._time);
+
+  if (!events.length) return;
+
+  const itemsHtml = events.map(ev => {
+    const timeAgo = _bzTimeAgo(ev._time);
+
+    if (ev._type === 'postpone') {
+      return `
+<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+  <div style="flex-shrink:0;margin-top:2px">
+    <div style="width:32px;height:32px;border-radius:50%;background:#fff7ed;border:2px solid #fdba74;display:flex;align-items:center;justify-content:center;font-size:15px">📅</div>
+  </div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:13px;font-weight:800;color:var(--dark)">تأجيل موعد البازار</div>
+    <div style="font-size:12px;color:var(--ink3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="text-decoration:line-through;color:#dc2626">${_bzFmtDate(ev.old_start_date)} — ${_bzFmtDate(ev.old_end_date)}</span>
+      <span>→</span>
+      <span style="color:#047857;font-weight:700">${_bzFmtDate(ev.new_start_date)} — ${_bzFmtDate(ev.new_end_date)}</span>
+    </div>
+    ${ev.reason ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-right:2px solid #fdba74">${_bzEsc(ev.reason)}</div>` : ''}
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px">${timeAgo}</div>
+  </div>
+</div>`;
+    }
+
+    const meta  = _BZ_CHANGE_LABELS[ev.change_type] || { ico: '📝', label: ev.change_type };
+    const data  = ev.change_data || {};
+    let detail  = '';
+
+    if (ev.change_type === 'edit_info') {
+      const changed = Object.keys(data.after || {}).filter(k => k !== 'images');
+      if (changed.length) detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">الحقول المُعدَّلة: ${changed.map(_bzFieldLabel).join('، ')}</div>`;
+    } else if (ev.change_type === 'edit_slots_count') {
+      detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">${data.old_total || '?'} → ${data.new_total || '?'} مكان (محجوز: ${data.booked_count || 0})</div>`;
+    } else if (ev.change_type === 'cancel' && data.affected_bookings > 0) {
+      detail = `<div style="font-size:11px;color:#dc2626;margin-top:3px">أُشعر ${data.affected_bookings} حاجز</div>`;
+    }
+
+    const noteHtml = ev.note
+      ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-right:2px solid var(--orange)">${_bzEsc(ev.note)}</div>`
+      : '';
+
+    return `
+<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+  <div style="flex-shrink:0;margin-top:2px">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--orange-ultra);border:2px solid rgba(243,100,24,.25);display:flex;align-items:center;justify-content:center;font-size:15px">${meta.ico}</div>
+  </div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:13px;font-weight:800;color:var(--dark)">${meta.label}</div>
+    ${detail}
+    ${noteHtml}
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px">${timeAgo}</div>
+  </div>
+</div>`;
+  }).join('');
+
+  timelineEl.innerHTML = `
+<div style="background:var(--surface);border-radius:var(--radius-xl);border:1px solid var(--border);padding:18px 20px;margin-top:16px">
+  <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:8px">
+    📋 سجل التحديثات
+    <span style="font-size:11px;font-weight:700;background:var(--orange-ultra);color:var(--orange);padding:2px 8px;border-radius:50px">${events.length}</span>
+  </div>
+  <div>${itemsHtml}</div>
+</div>`;
+  timelineEl.style.display = 'block';
+}
+
+function _bzFieldLabel(key) {
+  const m = { title:'الاسم', description:'الوصف', location:'الموقع', location_url:'رابط الخريطة', working_hours:'ساعات العمل', start_date:'تاريخ البداية', end_date:'تاريخ النهاية', images:'الصور' };
+  return m[key] || key;
+}
+
+function _bzTimeAgo(date) {
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)   return 'الآن';
+  if (mins < 60)  return `منذ ${mins} دقيقة`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)   return `منذ ${hrs} ساعة`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30)  return `منذ ${days} يوم`;
+  return date.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+}
+
+
+/* ================================================================
+   🔔 القسم 19: M14 — إشعارات user_bazaar_notifications
+   ================================================================ */
+
+let _bzNotifCount = 0;
+
+async function bzLoadNotifications() {
+  if (!currentUser || !sbClient) return;
+
+  const { data, error } = await sbClient
+    .from('user_bazaar_notifications')
+    .select('id,type,title,body,action_url,is_read,created_at,bazaar_id')
+    .eq('user_id', String(currentUser.id))
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (error || !data) return;
+
+  const unread = data.filter(n => !n.is_read);
+  _bzNotifCount = unread.length;
+  _renderNotifBell(unread.length);
+  _renderNotifPanel(data);
+}
+
+function _renderNotifBell(count) {
+  // نضيف bell في الـ nav إذا لم يكن موجوداً
+  let bell = document.getElementById('bz-notif-bell');
+  if (!bell) {
+    const navUser = document.getElementById('bz-nav-user');
+    if (!navUser) return;
+    bell = document.createElement('div');
+    bell.id = 'bz-notif-bell';
+    bell.style.cssText = 'position:relative;cursor:pointer;margin-left:4px;padding:6px;border-radius:50%;transition:background .2s';
+    bell.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:block;color:var(--ink2)">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <span id="bz-notif-badge" style="display:none;position:absolute;top:2px;left:2px;min-width:16px;height:16px;border-radius:50%;background:#dc2626;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;padding:0 3px"></span>`;
+    bell.addEventListener('mouseenter', () => { bell.style.background = 'var(--orange-ultra)'; });
+    bell.addEventListener('mouseleave', () => { bell.style.background = ''; });
+    bell.addEventListener('click', () => toggleNotifPanel());
+    navUser.insertBefore(bell, navUser.firstChild);
+  }
+
+  const badge = document.getElementById('bz-notif-badge');
+  if (badge) {
+    if (count > 0) {
+      badge.textContent  = count > 9 ? '9+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function toggleNotifPanel() {
+  let panel = document.getElementById('bz-notif-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'bz-notif-panel';
+    panel.style.cssText = `
+      position:fixed;top:70px;left:16px;width:320px;max-width:calc(100vw - 32px);
+      background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-xl);
+      box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:400;max-height:70vh;display:flex;flex-direction:column;
+      animation:bz-notif-in .2s ease;
+    `;
+    if (!document.getElementById('bz-notif-style')) {
+      const s = document.createElement('style');
+      s.id = 'bz-notif-style';
+      s.textContent = '@keyframes bz-notif-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}';
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(panel);
+    document.addEventListener('click', _bzNotifOutside, true);
+  } else {
+    panel.remove();
+    document.removeEventListener('click', _bzNotifOutside, true);
+    return;
+  }
+
+  // إعادة رندر المحتوى
+  sbClient.from('user_bazaar_notifications')
+    .select('id,type,title,body,action_url,is_read,created_at')
+    .eq('user_id', String(currentUser.id))
+    .order('created_at', { ascending: false })
+    .limit(20)
+    .then(({ data }) => _renderNotifPanel(data || [], panel));
+}
+
+function _bzNotifOutside(e) {
+  const panel = document.getElementById('bz-notif-panel');
+  const bell  = document.getElementById('bz-notif-bell');
+  if (panel && !panel.contains(e.target) && !bell?.contains(e.target)) {
+    panel.remove();
+    document.removeEventListener('click', _bzNotifOutside, true);
+  }
+}
+
+function _renderNotifPanel(notifs, panelEl) {
+  const panel = panelEl || document.getElementById('bz-notif-panel');
+  if (!panel) return;
+
+  const TYPE_ICO = {
+    bazaar_cancelled: '🚫',
+    bazaar_postponed: '📅',
+    slot_reserved:    '🔒',
+    general:          '📢',
+  };
+
+  const items = notifs.length
+    ? notifs.map(n => `
+<div onclick="bzNotifClick('${n.id}','${n.action_url || ''}')"
+     style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:${n.is_read ? 'transparent' : 'var(--orange-ultra)'}"
+     onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='${n.is_read ? 'transparent' : 'var(--orange-ultra)'}'">
+  <div style="font-size:20px;flex-shrink:0;margin-top:1px">${TYPE_ICO[n.type] || '📢'}</div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:12.5px;font-weight:${n.is_read ? '600' : '900'};color:var(--dark);margin-bottom:2px">${_bzEsc(n.title)}</div>
+    <div style="font-size:11px;color:var(--ink3);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_bzEsc(n.body)}</div>
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px">${_bzTimeAgo(new Date(n.created_at))}</div>
+  </div>
+  ${!n.is_read ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:6px"></div>' : ''}
+</div>`).join('')
+    : '<div style="text-align:center;padding:32px 16px;color:var(--ink3);font-size:13px">لا توجد إشعارات</div>';
+
+  panel.innerHTML = `
+<div style="padding:12px 14px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+  <span style="font-size:13px;font-weight:900;color:var(--dark)">🔔 الإشعارات</span>
+  ${_bzNotifCount > 0 ? `<button onclick="bzMarkAllRead()" style="font-size:11px;font-weight:700;color:var(--orange);background:none;border:none;cursor:pointer;font-family:var(--font-display)">تحديد الكل كمقروء</button>` : ''}
+</div>
+<div style="overflow-y:auto;flex:1">${items}</div>`;
+}
+
+async function bzNotifClick(notifId, actionUrl) {
+  // mark as read
+  await sbClient.from('user_bazaar_notifications')
+    .update({ is_read: true })
+    .eq('id', notifId)
+    .eq('user_id', String(currentUser.id));
+
+  _bzNotifCount = Math.max(0, _bzNotifCount - 1);
+  _renderNotifBell(_bzNotifCount);
+
+  const panel = document.getElementById('bz-notif-panel');
+  if (panel) panel.remove();
+  document.removeEventListener('click', _bzNotifOutside, true);
+
+  if (actionUrl) window.location.href = actionUrl;
+}
+
+async function bzMarkAllRead() {
+  await sbClient.from('user_bazaar_notifications')
+    .update({ is_read: true })
+    .eq('user_id', String(currentUser.id))
+    .eq('is_read', false);
+
+  _bzNotifCount = 0;
+  _renderNotifBell(0);
+
+  const panel = document.getElementById('bz-notif-panel');
+  if (panel) {
+    const items = panel.querySelectorAll('[style*="var(--orange-ultra)"]');
+    items.forEach(el => { el.style.background = 'transparent'; });
+    panel.querySelector('button')?.remove();
   }
 }
 

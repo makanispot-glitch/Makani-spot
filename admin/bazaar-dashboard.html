@@ -278,6 +278,15 @@ tbody tr:hover .row-acts{opacity:1}
 #orv-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
 #orv-lb-close{position:fixed;top:20px;left:20px;width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);color:var(--tx);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10000}
 @media(max-width:700px){.orv-dg{grid-template-columns:1fr}.orv-imgs{grid-template-columns:1fr}}
+
+/* ═══ EMERGENCY OVERRIDE ═══ */
+.ov-card{background:var(--bg2);border:1px solid rgba(239,68,68,.2);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;transition:border-color .2s}
+.ov-card:hover{border-color:rgba(239,68,68,.38)}
+.ov-card-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.ov-card-ico{font-size:24px;flex-shrink:0;margin-top:2px}
+.ov-card-title{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:3px}
+.ov-card-desc{font-size:11.5px;color:var(--mu);line-height:1.5}
+.ov-res{padding:10px 13px;border-radius:8px;font-size:12.5px;margin-top:10px}
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -375,6 +384,14 @@ tbody tr:hover .row-acts{opacity:1}
 
     <div class="nl">الدعم</div>
     <div class="ni" onclick="gp('org-support')" id="ni-org-support"><span class="ic">🛡️</span>دعم المنظّمين<span class="nb g" id="nb-org-support" style="display:none">0</span></div>
+
+    <div class="nl">التحليل والتتبع</div>
+    <div class="ni" onclick="gp('audit')"><span class="ic">📋</span>سجل التغييرات</div>
+    <div class="ni" onclick="gp('cancelled')"><span class="ic">🚫</span>البازارات الملغاة</div>
+    <div class="ni" onclick="gp('postpone')"><span class="ic">📅</span>التأجيلات</div>
+
+    <div class="nl">⚡ الطوارئ</div>
+    <div class="ni" onclick="gp('override')"><span class="ic">🚨</span>Emergency Override</div>
   </nav>
   <div class="sb-api" style="display:none"></div>
 </aside>
@@ -910,6 +927,177 @@ tbody tr:hover .row-acts{opacity:1}
 
     <div id="arch-list">
       <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+  </div>
+
+  <!-- ═══ AUDIT LOG ═══ -->
+  <div class="pg" id="pg-audit">
+    <div class="sh">
+      <div class="st">📋 سجل <span>التغييرات (Audit Log)</span></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <select class="fc-s" id="audit-filter-type" onchange="loadAuditLog()">
+          <option value="">جميع الأنواع</option>
+          <option value="cancel">🚫 إلغاء</option>
+          <option value="postpone">📅 تأجيل</option>
+          <option value="edit_info">✏️ تعديل معلومات</option>
+          <option value="edit_slots_count">🔢 تعديل عدد الأماكن</option>
+          <option value="booking_paused">⏸️ إيقاف الحجوزات</option>
+          <option value="booking_resumed">▶️ استئناف الحجوزات</option>
+          <option value="admin_delete">🗑️ إخفاء إداري</option>
+          <option value="auto_expire_response">⏰ انتهاء مهلة الرد</option>
+          <option value="admin_reactivate">♻️ إعادة تفعيل إداري</option>
+          <option value="admin_cancel_postponement">⏪ إلغاء تأجيل إداري</option>
+          <option value="admin_force_close">🔒 إغلاق قسري</option>
+          <option value="admin_restore_snapshot">🕐 استرجاع نسخة</option>
+          <option value="reserve_slot">حجز داخلي</option>
+          <option value="unreserve_slot">تحرير حجز داخلي</option>
+        </select>
+        <input type="date" class="fc-s" id="audit-filter-from" onchange="loadAuditLog()" style="font-family:'Cairo',sans-serif">
+        <input type="date" class="fc-s" id="audit-filter-to"   onchange="loadAuditLog()" style="font-family:'Cairo',sans-serif">
+        <button class="btn btn-gh btn-sm" onclick="loadAuditLog()">🔄 تحديث</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>التاريخ</th><th>البازار</th><th>نوع التغيير</th><th>التفاصيل</th><th>ملاحظة</th>
+        </tr></thead>
+        <tbody id="audit-tbody"><tr><td colspan="5" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pag" id="audit-pag"></div>
+  </div>
+
+  <!-- ═══ CANCELLED BAZAARS ═══ -->
+  <div class="pg" id="pg-cancelled">
+    <div class="sh">
+      <div class="st">🚫 البازارات <span>الملغاة</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadCancelledBazaars()">🔄 تحديث</button>
+    </div>
+    <div class="sg sg-3" style="margin-bottom:16px">
+      <div class="scard"><div class="sc-ico">🚫</div><div class="sc-lbl">إجمالي الملغاة</div><div class="sc-val" id="cn-total">—</div></div>
+      <div class="scard"><div class="sc-ico">🧾</div><div class="sc-lbl">حجوزات متأثرة</div><div class="sc-val" id="cn-bookings" style="color:var(--rd)">—</div></div>
+      <div class="scard"><div class="sc-ico">📅</div><div class="sc-lbl">آخر إلغاء</div><div class="sc-val" id="cn-last" style="font-size:14px">—</div></div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>البازار</th><th>المنظّم</th><th>تاريخ الإلغاء</th><th>السبب</th><th>الحجوزات</th><th>إجراء</th>
+        </tr></thead>
+        <tbody id="cancelled-tbody"><tr><td colspan="6" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ POSTPONEMENTS ═══ -->
+  <div class="pg" id="pg-postpone">
+    <div class="sh">
+      <div class="st">📅 التأجيلات <span>المسجّلة</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadPostponements()">🔄 تحديث</button>
+    </div>
+    <div class="sg sg-3" style="margin-bottom:16px">
+      <div class="scard"><div class="sc-ico">📅</div><div class="sc-lbl">إجمالي التأجيلات</div><div class="sc-val" id="pp-total">—</div></div>
+      <div class="scard"><div class="sc-ico">✅</div><div class="sc-lbl">قبل التأجيل</div><div class="sc-val" id="pp-accepted" style="color:var(--gr)">—</div></div>
+      <div class="scard"><div class="sc-ico">❌</div><div class="sc-lbl">إلغاء بعد التأجيل</div><div class="sc-val" id="pp-cancelled" style="color:var(--rd)">—</div></div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>البازار</th><th>من</th><th>إلى</th><th>السبب</th><th>الحجوزات</th><th>تاريخ التأجيل</th><th>إجراء</th>
+        </tr></thead>
+        <tbody id="postpone-tbody"><tr><td colspan="7" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ EMERGENCY OVERRIDE ═══ -->
+  <div class="pg" id="pg-override">
+    <div class="sh">
+      <div class="st">🚨 Emergency <span>Override</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadOverridePage()">🔄 تحديث</button>
+    </div>
+
+    <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.28);border-radius:var(--r);padding:14px 18px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:var(--rd);margin-bottom:4px">⚠️ منطقة الإجراءات الطارئة</div>
+      <div style="font-size:12px;color:rgba(220,80,80,.85);line-height:1.7">هذه الإجراءات تتجاوز القيود العادية وتُطبَّق مباشرة على قاعدة البيانات دون موافقة المنظّم. استخدمها فقط عند الضرورة الحقيقية وستُسجَّل في Audit Log تلقائياً.</div>
+    </div>
+
+    <!-- Action 1: Reactivate cancelled bazaar -->
+    <div class="ov-card">
+      <div class="ov-card-hdr">
+        <span class="ov-card-ico">♻️</span>
+        <div>
+          <div class="ov-card-title">إعادة تفعيل بازار ملغي</div>
+          <div class="ov-card-desc">يُعيد البازار المُلغى إلى حالة منشور أو قيد المراجعة ويُزيل سبب الإلغاء وعلامة الإخفاء الإداري</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select class="fc-s" id="ov-reactivate-bz" style="flex:1;min-width:200px">
+          <option value="">— اختر بازار ملغي —</option>
+        </select>
+        <select class="fc-s" id="ov-reactivate-status" style="width:160px">
+          <option value="published">✅ منشور</option>
+          <option value="pending_review">⏳ قيد المراجعة</option>
+          <option value="draft">📝 مسودة</option>
+        </select>
+        <button class="btn btn-gr btn-sm" onclick="adminReactivateBazaar()">♻️ إعادة التفعيل</button>
+      </div>
+      <div id="ov-reactivate-res" class="ov-res" style="display:none"></div>
+    </div>
+
+    <!-- Action 2: Cancel postponement -->
+    <div class="ov-card">
+      <div class="ov-card-hdr">
+        <span class="ov-card-ico">⏪</span>
+        <div>
+          <div class="ov-card-title">إلغاء آخر تأجيل</div>
+          <div class="ov-card-desc">يُعيد تواريخ البازار للمواعيد الأصلية ويُعيد حالة الحجوزات المعلّقة بسبب التأجيل إلى "مؤكّد"</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select class="fc-s" id="ov-unpost-bz" style="flex:1;min-width:200px" onchange="previewLastPostponement()">
+          <option value="">— اختر بازار مؤجّل —</option>
+        </select>
+        <button class="btn btn-yw btn-sm" onclick="adminCancelPostponement()">⏪ إلغاء التأجيل</button>
+      </div>
+      <div id="ov-unpost-preview" style="display:none;margin-top:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;font-size:12px"></div>
+      <div id="ov-unpost-res" class="ov-res" style="display:none"></div>
+    </div>
+
+    <!-- Action 3: Force close -->
+    <div class="ov-card">
+      <div class="ov-card-hdr">
+        <span class="ov-card-ico">🔒</span>
+        <div>
+          <div class="ov-card-title">إجبار البازار على الإغلاق</div>
+          <div class="ov-card-desc">يُحوّل البازار فوراً إلى حالة "منتهي" بدون إشعارات للمنظّم أو الحاجزين</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select class="fc-s" id="ov-close-bz" style="flex:1;min-width:200px">
+          <option value="">— اختر بازار —</option>
+        </select>
+        <button class="btn btn-rd btn-sm" onclick="adminForceClose()">🔒 إغلاق فوري</button>
+      </div>
+      <div id="ov-close-res" class="ov-res" style="display:none"></div>
+    </div>
+
+    <!-- Action 4: Restore snapshot from audit log -->
+    <div class="ov-card">
+      <div class="ov-card-hdr">
+        <span class="ov-card-ico">🕐</span>
+        <div>
+          <div class="ov-card-title">استرجاع نسخة قديمة</div>
+          <div class="ov-card-desc">يعرض آخر 10 تعديلات على معلومات البازار ويتيح الرجوع لأي نقطة سابقة</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <select class="fc-s" id="ov-restore-bz" style="flex:1;min-width:200px" onchange="loadBazaarSnapshotHistory()">
+          <option value="">— اختر بازار —</option>
+        </select>
+      </div>
+      <div id="ov-restore-history" style="display:none"></div>
+      <div id="ov-restore-res" class="ov-res" style="display:none"></div>
     </div>
   </div>
 
@@ -2531,6 +2719,10 @@ function gp(tab){
   if(tab==='org-support') loadSupportOrganizers();
   if(tab==='featured')    loadFeaturedPage();
   if(tab==='archive')     loadArchivePage();
+  if(tab==='audit')       { _auditPage=1; loadAuditLog(); }
+  if(tab==='cancelled')   loadCancelledBazaars();
+  if(tab==='postpone')    loadPostponements();
+  if(tab==='override')    loadOverridePage();
 }
 
 /* ══════════════════════════════════════════
@@ -3566,6 +3758,290 @@ function renderOrgVerLeaderboard() {
   }).join('');
 }
 
+/* ══════════════════════════════════════════
+   AUDIT LOG — M13
+══════════════════════════════════════════ */
+const _AUDIT_LABELS = {
+  cancel:                   { ico:'🚫', label:'إلغاء بازار' },
+  postpone:                 { ico:'📅', label:'تأجيل' },
+  edit_info:                { ico:'✏️', label:'تعديل معلومات' },
+  info_updated:             { ico:'✏️', label:'تعديل معلومات (قديم)' },
+  edit_slots_count:         { ico:'🔢', label:'تعديل عدد الأماكن' },
+  reserve_slot:             { ico:'🔒', label:'حجز داخلي' },
+  unreserve_slot:           { ico:'🔓', label:'تحرير حجز داخلي' },
+  toggle_premium:           { ico:'⭐', label:'تغيير مميّز' },
+  booking_paused:           { ico:'⏸️', label:'إيقاف الحجوزات' },
+  booking_resumed:          { ico:'▶️', label:'استئناف الحجوزات' },
+  admin_delete:             { ico:'🗑️', label:'إخفاء إداري' },
+  auto_expire_response:     { ico:'⏰', label:'انتهاء مهلة الرد' },
+  admin_reactivate:         { ico:'♻️', label:'إعادة تفعيل إداري' },
+  admin_cancel_postponement:{ ico:'⏪', label:'إلغاء تأجيل إداري' },
+  admin_force_close:        { ico:'🔒', label:'إغلاق قسري إداري' },
+  admin_restore_snapshot:   { ico:'🕐', label:'استرجاع نسخة قديمة' },
+};
+
+let _auditPage = 1;
+const _AUDIT_PER_PAGE = 50;
+
+async function loadAuditLog() {
+  const tbody = document.getElementById('audit-tbody');
+  const pagEl  = document.getElementById('audit-pag');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
+
+  const changeType = document.getElementById('audit-filter-type')?.value || '';
+  const fromDate   = document.getElementById('audit-filter-from')?.value || '';
+  const toDate     = document.getElementById('audit-filter-to')?.value   || '';
+
+  try {
+    let q = db.from('bazaar_change_log')
+      .select('id,bazaar_id,change_type,changed_by,old_value,new_value,note,created_at, bazaars(name)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range((_auditPage - 1) * _AUDIT_PER_PAGE, _auditPage * _AUDIT_PER_PAGE - 1);
+
+    if (changeType) q = q.eq('change_type', changeType);
+    if (fromDate)   q = q.gte('created_at', fromDate + 'T00:00:00');
+    if (toDate)     q = q.lte('created_at', toDate   + 'T23:59:59');
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">لا توجد سجلات</td></tr>`;
+      if (pagEl) pagEl.innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.map(r => {
+      const lbl  = _AUDIT_LABELS[r.change_type] || { ico:'🔧', label: r.change_type };
+      const date = r.created_at ? new Date(r.created_at).toLocaleString('ar-EG') : '—';
+      const bzName = r.bazaars?.name || r.bazaar_id?.slice(0,8) + '…' || '—';
+      const oldV = r.old_value ? JSON.stringify(r.old_value).slice(0, 80) : '—';
+      const newV = r.new_value ? JSON.stringify(r.new_value).slice(0, 80) : '—';
+      const details = oldV !== '—' || newV !== '—'
+        ? `<span style="color:var(--rd);font-size:10px">${escHtml(oldV)}</span> → <span style="color:var(--gr);font-size:10px">${escHtml(newV)}</span>`
+        : '—';
+      return `<tr>
+        <td style="font-size:10.5px;white-space:nowrap;color:var(--mu)">${date}</td>
+        <td><span class="pr">${escHtml(bzName)}</span></td>
+        <td><span class="ba ba-pd">${lbl.ico} ${lbl.label}</span></td>
+        <td style="max-width:260px;word-break:break-word">${details}</td>
+        <td style="font-size:11px;color:var(--mu)">${r.note ? escHtml(r.note) : '—'}</td>
+      </tr>`;
+    }).join('');
+
+    // pagination
+    if (pagEl) {
+      const total = count || 0;
+      const pages = Math.ceil(total / _AUDIT_PER_PAGE);
+      if (pages <= 1) { pagEl.innerHTML = ''; return; }
+      let html = '';
+      for (let i = 1; i <= pages; i++) {
+        html += `<button class="pb2${i===_auditPage?' active':''}" onclick="_auditGo(${i})">${i}</button>`;
+      }
+      pagEl.innerHTML = `<span class="pi">${total} سجل</span>` + html;
+    }
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="rer">❌ ${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function _auditGo(page) { _auditPage = page; loadAuditLog(); }
+
+/* ══════════════════════════════════════════
+   CANCELLED BAZAARS — M13
+══════════════════════════════════════════ */
+async function loadCancelledBazaars() {
+  const tbody = document.getElementById('cancelled-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
+
+  try {
+    const { data, error } = await db
+      .from('bazaars')
+      .select('id,name,status,is_deleted,deleted_at,deleted_by,cancelled_at,cancellation_reason,organizer,organizer_id,image,date_start,date_end')
+      .eq('status', 'cancelled')
+      .order('cancelled_at', { ascending: false });
+    if (error) throw error;
+
+    const total       = data?.length || 0;
+    const adminDeleted = (data || []).filter(b => b.is_deleted).length;
+    const orgCancelled = total - adminDeleted;
+    document.getElementById('cn-total').textContent    = total;
+    document.getElementById('cn-bookings').textContent = '…';
+
+    if (!total) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">لا توجد بازارات ملغاة</td></tr>`;
+      document.getElementById('cn-bookings').textContent = '0';
+      document.getElementById('cn-last').textContent = '—';
+      return;
+    }
+
+    const lastDate = data[0].cancelled_at
+      ? new Date(data[0].cancelled_at).toLocaleDateString('ar-EG')
+      : '—';
+    document.getElementById('cn-last').textContent = lastDate;
+
+    const ids = data.map(b => b.id);
+    const { count: bkCount } = await db
+      .from('bazaar_bookings')
+      .select('id', { count: 'exact', head: true })
+      .in('bazaar_id', ids)
+      .in('status', ['cancelled_by_organizer','cancelled_by_user_after_postponement','pending','confirmed','pending_after_postponement']);
+    document.getElementById('cn-bookings').textContent = bkCount || 0;
+
+    tbody.innerHTML = data.map(b => {
+      const isAdminDel  = !!b.is_deleted;
+      const cancelDate  = b.cancelled_at ? new Date(b.cancelled_at).toLocaleDateString('ar-EG') : '—';
+      const reason      = b.cancellation_reason || '—';
+      const sourceBadge = isAdminDel
+        ? `<span class="ba" style="background:rgba(239,68,68,.15);color:var(--rd);font-size:9px">🔴 إداري</span>`
+        : `<span class="ba" style="background:rgba(245,158,11,.15);color:var(--yw);font-size:9px">🟡 منظّم</span>`;
+      // Actions: reactivate always shown; soft-delete only if not already admin-deleted
+      const actions = isAdminDel
+        ? `<button class="btn btn-sm btn-gr" style="font-size:10px" onclick="adminReactivateSingle('${b.id}','${escHtml(b.name)}')">♻️ إعادة تفعيل</button>
+           <button class="btn btn-sm btn-rd" style="font-size:10px" onclick="adminPurgeBazaar('${b.id}','${escHtml(b.name)}')">💣 حذف كامل</button>`
+        : `<button class="btn btn-sm btn-gr" style="font-size:10px" onclick="adminReactivateSingle('${b.id}','${escHtml(b.name)}')">♻️ إعادة تفعيل</button>
+           <button class="btn btn-sm btn-gh" style="font-size:10px" onclick="adminSoftDeleteBazaar('${b.id}','${escHtml(b.name)}')">🙈 إخفاء إداري</button>
+           <button class="btn btn-sm btn-rd" style="font-size:10px" onclick="adminPurgeBazaar('${b.id}','${escHtml(b.name)}')">💣 حذف كامل</button>`;
+      return `<tr${isAdminDel ? ' style="opacity:.7"' : ''}>
+        <td>
+          <div style="font-weight:700">${escHtml(b.name)} ${sourceBadge}</div>
+          <div style="font-size:10px;color:var(--mu)">${b.date_start||''} → ${b.date_end||''}</div>
+        </td>
+        <td style="font-size:11.5px">${escHtml(b.organizer||b.organizer_id?.slice(0,8)||'—')}</td>
+        <td style="font-size:11px;color:var(--mu)">${cancelDate}</td>
+        <td style="font-size:11px;max-width:180px;word-break:break-word">${escHtml(reason)}</td>
+        <td><span class="ba ba-ca" id="cn-bk-${b.id}">—</span></td>
+        <td><div class="row-acts" style="opacity:1;flex-wrap:wrap;gap:3px">${actions}</div></td>
+      </tr>`;
+    }).join('');
+
+    // تحميل عدد الحجوزات لكل بازار بشكل غير متزامن
+    data.forEach(async b => {
+      const { count } = await db
+        .from('bazaar_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('bazaar_id', b.id);
+      const el = document.getElementById(`cn-bk-${b.id}`);
+      if (el) el.textContent = count || 0;
+    });
+
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" class="rer">❌ ${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+// Soft delete — البازار يُخفى من الواجهة ويبقى في قاعدة البيانات
+async function adminSoftDeleteBazaar(bazaarId, bazaarName) {
+  if (!confirm(`إخفاء البازار "${bazaarName}" من الواجهة العامة؟\n\nسيتم إلغاؤه وإخفاؤه من قائمة البازارات. البيانات ستُحفظ في قاعدة البيانات للمراجعة لاحقاً.`)) return;
+  const reason = prompt('سبب الإخفاء (اختياري):', 'حذف إداري') || 'حذف إداري';
+  try {
+    const { data, error } = await db.rpc('admin_delete_bazaar', { p_bazaar_id: bazaarId, p_reason: reason });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'unknown');
+    toast(`✅ تم إخفاء البازار "${bazaarName}" — سجل البيانات محفوظ`, 's');
+    loadCancelledBazaars();
+  } catch(e) {
+    toast('❌ فشل الإخفاء: ' + e.message, 'e');
+  }
+}
+
+// Hard purge — حذف كامل نهائي من قاعدة البيانات (nuclear option)
+async function adminPurgeBazaar(bazaarId, bazaarName) {
+  const first = confirm(`🚨 تحذير: حذف نهائي كامل\n\nسيتم حذف "${bazaarName}" وجميع بياناته (وحدات، حجوزات، سجلات) بشكل دائم لا رجعة فيه.\n\nهذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد؟`);
+  if (!first) return;
+  const second = confirm(`تأكيد أخير: حذف "${bazaarName}" نهائياً من قاعدة البيانات؟`);
+  if (!second) return;
+  try {
+    const { data, error } = await db.rpc('admin_purge_bazaar', {
+      p_bazaar_id: bazaarId,
+      p_confirm:   'PURGE_CONFIRMED'
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'unknown');
+
+    // Show image URLs that need manual R2 cleanup
+    const imgs = data.image_urls || [];
+    let msg = `✅ تم الحذف النهائي لـ "${data.name}"`;
+    if (imgs.length) {
+      msg += `\n\nيجب حذف ${imgs.length} صورة من R2 يدوياً:\n` + imgs.join('\n');
+      alert(msg);
+    }
+    toast(`🗑️ تم الحذف النهائي للبازار "${bazaarName}"`, 's');
+    loadCancelledBazaars();
+  } catch(e) {
+    toast('❌ فشل الحذف الكامل: ' + e.message, 'e');
+  }
+}
+
+/* ══════════════════════════════════════════
+   POSTPONEMENTS — M13
+══════════════════════════════════════════ */
+async function loadPostponements() {
+  const tbody = document.getElementById('postpone-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
+
+  try {
+    const { data, error } = await db
+      .from('bazaar_postponements')
+      .select('id,bazaar_id,old_date_start,old_date_end,new_date_start,new_date_end,reason,postponed_at,bazaars(name)')
+      .order('postponed_at', { ascending: false });
+    if (error) throw error;
+
+    const total = data?.length || 0;
+    document.getElementById('pp-total').textContent = total;
+
+    if (!total) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">لا توجد تأجيلات مسجّلة</td></tr>`;
+      document.getElementById('pp-accepted').textContent = '0';
+      document.getElementById('pp-cancelled').textContent = '0';
+      return;
+    }
+
+    // إحصائيات الاستجابات
+    const ppIds = data.map(p => p.id);
+    const [acceptRes, cancelRes] = await Promise.all([
+      db.from('bazaar_bookings').select('id', { count: 'exact', head: true })
+        .eq('status', 'confirmed').in('last_postponement_id', ppIds.length ? ppIds : ['__none__']),
+      db.from('bazaar_bookings').select('id', { count: 'exact', head: true })
+        .eq('status', 'cancelled_by_user_after_postponement').in('last_postponement_id', ppIds.length ? ppIds : ['__none__']),
+    ]);
+    document.getElementById('pp-accepted').textContent  = acceptRes.count  || 0;
+    document.getElementById('pp-cancelled').textContent = cancelRes.count || 0;
+
+    tbody.innerHTML = data.map(p => {
+      const bzName   = p.bazaars?.name || p.bazaar_id?.slice(0,8) + '…';
+      const oldRange = `${p.old_date_start||'—'} → ${p.old_date_end||'—'}`;
+      const newRange = `${p.new_date_start||'—'} → ${p.new_date_end||'—'}`;
+      const pDate    = p.postponed_at ? new Date(p.postponed_at).toLocaleDateString('ar-EG') : '—';
+      return `<tr>
+        <td><span class="pr">${escHtml(bzName)}</span></td>
+        <td style="font-size:11px;color:var(--rd)">${escHtml(oldRange)}</td>
+        <td style="font-size:11px;color:var(--gr)">${escHtml(newRange)}</td>
+        <td style="font-size:11px;max-width:200px;word-break:break-word">${escHtml(p.reason||'—')}</td>
+        <td><span class="ba ba-pa" id="pp-bk-${p.id}">—</span></td>
+        <td style="font-size:11px;color:var(--mu)">${pDate}</td>
+        <td><button class="btn btn-sm btn-yw" style="font-size:10px" onclick="adminCancelPostponementSingle('${p.bazaar_id}','${p.id}','${p.old_date_start||''}','${p.old_date_end||''}')">⏪ إلغاء</button></td>
+      </tr>`;
+    }).join('');
+
+    // تحميل الاستجابات لكل تأجيل
+    data.forEach(async p => {
+      const { count } = await db
+        .from('bazaar_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('last_postponement_id', p.id);
+      const el = document.getElementById(`pp-bk-${p.id}`);
+      if (el) el.textContent = count || 0;
+    });
+
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" class="rer">❌ ${escHtml(e.message)}</td></tr>`;
+  }
+}
+
 function openOrgLightbox(url) {
   const img = document.getElementById('orv-lb-img');
   if (img) img.src = url;
@@ -3575,6 +4051,341 @@ function closeOrgLightbox() {
   document.getElementById('orv-lightbox').classList.remove('open');
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeOrgLightbox(); });
+
+/* ══════════════════════════════════════════
+   EMERGENCY OVERRIDE
+══════════════════════════════════════════ */
+function _setOvRes(key, msg, type) {
+  const el = document.getElementById(`ov-${key}-res`);
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = type === 'ok'
+    ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)';
+  el.style.border = type === 'ok'
+    ? '1px solid rgba(34,197,94,.25)' : '1px solid rgba(239,68,68,.25)';
+  el.style.color = type === 'ok' ? 'var(--gr)' : 'var(--rd)';
+  el.textContent = msg;
+}
+
+async function _logOverride(bazaarId, changeType, changeData, note) {
+  await db.from('bazaar_change_log').insert({
+    bazaar_id:   bazaarId,
+    changed_by:  null,
+    change_type: changeType,
+    change_data: changeData,
+    note:        note,
+    source:      'admin_panel',
+  });
+}
+
+async function loadOverridePage() {
+  // Reactivate dropdown: fetch cancelled directly from DB (includes is_deleted ones)
+  try {
+    const { data: cxl } = await db.from('bazaars')
+      .select('id,name,is_deleted')
+      .eq('status', 'cancelled')
+      .order('cancelled_at', { ascending: false })
+      .limit(100);
+    document.getElementById('ov-reactivate-bz').innerHTML =
+      '<option value="">— اختر بازار ملغي —</option>' +
+      (cxl || []).map(b =>
+        `<option value="${b.id}">${escHtml(b.name)}${b.is_deleted ? ' 🗑️' : ''}</option>`
+      ).join('');
+  } catch(_) {
+    document.getElementById('ov-reactivate-bz').innerHTML =
+      '<option value="">— اختر بازار ملغي —</option>';
+  }
+
+  // Force-close dropdown: active / published / pending_review bazaars
+  document.getElementById('ov-close-bz').innerHTML =
+    '<option value="">— اختر بازار —</option>' +
+    BAZAARS.filter(b => !['closed','cancelled'].includes(b.status))
+      .map(b => `<option value="${b.id}">${escHtml(b.name)} (${b.status})</option>`).join('');
+
+  // Cancel-postponement dropdown: postponed bazaars
+  document.getElementById('ov-unpost-bz').innerHTML =
+    '<option value="">— اختر بازار مؤجّل —</option>' +
+    BAZAARS.filter(b => b.status === 'postponed')
+      .map(b => `<option value="${b.id}">${escHtml(b.name)}</option>`).join('');
+
+  // Restore snapshot dropdown: all bazaars
+  document.getElementById('ov-restore-bz').innerHTML =
+    '<option value="">— اختر بازار —</option>' +
+    BAZAARS.map(b => `<option value="${b.id}">${escHtml(b.name)}</option>`).join('');
+
+  // Reset result boxes
+  ['reactivate','unpost','close','restore'].forEach(k => {
+    const el = document.getElementById(`ov-${k}-res`);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('ov-unpost-preview').style.display = 'none';
+  document.getElementById('ov-restore-history').style.display = 'none';
+}
+
+// ── Reactivate (from Override page dropdown) ──────────────────────────────
+async function adminReactivateBazaar() {
+  const sel       = document.getElementById('ov-reactivate-bz');
+  const bazaarId  = sel.value;
+  if (!bazaarId) { toast('اختر بازاراً أولاً', 'e'); return; }
+  const bzName    = sel.options[sel.selectedIndex].text;
+  const newStatus = document.getElementById('ov-reactivate-status').value;
+  if (!confirm(`إعادة تفعيل "${bzName}" كـ "${newStatus}"؟\nسيُزال سبب الإلغاء وعلامة الإخفاء.`)) return;
+  try {
+    const { error } = await db.from('bazaars').update({
+      status:              newStatus,
+      cancelled_at:        null,
+      cancellation_reason: null,
+      is_deleted:          false,
+      deleted_at:          null,
+      deleted_by:          null,
+    }).eq('id', bazaarId);
+    if (error) throw error;
+    await _logOverride(bazaarId, 'admin_reactivate', { new_status: newStatus }, `إعادة تفعيل إداري → ${newStatus}`);
+    const local = BAZAARS.find(x => x.id === bazaarId);
+    if (local) local.status = newStatus;
+    updateAll();
+    _setOvRes('reactivate', `✅ تم إعادة تفعيل "${bzName}" كـ ${newStatus}`, 'ok');
+    toast('✅ تم إعادة التفعيل', 's');
+    // refresh cancelled list if open
+    if (document.getElementById('pg-cancelled')?.classList.contains('active')) loadCancelledBazaars();
+  } catch(e) {
+    _setOvRes('reactivate', '❌ ' + e.message, 'err');
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+// ── Reactivate (from cancelled table row button) ──────────────────────────
+function adminReactivateSingle(bazaarId, bzName) {
+  gp('override');
+  setTimeout(() => {
+    const sel = document.getElementById('ov-reactivate-bz');
+    if (sel) sel.value = bazaarId;
+    toast(`📌 "${bzName}" — اختر الحالة واضغط ♻️ إعادة التفعيل`, 'i');
+  }, 350);
+}
+
+// ── Force Close (from Override page) ─────────────────────────────────────
+async function adminForceClose() {
+  const sel      = document.getElementById('ov-close-bz');
+  const bazaarId = sel.value;
+  if (!bazaarId) { toast('اختر بازاراً أولاً', 'e'); return; }
+  const bzName   = sel.options[sel.selectedIndex].text;
+  const b        = BAZAARS.find(x => x.id === bazaarId);
+  if (!confirm(`إجبار "${bzName}" على الإغلاق الفوري؟\nسيتحول إلى "منتهي" بدون إشعارات.`)) return;
+  try {
+    const { error } = await db.from('bazaars').update({ status: 'closed' }).eq('id', bazaarId);
+    if (error) throw error;
+    await _logOverride(bazaarId, 'admin_force_close', { prev_status: b?.status || '?' }, 'إغلاق قسري إداري');
+    if (b) b.status = 'closed';
+    updateAll();
+    _setOvRes('close', `🔒 تم إغلاق "${bzName}" فوراً`, 'ok');
+    toast('🔒 تم الإغلاق الفوري', 's');
+  } catch(e) {
+    _setOvRes('close', '❌ ' + e.message, 'err');
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+// ── Preview last postponement (Override page) ─────────────────────────────
+let _lastPostponementData = null;
+
+async function previewLastPostponement() {
+  const bazaarId = document.getElementById('ov-unpost-bz').value;
+  const prev     = document.getElementById('ov-unpost-preview');
+  _lastPostponementData = null;
+  if (!bazaarId) { prev.style.display = 'none'; return; }
+  prev.style.display = 'block';
+  prev.innerHTML = '<span style="color:var(--mu)">جارٍ التحميل…</span>';
+  try {
+    const { data, error } = await db
+      .from('bazaar_postponements')
+      .select('id,old_date_start,old_date_end,new_date_start,new_date_end,reason,postponed_at')
+      .eq('bazaar_id', bazaarId)
+      .order('postponed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      prev.innerHTML = '<span style="color:var(--mu)">لا يوجد تأجيل مسجّل لهذا البازار</span>';
+      return;
+    }
+    _lastPostponementData = { ...data, bazaar_id: bazaarId };
+    prev.innerHTML = `
+      <div style="font-weight:700;color:var(--yw);margin-bottom:7px">آخر تأجيل مسجّل:</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--mu);margin-bottom:2px">الموعد القديم (سيُستعاد)</div>
+          <div style="font-weight:700;color:var(--gr)">${data.old_date_start||'—'} → ${data.old_date_end||'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--mu);margin-bottom:2px">الموعد الحالي (سيُلغى)</div>
+          <div style="font-weight:700;color:var(--rd)">${data.new_date_start||'—'} → ${data.new_date_end||'—'}</div>
+        </div>
+      </div>
+      ${data.reason ? `<div style="margin-top:6px;font-size:11px;color:var(--mu)">السبب: ${escHtml(data.reason)}</div>` : ''}`;
+  } catch(e) {
+    prev.innerHTML = `<span style="color:var(--rd)">❌ ${escHtml(e.message)}</span>`;
+  }
+}
+
+// ── Cancel Postponement (Override page) ──────────────────────────────────
+async function adminCancelPostponement() {
+  const bazaarId = document.getElementById('ov-unpost-bz').value;
+  if (!bazaarId)             { toast('اختر بازاراً أولاً', 'e'); return; }
+  if (!_lastPostponementData){ toast('لا يوجد بيانات تأجيل — اختر بازاراً وانتظر المعاينة', 'e'); return; }
+  const d    = _lastPostponementData;
+  const b    = BAZAARS.find(x => x.id === bazaarId);
+  if (!confirm(`إلغاء التأجيل وإعادة مواعيد "${b?.name||bazaarId}"؟\nالمواعيد الجديدة: ${d.old_date_start} → ${d.old_date_end}\nسيُعاد تأكيد الحجوزات المعلّقة بسبب التأجيل.`)) return;
+  await _doCancelPostponement(bazaarId, d.id, d.old_date_start, d.old_date_end, d.new_date_start, d.new_date_end, b, 'unpost');
+  _lastPostponementData = null;
+  document.getElementById('ov-unpost-preview').style.display = 'none';
+}
+
+// ── Cancel Postponement (table row button) ────────────────────────────────
+async function adminCancelPostponementSingle(bazaarId, postponementId, oldStart, oldEnd) {
+  const b = BAZAARS.find(x => x.id === bazaarId);
+  if (!confirm(`إلغاء التأجيل لبازار "${b?.name||bazaarId}"؟\nستُعاد المواعيد إلى: ${oldStart} → ${oldEnd}\nوسيُعاد تأكيد الحجوزات المعلّقة.`)) return;
+  // fetch full row first to get new dates for log
+  const { data: row } = await db.from('bazaar_postponements')
+    .select('new_date_start,new_date_end')
+    .eq('id', postponementId)
+    .maybeSingle();
+  await _doCancelPostponement(bazaarId, postponementId, oldStart, oldEnd, row?.new_date_start, row?.new_date_end, b, null);
+  if (document.getElementById('pg-postpone')?.classList.contains('active')) loadPostponements();
+}
+
+async function _doCancelPostponement(bazaarId, postponementId, oldStart, oldEnd, newStart, newEnd, bLocal, resKey) {
+  try {
+    const { error: e1 } = await db.from('bazaars').update({
+      date_start:      oldStart,
+      date_end:        oldEnd,
+      status:          'published',
+      postponed_count: Math.max(0, (bLocal?.postponed_count || 1) - 1),
+    }).eq('id', bazaarId);
+    if (e1) throw e1;
+
+    const { error: e2 } = await db.from('bazaar_bookings').update({
+      status:                  'confirmed',
+      postponement_response:   null,
+      postponement_deadline:   null,
+    }).eq('bazaar_id', bazaarId).eq('status', 'pending_after_postponement').eq('last_postponement_id', postponementId);
+    if (e2) throw e2;
+
+    await _logOverride(bazaarId, 'admin_cancel_postponement', {
+      postponement_id: postponementId,
+      restored_start:  oldStart,
+      restored_end:    oldEnd,
+      was_start:       newStart,
+      was_end:         newEnd,
+    }, 'إلغاء تأجيل إداري طارئ');
+
+    if (bLocal) {
+      bLocal.status       = 'published';
+      bLocal.date_start   = oldStart;
+      bLocal.date_end     = oldEnd;
+    }
+    updateAll();
+    if (resKey) _setOvRes(resKey, `⏪ تم إلغاء التأجيل — المواعيد عادت لـ ${oldStart} → ${oldEnd}`, 'ok');
+    toast('⏪ تم إلغاء التأجيل بنجاح', 's');
+  } catch(e) {
+    if (resKey) _setOvRes(resKey, '❌ ' + e.message, 'err');
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+// ── Snapshot History (Override page) ─────────────────────────────────────
+async function loadBazaarSnapshotHistory() {
+  const bazaarId = document.getElementById('ov-restore-bz').value;
+  const cont     = document.getElementById('ov-restore-history');
+  if (!bazaarId) { cont.style.display = 'none'; return; }
+  cont.style.display = 'block';
+  cont.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  try {
+    const { data, error } = await db
+      .from('bazaar_change_log')
+      .select('id,change_type,change_data,note,created_at,source')
+      .eq('bazaar_id', bazaarId)
+      .in('change_type', ['edit_info','info_updated'])
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    if (!data?.length) {
+      cont.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">لا توجد تعديلات مسجّلة على معلومات هذا البازار</div>';
+      return;
+    }
+    const FIELD_AR = { name:'الاسم', description:'الوصف', location:'الموقع', maps_link:'رابط الموقع', date_start:'تاريخ البداية', date_end:'تاريخ النهاية' };
+    cont.innerHTML = `<div style="font-size:11px;color:var(--mu);margin-bottom:8px">آخر ${data.length} تعديل — اضغط «استرجاع» لتطبيق البيانات السابقة</div>` +
+      data.map(e => {
+        const before   = e.change_data?.before || {};
+        const date     = e.created_at ? new Date(e.created_at).toLocaleString('ar-EG') : '—';
+        const hasBefore = Object.keys(before).length > 0;
+        const srcBadge  = e.source === 'admin_panel'
+          ? '<span class="ba" style="background:rgba(239,68,68,.1);color:var(--rd);margin-right:4px">🛡️ أدمن</span>' : '';
+        return `<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:${hasBefore?'8px':'0'}">
+            <div>${srcBadge}<span style="font-size:11px;color:var(--mu)">${date}</span></div>
+            ${hasBefore
+              ? `<button class="btn btn-sm" style="background:rgba(245,158,11,.12);color:var(--yw);border:1px solid rgba(245,158,11,.3);font-size:11px" onclick="adminRestoreSnapshot('${bazaarId}','${e.id}')">⏪ استرجاع هذه النسخة</button>`
+              : '<span style="font-size:11px;color:var(--mu)">لا تتوفر بيانات سابقة</span>'}
+          </div>
+          ${hasBefore ? `<div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${Object.entries(before).filter(([k]) => Object.keys(FIELD_AR).includes(k)).slice(0,4).map(([k,v]) =>
+              `<span style="font-size:11px;background:var(--bg2);border:1px solid var(--bd);border-radius:5px;padding:3px 7px">
+                <span style="color:var(--mu)">${FIELD_AR[k]||k}:</span>
+                <span style="color:var(--rd);margin-right:4px">${escHtml(String(v||'—').slice(0,50))}</span>
+              </span>`).join('')}
+          </div>` : ''}
+        </div>`;
+      }).join('');
+  } catch(e) {
+    cont.innerHTML = `<div style="color:var(--rd);font-size:12px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function adminRestoreSnapshot(bazaarId, logId) {
+  const { data: row, error } = await db
+    .from('bazaar_change_log')
+    .select('change_data,created_at')
+    .eq('id', logId)
+    .maybeSingle();
+  if (error || !row?.change_data?.before) {
+    toast('لا تتوفر بيانات كافية لهذا الاسترجاع', 'e'); return;
+  }
+  const before = row.change_data.before;
+  const date   = new Date(row.created_at).toLocaleString('ar-EG');
+  const b      = BAZAARS.find(x => x.id === bazaarId);
+  if (!confirm(`استرجاع "${b?.name||bazaarId}" لنسخة من ${date}؟\nالحقول: ${Object.keys(before).join('، ')}`)) return;
+  try {
+    const updates = {};
+    if (before.name)        updates.name        = before.name;
+    if (before.description) updates.description = before.description;
+    if (before.location)    updates.location    = before.location;
+    if (before.maps_link)   updates.maps_link   = before.maps_link;
+    if (before.date_start)  updates.date_start  = before.date_start;
+    if (before.date_end)    updates.date_end    = before.date_end;
+    if (!Object.keys(updates).length) { toast('لا توجد حقول يمكن استرجاعها', 'e'); return; }
+    updates.updated_at = new Date().toISOString();
+
+    const { error: ue } = await db.from('bazaars').update(updates).eq('id', bazaarId);
+    if (ue) throw ue;
+    await _logOverride(bazaarId, 'admin_restore_snapshot',
+      { restored_from_log: logId, fields: Object.keys(updates) },
+      `استرجاع نسخة من ${date}`);
+
+    if (b) {
+      if (updates.name)       b.name      = updates.name;
+      if (updates.date_start) b.date_start = updates.date_start;
+      if (updates.date_end)   b.date_end   = updates.date_end;
+    }
+    updateAll();
+    _setOvRes('restore', `✅ تم استرجاع البازار "${b?.name||bazaarId}" لنسخة ${date}`, 'ok');
+    toast('✅ تم الاسترجاع بنجاح', 's');
+    loadBazaarSnapshotHistory();
+  } catch(e) {
+    _setOvRes('restore', '❌ ' + e.message, 'err');
+    toast('❌ ' + e.message, 'e');
+  }
+}
 
 /* ══════════════════════════════════════════
    INIT

@@ -116,7 +116,7 @@ async function _loadMyProfile() {
               .eq('user_id', currentUser.id)
               .order('created_at', { ascending: false }).limit(1).single(),
       sbClient.from('bazaars').select('id,name,date_start,date_end,status')
-              .eq('organizer_id', currentUser.id),
+              .eq('organizer_id', currentUser.id).eq('is_deleted', false),
       sbClient.from('listings')
               .select('id,title,category,price,cover_image,status,expires_at,created_at,phone,region')
               .eq('user_id', currentUser.id)
@@ -191,6 +191,55 @@ async function _loadMyProfile() {
 
 
 /* ================================================================
+   🎯 كارت اكتمال الملف الشخصي
+   ================================================================ */
+function _buildCompletionCard(profile, userProfile, bazaars) {
+  const hasSocial = !!(profile?.facebook_url || profile?.instagram_url || profile?.tiktok_url);
+  const checks = [
+    { done: !!(profile?.avatar_url),                       pts: 20, label: 'أضف صورة شخصية',   tip: 'تزيد ثقة العارضين بك' },
+    { done: !!(profile?.cover_url),                        pts: 15, label: 'أضف صورة الغلاف',   tip: 'تحسّن انطباعك الأول' },
+    { done: !!(profile?.bio?.trim()),                      pts: 25, label: 'اكتب نبذة شخصية',   tip: 'يجذب 3× عارضين أكثر' },
+    { done: hasSocial,                                     pts: 25, label: 'أضف سوشيال ميديا',  tip: 'يعزّز مصداقيتك مع المولات' },
+    { done: !!(profile?.region || userProfile?.city),      pts: 15, label: 'أضف منطقتك',        tip: 'يساعد العارضين في إيجادك' },
+  ];
+
+  const pct     = checks.reduce((s, c) => s + (c.done ? c.pts : 0), 0);
+  const missing = checks.filter(c => !c.done);
+
+  if (missing.length === 0) return '';
+
+  const color = pct >= 75 ? '#059669' : pct >= 50 ? '#D97706' : '#F36418';
+
+  return `
+  <div class="op-completion-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:13.5px;font-weight:900;color:var(--ink)">🎯 اكتمال ملفك كمنظّم بازار</div>
+      <div style="font-size:20px;font-weight:900;color:${color};font-family:var(--font-display)">${pct}%</div>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink3);margin-bottom:8px">
+      ${pct < 50 ? 'أكمل ملفك لتجذب عارضين أكثر وتتعامل مع المولات الكبرى' :
+        pct < 80 ? 'أنت على الطريق الصحيح — خطوة أخرى وستصبح Brand حقيقي' :
+                   'ملفك قوي! أضف التفاصيل المتبقية لتميّز نفسك بشكل كامل'}
+    </div>
+    <div class="op-completion-bar-bg">
+      <div class="op-completion-bar-fill" style="width:${pct}%;background:${color}"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${missing.slice(0, 3).map(c => `
+      <div class="op-completion-tip" onclick="openEditModal()">
+        <div class="op-completion-pts" style="background:${color}18;color:${color}">+${c.pts}</div>
+        <div style="flex:1">
+          <span style="font-weight:700;color:var(--ink);font-size:12.5px">${c.label}</span>
+          <span style="color:var(--ink3);font-size:11px"> — ${c.tip}</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="13" height="13"><path d="M15 18l-6-6 6-6"/></svg>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+
+/* ================================================================
    🎨 عرض ملفي الشخصي
    ================================================================ */
 function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner) {
@@ -209,6 +258,38 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   const avatarHtml = avatarUrl
     ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
     : `<span>${initial}</span>`;
+
+  /* ── Cover / Banner ── */
+  const coverUrl  = _toDirectImgUrl(profile?.cover_url || '');
+  const coverHtml = `
+    <div class="op-cover-section">
+      ${coverUrl ? `<img id="op-cover-img-el" src="${coverUrl}" alt="cover">` : `<img id="op-cover-img-el" style="display:none">`}
+      <button class="op-cover-upload-btn" id="op-cover-upload-btn" onclick="triggerCoverUpload()" title="تغيير صورة الغلاف">
+        📷 ${coverUrl ? 'تغيير الغلاف' : 'أضف صورة غلاف'}
+      </button>
+    </div>`;
+
+  /* ── Bio ── */
+  const bioHtml = profile?.bio
+    ? `<div class="op-bio">${profile.bio}</div>`
+    : '';
+
+  /* ── Social Links ── */
+  const socialLinks = [
+    { key: 'facebook_url',  cls: 'fb', title: 'Facebook',
+      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>` },
+    { key: 'instagram_url', cls: 'ig', title: 'Instagram',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>` },
+    { key: 'tiktok_url',   cls: 'tt', title: 'TikTok',
+      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.75a4.86 4.86 0 0 1-1-.06z"/></svg>` },
+  ];
+  const socialHtml = (() => {
+    const links = socialLinks
+      .filter(s => profile?.[s.key])
+      .map(s => `<a href="${profile[s.key]}" target="_blank" rel="noopener noreferrer" class="op-social-link ${s.cls}" title="${s.title}">${s.icon}</a>`)
+      .join('');
+    return links ? `<div class="op-social-links">${links}</div>` : '';
+  })();
 
   /* ── إحصائيات ── */
   const today          = new Date().toISOString().split('T')[0];
@@ -244,6 +325,9 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
   <!-- ═══════ HERO ═══════ -->
   <div class="op-hero">
+
+    ${coverHtml}
+
     <div class="op-hero-top">
 
       <!-- أفاتار -->
@@ -265,11 +349,10 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
           ${myMergedCity  ? `<span>📍 ${myMergedCity}</span>` : ''}
           ${currentUser.email ? `<span style="direction:ltr;unicode-bidi:embed">✉️ ${currentUser.email}</span>` : ''}
         </div>
-        <div class="op-hero-actions">
+        ${bioHtml}
+        ${socialHtml}
+        <div class="op-hero-actions" style="margin-top:10px">
           <button class="op-qn-btn primary" onclick="openEditModal()">✍️ تعديل البيانات</button>
-          ${profile?.whatsapp
-            ? `<a href="https://wa.me/${profile.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">واتساب 📲</a>`
-            : ''}
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -348,6 +431,9 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <div class="op-stat-lbl">إعلان نشط في السوق</div>
     </div>
   </div>
+
+  <!-- ═══════ كارت اكتمال الملف الشخصي ═══════ -->
+  ${_buildCompletionCard(profile, userProfile, bazaars)}
 
   <!-- ═══════ عمودان: البيانات الشخصية + الإعلانات ═══════ -->
   <div class="op-two-col">
@@ -435,15 +521,35 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
       <span>🎪 بازاراتي كمنظم (${totalBaz})</span>
-      ${isVerified ? `<a href="/bazaars/organize.html" style="color:var(--orange);font-weight:900;font-size:13px;text-decoration:none">+ نظّم بازار جديد</a>` : ''}
+      <div style="display:flex;gap:8px;align-items:center">
+        ${isVerified ? `<a href="/bazaars/manage.html" style="font-size:11px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 10px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">⚙️ إدارة البازارات</a>` : ''}
+        ${isVerified ? `<a href="/bazaars/organize.html" style="color:var(--orange);font-weight:900;font-size:13px;text-decoration:none">+ بازار جديد</a>` : ''}
+      </div>
     </div>
     ${totalBaz ? bazaars.map(b => {
       const ds = b.date_start ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' }) : '—';
-      const statusMap = { active:'🟢 نشط', upcoming:'🔵 قادم', closed:'⚫ منتهي', cancelled:'🔴 ملغي', pending_review:'⏳ قيد المراجعة' };
+      const statusMap = {
+        published:'🟢 منشور', active:'🟢 نشط', upcoming:'🔵 قادم',
+        postponed:'🟠 مؤجّل', closed:'⚫ منتهي', cancelled:'🔴 ملغي',
+        pending_review:'⏳ قيد المراجعة'
+      };
       const st = statusMap[b.status] || b.status;
-      return `<div class="op-data-row">
-        <div class="op-data-lbl" style="font-size:12px">${ds}</div>
-        <div class="op-data-val" style="font-size:13px">${b.name} <span style="font-size:11px;color:var(--ink3);margin-right:6px">${st}</span></div>
+      const canManage = ['published','active','upcoming','postponed','pending_review'].includes(b.status);
+      return `<div class="op-data-row" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${ds} · ${st}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <a href="/bazaars/?bazaar=${b.id}"
+             style="font-size:10px;font-weight:700;color:var(--orange);text-decoration:none;padding:3px 9px;border:1px solid rgba(243,100,24,.3);border-radius:50px;background:var(--orange-ultra)">
+            عرض
+          </a>
+          ${canManage ? `<a href="/bazaars/manage.html"
+             style="font-size:10px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 9px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">
+            إدارة
+          </a>` : ''}
+        </div>
       </div>`;
     }).join('') : `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">
       لم تنظّم أي بازار بعد
@@ -846,12 +952,12 @@ async function _loadPublicProfile(userId) {
 
   try {
     const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes] = await Promise.all([
-      sbClient.from('profiles').select('full_name,created_at,role').eq('id', userId).single(),
+      sbClient.from('profiles').select('full_name,created_at,role,city').eq('id', userId).single(),
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
-      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots')
-              .eq('organizer_id', userId).order('date_start', { ascending: false }),
+      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots,status,is_archived')
+              .eq('organizer_id', userId).eq('is_deleted', false).order('date_start', { ascending: false }),
       sbClient.rpc('get_user_reputation', { p_user_id: userId }),
       sbClient.from('user_ratings').select('*')
               .eq('ratee_id', userId).eq('status', 'visible')
@@ -893,6 +999,35 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
     : `<span>${initial}</span>`;
 
+  /* ── Cover ── */
+  const pubCoverUrl  = _toDirectImgUrl(organizer?.cover_url || '');
+  const pubCoverHtml = `
+    <div class="op-cover-section">
+      ${pubCoverUrl ? `<img src="${pubCoverUrl}" alt="cover">` : ''}
+    </div>`;
+
+  /* ── Bio ── */
+  const pubBioHtml = organizer?.bio
+    ? `<div class="op-bio">${organizer.bio}</div>`
+    : '';
+
+  /* ── Social Links ── */
+  const pubSocialLinks = [
+    { key: 'facebook_url',  cls: 'fb', title: 'Facebook',
+      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>` },
+    { key: 'instagram_url', cls: 'ig', title: 'Instagram',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>` },
+    { key: 'tiktok_url',   cls: 'tt', title: 'TikTok',
+      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.75a4.86 4.86 0 0 1-1-.06z"/></svg>` },
+  ];
+  const pubSocialHtml = (() => {
+    const links = pubSocialLinks
+      .filter(s => organizer?.[s.key])
+      .map(s => `<a href="${organizer[s.key]}" target="_blank" rel="noopener noreferrer" class="op-social-link ${s.cls}" title="${s.title}">${s.icon}</a>`)
+      .join('');
+    return links ? `<div class="op-social-links">${links}</div>` : '';
+  })();
+
   /* تاريخ الانضمام */
   const joinDate = (publicUser?.created_at || organizer?.joined_at)
     ? new Date(publicUser?.created_at || organizer?.joined_at)
@@ -901,7 +1036,15 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
 
   /* إحصائيات */
   const today        = new Date().toISOString().split('T')[0];
-  const pastCount    = bazaars.filter(b => b.date_end && b.date_end < today).length;
+  const activeBazaars = bazaars.filter(b =>
+    !b.is_archived && b.status !== 'archived' &&
+    (!b.date_end || b.date_end >= today)
+  );
+  const pastBazaars   = bazaars.filter(b =>
+    b.is_archived || b.status === 'archived' ||
+    (b.date_end && b.date_end < today)
+  );
+  const pastCount    = pastBazaars.length;
   const totalVendors = bazaars.reduce((s,b) => s + (b.total_slots||0), 0);
   const avgRating    = reviews.length
     ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
@@ -920,28 +1063,38 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
   /* شارة الاسم */
   const nameBadge = isVerified ? `<span class="op-verified-badge">✓ منظم موثّق</span>` : '';
 
-  /* قائمة البازارات */
-  const bazaarsHtml = bazaars.length
-    ? bazaars.map(b => {
-        const ds = b.date_start
-          ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
-          : '—';
-        const imgHtml = b.image
-          ? `<img src="${_toDirectImgUrl(b.image)}" alt="${b.name}"
-               style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
-               onerror="this.style.display='none'">`
-          : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎪</div>`;
-        return `
-          <div class="op-bazaar-item" onclick="window.location.href='/bazaars/?bazaar=${b.id}'">
-            ${imgHtml}
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
-              <div style="font-size:11px;color:var(--ink3)">📅 ${ds} · 📍 ${b.location||'—'}</div>
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
-          </div>`;
-      }).join('')
-    : `<div class="op-empty">لا توجد بازارات مسجّلة</div>`;
+  /* ── بناء بطاقة بازار واحدة ── */
+  function _buildBazaarRow(b) {
+    const ds = b.date_start
+      ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+      : '—';
+    const de = b.date_end
+      ? new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
+      : null;
+    const dateLabel = de && de !== ds ? `${ds} ← ${de}` : ds;
+    const imgHtml = b.image
+      ? `<img src="${_toDirectImgUrl(b.image)}" alt="${b.name}"
+             style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
+             onerror="this.style.display='none'">`
+      : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎪</div>`;
+    return `
+      <div class="op-bazaar-item" onclick="window.location.href='/bazaars/?bazaar=${b.id}'">
+        ${imgHtml}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+          <div style="font-size:11px;color:var(--ink3)">📅 ${dateLabel} · 📍 ${b.location||'—'}</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
+      </div>`;
+  }
+
+  /* قائمة البازارات مقسّمة */
+  const activeBazaarsHtml = activeBazaars.length
+    ? activeBazaars.map(_buildBazaarRow).join('')
+    : `<div class="op-empty">لا توجد بازارات نشطة حالياً</div>`;
+  const pastBazaarsHtml = pastBazaars.length
+    ? pastBazaars.map(_buildBazaarRow).join('')
+    : `<div class="op-empty">لا توجد بازارات منتهية</div>`;
 
   const reviewsHtml = reviews.length
     ? reviews.map(r => {
@@ -964,6 +1117,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
 
   <!-- ═══════ HERO ═══════ -->
   <div class="op-hero">
+
+    ${pubCoverHtml}
+
     <div class="op-hero-top">
       <div class="op-avatar-wrap">
         <div class="op-avatar">${avatarHtml}</div>
@@ -974,10 +1130,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
           <span>🗓 عضو منذ ${joinDate}</span>
           ${organizer?.region ? `<span>📍 ${organizer.region}</span>` : ''}
         </div>
-        <div class="op-hero-actions">
-          ${organizer?.whatsapp
-            ? `<a href="https://wa.me/${organizer.whatsapp.replace(/\D/g,'')}" target="_blank" class="op-wa-btn">تواصل واتساب 📲</a>`
-            : ''}
+        ${pubBioHtml}
+        ${pubSocialHtml}
+        <div class="op-hero-actions" style="margin-top:${pubBioHtml || pubSocialHtml ? '10px' : '0'}">
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -1004,12 +1159,12 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
   <!-- ═══════ الإحصائيات (عامة فقط) ═══════ -->
   <div class="op-stats-grid">
     <div class="op-stat-card">
-      <div class="op-stat-num">${bazaars.length}</div>
-      <div class="op-stat-lbl">إجمالي البازارات</div>
+      <div class="op-stat-num">${activeBazaars.length}</div>
+      <div class="op-stat-lbl">بازار نشط</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${pastCount}</div>
-      <div class="op-stat-lbl">بازار منتهي</div>
+      <div class="op-stat-lbl">بازار سابق</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
@@ -1024,11 +1179,21 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
   <!-- ═══════ السمعة كمستأجر (تقييمات أصحاب المساحات والمنظمين) ═══════ -->
   ${_pubRepPanelHtml(reputation, recvRatings)}
 
-  <!-- ═══════ بازاراته ═══════ -->
-  ${bazaars.length ? `
+  <!-- ═══════ البازارات النشطة/القادمة ═══════ -->
   <div class="op-section-card" style="margin-bottom:16px">
-    <div class="op-section-title"><span>🎪 البازارات (${bazaars.length})</span></div>
-    ${bazaarsHtml}
+    <div class="op-section-title">
+      <span>🟢 البازارات النشطة والقادمة (${activeBazaars.length})</span>
+    </div>
+    ${activeBazaarsHtml}
+  </div>
+
+  <!-- ═══════ البازارات السابقة ═══════ -->
+  ${pastBazaars.length ? `
+  <div class="op-section-card" style="margin-bottom:16px">
+    <div class="op-section-title">
+      <span style="color:var(--ink3)">📁 البازارات السابقة (${pastBazaars.length})</span>
+    </div>
+    ${pastBazaarsHtml}
   </div>` : ''}
 
   <!-- ═══════ تقييماته ═══════ -->
@@ -1140,10 +1305,13 @@ function openEditModal() {
   const modal = document.getElementById('edit-profile-modal');
   if (!modal) return;
 
-  document.getElementById('edit-name').value     = myProfileData?.full_name || myUserProfile?.full_name || '';
-  document.getElementById('edit-phone').value    = myMergedPhone || '';
-  document.getElementById('edit-whatsapp').value = myProfileData?.whatsapp || '';
-  document.getElementById('edit-region').value   = myProfileData?.region   || '';
+  document.getElementById('edit-name').value      = myProfileData?.full_name || myUserProfile?.full_name || '';
+  document.getElementById('edit-phone').value     = myMergedPhone || '';
+  document.getElementById('edit-region').value    = myProfileData?.region   || '';
+  document.getElementById('edit-bio').value       = myProfileData?.bio      || '';
+  document.getElementById('edit-facebook').value  = myProfileData?.facebook_url  || '';
+  document.getElementById('edit-instagram').value = myProfileData?.instagram_url || '';
+  document.getElementById('edit-tiktok').value    = myProfileData?.tiktok_url    || '';
 
   const cityEl = document.getElementById('edit-city');
   if (cityEl) {
@@ -1156,6 +1324,30 @@ function openEditModal() {
   const cfmEl = document.getElementById('edit-password-confirm');
   if (pwdEl) pwdEl.value = '';
   if (cfmEl) cfmEl.value = '';
+
+  /* ── معاينة صورة الغلاف داخل المودال ── */
+  const cvThumb = document.getElementById('edit-cover-thumb-inner');
+  if (cvThumb) {
+    const cv = _toDirectImgUrl(myProfileData?.cover_url || '');
+    cvThumb.innerHTML = cv
+      ? `<img src="${cv}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" onerror="this.style.display='none'">`
+      : '';
+  }
+
+  /* ── معاينة الأفاتار داخل المودال ── */
+  const avThumb = document.getElementById('edit-avatar-thumb-inner');
+  if (avThumb) {
+    const av = _toDirectImgUrl(myProfileData?.avatar_url || '');
+    const initial = (myProfileData?.full_name || myUserProfile?.full_name || currentUser?.email || '?')[0].toUpperCase();
+    avThumb.innerHTML = av
+      ? `<img src="${av}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div class=\\'edit-avatar-thumb-init\\'>${initial}</div>'">`
+      : `<div class="edit-avatar-thumb-init">${initial}</div>`;
+  }
+
+  /* ── عداد البيو ── */
+  const bioEl      = document.getElementById('edit-bio');
+  const bioCountEl = document.getElementById('edit-bio-count');
+  if (bioEl && bioCountEl) bioCountEl.textContent = bioEl.value.length + ' / 200';
 
   document.getElementById('edit-error').style.display = 'none';
   modal.classList.add('open');
@@ -1170,8 +1362,11 @@ async function saveProfileDetails() {
   const name      = document.getElementById('edit-name').value.trim();
   const phone     = document.getElementById('edit-phone')?.value.trim()     || '';
   const city      = document.getElementById('edit-city')?.value             || '';
-  const whatsapp  = document.getElementById('edit-whatsapp').value.trim();
   const region    = document.getElementById('edit-region').value.trim();
+  const bio       = document.getElementById('edit-bio')?.value.trim()       || '';
+  const facebook  = document.getElementById('edit-facebook')?.value.trim()  || '';
+  const instagram = document.getElementById('edit-instagram')?.value.trim() || '';
+  const tiktok    = document.getElementById('edit-tiktok')?.value.trim()    || '';
   const newPwd    = document.getElementById('edit-password')?.value         || '';
   const cfmPwd    = document.getElementById('edit-password-confirm')?.value || '';
   const errorEl   = document.getElementById('edit-error');
@@ -1188,7 +1383,17 @@ async function saveProfileDetails() {
   }
 
   if (errorEl) errorEl.style.display = 'none';
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ جاري الحفظ...'; }
+
+  /* ── حالة التحميل ── */
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    const lbl = document.getElementById('edit-save-label');
+    const spn = document.getElementById('edit-save-spinner');
+    if (lbl) lbl.textContent = 'جاري الحفظ…';
+    if (spn) spn.style.display = 'inline-block';
+  }
+  document.querySelectorAll('#edit-profile-modal input, #edit-profile-modal textarea, #edit-profile-modal select')
+    .forEach(el => { el.disabled = true; });
 
   try {
     /* 1. حفظ في profiles (المصدر الرئيسي) */
@@ -1200,12 +1405,16 @@ async function saveProfileDetails() {
       );
     if (profilesErr) throw new Error('خطأ في حفظ البيانات الشخصية: ' + profilesErr.message);
 
-    /* 2. حفظ/تحديث organizer_profiles (مزامنة الاسم دائماً) */
-    const orgPayload = { user_id: currentUser.id, full_name: name };
-    if (whatsapp) orgPayload.whatsapp = whatsapp;
-    else if (myProfileData && 'whatsapp' in myProfileData) orgPayload.whatsapp = null;
-    if (region)   orgPayload.region = region;
-    else if (myProfileData && 'region' in myProfileData)   orgPayload.region = null;
+    /* 2. حفظ/تحديث organizer_profiles */
+    const orgPayload = {
+      user_id:       currentUser.id,
+      full_name:     name,
+      region:        region  || null,
+      bio:           bio     || null,
+      facebook_url:  facebook  || null,
+      instagram_url: instagram || null,
+      tiktok_url:    tiktok    || null,
+    };
 
     const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload);
     if (orgErr) throw new Error('خطأ في حفظ بيانات المنظّم: ' + orgErr.message);
@@ -1216,13 +1425,34 @@ async function saveProfileDetails() {
       if (pwdErr) throw new Error('تم حفظ البيانات لكن فشل تغيير كلمة المرور: ' + pwdErr.message);
     }
 
+    /* 4. مزامنة الاسم الجديد في جميع بازارات المستخدم (طبقة أمان ثانية — الـ Trigger في DB هو الأول) */
+    sbClient.rpc('sync_my_profile_to_bazaars').catch(() => {});
+
     closeEditModal();
+    showSuccessToast('✅ تم حفظ التعديلات بنجاح!');
     await _loadMyProfile();
   } catch (err) {
     showErr(err.message);
   } finally {
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'حفظ التعديلات'; }
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      const lbl = document.getElementById('edit-save-label');
+      const spn = document.getElementById('edit-save-spinner');
+      if (lbl) lbl.textContent = 'حفظ التعديلات';
+      if (spn) spn.style.display = 'none';
+    }
+    document.querySelectorAll('#edit-profile-modal input, #edit-profile-modal textarea, #edit-profile-modal select')
+      .forEach(el => { el.disabled = false; });
   }
+}
+
+function showSuccessToast(msg) {
+  const toast = document.getElementById('edit-success-toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.style.cssText = 'display:block;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:13px 30px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px rgba(5,150,105,.35);animation:toastIn .3s ease;';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
 }
 
 
@@ -1233,6 +1463,48 @@ function triggerAvatarUpload() {
   if (!currentUser) return;
   const fileInput = document.getElementById('avatar-file-input');
   if (fileInput) fileInput.click();
+}
+
+/* ================================================================
+   🖼️ رفع صورة الغلاف (Cover/Banner)
+   ================================================================ */
+function triggerCoverUpload() {
+  if (!currentUser) return;
+  document.getElementById('cover-file-input')?.click();
+}
+
+async function uploadCoverImage(inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+
+  const coverEl = document.getElementById('op-cover-img-el');
+  const uploadBtn = document.getElementById('op-cover-upload-btn');
+  if (uploadBtn) uploadBtn.textContent = '⏳ جارٍ الرفع…';
+
+  try {
+    const { data: { session } } = await sbClient.auth.getSession();
+    const authToken = session?.access_token;
+    if (!authToken) throw new Error('يجب تسجيل الدخول أولاً');
+
+    const r2Path    = `covers/${currentUser.id}/cover-${Date.now()}.webp`;
+    const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
+
+    /* معاينة فورية قبل إعادة التحميل */
+    if (coverEl) { coverEl.src = publicUrl; coverEl.style.display = 'block'; }
+
+    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
+      user_id:   currentUser.id,
+      full_name: myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
+      cover_url: publicUrl,
+    });
+    if (dbErr) throw new Error(dbErr.message);
+
+    await _loadMyProfile();
+  } catch (err) {
+    alert('تعذّر رفع صورة الغلاف: ' + err.message);
+    if (uploadBtn) uploadBtn.textContent = '📷 تغيير الغلاف';
+    await _loadMyProfile();
+  }
 }
 
 async function uploadAvatarImage(inputEl) {
@@ -1261,6 +1533,9 @@ async function uploadAvatarImage(inputEl) {
 
     const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData);
     if (dbErr) throw new Error(dbErr.message);
+
+    /* مزامنة الصورة الجديدة في جميع بازارات المستخدم (الـ Trigger يفعل هذا تلقائياً، هذا احتياط إضافي) */
+    sbClient.rpc('sync_my_profile_to_bazaars').catch(() => {});
 
     await _loadMyProfile();
   } catch (err) {

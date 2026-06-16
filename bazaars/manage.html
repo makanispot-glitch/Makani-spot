@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>إدارة بازاراتي — مكاني Spot</title>
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css?v=27">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-DCJNEVKVRH');</script>
+<!-- GlitchTip -->
+<script src="https://browser.sentry-cdn.com/7.99.0/bundle.min.js" crossorigin="anonymous"></script>
+<script>Sentry.init({dsn:"https://ed7c17027f844e3d8fec0e62c8913c8a@app.glitchtip.com/24757",environment:"production",tracesSampleRate:0.01,autoSessionTracking:false});</script>
+<!-- Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,"clarity","script","x75f1lzib4");</script>
+
+<style>
+/* ── Standalone Nav ── */
+.bz-standalone-nav{position:sticky;top:0;z-index:300;background:rgba(250,250,247,0.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:var(--shadow)}
+.bz-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.bz-nav-logo .logo-ar{font-size:20px;font-weight:900;font-family:var(--font-display);color:var(--dark)}
+.bz-nav-logo .logo-en{font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--orange)}
+.bz-nav-title{font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--ink2);padding:4px 12px;background:var(--orange-ultra);border-radius:var(--radius-pill)}
+.bz-nav-right{display:flex;align-items:center;gap:12px}
+.bz-nav-back{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-pill);font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--ink2);text-decoration:none;transition:color var(--dur-fast) var(--ease-out)}
+.bz-nav-back:hover{color:var(--orange)}
+@media(max-width:640px){.bz-standalone-nav{padding:0 16px;height:58px}.bz-nav-title{display:none}}
+
+/* ── Page ── */
+.mn-page{min-height:100vh;background:var(--surface2);padding-bottom:80px}
+
+/* ── Hero ── */
+.mn-hero{background:var(--navy-700);padding:28px 32px 22px;color:#fff;position:relative;overflow:hidden}
+.mn-hero::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(243,100,24,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(243,100,24,0.06) 1px,transparent 1px);background-size:48px 48px}
+.mn-hero::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 80% at 50% -10%,rgba(243,100,24,0.14) 0%,transparent 65%)}
+.mn-hero>*{position:relative;z-index:1}
+.mn-hero h1{font-size:22px;font-weight:900;font-family:var(--font-display);margin-bottom:4px}
+.mn-hero h1 span{color:var(--orange)}
+.mn-hero p{font-size:12px;color:rgba(255,255,255,0.6);max-width:520px}
+
+/* ── Guard ── */
+#mn-guard{text-align:center;padding:80px 24px;background:var(--surface);border-radius:var(--radius-2xl);border:1px solid var(--border);max-width:480px;margin:32px auto}
+#mn-guard .g-ico{font-size:52px;margin-bottom:16px}
+#mn-guard h2{font-size:20px;font-weight:900;color:var(--dark);margin-bottom:8px}
+#mn-guard p{font-size:14px;color:var(--ink3);max-width:380px;margin:0 auto 20px;line-height:1.7}
+
+/* ── Wrap ── */
+.mn-wrap{max-width:920px;margin:0 auto;padding:24px 20px}
+
+/* ══════════════════════════════
+   VIEW 1 — LIST
+══════════════════════════════ */
+.mn-filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.mn-filter-btn{padding:7px 16px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border);background:var(--surface);color:var(--ink2);cursor:pointer;transition:all var(--dur-fast) var(--ease-out)}
+.mn-filter-btn:hover{border-color:var(--orange);color:var(--orange)}
+.mn-filter-btn.active{background:var(--orange);border-color:var(--orange);color:#fff}
+
+.mn-cards{display:flex;flex-direction:column;gap:14px}
+.mn-card{background:var(--surface);border-radius:var(--radius-xl);border:1px solid var(--border);box-shadow:var(--shadow-xs);overflow:hidden;transition:box-shadow var(--dur-fast) var(--ease-out)}
+.mn-card:hover{box-shadow:var(--shadow)}
+.mn-card-top{display:flex;gap:16px;padding:16px 18px}
+.mn-card-img{width:80px;height:80px;border-radius:var(--radius-lg);overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#F47432,#c44a00);display:flex;align-items:center;justify-content:center;font-size:28px}
+.mn-card-img img{width:100%;height:100%;object-fit:cover}
+.mn-card-body{flex:1;min-width:0}
+.mn-card-title{font-size:15px;font-weight:900;color:var(--dark);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mn-card-meta{display:flex;flex-wrap:wrap;gap:7px;font-size:12px;color:var(--ink3);margin-bottom:7px}
+.mn-card-meta span{display:flex;align-items:center;gap:4px}
+.mn-card-actions{padding:11px 18px;border-top:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Status badges */
+.mn-status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}
+.mn-status.published{background:#ecfdf5;color:#047857;border:1px solid #6ee7b7}
+.mn-status.upcoming{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd}
+.mn-status.postponed{background:#fff7ed;color:#c2410c;border:1px solid #fdba74}
+.mn-status.cancelled{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+.mn-status.closed{background:var(--surface2);color:var(--ink3);border:1px solid var(--border)}
+.mn-status.pending_review{background:#fefce8;color:#a16207;border:1px solid #fde047}
+.mn-status.active{background:#ecfdf5;color:#047857;border:1px solid #6ee7b7}
+
+/* Buttons */
+.mn-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border);background:var(--surface);color:var(--ink2);cursor:pointer;transition:all var(--dur-fast) var(--ease-out)}
+.mn-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-ultra)}
+.mn-btn.primary{background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(243,100,24,.22)}
+.mn-btn.primary:hover{opacity:.9}
+.mn-btn.danger{border-color:#fca5a5;color:#dc2626}
+.mn-btn.danger:hover{background:#fef2f2;border-color:#dc2626}
+.mn-btn.warn{border-color:#fdba74;color:#c2410c}
+.mn-btn.warn:hover{background:#fff7ed;border-color:#f97316}
+.mn-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* Empty + Loading */
+.mn-empty{text-align:center;padding:60px 24px;background:var(--surface);border-radius:var(--radius-2xl);border:1px solid var(--border)}
+.mn-empty-ico{font-size:52px;margin-bottom:14px}
+.mn-empty-title{font-size:18px;font-weight:900;color:var(--dark);margin-bottom:8px}
+.mn-empty-desc{font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:20px}
+.mn-loading{text-align:center;padding:60px 20px;color:var(--ink3)}
+@keyframes mn-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.mn-spin{display:inline-block;animation:mn-spin 1s linear infinite;font-size:32px;margin-bottom:12px}
+
+/* ══════════════════════════════
+   VIEW 2 — DETAIL WITH TABS
+══════════════════════════════ */
+
+/* Detail header */
+.mn-detail-hdr{display:flex;align-items:center;gap:12px;padding:16px 0 14px;border-bottom:1.5px solid var(--border);margin-bottom:0}
+.mn-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border);background:var(--surface);color:var(--ink2);cursor:pointer;transition:all var(--dur-fast);flex-shrink:0}
+.mn-back-btn:hover{border-color:var(--orange);color:var(--orange)}
+.mn-detail-info{flex:1;min-width:0}
+.mn-detail-name{font-size:17px;font-weight:900;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;margin-bottom:4px}
+.mn-detail-sub{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mn-detail-view-link{font-size:11px;font-weight:700;color:var(--orange);text-decoration:none}
+.mn-detail-view-link:hover{text-decoration:underline}
+
+/* Tab bar */
+.mn-tabs{display:flex;gap:0;border-bottom:1.5px solid var(--border);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.mn-tabs::-webkit-scrollbar{display:none}
+.mn-tab{display:inline-flex;align-items:center;gap:6px;padding:13px 18px;font-size:13px;font-weight:700;font-family:var(--font-display);cursor:pointer;color:var(--ink3);border-bottom:2.5px solid transparent;margin-bottom:-1.5px;white-space:nowrap;transition:all var(--dur-fast);user-select:none}
+.mn-tab:hover{color:var(--ink2)}
+.mn-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.mn-tab .mn-tab-badge{font-size:10px;font-weight:900;padding:1px 6px;border-radius:10px;background:var(--orange);color:#fff;display:none}
+.mn-tab .mn-tab-badge.show{display:inline}
+
+/* Tab panels */
+.mn-tab-panel{display:none;padding:24px 0;animation:mn-fi .18s ease}
+.mn-tab-panel.active{display:block}
+@keyframes mn-fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════
+   FORM ELEMENTS (shared)
+══════════════════════════════ */
+.mn-fg{display:flex;flex-direction:column;gap:5px}
+.mn-fg label{font-size:13px;font-weight:700;color:var(--ink2);display:flex;align-items:center;gap:4px}
+.mn-fg label .req{color:var(--orange)}
+.mn-fg input,.mn-fg select,.mn-fg textarea{padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-body);font-size:14px;color:var(--ink);background:var(--surface2);outline:none;transition:border-color var(--dur-fast);width:100%;box-sizing:border-box}
+.mn-fg input:focus,.mn-fg select:focus,.mn-fg textarea:focus{border-color:var(--orange);background:var(--surface);box-shadow:var(--ring-focus)}
+.mn-fg textarea{resize:vertical;min-height:76px}
+.mn-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.mn-row{grid-template-columns:1fr}}
+.mn-hint{font-size:11px;color:var(--ink3);line-height:1.6}
+.mn-section-lbl{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.mn-form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px}
+.mn-form-card-title{font-size:14px;font-weight:900;color:var(--dark);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.mn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.mn-msg{display:none;font-size:13px;padding:10px 14px;border-radius:var(--radius-lg);margin-top:10px}
+.mn-msg.ok{background:#ecfdf5;color:#047857;border:1px solid #6ee7b7}
+.mn-msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+
+/* Reason chips */
+.mn-reason-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+.mn-reason-chip{padding:6px 13px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;border:1.5px solid var(--border);background:var(--surface2);color:var(--ink2);cursor:pointer;transition:all var(--dur-fast);font-family:var(--font-display)}
+.mn-reason-chip:hover{border-color:var(--orange);color:var(--orange)}
+.mn-reason-chip.selected{background:var(--orange);border-color:var(--orange);color:#fff}
+.mn-reason-chip.danger.selected{background:#dc2626;border-color:#dc2626;color:#fff}
+
+/* ══════════════════════════════
+   TAB: INFO — image uploads
+══════════════════════════════ */
+.mn-imgs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mn-img-slot{position:relative;aspect-ratio:1/1;border-radius:var(--radius-lg);overflow:hidden;background:var(--surface2);border:2px dashed var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink3);transition:border-color var(--dur-fast),background var(--dur-fast)}
+.mn-img-slot:hover{border-color:var(--orange);background:var(--orange-ultra)}
+.mn-img-slot.has-img{border-style:solid;border-color:#86efac;background:#f0fdf4}
+.mn-img-slot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.mn-img-remove{position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:rgba(220,38,38,.88);color:#fff;border:none;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5;line-height:1}
+.mn-img-remove:hover{background:#dc2626}
+.mn-cover-box{width:100%;height:120px;border:2px dashed var(--border);border-radius:var(--radius-lg);background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;overflow:hidden;text-align:center;padding:12px;transition:border-color var(--dur-fast)}
+.mn-cover-box:hover{border-color:var(--orange)}
+.mn-cover-box.has-img{border-style:solid;border-color:#86efac;background:#f0fdf4;padding:0}
+.mn-cover-box img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none}
+.mn-cover-box.has-img img{display:block}
+
+/* ══════════════════════════════
+   TAB: SLOTS — slot map
+══════════════════════════════ */
+.sm-sub-tabs{display:flex;gap:0;border-bottom:1.5px solid var(--border);margin-bottom:16px}
+.sm-sub-tab{padding:9px 18px;font-size:13px;font-weight:700;font-family:var(--font-display);cursor:pointer;color:var(--ink3);border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:all var(--dur-fast)}
+.sm-sub-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.sm-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:11px;font-weight:700}
+.sm-legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.sm-legend-item{display:flex;align-items:center;gap:5px;color:var(--ink2)}
+.sm-grid{display:flex;flex-direction:column;gap:6px}
+.sm-row{display:flex;gap:6px;align-items:center}
+.sm-row-lbl{font-size:10px;font-weight:800;color:var(--ink3);width:22px;text-align:center;flex-shrink:0}
+.sm-slot{width:44px;height:44px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:10px;font-weight:800;border:1.5px solid transparent;transition:all var(--dur-fast) var(--ease-out);flex-shrink:0}
+.sm-slot .sm-num{font-size:10px;font-weight:900}
+.sm-slot .sm-star{font-size:8px;position:absolute;top:2px;left:2px}
+.sm-slot.available{background:#ecfdf5;border-color:#86efac;color:#047857}
+.sm-slot.available:hover{background:#d1fae5;border-color:#34d399;transform:scale(1.08)}
+.sm-slot.booked,.sm-slot.pending{background:#e0f2fe;border-color:#7dd3fc;color:#0369a1;cursor:not-allowed}
+.sm-slot.reserved_by_organizer{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.sm-slot.reserved_by_organizer:hover{background:#fde68a;transform:scale(1.08)}
+.sm-slot.premium{box-shadow:0 0 0 2px rgba(245,158,11,.4)}
+.mn-slots-info{background:var(--orange-ultra);border:1px solid rgba(243,100,24,0.18);border-radius:var(--radius-lg);padding:12px 16px;display:flex;justify-content:space-between;margin-bottom:16px}
+.mn-slots-info-item{text-align:center}
+.mn-slots-info-val{font-size:22px;font-weight:900;color:var(--orange)}
+.mn-slots-info-lbl{font-size:11px;color:var(--ink3);margin-top:2px}
+
+/* ══════════════════════════════
+   TAB: STATUS — warning box
+══════════════════════════════ */
+.mn-warn-box{background:#fef2f2;border:1.5px solid #fca5a5;border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:14px}
+.mn-warn-box.orange{background:#fff7ed;border-color:#fdba74}
+.mn-warn-title{font-size:13px;font-weight:900;color:#dc2626;margin-bottom:5px}
+.mn-warn-title.orange{color:#c2410c}
+.mn-warn-text{font-size:12.5px;color:#7f1d1d;line-height:1.7}
+.mn-warn-text.orange{color:#7c2d12}
+.mn-status-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px}
+.mn-status-section.disabled{opacity:.5;pointer-events:none}
+.mn-status-title{font-size:15px;font-weight:900;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.mn-disabled-note{font-size:12px;color:var(--ink3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 13px;margin-bottom:14px}
+
+/* ══════════════════════════════
+   TAB: LOG
+══════════════════════════════ */
+.mn-log-list{display:flex;flex-direction:column;gap:0}
+.mn-log-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.mn-log-item:last-child{border-bottom:none}
+.mn-log-dot{width:32px;height:32px;border-radius:50%;background:var(--orange-ultra);border:1.5px solid rgba(243,100,24,.25);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px}
+.mn-log-body{flex:1}
+.mn-log-type{font-size:13px;font-weight:800;color:var(--dark)}
+.mn-log-note{font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.5}
+.mn-log-date{font-size:11px;color:var(--ink3);margin-top:4px}
+
+/* ══════════════════════════════
+   TAB: BOOKINGS
+══════════════════════════════ */
+.mn-bk-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden}
+.mn-bk-table{width:100%;border-collapse:collapse}
+.mn-bk-table thead tr{background:var(--surface2);border-bottom:1.5px solid var(--border)}
+.mn-bk-table thead th{padding:10px 14px;font-size:11px;font-weight:800;color:var(--ink3);text-align:right}
+.mn-bk-table tbody tr{border-bottom:1px solid var(--border);transition:background var(--dur-fast)}
+.mn-bk-table tbody tr:last-child{border-bottom:none}
+.mn-bk-table tbody tr:hover{background:var(--surface2)}
+.mn-bk-table tbody td{padding:10px 14px;font-size:12.5px;vertical-align:middle}
+.mn-bk-status{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:800}
+
+/* ══════════════════════════════
+   LOCK WINDOW BANNER
+══════════════════════════════ */
+.mn-lock-banner{display:none;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px;gap:10px;align-items:flex-start}
+.mn-lock-banner.show{display:flex}
+.mn-lock-banner-ico{font-size:22px;flex-shrink:0;margin-top:1px}
+.mn-lock-banner-body{flex:1}
+.mn-lock-banner-title{font-size:13px;font-weight:900;color:#92400e;margin-bottom:3px}
+.mn-lock-banner-desc{font-size:11.5px;color:#78350f;line-height:1.6}
+.mn-lock-badge{display:inline-flex;align-items:center;gap:4px;background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:20px;font-family:var(--font-display);letter-spacing:.2px}
+.mn-field-locked input,.mn-field-locked textarea,.mn-field-locked select{background:#fef9ee !important;border-color:#fde68a !important;color:var(--ink3) !important;cursor:not-allowed !important;pointer-events:none}
+.mn-field-locked label::after{content:' 🔒';font-size:10px;color:#d97706}
+
+/* ══════════════════════════════
+   ACTIVITY FEED
+══════════════════════════════ */
+.mn-activity{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px 20px;margin-bottom:0;margin-top:16px}
+.mn-activity-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mn-activity-title{font-size:13px;font-weight:900;color:var(--dark);display:flex;align-items:center;gap:7px}
+.mn-activity-see-all{font-size:11px;font-weight:700;color:var(--orange);background:var(--orange-ultra);border:1px solid rgba(243,100,24,.2);border-radius:var(--radius-pill);padding:4px 11px;cursor:pointer;transition:all var(--dur-fast);font-family:var(--font-display)}
+.mn-activity-see-all:hover{background:var(--orange);color:#fff}
+.mn-feed-list{display:flex;flex-direction:column;gap:0}
+.mn-feed-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);position:relative}
+.mn-feed-item:last-child{border-bottom:none;padding-bottom:0}
+.mn-feed-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
+.mn-feed-dot.log{background:var(--orange-ultra);border:1px solid rgba(243,100,24,.25)}
+.mn-feed-dot.booking{background:#ecfdf5;border:1px solid #6ee7b7}
+.mn-feed-dot.admin{background:#fef2f2;border:1px solid #fca5a5}
+.mn-feed-dot.system{background:#f0f9ff;border:1px solid #7dd3fc}
+.mn-feed-body{flex:1;min-width:0}
+.mn-feed-text{font-size:12.5px;font-weight:700;color:var(--dark);line-height:1.4}
+.mn-feed-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.mn-feed-time{font-size:10.5px;color:var(--ink3);white-space:nowrap;margin-top:2px}
+.mn-feed-new{display:inline-flex;align-items:center;background:#ecfdf5;color:#047857;font-size:10px;font-weight:900;padding:1px 6px;border-radius:10px;margin-right:5px;vertical-align:middle}
+
+/* ── Toast ── */
+#mn-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(14px);background:#059669;color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:12px 28px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px rgba(5,150,105,.35);opacity:0;transition:all .3s;pointer-events:none}
+#mn-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#mn-toast.error{background:#dc2626;box-shadow:0 6px 28px rgba(220,38,38,.35)}
+
+@media(max-width:560px){
+  .mn-card-top{flex-direction:column}
+  .mn-card-img{width:100%;height:160px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+  .mn-imgs-grid{grid-template-columns:repeat(3,1fr)}
+  .sm-slot{width:38px;height:38px}
+  .mn-tab{padding:10px 13px;font-size:12px}
+  .mn-bk-table{font-size:11.5px}
+}
+</style>
+</head>
+<body class="mn-page">
+
+<!-- ── NAV ── -->
+<nav class="bz-standalone-nav">
+  <a class="bz-nav-logo" href="/bazaars/">
+    <span class="logo-ar">مكاني</span>
+    <span class="logo-en">Spot</span>
+  </a>
+  <div class="bz-nav-title" id="nav-title">⚙️ إدارة البازارات</div>
+  <div class="bz-nav-right">
+    <a class="bz-nav-back" href="/bazaars/profile.html">← ملفي</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="mn-hero">
+  <h1 id="hero-title">إدارة <span>بازاراتي</span></h1>
+  <p id="hero-sub">تعديل التفاصيل، الإلغاء، التأجيل، وإدارة الأماكن بعد النشر</p>
+</div>
+
+<!-- ── CONTENT ── -->
+<div class="mn-wrap">
+
+  <!-- Guard -->
+  <div id="mn-guard" style="display:none">
+    <div class="g-ico" id="mn-guard-ico">🔒</div>
+    <h2 id="mn-guard-title">جارٍ التحقق…</h2>
+    <p id="mn-guard-desc">يُرجى الانتظار</p>
+    <div id="mn-guard-actions"></div>
+  </div>
+
+  <!-- Loading -->
+  <div id="mn-loading">
+    <div class="mn-loading">
+      <div class="mn-spin">⏳</div>
+      <div style="font-size:14px">جارٍ تحميل بازاراتك…</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW 1 — قائمة البازارات
+  ══════════════════════════════ -->
+  <div id="view-list" style="display:none">
+    <div class="mn-filters" id="mn-filters">
+      <button class="mn-filter-btn active" onclick="applyFilter('all',this)">الكل</button>
+      <button class="mn-filter-btn" onclick="applyFilter('published',this)">منشور</button>
+      <button class="mn-filter-btn" onclick="applyFilter('active',this)">نشط</button>
+      <button class="mn-filter-btn" onclick="applyFilter('upcoming',this)">قادم</button>
+      <button class="mn-filter-btn" onclick="applyFilter('postponed',this)">مؤجّل</button>
+      <button class="mn-filter-btn" onclick="applyFilter('pending_review',this)">قيد المراجعة</button>
+      <button class="mn-filter-btn" onclick="applyFilter('cancelled',this)">ملغي</button>
+      <button class="mn-filter-btn" onclick="applyFilter('closed',this)">منتهي</button>
+    </div>
+    <div class="mn-cards" id="mn-cards"></div>
+    <div id="mn-empty" style="display:none" class="mn-empty">
+      <div class="mn-empty-ico">🎪</div>
+      <div class="mn-empty-title">لا توجد بازارات</div>
+      <div class="mn-empty-desc">لم نجد بازارات تطابق الفلتر المحدد</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW 2 — إدارة بازار محدد
+  ══════════════════════════════ -->
+  <div id="view-detail" style="display:none">
+
+    <!-- Detail Header -->
+    <div class="mn-detail-hdr">
+      <button class="mn-back-btn" onclick="backToList()">← رجوع</button>
+      <div class="mn-detail-info">
+        <div class="mn-detail-name" id="detail-name">—</div>
+        <div class="mn-detail-sub">
+          <span class="mn-status" id="detail-status-badge"></span>
+          <a class="mn-detail-view-link" id="detail-view-link" href="#" target="_blank">عرض الصفحة ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="mn-activity" id="activity-feed">
+      <div class="mn-activity-hdr">
+        <div class="mn-activity-title">⚡ النشاط الأخير</div>
+        <button class="mn-activity-see-all" onclick="switchTab('log')">السجل الكامل ←</button>
+      </div>
+      <div id="activity-feed-list">
+        <div class="mn-loading" style="padding:16px 0;font-size:12px">
+          <div class="mn-spin" style="font-size:18px;margin-bottom:6px">⏳</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="mn-tabs">
+      <div class="mn-tab active" onclick="switchTab('info')"    id="tab-btn-info">    📝 المعلومات</div>
+      <div class="mn-tab"        onclick="switchTab('slots')"   id="tab-btn-slots">   📦 الأماكن</div>
+      <div class="mn-tab"        onclick="switchTab('status')"  id="tab-btn-status">  ⚙️ الحالة</div>
+      <div class="mn-tab"        onclick="switchTab('log')"     id="tab-btn-log">     📋 السجل</div>
+      <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings">🧾 الحجوزات <span class="mn-tab-badge" id="bk-badge"></span></div>
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 1: المعلومات
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel active" id="tab-info">
+
+      <!-- Lock Window Banner -->
+      <div class="mn-lock-banner" id="lock-banner-info">
+        <div class="mn-lock-banner-ico">🔒</div>
+        <div class="mn-lock-banner-body">
+          <div class="mn-lock-banner-title">
+            <span class="mn-lock-badge">🔒 Editing Locked</span>
+            &nbsp;— التعديل مقيّد قبل 24 ساعة من البدء
+          </div>
+          <div class="mn-lock-banner-desc">
+            لا يمكن تعديل الاسم، التواريخ، الموقع، أو ساعات العمل الآن.<br>
+            يُسمح فقط بتعديل <strong>الوصف والصور</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">✏️ معلومات البازار الأساسية</div>
+
+        <div class="mn-fg" style="margin-bottom:12px">
+          <label>اسم البازار <span class="req">*</span></label>
+          <input type="text" id="e-title" maxlength="100" placeholder="اسم البازار">
+        </div>
+
+        <div class="mn-row" style="margin-bottom:12px">
+          <div class="mn-fg">
+            <label>تاريخ البداية</label>
+            <input type="date" id="e-start-date">
+          </div>
+          <div class="mn-fg">
+            <label>تاريخ النهاية</label>
+            <input type="date" id="e-end-date">
+          </div>
+        </div>
+
+        <div class="mn-fg" style="margin-bottom:12px">
+          <label>اسم المكان / القاعة</label>
+          <input type="text" id="e-location" maxlength="150" placeholder="مثال: قاعة الأهرام">
+        </div>
+
+        <div class="mn-fg" style="margin-bottom:12px">
+          <label>رابط الموقع على خرائط Google</label>
+          <input type="url" id="e-location-url" dir="ltr" placeholder="https://maps.google.com/...">
+        </div>
+
+        <div class="mn-fg" style="margin-bottom:12px">
+          <label>ساعات العمل</label>
+          <input type="text" id="e-working-hours" placeholder="مثال: 10 ص — 9 م" maxlength="80">
+        </div>
+
+        <div class="mn-fg">
+          <label>وصف البازار</label>
+          <textarea id="e-description" rows="3" maxlength="800" placeholder="وصف موجز عن البازار…"></textarea>
+        </div>
+
+        <div id="edit-msg" class="mn-msg"></div>
+
+        <div class="mn-form-actions">
+          <button class="mn-btn primary" id="edit-save-btn" onclick="saveEditInfo()">💾 حفظ التعديلات</button>
+        </div>
+      </div>
+
+      <!-- Images card -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">🖼️ صور البازار</div>
+
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">صورة الغلاف</div>
+          <div class="mn-cover-box" id="e-cover-box" onclick="document.getElementById('e-cover-file').click()">
+            <div id="e-cover-placeholder" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <span style="font-size:28px">📷</span>
+              <span style="font-size:11px;font-weight:700;color:var(--ink3)">اضغط لتغيير الغلاف</span>
+            </div>
+            <img id="e-cover-preview" alt="الغلاف">
+            <div id="e-cover-status" style="font-size:10px;color:var(--ink3);position:absolute;bottom:6px;right:0;left:0;text-align:center"></div>
+          </div>
+          <input type="file" id="e-cover-file" accept="image/*" style="display:none" onchange="handleEditCover(this)">
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">صور إضافية (حتى 4)</div>
+          <div class="mn-imgs-grid" id="e-extras-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 2: الأماكن
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel" id="tab-slots">
+
+      <!-- Lock Window Banner (slots) -->
+      <div class="mn-lock-banner" id="lock-banner-slots">
+        <div class="mn-lock-banner-ico">🔒</div>
+        <div class="mn-lock-banner-body">
+          <div class="mn-lock-banner-title">
+            <span class="mn-lock-badge">🔒 Editing Locked</span>
+            &nbsp;— لا يمكن تعديل الأماكن قبل 24 ساعة من البدء
+          </div>
+          <div class="mn-lock-banner-desc">
+            لا يمكن تغيير عدد الأماكن أو نوعها (عادي / مميّز) خلال هذه الفترة.<br>
+            يمكنك فقط إدارة <strong>الحجوزات الداخلية</strong> من تبويب الحجز الداخلي.
+          </div>
+        </div>
+      </div>
+
+      <!-- Slot count -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">🔢 عدد الأماكن الإجمالي</div>
+
+        <div class="mn-slots-info" id="sc-info">
+          <div class="mn-slots-info-item">
+            <div class="mn-slots-info-val" id="sc-total">—</div>
+            <div class="mn-slots-info-lbl">الإجمالي</div>
+          </div>
+          <div class="mn-slots-info-item">
+            <div class="mn-slots-info-val" id="sc-booked" style="color:#0369a1">—</div>
+            <div class="mn-slots-info-lbl">محجوز</div>
+          </div>
+          <div class="mn-slots-info-item">
+            <div class="mn-slots-info-val" id="sc-available" style="color:#047857">—</div>
+            <div class="mn-slots-info-lbl">متاح</div>
+          </div>
+        </div>
+
+        <div class="mn-fg">
+          <label>العدد الإجمالي الجديد</label>
+          <input type="number" id="sc-new-total" min="1" max="1000" placeholder="أدخل العدد الجديد">
+          <div class="mn-hint" id="sc-hint">لا يمكن تقليل العدد عن الحجوزات الفعلية</div>
+        </div>
+        <div id="sc-msg" class="mn-msg"></div>
+        <div class="mn-form-actions">
+          <button class="mn-btn primary" id="sc-save-btn" onclick="saveSlotsCount()">✅ حفظ العدد</button>
+        </div>
+      </div>
+
+      <!-- Slot map -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">🗺️ خريطة الأماكن</div>
+
+        <!-- Sub-tabs -->
+        <div class="sm-sub-tabs">
+          <div class="sm-sub-tab active" id="smt-reserve"  onclick="switchSlotTab('reserve')">🔒 حجز داخلي</div>
+          <div class="sm-sub-tab"        id="smt-premium"  onclick="switchSlotTab('premium')">⭐ مميّز / عادي</div>
+        </div>
+
+        <!-- Reserve panel -->
+        <div id="smt-reserve-panel">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">
+            اضغط على مكان <span style="background:#ecfdf5;color:#047857;padding:1px 6px;border-radius:5px;font-weight:700">متاح</span>
+            لتحجزه داخلياً، أو على مكان
+            <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:700">محجوز بالمنظم</span>
+            لتحريره.
+          </div>
+          <div class="mn-row" style="margin-bottom:12px">
+            <div class="mn-fg">
+              <label>محجوز لـ (اختياري)</label>
+              <input type="text" id="sm-reserved-for" placeholder="مثال: أحمد محمد، شريك VIP…" maxlength="100">
+            </div>
+            <div class="mn-fg">
+              <label>ملاحظة داخلية (اختياري)</label>
+              <input type="text" id="sm-note" placeholder="مثال: لا يُباع، ادخل يدوياً…" maxlength="100">
+            </div>
+          </div>
+          <div class="sm-legend">
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> متاح</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> محجوز</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fcd34d"></div> محجوز بالمنظم</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#d97706;border-radius:50%"></div> مميّز ⭐</div>
+          </div>
+          <div class="sm-grid" id="sm-grid-reserve"></div>
+        </div>
+
+        <!-- Premium panel -->
+        <div id="smt-premium-panel" style="display:none">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">
+            اضغط على أي مكان لتبديله بين <span style="color:#d97706;font-weight:700">مميّز ⭐</span>
+            و <span style="color:var(--ink2);font-weight:700">عادي</span>.
+            سعر المميّز: <span id="sm-premium-price-display" style="color:var(--orange);font-weight:900">—</span>
+          </div>
+          <div class="sm-legend">
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> عادي — متاح</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fde68a;border:2px solid #f59e0b;border-radius:3px"></div> مميّز ⭐</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> محجوز (لا يتغير)</div>
+          </div>
+          <div class="sm-grid" id="sm-grid-premium"></div>
+        </div>
+
+        <div id="sm-msg" class="mn-msg" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 3: الحالة
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel" id="tab-status">
+
+      <!-- Booking Pause section -->
+      <div class="mn-status-section" id="pause-section">
+        <div class="mn-status-title">⏸️ إيقاف الحجوزات مؤقتاً</div>
+
+        <div class="mn-warn-box orange" id="pause-active-note" style="display:none">
+          <div class="mn-warn-title orange">⏸️ الحجوزات موقوفة حالياً</div>
+          <div class="mn-warn-text orange" id="pause-reason-display"></div>
+        </div>
+
+        <div id="pause-form-wrap">
+          <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;margin-bottom:12px">
+            إيقاف مؤقت للحجوزات دون إلغاء البازار. مفيد عند مراجعة العقود أو تأكيد الموقع.
+          </div>
+          <div class="mn-fg" id="pause-reason-wrap" style="margin-bottom:0">
+            <label>سبب الإيقاف (اختياري)</label>
+            <input type="text" id="pause-reason-input" placeholder="مثال: جارٍ مراجعة العقود…" maxlength="200">
+          </div>
+        </div>
+
+        <div id="pause-msg" class="mn-msg"></div>
+        <div class="mn-form-actions">
+          <button class="mn-btn warn" id="pause-toggle-btn" onclick="toggleBookingPause()">⏸️ إيقاف الحجوزات</button>
+        </div>
+      </div>
+
+      <!-- Postpone section -->
+      <div class="mn-status-section" id="postpone-section">
+        <div class="mn-status-title">📅 تأجيل موعد البازار</div>
+
+        <div class="mn-disabled-note" id="postpone-disabled-note" style="display:none"></div>
+
+        <div class="mn-warn-box orange" style="margin-bottom:14px">
+          <div class="mn-warn-title orange">⏰ تنبيه</div>
+          <div class="mn-warn-text orange">سيُشعَر جميع أصحاب الحجوزات الفعلية بالتأجيل وستُعطى لهم مهلة <strong>48 ساعة</strong> للرد (قبول أو إلغاء).</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px">الموعد الحالي</div>
+          <div style="font-size:14px;font-weight:700;color:var(--ink2);background:var(--surface2);padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border)" id="postpone-current-dates">—</div>
+        </div>
+
+        <div class="mn-row" style="margin-bottom:12px">
+          <div class="mn-fg">
+            <label>تاريخ البداية الجديد <span class="req">*</span></label>
+            <input type="date" id="p-new-start">
+          </div>
+          <div class="mn-fg">
+            <label>تاريخ النهاية الجديد <span class="req">*</span></label>
+            <input type="date" id="p-new-end">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">سبب التأجيل <span style="color:var(--orange)">*</span></div>
+          <div class="mn-reason-chips" id="postpone-reason-chips">
+            <div class="mn-reason-chip" onclick="selectPostponeReason('ظروف طارئة')">ظروف طارئة</div>
+            <div class="mn-reason-chip" onclick="selectPostponeReason('تعديل على المكان')">تعديل على المكان</div>
+            <div class="mn-reason-chip" onclick="selectPostponeReason('طلب من المنشأة')">طلب من المنشأة</div>
+            <div class="mn-reason-chip" onclick="selectPostponeReason('أسباب تشغيلية')">أسباب تشغيلية</div>
+            <div class="mn-reason-chip" onclick="selectPostponeReason('other')">سبب آخر…</div>
+          </div>
+        </div>
+
+        <div class="mn-fg" id="postpone-custom-wrap" style="display:none;margin-bottom:10px">
+          <label>اكتب السبب</label>
+          <textarea id="postpone-custom-reason" rows="2" placeholder="اشرح سبب التأجيل…" maxlength="300"></textarea>
+        </div>
+
+        <div id="postpone-msg" class="mn-msg"></div>
+        <div class="mn-form-actions">
+          <button class="mn-btn warn" id="postpone-confirm-btn" onclick="confirmPostpone()">📅 تأكيد التأجيل</button>
+        </div>
+      </div>
+
+      <!-- Cancel section -->
+      <div class="mn-status-section" id="cancel-section" style="border-color:#fca5a5">
+        <div class="mn-status-title">🚫 إلغاء البازار</div>
+
+        <div class="mn-disabled-note" id="cancel-disabled-note" style="display:none"></div>
+
+        <div class="mn-warn-box" style="margin-bottom:14px">
+          <div class="mn-warn-title">⚠️ تنبيه مهم</div>
+          <div class="mn-warn-text" id="cancel-warning-text">سيتم إلغاء البازار ويُشعَر جميع أصحاب الحجوزات الفعلية.</div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">سبب الإلغاء</div>
+          <div class="mn-reason-chips" id="cancel-reason-chips">
+            <div class="mn-reason-chip danger" onclick="selectCancelReason('ظروف طارئة')">ظروف طارئة</div>
+            <div class="mn-reason-chip danger" onclick="selectCancelReason('مشكلة في المكان')">مشكلة في المكان</div>
+            <div class="mn-reason-chip danger" onclick="selectCancelReason('ضعف الإقبال')">ضعف الإقبال</div>
+            <div class="mn-reason-chip danger" onclick="selectCancelReason('قرار شخصي')">قرار شخصي</div>
+            <div class="mn-reason-chip danger" onclick="selectCancelReason('other')">سبب آخر…</div>
+          </div>
+        </div>
+
+        <div class="mn-fg" id="cancel-custom-wrap" style="display:none;margin-bottom:10px">
+          <label>اكتب السبب</label>
+          <textarea id="cancel-custom-reason" rows="2" placeholder="اشرح سبب الإلغاء…" maxlength="300"></textarea>
+        </div>
+
+        <div id="cancel-msg" class="mn-msg"></div>
+        <div class="mn-form-actions">
+          <button class="mn-btn danger" id="cancel-confirm-btn" onclick="confirmCancel()">🚫 تأكيد الإلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 4: السجل
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel" id="tab-log">
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">📋 سجل التغييرات</div>
+        <div id="log-list-container">
+          <div class="mn-loading" style="padding:30px 0"><div class="mn-spin" style="font-size:22px">⏳</div></div>
+        </div>
+      </div>
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">📅 سجل التأجيلات</div>
+        <div id="postpone-history-container">
+          <div class="mn-loading" style="padding:20px 0"><div class="mn-spin" style="font-size:20px">⏳</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 5: الحجوزات
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel" id="tab-bookings">
+      <div id="bookings-container">
+        <div class="mn-loading" style="padding:40px 0"><div class="mn-spin">⏳</div></div>
+      </div>
+    </div>
+
+  </div><!-- /view-detail -->
+
+</div><!-- /mn-wrap -->
+
+<!-- ── Toast ── -->
+<div id="mn-toast"></div>
+
+<!-- ── Scripts ── -->
+<script src="../media-handler.js" defer></script>
+<script src="manage.js?v=20260620" defer></script>
+</body>
+</html>

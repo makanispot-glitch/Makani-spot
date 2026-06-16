@@ -468,6 +468,7 @@ async function orgSubmit() {
       name,
       organizer:             displayName,
       organizer_id:          currentUser.id,
+      organizer_avatar_url:  orgProfile?.avatar_url || null,
       is_organizer_verified: true,
       venue_name:            venue,
       venue_address:         addr,
