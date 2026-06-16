@@ -1426,7 +1426,7 @@ async function saveProfileDetails() {
     }
 
     /* 4. مزامنة الاسم الجديد في جميع بازارات المستخدم (طبقة أمان ثانية — الـ Trigger في DB هو الأول) */
-    sbClient.rpc('sync_my_profile_to_bazaars').catch(() => {});
+    sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
 
     closeEditModal();
     showSuccessToast('✅ تم حفظ التعديلات بنجاح!');
@@ -1446,13 +1446,15 @@ async function saveProfileDetails() {
   }
 }
 
-function showSuccessToast(msg) {
+function showSuccessToast(msg, isErr = false) {
   const toast = document.getElementById('edit-success-toast');
   if (!toast) return;
+  const bg  = isErr ? '#dc2626' : '#059669';
+  const shd = isErr ? 'rgba(220,38,38,.35)' : 'rgba(5,150,105,.35)';
   toast.textContent = msg;
-  toast.style.cssText = 'display:block;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:13px 30px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px rgba(5,150,105,.35);animation:toastIn .3s ease;';
+  toast.style.cssText = `display:block;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:13px 30px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px ${shd};animation:toastIn .3s ease`;
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
+  toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3500);
 }
 
 
@@ -1489,8 +1491,9 @@ async function uploadCoverImage(inputEl) {
     const r2Path    = `covers/${currentUser.id}/cover-${Date.now()}.webp`;
     const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
 
-    /* معاينة فورية قبل إعادة التحميل */
+    /* معاينة فورية */
     if (coverEl) { coverEl.src = publicUrl; coverEl.style.display = 'block'; }
+    if (uploadBtn) uploadBtn.textContent = '📷 تغيير الغلاف';
 
     const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
       user_id:   currentUser.id,
@@ -1499,9 +1502,10 @@ async function uploadCoverImage(inputEl) {
     }, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
 
+    showSuccessToast('✅ تم تحديث صورة البانر بنجاح');
     await _loadMyProfile();
   } catch (err) {
-    alert('تعذّر رفع صورة الغلاف: ' + err.message);
+    showSuccessToast('❌ تعذّر رفع صورة الغلاف: ' + err.message, true);
     if (uploadBtn) uploadBtn.textContent = '📷 تغيير الغلاف';
     await _loadMyProfile();
   }
@@ -1515,31 +1519,34 @@ async function uploadAvatarImage(inputEl) {
   if (inner) inner.innerHTML = `<span style="font-size:12px;animation:spin 1s linear infinite">⏳</span>`;
 
   try {
-    /* جلب الـ token لتمريره لـ /upload */
     const { data: { session } } = await sbClient.auth.getSession();
     const authToken = session?.access_token;
     if (!authToken) throw new Error('يجب تسجيل الدخول أولاً');
 
-    /* ضغط → WebP → R2 في مجلد avatars/ */
-    const r2Path   = `avatars/${currentUser.id}/avatar-${Date.now()}.webp`;
+    const r2Path    = `avatars/${currentUser.id}/avatar-${Date.now()}.webp`;
     const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
 
-    /* حفظ الرابط في organizer_profiles */
-    const updateData = {
+    /* معاينة فورية — تحديث الأفاتار في الصفحة قبل إعادة التحميل */
+    const avatarImgStyle = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+    if (inner) inner.innerHTML = `<img src="${publicUrl}" style="${avatarImgStyle}" alt="avatar">`;
+    document.querySelectorAll('.op-avatar').forEach(el => {
+      el.innerHTML = `<img src="${publicUrl}" style="${avatarImgStyle}" alt="avatar">`;
+    });
+
+    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
       user_id:    currentUser.id,
       full_name:  myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
       avatar_url: publicUrl,
-    };
-
-    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData, { onConflict: 'user_id' });
+    }, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
 
-    /* مزامنة الصورة الجديدة في جميع بازارات المستخدم (الـ Trigger يفعل هذا تلقائياً، هذا احتياط إضافي) */
-    sbClient.rpc('sync_my_profile_to_bazaars').catch(() => {});
+    /* مزامنة في بازارات المستخدم (الـ Trigger يفعلها تلقائياً، هذا احتياط) */
+    sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
 
+    showSuccessToast('✅ تم تحديث صورة البروفايل بنجاح');
     await _loadMyProfile();
   } catch (err) {
-    alert('تعذر رفع الصورة: ' + err.message);
+    showSuccessToast('❌ تعذّر رفع الصورة: ' + err.message, true);
     await _loadMyProfile();
   }
 }

@@ -4233,8 +4233,8 @@ async function adminCancelPostponement() {
   if (!_lastPostponementData){ toast('لا يوجد بيانات تأجيل — اختر بازاراً وانتظر المعاينة', 'e'); return; }
   const d    = _lastPostponementData;
   const b    = BAZAARS.find(x => x.id === bazaarId);
-  if (!confirm(`إلغاء التأجيل وإعادة مواعيد "${b?.name||bazaarId}"؟\nالمواعيد الجديدة: ${d.old_date_start} → ${d.old_date_end}\nسيُعاد تأكيد الحجوزات المعلّقة بسبب التأجيل.`)) return;
-  await _doCancelPostponement(bazaarId, d.id, d.old_date_start, d.old_date_end, d.new_date_start, d.new_date_end, b, 'unpost');
+  if (!confirm(`إلغاء التأجيل وإعادة مواعيد "${b?.name||bazaarId}"؟\nالمواعيد الجديدة: ${d.old_start_date} → ${d.old_end_date}\nسيُعاد تأكيد الحجوزات المعلّقة بسبب التأجيل.`)) return;
+  await _doCancelPostponement(bazaarId, d.id, d.old_start_date, d.old_end_date, d.new_start_date, d.new_end_date, b, 'unpost');
   _lastPostponementData = null;
   document.getElementById('ov-unpost-preview').style.display = 'none';
 }
@@ -4245,10 +4245,10 @@ async function adminCancelPostponementSingle(bazaarId, postponementId, oldStart,
   if (!confirm(`إلغاء التأجيل لبازار "${b?.name||bazaarId}"؟\nستُعاد المواعيد إلى: ${oldStart} → ${oldEnd}\nوسيُعاد تأكيد الحجوزات المعلّقة.`)) return;
   // fetch full row first to get new dates for log
   const { data: row } = await db.from('bazaar_postponements')
-    .select('new_date_start,new_date_end')
+    .select('new_start_date,new_end_date')
     .eq('id', postponementId)
     .maybeSingle();
-  await _doCancelPostponement(bazaarId, postponementId, oldStart, oldEnd, row?.new_date_start, row?.new_date_end, b, null);
+  await _doCancelPostponement(bazaarId, postponementId, oldStart, oldEnd, row?.new_start_date, row?.new_end_date, b, null);
   if (document.getElementById('pg-postpone')?.classList.contains('active')) loadPostponements();
 }
 
