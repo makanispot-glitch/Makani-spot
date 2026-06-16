@@ -1416,7 +1416,7 @@ async function saveProfileDetails() {
       tiktok_url:    tiktok    || null,
     };
 
-    const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload);
+    const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload, { onConflict: 'user_id' });
     if (orgErr) throw new Error('خطأ في حفظ بيانات المنظّم: ' + orgErr.message);
 
     /* 3. تغيير كلمة المرور إن وُجدت */
@@ -1496,7 +1496,7 @@ async function uploadCoverImage(inputEl) {
       user_id:   currentUser.id,
       full_name: myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
       cover_url: publicUrl,
-    });
+    }, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
 
     await _loadMyProfile();
@@ -1531,7 +1531,7 @@ async function uploadAvatarImage(inputEl) {
       avatar_url: publicUrl,
     };
 
-    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData);
+    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert(updateData, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
 
     /* مزامنة الصورة الجديدة في جميع بازارات المستخدم (الـ Trigger يفعل هذا تلقائياً، هذا احتياط إضافي) */

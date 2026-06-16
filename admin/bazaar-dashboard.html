@@ -3795,7 +3795,7 @@ async function loadAuditLog() {
 
   try {
     let q = db.from('bazaar_change_log')
-      .select('id,bazaar_id,change_type,changed_by,old_value,new_value,note,created_at, bazaars(name)', { count: 'exact' })
+      .select('id,bazaar_id,change_type,changed_by,change_data,note,created_at,bazaars(name)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range((_auditPage - 1) * _AUDIT_PER_PAGE, _auditPage * _AUDIT_PER_PAGE - 1);
 
@@ -3816,10 +3816,8 @@ async function loadAuditLog() {
       const lbl  = _AUDIT_LABELS[r.change_type] || { ico:'🔧', label: r.change_type };
       const date = r.created_at ? new Date(r.created_at).toLocaleString('ar-EG') : '—';
       const bzName = r.bazaars?.name || r.bazaar_id?.slice(0,8) + '…' || '—';
-      const oldV = r.old_value ? JSON.stringify(r.old_value).slice(0, 80) : '—';
-      const newV = r.new_value ? JSON.stringify(r.new_value).slice(0, 80) : '—';
-      const details = oldV !== '—' || newV !== '—'
-        ? `<span style="color:var(--rd);font-size:10px">${escHtml(oldV)}</span> → <span style="color:var(--gr);font-size:10px">${escHtml(newV)}</span>`
+      const details = r.change_data
+        ? `<span style="font-size:10px;color:var(--mu)">${escHtml(JSON.stringify(r.change_data).slice(0, 120))}</span>`
         : '—';
       return `<tr>
         <td style="font-size:10.5px;white-space:nowrap;color:var(--mu)">${date}</td>
@@ -3986,8 +3984,8 @@ async function loadPostponements() {
   try {
     const { data, error } = await db
       .from('bazaar_postponements')
-      .select('id,bazaar_id,old_date_start,old_date_end,new_date_start,new_date_end,reason,postponed_at,bazaars(name)')
-      .order('postponed_at', { ascending: false });
+      .select('id,bazaar_id,old_start_date,old_end_date,new_start_date,new_end_date,reason,created_at,bazaars(name)')
+      .order('created_at', { ascending: false });
     if (error) throw error;
 
     const total = data?.length || 0;
@@ -4013,9 +4011,9 @@ async function loadPostponements() {
 
     tbody.innerHTML = data.map(p => {
       const bzName   = p.bazaars?.name || p.bazaar_id?.slice(0,8) + '…';
-      const oldRange = `${p.old_date_start||'—'} → ${p.old_date_end||'—'}`;
-      const newRange = `${p.new_date_start||'—'} → ${p.new_date_end||'—'}`;
-      const pDate    = p.postponed_at ? new Date(p.postponed_at).toLocaleDateString('ar-EG') : '—';
+      const oldRange = `${p.old_start_date||'—'} → ${p.old_end_date||'—'}`;
+      const newRange = `${p.new_start_date||'—'} → ${p.new_end_date||'—'}`;
+      const pDate    = p.created_at ? new Date(p.created_at).toLocaleDateString('ar-EG') : '—';
       return `<tr>
         <td><span class="pr">${escHtml(bzName)}</span></td>
         <td style="font-size:11px;color:var(--rd)">${escHtml(oldRange)}</td>
@@ -4023,7 +4021,7 @@ async function loadPostponements() {
         <td style="font-size:11px;max-width:200px;word-break:break-word">${escHtml(p.reason||'—')}</td>
         <td><span class="ba ba-pa" id="pp-bk-${p.id}">—</span></td>
         <td style="font-size:11px;color:var(--mu)">${pDate}</td>
-        <td><button class="btn btn-sm btn-yw" style="font-size:10px" onclick="adminCancelPostponementSingle('${p.bazaar_id}','${p.id}','${p.old_date_start||''}','${p.old_date_end||''}')">⏪ إلغاء</button></td>
+        <td><button class="btn btn-sm btn-yw" style="font-size:10px" onclick="adminCancelPostponementSingle('${p.bazaar_id}','${p.id}','${p.old_start_date||''}','${p.old_end_date||''}')">⏪ إلغاء</button></td>
       </tr>`;
     }).join('');
 
@@ -4199,9 +4197,9 @@ async function previewLastPostponement() {
   try {
     const { data, error } = await db
       .from('bazaar_postponements')
-      .select('id,old_date_start,old_date_end,new_date_start,new_date_end,reason,postponed_at')
+      .select('id,old_start_date,old_end_date,new_start_date,new_end_date,reason,created_at')
       .eq('bazaar_id', bazaarId)
-      .order('postponed_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error) throw error;
@@ -4215,11 +4213,11 @@ async function previewLastPostponement() {
       <div style="display:flex;gap:20px;flex-wrap:wrap">
         <div>
           <div style="font-size:10px;color:var(--mu);margin-bottom:2px">الموعد القديم (سيُستعاد)</div>
-          <div style="font-weight:700;color:var(--gr)">${data.old_date_start||'—'} → ${data.old_date_end||'—'}</div>
+          <div style="font-weight:700;color:var(--gr)">${data.old_start_date||'—'} → ${data.old_end_date||'—'}</div>
         </div>
         <div>
           <div style="font-size:10px;color:var(--mu);margin-bottom:2px">الموعد الحالي (سيُلغى)</div>
-          <div style="font-weight:700;color:var(--rd)">${data.new_date_start||'—'} → ${data.new_date_end||'—'}</div>
+          <div style="font-weight:700;color:var(--rd)">${data.new_start_date||'—'} → ${data.new_end_date||'—'}</div>
         </div>
       </div>
       ${data.reason ? `<div style="margin-top:6px;font-size:11px;color:var(--mu)">السبب: ${escHtml(data.reason)}</div>` : ''}`;

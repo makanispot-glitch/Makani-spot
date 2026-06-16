@@ -91,6 +91,7 @@ async function bzInitAuth() {
       currentProfile = null;
       if (currentUser) await _loadBzProfile();
       bzRenderNavUser();
+      if (currentUser) bzLoadNotifications();
     });
   } catch (e) {
     console.warn('تعذّر تهيئة المصادقة:', e.message);
@@ -128,18 +129,6 @@ function bzRenderNavUser() {
     area.innerHTML = `
       <div class="bz-nav-user-wrap">
 
-        ${currentProfile?.is_verified ? `
-        <div class="bz-notif-wrap" id="bz-notif-btn" onclick="bzToggleNotifPanel(event)" title="إشعاراتي">
-          🔔
-          <span class="bz-notif-badge" id="bz-notif-badge" style="display:none">0</span>
-          <div class="bz-notif-panel" id="bz-notif-panel" onclick="event.stopPropagation()">
-            <div class="bz-notif-panel-hd">
-              <span>الإشعارات</span>
-              <button onclick="event.stopPropagation();bzMarkAllNotifsRead()" style="background:none;border:none;font-size:11px;color:var(--orange);cursor:pointer;font-family:'Cairo',sans-serif">تعليم الكل مقروء</button>
-            </div>
-            <div id="bz-notif-list"><div class="bz-notif-empty">جاري التحميل…</div></div>
-          </div>
-        </div>` : ''}
 
         ${currentProfile?.is_verified ? `
         <a class="bz-org-pill" href="/bazaars/organize.html">
