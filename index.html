@@ -1929,6 +1929,47 @@
 
 
   <!-- ================================================================
+     🪪 صفحة البروفايل العام الموحّد — هوية الناشر الرقمية
+     ================================================================ -->
+  <style>
+    .opp-wrap{max-width:1000px;margin:0 auto;padding:0 16px 60px}
+    .opp-cover{height:230px;border-radius:0 0 24px 24px;background:linear-gradient(135deg,#ffe6d2,#fff3ea);background-size:cover;background-position:center;position:relative}
+    .opp-head{display:flex;align-items:flex-end;gap:20px;margin-top:-56px;padding:0 14px;position:relative;z-index:2}
+    .opp-avatar{width:122px;height:122px;border-radius:50%;border:5px solid #fff;background:var(--orange,#F36418);color:#fff;display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:800;overflow:hidden;background-size:cover;background-position:center;box-shadow:0 6px 22px rgba(0,0,0,.12);flex-shrink:0}
+    .opp-headinfo{padding-bottom:10px}
+    .opp-name{font-size:26px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .opp-verified{color:#1d9bf0;font-size:20px}
+    .opp-type{color:#6b6b76;font-size:15px;margin-top:3px}
+    .opp-rolebadges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .opp-rbadge{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:rgba(243,100,24,.10);color:var(--orange,#F36418);border:1px solid rgba(243,100,24,.22)}
+    .opp-bio{margin:22px 4px 0;color:#3a3a42;font-size:15px;line-height:1.9;max-width:760px}
+    .opp-stats{display:flex;gap:14px;flex-wrap:wrap;margin:24px 4px 0}
+    .opp-stat{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px 22px;min-width:120px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+    .opp-stat b{font-size:24px;font-weight:800;color:#1a1a1f;display:block}
+    .opp-stat span{font-size:13px;color:#7a7a85}
+    .opp-section{margin-top:38px}
+    .opp-section-title{font-size:19px;font-weight:800;margin:0 4px 16px;display:flex;align-items:center;gap:8px}
+    .opp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+    .opp-card{background:#fff;border:1px solid #eee;border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;text-decoration:none;color:inherit;display:block}
+    .opp-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.10)}
+    .opp-card-img{height:140px;background:#f3f3f5;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:38px}
+    .opp-card-body{padding:13px 15px}
+    .opp-card-name{font-weight:700;font-size:15px;margin-bottom:5px}
+    .opp-card-meta{font-size:12.5px;color:#7a7a85;display:flex;justify-content:space-between;gap:8px}
+    .opp-card-price{color:var(--orange,#F36418);font-weight:700}
+    .opp-empty{color:#9a9aa3;font-size:14px;padding:24px 4px}
+    .opp-social{display:flex;gap:10px;margin:20px 4px 0;flex-wrap:wrap}
+    .opp-social a{width:40px;height:40px;border-radius:50%;background:#f5f5f7;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px;border:1px solid #eee}
+    @media(max-width:560px){.opp-cover{height:160px}.opp-avatar{width:92px;height:92px;font-size:34px}.opp-name{font-size:21px}.opp-head{margin-top:-44px}}
+  </style>
+  <div id="pg-owner-profile" class="page">
+    <div class="opp-wrap" id="opp-root">
+      <div style="text-align:center;padding:90px 0;color:#9a9aa3">⏳ جاري تحميل البروفايل…</div>
+    </div>
+  </div><!-- end pg-owner-profile -->
+
+
+  <!-- ================================================================
      📄 صفحة الماركت بليس (كل المساحات) — من الكود الأول
      ================================================================ -->
   <div id="pg-market" class="page">

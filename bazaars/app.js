@@ -1521,7 +1521,9 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars }, userId, fallbac
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;overflow:hidden">
     <div style="background:linear-gradient(135deg,rgba(243,100,24,.10),rgba(243,100,24,.03));
                 padding:16px 20px;border-bottom:1px solid var(--border);
-                display:flex;align-items:center;gap:14px">
+                display:flex;align-items:center;gap:14px;
+                cursor:pointer;user-select:none"
+         onclick="window.location.href='/bazaars/profile.html?organizer=${userId}'">
       <div style="width:56px;height:56px;border-radius:50%;
                   background:linear-gradient(180deg,#F47432 0%,#F36418 100%);
                   display:flex;align-items:center;justify-content:center;
@@ -1568,25 +1570,6 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars }, userId, fallbac
           <div style="font-size:12px;font-weight:800;color:var(--ink2)">${joinDate}</div>
           <div style="font-size:10px;color:var(--ink3)">تاريخ الانضمام</div>
         </div>` : ''}
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border);flex-wrap:wrap">
-        ${org.whatsapp ? `
-        <a href="https://wa.me/${org.whatsapp.replace(/\D/g,'')}" target="_blank"
-           style="display:inline-flex;align-items:center;gap:5px;
-                  background:rgba(34,197,94,.12);color:#22C55E;
-                  border:1px solid rgba(34,197,94,.3);border-radius:8px;
-                  padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none"
-           onclick="event.stopPropagation()">
-          💬 واتساب
-        </a>` : ''}
-        <a href="/bazaars/profile.html?organizer=${userId}"
-           style="display:inline-flex;align-items:center;gap:5px;
-                  background:rgba(243,100,24,.10);color:var(--orange);
-                  border:1px solid rgba(243,100,24,.28);border-radius:8px;
-                  padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none"
-           onclick="event.stopPropagation()">
-          👤 صفحة المنظّم ←
-        </a>
       </div>
       ${reviewsHtml}
     </div>

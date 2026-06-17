@@ -1502,6 +1502,9 @@ async function uploadCoverImage(inputEl) {
     }, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
 
+    /* 🪪 توحيد: حدّث المصدر الموحّد profiles.cover_url */
+    sbClient.from('profiles').update({ cover_url: publicUrl }).eq('id', currentUser.id).then(null, () => {});
+
     showSuccessToast('✅ تم تحديث صورة البانر بنجاح');
     await _loadMyProfile();
   } catch (err) {
@@ -1539,6 +1542,9 @@ async function uploadAvatarImage(inputEl) {
       avatar_url: publicUrl,
     }, { onConflict: 'user_id' });
     if (dbErr) throw new Error(dbErr.message);
+
+    /* 🪪 توحيد: حدّث المصدر الموحّد profiles.avatar_url ليظهر في كل المنصة */
+    sbClient.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id).then(null, () => {});
 
     /* مزامنة في بازارات المستخدم (الـ Trigger يفعلها تلقائياً، هذا احتياط) */
     sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});

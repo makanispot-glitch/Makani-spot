@@ -645,6 +645,14 @@ async function checkRoleAndProceed(user) {
     phone:    profile.phone || '',
     role:     'owner',
     planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
+    /* 🪪 حقول البروفايل العام الموحد */
+    avatarUrl:  profile.avatar_url  || '',
+    coverUrl:   profile.cover_url   || '',
+    bio:        profile.bio         || '',
+    entityName: profile.entity_name || '',
+    entityType: profile.entity_type || '',
+    isVerified: !!profile.is_verified,
+    roles:      Array.isArray(profile.roles) ? profile.roles : [],
   };
 
   /* 🔒 باقة Starter — لوحة التحكم تتطلب Growth فما فوق */
@@ -718,6 +726,7 @@ function initDashboard() {
   setTxt('sb-initial', currentOwner.initial);
   setTxt('sb-name',    currentOwner.name);
   setTxt('sb-place',   currentOwner.place ? '📍 ' + currentOwner.place : '');
+  _applySidebarAvatar();   /* 🪪 توحيد صورة السايدبار من profiles.avatar_url */
 
   /* ملء حقول الإعدادات تلقائياً */
   const stName  = document.getElementById('st-name');
@@ -2522,6 +2531,7 @@ const VIEW_TITLES = {
   'add-space':  'إضافة مساحة جديدة',
   'add-bazaar': 'تنظيم بازار',
   'alerts':     'التنبيهات',
+  'public-profile': 'البروفايل العام',
   'settings':   'الإعدادات',
 };
 
@@ -2543,6 +2553,7 @@ function goTo(viewId, navEl) {
   if (viewId === 'add-bazaar') renderAddBazaarView();
   if (viewId === 'ratings')    loadOwnerRatings();   /* تحديث القائمة والسجل من Supabase */
   if (viewId === 'bookings')   { loadBookingsRemote().then(renderBookings); }
+  if (viewId === 'public-profile') renderProfileView();
 }
 
 function setPeriod(p, btn) {
@@ -4629,6 +4640,206 @@ async function saveSettings() {
 }
 
 /* ══════════════════════════════════════════
+   🪪  البروفايل العام الموحّد — profiles
+   ══════════════════════════════════════════ */
+let _entityTypesLoaded = false;
+
+/* تحميل أنواع الكيانات من قاعدة البيانات (قابلة للتوسع من الأدمن) */
+async function loadEntityTypes(selected) {
+  const sel = document.getElementById('pp-entity-type');
+  if (!sel) return;
+  if (!_entityTypesLoaded) {
+    const sb = getSB();
+    let types = [];
+    if (sb) {
+      const { data } = await sb.from('entity_types')
+        .select('name').eq('is_active', true).order('sort_order', { ascending: true });
+      types = (data || []).map(r => r.name);
+    }
+    sel.innerHTML = '<option value="">— اختر النوع —</option>' +
+      types.map(t => `<option value="${_escAttr(t)}">${t}</option>`).join('');
+    _entityTypesLoaded = true;
+  }
+  if (selected != null) sel.value = selected;
+}
+
+function _escAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+
+/* ملء قسم البروفايل العام بالبيانات الحالية */
+async function renderProfileView() {
+  if (!currentOwner) return;
+  await loadEntityTypes(currentOwner.entityType || '');
+
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  setVal('pp-entity-name', currentOwner.entityName);
+  setVal('pp-bio',         currentOwner.bio);
+
+  /* صورة الأفاتار */
+  const av = document.getElementById('pp-avatar');
+  if (av) {
+    if (currentOwner.avatarUrl) {
+      av.style.backgroundImage = `url("${currentOwner.avatarUrl}")`;
+      av.textContent = '';
+    } else {
+      av.style.backgroundImage = '';
+      av.textContent = currentOwner.initial || 'م';
+    }
+  }
+  /* صورة الغلاف */
+  const cv = document.getElementById('pp-cover-wrap');
+  if (cv) cv.style.backgroundImage = currentOwner.coverUrl ? `url("${currentOwner.coverUrl}")` : '';
+
+  /* رابط الصفحة العامة */
+  const link = document.getElementById('pp-public-link');
+  if (link) link.href = `/?p=owner-profile&id=${currentOwner.id}`;
+
+  /* badges الأدوار */
+  const badgesEl = document.getElementById('pp-roles-badges');
+  if (badgesEl) {
+    const map = {
+      space_owner:      { ico: '🏢', label: 'صاحب مساحات' },
+      bazaar_organizer: { ico: '🎪', label: 'منظم فعاليات' },
+    };
+    const roles = (currentOwner.roles && currentOwner.roles.length) ? currentOwner.roles : ['space_owner'];
+    badgesEl.innerHTML = roles.map(r => {
+      const m = map[r]; if (!m) return '';
+      return `<span class="badge" style="background:var(--orange-pale);color:var(--orange);border:1px solid var(--border2)">${m.ico} ${m.label}</span>`;
+    }).join('');
+  }
+
+  ppSyncPreview();
+}
+
+/* تحديث المعاينة الحية للاسم/النوع/التوثيق */
+function ppSyncPreview() {
+  const name = document.getElementById('pp-entity-name')?.value.trim();
+  const type = document.getElementById('pp-entity-type')?.value;
+  const nameEl = document.getElementById('pp-preview-name');
+  const typeEl = document.getElementById('pp-preview-type');
+  const verEl  = document.getElementById('pp-preview-verified');
+  if (nameEl) nameEl.textContent = name || currentOwner?.name || '—';
+  if (typeEl) typeEl.textContent = type || 'لم يُحدّد نوع الكيان';
+  if (verEl)  verEl.style.display = currentOwner?.isVerified ? 'inline' : 'none';
+}
+
+function _ppMsg(type, text) {
+  const msgEl = document.getElementById('pp-msg');
+  if (!msgEl) return;
+  msgEl.className = `alert-item ${type}`;
+  msgEl.style.display = 'flex';
+  const ico = type === 'success' ? '✅' : '❌';
+  msgEl.innerHTML = `<span class="alert-ico">${ico}</span><div class="alert-text"><strong>${text}</strong></div>`;
+  setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+}
+
+/* رفع صورة البروفايل (avatar) — يُحفظ في profiles.avatar_url */
+async function uploadProfileAvatar(input) {
+  const file = input.files?.[0];
+  if (!file || !currentOwner) return;
+  if (file.size > 20 * 1024 * 1024) { _ppMsg('danger', 'الصورة أكبر من 20 ميجا.'); input.value = ''; return; }
+
+  const av = document.getElementById('pp-avatar');
+  const prevImg = av ? av.style.backgroundImage : '';
+  if (av) { av.style.backgroundImage = `url("${URL.createObjectURL(file)}")`; av.textContent = ''; av.style.opacity = '0.55'; }
+
+  try {
+    const sb = getSB();
+    const { data: { session } } = sb ? await sb.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token || SUPABASE_KEY;
+    const r2Path = `avatars/${currentOwner.id}/avatar-${Date.now()}.webp`;
+    const url = await uploadSingleImageToR2(file, r2Path, token);
+
+    await sb.from('profiles').update({ avatar_url: url }).eq('id', currentOwner.id);
+    currentOwner.avatarUrl = url;
+    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+
+    if (av) { av.style.backgroundImage = `url("${url}")`; av.style.opacity = '1'; }
+    /* توحيد: حدّث أفاتار السايدبار أيضاً */
+    _applySidebarAvatar();
+    _ppMsg('success', 'تم تحديث صورة البروفايل بنجاح.');
+  } catch (err) {
+    if (av) { av.style.backgroundImage = prevImg; av.style.opacity = '1'; if (!prevImg) av.textContent = currentOwner.initial || 'م'; }
+    _ppMsg('danger', 'فشل رفع الصورة: ' + err.message);
+  } finally { input.value = ''; }
+}
+
+/* رفع صورة الغلاف — يُحفظ في profiles.cover_url */
+async function uploadProfileCover(input) {
+  const file = input.files?.[0];
+  if (!file || !currentOwner) return;
+  if (file.size > 20 * 1024 * 1024) { _ppMsg('danger', 'الصورة أكبر من 20 ميجا.'); input.value = ''; return; }
+
+  const cv = document.getElementById('pp-cover-wrap');
+  const prev = cv ? cv.style.backgroundImage : '';
+  const lbl = document.getElementById('pp-cover-label');
+  if (lbl) lbl.textContent = 'جاري الرفع…';
+  if (cv) cv.style.backgroundImage = `url("${URL.createObjectURL(file)}")`;
+
+  try {
+    const sb = getSB();
+    const { data: { session } } = sb ? await sb.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token || SUPABASE_KEY;
+    const r2Path = `covers/${currentOwner.id}/cover-${Date.now()}.webp`;
+    const url = await uploadSingleImageToR2(file, r2Path, token);
+
+    await sb.from('profiles').update({ cover_url: url }).eq('id', currentOwner.id);
+    currentOwner.coverUrl = url;
+    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+
+    if (cv) cv.style.backgroundImage = `url("${url}")`;
+    _ppMsg('success', 'تم تحديث صورة الغلاف بنجاح.');
+  } catch (err) {
+    if (cv) cv.style.backgroundImage = prev;
+    _ppMsg('danger', 'فشل رفع الغلاف: ' + err.message);
+  } finally { if (lbl) lbl.textContent = 'تغيير الغلاف'; input.value = ''; }
+}
+
+/* حفظ بيانات الجهة (الاسم، النوع، الوصف) في profiles */
+async function saveProfileForm() {
+  if (!currentOwner) return;
+  const entityName = document.getElementById('pp-entity-name')?.value.trim() || null;
+  const entityType = document.getElementById('pp-entity-type')?.value || null;
+  const bio        = document.getElementById('pp-bio')?.value.trim() || null;
+  const btn = document.getElementById('pp-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ…'; }
+
+  try {
+    const sb = getSB();
+    if (sb && currentOwner.id) {
+      const { error } = await sb.from('profiles')
+        .update({ entity_name: entityName, entity_type: entityType, bio })
+        .eq('id', currentOwner.id);
+      if (error) throw error;
+    }
+    currentOwner.entityName = entityName || '';
+    currentOwner.entityType = entityType || '';
+    currentOwner.bio        = bio || '';
+    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+    ppSyncPreview();
+    _ppMsg('success', 'تم حفظ البروفايل بنجاح.');
+  } catch (err) {
+    _ppMsg('danger', 'تعذّر الحفظ: ' + (err.message || err));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 حفظ البروفايل'; }
+  }
+}
+
+/* توحيد صورة السايدبار من profiles.avatar_url */
+function _applySidebarAvatar() {
+  const el = document.getElementById('sb-initial');
+  if (!el || !currentOwner) return;
+  if (currentOwner.avatarUrl) {
+    el.style.backgroundImage   = `url("${currentOwner.avatarUrl}")`;
+    el.style.backgroundSize     = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = '';
+    el.textContent = currentOwner.initial || 'م';
+  }
+}
+
+/* ══════════════════════════════════════════
    🔔  تفضيلات التنبيهات — owner_settings
    ══════════════════════════════════════════ */
 function applyNotifPrefsToUI() {
@@ -4903,6 +5114,14 @@ async function checkSessionOnLoad() {
     phone:    profile.phone || '',
     role:     'owner',
     planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
+    /* 🪪 حقول البروفايل العام الموحد */
+    avatarUrl:  profile.avatar_url  || '',
+    coverUrl:   profile.cover_url   || '',
+    bio:        profile.bio         || '',
+    entityName: profile.entity_name || '',
+    entityType: profile.entity_type || '',
+    isVerified: !!profile.is_verified,
+    roles:      Array.isArray(profile.roles) ? profile.roles : [],
   };
   sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
   initDashboard();

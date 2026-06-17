@@ -53,6 +53,7 @@ let selectedAct = '';    // النشاط المحدد في الفلتر
 let sbClient = null;  // كائن Supabase يُهيَّأ عند التحميل
 let currentUser = null;  // بيانات المستخدم المسجّل حالياً
 let currentProfile = null;  // بيانات الـ profile من قاعدة البيانات
+let currentAvatarUrl = null; // 🪪 المصدر الموحّد: profiles.avatar_url
 let _authRedirect = false; // هل وصلنا من redirect مصادقة (Google OAuth / تأكيد بريد)؟
 //   يُلتقط من الـ URL عند التحميل — هو الحالة الوحيدة التي يُسمح فيها
 //   بالتحويل التلقائي للداشبورد دون فعل صريح من المستخدم
@@ -134,6 +135,11 @@ document.addEventListener('DOMContentLoaded', function () {
       showPage(urlPage);
     } else if (urlPage === 'market') {
       window.location.replace('/spaces/');
+    } else if (urlPage === 'owner-profile') {
+      // 🪪 صفحة البروفايل العام الموحّد: /?p=owner-profile&id=UUID
+      const pid = new URLSearchParams(window.location.search).get('id');
+      showPage('owner-profile');
+      loadOwnerProfile(pid);
     }
     // dashboard يُعالَج في initAuth بعد التحقق من الجلسة
   }
@@ -1722,6 +1728,159 @@ function goToDashboard() {
 
 
 /* ================================================================
+   🪪 البروفايل العام الموحّد — هوية الناشر الرقمية
+   يجلب البيانات عبر RPC: get_public_profile (بروفايل + مساحات + بازارات)
+   ================================================================ */
+function _oppEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+async function loadOwnerProfile(userId) {
+  const root = document.getElementById('opp-root');
+  if (!root) return;
+  if (!userId) { root.innerHTML = _oppNotFound(); return; }
+
+  // ننتظر تهيئة العميل إن لزم
+  let tries = 0;
+  while (!sbClient && tries < 20) { await new Promise(r => setTimeout(r, 100)); tries++; }
+  if (!sbClient) { root.innerHTML = _oppNotFound(); return; }
+
+  try {
+    const { data, error } = await sbClient.rpc('get_public_profile', { p_user_id: userId });
+    if (error) throw error;
+    if (!data || !data.found) { root.innerHTML = _oppNotFound(); return; }
+    renderOwnerProfile(data);
+  } catch (e) {
+    console.warn('[owner-profile] load error:', e.message || e);
+    root.innerHTML = _oppNotFound();
+  }
+}
+
+function _oppNotFound() {
+  return `<div style="text-align:center;padding:80px 20px;color:#9a9aa3">
+    <div style="font-size:42px;margin-bottom:10px">🪪</div>
+    <div style="font-size:18px;font-weight:700;color:#55555f">لم يتم العثور على هذا البروفايل</div>
+    <div style="margin-top:8px">قد يكون الحساب غير متاح أو تم حذفه.</div>
+    <a href="/" class="btn-primary" style="display:inline-block;margin-top:20px;padding:10px 22px;border-radius:12px;background:var(--orange,#F36418);color:#fff;text-decoration:none">العودة للرئيسية</a>
+  </div>`;
+}
+
+function renderOwnerProfile(data) {
+  const root = document.getElementById('opp-root');
+  const p = data.profile || {};
+  const spaces  = data.spaces  || [];
+  const bazaars = data.bazaars || [];
+  const roles = Array.isArray(p.roles) ? p.roles : [];
+
+  const displayName = p.entity_name || p.full_name || 'ناشر داخل مكاني سبوت';
+  const initial = (displayName.trim()[0] || 'م');
+
+  // الأفاتار: avatar_url من profiles (المصدر الموحد) ثم org_logo كاحتياط
+  const avatarUrl = p.avatar_url || p.org_logo || '';
+  const avatarHtml = avatarUrl
+    ? `<div class="opp-avatar" style="background-image:url('${_oppEsc(avatarUrl)}')"></div>`
+    : `<div class="opp-avatar">${_oppEsc(initial)}</div>`;
+
+  const coverStyle = p.cover_url ? `style="background-image:url('${_oppEsc(p.cover_url)}')"` : '';
+
+  // badges الأدوار
+  const roleMap = {
+    space_owner:      { ico: '🏢', label: 'صاحب مساحات' },
+    bazaar_organizer: { ico: '🎪', label: 'منظم فعاليات' },
+  };
+  const effectiveRoles = roles.length ? roles : (spaces.length ? ['space_owner'] : (bazaars.length ? ['bazaar_organizer'] : []));
+  const roleBadges = effectiveRoles.map(r => {
+    const m = roleMap[r]; if (!m) return '';
+    return `<span class="opp-rbadge">${m.ico} ${m.label}</span>`;
+  }).join('');
+
+  // الإحصائيات
+  const statsHtml = `
+    ${spaces.length  ? `<div class="opp-stat"><b>${spaces.length}</b><span>مساحة منشورة</span></div>` : ''}
+    ${bazaars.length ? `<div class="opp-stat"><b>${bazaars.length}</b><span>بازار / فعالية</span></div>` : ''}
+    ${p.region ? `<div class="opp-stat"><b style="font-size:17px;padding-top:5px">📍 ${_oppEsc(p.region)}</b><span>الموقع</span></div>` : ''}`;
+
+  // روابط التواصل (إن وُجدت من organizer_profiles)
+  const social = [
+    p.whatsapp      ? `<a href="https://wa.me/${_oppEsc(String(p.whatsapp).replace(/[^0-9]/g,''))}" target="_blank" rel="noopener" title="واتساب">🟢</a>` : '',
+    p.instagram_url ? `<a href="${_oppEsc(p.instagram_url)}" target="_blank" rel="noopener" title="إنستغرام">📸</a>` : '',
+    p.facebook_url  ? `<a href="${_oppEsc(p.facebook_url)}" target="_blank" rel="noopener" title="فيسبوك">📘</a>` : '',
+    p.tiktok_url    ? `<a href="${_oppEsc(p.tiktok_url)}" target="_blank" rel="noopener" title="تيك توك">🎵</a>` : '',
+  ].filter(Boolean).join('');
+
+  // قسم المساحات
+  const spacesSection = roles.includes('space_owner') || spaces.length ? `
+    <div class="opp-section">
+      <div class="opp-section-title">🏢 المساحات المنشورة</div>
+      ${spaces.length
+        ? `<div class="opp-grid">${spaces.map(_oppSpaceCard).join('')}</div>`
+        : `<div class="opp-empty">لا توجد مساحات منشورة حالياً.</div>`}
+    </div>` : '';
+
+  // قسم البازارات
+  const bazaarsSection = roles.includes('bazaar_organizer') || bazaars.length ? `
+    <div class="opp-section">
+      <div class="opp-section-title">🎪 البازارات والفعاليات</div>
+      ${bazaars.length
+        ? `<div class="opp-grid">${bazaars.map(_oppBazaarCard).join('')}</div>`
+        : `<div class="opp-empty">لا توجد فعاليات منشورة حالياً.</div>`}
+    </div>` : '';
+
+  root.innerHTML = `
+    <div class="opp-cover" ${coverStyle}></div>
+    <div class="opp-head">
+      ${avatarHtml}
+      <div class="opp-headinfo">
+        <div class="opp-name">${_oppEsc(displayName)}${p.is_verified ? '<span class="opp-verified" title="حساب موثّق">✔️</span>' : ''}</div>
+        <div class="opp-type">${_oppEsc(p.entity_type || 'ناشر داخل المنصة')}</div>
+        ${roleBadges ? `<div class="opp-rolebadges">${roleBadges}</div>` : ''}
+      </div>
+    </div>
+    ${p.bio ? `<div class="opp-bio">${_oppEsc(p.bio)}</div>` : ''}
+    ${social ? `<div class="opp-social">${social}</div>` : ''}
+    ${statsHtml.trim() ? `<div class="opp-stats">${statsHtml}</div>` : ''}
+    ${spacesSection}
+    ${bazaarsSection}`;
+
+  document.title = `${displayName} — مكاني سبوت`;
+}
+
+function _oppSpaceCard(s) {
+  const img = s.image_url || (Array.isArray(s.extra_images) && s.extra_images[0]) || '';
+  const imgStyle = img ? `style="background-image:url('${_oppEsc(img)}')"` : '';
+  const emoji = !img ? (s.icon_emoji || '🏢') : '';
+  const price = s.min_price ? `<span class="opp-card-price">من ${Number(s.min_price).toLocaleString('ar-EG')} ج</span>` : '';
+  return `<a class="opp-card" href="/spaces/?space=${_oppEsc(s.id)}">
+    <div class="opp-card-img" ${imgStyle}>${emoji}</div>
+    <div class="opp-card-body">
+      <div class="opp-card-name">${_oppEsc(s.name || 'مساحة')}</div>
+      <div class="opp-card-meta"><span>${_oppEsc(s.region || s.type || '')}</span>${price}</div>
+    </div>
+  </a>`;
+}
+
+function _oppBazaarCard(b) {
+  const img = b.event_image_url || b.image || '';
+  const imgStyle = img ? `style="background-image:url('${_oppEsc(img)}')"` : '';
+  const emoji = !img ? '🎪' : '';
+  const price = b.price_per_slot ? `<span class="opp-card-price">${Number(b.price_per_slot).toLocaleString('ar-EG')} ج/يوم</span>` : '';
+  let dateLabel = '';
+  if (b.date_start) {
+    try { dateLabel = new Date(b.date_start).toLocaleDateString('ar-EG', { month: 'short', year: 'numeric' }); } catch (e) {}
+  }
+  return `<a class="opp-card" href="/bazaars/?bazaar=${_oppEsc(b.id)}">
+    <div class="opp-card-img" ${imgStyle}>${emoji}</div>
+    <div class="opp-card-body">
+      <div class="opp-card-name">${_oppEsc(b.name || 'بازار')}</div>
+      <div class="opp-card-meta"><span>${_oppEsc(b.venue_name || b.region || dateLabel)}</span>${price}</div>
+    </div>
+  </a>`;
+}
+
+
+/* ================================================================
    📋 القسم الحادي عشر: مودال الحجز
    ================================================================ */
 
@@ -1959,9 +2118,9 @@ async function initAuth() {
 
     if (session?.user) {
       currentUser = session.user;
-      const { data: profile } = await sbClient
-        .from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
       currentProfile = profile;
+      currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
 
       // يُفتح الداشبورد تلقائياً في حالتين صريحتين فقط:
@@ -1995,9 +2154,9 @@ async function initAuth() {
 
       // لا داعي لإعادة جلب الـ profile عند كل تجديد token
       if (!sameUser || !currentProfile) {
-        const { data: profile } = await sbClient
-          .from('profiles').select('*').eq('id', session.user.id).single();
+        const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
         currentProfile = profile;
+        currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       }
       setNavUser(session.user, currentProfile);
 
@@ -2021,6 +2180,7 @@ async function initAuth() {
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       currentProfile = null;
+      currentAvatarUrl = null;
       setNavUser(null, null);
     }
   });
@@ -2044,7 +2204,14 @@ function setNavUser(user, profile) {
     loggedEl.style.display = 'flex';
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    set('nav-av-circle', initial);
+    const circleEl = document.getElementById('nav-av-circle');
+    if (circleEl) {
+      if (currentAvatarUrl) {
+        circleEl.innerHTML = `<img src="${currentAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.outerHTML='${initial}'">`;
+      } else {
+        circleEl.textContent = initial;
+      }
+    }
     set('nav-av-name', name);
     set('nav-av-email', email);
     set('dd-name', name);
@@ -2081,7 +2248,9 @@ function setNavUser(user, profile) {
   if (bnUserIcon && bnUserLabel) {
     if (user) {
       const initial = (profile?.full_name || user.email || 'م')[0].toUpperCase();
-      bnUserIcon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
+      bnUserIcon.innerHTML = currentAvatarUrl
+        ? `<img src="${currentAvatarUrl}" style="width:22px;height:22px;border-radius:50%;object-fit:cover" onerror="this.outerHTML='<span style=\\'width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;\\'>${initial}</span>'">`
+        : `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
       bnUserLabel.textContent = 'حسابي';
       const descEl = document.getElementById('bn-user-desc');
       if (descEl) descEl.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
@@ -2248,6 +2417,7 @@ async function doLogout() {
   await sbClient.auth.signOut();
   currentUser = null;
   currentProfile = null;
+  currentAvatarUrl = null;
   localStorage.removeItem('lastPage');
   setNavUser(null, null);
   showPage('home');
@@ -2263,13 +2433,14 @@ async function loadDashboardData(user) {
 
   const [profileRes, orgProfileRes, reqRes] = await Promise.all([
     sbClient.from('profiles').select('*').eq('id', user.id).single(),
-    sbClient.from('organizer_profiles').select('is_verified').eq('user_id', user.id).single(),
+    sbClient.from('organizer_profiles').select('is_verified,avatar_url').eq('user_id', user.id).single(),
     sbClient.from('organizer_requests').select('status').eq('user_id', user.id)
       .order('created_at', { ascending: false }).limit(1).single(),
   ]);
 
   currentUser = user;
   currentProfile = profileRes.data;
+  currentAvatarUrl = profileRes.data?.avatar_url || orgProfileRes.data?.avatar_url || null;   // 🪪 المصدر الموحّد: profiles أولاً
 
   const profile = profileRes.data;
   const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
@@ -2876,9 +3047,9 @@ async function handleBnUser() {
       const { data: { session } } = await sbClient.auth.getSession();
       if (session?.user) {
         currentUser = session.user;
-        const { data: profile } = await sbClient
-          .from('profiles').select('*').eq('id', session.user.id).single();
+        const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
         currentProfile = profile;
+        currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
         setNavUser(session.user, profile);
         await loadDashboardData(session.user);
         showPage('dashboard');

@@ -29,6 +29,7 @@ let ACTIVITIES     = [];
 let sbClient       = null;
 let currentUser    = null;
 let currentProfile = null;
+let currentAvatarUrl = null;
 
 // ── متغيرات الماركت بليس ──
 let mpPage        = 1;
@@ -148,7 +149,7 @@ async function loadData() {
     if (ownerIds.length > 0) {
       const { data: profiles } = await sbClient
         .from('profiles')
-        .select('id, plan_tier, full_name, avatar_url')
+        .select('id, plan_tier, full_name, avatar_url, entity_name, is_verified')
         .in('id', ownerIds);
       (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
@@ -201,8 +202,9 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
     description: row.description || '',
     amenities:   row.amenities   || [],
     isBroker:    isBroker,
-    ownerName:   isBroker ? 'مكاني سبوت' : (ownerProfile.full_name || null),
+    ownerName:   isBroker ? 'مكاني سبوت' : (ownerProfile.entity_name || ownerProfile.full_name || null),
     ownerAvatar: isBroker ? null : (ownerProfile.avatar_url || null),
+    ownerVerified: isBroker ? false : !!ownerProfile.is_verified,
     planTier:    isBroker ? 'broker' : (ownerProfile.plan_tier || 'starter'),
     subSpaces:   (row.space_units || []).map(u => ({
       unitId:   u.unit_id   || '',
@@ -264,7 +266,7 @@ async function silentRefreshSpaces() {
     let profilesMap = {};
     if (ownerIds.length) {
       const { data: profiles } = await sbClient
-        .from('profiles').select('id, plan_tier, full_name, avatar_url').in('id', ownerIds);
+        .from('profiles').select('id, plan_tier, full_name, avatar_url, entity_name, is_verified').in('id', ownerIds);
       (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
 
@@ -367,7 +369,7 @@ async function _refreshSingleSpace(spaceId) {
     let profilesMap = {};
     if (data.owner_id) {
       const { data: profiles } = await sbClient
-        .from('profiles').select('id, plan_tier, full_name, avatar_url').eq('id', data.owner_id);
+        .from('profiles').select('id, plan_tier, full_name, avatar_url, entity_name, is_verified').eq('id', data.owner_id);
       (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
 
@@ -409,7 +411,7 @@ async function loadMoreSpaces() {
     let profilesMap = {};
     if (ownerIds.length) {
       const { data: profiles } = await sbClient
-        .from('profiles').select('id, plan_tier, full_name, avatar_url').in('id', ownerIds);
+        .from('profiles').select('id, plan_tier, full_name, avatar_url, entity_name, is_verified').in('id', ownerIds);
       (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
 
@@ -738,6 +740,12 @@ function closeSpaceDetail() {
   showPage(prevPage);
 }
 
+/* 🪪 الانتقال لصفحة البروفايل العام للناشر (الهوية الرقمية الموحّدة) */
+function goToOwnerProfile(ownerId) {
+  if (!ownerId) return;
+  window.location.href = `/?p=owner-profile&id=${ownerId}`;
+}
+
 function _renderDetailGallery(s) {
   const galleryEl = document.getElementById('sd-gallery');
   if (!galleryEl) return;
@@ -922,15 +930,25 @@ function _renderDetailInfo(s) {
           avatarHtml = `<div class="sd-owner-avatar-placeholder">${name[0]}</div>`;
         }
 
+        // البطاقة قابلة للضغط فقط لو الناشر صاحب مساحة حقيقي (ليس مكاني سبوت)
+        const clickable = hasOwner && s.ownerId && !isBroker;
+        const cardAttrs = clickable
+          ? `style="margin-top:10px;cursor:pointer" onclick="goToOwnerProfile('${s.ownerId}')" title="اضغط لعرض صفحة الناشر"`
+          : `style="margin-top:10px"`;
+        const arrowHtml = clickable
+          ? `<span style="margin-inline-start:auto;color:var(--ink2);font-size:18px">‹</span>`
+          : '';
+
         return `
       <div class="sd-info-card sd-info-full">
         <div class="sd-info-title">🏠 ناشر المساحة</div>
-        <div class="sd-owner-card" style="margin-top:10px">
+        <div class="sd-owner-card" ${cardAttrs}>
           ${avatarHtml}
           <div class="sd-owner-info">
             <div class="sd-owner-name">${name}</div>
             ${badgeHtml}
           </div>
+          ${arrowHtml}
         </div>
       </div>`;
       })()}
@@ -1837,9 +1855,9 @@ async function initAuth() {
 
     if (session?.user) {
       currentUser = session.user;
-      const { data: profile } = await sbClient
-        .from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
       currentProfile = profile;
+      currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
     } else {
       setNavUser(null, null);
@@ -1851,9 +1869,9 @@ async function initAuth() {
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
-      const { data: profile } = await sbClient
-        .from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
       currentProfile = profile;
+      currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
 
       const isOnAuthPage = ['pg-login', 'pg-signup'].some(
@@ -1868,6 +1886,7 @@ async function initAuth() {
     } else if (event === 'SIGNED_OUT') {
       currentUser    = null;
       currentProfile = null;
+      currentAvatarUrl = null;
       setNavUser(null, null);
     }
   });
@@ -1891,7 +1910,14 @@ function setNavUser(user, profile) {
     loggedEl.style.display = 'flex';
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    set('nav-av-circle', initial);
+    const circleEl = document.getElementById('nav-av-circle');
+    if (circleEl) {
+      if (currentAvatarUrl) {
+        circleEl.innerHTML = `<img src="${currentAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.outerHTML='${initial}'">`;
+      } else {
+        circleEl.textContent = initial;
+      }
+    }
     set('nav-av-name',   name);
     set('nav-av-email',  email);
     set('dd-name',       name);

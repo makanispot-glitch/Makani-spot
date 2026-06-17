@@ -70,6 +70,7 @@ function _imgAttrs(isLazy = true) {
 
 let eqSb             = null;
 let eqUser           = null;
+let eqAvatarUrl      = null;
 let eqListings       = [];
 let eqFiltered       = [];
 let eqOffset         = 0;     // offset للجلب التالي من الخادم
@@ -211,10 +212,22 @@ function trackEvent(eventName, params = {}) {
 async function eqInitAuth() {
   const { data: { session } } = await eqSb.auth.getSession();
   eqUser = session?.user || null;
+  if (eqUser) {
+    const { data: prof } = await eqSb.from('profiles')
+      .select('avatar_url').eq('id', eqUser.id).single();
+    eqAvatarUrl = prof?.avatar_url || null;   // 🪪 المصدر الموحّد
+  }
   eqRenderNavUser();
 
-  eqSb.auth.onAuthStateChange((_e, sess) => {
+  eqSb.auth.onAuthStateChange(async (_e, sess) => {
     eqUser = sess?.user || null;
+    if (eqUser) {
+      const { data: prof } = await eqSb.from('profiles')
+        .select('avatar_url').eq('id', eqUser.id).single();
+      eqAvatarUrl = prof?.avatar_url || null;   // 🪪 المصدر الموحّد
+    } else {
+      eqAvatarUrl = null;
+    }
     eqRenderNavUser();
     if (eqUser) {
       eqLoadFavorites();
@@ -230,9 +243,12 @@ function eqRenderNavUser() {
   const area = document.getElementById('eq-nav-user');
   if (!area) return;
   if (eqUser) {
-    const initial = (eqUser.email || '?')[0].toUpperCase();
-    const email   = eqUser.email || '';
-    const name    = eqUser.user_metadata?.full_name || eqUser.email || '';
+    const initial   = (eqUser.user_metadata?.full_name || eqUser.email || '?')[0].toUpperCase();
+    const email     = eqUser.email || '';
+    const name      = eqUser.user_metadata?.full_name || eqUser.email || '';
+    const circleHtml = eqAvatarUrl
+      ? `<img src="${eqAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.outerHTML='${initial}'">`
+      : initial;
 
     area.innerHTML = `
       <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">❤️</button>
@@ -246,7 +262,7 @@ function eqRenderNavUser() {
         </div>
       </div>
       <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
-        <div class="nav-avatar-circle">${initial}</div>
+        <div class="nav-avatar-circle">${circleHtml}</div>
         <div class="nav-avatar-info">
           <div class="nav-avatar-name">${name || 'حسابي'}</div>
           <div class="nav-avatar-email">${email}</div>

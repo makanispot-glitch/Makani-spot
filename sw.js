@@ -13,7 +13,7 @@
 /* ── الإصدار: غيّر هذا الرقم عند كل نشر جديد ────────────────
    الصيغة: YYYYMMDD-HHMM  →  سهل تعرف امتى اتعمل
    ─────────────────────────────────────────────────────────── */
-const CACHE_VER   = 'v202506161600';
+const CACHE_VER   = 'v202606171600';
 const SHELL_CACHE = `makani-shell-${CACHE_VER}`;
 const FONT_CACHE  = `makani-fonts-${CACHE_VER}`;
 const CDN_CACHE   = `makani-cdn-${CACHE_VER}`;
