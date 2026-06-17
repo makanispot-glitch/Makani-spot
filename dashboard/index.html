@@ -906,7 +906,67 @@ body {
 .bk-val { color:var(--text); font-weight:600; }
 .bk-card-actions { display:flex; gap:8px; flex-wrap:wrap; padding:10px 16px 14px;
                    border-top:1px solid rgba(255,255,255,.05); }
+.bk-btn-reject { background:rgba(255,77,77,.14); color:var(--red); border-color:rgba(255,77,77,.32); }
+.bk-btn-reject:hover { background:rgba(255,77,77,.22); }
 .empty-hint { text-align:center; padding:40px 20px; color:var(--text3); font-size:13px; }
+
+/* ── Booker identity block (هوية مقدّم الطلب) ── */
+.bk-booker { display:flex; align-items:center; gap:11px; padding:4px 16px 12px;
+             margin-top:-2px; }
+.bk-avatar { width:42px; height:42px; border-radius:50%; flex-shrink:0;
+             background-size:cover; background-position:center;
+             border:2px solid rgba(255,107,0,.35); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.bk-avatar--ph { display:flex; align-items:center; justify-content:center;
+                 background:linear-gradient(135deg,var(--orange),#b8430f);
+                 color:#fff; font-weight:800; font-size:18px; }
+.bk-booker-id { flex:1; min-width:0; }
+.bk-booker-name { font-size:13.5px; font-weight:800; color:var(--text);
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bk-booker-name[onclick]:hover { color:var(--orange); }
+.bk-verified { color:var(--blue); font-size:11px; }
+.bk-booker-meta { font-size:11px; color:var(--text2); margin-top:2px;
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bk-profile-btn { flex-shrink:0; background:var(--orange-pale); color:var(--orange);
+                  border:1px solid var(--border2); border-radius:8px; cursor:pointer;
+                  font-family:inherit; font-size:11px; font-weight:700; padding:6px 11px;
+                  transition:all .16s; white-space:nowrap; }
+.bk-profile-btn:hover { background:var(--orange); color:#fff; }
+
+/* ── Interest analytics panel (المهتمون بمساحاتك) ── */
+.bk-interest { margin:12px 16px 4px; background:rgba(255,107,0,.05);
+               border:1px solid var(--border2); border-radius:12px; overflow:hidden; }
+.bk-interest-head { font-size:12.5px; font-weight:800; color:var(--orange);
+                    padding:10px 14px 8px; border-bottom:1px solid rgba(255,107,0,.14); }
+.bk-interest-body { display:flex; flex-direction:column; }
+.bk-int-row { display:flex; align-items:center; justify-content:space-between; gap:10px;
+              padding:9px 14px; flex-wrap:wrap; }
+.bk-int-row:not(:last-child) { border-bottom:1px solid rgba(255,255,255,.04); }
+.bk-int-name { font-size:12.5px; font-weight:700; color:var(--text);
+               max-width:46%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bk-int-stats { display:flex; gap:6px; flex-wrap:wrap; }
+.bk-int-chip { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px;
+               background:rgba(255,255,255,.05); color:var(--text2); border:1px solid var(--border); white-space:nowrap; }
+.bk-int-chip--total { background:var(--orange-pale); color:var(--orange); border-color:var(--border2); }
+.bk-int-chip--p { background:var(--yellow-bg); color:var(--yellow); }
+.bk-int-chip--w { background:rgba(255,184,0,.10); color:var(--yellow); }
+.bk-int-chip--c { background:var(--green-bg); color:var(--green); }
+
+/* ── Waitlist specifics ── */
+.bk-card--wl { border-color:rgba(255,184,0,.30); }
+.bk-wl-banner { margin:12px 16px 6px; background:var(--yellow-bg); color:var(--yellow);
+                border:1px solid rgba(255,184,0,.30); border-radius:10px;
+                padding:9px 13px; font-size:12px; font-weight:600; }
+.bk-wl-order { display:inline-flex; align-items:center; justify-content:center;
+               min-width:28px; height:28px; border-radius:8px; flex-shrink:0;
+               background:var(--yellow-bg); color:var(--yellow);
+               border:1px solid rgba(255,184,0,.35); font-weight:800; font-size:12px;
+               font-family:'Space Mono',monospace; }
+
+@media (max-width:480px) {
+  .bk-int-name { max-width:100%; }
+  .bk-booker { flex-wrap:wrap; }
+  .bk-profile-btn { width:100%; margin-top:2px; }
+}
 
 /* Chart bars (CSS only) */
 .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding: 0 4px; }
@@ -2809,11 +2869,11 @@ body {
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=202606140600"></script>
+<script src="../media-handler.js?v=202606171812"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="app.js?v=202606140600"></script>
+<script src="app.js?v=202606171812"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>

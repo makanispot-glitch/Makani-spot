@@ -102,13 +102,14 @@ async function _loadBzProfile() {
   if (!sbClient || !currentUser) return;
   try {
     const [profRes, orgRes] = await Promise.all([
-      sbClient.from('profiles').select('full_name, phone').eq('id', currentUser.id).single(),
+      sbClient.from('profiles').select('full_name, phone, avatar_url, is_verified').eq('id', currentUser.id).single(),
       sbClient.from('organizer_profiles').select('avatar_url, logo, image, is_verified').eq('user_id', currentUser.id).single()
     ]);
     currentProfile = {
       ...(profRes.data || {}),
-      avatar_url:  orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
-      is_verified: orgRes.data?.is_verified === true,
+      /* 🪪 المصدر الموحّد: profiles.avatar_url أولاً ثم organizer_profiles كاحتياط للبيانات القديمة */
+      avatar_url:  profRes.data?.avatar_url || orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
+      is_verified: (profRes.data?.is_verified === true) || (orgRes.data?.is_verified === true),
     };
   } catch (_) {}
 }

@@ -172,8 +172,25 @@ const SUPABASE_KEY     = 'eyJhbGc...';  // anon key
 ### `notifications` — إشعارات المالك
 `owner_id`, `type` (مثل `space_submitted`), `title`, `body`, علم القراءة.
 
-### `bookings` — الحجوزات · `user_ratings` — التقييمات
-الحجوزات تُحفظ في Supabase + Apps Script. التقييمات مرتبطة بالحجوزات والملفات.
+### `bookings` — الحجوزات (نظام إدارة طلبات الحجز) ⭐
+الأعمدة: `id`, `user_id` (FK→auth.users, الحاجز), `owner_id` (FK→auth.users, صاحب المساحة), `space_id` (FK→spaces), `space_name`, `space_loc`, `price` (numeric), `activity`, `size`, `duration`, `start_date`, `notes`, **`status`** (`pending`/`viewing_pending`/`confirmed`/`cancelled`/`completed`), **`is_waitlist`** (bool — قائمة الانتظار), `profile_link`, `created_at`, `updated_at`.
+
+**التدفّق:** نموذج الحجز (`submitBooking` في `app.js` و `spaces/app.js`) يُدرج صفّاً بـ `user_id`+`space_id`+`owner_id`. صاحب المساحة يراها في **لوحة التحكم → طلبات الحجز** (`view-bookings`).
+
+**Triggers (مهمة):**
+- `trg_bookings_fill_owner` (BEFORE INSERT) → `_bookings_fill_owner()`: يملأ `owner_id` تلقائياً من `spaces` عند توفّر `space_id` فقط (ضمان وصول الطلب للمالك الصحيح حتى لو لم يضبطه العميل).
+- `trg_notify_owner_on_booking` (AFTER INSERT) → `notify_owner_on_booking()`: يُنشئ إشعاراً للمالك (`booking_request`/`waitlist_request`)، ويشتق اسم الحاجز من `profiles` (entity_name/full_name). ⚠️ كان معطوباً يشير إلى `NEW.name` (عمود غير موجود) فيُفشل **كل** إدراج حجز — أُصلح.
+
+**RPCs (SECURITY DEFINER، مفلترة بـ `auth.uid()=owner_id`):**
+- `owner_update_booking_status(p_booking_id, p_status)` — قبول/رفض (`confirmed`/`cancelled`/`completed`).
+- `owner_promote_waitlist(p_booking_id)` — ترقية طلب من قائمة الانتظار لحجز مؤكد.
+- `owner_set_booking_waitlist(p_booking_id, p_on)` — نقل طلب من/إلى قائمة الانتظار.
+- `owner_space_interest()` — تحليلات لكل مساحة: `total`/`pending`/`waitlist`/`confirmed` (شريط «المهتمون بمساحاتك»).
+
+⚠️ **ملاحظة قراءة:** لا يوجد FK من `bookings.user_id` إلى `public.profiles` (يشير لـ auth.users)، لذا **لا تستخدم** PostgREST embed `profiles!bookings_user_id_fkey` (يُرجع 400). تُجلب بروفايلات الحاجزين باستعلام منفصل `profiles.in('id', userIds)` (سياسة `profiles_public_read_basic` تسمح بالقراءة).
+
+### `user_ratings` — التقييمات
+مرتبطة بالحجوزات والملفات.
 
 ### جداول البازارات
 `bazaars`, `bazaar_slots` (الأكشاك), `bazaar_bookings` (حجز كشك), `organizer_requests` (توثيق منظّم), `organizer_profiles`.
@@ -360,7 +377,9 @@ _planBadgeHtml(tier)            // بادج الباقة في السايدبار
 > تصميم داكن (Charcoal + Orange). كل الـ views مضمّنة في `dashboard/index.html` (id=`view-*`)، والتنقل عبر `goTo(viewId, navEl)`.
 
 ### 8-أ. الـ Views المتاحة
-`view-overview` · `view-spaces` · `view-add-space` · `view-tenants` · `view-contracts` · `view-alerts` · `view-revenue` · `view-insights` · `view-ratings` · `view-payments` · `view-violations` · `view-reports` · `view-settings` · `view-add-bazaar`
+`view-overview` · `view-spaces` · `view-add-space` · `view-tenants` · **`view-bookings`** (طلبات الحجز) · `view-contracts` · `view-alerts` · `view-revenue` · `view-insights` · `view-ratings` · `view-payments` · `view-violations` · `view-reports` · `view-settings` · `view-add-bazaar`
+
+> **`view-bookings` — نظام إدارة طلبات الحجز:** `loadBookingsRemote` (جلب الحجوزات + بروفايلات الحاجزين باستعلام منفصل) · `renderBookings` (تبويبات: معلقة/مؤكدة/قائمة انتظار/الكل + شريط المهتمين `_bkInterestPanel` + بطاقة هوية الحاجز `_bkBookerBlock` مع زر «عرض البروفايل» → `/?p=owner-profile&id=`) · إجراءات: `acceptBooking`/`rejectBooking`/`setBookingWaitlist`/`approveWaitlist`/`promoteWaitlist`/`convertBookingToContract` · تنبيهات الحجوزات تظهر في `_buildLocalAlerts` (📬 طلبات جديدة + ⏳ قائمة انتظار) وبادج السايدبار `nb-bookings`.
 
 ### 8-ب. المصادقة بالدور (`dashboard/app.js`)
 ```

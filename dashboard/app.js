@@ -132,8 +132,33 @@ async function loadOwnerSettings() {
   } catch { /* الجدول اختياري */ }
 }
 
-/* يحوّل صف booking من Supabase إلى شكل الذاكرة — مع عرض السعر بشكل صحيح (#12) */
-function _mapBookingRow(b) {
+/* الحقول الغنية لبروفايل الحاجز التي يراها صاحب المساحة (هوية البراند/المشروع) */
+const BOOKER_PROFILE_FIELDS =
+  'id, full_name, phone, email, avatar_url, entity_name, entity_type, city, bio, is_verified, created_at, role';
+
+/* الحالات التي تُحمّل في صندوق الحجوزات (الطلبات النشطة + قوائم الانتظار) */
+const BOOKING_LOAD_STATUSES = ['pending', 'confirmed', 'viewing_pending'];
+
+/* يجلب بروفايلات الحاجزين دفعة واحدة عبر user_id.
+   ملاحظة: سياسة RLS «profiles_public_read_basic» تسمح بقراءة البروفايلات العامة،
+   لذا لا نعتمد على PostgREST embed (الذي يفشل لأن FK يشير إلى auth.users لا profiles). */
+async function _fetchBookerProfiles(rows) {
+  const sb = getSB();
+  const ids = [...new Set((rows || []).map(r => r.user_id).filter(Boolean))];
+  if (!sb || !ids.length) return {};
+  try {
+    const { data } = await sb.from('profiles').select(BOOKER_PROFILE_FIELDS).in('id', ids);
+    const map = {};
+    (data || []).forEach(p => { map[p.id] = p; });
+    return map;
+  } catch (e) {
+    console.warn('[Makani] booker profiles load:', e.message);
+    return {};
+  }
+}
+
+/* يحوّل صف booking من Supabase إلى شكل الذاكرة + بيانات بروفايل الحاجز (#12) */
+function _mapBookingRow(b, profilesMap) {
   const rawPrice = b.price;
   let priceDisplay;
   if (rawPrice === null || rawPrice === undefined || rawPrice === '') {
@@ -144,6 +169,8 @@ function _mapBookingRow(b) {
       ? num.toLocaleString('ar-EG') + ' ج'
       : String(rawPrice);  // قديم: نص مثل "1,500 ج"
   }
+  const prof  = (profilesMap && b.user_id && profilesMap[b.user_id]) || {};
+  const brand = prof.entity_name || prof.full_name || '';
   return {
     id:          b.id,
     userId:      b.user_id,
@@ -160,9 +187,17 @@ function _mapBookingRow(b) {
     createdAt:   b.created_at   || '',
     isWaitlist:  !!b.is_waitlist,
     profileLink: b.profile_link || '',
-    bookerName:  b.profiles?.full_name || '—',
-    bookerPhone: b.profiles?.phone     || '—',
-    bookerEmail: b.profiles?.email     || '—',
+    /* ── هوية الحاجز (البراند/المشروع) ── */
+    bookerName:       brand || '—',
+    bookerPhone:      prof.phone || '—',
+    bookerEmail:      prof.email || '—',
+    bookerAvatar:     prof.avatar_url || '',
+    bookerEntityType: prof.entity_type || '',
+    bookerCity:       prof.city || '',
+    bookerBio:        prof.bio || '',
+    bookerVerified:   !!prof.is_verified,
+    bookerCreatedAt:  prof.created_at || '',
+    hasProfile:       !!(b.user_id && prof.id),
   };
 }
 
@@ -173,16 +208,19 @@ async function loadBookingsRemote() {
     /* نجلب الحجوزات النشطة — 50 في المرة الأولى (#11) */
     const { data, error } = await sb
       .from('bookings')
-      .select('*, profiles!bookings_user_id_fkey(full_name, phone, email)')
+      .select('*')
       .eq('owner_id', currentOwner.id)
-      .in('status', ['pending', 'confirmed', 'viewing_pending'])
+      .in('status', BOOKING_LOAD_STATUSES)
       .order('created_at', { ascending: false })
       .range(0, BOOKINGS_BATCH - 1);
     if (error) throw error;
+    /* بروفايلات الحاجزين دفعة واحدة (استعلام منفصل أكثر موثوقية من الـ embed) */
+    const profilesMap = await _fetchBookerProfiles(data);
     _bookingsOffset = 0;
     bookingsHasMore = (data || []).length === BOOKINGS_BATCH;
-    bookingsList = (data || []).map(_mapBookingRow);
+    bookingsList = (data || []).map(b => _mapBookingRow(b, profilesMap));
     updateBookingsBadge();
+    loadSpaceInterest();   /* تحليلات المهتمين لكل مساحة (غير حاجب) */
   } catch (e) {
     console.warn('[Makani] bookings load:', e.message);
     bookingsList = [];
@@ -200,20 +238,41 @@ async function loadMoreBookings() {
   try {
     const { data, error } = await sb
       .from('bookings')
-      .select('*, profiles!bookings_user_id_fkey(full_name, phone, email)')
+      .select('*')
       .eq('owner_id', currentOwner.id)
-      .in('status', ['pending', 'confirmed', 'viewing_pending'])
+      .in('status', BOOKING_LOAD_STATUSES)
       .order('created_at', { ascending: false })
       .range(nextOffset, nextOffset + BOOKINGS_BATCH - 1);
     if (error) throw error;
+    const profilesMap = await _fetchBookerProfiles(data);
     _bookingsOffset = nextOffset;
     bookingsHasMore = (data || []).length === BOOKINGS_BATCH;
-    bookingsList = [...bookingsList, ...(data || []).map(_mapBookingRow)];
+    bookingsList = [...bookingsList, ...(data || []).map(b => _mapBookingRow(b, profilesMap))];
     updateBookingsBadge();
     renderBookings();
   } catch (e) {
     console.warn('[Makani] load more bookings:', e.message);
     if (btn) { btn.disabled = false; btn.textContent = `⬇ تحميل ${BOOKINGS_BATCH} طلب إضافي`; }
+  }
+}
+
+/* ── تحليلات المهتمين لكل مساحة (RPC owner_space_interest) ── */
+let spaceInterestList = [];
+async function loadSpaceInterest() {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) { spaceInterestList = []; return; }
+  try {
+    const { data, error } = await sb.rpc('owner_space_interest');
+    if (error) throw error;
+    spaceInterestList = data || [];
+    /* لو قسم الحجوزات معروض، أعد رسمه ليظهر شريط المهتمين المحدّث */
+    const wrap = document.getElementById('bookings-list');
+    if (wrap && document.getElementById('view-bookings')?.classList.contains('active')) {
+      renderBookings();
+    }
+  } catch (e) {
+    console.warn('[Makani] space interest load:', e.message);
+    spaceInterestList = [];
   }
 }
 
@@ -3049,11 +3108,39 @@ function _buildLocalAlerts() {
       }));
   }
 
+  /* 📬 طلبات حجز جديدة + قائمة انتظار — تنبيهات الحجوزات */
+  const newBookings = bookingsList.filter(b =>
+    !b.isWaitlist && (b.status === 'pending' || b.status === 'viewing_pending')).length;
+  const waitingCount = bookingsList.filter(b => b.isWaitlist).length;
+  /* المفتاح يحمل العدد ليُعاد ظهور التنبيه تلقائياً عند وصول طلبات جديدة */
+  if (newBookings > 0) {
+    push({
+      key: 'bk-pending:' + newBookings, type: 'info', ico: '📬',
+      title: `${newBookings} ${newBookings === 1 ? 'طلب حجز جديد' : 'طلبات حجز جديدة'} بانتظار قرارك`,
+      body:  'راجعها في صندوق طلبات الحجز — اقبل أو ارفض أو انقلها لقائمة الانتظار.',
+      action: 'goToBookingsView()',
+    });
+  }
+  if (waitingCount > 0) {
+    push({
+      key: 'bk-waitlist:' + waitingCount, type: 'warning', ico: '⏳',
+      title: `${waitingCount} طلب في قائمة الانتظار`,
+      body:  'مهتمون بمساحاتك ينتظرون توفّر وحدة — تابعهم من تبويب قائمة الانتظار.',
+      action: 'goToBookingsView()',
+    });
+  }
+
   /* لا مساحات مضافة */
   if (!ownerSpaces.length && !dismissed.has('no-spaces')) {
     out.push({ key: 'no-spaces', type: 'info', ico: '💡', title: 'لم تُضَف مساحات بعد', body: 'ابدأ بإضافة مساحاتك ليراها المستأجرون على المنصة.' });
   }
   return out;
+}
+
+/* انتقال سريع إلى صندوق طلبات الحجز (من التنبيهات) */
+function goToBookingsView() {
+  const nav = document.querySelector('[onclick*="bookings"]');
+  goTo('bookings', nav);
 }
 
 let _lastLocalAlertKeys = [];
@@ -3097,7 +3184,7 @@ function renderAlerts() {
   }
 
   const closeBtn = (handler) =>
-    `<button title="حذف التنبيه" onclick="${handler}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;margin-inline-start:auto;flex-shrink:0">✕</button>`;
+    `<button title="حذف التنبيه" onclick="event.stopPropagation();${handler}" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;margin-inline-start:auto;flex-shrink:0">✕</button>`;
 
   const toolbar = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <span style="font-size:12px;color:var(--text3)">${total} تنبيه</span>
@@ -3112,7 +3199,7 @@ function renderAlerts() {
     </div>`).join('');
 
   const rowsLocal = localAlerts.map(a => `
-    <div class="alert-item ${a.type}" style="display:flex;align-items:flex-start;gap:10px">
+    <div class="alert-item ${a.type}" style="display:flex;align-items:flex-start;gap:10px${a.action ? ';cursor:pointer' : ''}"${a.action ? ` onclick="${a.action}"` : ''}>
       <span class="alert-ico">${a.ico}</span>
       <div class="alert-text" style="flex:1"><strong>${a.title}</strong>${a.body}</div>
       ${closeBtn(`dismissAlert('${a.key}')`)}
@@ -3235,10 +3322,12 @@ function renderBookings() {
       ${tabBtn('waitlist',  '⏳ قائمة الانتظار', waitlistCount)}
       ${tabBtn('all',       'الكل',          normal.length)}
     </div>`;
+  /* شريط تحليلات المهتمين + التبويبات */
+  const head = _bkInterestPanel() + tabsHtml;
 
   if (!bookingsList.length) {
     wrap.innerHTML = `
-      ${tabsHtml}
+      ${head}
       <div class="empty-hint">
         <div style="font-size:36px;margin-bottom:12px">📬</div>
         <div style="font-weight:700;margin-bottom:6px">لا توجد طلبات حجز حالياً</div>
@@ -3249,7 +3338,7 @@ function renderBookings() {
 
   /* بطاقات قائمة الانتظار لها شكل وإجراءات مختلفة */
   if (activeFilter === 'waitlist') {
-    wrap.innerHTML = tabsHtml + renderWaitlistCards(waitlist);
+    wrap.innerHTML = head + renderWaitlistCards(waitlist);
     return;
   }
 
@@ -3268,10 +3357,10 @@ function renderBookings() {
             </div>
             <span class="badge ${st.cls}">${st.lbl}</span>
           </div>
+          ${_bkBookerBlock(b)}
           <div class="bk-card-body">
             <div class="bk-info-grid">
-              <span class="bk-lbl">👤 الحاجز</span><span class="bk-val">${_escBk(b.bookerName)}</span>
-              <span class="bk-lbl">📞 الهاتف</span><span class="bk-val">${b.bookerPhone !== '—' ? `<a href="tel:${_escBk(b.bookerPhone)}" style="color:var(--accent)">${_escBk(b.bookerPhone)}</a>` : '—'}</span>
+              <span class="bk-lbl">📞 الهاتف</span><span class="bk-val">${b.bookerPhone !== '—' ? `<a href="tel:${_escBk(b.bookerPhone)}" style="color:var(--orange)">${_escBk(b.bookerPhone)}</a>` : '—'}</span>
               <span class="bk-lbl">🏷️ النشاط</span><span class="bk-val">${_escBk(b.activity)}</span>
               <span class="bk-lbl">📅 التاريخ المطلوب</span><span class="bk-val">${_escBk(startStr)}</span>
               <span class="bk-lbl">⏱ المدة</span><span class="bk-val">${_escBk(b.duration)}</span>
@@ -3283,7 +3372,8 @@ function renderBookings() {
           <div class="bk-card-actions">
             ${isPending ? `
               <button class="btn btn-primary btn-sm" onclick="acceptBooking('${b.id}')">✅ قبول</button>
-              <button class="btn btn-sm" style="background:rgba(255,77,77,.15);color:var(--red);border-color:rgba(255,77,77,.3)" onclick="rejectBooking('${b.id}')">❌ رفض</button>
+              <button class="btn btn-sm bk-btn-reject" onclick="rejectBooking('${b.id}')">❌ رفض</button>
+              <button class="btn btn-ghost btn-sm" onclick="setBookingWaitlist('${b.id}', true)" title="نقل الطلب إلى قائمة الانتظار">📋 قائمة الانتظار</button>
               <button class="btn btn-ghost btn-sm" onclick="convertBookingToContract('${b.id}')">📄 تحويل لعقد</button>` : ''}
             ${b.status === 'confirmed' ? `
               <button class="btn btn-ghost btn-sm" onclick="convertBookingToContract('${b.id}')">📄 إنشاء عقد</button>
@@ -3305,7 +3395,7 @@ function renderBookings() {
          </button>
        </div>`
     : '';
-  wrap.innerHTML = tabsHtml + `<div class="bk-cards">${rows}</div>` + loadMoreHtml;
+  wrap.innerHTML = head + `<div class="bk-cards">${rows}</div>` + loadMoreHtml;
 }
 
 /* بطاقات قائمة الانتظار — تعرض رابط البروفايل وإجراءات خاصة */
@@ -3317,27 +3407,28 @@ function renderWaitlistCards(list) {
       <div style="font-size:12px;color:var(--text3)">عند امتلاء كل وحداتك، من يطلب الحجز يدخل هنا تلقائياً.</div>
     </div>`;
   }
-  const cards = list.map(b => {
+  /* رأس قائمة الانتظار: عدد المهتمين الكلي */
+  const head = `<div class="bk-wl-banner">⏳ <b>${list.length}</b> ${list.length === 1 ? 'طلب' : 'طلب'} في قائمة الانتظار — رتّبهم حسب الأولوية وتواصل معهم فور توفّر وحدة.</div>`;
+  const cards = list.map((b, i) => {
     const dateStr  = b.createdAt ? new Date(b.createdAt).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' }) : '—';
     const phoneOk  = b.bookerPhone && b.bookerPhone !== '—';
-    const profileLink = b.profileLink
-      ? `<span class="bk-lbl">📁 البروفايل</span><span class="bk-val"><a href="${_escBk(b.profileLink)}" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:underline">فتح ملف النشاط ↗</a></span>`
-      : `<span class="bk-lbl">📁 البروفايل</span><span class="bk-val" style="color:var(--text3)">لم يُرفق</span>`;
     return `
-    <div class="bk-card" style="border-color:rgba(255,184,0,.30)">
+    <div class="bk-card bk-card--wl">
       <div class="bk-card-head">
-        <div>
-          <div class="bk-card-space">${_escBk(b.spaceName)}</div>
-          <div class="bk-card-loc">📍 ${_escBk(b.spaceLoc)} ${b.size !== '—' ? '· ' + _escBk(b.size) : ''}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="bk-wl-order" title="ترتيب الطلب في الانتظار">#${i + 1}</span>
+          <div>
+            <div class="bk-card-space">${_escBk(b.spaceName)}</div>
+            <div class="bk-card-loc">📍 ${_escBk(b.spaceLoc)} ${b.size !== '—' ? '· ' + _escBk(b.size) : ''}</div>
+          </div>
         </div>
         <span class="badge badge-yellow">⏳ قائمة انتظار</span>
       </div>
+      ${_bkBookerBlock(b)}
       <div class="bk-card-body">
         <div class="bk-info-grid">
-          <span class="bk-lbl">👤 المهتم</span><span class="bk-val">${_escBk(b.bookerName)}</span>
           <span class="bk-lbl">📞 الهاتف</span><span class="bk-val">${phoneOk ? `<a href="tel:${_escBk(b.bookerPhone)}" style="color:var(--orange)">${_escBk(b.bookerPhone)}</a>` : '—'}</span>
           <span class="bk-lbl">🏷️ النشاط</span><span class="bk-val">${_escBk(b.activity)}</span>
-          ${profileLink}
           ${b.notes ? `<span class="bk-lbl">📝 ملاحظات</span><span class="bk-val">${_escBk(b.notes)}</span>` : ''}
           <span class="bk-lbl">🕐 انضم بتاريخ</span><span class="bk-val">${dateStr}</span>
         </div>
@@ -3345,12 +3436,13 @@ function renderWaitlistCards(list) {
       <div class="bk-card-actions">
         <button class="btn btn-primary btn-sm" onclick="approveWaitlist('${b.id}')" title="تأكيد توفّر وحدة وقبول الطلب">✅ توفّرت وحدة — قبول</button>
         <button class="btn btn-ghost btn-sm" onclick="promoteWaitlist('${b.id}')" title="إنشاء عقد مباشرة">📄 تحويل لعقد</button>
-        <button class="btn btn-sm" style="background:rgba(255,77,77,.15);color:var(--red);border-color:rgba(255,77,77,.3)" onclick="rejectWaitlist('${b.id}')">❌ إزالة</button>
+        <button class="btn btn-ghost btn-sm" onclick="setBookingWaitlist('${b.id}', false)" title="إرجاع الطلب إلى الطلبات المعلّقة">↩ إرجاع للطلبات</button>
+        <button class="btn btn-sm bk-btn-reject" onclick="rejectWaitlist('${b.id}')">❌ إزالة</button>
         ${phoneOk ? `<a href="https://wa.me/2${b.bookerPhone.replace(/\D/g,'')}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="text-decoration:none">💬 واتساب</a>` : ''}
       </div>
     </div>`;
   }).join('');
-  return `<div class="bk-cards">${cards}</div>`;
+  return head + `<div class="bk-cards">${cards}</div>`;
 }
 
 /* مساعد escape لـ bookings */
@@ -3360,10 +3452,121 @@ function _escBk(str) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+/* صياغة «عضو منذ …» بالعربية من تاريخ التسجيل */
+function _sinceLabel(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (days < 0) return '';
+  if (days < 7)  return 'هذا الأسبوع';
+  if (days < 30) return 'منذ ' + Math.max(1, Math.floor(days / 7)) + (Math.floor(days / 7) <= 1 ? ' أسبوع' : ' أسابيع');
+  const months = Math.floor(days / 30);
+  if (months < 12) return 'منذ ' + (months === 1 ? 'شهر' : months === 2 ? 'شهرين' : months + ' شهور');
+  const years = Math.floor(months / 12);
+  return 'منذ ' + (years === 1 ? 'سنة' : years === 2 ? 'سنتين' : years + ' سنوات');
+}
+
+/* بطاقة هوية مقدّم الطلب (الأفاتار + البراند + نوع النشاط + المدينة + زر البروفايل) */
+function _bkBookerBlock(b) {
+  const nameClean = (b.bookerName && b.bookerName !== '—') ? b.bookerName.trim() : '';
+  const initial   = nameClean ? nameClean[0] : '👤';
+  const avatar = b.bookerAvatar
+    ? `<div class="bk-avatar" style="background-image:url('${_escBk(b.bookerAvatar)}')"></div>`
+    : `<div class="bk-avatar bk-avatar--ph">${_escBk(initial)}</div>`;
+  const verified = b.bookerVerified ? ` <span class="bk-verified" title="حساب موثّق">✔</span>` : '';
+
+  const metaParts = [];
+  if (b.bookerEntityType) metaParts.push('🏷️ ' + _escBk(b.bookerEntityType));
+  if (b.bookerCity)       metaParts.push('📍 ' + _escBk(b.bookerCity));
+  const since = _sinceLabel(b.bookerCreatedAt);
+  if (since) metaParts.push('🗓 عضو ' + since);
+  const meta = metaParts.length
+    ? `<div class="bk-booker-meta">${metaParts.join(' · ')}</div>`
+    : `<div class="bk-booker-meta" style="color:var(--text3)">مستخدم على المنصة</div>`;
+
+  const viewBtn = (b.hasProfile && b.userId)
+    ? `<button class="bk-profile-btn" onclick="openBookerProfile('${b.userId}')" title="عرض ملف مقدّم الطلب">عرض البروفايل ↗</button>`
+    : '';
+
+  const clickAttr = (b.hasProfile && b.userId)
+    ? ` style="cursor:pointer" onclick="openBookerProfile('${b.userId}')" title="عرض ملف مقدّم الطلب"`
+    : '';
+
+  return `
+    <div class="bk-booker">
+      <div${clickAttr}>${avatar}</div>
+      <div class="bk-booker-id">
+        <div class="bk-booker-name"${clickAttr}>${_escBk(b.bookerName)}${verified}</div>
+        ${meta}
+      </div>
+      ${viewBtn}
+    </div>`;
+}
+
+/* فتح البروفايل العام لمقدّم الطلب في تبويب جديد */
+function openBookerProfile(userId) {
+  if (!userId) return;
+  window.open(`/?p=owner-profile&id=${encodeURIComponent(userId)}`, '_blank', 'noopener');
+}
+
+/* شريط «المهتمون بمساحاتك» — يعرض عدد الطلبات/المهتمين وقائمة الانتظار لكل مساحة */
+function _bkInterestPanel() {
+  const list = (spaceInterestList || []).filter(s => Number(s.total) > 0);
+  if (!list.length) return '';
+  const rows = list.slice(0, 10).map(s => {
+    const total = Number(s.total)     || 0;
+    const wait  = Number(s.waitlist)  || 0;
+    const pend  = Number(s.pending)   || 0;
+    const conf  = Number(s.confirmed) || 0;
+    return `
+      <div class="bk-int-row">
+        <div class="bk-int-name" title="${_escBk(s.space_name)}">${_escBk(s.space_name)}</div>
+        <div class="bk-int-stats">
+          <span class="bk-int-chip bk-int-chip--total" title="إجمالي المهتمين بهذه المساحة">👥 ${total} مهتم</span>
+          ${pend ? `<span class="bk-int-chip bk-int-chip--p" title="طلبات معلّقة تنتظر قرارك">⏳ ${pend} معلّق</span>` : ''}
+          ${wait ? `<span class="bk-int-chip bk-int-chip--w" title="عدد الطلبات في قائمة الانتظار">📋 ${wait} انتظار</span>` : ''}
+          ${conf ? `<span class="bk-int-chip bk-int-chip--c" title="طلبات مؤكدة">✅ ${conf} مؤكد</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="bk-interest">
+      <div class="bk-interest-head">📊 المهتمون بمساحاتك</div>
+      <div class="bk-interest-body">${rows}</div>
+    </div>`;
+}
+
 /* تغيير فلتر الحجوزات */
 function setBkFilter(val) {
   const wrap = document.getElementById('bookings-list');
   if (wrap) { wrap.dataset.filter = val; renderBookings(); }
+}
+
+/* نقل طلب إلى/من قائمة الانتظار (RPC owner_set_booking_waitlist) */
+async function setBookingWaitlist(bookingId, on) {
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('owner_set_booking_waitlist', {
+      p_booking_id: bookingId,
+      p_on:         !!on,
+    });
+    if (error) throw error;
+    const bk = bookingsList.find(b => b.id === bookingId);
+    if (bk) {
+      bk.isWaitlist = !!on;
+      if (on && (bk.status === 'cancelled' || bk.status === 'completed')) bk.status = 'pending';
+    }
+    loadSpaceInterest();       /* حدّث شريط المهتمين */
+    renderBookings();
+    updateBookingsBadge();
+  } catch (e) {
+    alert('تعذّر تحديث الطلب: ' + e.message);
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* قبول الحجز */
@@ -3383,6 +3586,7 @@ async function acceptBooking(bookingId) {
     if (bk) bk.status = 'confirmed';
     renderBookings();
     updateBookingsBadge();
+    loadSpaceInterest();
   } catch (e) {
     alert('تعذّر قبول الحجز: ' + e.message);
     if (btn) btn.disabled = false;
@@ -3403,6 +3607,7 @@ async function rejectBooking(bookingId) {
     bookingsList = bookingsList.filter(b => b.id !== bookingId);
     renderBookings();
     updateBookingsBadge();
+    loadSpaceInterest();
   } catch (e) {
     alert('تعذّر رفض الحجز: ' + e.message);
   }
@@ -3422,6 +3627,7 @@ async function approveWaitlist(bookingId) {
     if (bk) { bk.isWaitlist = false; bk.status = 'confirmed'; }
     renderBookings();
     updateBookingsBadge();
+    loadSpaceInterest();
   } catch (e) {
     alert('تعذّر قبول الطلب: ' + e.message);
     if (btn) btn.disabled = false;
@@ -3442,6 +3648,7 @@ async function rejectWaitlist(bookingId) {
     bookingsList = bookingsList.filter(b => b.id !== bookingId);
     renderBookings();
     updateBookingsBadge();
+    loadSpaceInterest();
   } catch (e) {
     alert('تعذّر إزالة الطلب: ' + e.message);
   }
@@ -4750,6 +4957,8 @@ async function uploadProfileAvatar(input) {
     const url = await uploadSingleImageToR2(file, r2Path, token);
 
     await sb.from('profiles').update({ avatar_url: url }).eq('id', currentOwner.id);
+    /* 🪪 مزامنة organizer_profiles (تحديث فقط إن كان الحساب منظم بازار أيضاً — لا ينشئ صفاً) */
+    sb.from('organizer_profiles').update({ avatar_url: url }).eq('user_id', currentOwner.id).then(null, () => {});
     currentOwner.avatarUrl = url;
     sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
 
@@ -4783,6 +4992,8 @@ async function uploadProfileCover(input) {
     const url = await uploadSingleImageToR2(file, r2Path, token);
 
     await sb.from('profiles').update({ cover_url: url }).eq('id', currentOwner.id);
+    /* 🪪 مزامنة organizer_profiles إن وُجد */
+    sb.from('organizer_profiles').update({ cover_url: url }).eq('user_id', currentOwner.id).then(null, () => {});
     currentOwner.coverUrl = url;
     sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
 
@@ -4810,6 +5021,8 @@ async function saveProfileForm() {
         .update({ entity_name: entityName, entity_type: entityType, bio })
         .eq('id', currentOwner.id);
       if (error) throw error;
+      /* 🪪 مزامنة الوصف مع organizer_profiles إن كان الحساب منظم بازار أيضاً */
+      sb.from('organizer_profiles').update({ bio }).eq('user_id', currentOwner.id).then(null, () => {});
     }
     currentOwner.entityName = entityName || '';
     currentOwner.entityType = entityType || '';

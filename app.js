@@ -1737,6 +1737,12 @@ function _oppEsc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* رجوع من صفحة البروفايل: للصفحة السابقة إن وُجدت، وإلا للرئيسية */
+function oppGoBack() {
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = '/';
+}
+
 async function loadOwnerProfile(userId) {
   const root = document.getElementById('opp-root');
   if (!root) return;
@@ -1800,7 +1806,7 @@ function renderOwnerProfile(data) {
   const statsHtml = `
     ${spaces.length  ? `<div class="opp-stat"><b>${spaces.length}</b><span>مساحة منشورة</span></div>` : ''}
     ${bazaars.length ? `<div class="opp-stat"><b>${bazaars.length}</b><span>بازار / فعالية</span></div>` : ''}
-    ${p.region ? `<div class="opp-stat"><b style="font-size:17px;padding-top:5px">📍 ${_oppEsc(p.region)}</b><span>الموقع</span></div>` : ''}`;
+    ${p.region ? `<div class="opp-stat"><b>📍</b><span>${_oppEsc(p.region)}</span></div>` : ''}`;
 
   // روابط التواصل (إن وُجدت من organizer_profiles)
   const social = [
@@ -1829,20 +1835,24 @@ function renderOwnerProfile(data) {
     </div>` : '';
 
   root.innerHTML = `
-    <div class="opp-cover" ${coverStyle}></div>
-    <div class="opp-head">
-      ${avatarHtml}
-      <div class="opp-headinfo">
-        <div class="opp-name">${_oppEsc(displayName)}${p.is_verified ? '<span class="opp-verified" title="حساب موثّق">✔️</span>' : ''}</div>
-        <div class="opp-type">${_oppEsc(p.entity_type || 'ناشر داخل المنصة')}</div>
-        ${roleBadges ? `<div class="opp-rolebadges">${roleBadges}</div>` : ''}
-      </div>
+    <div class="opp-cover" ${coverStyle}>
+      <button class="opp-back" onclick="oppGoBack()" aria-label="رجوع">→ رجوع</button>
     </div>
-    ${p.bio ? `<div class="opp-bio">${_oppEsc(p.bio)}</div>` : ''}
-    ${social ? `<div class="opp-social">${social}</div>` : ''}
-    ${statsHtml.trim() ? `<div class="opp-stats">${statsHtml}</div>` : ''}
-    ${spacesSection}
-    ${bazaarsSection}`;
+    <div class="opp-body">
+      <div class="opp-head">
+        ${avatarHtml}
+        <div class="opp-headinfo">
+          <div class="opp-name">${_oppEsc(displayName)}${p.is_verified ? '<span class="opp-verified" title="حساب موثّق">✔️</span>' : ''}</div>
+          <div class="opp-type">${_oppEsc(p.entity_type || 'ناشر داخل المنصة')}</div>
+        </div>
+      </div>
+      ${roleBadges ? `<div class="opp-rolebadges">${roleBadges}</div>` : ''}
+      ${p.bio ? `<div class="opp-bio">${_oppEsc(p.bio)}</div>` : ''}
+      ${social ? `<div class="opp-social">${social}</div>` : ''}
+      ${statsHtml.trim() ? `<div class="opp-stats">${statsHtml}</div>` : ''}
+      ${spacesSection}
+      ${bazaarsSection}
+    </div>`;
 
   document.title = `${displayName} — مكاني سبوت`;
 }
