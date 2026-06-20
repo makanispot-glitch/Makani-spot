@@ -88,6 +88,14 @@ document.addEventListener('DOMContentLoaded', function () {
   initAuth();
   subscribeSpacesRealtime();
 
+  // ESC لإغلاق الـ lightbox
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const lb = document.getElementById('ann-lightbox');
+      if (lb && lb.style.display === 'flex') { lb.style.display = 'none'; document.body.style.overflow = ''; }
+    }
+  });
+
   // تهيئة مؤشر سعر الماركت بعد لحظة
   setTimeout(initMpSlider, 150);
 
@@ -345,7 +353,12 @@ function _applyCurrentFilters() {
     spacesData = [...SPACES];
     if (region) spacesData = spacesData.filter(s => s.loc === region);
     if (mpActiveTypes.length) spacesData = spacesData.filter(s => mpActiveTypes.includes(s.type));
-    spacesData = spacesData.filter(s => (parseInt(s.price) || 0) <= maxVal);
+    // فلتر السعر: يُطبَّق فقط لو السلايدر لم يصل للحد الأقصى (بلا حد = عرض الكل)
+    const sliderEl  = document.getElementById('mp-slider-max');
+    const sliderMax = parseInt(sliderEl?.max || 50000);
+    if (maxVal < sliderMax) {
+      spacesData = spacesData.filter(s => (parseInt(s.price) || 0) <= maxVal);
+    }
     if (mpActiveActs.length) {
       spacesData = spacesData.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
     }
@@ -1315,14 +1328,73 @@ function openAnnouncementDetail(id) {
   if (!a) return;
   currentAnnDetail = a;
 
+  // ── بوابة الدخول ──
+  if (!currentUser) {
+    _showAnnLoginGate(a);
+    return;
+  }
+
+  _renderAnnDetail(a);
+}
+
+function _showAnnLoginGate(a) {
+  const headerEl = document.getElementById('ann-det-header');
+  if (headerEl) {
+    headerEl.innerHTML = `<div class="sd-header-inner">
+      <div class="sd-back-row">
+        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">→ العودة</button>
+      </div>
+      <div class="sd-title-row">
+        <div>
+          <h1 class="sd-name">${a.title}</h1>
+          <div class="sd-meta">
+            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${a.announcementType}</span>
+            <span class="sd-meta-sep">·</span>
+            <span>📍 ${a.governorate}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const bodyEl = document.getElementById('ann-det-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div style="text-align:center;padding:60px 24px;max-width:420px;margin:0 auto">
+        <div style="font-size:56px;margin-bottom:18px">🔐</div>
+        <div style="font-size:19px;font-weight:900;color:var(--fg-1,#1a1a1a);margin-bottom:10px;font-family:var(--font-display,'Cairo',sans-serif)">
+          يلزم تسجيل الدخول لعرض التفاصيل
+        </div>
+        <div style="font-size:14px;color:var(--fg-2,#555);line-height:1.7;margin-bottom:28px">
+          سجّل دخولك أو أنشئ حساباً مجانياً لعرض كامل تفاصيل الإعلان والمناقصة
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" style="padding:13px 32px;font-size:15px" onclick="showPage('login')">
+            تسجيل الدخول ←
+          </button>
+          <button class="btn" style="padding:13px 22px;font-size:14px" onclick="showPage('signup')">
+            إنشاء حساب جديد
+          </button>
+        </div>
+        <button class="btn" style="margin-top:18px;padding:10px 20px;font-size:13px;color:var(--fg-3,#888)" onclick="closeAnnouncementDetail()">
+          العودة للمساحات
+        </button>
+      </div>`;
+  }
+
+  showPage('announcement-detail');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function _renderAnnDetail(a) {
   const today    = new Date();
   const deadline = new Date(a.submissionDeadline);
   const daysLeft = Math.ceil((deadline - today) / 86400000);
   let statusHtml;
-  if (daysLeft < 0)      statusHtml = `<div class="ann-status-bar ann-st-expired">❌ انتهى موعد التقديم</div>`;
+  if (daysLeft < 0)       statusHtml = `<div class="ann-status-bar ann-st-expired">❌ انتهى موعد التقديم</div>`;
   else if (daysLeft === 0) statusHtml = `<div class="ann-status-bar ann-st-urgent">🔥 آخر يوم للتقديم اليوم</div>`;
-  else if (daysLeft <= 3) statusHtml = `<div class="ann-status-bar ann-st-urgent">⏰ ${daysLeft} أيام متبقية على آخر موعد</div>`;
-  else                   statusHtml = `<div class="ann-status-bar ann-st-ok">⏳ مفتوح للتقديم حتى ${_fmtAnnDate(a.submissionDeadline)}</div>`;
+  else if (daysLeft <= 3)  statusHtml = `<div class="ann-status-bar ann-st-urgent">⏰ ${daysLeft} أيام متبقية على آخر موعد</div>`;
+  else                     statusHtml = `<div class="ann-status-bar ann-st-ok">⏳ مفتوح للتقديم حتى ${_fmtAnnDate(a.submissionDeadline)}</div>`;
 
   const headerEl = document.getElementById('ann-det-header');
   if (headerEl) {
@@ -1348,7 +1420,14 @@ function openAnnouncementDetail(id) {
   const bodyEl = document.getElementById('ann-det-body');
   if (bodyEl) {
     bodyEl.innerHTML = `
-      ${a.imageUrl ? `<img class="ann-det-img" src="${a.imageUrl}" alt="${a.title}">` : ''}
+      ${a.imageUrl ? `
+        <div style="position:relative;margin-bottom:16px;cursor:zoom-in" onclick="openLightbox('${a.imageUrl.replace(/'/g,"\\'")}')">
+          <img class="ann-det-img" src="${a.imageUrl}" alt="${a.title}" style="margin-bottom:0">
+          <div style="position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;
+               border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;pointer-events:none">
+            🔍 اضغط للتكبير
+          </div>
+        </div>` : ''}
       ${statusHtml}
       <div class="ann-det-grid">
         <div class="ann-det-card">
@@ -1377,6 +1456,37 @@ function openAnnouncementDetail(id) {
   }
 
   showPage('announcement-detail');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* ================================================================
+   🔍 Lightbox — تكبير صورة الإعلان
+   ================================================================ */
+let _lbScale = 1;
+
+function openLightbox(url) {
+  const lb  = document.getElementById('ann-lightbox');
+  const img = document.getElementById('ann-lb-img');
+  if (!lb || !img) return;
+  img.src = url;
+  _lbScale = 1;
+  img.style.transform = 'scale(1)';
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(e) {
+  // يُغلق فقط لو الضغط على الخلفية الداكنة (ليس الصورة أو الأزرار)
+  if (e && e.target.id !== 'ann-lightbox') return;
+  const lb = document.getElementById('ann-lightbox');
+  if (lb) lb.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function lbZoom(delta) {
+  _lbScale = Math.min(4, Math.max(0.5, _lbScale + delta));
+  const img = document.getElementById('ann-lb-img');
+  if (img) img.style.transform = `scale(${_lbScale})`;
 }
 
 function closeAnnouncementDetail() {
