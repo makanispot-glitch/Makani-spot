@@ -81,18 +81,22 @@ function _showGuard(ico, title, desc, actionsHtml) {
 function _showForm() {
   document.getElementById('org-guard').style.display = 'none';
   document.getElementById('org-steps').style.display = 'flex';
-  document.getElementById('org-panel-1').classList.add('active');
-  setTimeout(() => { _orgRestoreDraft(); _attachDraftListeners(); }, 60);
+  _setStep(1);
+  setTimeout(() => { _fillOrganizerInfo(); _orgRestoreDraft(); _attachDraftListeners(); }, 60);
 }
 
 /* ──────────────────────────────────────────────────────
    التنقل بين الخطوات
 ────────────────────────────────────────────────────── */
 function orgNext(fromStep) {
-  if (fromStep === 1 && !_validateStep1()) return;
-  if (fromStep === 2 && !_validateStep2()) return;
+  if (fromStep === 1) {
+    if (!_validateStep0()) return;
+    _saveOrganizerInfo().catch(() => {});
+  }
+  if (fromStep === 2 && !_validateStep1()) return;
+  if (fromStep === 3 && !_validateStep2()) return;
   _setStep(fromStep + 1);
-  if (fromStep + 1 === 3) _buildSummary();
+  if (fromStep + 1 === 4) _buildSummary();
 }
 
 function orgBack(fromStep) {

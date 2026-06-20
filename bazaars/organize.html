@@ -70,7 +70,7 @@
 /* Step indicator */
 .org-steps {
   display: flex; align-items: center; justify-content: center;
-  gap: 0; padding: 28px 20px 0; max-width: 480px; margin: 0 auto;
+  gap: 0; padding: 28px 20px 0; max-width: 600px; margin: 0 auto;
 }
 .org-step {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -340,6 +340,39 @@
   background: var(--red-light); border: 1.5px solid #fca5a5; border-radius: var(--radius-lg);
   padding: 14px 18px; font-size: 13px; color: var(--red);
 }
+
+/* ── معلومات المنظم (خطوة 1) ── */
+.oi-profile-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px; background: var(--surface2);
+  border: 1.5px solid var(--border); border-radius: var(--radius-xl);
+}
+.oi-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 900; overflow: hidden;
+  border: 3px solid var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  flex-shrink: 0;
+}
+.oi-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.oi-profile-details { flex: 1; min-width: 0; }
+.oi-name {
+  font-size: 16px; font-weight: 900; color: var(--dark);
+  margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.oi-sub { font-size: 12px; color: var(--ink3); margin-bottom: 5px; direction: ltr; text-align: right; }
+.oi-verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  color: #2e7d32; border: 1.5px solid #81c784;
+  font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 50px;
+}
+.oi-social-section { margin-top: 22px; }
+.oi-social-title {
+  font-size: 14px; font-weight: 900; color: var(--dark);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+}
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -409,14 +442,18 @@
   <div class="org-steps" id="org-steps" style="display:none">
     <div class="org-step active" id="step-dot-1">
       <div class="org-step-dot">1</div>
-      <div class="org-step-lbl">الفعالية</div>
+      <div class="org-step-lbl">المنظم</div>
     </div>
     <div class="org-step" id="step-dot-2">
       <div class="org-step-dot">2</div>
-      <div class="org-step-lbl">التسعير</div>
+      <div class="org-step-lbl">الفعالية</div>
     </div>
     <div class="org-step" id="step-dot-3">
       <div class="org-step-dot">3</div>
+      <div class="org-step-lbl">التسعير</div>
+    </div>
+    <div class="org-step" id="step-dot-4">
+      <div class="org-step-dot">4</div>
       <div class="org-step-lbl">التأكيد</div>
     </div>
   </div>
@@ -431,7 +468,67 @@
   </div>
 
   <!-- ══════════════════════════════════════════
-       Step 1: معلومات الفعالية
+       Step 1 (جديد): معلومات المنظم
+  ══════════════════════════════════════════ -->
+  <div class="org-panel" id="org-panel-0" style="margin-top:22px">
+    <div class="org-panel-title">👤 معلومات المنظم</div>
+
+    <!-- بطاقة هوية المنظم (تُعبَّأ تلقائياً من البروفايل) -->
+    <div class="oi-profile-card">
+      <div class="oi-avatar" id="oi-avatar">?</div>
+      <div class="oi-profile-details">
+        <div class="oi-name" id="oi-name">—</div>
+        <div class="oi-sub" id="oi-email">—</div>
+        <span class="oi-verified-badge" id="oi-verified" style="display:none">✓ منظم موثّق</span>
+      </div>
+    </div>
+
+    <!-- روابط التواصل الاجتماعي -->
+    <div class="oi-social-section">
+      <div class="oi-social-title">
+        📱 روابط التواصل الاجتماعي
+        <span class="req">*</span>
+      </div>
+      <div class="org-hint" style="margin-bottom:16px">
+        يجب إضافة رابط تواصل اجتماعي واحد على الأقل — تُعرض للعارضين المهتمين بالمشاركة وتُحفظ في ملفك الشخصي تلقائياً
+      </div>
+
+      <div class="org-fg" style="margin-bottom:12px">
+        <label>
+          <svg viewBox="0 0 24 24" fill="#1877F2" width="14" height="14" style="vertical-align:middle;margin-left:4px"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          Facebook
+        </label>
+        <input type="url" id="oi-facebook" placeholder="https://facebook.com/yourpage" dir="ltr" autocomplete="off">
+      </div>
+
+      <div class="org-fg" style="margin-bottom:12px">
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" width="14" height="14" style="vertical-align:middle;margin-left:4px;stroke:url(#oi-ig-g)">
+            <defs><linearGradient id="oi-ig-g" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+          Instagram
+        </label>
+        <input type="url" id="oi-instagram" placeholder="https://instagram.com/youraccount" dir="ltr" autocomplete="off">
+      </div>
+
+      <div class="org-fg">
+        <label>
+          <svg viewBox="0 0 24 24" fill="#010101" width="14" height="14" style="vertical-align:middle;margin-left:4px"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.75a4.86 4.86 0 0 1-1-.06z"/></svg>
+          TikTok
+        </label>
+        <input type="url" id="oi-tiktok" placeholder="https://tiktok.com/@youraccount" dir="ltr" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="org-nav">
+      <span></span>
+      <button class="org-nav-next" onclick="orgNext(1)">التالي — الفعالية →</button>
+    </div>
+  </div><!-- /panel-0 -->
+
+  <!-- ══════════════════════════════════════════
+       Step 2: معلومات الفعالية
   ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-1" style="margin-top:22px">
     <div class="org-panel-title">🗓 معلومات الفعالية</div>
@@ -587,8 +684,8 @@
     </div><!-- /org-media-section -->
 
     <div class="org-nav">
-      <span></span>
-      <button class="org-nav-next" onclick="orgNext(1)">التالي — التسعير →</button>
+      <button class="org-nav-back" onclick="orgBack(2)">← المنظم</button>
+      <button class="org-nav-next" onclick="orgNext(2)">التالي — التسعير →</button>
     </div>
   </div><!-- /panel-1 -->
 
@@ -667,8 +764,8 @@
     </div>
 
     <div class="org-nav">
-      <button class="org-nav-back" onclick="orgBack(2)">← الفعالية</button>
-      <button class="org-nav-next" onclick="orgNext(2)">التالي — التأكيد →</button>
+      <button class="org-nav-back" onclick="orgBack(3)">← الفعالية</button>
+      <button class="org-nav-next" onclick="orgNext(3)">التالي — التأكيد →</button>
     </div>
   </div><!-- /panel-2 -->
 
@@ -704,7 +801,7 @@
     <div id="org-result"></div>
 
     <div class="org-nav">
-      <button class="org-nav-back" onclick="orgBack(3)">← التسعير</button>
+      <button class="org-nav-back" onclick="orgBack(4)">← التسعير</button>
       <button class="org-nav-next" id="org-submit-btn" onclick="orgSubmit()">إرسال الطلب ✓</button>
     </div>
   </div><!-- /panel-3 -->

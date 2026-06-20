@@ -1204,8 +1204,10 @@ function eqIncrementView(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
   /* Skip listings already seen this browser session */
-  if (sessionStorage.getItem('eq_seen_' + id)) return;
-  sessionStorage.setItem('eq_seen_' + id, '1');
+  try {
+    if (sessionStorage.getItem('eq_seen_' + id)) return;
+    sessionStorage.setItem('eq_seen_' + id, '1');
+  } catch { /* WebView / private mode — skip dedup, allow count */ }
   listing.view_count = (listing.view_count || 0) + 1;
   _eqViewQueue.add(id);
   if (!_eqViewTimer) _eqViewTimer = setTimeout(_eqFlushViews, 30_000);

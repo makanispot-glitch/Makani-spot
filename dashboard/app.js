@@ -25,6 +25,12 @@ let ownerTenants   = [];
 let ownerContracts = [];
 let ownerAuthChecked = false;
 
+/* wrapper آمن لـ sessionStorage — يمنع SecurityError في WebViews / وضع خاص */
+const _ss = {
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+  rm(k)     { try { sessionStorage.removeItem(k); } catch {} },
+};
+
 /* ══════════════════════════════════════════
    📋  CONTRACTS / PAYMENTS / VIOLATIONS / RATINGS
    كل البيانات في Supabase — هذه مصفوفات كاش في الذاكرة
@@ -725,7 +731,7 @@ async function checkRoleAndProceed(user) {
     return;
   }
 
-  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  _ss.set('ms_owner', JSON.stringify(currentOwner));
   setLoginLoading(false);
   initDashboard();
 }
@@ -769,7 +775,7 @@ async function doLogout() {
   const sb = getSB();
   if (sb) await sb.auth.signOut();
 
-  sessionStorage.removeItem('ms_owner');
+  _ss.rm('ms_owner');
   currentOwner   = null;
   ownerSpaces    = [];
   ownerTenants   = [];
@@ -914,7 +920,7 @@ async function loadOwnerData() {
       const { data: effectivePlan } = await sb.rpc('get_my_effective_plan');
       if (effectivePlan && effectivePlan !== currentOwner.planTier) {
         currentOwner.planTier = effectivePlan;
-        sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+        _ss.set('ms_owner', JSON.stringify(currentOwner));
         const badge = document.getElementById('sb-plan-badge');
         if (badge) badge.innerHTML = _planBadgeHtml(effectivePlan);
       }
@@ -4833,7 +4839,7 @@ async function saveSettings() {
   if (name)  { currentOwner.name  = name;  setTxt('sb-name', name); }
   if (phone)   currentOwner.phone = phone;
 
-  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  _ss.set('ms_owner', JSON.stringify(currentOwner));
 
   /* 🔗 DB-LINK: احفظ في جدول profiles في Supabase */
   const sb = getSB();
@@ -4960,7 +4966,7 @@ async function uploadProfileAvatar(input) {
     /* 🪪 مزامنة organizer_profiles (تحديث فقط إن كان الحساب منظم بازار أيضاً — لا ينشئ صفاً) */
     sb.from('organizer_profiles').update({ avatar_url: url }).eq('user_id', currentOwner.id).then(null, () => {});
     currentOwner.avatarUrl = url;
-    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+    _ss.set('ms_owner', JSON.stringify(currentOwner));
 
     if (av) { av.style.backgroundImage = `url("${url}")`; av.style.opacity = '1'; }
     /* توحيد: حدّث أفاتار السايدبار أيضاً */
@@ -4995,7 +5001,7 @@ async function uploadProfileCover(input) {
     /* 🪪 مزامنة organizer_profiles إن وُجد */
     sb.from('organizer_profiles').update({ cover_url: url }).eq('user_id', currentOwner.id).then(null, () => {});
     currentOwner.coverUrl = url;
-    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+    _ss.set('ms_owner', JSON.stringify(currentOwner));
 
     if (cv) cv.style.backgroundImage = `url("${url}")`;
     _ppMsg('success', 'تم تحديث صورة الغلاف بنجاح.');
@@ -5027,7 +5033,7 @@ async function saveProfileForm() {
     currentOwner.entityName = entityName || '';
     currentOwner.entityType = entityType || '';
     currentOwner.bio        = bio || '';
-    sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+    _ss.set('ms_owner', JSON.stringify(currentOwner));
     ppSyncPreview();
     _ppMsg('success', 'تم حفظ البروفايل بنجاح.');
   } catch (err) {
@@ -5278,7 +5284,7 @@ async function checkSessionOnLoad() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
-    sessionStorage.removeItem('ms_owner');
+    _ss.rm('ms_owner');
     showOwnerAccessGate(
       'info',
       'ادخل من حسابك على منصة مكاني Spot',
@@ -5295,7 +5301,7 @@ async function checkSessionOnLoad() {
     .single();
 
   if (error || !profile || profile.role !== 'owner') {
-    sessionStorage.removeItem('ms_owner');
+    _ss.rm('ms_owner');
     showOwnerAccessGate(
       'danger',
       'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
@@ -5306,7 +5312,7 @@ async function checkSessionOnLoad() {
 
   /* ❌ حساب موقوف من الأدمن */
   if (profile.is_suspended) {
-    sessionStorage.removeItem('ms_owner');
+    _ss.rm('ms_owner');
     showOwnerAccessGate(
       'danger',
       'تم إيقاف هذا الحساب مؤقتاً',
@@ -5336,7 +5342,7 @@ async function checkSessionOnLoad() {
     isVerified: !!profile.is_verified,
     roles:      Array.isArray(profile.roles) ? profile.roles : [],
   };
-  sessionStorage.setItem('ms_owner', JSON.stringify(currentOwner));
+  _ss.set('ms_owner', JSON.stringify(currentOwner));
   initDashboard();
 }
 

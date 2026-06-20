@@ -128,8 +128,10 @@ async function cacheFirst(request) {
     if (response.ok) {
       const cache = await caches.open(SHELL_CACHE);
       cache.put(request, response.clone());
+      return response;
     }
-    return response;
+    // لا نُعيد استجابة HTML للأخطاء (404…) حتى لا تُفسَّر كـ JS/CSS
+    return new Response('', { status: response.status, statusText: response.statusText });
   } catch {
     return new Response('', { status: 503, statusText: 'Service Unavailable' });
   }
