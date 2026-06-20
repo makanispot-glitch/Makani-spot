@@ -217,6 +217,7 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
     ownerAvatar: isBroker ? null : (ownerProfile.avatar_url || null),
     ownerVerified: isBroker ? false : !!ownerProfile.is_verified,
     planTier:    isBroker ? 'broker' : (ownerProfile.plan_tier || 'starter'),
+    createdAt:   row.created_at || '',
     subSpaces:   (row.space_units || []).map(u => ({
       unitId:   u.unit_id   || '',
       name:     u.name      || '',
@@ -228,6 +229,28 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
       floor:    u.floor     || '',
       notes:    u.notes     || '',
     })),
+  };
+}
+
+function mapAnnouncementObject(row) {
+  return {
+    _type:              'announcement',
+    id:                 row.id,
+    title:              row.title              || '',
+    imageUrl:           row.image_url          || '',
+    issuingBody:        row.issuing_body       || '',
+    announcementType:   row.announcement_type  || 'مناقصة رسمية',
+    classification:     row.classification     || '',
+    governorate:        row.governorate        || '',
+    source:             row.source             || '',
+    publishedAt:        row.published_at       || '',
+    submissionDeadline: row.submission_deadline|| '',
+    sessionDate:        row.session_date       || '',
+    sessionTime:        row.session_time       || '',
+    documentPrice:      row.document_price     || null,
+    insuranceValue:     row.insurance_value    || 'غير محدد',
+    description:        row.description        || '',
+    createdAt:          row.created_at         || '',
   };
 }
 
@@ -311,24 +334,59 @@ function subscribeSpacesRealtime() {
 
 /* ── يطبّق الفلاتر الحالية بدون إعادة ضبط الصفحة — مشترك بين silentRefresh والـ Realtime ── */
 function _applyCurrentFilters() {
-  const region = document.getElementById('mp-region')?.value  || '';
-  const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-  const sort   = document.getElementById('mp-sort')?.value    || 'default';
-  let data = [...SPACES];
-  if (region) data = data.filter(s => s.loc === region);
-  if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
-  data = data.filter(s => (parseInt(s.price) || 0) <= maxVal);
-  if (mpActiveActs.length) {
-    data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
+  const region      = document.getElementById('mp-region')?.value    || '';
+  const maxVal      = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
+  const sort        = document.getElementById('mp-sort')?.value      || 'default';
+  const annClassFlt = document.getElementById('mp-ann-class')?.value || '';
+
+  // ── مساحات ──
+  let spacesData = [];
+  if (mpContentFilter !== 'announcements') {
+    spacesData = [...SPACES];
+    if (region) spacesData = spacesData.filter(s => s.loc === region);
+    if (mpActiveTypes.length) spacesData = spacesData.filter(s => mpActiveTypes.includes(s.type));
+    spacesData = spacesData.filter(s => (parseInt(s.price) || 0) <= maxVal);
+    if (mpActiveActs.length) {
+      spacesData = spacesData.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
+    }
   }
-  if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
-  if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
-  mpFiltered = data;
+
+  // ── إعلانات ──
+  let annData = [];
+  if (mpContentFilter !== 'spaces') {
+    annData = [...ANNOUNCEMENTS];
+    if (region) annData = annData.filter(a => a.governorate === region);
+    if (annClassFlt) annData = annData.filter(a => a.classification === annClassFlt);
+  }
+
+  // ── دمج + ترتيب ──
+  const spacesTagged = spacesData.map(s => Object.assign({}, s, { _type: 'space' }));
+  const annTagged    = annData;   // already have _type:'announcement'
+
+  if (sort === 'price-asc') {
+    spacesTagged.sort((a, b) => a.price - b.price);
+    mpFiltered = [...annTagged, ...spacesTagged];
+  } else if (sort === 'price-desc') {
+    spacesTagged.sort((a, b) => b.price - a.price);
+    mpFiltered = [...annTagged, ...spacesTagged];
+  } else {
+    const all = [...spacesTagged, ...annTagged];
+    all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    mpFiltered = all;
+  }
+
   const maxPage = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
   if (mpPage > maxPage) mpPage = maxPage;
   renderMarketplace();
-  const counter = document.getElementById('mp-count');
-  if (counter) counter.textContent = SPACES.length + (spacesHasMore ? '+' : '') + ' مساحة';
+
+  const counter  = document.getElementById('mp-count');
+  const annCnt   = mpFiltered.filter(x => x._type === 'announcement').length;
+  const spCnt    = mpFiltered.filter(x => x._type !== 'announcement').length;
+  if (counter) {
+    if (annCnt && spCnt) counter.textContent = mpFiltered.length + ' نتيجة';
+    else if (annCnt)     counter.textContent = annCnt + ' إعلان';
+    else                 counter.textContent = spCnt + (spacesHasMore ? '+' : '') + ' مساحة';
+  }
 }
 
 /* ── يتعامل مع حدث Realtime لمساحة محددة بدل إعادة تحميل الكل ── */
@@ -1114,58 +1172,59 @@ function toggleMpAct(id, el) {
 }
 
 function applyMpFilters() {
-  const region = document.getElementById('mp-region')?.value || '';
-  const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-  const sort   = document.getElementById('mp-sort')?.value || 'default';
-
-  let data = [...SPACES];
-
-  if (region) data = data.filter(s => s.loc === region);
-  if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
-  data = data.filter(s => {
-    const p = parseInt(s.price) || 0;
-    return p >= 0 && p <= maxVal;
-  });
-  if (mpActiveActs.length) {
-    data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
-  }
-
-  if (sort === 'price-asc')  data.sort((a, b) => a.price - b.price);
-  if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
-
-  mpFiltered = data;
-  mpPage     = 1;
-  renderMarketplace();
+  mpPage = 1;
+  _applyCurrentFilters();
   updateMpChips();
 }
 
+function setContentFilter(type, btn) {
+  mpContentFilter = type;
+  document.querySelectorAll('.mp-ctype-btn').forEach(b => b.className = 'mp-ctype-btn');
+  if (btn) btn.classList.add(type === 'all' ? 'on-all' : type === 'spaces' ? 'on-sp' : 'on-ann');
+  // إظهار/إخفاء فلتر تصنيف الإعلان
+  const clsWrap = document.getElementById('mp-ann-class-wrap');
+  if (clsWrap) clsWrap.style.display = type === 'announcements' ? '' : 'none';
+  applyMpFilters();
+}
+
 function clearMpFilters() {
-  mpActiveTypes = [];
-  mpActiveActs  = [];
+  mpActiveTypes   = [];
+  mpActiveActs    = [];
+  mpContentFilter = 'all';
   document.querySelectorAll('.mp-type-btn').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.mp-act-btn').forEach(b  => b.classList.remove('on'));
 
   const s2 = document.getElementById('mp-slider-max');
-  if (s2) s2.value = parseInt(s2?.max || 50000);
+  if (s2) s2.value = parseInt(s2.max || 50000);
   updateMpSlider();
 
   const mpRegion = document.getElementById('mp-region');
   if (mpRegion) mpRegion.value = '';
   const mpSort = document.getElementById('mp-sort');
   if (mpSort) mpSort.value = 'default';
+  const annClass = document.getElementById('mp-ann-class');
+  if (annClass) annClass.value = '';
+  const clsWrap = document.getElementById('mp-ann-class-wrap');
+  if (clsWrap) clsWrap.style.display = 'none';
 
-  mpFiltered = [...SPACES];
-  mpPage     = 1;
-  renderMarketplace();
+  // إعادة ضبط أزرار نوع المحتوى
+  document.querySelectorAll('.mp-ctype-btn').forEach(b => b.className = 'mp-ctype-btn');
+  const allBtn = document.getElementById('mp-ctype-all');
+  if (allBtn) allBtn.classList.add('on-all');
+
+  mpPage = 1;
+  _applyCurrentFilters();
   updateMpChips();
 }
 
 function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
-  const chips  = [];
+  const chips   = [];
   const typeMap = { mall: 'مولات', club: 'نوادي', school: 'مدارس' };
 
+  if (mpContentFilter === 'announcements') chips.push(`<span class="mp-chip" onclick="clearMpFilters()">📢 إعلانات فقط ×</span>`);
+  if (mpContentFilter === 'spaces')        chips.push(`<span class="mp-chip" onclick="clearMpFilters()">🏢 مساحات فقط ×</span>`);
   mpActiveTypes.forEach(t => {
     chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${typeMap[t] || t} ×</span>`);
   });
@@ -1178,13 +1237,10 @@ function updateMpChips() {
 }
 
 function renderMarketplace() {
-  const grid    = document.getElementById('mp-grid');
-  const countEl = document.getElementById('mp-count');
+  const grid = document.getElementById('mp-grid');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = mpFiltered.length + ' مساحة';
-
-  const start    = (mpPage - 1) * MP_PER_PAGE;
+  const start = (mpPage - 1) * MP_PER_PAGE;
   const pageData = mpFiltered.slice(start, start + MP_PER_PAGE);
 
   if (!pageData.length) {
@@ -1199,9 +1255,142 @@ function renderMarketplace() {
     return;
   }
 
-  grid.innerHTML = pageData.map(s => buildCardHtml(s, 'market')).join('');
+  grid.innerHTML = pageData.map(item =>
+    item._type === 'announcement'
+      ? buildAnnouncementCardHtml(item)
+      : buildCardHtml(item, 'market')
+  ).join('');
   setTimeout(() => csInitAll(), 120);
   renderMpPagination();
+}
+
+/* ================================================================
+   📢 كروت وتفاصيل الإعلانات الرسمية
+   ================================================================ */
+
+function buildAnnouncementCardHtml(a) {
+  const today    = new Date();
+  const deadline = new Date(a.submissionDeadline);
+  const daysLeft = Math.ceil((deadline - today) / 86400000);
+
+  let dlHtml;
+  if (daysLeft < 0) {
+    dlHtml = `<span class="ann-deadline ann-dl-expired">❌ انتهى التقديم</span>`;
+  } else if (daysLeft === 0) {
+    dlHtml = `<span class="ann-deadline ann-dl-urgent">🔥 آخر يوم للتقديم</span>`;
+  } else if (daysLeft <= 3) {
+    dlHtml = `<span class="ann-deadline ann-dl-urgent">⏰ ${daysLeft} أيام متبقية</span>`;
+  } else {
+    dlHtml = `<span class="ann-deadline ann-dl-ok">⏳ حتى ${_fmtAnnDate(a.submissionDeadline)}</span>`;
+  }
+
+  const typeClass = { 'مناقصة رسمية':'ann-badge-tender','مزاد علني':'ann-badge-auction','إعلان رسمي':'ann-badge-official' }[a.announcementType] || 'ann-badge-other';
+  const thumb = a.imageUrl
+    ? `<img src="${a.imageUrl}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=ann-thumb-ph>📄</div>'">`
+    : `<div class="ann-thumb-ph">📄</div>`;
+
+  const finRows = [];
+  if (a.documentPrice) finRows.push(`<span>📄 المستندات: ${Number(a.documentPrice).toLocaleString('ar-EG')} ج.م</span>`);
+  if (a.insuranceValue && a.insuranceValue !== 'غير محدد') finRows.push(`<span>🔒 تأمين: ${a.insuranceValue}</span>`);
+
+  return `<div class="ann-card" onclick="openAnnouncementDetail('${a.id}')">
+  <div class="ann-thumb">
+    ${thumb}
+    <span class="ann-type-badge ${typeClass}">${a.announcementType}</span>
+  </div>
+  <div class="ann-body">
+    <div class="ann-title">${a.title}</div>
+    <div class="ann-issuer">🏛 ${a.issuingBody}</div>
+    <div class="ann-meta-row">📍 ${a.governorate}${a.classification ? ` · ${a.classification}` : ''}</div>
+    ${dlHtml}
+    ${finRows.length ? `<div class="ann-financial">${finRows.join('')}</div>` : ''}
+    <div class="ann-publisher">نشر بواسطة مكاني سبوت</div>
+    <button class="ann-details-btn">عرض التفاصيل ←</button>
+  </div>
+</div>`;
+}
+
+function openAnnouncementDetail(id) {
+  const a = ANNOUNCEMENTS.find(x => x.id === id);
+  if (!a) return;
+  currentAnnDetail = a;
+
+  const today    = new Date();
+  const deadline = new Date(a.submissionDeadline);
+  const daysLeft = Math.ceil((deadline - today) / 86400000);
+  let statusHtml;
+  if (daysLeft < 0)      statusHtml = `<div class="ann-status-bar ann-st-expired">❌ انتهى موعد التقديم</div>`;
+  else if (daysLeft === 0) statusHtml = `<div class="ann-status-bar ann-st-urgent">🔥 آخر يوم للتقديم اليوم</div>`;
+  else if (daysLeft <= 3) statusHtml = `<div class="ann-status-bar ann-st-urgent">⏰ ${daysLeft} أيام متبقية على آخر موعد</div>`;
+  else                   statusHtml = `<div class="ann-status-bar ann-st-ok">⏳ مفتوح للتقديم حتى ${_fmtAnnDate(a.submissionDeadline)}</div>`;
+
+  const headerEl = document.getElementById('ann-det-header');
+  if (headerEl) {
+    headerEl.innerHTML = `<div class="sd-header-inner">
+      <div class="sd-back-row">
+        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">→ العودة</button>
+      </div>
+      <div class="sd-title-row">
+        <div>
+          <h1 class="sd-name">${a.title}</h1>
+          <div class="sd-meta">
+            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${a.announcementType}</span>
+            <span class="sd-meta-sep">·</span>
+            <span>📍 ${a.governorate}</span>
+            <span class="sd-meta-sep">·</span>
+            <span>🏛 ${a.issuingBody}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const bodyEl = document.getElementById('ann-det-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      ${a.imageUrl ? `<img class="ann-det-img" src="${a.imageUrl}" alt="${a.title}">` : ''}
+      ${statusHtml}
+      <div class="ann-det-grid">
+        <div class="ann-det-card">
+          <div class="ann-det-card-title">📋 بيانات الإعلان</div>
+          ${_annRow('الجهة الناشرة', a.issuingBody)}
+          ${_annRow('نوع الإعلان', a.announcementType)}
+          ${_annRow('التصنيف', a.classification)}
+          ${_annRow('المحافظة', a.governorate)}
+          ${a.source ? _annRow('المصدر', a.source) : ''}
+        </div>
+        <div class="ann-det-card">
+          <div class="ann-det-card-title">📅 المواعيد</div>
+          ${_annRow('تاريخ النشر', _fmtAnnDate(a.publishedAt))}
+          ${_annRow('آخر موعد التقديم', _fmtAnnDate(a.submissionDeadline))}
+          ${a.sessionDate ? _annRow('موعد جلسة الفتح', _fmtAnnDate(a.sessionDate) + (a.sessionTime ? ' — ' + a.sessionTime : '')) : ''}
+        </div>
+        <div class="ann-det-card">
+          <div class="ann-det-card-title">💰 البيانات المالية</div>
+          ${a.documentPrice ? _annRow('قيمة المستندات', Number(a.documentPrice).toLocaleString('ar-EG') + ' ج.م') : _annRow('قيمة المستندات', 'غير محدد')}
+          ${_annRow('قيمة التأمين', a.insuranceValue || 'غير محدد')}
+        </div>
+      </div>
+      ${a.description ? `<div class="sd-sec-title" style="margin-bottom:10px">📝 التفاصيل</div>
+        <div class="ann-desc">${a.description.replace(/\n/g, '<br>')}</div>` : ''}
+      <div style="height:80px"></div>`;
+  }
+
+  showPage('announcement-detail');
+}
+
+function closeAnnouncementDetail() {
+  currentAnnDetail = null;
+  showPage('market');
+}
+
+function _fmtAnnDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function _annRow(k, v) {
+  return `<div class="ann-det-row"><span class="ann-det-key">${k}</span><span class="ann-det-val">${v || '—'}</span></div>`;
 }
 
 function renderMpPagination() {
@@ -1833,14 +2022,13 @@ function showPage(p) {
 
   // تحديث الـ Nav
   document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
-  if (p === 'market' || p === 'space-detail') {
+  if (p === 'market' || p === 'space-detail' || p === 'announcement-detail') {
     document.getElementById('nsb-spaces')?.classList.add('active');
   }
   if (p === 'market') {
     setTimeout(initMpSlider, 120);
-    if (SPACES.length && !mpFiltered.length) {
-      mpFiltered = [...SPACES];
-      renderMarketplace();
+    if ((SPACES.length || ANNOUNCEMENTS.length) && !mpFiltered.length) {
+      _applyCurrentFilters();
     }
   }
 
