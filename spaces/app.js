@@ -50,6 +50,11 @@ let detailPrevPage     = 'market';
 // المساحة الجاري حجزها — لربط الحجز بصاحب المساحة (نظام التقييمات)
 let bookingSpace = null;
 
+// ── الإعلانات الرسمية والمناقصات ──
+let ANNOUNCEMENTS    = [];
+let mpContentFilter  = 'all';    // 'all' | 'spaces' | 'announcements'
+let currentAnnDetail = null;
+
 // ── نظام الـ Slider ──
 const _sliders = {};
 const CS_AUTO_DELAY = 3800;
@@ -159,15 +164,21 @@ async function loadData() {
     spacesOffset  = 0;
     spacesHasMore = (spacesData || []).length === SPACES_FETCH_SIZE;
 
+    // تحميل الإعلانات الرسمية غير المنتهية
+    const todayIso = new Date().toISOString().split('T')[0];
+    const { data: annData } = await sbClient
+      .from('official_announcements')
+      .select('*')
+      .eq('is_active', true)
+      .gte('submission_deadline', todayIso)
+      .order('created_at', { ascending: false });
+    ANNOUNCEMENTS = (annData || []).map(mapAnnouncementObject);
+
     buildModalActivityPicker();
     buildMpActivityFilters();
 
-    mpFiltered = [...SPACES];
-    renderMarketplace();
+    _applyCurrentFilters();
     setTimeout(() => csInitAll(), 120);
-
-    const counter = document.getElementById('mp-count');
-    if (counter) counter.textContent = SPACES.length + (spacesHasMore ? '+' : '') + ' مساحة';
 
   } catch (err) {
     showLoadingState('mp-grid', true, err.message || 'خطأ في تحميل البيانات');

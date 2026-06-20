@@ -499,6 +499,9 @@ textarea.fc{resize:vertical;min-height:72px}
       <div class="sb-item" id="sbi-maintenance" onclick="gp('maintenance',this)">
         <span class="sb-ico">🔧</span> صيانة DB
       </div>
+      <div class="sb-item" id="sbi-announcements" onclick="gp('announcements',this)">
+        <span class="sb-ico">📢</span> إعلانات رسمية
+      </div>
       <div class="sb-sep"></div>
       <div class="sb-item" id="sbi-add" onclick="openAddForm()">
         <span class="sb-ico">➕</span> إضافة مساحة
@@ -536,6 +539,8 @@ textarea.fc{resize:vertical;min-height:72px}
       <div id="pg-export"       class="page"></div>
       <div id="pg-maintenance"  class="page"></div>
       <div id="pg-form"         class="page"></div>
+      <div id="pg-announcements" class="page"></div>
+      <div id="pg-ann-form"      class="page"></div>
     </div>
   </div>
 </div>
@@ -608,7 +613,7 @@ const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة'};
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة',announcements:'الإعلانات الرسمية','ann-form':'نموذج إعلان رسمي'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
@@ -618,6 +623,12 @@ let allSpaces   = [];
 let allOwners   = [];
 let allActivities    = [];
 let allOwnerRequests = [];
+let allAnnouncements = [];
+let annEditingId     = null;
+let annImgUrl        = null;
+const ANN_TYPES = ['مناقصة رسمية','مزاد علني','إعلان رسمي','أخرى'];
+const ANN_CLASSIFICATIONS = ['إدارة واستغلال كافتيريا','إدارة واستغلال بوفيه','إدارة واستغلال منفذ بيع','إدارة واستغلال محل تجاري','إدارة واستغلال صالة رياضية','إدارة واستغلال مطعم','أخرى'];
+const EG_GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','الغربية','المنوفية','البحيرة','الدقهلية','الشرقية','القليوبية','كفر الشيخ','دمياط','بورسعيد','الإسماعيلية','السويس','شمال سيناء','جنوب سيناء','البحر الأحمر','سوهاج','قنا','الأقصر','أسوان','أسيوط','المنيا','الفيوم','بني سويف','مطروح','الوادي الجديد'];
 /* Subscription management state */
 let subSearch = '', subPlanFilter = 'all', subStatusFilter = 'all', subExpiringOnly = false;
 let editingSubOwner = null;
@@ -710,17 +721,19 @@ async function loadAll() {
   setPageLoading(currentPage);
   try {
     let ownerReqsErr = null;
-    const [spaces, owners, activities, ownerReqs] = await Promise.all([
+    const [spaces, owners, activities, ownerReqs, announcements] = await Promise.all([
       sbRpc('admin_get_spaces',   {p_secret:adminHash}),
       sbRpc('admin_get_owners',   {p_secret:adminHash}),
       fetchActivities().catch(()=>[]),
       sbRpc('admin_get_upgrade_requests', {p_secret:adminHash})
         .catch(e => { ownerReqsErr = e; return []; }),
+      sbRpc('admin_get_announcements', {p_secret:adminHash}).catch(()=>[]),
     ]);
-    allSpaces        = spaces     || [];
-    allOwners        = owners     || [];
-    allActivities    = activities || [];
-    allOwnerRequests = ownerReqs  || [];
+    allSpaces        = spaces        || [];
+    allOwners        = owners        || [];
+    allActivities    = activities    || [];
+    allOwnerRequests = ownerReqs     || [];
+    allAnnouncements = announcements || [];
     if (ownerReqsErr) console.error('[upgrade_requests]', ownerReqsErr.message);
     updatePendingBadge();
     const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
@@ -801,7 +814,9 @@ function renderCurrentPage() {
     case 'notif':          renderBulkNotif();      break;
     case 'export':         renderExport();         break;
     case 'maintenance':    renderMaintenance();    break;
-    case 'form':     /* rendered by editSpace/openAddForm */ break;
+    case 'form':          /* rendered by editSpace/openAddForm */ break;
+    case 'announcements': renderAnnouncements();                break;
+    case 'ann-form':      /* rendered by openAnnForm */        break;
   }
 }
 
@@ -4258,6 +4273,325 @@ function statusCls(s) { return {approved:'b-approved',pending:'b-pending',reject
 function planCls(p)   { return {starter:'b-starter',growth:'b-growth',pro:'b-pro'}[p]||'b-starter'; }
 function planLbl(p)   { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p||'Starter'; }
 function unitStatusLbl(s){ return {available:'متاحة',rented:'مؤجّرة',reserved:'محجوزة',maintenance:'صيانة'}[s]||s; }
+
+/* ═══════════════════════════════
+   PAGE: ANNOUNCEMENTS LIST
+═══════════════════════════════ */
+function renderAnnouncements() {
+  const today   = new Date().toISOString().split('T')[0];
+  const active  = allAnnouncements.filter(a =>  a.is_active && a.submission_deadline >= today).length;
+  const expired = allAnnouncements.filter(a =>  a.is_active && a.submission_deadline <  today).length;
+  const hidden  = allAnnouncements.filter(a => !a.is_active).length;
+
+  const rows = allAnnouncements.map(a => {
+    const isExpired = a.submission_deadline < today;
+    const stBadge   = !a.is_active ? '<span class="badge b-hidden">مخفي</span>'
+                    : isExpired    ? '<span class="badge b-rejected">منتهي</span>'
+                    :                '<span class="badge b-approved">نشط</span>';
+    const thumb = a.image_url
+      ? `<img src="${esc(a.image_url)}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)" onerror="this.style.display='none'">`
+      : `<div style="width:52px;height:40px;background:var(--bg4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>`;
+    const safeTitle = esc(a.title||'—');
+    return `<tr>
+      <td><div style="display:flex;gap:10px;align-items:center">${thumb}
+        <div><div style="font-weight:700;font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeTitle}</div>
+        <div style="font-size:10px;color:var(--mu);margin-top:2px">${esc(a.source||'—')}</div></div></div></td>
+      <td style="font-size:11px;max-width:130px">${esc(a.issuing_body||'—')}</td>
+      <td><span class="badge b-broker">${esc(a.announcement_type||'—')}</span></td>
+      <td style="font-size:11px">${esc(a.governorate||'—')}</td>
+      <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:${isExpired?'var(--rd)':'var(--tx)'}">${a.submission_deadline||'—'}</td>
+      <td>${stBadge}</td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-bl" onclick="openAnnForm('${a.id}')">✏️</button>
+        <button class="btn ${a.is_active?'btn-yw':'btn-ok'}" onclick="toggleAnn('${a.id}',${!a.is_active})">${a.is_active?'⏸':'▶'}</button>
+        <button class="btn btn-err" onclick="deleteAnn('${a.id}','${safeTitle}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <div>
+    <div class="sec-title">الإعلانات الرسمية والمناقصات</div>
+    <div class="sec-sub">يُديرها الأدمن فقط — تظهر مختلطة مع المساحات على المنصة العامة</div>
+  </div>
+  <button class="tbtn tbtn-primary" onclick="openAnnForm()">+ إعلان جديد</button>
+</div>
+<div class="stats-bar" style="margin-bottom:20px">
+  <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> نشط</div>
+  <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${expired}</span> منتهي الصلاحية</div>
+  <div class="stat-chip"><span class="stat-num" style="color:var(--mu)">${hidden}</span> مخفي</div>
+</div>
+${allAnnouncements.length === 0
+  ? `<div class="empty-state"><div class="empty-ico">📢</div><div class="empty-title">لا توجد إعلانات بعد</div>
+     <button class="btn btn-or" style="margin-top:14px" onclick="openAnnForm()">+ أضف إعلاناً الآن</button></div>`
+  : `<div class="t-wrap"><table class="t"><thead><tr>
+       <th>الإعلان</th><th>الجهة الناشرة</th><th>النوع</th><th>المحافظة</th>
+       <th>آخر موعد</th><th>الحالة</th><th>إجراءات</th>
+     </tr></thead><tbody>${rows}</tbody></table></div>`}`;
+
+  setPageContent('announcements', html);
+}
+
+/* ═══════════════════════════════
+   ANNOUNCEMENTS — FORM
+═══════════════════════════════ */
+function openAnnForm(id) {
+  annEditingId = id || null;
+  const a      = id ? allAnnouncements.find(x => x.id === id) : null;
+  annImgUrl    = a ? (a.image_url || null) : null;
+
+  const knownClasses  = ANN_CLASSIFICATIONS.slice(0, -1);
+  const isOtherClass  = a && !knownClasses.includes(a.classification);
+  const classVal      = isOtherClass ? 'أخرى' : (a ? a.classification : '');
+  const classOther    = isOtherClass ? (a.classification || '') : '';
+
+  const pg = document.getElementById('pg-ann-form');
+  if (!pg) return;
+  pg.innerHTML = `<div class="form-wrap">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <button class="btn btn-neu" onclick="gp('announcements',document.getElementById('sbi-announcements'))">← رجوع</button>
+    <div>
+      <div style="font-size:15px;font-weight:800;color:var(--tx)">${id ? 'تعديل إعلان' : 'إعلان جديد'}</div>
+      <div style="font-size:11px;color:var(--mu)">الإعلانات الرسمية والمناقصات</div>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">📄 البيانات الأساسية</div>
+    <div class="fg2">
+      <div class="fg"><label class="fl">عنوان الإعلان <span class="rq">*</span></label>
+        <input id="ann-title" class="fc" placeholder="مثال: تأجير بوفيه الملعب الرئيسي" value="${esc(a&&a.title||'')}"></div>
+      <div class="fg"><label class="fl">الجهة الناشرة <span class="rq">*</span></label>
+        <input id="ann-issuer" class="fc" placeholder="مثال: مركز شباب محلة مرحوم" value="${esc(a&&a.issuing_body||'')}"></div>
+    </div>
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label class="fl">نوع الإعلان <span class="rq">*</span></label>
+        <select id="ann-type" class="fc">
+          ${ANN_TYPES.map(t=>`<option value="${esc(t)}" ${(a&&a.announcement_type||'مناقصة رسمية')===t?'selected':''}>${esc(t)}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label class="fl">التصنيف <span class="rq">*</span></label>
+        <select id="ann-class" class="fc" onchange="toggleAnnClassOther(this)">
+          <option value="">— اختر —</option>
+          ${ANN_CLASSIFICATIONS.map(c=>`<option value="${esc(c)}" ${classVal===c?'selected':''}>${esc(c)}</option>`).join('')}
+        </select></div>
+    </div>
+    <div id="ann-class-other-wrap" style="${classVal==='أخرى'?'':'display:none'};margin-top:12px">
+      <div class="fg"><label class="fl">التصنيف (تفصيل)</label>
+        <input id="ann-class-other" class="fc" placeholder="اكتب التصنيف..." value="${esc(classOther)}"></div>
+    </div>
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label class="fl">المحافظة <span class="rq">*</span></label>
+        <select id="ann-gov" class="fc">
+          <option value="">— اختر —</option>
+          ${EG_GOVERNORATES.map(g=>`<option value="${esc(g)}" ${(a&&a.governorate||'')===g?'selected':''}>${esc(g)}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label class="fl">المصدر (الجريدة / الجهة)</label>
+        <input id="ann-source" class="fc" placeholder="مثال: الجمهورية" value="${esc(a&&a.source||'')}"></div>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">📅 التواريخ والمواعيد</div>
+    <div class="fg3">
+      <div class="fg"><label class="fl">تاريخ النشر <span class="rq">*</span></label>
+        <input id="ann-pub-date" class="fc" type="date" value="${(a&&a.published_at)||new Date().toISOString().split('T')[0]}"></div>
+      <div class="fg"><label class="fl">آخر موعد التقديم <span class="rq">*</span></label>
+        <input id="ann-deadline" class="fc" type="date" value="${(a&&a.submission_deadline)||''}"></div>
+      <div class="fg"><label class="fl">موعد جلسة الفتح</label>
+        <input id="ann-session-date" class="fc" type="date" value="${(a&&a.session_date)||''}"></div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="fg" style="max-width:300px"><label class="fl">وقت الجلسة</label>
+        <input id="ann-session-time" class="fc" placeholder="مثال: 1:00 ظهراً" value="${esc(a&&a.session_time||'')}"></div>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">💰 البيانات المالية</div>
+    <div class="fg2">
+      <div class="fg"><label class="fl">قيمة المستندات (بالجنيه)</label>
+        <input id="ann-doc-price" class="fc" type="number" step="0.01" placeholder="مثال: 359" value="${(a&&a.document_price)||''}"></div>
+      <div class="fg"><label class="fl">قيمة التأمين</label>
+        <input id="ann-insurance" class="fc" placeholder="مثال: 5000 أو: غير محدد" value="${esc(a&&a.insurance_value||'غير محدد')}"></div>
+    </div>
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">📷 صورة الإعلان</div>
+    <div id="ann-img-preview" style="${annImgUrl?'':'display:none'};margin-bottom:12px">
+      <div style="position:relative;display:inline-block">
+        <img id="ann-img-preview-img" src="${annImgUrl||''}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--bd);object-fit:cover;display:block">
+        <button type="button" onclick="clearAnnImg()" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button>
+      </div>
+    </div>
+    <div class="upload-zone" onclick="document.getElementById('ann-img-input').click()" id="ann-upload-zone">
+      <div class="upload-zone-ico">📤</div>
+      <div class="upload-zone-lbl">${annImgUrl?'استبدال الصورة':'اضغط لرفع صورة الإعلان'}</div>
+    </div>
+    <div id="ann-upload-status" class="upload-status" style="margin-top:6px;color:var(--mu)">JPG أو PNG — تُضغط وتُحوَّل إلى WebP تلقائياً</div>
+    <input type="file" id="ann-img-input" accept="image/*" style="display:none" onchange="handleAnnImg(this)">
+  </div>
+
+  <div class="form-sec">
+    <div class="form-sec-title">📝 الوصف التفصيلي</div>
+    <div class="fg"><label class="fl">الوصف</label>
+      <textarea id="ann-desc" class="fc" rows="6" placeholder="اكتب تفاصيل الإعلان أو المناقصة...">${esc(a&&a.description||'')}</textarea>
+    </div>
+  </div>
+
+  <div class="form-sec" style="border-color:rgba(107,107,138,.3)">
+    <div class="form-sec-title" style="color:var(--mu)">⚙️ حالة النشر</div>
+    <div class="sub-toggle-wrap">
+      <label class="fl" style="margin:0;flex:1">نشط ومرئي على المنصة</label>
+      <label class="sub-toggle-sw">
+        <input type="checkbox" id="ann-is-active" ${(!id||(a&&a.is_active!==false))?'checked':''}>
+        <span class="sub-toggle-sl"></span>
+      </label>
+    </div>
+  </div>
+
+  <div id="ann-form-msg" style="display:none;padding:12px;border-radius:8px;margin-top:10px;font-size:13px"></div>
+  <div class="form-toolbar" style="margin-top:6px">
+    <button class="btn btn-or" id="ann-save-btn" onclick="saveAnn()">💾 ${id ? 'حفظ التعديلات' : 'إضافة الإعلان'}</button>
+    <button class="btn btn-neu" onclick="gp('announcements',document.getElementById('sbi-announcements'))">إلغاء</button>
+  </div>
+</div>`;
+
+  gp('ann-form', document.getElementById('sbi-announcements'));
+}
+
+function toggleAnnClassOther(sel) {
+  const wrap = document.getElementById('ann-class-other-wrap');
+  if (wrap) wrap.style.display = sel.value === 'أخرى' ? '' : 'none';
+}
+
+async function handleAnnImg(inp) {
+  const file = inp.files && inp.files[0];
+  if (!file) return;
+  const status  = document.getElementById('ann-upload-status');
+  const zone    = document.getElementById('ann-upload-zone');
+  const preview = document.getElementById('ann-img-preview');
+  const preImg  = document.getElementById('ann-img-preview-img');
+  if (preview) preview.style.display = '';
+  if (preImg)  { preImg.src = URL.createObjectURL(file); preImg.style.opacity = '.6'; }
+  if (status)  status.innerHTML = '<span style="color:var(--yw)">⏳ جاري الرفع…</span>';
+  if (zone)    zone.style.borderColor = 'var(--or)';
+  try {
+    const folder = annEditingId ? `admin-anns/${annEditingId}` : 'admin-anns/new';
+    const [url]  = await uploadImages([file], folder, null, SB_KEY);
+    annImgUrl = url;
+    if (preImg)  { preImg.src = url.replace('_f.webp','_d.webp'); preImg.style.opacity = '1'; }
+    if (status)  status.innerHTML = '<span style="color:var(--gr)">✅ تم الرفع</span>';
+    if (zone) {
+      zone.style.borderColor = 'var(--gr)';
+      const lbl = zone.querySelector('.upload-zone-lbl');
+      if (lbl) lbl.textContent = 'استبدال الصورة';
+    }
+  } catch(e) {
+    annImgUrl = null;
+    if (preImg)  preImg.style.opacity = '1';
+    if (status)  status.innerHTML = `<span style="color:var(--rd)">❌ فشل: ${esc(e.message)}</span>`;
+    if (zone)    zone.style.borderColor = 'var(--rd)';
+  }
+}
+
+function clearAnnImg() {
+  annImgUrl = null;
+  const p = document.getElementById('ann-img-preview');
+  const s = document.getElementById('ann-upload-status');
+  const i = document.getElementById('ann-img-input');
+  const l = document.querySelector('#ann-upload-zone .upload-zone-lbl');
+  if (p) p.style.display = 'none';
+  if (s) s.textContent = 'JPG أو PNG — تُضغط وتُحوَّل إلى WebP تلقائياً';
+  if (i) i.value = '';
+  if (l) l.textContent = 'اضغط لرفع صورة الإعلان';
+}
+
+async function saveAnn() {
+  const btn      = document.getElementById('ann-save-btn');
+  const title    = (document.getElementById('ann-title')?.value || '').trim();
+  const issuer   = (document.getElementById('ann-issuer')?.value || '').trim();
+  const type     = document.getElementById('ann-type')?.value || '';
+  const classVal = document.getElementById('ann-class')?.value || '';
+  const classOth = (document.getElementById('ann-class-other')?.value || '').trim();
+  const gov      = document.getElementById('ann-gov')?.value || '';
+  const deadline = document.getElementById('ann-deadline')?.value || '';
+  const pubDate  = document.getElementById('ann-pub-date')?.value || new Date().toISOString().split('T')[0];
+
+  if (!title)    { showAnnMsg('error','⚠️ عنوان الإعلان مطلوب');    return; }
+  if (!issuer)   { showAnnMsg('error','⚠️ الجهة الناشرة مطلوبة');   return; }
+  if (!classVal) { showAnnMsg('error','⚠️ التصنيف مطلوب');          return; }
+  if (!gov)      { showAnnMsg('error','⚠️ المحافظة مطلوبة');        return; }
+  if (!deadline) { showAnnMsg('error','⚠️ آخر موعد التقديم مطلوب'); return; }
+
+  const finalClass = classVal === 'أخرى' ? (classOth || 'أخرى') : classVal;
+  const rawPrice   = document.getElementById('ann-doc-price')?.value;
+  const payload = {
+    title,
+    image_url:           annImgUrl || null,
+    issuing_body:        issuer,
+    announcement_type:   type,
+    classification:      finalClass,
+    classification_other: classVal === 'أخرى' ? classOth : null,
+    governorate:         gov,
+    source:              (document.getElementById('ann-source')?.value || '').trim() || null,
+    published_at:        pubDate,
+    submission_deadline: deadline,
+    session_date:        document.getElementById('ann-session-date')?.value || null,
+    session_time:        (document.getElementById('ann-session-time')?.value || '').trim() || null,
+    document_price:      rawPrice ? parseFloat(rawPrice) : null,
+    insurance_value:     (document.getElementById('ann-insurance')?.value || '').trim() || 'غير محدد',
+    description:         (document.getElementById('ann-desc')?.value || '').trim() || null,
+    is_active:           document.getElementById('ann-is-active')?.checked ?? true,
+  };
+  if (annEditingId) payload.id = annEditingId;
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin">⏳</span> جاري الحفظ…'; }
+  try {
+    await sbRpc('admin_upsert_announcement', { p_secret: adminHash, p_data: payload });
+    toast(`✅ تم ${annEditingId ? 'تعديل' : 'إضافة'} الإعلان بنجاح`, 's');
+    await loadAll();
+    gp('announcements', document.getElementById('sbi-announcements'));
+  } catch(e) {
+    showAnnMsg('error', '❌ خطأ: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = `💾 ${annEditingId ? 'حفظ التعديلات' : 'إضافة الإعلان'}`; }
+  }
+}
+
+function showAnnMsg(type, text) {
+  const el = document.getElementById('ann-form-msg');
+  if (!el) return;
+  el.style.display    = 'block';
+  el.style.background = type === 'error' ? 'rgba(239,68,68,.15)' : 'rgba(34,197,94,.15)';
+  el.style.color      = type === 'error' ? 'var(--rd)' : 'var(--gr)';
+  el.style.border     = `1px solid ${type === 'error' ? 'rgba(239,68,68,.3)' : 'rgba(34,197,94,.3)'}`;
+  el.textContent = text;
+}
+
+async function toggleAnn(id, newActive) {
+  try {
+    await sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: newActive });
+    toast(newActive ? '▶ تم إظهار الإعلان' : '⏸ تم إخفاء الإعلان', 's');
+    allAnnouncements = allAnnouncements.map(a => a.id === id ? Object.assign({}, a, {is_active: newActive}) : a);
+    renderAnnouncements();
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+async function deleteAnn(id, title) {
+  showConfirm(
+    'حذف الإعلان نهائياً',
+    `سيتم حذف "${title}" بشكل نهائي من قاعدة البيانات. لا يمكن التراجع.`,
+    async () => {
+      try {
+        await sbRpc('admin_delete_announcement', { p_secret: adminHash, p_id: id });
+        toast('🗑 تم حذف الإعلان', 's');
+        allAnnouncements = allAnnouncements.filter(a => a.id !== id);
+        renderAnnouncements();
+      } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+    }
+  );
+}
 
 /* ═══════════════════════════════
    AUTO-REFRESH — كل 5 دقائق

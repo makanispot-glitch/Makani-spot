@@ -301,6 +301,127 @@
 
     /* ── result-badge: pill shape ── */
     .result-badge { border-radius: var(--radius-pill); font-family: var(--font-display); }
+
+    /* ═══════════════════════════════════════
+       ANNOUNCEMENT CARDS
+    ═══════════════════════════════════════ */
+    .ann-card {
+      background: var(--surface, #fff);
+      border: 1.5px solid rgba(37,99,235,.18);
+      border-radius: var(--radius-xl, 16px);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+    }
+    .ann-card:hover {
+      border-color: rgba(37,99,235,.45);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(37,99,235,.1);
+    }
+    .ann-thumb {
+      width: 100%;
+      height: 160px;
+      overflow: hidden;
+      background: linear-gradient(135deg,rgba(37,99,235,.06),rgba(37,99,235,.14));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .ann-thumb img { width:100%;height:100%;object-fit:cover; }
+    .ann-thumb-ph { font-size:44px;opacity:.45; }
+    .ann-type-badge {
+      position:absolute;top:10px;right:10px;
+      padding:3px 10px;border-radius:8px;
+      font-size:10px;font-weight:800;letter-spacing:.02em;
+      font-family:var(--font-display,'Cairo',sans-serif);
+    }
+    .ann-badge-tender  { background:rgba(37,99,235,.9); color:#fff; }
+    .ann-badge-auction { background:rgba(234,88,12,.9);  color:#fff; }
+    .ann-badge-official{ background:rgba(5,150,105,.9);  color:#fff; }
+    .ann-badge-other   { background:rgba(107,114,128,.9);color:#fff; }
+    .ann-body { padding:13px 15px 15px;display:flex;flex-direction:column;flex:1;gap:5px; }
+    .ann-title {
+      font-size:13px;font-weight:900;
+      color:var(--fg-1,#1a1a1a);line-height:1.4;
+      font-family:var(--font-display,'Cairo',sans-serif);
+    }
+    .ann-issuer { font-size:11px;font-weight:700;color:var(--fg-2,#555); }
+    .ann-meta-row { display:flex;align-items:center;gap:5px;font-size:11px;color:var(--fg-2,#666); }
+    .ann-financial {
+      display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;font-size:11px;
+    }
+    .ann-financial span {
+      background:var(--bg-2,#f5f5f5);border:1px solid var(--warm-200,#e2e8f0);
+      border-radius:6px;padding:2px 7px;color:var(--fg-2,#555);
+    }
+    .ann-deadline {
+      display:inline-flex;align-items:center;gap:4px;
+      font-size:11px;font-weight:800;padding:4px 10px;
+      border-radius:8px;margin:4px 0 6px;
+      font-family:var(--font-display,'Cairo',sans-serif);
+    }
+    .ann-dl-ok      { background:rgba(37,99,235,.08);color:#1d4ed8;border:1px solid rgba(37,99,235,.2); }
+    .ann-dl-urgent  { background:rgba(234,88,12,.1); color:#c2410c;border:1px solid rgba(234,88,12,.25); }
+    .ann-dl-expired { background:var(--bg-2,#f5f5f5);color:var(--fg-3,#888);border:1px solid var(--warm-200,#e2e8f0); }
+    .ann-details-btn {
+      margin-top:auto;background:transparent;
+      border:1.5px solid rgba(37,99,235,.4);color:#2563eb;
+      border-radius:50px;padding:7px 16px;
+      font-size:12px;font-weight:800;
+      font-family:var(--font-display,'Cairo',sans-serif);
+      cursor:pointer;transition:background .15s,border-color .15s;width:100%;
+    }
+    .ann-details-btn:hover { background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.6); }
+    .ann-publisher {
+      font-size:10px;color:var(--fg-3,#999);
+      display:flex;align-items:center;gap:4px;margin-top:2px;
+    }
+
+    /* ── Content-type filter buttons ── */
+    .mp-content-btns { display:flex;gap:6px; }
+    .mp-ctype-btn {
+      flex:1;padding:7px 6px;border-radius:10px;
+      border:1.5px solid var(--warm-200,#e2e8f0);
+      background:var(--surface,#fff);
+      font-size:11px;font-weight:700;
+      font-family:var(--font-display,'Cairo',sans-serif);
+      color:var(--fg-2,#555);cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .mp-ctype-btn.on-all  { background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.45);color:#2563eb; }
+    .mp-ctype-btn.on-sp   { background:rgba(243,100,24,.08);border-color:rgba(243,100,24,.45);color:var(--orange,#F36418); }
+    .mp-ctype-btn.on-ann  { background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.45);color:#059669; }
+
+    /* ── Announcement detail overlay ── */
+    .ann-det-img { width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-bottom:18px;display:block; }
+    .ann-status-bar {
+      padding:11px 15px;border-radius:12px;font-size:13px;font-weight:800;
+      margin-bottom:16px;display:flex;align-items:center;gap:8px;
+      font-family:var(--font-display,'Cairo',sans-serif);
+    }
+    .ann-st-ok      { background:rgba(37,99,235,.08);color:#1d4ed8;border:1px solid rgba(37,99,235,.2); }
+    .ann-st-urgent  { background:rgba(234,88,12,.1); color:#c2410c;border:1px solid rgba(234,88,12,.25); }
+    .ann-st-expired { background:var(--bg-2,#f5f5f5);color:var(--fg-3,#888);border:1px solid var(--warm-200,#e2e8f0); }
+    .ann-det-grid {
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+      gap:12px;margin-bottom:18px;
+    }
+    .ann-det-card { background:var(--bg-2,#f7f7f7);border-radius:12px;padding:13px 15px; }
+    .ann-det-card-title { font-size:11px;font-weight:800;color:var(--fg-3,#888);margin-bottom:9px; }
+    .ann-det-row {
+      display:flex;justify-content:space-between;align-items:flex-start;
+      padding:5px 0;border-bottom:1px solid var(--warm-200,#e2e8f0);gap:8px;font-size:12px;
+    }
+    .ann-det-row:last-child { border-bottom:none; }
+    .ann-det-key { color:var(--fg-3,#888);flex-shrink:0; }
+    .ann-det-val { color:var(--fg-1,#1a1a1a);font-weight:700;text-align:left; }
+    .ann-desc {
+      font-size:14px;color:var(--fg-2,#555);line-height:1.85;
+      background:var(--bg-2,#f7f7f7);border-radius:12px;padding:15px 17px;
+    }
   </style>
 
   <!-- Google Analytics 4 — Makani Spot -->
@@ -531,14 +652,45 @@
             <div class="mp-filter-group">
               <div class="mp-filter-title">المنطقة</div>
               <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل المناطق</option>
-                <option>مدينة نصر</option>
-                <option>التجمع الخامس</option>
-                <option>المهندسين</option>
-                <option>الزمالك</option>
-                <option>الشيخ زايد</option>
-                <option>6 أكتوبر</option>
-                <option>مصر الجديدة</option>
+                <option value="">كل المناطق والمحافظات</option>
+                <optgroup label="أحياء القاهرة الكبرى">
+                  <option>مدينة نصر</option>
+                  <option>التجمع الخامس</option>
+                  <option>المهندسين</option>
+                  <option>الزمالك</option>
+                  <option>الشيخ زايد</option>
+                  <option>6 أكتوبر</option>
+                  <option>مصر الجديدة</option>
+                </optgroup>
+                <optgroup label="المحافظات المصرية">
+                  <option>القاهرة</option>
+                  <option>الجيزة</option>
+                  <option>الإسكندرية</option>
+                  <option>الغربية</option>
+                  <option>المنوفية</option>
+                  <option>البحيرة</option>
+                  <option>الدقهلية</option>
+                  <option>الشرقية</option>
+                  <option>القليوبية</option>
+                  <option>كفر الشيخ</option>
+                  <option>دمياط</option>
+                  <option>بورسعيد</option>
+                  <option>الإسماعيلية</option>
+                  <option>السويس</option>
+                  <option>شمال سيناء</option>
+                  <option>جنوب سيناء</option>
+                  <option>البحر الأحمر</option>
+                  <option>سوهاج</option>
+                  <option>قنا</option>
+                  <option>الأقصر</option>
+                  <option>أسوان</option>
+                  <option>أسيوط</option>
+                  <option>المنيا</option>
+                  <option>الفيوم</option>
+                  <option>بني سويف</option>
+                  <option>مطروح</option>
+                  <option>الوادي الجديد</option>
+                </optgroup>
               </select>
             </div>
 
@@ -561,6 +713,30 @@
             <div class="mp-filter-group">
               <div class="mp-filter-title">النشاط التجاري</div>
               <div class="mp-act-filters" id="mp-act-filters"></div>
+            </div>
+
+            <!-- نوع المحتوى -->
+            <div class="mp-filter-group">
+              <div class="mp-filter-title">نوع المحتوى</div>
+              <div class="mp-content-btns">
+                <button class="mp-ctype-btn on-all" id="mp-ctype-all" onclick="setContentFilter('all',this)">الكل</button>
+                <button class="mp-ctype-btn" id="mp-ctype-sp"  onclick="setContentFilter('spaces',this)">مساحات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-ann" onclick="setContentFilter('announcements',this)">إعلانات</button>
+              </div>
+            </div>
+
+            <!-- تصنيف الإعلان -->
+            <div class="mp-filter-group" id="mp-ann-class-wrap" style="display:none">
+              <div class="mp-filter-title">تصنيف الإعلان</div>
+              <select id="mp-ann-class" class="mp-select" onchange="applyMpFilters()">
+                <option value="">كل التصنيفات</option>
+                <option>إدارة واستغلال كافتيريا</option>
+                <option>إدارة واستغلال بوفيه</option>
+                <option>إدارة واستغلال منفذ بيع</option>
+                <option>إدارة واستغلال محل تجاري</option>
+                <option>إدارة واستغلال صالة رياضية</option>
+                <option>إدارة واستغلال مطعم</option>
+              </select>
             </div>
 
             <!-- مسح الفلاتر -->
@@ -627,6 +803,22 @@
 
     </div>
   </div><!-- end pg-space-detail -->
+
+
+  <!-- ================================================================
+     📢 صفحة تفاصيل الإعلان الرسمي / المناقصة
+     ================================================================ -->
+  <div id="pg-announcement-detail" class="page">
+    <div class="sd-page">
+      <div id="ann-det-header"></div>
+      <div id="ann-det-body" style="padding:0 0 20px"></div>
+      <div class="sd-sticky-footer">
+        <button class="btn sd-back-btn-footer" onclick="closeAnnouncementDetail()">
+          → العودة للمساحات
+        </button>
+      </div>
+    </div>
+  </div><!-- end pg-announcement-detail -->
 
 
   <!-- ================================================================
