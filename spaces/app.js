@@ -370,13 +370,9 @@ function _applyCurrentFilters() {
   const actFlt    = document.getElementById('mp-act-sel')?.value   || '';
   const annClsFlt = document.getElementById('mp-ann-class')?.value || '';
 
-  // هل الفلتر مخصص للإعلانات فقط؟
-  const annSubTypes = ['tender', 'auction', 'gov'];
-  const isAnnOnly   = annSubTypes.includes(mpContentFilter);
-
   // ── مساحات ──
   let spacesData = [];
-  if (!isAnnOnly && mpContentFilter !== 'announcements') {
+  if (mpContentFilter !== 'announcements') {
     spacesData = [...SPACES];
     if (region)   spacesData = spacesData.filter(s => s.loc === region);
     if (placeFlt) spacesData = spacesData.filter(s => s.type === placeFlt);
@@ -391,14 +387,10 @@ function _applyCurrentFilters() {
     }
   }
 
-  // ── إعلانات ──
+  // ── إعلانات (مناقصات + مزادات + إعلانات حكومية) ──
   let annData = [];
   if (mpContentFilter !== 'spaces') {
     annData = [...ANNOUNCEMENTS];
-    // فلتر نوع الإعلان حسب قيمة mpContentFilter
-    if (mpContentFilter === 'tender')  annData = annData.filter(a => a.announcementType === 'مناقصة رسمية');
-    if (mpContentFilter === 'auction') annData = annData.filter(a => a.announcementType === 'مزاد علني');
-    if (mpContentFilter === 'gov')     annData = annData.filter(a => ['إعلان رسمي','أخرى'].includes(a.announcementType));
     if (region)    annData = annData.filter(a => a.governorate === region);
     if (placeFlt)  annData = annData.filter(a => a.placeType === placeFlt);
     if (actFlt)    annData = annData.filter(a => a.activityType === actFlt);
@@ -411,14 +403,16 @@ function _applyCurrentFilters() {
 
   if (sort === 'price-asc') {
     spacesTagged.sort((a, b) => a.price - b.price);
-    mpFiltered = [...annTagged, ...spacesTagged];
+    // المساحات أولاً مرتبة بالسعر، ثم الإعلانات
+    mpFiltered = [...spacesTagged, ...annTagged];
   } else if (sort === 'price-desc') {
     spacesTagged.sort((a, b) => b.price - a.price);
-    mpFiltered = [...annTagged, ...spacesTagged];
+    mpFiltered = [...spacesTagged, ...annTagged];
   } else {
-    const all = [...spacesTagged, ...annTagged];
-    all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    mpFiltered = all;
+    // الترتيب الافتراضي: المساحات أولاً (بتاريخ الإنشاء)، ثم الإعلانات (بتاريخ الإنشاء)
+    spacesTagged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    annTagged.sort((a, b)    => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    mpFiltered = [...spacesTagged, ...annTagged];
   }
 
   const maxPage = Math.max(1, Math.ceil(mpFiltered.length / MP_PER_PAGE));
@@ -1232,9 +1226,9 @@ function setContentFilter(type, btn) {
     const cls = type === 'all' ? 'on-all' : type === 'spaces' ? 'on-sp' : 'on-ann';
     btn.classList.add(cls);
   }
-  // إظهار تصنيف الإعلان عند عرض إعلانات فقط
+  // إظهار تصنيف الإعلان عند عرض "المناقصات والإعلانات" فقط
   const clsWrap = document.getElementById('mp-ann-class-wrap');
-  if (clsWrap) clsWrap.style.display = ['tender','auction','gov','announcements'].includes(type) ? '' : 'none';
+  if (clsWrap) clsWrap.style.display = type === 'announcements' ? '' : 'none';
   applyMpFilters();
 }
 
@@ -1275,10 +1269,8 @@ function updateMpChips() {
   if (!cont) return;
   const chips = [];
   const contentMap = {
-    spaces:  '🏢 مساحات فقط',
-    tender:  '📋 مناقصات',
-    auction: '🔨 مزادات',
-    gov:     '🏛 إعلانات حكومية',
+    spaces:        '🏢 المساحات فقط',
+    announcements: '📋 المناقصات والإعلانات فقط',
   };
   if (contentMap[mpContentFilter]) {
     chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${contentMap[mpContentFilter]} ×</span>`);
@@ -1471,27 +1463,22 @@ function _renderAnnDetail(a) {
   if (bodyEl) {
     // بناء gallery الصور
     const imgs = a.imageUrls && a.imageUrls.length ? a.imageUrls : (a.imageUrl ? [a.imageUrl] : []);
-    const galleryHtml = imgs.length === 0 ? '' : imgs.length === 1
-      ? `<div style="position:relative;margin-bottom:16px;cursor:zoom-in"
-             onclick="openLightbox('${imgs[0].replace(/'/g,"\\'")}')">
-           <img class="ann-det-img" src="${imgs[0]}" alt="${a.title}" style="margin-bottom:0">
-           <div style="position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;
-                border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;pointer-events:none">
-             🔍 اضغط للتكبير
-           </div>
-         </div>`
-      : `<div style="margin-bottom:16px">
-           <img class="ann-det-img" src="${imgs[0]}" alt="${a.title}" style="margin-bottom:8px;cursor:zoom-in"
-                onclick="openLightbox('${imgs[0].replace(/'/g,"\\'")}')">
-           <div style="display:grid;grid-template-columns:repeat(${imgs.length-1},1fr);gap:8px">
-             ${imgs.slice(1).map(u => `
-               <div style="position:relative;cursor:zoom-in" onclick="openLightbox('${u.replace(/'/g,"\\'")}')">
-                 <img src="${u}" alt="" style="width:100%;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--bd-1,#e5e7eb)">
-                 <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-                      background:rgba(0,0,0,.15);border-radius:10px;color:#fff;font-size:16px">🔍</div>
-               </div>`).join('')}
-           </div>
-         </div>`;
+    const _imgCell = (url, title) => {
+      const safe = url.replace(/'/g, "\\'");
+      return `<div onclick="openLightbox('${safe}')"
+                   style="cursor:zoom-in;border-radius:12px;overflow:hidden;
+                          border:1px solid var(--bd-1,#e5e7eb);background:var(--bg2,#f8f9fa)">
+                <img src="${url}" alt="${title||''}"
+                     style="width:100%;height:auto;display:block;
+                            max-height:420px;object-fit:contain;vertical-align:top">
+              </div>`;
+    };
+    const galleryHtml = imgs.length === 0 ? ''
+      : imgs.length === 1
+        ? `<div style="margin-bottom:16px">${_imgCell(imgs[0], a.title)}</div>`
+        : `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+             ${imgs.map(u => _imgCell(u, a.title)).join('')}
+           </div>`;
 
     bodyEl.innerHTML = `
       ${galleryHtml}

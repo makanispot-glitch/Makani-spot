@@ -641,12 +641,10 @@
             <!-- 1. نوع المحتوى — أول الفلاتر -->
             <div class="mp-filter-group">
               <div class="mp-filter-title">نوع المحتوى</div>
-              <div class="mp-content-btns" style="flex-wrap:wrap;gap:5px">
-                <button class="mp-ctype-btn on-all" id="mp-ctype-all"    onclick="setContentFilter('all',this)">🌐 جميع الفرص</button>
-                <button class="mp-ctype-btn" id="mp-ctype-sp"            onclick="setContentFilter('spaces',this)">🏢 مساحات</button>
-                <button class="mp-ctype-btn" id="mp-ctype-tender"        onclick="setContentFilter('tender',this)">📋 مناقصات</button>
-                <button class="mp-ctype-btn" id="mp-ctype-auction"       onclick="setContentFilter('auction',this)">🔨 مزادات</button>
-                <button class="mp-ctype-btn" id="mp-ctype-gov"           onclick="setContentFilter('gov',this)">🏛 إعلانات حكومية</button>
+              <div class="mp-content-btns">
+                <button class="mp-ctype-btn on-all" id="mp-ctype-all"  onclick="setContentFilter('all',this)">🌐 جميع الفرص</button>
+                <button class="mp-ctype-btn" id="mp-ctype-sp"          onclick="setContentFilter('spaces',this)">🏢 المساحات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-ann"         onclick="setContentFilter('announcements',this)">📋 المناقصات والإعلانات</button>
               </div>
             </div>
 
@@ -1401,7 +1399,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="app.js?v=202606201900" defer></script>
+  <script src="app.js?v=202606202100" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
