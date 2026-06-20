@@ -623,9 +623,10 @@ let allSpaces   = [];
 let allOwners   = [];
 let allActivities    = [];
 let allOwnerRequests = [];
-let allAnnouncements = [];
-let annEditingId     = null;
-let annImgUrl        = null;
+let allAnnouncements  = [];
+let annEditingId      = null;
+let annImgUrls        = [];   // مصفوفة تحمل حتى 3 URLs
+let annSelectedIds    = new Set();
 const ANN_TYPES = ['مناقصة رسمية','مزاد علني','إعلان رسمي','أخرى'];
 const ANN_CLASSIFICATIONS = ['إدارة واستغلال كافتيريا','إدارة واستغلال بوفيه','إدارة واستغلال منفذ بيع','إدارة واستغلال محل تجاري','إدارة واستغلال صالة رياضية','إدارة واستغلال مطعم','أخرى'];
 const EG_GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','الغربية','المنوفية','البحيرة','الدقهلية','الشرقية','القليوبية','كفر الشيخ','دمياط','بورسعيد','الإسماعيلية','السويس','شمال سيناء','جنوب سيناء','البحر الأحمر','سوهاج','قنا','الأقصر','أسوان','أسيوط','المنيا','الفيوم','بني سويف','مطروح','الوادي الجديد'];
@@ -4279,58 +4280,178 @@ function unitStatusLbl(s){ return {available:'متاحة',rented:'مؤجّرة',
 ═══════════════════════════════ */
 function renderAnnouncements() {
   const today   = new Date().toISOString().split('T')[0];
-  const active  = allAnnouncements.filter(a =>  a.is_active && a.submission_deadline >= today).length;
-  const expired = allAnnouncements.filter(a =>  a.is_active && a.submission_deadline <  today).length;
-  const hidden  = allAnnouncements.filter(a => !a.is_active).length;
+  const visible = allAnnouncements.filter(a =>  a.is_active);
+  const hidden  = allAnnouncements.filter(a => !a.is_active);
+  const active  = visible.filter(a => a.submission_deadline >= today).length;
+  const expired = visible.filter(a => a.submission_deadline <  today).length;
 
-  const rows = allAnnouncements.map(a => {
-    const isExpired = a.submission_deadline < today;
-    const stBadge   = !a.is_active ? '<span class="badge b-hidden">مخفي</span>'
-                    : isExpired    ? '<span class="badge b-rejected">منتهي</span>'
-                    :                '<span class="badge b-approved">نشط</span>';
-    const thumb = a.image_url
-      ? `<img src="${esc(a.image_url)}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)" onerror="this.style.display='none'">`
-      : `<div style="width:52px;height:40px;background:var(--bg4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>`;
-    const safeTitle = esc(a.title||'—');
-    return `<tr>
-      <td><div style="display:flex;gap:10px;align-items:center">${thumb}
-        <div><div style="font-weight:700;font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeTitle}</div>
-        <div style="font-size:10px;color:var(--mu);margin-top:2px">${esc(a.source||'—')}</div></div></div></td>
-      <td style="font-size:11px;max-width:130px">${esc(a.issuing_body||'—')}</td>
-      <td><span class="badge b-broker">${esc(a.announcement_type||'—')}</span></td>
-      <td style="font-size:11px">${esc(a.governorate||'—')}</td>
-      <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:${isExpired?'var(--rd)':'var(--tx)'}">${a.submission_deadline||'—'}</td>
-      <td>${stBadge}</td>
-      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
-        <button class="btn btn-bl" onclick="openAnnForm('${a.id}')">✏️</button>
-        <button class="btn ${a.is_active?'btn-yw':'btn-ok'}" onclick="toggleAnn('${a.id}',${!a.is_active})">${a.is_active?'⏸':'▶'}</button>
-        <button class="btn btn-err" onclick="deleteAnn('${a.id}','${safeTitle}')">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('');
+  annSelectedIds = new Set();
+
+  function buildRows(list) {
+    return list.map(a => {
+      const isExpired = a.submission_deadline < today;
+      const stBadge   = !a.is_active ? '<span class="badge b-hidden">مخفي</span>'
+                      : isExpired    ? '<span class="badge b-rejected">منتهي</span>'
+                      :                '<span class="badge b-approved">نشط</span>';
+      const imgs   = Array.isArray(a.image_urls) && a.image_urls.length ? a.image_urls : (a.image_url ? [a.image_url] : []);
+      const thumb  = imgs[0]
+        ? `<div style="position:relative;display:inline-block">
+             <img src="${esc(imgs[0])}" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)" onerror="this.style.display='none'">
+             ${imgs.length > 1 ? `<span style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;border-radius:4px;padding:1px 4px">+${imgs.length-1}</span>` : ''}
+           </div>`
+        : `<div style="width:52px;height:40px;background:var(--bg4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>`;
+      const safeTitle = esc(a.title||'—');
+      const chk = annSelectedIds.has(a.id) ? 'checked' : '';
+      return `<tr id="ann-row-${a.id}">
+        <td style="width:32px;text-align:center"><input type="checkbox" ${chk} onchange="toggleAnnSelect('${a.id}',this.checked)"></td>
+        <td><div style="display:flex;gap:10px;align-items:center">${thumb}
+          <div><div style="font-weight:700;font-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeTitle}</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px">${esc(a.source||'—')}</div></div></div></td>
+        <td style="font-size:11px;max-width:120px">${esc(a.issuing_body||'—')}</td>
+        <td><span class="badge b-broker" style="font-size:10px">${esc(a.announcement_type||'—')}</span></td>
+        <td style="font-size:11px">${esc(a.governorate||'—')}</td>
+        <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:${isExpired?'var(--rd)':'var(--tx)'}">${a.submission_deadline||'—'}</td>
+        <td>${stBadge}</td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-bl" onclick="openAnnForm('${a.id}')">✏️</button>
+          <button class="btn ${a.is_active?'btn-yw':'btn-ok'}" title="${a.is_active?'إخفاء':'إظهار'}" onclick="toggleAnn('${a.id}',${!a.is_active})">${a.is_active?'⏸':'▶'}</button>
+          <button class="btn btn-err" title="حذف نهائي + R2" onclick="deleteAnn('${a.id}','${safeTitle}')">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const visibleTable = visible.length === 0 ? '' : `
+    <div class="t-wrap"><table class="t">
+      <thead><tr>
+        <th style="width:32px"><input type="checkbox" id="ann-chk-all-vis" onchange="toggleAllAnnSection(this,'vis')"></th>
+        <th>الإعلان</th><th>الجهة الناشرة</th><th>النوع</th><th>المحافظة</th>
+        <th>آخر موعد</th><th>الحالة</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody id="ann-tbody-vis">${buildRows(visible)}</tbody>
+    </table></div>`;
+
+  const hiddenTable = hidden.length === 0 ? '' : `
+    <div style="margin-top:28px">
+      <div style="font-size:13px;font-weight:800;color:var(--mu);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span>👁️‍🗨️ إعلانات مخفية من المنصة</span>
+        <span class="badge" style="background:rgba(100,100,120,.2);color:var(--mu)">${hidden.length}</span>
+      </div>
+      <div class="t-wrap"><table class="t" style="opacity:.8">
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="ann-chk-all-hid" onchange="toggleAllAnnSection(this,'hid')"></th>
+          <th>الإعلان</th><th>الجهة الناشرة</th><th>النوع</th><th>المحافظة</th>
+          <th>آخر موعد</th><th>الحالة</th><th>إجراءات</th>
+        </tr></thead>
+        <tbody id="ann-tbody-hid">${buildRows(hidden)}</tbody>
+      </table></div>
+    </div>`;
 
   const html = `
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
   <div>
     <div class="sec-title">الإعلانات الرسمية والمناقصات</div>
-    <div class="sec-sub">يُديرها الأدمن فقط — تظهر مختلطة مع المساحات على المنصة العامة</div>
+    <div class="sec-sub">تظهر مختلطة مع المساحات — الإعلانات المنتهية تظل مرئية حتى تُخفيها يدوياً</div>
   </div>
   <button class="tbtn tbtn-primary" onclick="openAnnForm()">+ إعلان جديد</button>
 </div>
+
+<!-- شريط الإجراءات الجماعية -->
+<div id="ann-bulk-bar" style="display:none;background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.3);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
+  <span id="ann-bulk-count" style="font-size:13px;font-weight:800;color:var(--or)">0 محدد</span>
+  <button class="btn btn-yw" style="font-size:12px" onclick="bulkHideAnn()">⏸ إخفاء من المنصة</button>
+  <button class="btn btn-ok" style="font-size:12px" onclick="bulkRestoreAnn()">▶ إعادة النشر</button>
+  <button class="btn btn-err" style="font-size:12px" onclick="bulkDeleteAnn()">🗑 حذف نهائي</button>
+  <button class="btn btn-neu" style="font-size:12px;margin-right:auto" onclick="clearAnnSelection()">✕ إلغاء التحديد</button>
+</div>
+
 <div class="stats-bar" style="margin-bottom:20px">
   <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> نشط</div>
-  <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${expired}</span> منتهي الصلاحية</div>
-  <div class="stat-chip"><span class="stat-num" style="color:var(--mu)">${hidden}</span> مخفي</div>
+  <div class="stat-chip"><span class="stat-num" style="color:var(--or)">${expired}</span> منتهي لكن مرئي</div>
+  <div class="stat-chip"><span class="stat-num" style="color:var(--mu)">${hidden.length}</span> مخفي</div>
+  <div class="stat-chip"><span class="stat-num">${allAnnouncements.length}</span> الإجمالي</div>
 </div>
+
 ${allAnnouncements.length === 0
   ? `<div class="empty-state"><div class="empty-ico">📢</div><div class="empty-title">لا توجد إعلانات بعد</div>
      <button class="btn btn-or" style="margin-top:14px" onclick="openAnnForm()">+ أضف إعلاناً الآن</button></div>`
-  : `<div class="t-wrap"><table class="t"><thead><tr>
-       <th>الإعلان</th><th>الجهة الناشرة</th><th>النوع</th><th>المحافظة</th>
-       <th>آخر موعد</th><th>الحالة</th><th>إجراءات</th>
-     </tr></thead><tbody>${rows}</tbody></table></div>`}`;
+  : visibleTable + hiddenTable}`;
 
   setPageContent('announcements', html);
+}
+
+function toggleAnnSelect(id, checked) {
+  if (checked) annSelectedIds.add(id); else annSelectedIds.delete(id);
+  _syncAnnBulkBar();
+}
+
+function toggleAllAnnSection(chkEl, section) {
+  const tbody = document.getElementById(`ann-tbody-${section}`);
+  if (!tbody) return;
+  tbody.querySelectorAll('input[type=checkbox]').forEach(c => {
+    c.checked = chkEl.checked;
+    const rowId = c.closest('tr')?.id?.replace('ann-row-','');
+    if (rowId) { if (chkEl.checked) annSelectedIds.add(rowId); else annSelectedIds.delete(rowId); }
+  });
+  _syncAnnBulkBar();
+}
+
+function clearAnnSelection() {
+  annSelectedIds.clear();
+  document.querySelectorAll('#pg-announcements input[type=checkbox]').forEach(c => c.checked = false);
+  _syncAnnBulkBar();
+}
+
+function _syncAnnBulkBar() {
+  const bar   = document.getElementById('ann-bulk-bar');
+  const count = document.getElementById('ann-bulk-count');
+  const n     = annSelectedIds.size;
+  if (bar)   bar.style.display   = n > 0 ? 'flex' : 'none';
+  if (count) count.textContent   = `${n} ${n === 1 ? 'إعلان محدد' : 'إعلانات محددة'}`;
+}
+
+async function bulkHideAnn() {
+  const ids = [...annSelectedIds];
+  if (!ids.length) return;
+  if (!confirm(`إخفاء ${ids.length} إعلان من المنصة؟ يمكن إعادة نشرها لاحقاً.`)) return;
+  try {
+    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: false })));
+    ids.forEach(id => { const a = allAnnouncements.find(x => x.id === id); if (a) a.is_active = false; });
+    toast(`⏸ تم إخفاء ${ids.length} إعلان`, 's');
+    renderAnnouncements();
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+async function bulkRestoreAnn() {
+  const ids = [...annSelectedIds];
+  if (!ids.length) return;
+  try {
+    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: true })));
+    ids.forEach(id => { const a = allAnnouncements.find(x => x.id === id); if (a) a.is_active = true; });
+    toast(`▶ تم إعادة نشر ${ids.length} إعلان`, 's');
+    renderAnnouncements();
+  } catch(e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+async function bulkDeleteAnn() {
+  const ids = [...annSelectedIds];
+  if (!ids.length) return;
+  showConfirm(
+    `حذف ${ids.length} إعلان نهائياً`,
+    `سيتم حذف ${ids.length} إعلان من قاعدة البيانات وصورها من التخزين. لا يمكن التراجع.`,
+    async () => {
+      let ok = 0, fail = 0;
+      await Promise.all(ids.map(async id => {
+        try {
+          await _deleteAnnWithR2(id);
+          allAnnouncements = allAnnouncements.filter(a => a.id !== id);
+          ok++;
+        } catch { fail++; }
+      }));
+      toast(fail ? `تم حذف ${ok} / فشل ${fail}` : `🗑 تم حذف ${ok} إعلان`, fail ? 'w' : 's');
+      renderAnnouncements();
+    }
+  );
 }
 
 /* ═══════════════════════════════
@@ -4339,7 +4460,10 @@ ${allAnnouncements.length === 0
 function openAnnForm(id) {
   annEditingId = id || null;
   const a      = id ? allAnnouncements.find(x => x.id === id) : null;
-  annImgUrl    = a ? (a.image_url || null) : null;
+  // استخدام image_urls أولاً ثم image_url للتوافق الخلفي
+  annImgUrls   = a
+    ? (Array.isArray(a.image_urls) && a.image_urls.length ? [...a.image_urls] : (a.image_url ? [a.image_url] : []))
+    : [];
 
   const knownClasses  = ANN_CLASSIFICATIONS.slice(0, -1);
   const isOtherClass  = a && !knownClasses.includes(a.classification);
@@ -4418,19 +4542,13 @@ function openAnnForm(id) {
   </div>
 
   <div class="form-sec">
-    <div class="form-sec-title">📷 صورة الإعلان</div>
-    <div id="ann-img-preview" style="${annImgUrl?'':'display:none'};margin-bottom:12px">
-      <div style="position:relative;display:inline-block">
-        <img id="ann-img-preview-img" src="${annImgUrl||''}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--bd);object-fit:cover;display:block">
-        <button type="button" onclick="clearAnnImg()" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button>
-      </div>
+    <div class="form-sec-title">📷 صور الإعلان <span style="font-size:11px;font-weight:400;color:var(--mu)">(حد أقصى 3 صور — تُحوَّل تلقائياً إلى WebP)</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px" id="ann-img-slots">
+      ${[0,1,2].map(i => _buildAnnSlotHtml(i, annImgUrls[i] || null)).join('')}
     </div>
-    <div class="upload-zone" onclick="document.getElementById('ann-img-input').click()" id="ann-upload-zone">
-      <div class="upload-zone-ico">📤</div>
-      <div class="upload-zone-lbl">${annImgUrl?'استبدال الصورة':'اضغط لرفع صورة الإعلان'}</div>
-    </div>
-    <div id="ann-upload-status" class="upload-status" style="margin-top:6px;color:var(--mu)">JPG أو PNG — تُضغط وتُحوَّل إلى WebP تلقائياً</div>
-    <input type="file" id="ann-img-input" accept="image/*" style="display:none" onchange="handleAnnImg(this)">
+    <input type="file" id="ann-img-inp-0" accept="image/*" style="display:none" onchange="handleAnnImgSlot(this,0)">
+    <input type="file" id="ann-img-inp-1" accept="image/*" style="display:none" onchange="handleAnnImgSlot(this,1)">
+    <input type="file" id="ann-img-inp-2" accept="image/*" style="display:none" onchange="handleAnnImgSlot(this,2)">
   </div>
 
   <div class="form-sec">
@@ -4466,46 +4584,58 @@ function toggleAnnClassOther(sel) {
   if (wrap) wrap.style.display = sel.value === 'أخرى' ? '' : 'none';
 }
 
-async function handleAnnImg(inp) {
-  const file = inp.files && inp.files[0];
+/* ── بناء HTML لـ slot صورة واحدة ── */
+function _buildAnnSlotHtml(idx, url) {
+  const hasImg = !!url;
+  const labels = ['صورة رئيسية', 'صورة 2', 'صورة 3'];
+  return `<div id="ann-slot-${idx}" style="border:2px dashed ${hasImg?'var(--gr)':'var(--bd)'};border-radius:10px;
+      min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      cursor:pointer;position:relative;overflow:hidden;background:var(--bg3);transition:.2s"
+      onclick="document.getElementById('ann-img-inp-${idx}').click()">
+    ${hasImg
+      ? `<img src="${esc(url)}" style="width:100%;height:110px;object-fit:cover;display:block">
+         <button type="button" onclick="event.stopPropagation();clearAnnImgSlot(${idx})"
+           style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.7);color:#fff;border:none;
+                  border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;line-height:1">✕</button>
+         <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,200,83,.85);
+                     color:#fff;border-radius:5px;font-size:9px;font-weight:700;padding:2px 6px">${labels[idx]}</div>`
+      : `<div style="font-size:24px;margin-bottom:6px">📤</div>
+         <div style="font-size:11px;color:var(--mu);font-weight:600">${labels[idx]}</div>
+         <div style="font-size:10px;color:var(--mu);margin-top:2px">اضغط للرفع</div>`}
+    <div id="ann-slot-prog-${idx}" style="position:absolute;bottom:0;left:0;right:0;
+         background:rgba(255,107,0,.2);font-size:10px;color:var(--or);text-align:center;
+         padding:3px;display:none">⏳ جاري الرفع…</div>
+  </div>`;
+}
+
+/* ── رفع صورة لـ slot معين ── */
+async function handleAnnImgSlot(inp, idx) {
+  const file = inp.files?.[0];
   if (!file) return;
-  const status  = document.getElementById('ann-upload-status');
-  const zone    = document.getElementById('ann-upload-zone');
-  const preview = document.getElementById('ann-img-preview');
-  const preImg  = document.getElementById('ann-img-preview-img');
-  if (preview) preview.style.display = '';
-  if (preImg)  { preImg.src = URL.createObjectURL(file); preImg.style.opacity = '.6'; }
-  if (status)  status.innerHTML = '<span style="color:var(--yw)">⏳ جاري الرفع…</span>';
-  if (zone)    zone.style.borderColor = 'var(--or)';
+  inp.value = '';
+  const slot = document.getElementById(`ann-slot-${idx}`);
+  const prog = document.getElementById(`ann-slot-prog-${idx}`);
+  if (prog) prog.style.display = '';
+  if (slot) slot.style.borderColor = 'var(--or)';
   try {
-    const folder = annEditingId ? `admin-anns/${annEditingId}` : 'admin-anns/new';
+    const year   = new Date().getFullYear();
+    const folder = `official-listings/${year}/${annEditingId || 'new'}`;
     const [url]  = await uploadImages([file], folder, null, SB_KEY);
-    annImgUrl = url;
-    if (preImg)  { preImg.src = url.replace('_f.webp','_d.webp'); preImg.style.opacity = '1'; }
-    if (status)  status.innerHTML = '<span style="color:var(--gr)">✅ تم الرفع</span>';
-    if (zone) {
-      zone.style.borderColor = 'var(--gr)';
-      const lbl = zone.querySelector('.upload-zone-lbl');
-      if (lbl) lbl.textContent = 'استبدال الصورة';
-    }
+    annImgUrls[idx] = url;
+    const container = document.getElementById('ann-img-slots');
+    if (slot && container) slot.outerHTML = _buildAnnSlotHtml(idx, url);
   } catch(e) {
-    annImgUrl = null;
-    if (preImg)  preImg.style.opacity = '1';
-    if (status)  status.innerHTML = `<span style="color:var(--rd)">❌ فشل: ${esc(e.message)}</span>`;
-    if (zone)    zone.style.borderColor = 'var(--rd)';
+    if (prog) prog.style.display = 'none';
+    if (slot) slot.style.borderColor = 'var(--rd)';
+    toast('❌ فشل رفع الصورة: ' + e.message, 'e');
   }
 }
 
-function clearAnnImg() {
-  annImgUrl = null;
-  const p = document.getElementById('ann-img-preview');
-  const s = document.getElementById('ann-upload-status');
-  const i = document.getElementById('ann-img-input');
-  const l = document.querySelector('#ann-upload-zone .upload-zone-lbl');
-  if (p) p.style.display = 'none';
-  if (s) s.textContent = 'JPG أو PNG — تُضغط وتُحوَّل إلى WebP تلقائياً';
-  if (i) i.value = '';
-  if (l) l.textContent = 'اضغط لرفع صورة الإعلان';
+/* ── مسح صورة slot ── */
+function clearAnnImgSlot(idx) {
+  annImgUrls[idx] = null;
+  const slot = document.getElementById(`ann-slot-${idx}`);
+  if (slot) slot.outerHTML = _buildAnnSlotHtml(idx, null);
 }
 
 async function saveAnn() {
@@ -4525,25 +4655,27 @@ async function saveAnn() {
   if (!gov)      { showAnnMsg('error','⚠️ المحافظة مطلوبة');        return; }
   if (!deadline) { showAnnMsg('error','⚠️ آخر موعد التقديم مطلوب'); return; }
 
-  const finalClass = classVal === 'أخرى' ? (classOth || 'أخرى') : classVal;
-  const rawPrice   = document.getElementById('ann-doc-price')?.value;
+  const finalClass  = classVal === 'أخرى' ? (classOth || 'أخرى') : classVal;
+  const rawPrice    = document.getElementById('ann-doc-price')?.value;
+  const validUrls   = annImgUrls.filter(Boolean);
   const payload = {
     title,
-    image_url:           annImgUrl || null,
-    issuing_body:        issuer,
-    announcement_type:   type,
-    classification:      finalClass,
+    image_url:            validUrls[0] || null,
+    image_urls:           validUrls,
+    issuing_body:         issuer,
+    announcement_type:    type,
+    classification:       finalClass,
     classification_other: classVal === 'أخرى' ? classOth : null,
-    governorate:         gov,
-    source:              (document.getElementById('ann-source')?.value || '').trim() || null,
-    published_at:        pubDate,
-    submission_deadline: deadline,
-    session_date:        document.getElementById('ann-session-date')?.value || null,
-    session_time:        (document.getElementById('ann-session-time')?.value || '').trim() || null,
-    document_price:      rawPrice ? parseFloat(rawPrice) : null,
-    insurance_value:     (document.getElementById('ann-insurance')?.value || '').trim() || 'غير محدد',
-    description:         (document.getElementById('ann-desc')?.value || '').trim() || null,
-    is_active:           document.getElementById('ann-is-active')?.checked ?? true,
+    governorate:          gov,
+    source:               (document.getElementById('ann-source')?.value || '').trim() || null,
+    published_at:         pubDate,
+    submission_deadline:  deadline,
+    session_date:         document.getElementById('ann-session-date')?.value || null,
+    session_time:         (document.getElementById('ann-session-time')?.value || '').trim() || null,
+    document_price:       rawPrice ? parseFloat(rawPrice) : null,
+    insurance_value:      (document.getElementById('ann-insurance')?.value || '').trim() || 'غير محدد',
+    description:          (document.getElementById('ann-desc')?.value || '').trim() || null,
+    is_active:            document.getElementById('ann-is-active')?.checked ?? true,
   };
   if (annEditingId) payload.id = annEditingId;
 
@@ -4578,14 +4710,27 @@ async function toggleAnn(id, newActive) {
   } catch(e) { toast('خطأ: ' + e.message, 'e'); }
 }
 
+/* حذف إعلان واحد من R2 + Supabase عبر Pages Function */
+async function _deleteAnnWithR2(id) {
+  const res = await fetch('/admin/delete-announcement', {
+    method:  'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ id, p_secret: adminHash }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+}
+
 async function deleteAnn(id, title) {
   showConfirm(
     'حذف الإعلان نهائياً',
-    `سيتم حذف "${title}" بشكل نهائي من قاعدة البيانات. لا يمكن التراجع.`,
+    `سيتم حذف "${title}" من قاعدة البيانات وصوره من التخزين. لا يمكن التراجع.`,
     async () => {
       try {
-        await sbRpc('admin_delete_announcement', { p_secret: adminHash, p_id: id });
-        toast('🗑 تم حذف الإعلان', 's');
+        await _deleteAnnWithR2(id);
+        toast('🗑 تم حذف الإعلان وصوره', 's');
         allAnnouncements = allAnnouncements.filter(a => a.id !== id);
         renderAnnouncements();
       } catch(e) { toast('خطأ: ' + e.message, 'e'); }

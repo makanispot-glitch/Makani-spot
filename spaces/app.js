@@ -172,13 +172,11 @@ async function loadData() {
     spacesOffset  = 0;
     spacesHasMore = (spacesData || []).length === SPACES_FETCH_SIZE;
 
-    // تحميل الإعلانات الرسمية غير المنتهية
-    const todayIso = new Date().toISOString().split('T')[0];
+    // تحميل الإعلانات الرسمية النشطة (بدون فلتر الموعد — الإخفاء يدوي من الأدمن)
     const { data: annData } = await sbClient
       .from('official_announcements')
       .select('*')
       .eq('is_active', true)
-      .gte('submission_deadline', todayIso)
       .order('created_at', { ascending: false });
     ANNOUNCEMENTS = (annData || []).map(mapAnnouncementObject);
 
@@ -241,11 +239,16 @@ function mapSupabaseToSpaceObject(row, profilesMap) {
 }
 
 function mapAnnouncementObject(row) {
+  // imageUrls: يأخذ image_urls أولاً ثم يبني من image_url للتوافق الخلفي
+  const imgs = Array.isArray(row.image_urls) && row.image_urls.length
+    ? row.image_urls
+    : (row.image_url ? [row.image_url] : []);
   return {
     _type:              'announcement',
     id:                 row.id,
     title:              row.title              || '',
-    imageUrl:           row.image_url          || '',
+    imageUrl:           imgs[0]               || '',
+    imageUrls:          imgs,
     issuingBody:        row.issuing_body       || '',
     announcementType:   row.announcement_type  || 'مناقصة رسمية',
     classification:     row.classification     || '',
@@ -1419,15 +1422,32 @@ function _renderAnnDetail(a) {
 
   const bodyEl = document.getElementById('ann-det-body');
   if (bodyEl) {
+    // بناء gallery الصور
+    const imgs = a.imageUrls && a.imageUrls.length ? a.imageUrls : (a.imageUrl ? [a.imageUrl] : []);
+    const galleryHtml = imgs.length === 0 ? '' : imgs.length === 1
+      ? `<div style="position:relative;margin-bottom:16px;cursor:zoom-in"
+             onclick="openLightbox('${imgs[0].replace(/'/g,"\\'")}')">
+           <img class="ann-det-img" src="${imgs[0]}" alt="${a.title}" style="margin-bottom:0">
+           <div style="position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;
+                border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;pointer-events:none">
+             🔍 اضغط للتكبير
+           </div>
+         </div>`
+      : `<div style="margin-bottom:16px">
+           <img class="ann-det-img" src="${imgs[0]}" alt="${a.title}" style="margin-bottom:8px;cursor:zoom-in"
+                onclick="openLightbox('${imgs[0].replace(/'/g,"\\'")}')">
+           <div style="display:grid;grid-template-columns:repeat(${imgs.length-1},1fr);gap:8px">
+             ${imgs.slice(1).map(u => `
+               <div style="position:relative;cursor:zoom-in" onclick="openLightbox('${u.replace(/'/g,"\\'")}')">
+                 <img src="${u}" alt="" style="width:100%;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--bd-1,#e5e7eb)">
+                 <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                      background:rgba(0,0,0,.15);border-radius:10px;color:#fff;font-size:16px">🔍</div>
+               </div>`).join('')}
+           </div>
+         </div>`;
+
     bodyEl.innerHTML = `
-      ${a.imageUrl ? `
-        <div style="position:relative;margin-bottom:16px;cursor:zoom-in" onclick="openLightbox('${a.imageUrl.replace(/'/g,"\\'")}')">
-          <img class="ann-det-img" src="${a.imageUrl}" alt="${a.title}" style="margin-bottom:0">
-          <div style="position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;
-               border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;pointer-events:none">
-            🔍 اضغط للتكبير
-          </div>
-        </div>` : ''}
+      ${galleryHtml}
       ${statusHtml}
       <div class="ann-det-grid">
         <div class="ann-det-card">
