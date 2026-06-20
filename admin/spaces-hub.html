@@ -4513,6 +4513,30 @@ function openAnnForm(id) {
       <div class="fg"><label class="fl">المصدر (الجريدة / الجهة)</label>
         <input id="ann-source" class="fc" placeholder="مثال: الجمهورية" value="${esc(a&&a.source||'')}"></div>
     </div>
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label class="fl">نوع المكان</label>
+        <select id="ann-place-type" class="fc">
+          <option value="">— غير محدد —</option>
+          <option value="mall"            ${(a&&a.place_type||'')==='mall'           ?'selected':''}>🏬 مول تجاري</option>
+          <option value="admin_mall"      ${(a&&a.place_type||'')==='admin_mall'     ?'selected':''}>🏢 مول إداري</option>
+          <option value="club"            ${(a&&a.place_type||'')==='club'           ?'selected':''}>⚽ نادي رياضي</option>
+          <option value="school"          ${(a&&a.place_type||'')==='school'         ?'selected':''}>🏫 مدرسة</option>
+          <option value="hospital"        ${(a&&a.place_type||'')==='hospital'       ?'selected':''}>🏥 مستشفى</option>
+          <option value="gov_entity"      ${(a&&a.place_type||'')==='gov_entity'     ?'selected':''}>🏛 جهة حكومية</option>
+          <option value="company"         ${(a&&a.place_type||'')==='company'        ?'selected':''}>💼 شركة</option>
+          <option value="university"      ${(a&&a.place_type||'')==='university'     ?'selected':''}>🎓 جامعة</option>
+          <option value="youth_center"    ${(a&&a.place_type||'')==='youth_center'   ?'selected':''}>🤸 مركز شباب</option>
+          <option value="edu_institution" ${(a&&a.place_type||'')==='edu_institution'?'selected':''}>📚 مؤسسة تعليمية</option>
+          <option value="admin_building"  ${(a&&a.place_type||'')==='admin_building' ?'selected':''}>🏗 مبنى إداري</option>
+          <option value="outlet"          ${(a&&a.place_type||'')==='outlet'         ?'selected':''}>🛒 منفذ بيع</option>
+          <option value="facility"        ${(a&&a.place_type||'')==='facility'       ?'selected':''}>🏭 منشأة حكومية</option>
+        </select></div>
+      <div class="fg"><label class="fl">النشاط التجاري</label>
+        <select id="ann-activity-type" class="fc">
+          <option value="">— غير محدد —</option>
+          ${allActivities.filter(x=>x.is_active!==false).map(x=>`<option value="${esc(x.id)}" ${(a&&a.activity_type||'')===(x.id+'')?'selected':''}>${esc((x.emoji||'')+' '+(x.name_ar||'')).trim()}</option>`).join('')}
+        </select></div>
+    </div>
   </div>
 
   <div class="form-sec">
@@ -4676,6 +4700,8 @@ async function saveAnn() {
     insurance_value:      (document.getElementById('ann-insurance')?.value || '').trim() || 'غير محدد',
     description:          (document.getElementById('ann-desc')?.value || '').trim() || null,
     is_active:            document.getElementById('ann-is-active')?.checked ?? true,
+    place_type:           document.getElementById('ann-place-type')?.value    || null,
+    activity_type:        document.getElementById('ann-activity-type')?.value || null,
   };
   if (annEditingId) payload.id = annEditingId;
 

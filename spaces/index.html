@@ -638,17 +638,40 @@
         <aside class="mp-sidebar" id="mp-sidebar">
           <div class="mp-sidebar-inner">
 
-            <!-- نوع المكان -->
+            <!-- 1. نوع المحتوى — أول الفلاتر -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">نوع المكان</div>
-              <div class="mp-type-btns">
-                <button class="mp-type-btn" data-type="mall" onclick="toggleMpType('mall',this)">مول تجاري</button>
-                <button class="mp-type-btn" data-type="club" onclick="toggleMpType('club',this)">نادي رياضي</button>
-                <button class="mp-type-btn" data-type="school" onclick="toggleMpType('school',this)">مدرسة</button>
+              <div class="mp-filter-title">نوع المحتوى</div>
+              <div class="mp-content-btns" style="flex-wrap:wrap;gap:5px">
+                <button class="mp-ctype-btn on-all" id="mp-ctype-all"    onclick="setContentFilter('all',this)">🌐 جميع الفرص</button>
+                <button class="mp-ctype-btn" id="mp-ctype-sp"            onclick="setContentFilter('spaces',this)">🏢 مساحات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-tender"        onclick="setContentFilter('tender',this)">📋 مناقصات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-auction"       onclick="setContentFilter('auction',this)">🔨 مزادات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-gov"           onclick="setContentFilter('gov',this)">🏛 إعلانات حكومية</button>
               </div>
             </div>
 
-            <!-- المنطقة -->
+            <!-- 2. نوع المكان — dropdown موسّع -->
+            <div class="mp-filter-group">
+              <div class="mp-filter-title">نوع المكان</div>
+              <select id="mp-place-sel" class="mp-select" onchange="applyMpFilters()">
+                <option value="">كل أنواع الأماكن</option>
+                <option value="mall">🏬 مول تجاري</option>
+                <option value="admin_mall">🏢 مول إداري</option>
+                <option value="club">⚽ نادي رياضي</option>
+                <option value="school">🏫 مدرسة</option>
+                <option value="hospital">🏥 مستشفى</option>
+                <option value="gov_entity">🏛 جهة حكومية</option>
+                <option value="company">💼 شركة</option>
+                <option value="university">🎓 جامعة</option>
+                <option value="youth_center">🤸 مركز شباب</option>
+                <option value="edu_institution">📚 مؤسسة تعليمية</option>
+                <option value="admin_building">🏗 مبنى إداري</option>
+                <option value="outlet">🛒 منفذ بيع</option>
+                <option value="facility">🏭 منشأة حكومية</option>
+              </select>
+            </div>
+
+            <!-- 3. المنطقة -->
             <div class="mp-filter-group">
               <div class="mp-filter-title">المنطقة</div>
               <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
@@ -694,7 +717,7 @@
               </select>
             </div>
 
-            <!-- مؤشر السعر -->
+            <!-- 4. مؤشر السعر (مساحات فقط) -->
             <div class="mp-filter-group">
               <div class="mp-filter-title">الحد الأقصى للسعر / شهر</div>
               <div class="mp-price-single-val" id="mp-price-max-label">بلا حد</div>
@@ -709,23 +732,15 @@
               </div>
             </div>
 
-            <!-- الأنشطة -->
+            <!-- 5. النشاط التجاري — dropdown -->
             <div class="mp-filter-group">
               <div class="mp-filter-title">النشاط التجاري</div>
-              <div class="mp-act-filters" id="mp-act-filters"></div>
+              <select id="mp-act-sel" class="mp-select" onchange="applyMpFilters()">
+                <option value="">كل الأنشطة</option>
+              </select>
             </div>
 
-            <!-- نوع المحتوى -->
-            <div class="mp-filter-group">
-              <div class="mp-filter-title">نوع المحتوى</div>
-              <div class="mp-content-btns">
-                <button class="mp-ctype-btn on-all" id="mp-ctype-all" onclick="setContentFilter('all',this)">الكل</button>
-                <button class="mp-ctype-btn" id="mp-ctype-sp"  onclick="setContentFilter('spaces',this)">مساحات</button>
-                <button class="mp-ctype-btn" id="mp-ctype-ann" onclick="setContentFilter('announcements',this)">إعلانات</button>
-              </div>
-            </div>
-
-            <!-- تصنيف الإعلان -->
+            <!-- 6. تصنيف الإعلان (يظهر مع الإعلانات فقط) -->
             <div class="mp-filter-group" id="mp-ann-class-wrap" style="display:none">
               <div class="mp-filter-title">تصنيف الإعلان</div>
               <select id="mp-ann-class" class="mp-select" onchange="applyMpFilters()">
@@ -1386,7 +1401,7 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="app.js?v=202606201600" defer></script>
+  <script src="app.js?v=202606201900" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

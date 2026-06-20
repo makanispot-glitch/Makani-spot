@@ -38,6 +38,22 @@ let mpFiltered    = [];
 let mpActiveTypes = [];
 let mpActiveActs  = [];
 
+const PLACE_TYPES = [
+  { id: 'mall',            label: '🏬 مول تجاري' },
+  { id: 'admin_mall',      label: '🏢 مول إداري' },
+  { id: 'club',            label: '⚽ نادي رياضي' },
+  { id: 'school',          label: '🏫 مدرسة' },
+  { id: 'hospital',        label: '🏥 مستشفى' },
+  { id: 'gov_entity',      label: '🏛 جهة حكومية' },
+  { id: 'company',         label: '💼 شركة' },
+  { id: 'university',      label: '🎓 جامعة' },
+  { id: 'youth_center',    label: '🤸 مركز شباب' },
+  { id: 'edu_institution', label: '📚 مؤسسة تعليمية' },
+  { id: 'admin_building',  label: '🏗 مبنى إداري' },
+  { id: 'outlet',          label: '🛒 منفذ بيع' },
+  { id: 'facility',        label: '🏭 منشأة حكومية' },
+];
+
 // ── Pagination الخادمي — يحمي من تحميل آلاف المساحات دفعة واحدة ──
 const SPACES_FETCH_SIZE = 100;
 let spacesOffset  = 0;
@@ -262,6 +278,8 @@ function mapAnnouncementObject(row) {
     insuranceValue:     row.insurance_value    || 'غير محدد',
     description:        row.description        || '',
     createdAt:          row.created_at         || '',
+    placeType:          row.place_type         || '',
+    activityType:       row.activity_type      || '',
   };
 }
 
@@ -345,25 +363,31 @@ function subscribeSpacesRealtime() {
 
 /* ── يطبّق الفلاتر الحالية بدون إعادة ضبط الصفحة — مشترك بين silentRefresh والـ Realtime ── */
 function _applyCurrentFilters() {
-  const region      = document.getElementById('mp-region')?.value    || '';
-  const maxVal      = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-  const sort        = document.getElementById('mp-sort')?.value      || 'default';
-  const annClassFlt = document.getElementById('mp-ann-class')?.value || '';
+  const region    = document.getElementById('mp-region')?.value    || '';
+  const maxVal    = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
+  const sort      = document.getElementById('mp-sort')?.value      || 'default';
+  const placeFlt  = document.getElementById('mp-place-sel')?.value || '';
+  const actFlt    = document.getElementById('mp-act-sel')?.value   || '';
+  const annClsFlt = document.getElementById('mp-ann-class')?.value || '';
+
+  // هل الفلتر مخصص للإعلانات فقط؟
+  const annSubTypes = ['tender', 'auction', 'gov'];
+  const isAnnOnly   = annSubTypes.includes(mpContentFilter);
 
   // ── مساحات ──
   let spacesData = [];
-  if (mpContentFilter !== 'announcements') {
+  if (!isAnnOnly && mpContentFilter !== 'announcements') {
     spacesData = [...SPACES];
-    if (region) spacesData = spacesData.filter(s => s.loc === region);
-    if (mpActiveTypes.length) spacesData = spacesData.filter(s => mpActiveTypes.includes(s.type));
-    // فلتر السعر: يُطبَّق فقط لو السلايدر لم يصل للحد الأقصى (بلا حد = عرض الكل)
+    if (region)   spacesData = spacesData.filter(s => s.loc === region);
+    if (placeFlt) spacesData = spacesData.filter(s => s.type === placeFlt);
+    // فلتر السعر: يُطبَّق فقط لو السلايدر لم يصل للحد الأقصى
     const sliderEl  = document.getElementById('mp-slider-max');
     const sliderMax = parseInt(sliderEl?.max || 50000);
     if (maxVal < sliderMax) {
       spacesData = spacesData.filter(s => (parseInt(s.price) || 0) <= maxVal);
     }
-    if (mpActiveActs.length) {
-      spacesData = spacesData.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
+    if (actFlt) {
+      spacesData = spacesData.filter(s => s.allActs || (s.acts && s.acts.includes(actFlt)));
     }
   }
 
@@ -371,8 +395,14 @@ function _applyCurrentFilters() {
   let annData = [];
   if (mpContentFilter !== 'spaces') {
     annData = [...ANNOUNCEMENTS];
-    if (region) annData = annData.filter(a => a.governorate === region);
-    if (annClassFlt) annData = annData.filter(a => a.classification === annClassFlt);
+    // فلتر نوع الإعلان حسب قيمة mpContentFilter
+    if (mpContentFilter === 'tender')  annData = annData.filter(a => a.announcementType === 'مناقصة رسمية');
+    if (mpContentFilter === 'auction') annData = annData.filter(a => a.announcementType === 'مزاد علني');
+    if (mpContentFilter === 'gov')     annData = annData.filter(a => ['إعلان رسمي','أخرى'].includes(a.announcementType));
+    if (region)    annData = annData.filter(a => a.governorate === region);
+    if (placeFlt)  annData = annData.filter(a => a.placeType === placeFlt);
+    if (actFlt)    annData = annData.filter(a => a.activityType === actFlt);
+    if (annClsFlt) annData = annData.filter(a => a.classification === annClsFlt);
   }
 
   // ── دمج + ترتيب ──
@@ -530,11 +560,10 @@ function onActivityChange(sel) {
 }
 
 function buildMpActivityFilters() {
-  const cont = document.getElementById('mp-act-filters');
-  if (!cont) return;
-  cont.innerHTML = ACTIVITIES.map(a =>
-    `<button class="mp-act-btn" data-id="${a.id}" onclick="toggleMpAct('${a.id}',this)">${a.label}</button>`
-  ).join('');
+  const sel = document.getElementById('mp-act-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">كل الأنشطة</option>' +
+    ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('');
 }
 
 
@@ -1115,7 +1144,8 @@ function _renderSubSpaces(s) {
 }
 
 function _typeLabel(type) {
-  return { mall: '🏬 مول تجاري', club: '⚽ نادي رياضي', school: '🏫 مدرسة' }[type] || type;
+  const pt = PLACE_TYPES.find(p => p.id === type);
+  return pt ? pt.label : (type || '');
 }
 
 
@@ -1163,8 +1193,10 @@ function goToMarketplace() {
   const mpSort = document.getElementById('mp-sort');
   if (mpSort) mpSort.value = 'default';
 
-  document.querySelectorAll('.mp-type-btn').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.mp-act-btn').forEach(b => b.classList.remove('on'));
+  const placeSel = document.getElementById('mp-place-sel');
+  const actSel   = document.getElementById('mp-act-sel');
+  if (placeSel) placeSel.value = '';
+  if (actSel)   actSel.value   = '';
 
   renderMarketplace();
 }
@@ -1196,10 +1228,13 @@ function applyMpFilters() {
 function setContentFilter(type, btn) {
   mpContentFilter = type;
   document.querySelectorAll('.mp-ctype-btn').forEach(b => b.className = 'mp-ctype-btn');
-  if (btn) btn.classList.add(type === 'all' ? 'on-all' : type === 'spaces' ? 'on-sp' : 'on-ann');
-  // إظهار/إخفاء فلتر تصنيف الإعلان
+  if (btn) {
+    const cls = type === 'all' ? 'on-all' : type === 'spaces' ? 'on-sp' : 'on-ann';
+    btn.classList.add(cls);
+  }
+  // إظهار تصنيف الإعلان عند عرض إعلانات فقط
   const clsWrap = document.getElementById('mp-ann-class-wrap');
-  if (clsWrap) clsWrap.style.display = type === 'announcements' ? '' : 'none';
+  if (clsWrap) clsWrap.style.display = ['tender','auction','gov','announcements'].includes(type) ? '' : 'none';
   applyMpFilters();
 }
 
@@ -1207,23 +1242,25 @@ function clearMpFilters() {
   mpActiveTypes   = [];
   mpActiveActs    = [];
   mpContentFilter = 'all';
-  document.querySelectorAll('.mp-type-btn').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.mp-act-btn').forEach(b  => b.classList.remove('on'));
 
-  const s2 = document.getElementById('mp-slider-max');
-  if (s2) s2.value = parseInt(s2.max || 50000);
+  const placeSel = document.getElementById('mp-place-sel');
+  const actSel   = document.getElementById('mp-act-sel');
+  const s2       = document.getElementById('mp-slider-max');
+  const mpRegion = document.getElementById('mp-region');
+  const mpSort   = document.getElementById('mp-sort');
+  const annClass = document.getElementById('mp-ann-class');
+  const clsWrap  = document.getElementById('mp-ann-class-wrap');
+
+  if (placeSel) placeSel.value = '';
+  if (actSel)   actSel.value   = '';
+  if (s2)       s2.value       = parseInt(s2.max || 50000);
+  if (mpRegion) mpRegion.value = '';
+  if (mpSort)   mpSort.value   = 'default';
+  if (annClass) annClass.value = '';
+  if (clsWrap)  clsWrap.style.display = 'none';
+
   updateMpSlider();
 
-  const mpRegion = document.getElementById('mp-region');
-  if (mpRegion) mpRegion.value = '';
-  const mpSort = document.getElementById('mp-sort');
-  if (mpSort) mpSort.value = 'default';
-  const annClass = document.getElementById('mp-ann-class');
-  if (annClass) annClass.value = '';
-  const clsWrap = document.getElementById('mp-ann-class-wrap');
-  if (clsWrap) clsWrap.style.display = 'none';
-
-  // إعادة ضبط أزرار نوع المحتوى
   document.querySelectorAll('.mp-ctype-btn').forEach(b => b.className = 'mp-ctype-btn');
   const allBtn = document.getElementById('mp-ctype-all');
   if (allBtn) allBtn.classList.add('on-all');
@@ -1236,18 +1273,28 @@ function clearMpFilters() {
 function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
-  const chips   = [];
-  const typeMap = { mall: 'مولات', club: 'نوادي', school: 'مدارس' };
+  const chips = [];
+  const contentMap = {
+    spaces:  '🏢 مساحات فقط',
+    tender:  '📋 مناقصات',
+    auction: '🔨 مزادات',
+    gov:     '🏛 إعلانات حكومية',
+  };
+  if (contentMap[mpContentFilter]) {
+    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${contentMap[mpContentFilter]} ×</span>`);
+  }
 
-  if (mpContentFilter === 'announcements') chips.push(`<span class="mp-chip" onclick="clearMpFilters()">📢 إعلانات فقط ×</span>`);
-  if (mpContentFilter === 'spaces')        chips.push(`<span class="mp-chip" onclick="clearMpFilters()">🏢 مساحات فقط ×</span>`);
-  mpActiveTypes.forEach(t => {
-    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${typeMap[t] || t} ×</span>`);
-  });
-  mpActiveActs.forEach(id => {
-    const a = ACTIVITIES.find(x => x.id === id);
-    if (a) chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${a.label} ×</span>`);
-  });
+  const placeVal = document.getElementById('mp-place-sel')?.value || '';
+  if (placeVal) {
+    const pt = PLACE_TYPES.find(p => p.id === placeVal);
+    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${pt?.label || placeVal} ×</span>`);
+  }
+
+  const actVal = document.getElementById('mp-act-sel')?.value || '';
+  if (actVal) {
+    const act = ACTIVITIES.find(a => a.id === actVal);
+    if (act) chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${act.label} ×</span>`);
+  }
 
   cont.innerHTML = chips.join('');
 }
