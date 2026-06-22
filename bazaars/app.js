@@ -1849,11 +1849,13 @@ async function submitBazaarBooking() {
   const _capturedSlotId = selectedSlotId;
   let   _slotWasLocked  = false;
 
+  /* احسب سعر المكان المختار (يأخذ أولوية على السعر الافتراضي للبازار) */
+  const _capturedSlotEl  = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`);
+  const _capturedSlotPrice = Number(_capturedSlotEl?.dataset?.price || 0);
+  const _bookingAmount   = _capturedSlotPrice > 0 ? _capturedSlotPrice : Number(currentBazaar.price_per_slot || 0);
+
   try {
     const now = new Date().toISOString();
-
-    /* ملاحظة schema: bazaar_bookings.bazaar_id = TEXT, bazaar_slots.bazaar_id = UUID (FK).
-       لذلك نستخدم String() دائماً عند التعامل مع bazaar_bookings، ونمرر UUID خاماً لـ bazaar_slots. */
 
     /* التحقق من حد الحجوزات: بحد أقصى 2 مكان لنفس المستخدم في نفس البازار */
     const { data: existingBks } = await sbClient
@@ -1884,7 +1886,7 @@ async function submitBazaarBooking() {
     _slotWasLocked = true;
 
     // حفظ الحجز
-    const { error: bookingErr } = await sbClient
+    const { data: insertedBooking, error: bookingErr } = await sbClient
       .from('bazaar_bookings')
       .insert({
         bazaar_id:     String(currentBazaar.id),
@@ -1897,8 +1899,11 @@ async function submitBazaarBooking() {
         activity:      activity,
         notes:         notes || null,
         status:        'pending',
+        amount:        _bookingAmount,
         created_at:    now,
-      });
+      })
+      .select('id')
+      .single();
 
     if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
 
@@ -1925,10 +1930,11 @@ async function submitBazaarBooking() {
     }
 
     const bazaarBookingRecord = {
+      id: insertedBooking?.id || null,
       bazaar_id: String(currentBazaar.id), slot_id: selectedSlotId,
       user_id: currentUser.id.toString(), user_name: name, user_phone: phone,
       user_email: email || null, business_name: business, notes: notes || null,
-      status: 'pending', created_at: now,
+      status: 'pending', amount: _bookingAmount, created_at: now,
     };
     _saveLocalBazaarBooking(currentUser.id, bazaarBookingRecord);
 
@@ -1997,9 +2003,11 @@ async function submitBazaarBooking() {
       submitBtn.disabled   = false;
       submitBtn.style.opacity = '1';
     }
-    const msg = err.message.includes('تعذّر حجز')
-      ? 'تم حجز هذا المكان للتو — اختار مكاناً آخر'
-      : 'في مشكلة في الحجز — تأكد من الاتصال وحاول تاني';
+    const msg = err.message?.includes('booking_limit_exceeded')
+      ? 'لا يمكن حجز أكثر من مكانين في نفس البازار بنفس الحساب'
+      : err.message?.includes('تعذّر حجز')
+        ? 'تم حجز هذا المكان للتو — اختار مكاناً آخر'
+        : 'في مشكلة في الحجز — تأكد من الاتصال وحاول تاني';
     showBzbError(msg);
   }
 }
@@ -2138,7 +2146,7 @@ async function bzLoadPostponeAlerts() {
   const bazaarIds = [...new Set(bookings.map(b => b.bazaar_id))];
   const { data: bazaarsData } = await sbClient
     .from('bazaars')
-    .select('id,name as title,date_start as start_date,date_end as end_date,location')
+    .select('id,title:name,start_date:date_start,end_date:date_end,location')
     .in('id', bazaarIds);
 
   const bazaarMap = {};

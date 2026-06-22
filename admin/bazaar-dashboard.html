@@ -1862,12 +1862,13 @@ function renderBookings() {
       </td>
       <td>
         <select class="ie-sel" onchange="changeBkStatus('${b.bookingId}','bookStatus',this.value)" onclick="event.stopPropagation()">
+          <option value="pending"   ${b.bookStatus==='pending'   ?'selected':''}>⏳ قيد المراجعة</option>
           <option value="confirmed" ${b.bookStatus==='confirmed'?'selected':''}>✅ مؤكد</option>
           <option value="cancelled" ${b.bookStatus==='cancelled'?'selected':''}>❌ ملغي</option>
         </select>
       </td>
       <td style="font-size:10.5px;color:var(--mu)">${b.bookDate||'—'}</td>
-      <td><div class="row-acts"><button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openBkDetail('${b.bookingId}')">👁</button></div></td>
+      <td><div class="row-acts"><button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openBkDetail('${b.bookingId}')">👁</button><button class="btn btn-rd btn-sm" onclick="event.stopPropagation();deleteBooking('${b.bookingId}')" title="حذف نهائي">🗑️</button></div></td>
     </tr>`;
   }).join(''):'<tr><td colspan="11"><div class="empty"><div class="ei">🧾</div>لا نتائج</div></td></tr>';
   renderPag('bk-pg',fBk.length,bkPg,p=>{bkPg=p;renderBookings();});
@@ -1986,35 +1987,73 @@ async function dbUpdateBookingStatus(dbId, field, value) {
    INLINE EDITS
 ══════════════════════════════════════════ */
 function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;dbUpdateBazaarStatus(b._dbId,val);renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
-function changeSlotStatus(id,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s.status=val;dbUpdateSlotStatus(s._dbId,val);renderSlots();updateAll();toast('تم تحديث الوحدة','s');}}
+async function changeSlotStatus(id, val) {
+  const s = SLOTS.find(x => x.slotId === id);
+  if (!s) return;
+  s.status = val;
+  await dbUpdateSlotStatus(s._dbId, val);
+  /* مزامنة الحجز المرتبط بالوحدة — المصدر الموحد للحقيقة */
+  const bk = BOOKINGS.find(b => b.slotId === s.slotId && b.bookStatus !== 'cancelled');
+  if (bk) {
+    const bkNewStatus = val === 'booked' ? 'confirmed' : val === 'available' ? 'cancelled' : val;
+    bk.bookStatus = bkNewStatus;
+    await dbUpdateBookingStatus(bk._dbId, 'bookStatus', bkNewStatus);
+    if (bkNewStatus === 'cancelled') {
+      db.rpc('increment_available_slots', { p_bazaar_id: String(s.bazaarId) });
+      const bz = BAZAARS.find(x => x.id === s.bazaarId);
+      if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
+    }
+  }
+  renderSlots(); renderBookings(); updateAll();
+  toast('تم تحديث الوحدة', 's');
+}
 function changeSlotTrader(id,field,val){const s=SLOTS.find(x=>x.slotId===id);if(s){s[field]=val;dbUpdateSlotField(s._dbId,field,val);}}
-function changeBkStatus(id, field, val) {
+async function changeBkStatus(id, field, val) {
   const b = BOOKINGS.find(x => x.bookingId === id);
   if (!b) return;
+  const prevVal = b[field];
   b[field] = val;
-  dbUpdateBookingStatus(b._dbId, field, val);
+  await dbUpdateBookingStatus(b._dbId, field, val);
 
-  /* مزامنة حالة المكان عند تأكيد/إلغاء الحجز */
-  if (field === 'bookStatus' && b.slotId) {
+  /* تحديث الذاكرة المحلية — trigger في DB يتولى تحديث bazaar_slots فعلياً */
+  if (field === 'bookStatus' && b.slotId && val !== prevVal) {
+    const slot = SLOTS.find(s => s._dbId === b.slotId || s.slotId === b.slotId);
     if (val === 'confirmed') {
-      db.from('bazaar_slots').update({ status: 'booked' }).eq('id', b.slotId);
+      if (slot) slot.status = 'booked';
     } else if (val === 'cancelled') {
-      db.from('bazaar_slots').update({ status: 'available' }).eq('id', b.slotId);
-      /* إعادة المكان المتاح للبازار بشكل atomic */
+      if (slot) slot.status = 'available';
       db.rpc('increment_available_slots', { p_bazaar_id: String(b.bazaarId) });
       const bz = BAZAARS.find(x => x.id === b.bazaarId);
       if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
-      /* تحديث SLOTS محلياً */
-      const slot = SLOTS.find(s => s._dbId === b.slotId || s.id === b.slotId);
-      if (slot) slot.status = 'available';
+    } else if (val === 'pending') {
+      if (slot) slot.status = 'pending';
     }
   }
 
-  renderBookings(); renderFinancial(); updateStats();
+  renderBookings(); renderSlots(); renderFinancial(); updateStats();
   toast('تم تحديث الحجز', 's');
 }
 function changeCostPaid(localIdx,val){const c=fCs[localIdx];if(c){const ri=COSTS.indexOf(c);if(ri>=0){COSTS[ri].paid=val;renderCosts();}}}
 function deleteCost(i){if(confirm('حذف هذا البند؟')){COSTS.splice(i,1);renderCosts();toast('تم حذف البند','i');}}
+async function deleteBooking(bookingId) {
+  const b = BOOKINGS.find(x => x.bookingId === bookingId);
+  if (!b) return;
+  if (!confirm(`حذف نهائي للحجز؟\nالتاجر: ${b.vendorName}\nالوحدة: ${b.slotId?.slice(0,8)}…\n\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
+  const { error } = await db.rpc('admin_delete_bazaar_booking', { p_booking_id: b._dbId });
+  if (error) { toast('خطأ في الحذف: ' + error.message, 'e'); return; }
+  /* تحديث الذاكرة المحلية */
+  const bi = BOOKINGS.indexOf(b);
+  if (bi >= 0) BOOKINGS.splice(bi, 1);
+  const slot = SLOTS.find(s => s._dbId === b.slotId || s.slotId === b.slotId);
+  if (slot) slot.status = 'available';
+  if (!['cancelled','expired'].includes(b.bookStatus)) {
+    const bz = BAZAARS.find(x => x.id === b.bazaarId);
+    if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
+  }
+  closeModal('modal-bk');
+  renderBookings(); renderSlots(); renderFinancial(); updateAll();
+  toast('🗑️ تم حذف الحجز نهائياً', 'i');
+}
 function updateStats(){
   const coll=BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
   const pend=BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
@@ -2192,10 +2231,12 @@ function openBkDetail(id){
         <option value="cancelled" ${b.payStatus==='cancelled'?'selected':''}>❌ ملغي</option>
       </select>
       <select class="fc" onchange="changeBkStatus('${b.bookingId}','bookStatus',this.value)" style="flex:1">
+        <option value="pending"   ${b.bookStatus==='pending'   ?'selected':''}>⏳ قيد المراجعة</option>
         <option value="confirmed" ${b.bookStatus==='confirmed'?'selected':''}>✅ مؤكد</option>
         <option value="cancelled" ${b.bookStatus==='cancelled'?'selected':''}>❌ ملغي</option>
       </select>
-    </div>`;
+    </div>
+    <button class="btn btn-rd" style="width:100%;margin-top:10px" onclick="deleteBooking('${b.bookingId}')">🗑️ حذف نهائي للحجز</button>`;
   openModal('modal-bk');
 }
 

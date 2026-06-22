@@ -2723,9 +2723,22 @@ async function loadUserBookings(userId) {
 
     const localBazaarBookings = _loadLocalBazaarBookings(userId);
     const bazaarById = new Map();
-    [...(bazaarBookings || []), ...localBazaarBookings].forEach(b => {
-      const key = b.id || `${b.bazaar_id}-${b.slot_id}-${b.created_at}`;
-      if (!bazaarById.has(key)) bazaarById.set(key, b);
+    const slotOwned = new Set(); // tracks "bazaar_id:slot_id" pairs already covered by DB
+    /* DB records take priority — add first */
+    (bazaarBookings || []).forEach(b => {
+      const key = b.id || `${b.bazaar_id}:${b.slot_id}`;
+      bazaarById.set(key, b);
+      if (b.bazaar_id && b.slot_id) slotOwned.add(`${b.bazaar_id}:${b.slot_id}`);
+    });
+    /* Local cache: skip entries already covered by a DB record for the same slot */
+    localBazaarBookings.forEach(b => {
+      const compositeKey = `${b.bazaar_id}:${b.slot_id}`;
+      if (slotOwned.has(compositeKey)) return; // DB record exists — use it (has updated status)
+      const key = b.id || compositeKey;
+      if (!bazaarById.has(key)) {
+        bazaarById.set(key, b);
+        if (b.bazaar_id && b.slot_id) slotOwned.add(compositeKey);
+      }
     });
 
     const normalizedSpaces = (spaceBookings || []).map(b => ({

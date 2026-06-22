@@ -291,20 +291,21 @@ async function loadMyBazaars() {
     .from('bazaars')
     .select([
       'id',
-      'name as title',
+      'title:name',
       'description',
       'location',
-      'maps_link as location_url',
-      'date_start as start_date',
-      'date_end as end_date',
+      'location_url:maps_link',
+      'start_date:date_start',
+      'end_date:date_end',
       'total_slots',
       'available_slots',
-      'price_per_slot as slot_price',
+      'slot_price:price_per_slot',
       'premium_slots',
       'premium_price',
       'image',
       'extra_images',
       'status',
+      'working_hours',
       'is_archived',
       'is_deleted',
       'deleted_at',
@@ -325,7 +326,13 @@ async function loadMyBazaars() {
 
   if (error) {
     document.getElementById('view-list').style.display = 'block';
-    showToast('خطأ في تحميل البازارات: ' + error.message, true);
+    document.getElementById('mn-cards').innerHTML = `
+      <div class="mn-empty" style="border-color:#fca5a5">
+        <div class="mn-empty-ico">⚠️</div>
+        <div class="mn-empty-title" style="color:#dc2626">تعذّر تحميل البازارات</div>
+        <div class="mn-empty-desc">حدث خطأ أثناء تحميل بيانات بازاراتك. يرجى تحديث الصفحة والمحاولة مرة أخرى.</div>
+        <button class="mn-btn primary" onclick="location.reload()" style="margin-top:12px">↻ تحديث الصفحة</button>
+      </div>`;
     return;
   }
 
@@ -1276,9 +1283,9 @@ async function loadBazaarBookings() {
 
   const { data, error } = await sb
     .from('bazaar_bookings')
-    .select('id,status,booked_at,total_price,notes,bazaar_slots(slot_number,row,col)')
+    .select('id,status,created_at,amount,notes,user_name,bazaar_slots(row_label,slot_number)')
     .eq('bazaar_id', activeBazaar.id)
-    .order('booked_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   /* update badge */
   const badge = document.getElementById('bk-badge');
@@ -1326,13 +1333,13 @@ async function loadBazaarBookings() {
           ${data.map(bk => {
             const s   = BK_STATUS[bk.status] || { label: bk.status, bg: '', color: '' };
             const sl  = bk.bazaar_slots;
-            const loc = sl ? `${sl.row || ''}${sl.col || ''} — ${sl.slot_number || ''}` : '—';
+            const loc = sl ? `${sl.row_label || ''}${sl.slot_number || ''}` : '—';
             return `<tr>
               <td>${_esc(loc)}</td>
               <td><span class="mn-bk-status" style="background:${s.bg};color:${s.color}">${s.label}</span></td>
-              <td>${bk.total_price ? _num(bk.total_price) + ' ج' : '—'}</td>
+              <td>${bk.amount ? _num(bk.amount) + ' ج' : '—'}</td>
               <td style="color:var(--ink3)">${_esc(bk.notes || '—')}</td>
-              <td>${_formatDateTime(bk.booked_at)}</td>
+              <td>${_formatDateTime(bk.created_at)}</td>
             </tr>`;
           }).join('')}
         </tbody>
