@@ -2275,9 +2275,9 @@
             <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
           </div>
 
-          <!-- ── زر صاحب المساحة ── -->
+          <!-- ── بوابة أصحاب المساحات ── -->
           <div class="owner-divider">بوابة أصحاب المساحات</div>
-          <a href="/dashboard/" class="owner-portal-btn">
+          <button onclick="goToOwnerDashboard()" class="owner-portal-btn">
             <div class="owner-portal-ico">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2291,7 +2291,7 @@
               <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
             </div>
             <div class="owner-portal-arrow">←</div>
-          </a>
+          </button>
 
         </div>
       </div>
@@ -2444,24 +2444,6 @@
           <div class="auth-switch-link" style="margin-top:8px">
             <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
           </div>
-
-          <!-- ── زر صاحب المساحة ── -->
-          <div class="owner-divider">بوابة أصحاب المساحات</div>
-          <a href="/dashboard/" class="owner-portal-btn">
-            <div class="owner-portal-ico">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-              <div class="owner-portal-dot"></div>
-            </div>
-            <div class="owner-portal-info">
-              <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
-              <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
-            </div>
-            <div class="owner-portal-arrow">←</div>
-          </a>
 
         </div>
       </div>
@@ -3192,6 +3174,38 @@
       });
     }
   </script>
+
+  <!-- ================================================================
+     🔐 مودال تسجيل الدخول لبوابة أصحاب المساحات (غير مسجّل الدخول)
+     ================================================================ -->
+  <div class="modal-overlay" id="owner-gate-modal" onclick="_ownerGateModalBg(event)">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <div class="modal-header-inner">
+          <div class="modal-icon" style="font-size:22px">🏢</div>
+          <div>
+            <div class="modal-title">لإدارة مساحتك — سجّل دخولك أولاً</div>
+            <div class="modal-sub">أصحاب المساحات ينتقلون للوحتهم تلقائياً بعد الدخول</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeOwnerGateModal()" aria-label="إغلاق">×</button>
+      </div>
+      <div class="modal-body" style="padding-top:8px">
+        <button onclick="closeOwnerGateModal(); showPage('login')"
+          class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;margin-bottom:10px">
+          تسجيل الدخول ←
+        </button>
+        <button onclick="closeOwnerGateModal(); showPage('signup')"
+          class="btn btn-ghost" style="width:100%;padding:12px;font-size:14px">
+          إنشاء حساب جديد
+        </button>
+        <div style="font-size:12px;color:var(--ink2);text-align:center;margin-top:14px;line-height:1.7">
+          إذا كان لديك حساب Owner بالفعل — ادخل وستنتقل للوحتك مباشرة.<br>
+          إذا لم يكن لديك حساب Owner — سجّل الدخول ثم اطلب تفعيل الحساب.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ================================================================
      🏢 مودال طلب تحويل الحساب لصاحب مساحة

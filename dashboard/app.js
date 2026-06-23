@@ -614,12 +614,13 @@ function hideLoginError() {
   if (err) err.style.display = 'none';
 }
 
-function showOwnerAccessGate(type, title, body) {
+function showOwnerAccessGate(type, title, body, ctaHtml = null) {
   const loginPage = document.getElementById('login-page');
   const app = document.getElementById('app');
   const titleEl = document.getElementById('access-title');
   const bodyEl = document.getElementById('access-body');
   const alertEl = document.getElementById('login-error');
+  const ctaEl = document.getElementById('access-cta');
 
   if (app) app.classList.remove('visible');
   if (loginPage) loginPage.style.display = 'flex';
@@ -630,6 +631,7 @@ function showOwnerAccessGate(type, title, body) {
     alertEl.textContent = body;
     alertEl.style.display = 'block';
   }
+  if (ctaEl && ctaHtml) ctaEl.innerHTML = ctaHtml;
 }
 
 /** حالة زر اللوجين (loading / normal) */
@@ -671,7 +673,8 @@ async function checkRoleAndProceed(user) {
     showOwnerAccessGate(
       'danger',
       'تعذّر التحقق من صلاحية الحساب',
-      `لم نتمكن من قراءة بيانات حسابك. تواصل مع الإدارة لمراجعة الصلاحية. ${detail}`
+      `لم نتمكن من قراءة بيانات حسابك. تواصل مع الإدارة لمراجعة الصلاحية. ${detail}`,
+      `<a href="/" class="btn-login" style="text-decoration:none">الرجوع إلى منصة مكاني Spot ←</a>`
     );
     setLoginLoading(false);
     return;
@@ -681,7 +684,11 @@ async function checkRoleAndProceed(user) {
     showOwnerAccessGate(
       'danger',
       'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
-      `حسابك الحالي مسجل كـ "${profile.role || 'tenant'}". اطلب ترقية الحساب من المنصة، وبعد تحويله إلى Owner ستفتح هذه اللوحة مباشرة.`
+      `حسابك الحالي مسجل كـ "${profile.role || 'tenant'}". اطلب تفعيل الحساب من المنصة وبعد تحويله إلى Owner ستفتح هذه اللوحة مباشرة.`,
+      `<div style="display:flex;flex-direction:column;gap:10px">
+        <a href="/?p=dashboard" class="btn-login" style="text-decoration:none">اطلب تفعيل الحساب ←</a>
+        <a href="/" style="color:var(--text2);font-size:13px;text-align:center;text-decoration:none;display:block;padding:4px 0">رجوع للمنصة</a>
+      </div>`
     );
     setLoginLoading(false);
     return;
@@ -692,7 +699,8 @@ async function checkRoleAndProceed(user) {
     showOwnerAccessGate(
       'danger',
       'تم إيقاف هذا الحساب مؤقتاً',
-      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.'
+      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.',
+      `<a href="/" class="btn-login" style="text-decoration:none">الرجوع إلى منصة مكاني Spot ←</a>`
     );
     setLoginLoading(false);
     return;
@@ -726,7 +734,8 @@ async function checkRoleAndProceed(user) {
     showOwnerAccessGate(
       'warning',
       '🔒 لوحة التحكم متاحة من باقة Growth فما فوق',
-      'باقتك الحالية هي Starter. قم بترقية حسابك إلى Growth أو Pro للوصول إلى لوحة التحكم وإدارة مساحاتك.'
+      'باقتك الحالية هي Starter. قم بترقية حسابك إلى Growth أو Pro للوصول إلى لوحة التحكم وإدارة مساحاتك.',
+      `<a href="/" class="btn-login" style="text-decoration:none">الرجوع إلى منصة مكاني Spot ←</a>`
     );
     return;
   }
@@ -5276,7 +5285,8 @@ async function checkSessionOnLoad() {
     showOwnerAccessGate(
       'danger',
       'تعذّر الاتصال بنظام الحسابات',
-      'لا يمكن فتح لوحة أصحاب المساحات بدون التحقق من حساب المنصة وصلاحية Owner.'
+      'لا يمكن فتح لوحة أصحاب المساحات بدون التحقق من حساب المنصة وصلاحية Owner.',
+      `<a href="/" class="btn-login" style="text-decoration:none">الرجوع إلى منصة مكاني Spot ←</a>`
     );
     return;
   }
@@ -5289,7 +5299,8 @@ async function checkSessionOnLoad() {
     showOwnerAccessGate(
       'info',
       'ادخل من حسابك على منصة مكاني Spot',
-      'لا توجد جلسة منصة نشطة في هذا المتصفح. سجل الدخول أو أنشئ حسابًا عاديًا من المنصة، ثم اطلب ترقية الحساب إلى Owner.'
+      'لا توجد جلسة نشطة في هذا المتصفح. سجّل الدخول من المنصة، وإذا كان لديك صلاحية Owner ستنتقل للوحتك مباشرة.',
+      `<a href="/?p=login" class="btn-login" style="text-decoration:none">تسجيل الدخول ←</a>`
     );
     return;
   }
@@ -5306,7 +5317,11 @@ async function checkSessionOnLoad() {
     showOwnerAccessGate(
       'danger',
       'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
-      `حسابك الحالي ${profile?.role ? `مسجل كـ "${profile.role}"` : 'لم يتم العثور على صلاحية Owner له'}. بعد تحويله إلى Owner ستدخل للوحة مباشرة من المنصة.`
+      `حسابك الحالي ${profile?.role ? `مسجل كـ "${profile.role}"` : 'لم يتم العثور على صلاحية Owner له'}. اطلب تفعيل الحساب وبعد تحويله إلى Owner ستدخل للوحة مباشرة.`,
+      `<div style="display:flex;flex-direction:column;gap:10px">
+        <a href="/?p=dashboard" class="btn-login" style="text-decoration:none">اطلب تفعيل الحساب ←</a>
+        <a href="/" style="color:var(--text2);font-size:13px;text-align:center;text-decoration:none;display:block;padding:4px 0">رجوع للمنصة</a>
+      </div>`
     );
     return;
   }
@@ -5317,7 +5332,8 @@ async function checkSessionOnLoad() {
     showOwnerAccessGate(
       'danger',
       'تم إيقاف هذا الحساب مؤقتاً',
-      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.'
+      'حسابك موقوف حالياً من قِبل إدارة مكاني Spot. تواصل معنا على واتساب 01103467711 للاستفسار.',
+      `<a href="/" class="btn-login" style="text-decoration:none">الرجوع إلى منصة مكاني Spot ←</a>`
     );
     return;
   }

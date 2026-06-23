@@ -2605,19 +2605,46 @@ async function loadOrgRequests() {
   }
 }
 
-function openOrgReqModal(id) {
+async function openOrgReqModal(id) {
   const b = _orgRequests.find(r => r.id === id);
   if (!b) { toast('لم يُعثر على بيانات الطلب — حاول التحديث', 'e'); return; }
 
   document.getElementById('mreq-name').textContent = b.name;
+  document.getElementById('modal-org-req-body').innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  openModal('modal-org-req');
+
+  /* جلب روابط التواصل الاجتماعي من organizer_profiles */
+  let orgSocial = null;
+  if (b.organizer_id) {
+    try {
+      const { data } = await db.from('organizer_profiles')
+        .select('facebook_url,instagram_url,tiktok_url,whatsapp')
+        .eq('user_id', b.organizer_id).single();
+      orgSocial = data;
+    } catch(_) {}
+  }
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '—';
   const expectedRev = (b.price_per_slot || 0) * (b.total_slots || 0);
   const safeId   = b.id;
   const safeName = (b.name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 
+  /* بناء عرض روابط التواصل */
+  const socialHtml = (() => {
+    const links = [
+      orgSocial?.facebook_url  ? `<a href="${escHtml(orgSocial.facebook_url)}"  target="_blank" rel="noopener" style="color:#60A5FA;text-decoration:none;font-size:12px">📘 Facebook</a>`  : null,
+      orgSocial?.instagram_url ? `<a href="${escHtml(orgSocial.instagram_url)}" target="_blank" rel="noopener" style="color:#E1306C;text-decoration:none;font-size:12px">📷 Instagram</a>` : null,
+      orgSocial?.tiktok_url    ? `<a href="${escHtml(orgSocial.tiktok_url)}"    target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none;font-size:12px">🎵 TikTok</a>`    : null,
+      orgSocial?.whatsapp      ? `<span style="color:var(--mu);font-size:12px">📱 ${escHtml(orgSocial.whatsapp)}</span>` : null,
+    ].filter(Boolean);
+    return links.length
+      ? links.join('<span style="color:var(--bd);margin:0 6px">·</span>')
+      : '<span style="color:var(--mu)">لا توجد روابط مضافة</span>';
+  })();
+
   const rows = [
     ['المنظّم',               `<strong style="color:var(--or)">${b.organizer||'—'}</strong>${b.is_organizer_verified ? ' <span style="color:var(--gr);font-size:10.5px">✓ موثّق</span>' : ''}`],
+    ['روابط التواصل',         socialHtml],
     ['تاريخ التقديم',         fmtDate(b.created_at)],
     ['اسم المكان / القاعة',  b.venue_name || '—'],
     ['عنوان المكان',          b.venue_address || '—'],
@@ -2665,8 +2692,6 @@ function openOrgReqModal(id) {
               onclick="rejectOrgRequest('${safeId}','${safeName}',true)">✕ رفض الطلب</button>
       <button class="btn btn-gh" onclick="closeModal('modal-org-req')" style="margin-right:auto">إغلاق</button>
     </div>`;
-
-  openModal('modal-org-req');
 }
 
 async function approveOrgRequest(id, name, totalSlots, fromModal) {

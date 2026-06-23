@@ -2603,8 +2603,46 @@ function showDashAlert(type, msg) {
    🏬 الانتقال إلى لوحة أصحاب المساحات
    ================================================================ */
 
-function goToOwnerDashboard() {
-  window.location.href = '/dashboard/';
+async function goToOwnerDashboard() {
+  if (!sbClient) { window.location.href = '/dashboard/'; return; }
+
+  const { data: { session } } = await sbClient.auth.getSession();
+
+  if (!session) {
+    const onLoginPage = document.getElementById('pg-login')?.classList.contains('active');
+    if (onLoginPage) {
+      showAuthAlert('login-alert', 'info',
+        'سجّل دخولك أولاً من الأعلى — أصحاب المساحات ينتقلون للوحتهم مباشرة بعد الدخول');
+      document.getElementById('li-email')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => document.getElementById('li-email')?.focus(), 400);
+    } else {
+      document.getElementById('owner-gate-modal')?.classList.add('open');
+    }
+    return;
+  }
+
+  const { data: profile } = await sbClient
+    .from('profiles').select('role').eq('id', session.user.id).single();
+
+  if (!profile) {
+    showAuthAlert('login-alert', 'info', 'يتم تجهيز حسابك — أعد المحاولة بعد لحظة.');
+    return;
+  }
+
+  if (profile.role === 'owner') {
+    window.location.href = '/dashboard/';
+    return;
+  }
+
+  openOwnerRequestModal();
+}
+
+function closeOwnerGateModal() {
+  document.getElementById('owner-gate-modal')?.classList.remove('open');
+}
+
+function _ownerGateModalBg(e) {
+  if (e.target === document.getElementById('owner-gate-modal')) closeOwnerGateModal();
 }
 
 /* ──────────────────────────────────────────────────────────────

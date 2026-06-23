@@ -86,6 +86,93 @@ function _showForm() {
 }
 
 /* ──────────────────────────────────────────────────────
+   معلومات المنظم — تعبئة البطاقة تلقائياً من البروفايل
+────────────────────────────────────────────────────── */
+function _fillOrganizerInfo() {
+  if (!currentUser) return;
+
+  const name = orgProfile?.full_name || currentUser.email?.split('@')[0] || '—';
+
+  const nameEl = document.getElementById('oi-name');
+  if (nameEl) nameEl.textContent = name;
+
+  const emailEl = document.getElementById('oi-email');
+  if (emailEl) emailEl.textContent = currentUser.email || '';
+
+  const avatarEl = document.getElementById('oi-avatar');
+  if (avatarEl) {
+    const initial = name[0]?.toUpperCase() || '?';
+    if (orgProfile?.avatar_url) {
+      avatarEl.innerHTML = `<img src="${orgProfile.avatar_url}" alt="${name}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='${initial}'">`;
+    } else {
+      avatarEl.textContent = initial;
+    }
+  }
+
+  const verifiedEl = document.getElementById('oi-verified');
+  if (verifiedEl) verifiedEl.style.display = orgProfile?.is_verified ? 'inline-flex' : 'none';
+
+  /* روابط التواصل — تُعبَّأ من البروفايل (يطغى عليها الدرافت لاحقاً في _orgRestoreDraft) */
+  const fbEl = document.getElementById('oi-facebook');
+  const igEl = document.getElementById('oi-instagram');
+  const ttEl = document.getElementById('oi-tiktok');
+  if (fbEl) fbEl.value = orgProfile?.facebook_url  || '';
+  if (igEl) igEl.value = orgProfile?.instagram_url || '';
+  if (ttEl) ttEl.value = orgProfile?.tiktok_url    || '';
+}
+
+/* ──────────────────────────────────────────────────────
+   التحقق من بيانات المنظم (خطوة 0)
+────────────────────────────────────────────────────── */
+function _validateStep0() {
+  const fb = document.getElementById('oi-facebook')?.value.trim()  || '';
+  const ig = document.getElementById('oi-instagram')?.value.trim() || '';
+  const tt = document.getElementById('oi-tiktok')?.value.trim()    || '';
+
+  if (!fb && !ig && !tt) {
+    alert('يجب إضافة رابط تواصل اجتماعي واحد على الأقل\n(Facebook أو Instagram أو TikTok)');
+    document.getElementById('oi-facebook')?.focus();
+    return false;
+  }
+
+  const urlRx = /^https?:\/\/.+/i;
+  if (fb && !urlRx.test(fb)) { _focusErr('oi-facebook',  'رابط Facebook غير صحيح — يجب أن يبدأ بـ https://'); return false; }
+  if (ig && !urlRx.test(ig)) { _focusErr('oi-instagram', 'رابط Instagram غير صحيح — يجب أن يبدأ بـ https://'); return false; }
+  if (tt && !urlRx.test(tt)) { _focusErr('oi-tiktok',    'رابط TikTok غير صحيح — يجب أن يبدأ بـ https://'); return false; }
+
+  return true;
+}
+
+/* ──────────────────────────────────────────────────────
+   حفظ روابط التواصل في organizer_profiles
+────────────────────────────────────────────────────── */
+async function _saveOrganizerInfo() {
+  if (!currentUser || !sbClient) return;
+
+  const facebook  = document.getElementById('oi-facebook')?.value.trim()  || null;
+  const instagram = document.getElementById('oi-instagram')?.value.trim() || null;
+  const tiktok    = document.getElementById('oi-tiktok')?.value.trim()    || null;
+
+  /* لا ترسل طلب إذا لم تتغيّر القيم */
+  if (
+    facebook  === (orgProfile?.facebook_url  || null) &&
+    instagram === (orgProfile?.instagram_url || null) &&
+    tiktok    === (orgProfile?.tiktok_url    || null)
+  ) return;
+
+  const { error } = await sbClient
+    .from('organizer_profiles')
+    .update({ facebook_url: facebook, instagram_url: instagram, tiktok_url: tiktok })
+    .eq('user_id', currentUser.id);
+
+  if (!error && orgProfile) {
+    orgProfile.facebook_url  = facebook;
+    orgProfile.instagram_url = instagram;
+    orgProfile.tiktok_url    = tiktok;
+  }
+}
+
+/* ──────────────────────────────────────────────────────
    التنقل بين الخطوات
 ────────────────────────────────────────────────────── */
 function orgNext(fromStep) {
@@ -108,7 +195,7 @@ function _setStep(n) {
   document.querySelectorAll('.org-panel').forEach((p, i) => {
     p.classList.toggle('active', i + 1 === n);
   });
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 4; i++) {
     const dot = document.getElementById(`step-dot-${i}`);
     if (!dot) continue;
     dot.classList.remove('active', 'done');
@@ -542,6 +629,7 @@ function _buildNotes(notes, sketchUrl) {
 ══════════════════════════════════════════════════════ */
 
 const _ORG_DRAFT_FIELDS = [
+  'oi-facebook','oi-instagram','oi-tiktok',
   'o-name','o-venue','o-addr','o-ds','o-de','o-maps','o-desc',
   'o-slots','o-price','o-dep1','o-dep2','o-contract',
   'o-premium-slots','o-premium-price',

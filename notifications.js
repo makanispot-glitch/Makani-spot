@@ -139,10 +139,11 @@
       .eq('id', notifId)
       .eq('user_id', _uid)
       .catch(function () {});
+    var wasUnread = _notifs.some(function (n) { return n.id === notifId && !n.is_read; });
     _notifs = _notifs.map(function (n) {
       return n.id === notifId ? Object.assign({}, n, { is_read: true }) : n;
     });
-    _count  = Math.max(0, _count - 1);
+    if (wasUnread) _count = Math.max(0, _count - 1);
     _syncBadge();           /* badge يتحدث فوراً بدون reload */
     _closePanel();
     if (actionUrl) window.location.href = actionUrl;
@@ -185,6 +186,22 @@
         }, function (payload) {
           if (!payload.new) return;
           _notifs.unshift(payload.new);
+          _count = _notifs.filter(function (n) { return !n.is_read; }).length;
+          _syncBadge();
+          if (_panelOpen()) _renderPanel();
+        })
+        .on('postgres_changes', {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'notifications',
+          filter: 'user_id=eq.' + _uid,
+        }, function (payload) {
+          if (!payload.new) return;
+          _notifs = _notifs.map(function (n) {
+            return n.id === payload.new.id
+              ? Object.assign({}, n, { is_read: payload.new.is_read })
+              : n;
+          });
           _count = _notifs.filter(function (n) { return !n.is_read; }).length;
           _syncBadge();
           if (_panelOpen()) _renderPanel();
