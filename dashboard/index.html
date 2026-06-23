@@ -1480,11 +1480,16 @@ body {
           <button class="period-btn"    onclick="setPeriod('quarter',this)">ربع سنوي</button>
           <button class="period-btn"    onclick="setPeriod('year',this)">سنوي</button>
         </div>
-        <div class="topbar-notif tooltip-wrap" id="notif-bell" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">
-          🔔
-          <div class="notif-dot" id="notif-dot"></div>
+        <div class="topbar-notif tooltip-wrap" id="notif-bell" onclick="GN.toggle(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               width="20" height="20" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <div class="notif-dot" id="notif-dot" style="display:none"></div>
           <span class="notif-badge" id="notif-badge">0</span>
-          <span class="tooltip-text">تنبيهات جديدة</span>
+          <span class="tooltip-text">الإشعارات</span>
         </div>
       </div>
     </div>
@@ -2873,6 +2878,7 @@ body {
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
+<script src="/notifications.js?v=20260623"></script>
 <script src="app.js?v=202606171812"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>

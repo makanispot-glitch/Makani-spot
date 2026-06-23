@@ -760,7 +760,7 @@ body.lightbox-open { overflow: hidden; }
     font-size: 22px;
   }
   .eq-fab-tooltip { display: none; }
-  .eq-notif-panel { position: fixed; top: 78px; left: 50%; right: auto; transform: translateX(-50%); width: min(320px, calc(100vw - 32px)); }
+
   .eq-sub-filters { gap: 8px; }
   .eq-sub-filters select { flex: 1; min-width: 0; }
   .eq-price-wrap { width: 100%; }
@@ -1102,44 +1102,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 .eq-fav-nav-btn:hover { border-color: #EF4444; background: #FEF2F2; }
 .eq-fav-nav-btn.has-favs { border-color: #EF4444; background: #FEF2F2; }
 
-/* ── Notification Bell ── */
-.eq-notif-wrap { position: relative; }
-.eq-notif-btn {
-  position: relative; background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: 50%; width: 38px; height: 38px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; cursor: pointer; transition: all var(--dur-fast) var(--ease-out);
-}
-.eq-notif-btn:hover { border-color: var(--orange); background: var(--orange-ultra); }
-.eq-notif-badge {
-  position: absolute; top: -4px; right: -4px;
-  background: #EF4444; color: #fff; border-radius: 50%;
-  width: 18px; height: 18px; font-size: 10px; font-weight: 900;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid #fff; pointer-events: none;
-}
-.eq-notif-panel {
-  display: none; position: absolute; top: calc(100% + 10px); left: 50%;
-  transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
-  width: 320px; max-height: 440px; overflow: hidden;
-  flex-direction: column; z-index: 300;
-}
-.eq-notif-panel.open { display: flex; }
-.eq-notif-header {
-  padding: 14px 16px; font-size: 15px; font-weight: 800;
-  border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.eq-notif-list { overflow-y: auto; flex: 1; }
-.eq-notif-item {
-  padding: 12px 16px; border-bottom: 1px solid #F5F5F5; cursor: pointer; transition: background var(--dur-fast) var(--ease-out);
-}
-.eq-notif-item:hover { background: var(--surface2); }
-.eq-notif-item.unread { background: #FFF7ED; }
-.eq-notif-item.unread:hover { background: #FFE8CC; }
-.eq-notif-title { font-size: 13px; font-weight: 700; color: var(--ink1); margin-bottom: 3px; }
-.eq-notif-body  { font-size: 12px; color: var(--ink2); margin-bottom: 4px; line-height: 1.5; }
-.eq-notif-time  { font-size: 11px; color: var(--ink3); }
+/* ── Notification Bell — يستخدم gn-* من style.css ── */
 
 /* ── Edit Modal ── */
 .eq-edit-box { max-width: 560px; }
@@ -1733,6 +1696,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
+<script src="/notifications.js?v=20260623" defer></script>
 <script src="app.js?v=202606171812" defer></script>
 <script>
 (function () {

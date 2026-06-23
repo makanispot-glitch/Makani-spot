@@ -81,7 +81,6 @@ let eqSortBy        = 'newest';
 let eqGov           = '';
 let eqPriceMax      = 0;
 let eqFavorites     = new Set();
-let eqNotifications = [];
 let eqMyListings    = [];
 let eqDrawerDraft   = {
   category: '',
@@ -218,6 +217,7 @@ async function eqInitAuth() {
     eqAvatarUrl = prof?.avatar_url || null;   // 🪪 المصدر الموحّد
   }
   eqRenderNavUser();
+  if (eqUser) GN.init(eqSb, eqUser.id);
 
   eqSb.auth.onAuthStateChange(async (_e, sess) => {
     eqUser = sess?.user || null;
@@ -231,10 +231,10 @@ async function eqInitAuth() {
     eqRenderNavUser();
     if (eqUser) {
       eqLoadFavorites();
-      eqLoadNotifications();
+      GN.init(eqSb, eqUser.id);
     } else {
       eqFavorites.clear();
-      eqNotifications = [];
+      GN.destroy();
     }
   });
 }
@@ -252,15 +252,6 @@ function eqRenderNavUser() {
 
     area.innerHTML = `
       <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">❤️</button>
-      <div class="eq-notif-wrap" id="eq-notif-wrap">
-        <button class="eq-notif-btn" onclick="eqToggleNotifPanel(event)">
-          🔔<span class="eq-notif-badge" id="eq-notif-badge" style="display:none">0</span>
-        </button>
-        <div class="eq-notif-panel" id="eq-notif-panel">
-          <div class="eq-notif-header">الإشعارات</div>
-          <div class="eq-notif-list" id="eq-notif-list"></div>
-        </div>
-      </div>
       <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
         <div class="nav-avatar-circle">${circleHtml}</div>
         <div class="nav-avatar-info">
@@ -302,7 +293,7 @@ function eqRenderNavUser() {
           </button>
         </div>
       </div>`;
-    eqLoadNotifications();
+    GN.mount(area);
   } else {
     area.innerHTML = `
       <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
@@ -341,7 +332,7 @@ function eqCloseAccountMenu() {
 document.addEventListener('click', (e) => {
   const btn = document.getElementById('eq-avatar-btn');
   if (btn && !btn.contains(e.target)) eqCloseAccountMenu();
-  eqCloseNotifPanel();
+  /* gn-panel يُغلق من _outside listener داخل GN module */
 });
 
 function eqOpenMyListings() {
@@ -1721,71 +1712,6 @@ function eqCloseFavorites() {
 
 
 /* ================================================================
-   🔔 القسم 22: الإشعارات
+   🔔 القسم 22: الإشعارات — موحّدة عبر وحدة GN
    ================================================================ */
-
-async function eqLoadNotifications() {
-  if (!eqUser) return;
-  const { data } = await eqSb
-    .from('notifications')
-    .select('*')
-    .eq('owner_id', eqUser.id.toString())
-    .order('created_at', { ascending: false })
-    .limit(30);
-  eqNotifications = data || [];
-  eqUpdateNotifBadge();
-}
-
-function eqUpdateNotifBadge() {
-  const badge = document.getElementById('eq-notif-badge');
-  if (!badge) return;
-  const count = eqNotifications.filter(n => !n.is_read).length;
-  badge.textContent = count > 9 ? '9+' : count;
-  badge.style.display = count > 0 ? 'flex' : 'none';
-}
-
-function eqToggleNotifPanel(e) {
-  e.stopPropagation();
-  eqCloseAccountMenu();
-  const panel = document.getElementById('eq-notif-panel');
-  const isOpen = panel.classList.contains('open');
-  if (isOpen) {
-    panel.classList.remove('open');
-  } else {
-    panel.classList.add('open');
-    eqRenderNotifications();
-    eqMarkNotifsRead();
-  }
-}
-
-function eqCloseNotifPanel() {
-  document.getElementById('eq-notif-panel')?.classList.remove('open');
-}
-
-function eqRenderNotifications() {
-  const cont = document.getElementById('eq-notif-list');
-  if (!cont) return;
-  if (eqNotifications.length === 0) {
-    cont.innerHTML = `<div style="text-align:center;padding:30px 20px;color:#999;font-size:14px">لا توجد إشعارات</div>`;
-    return;
-  }
-  cont.innerHTML = eqNotifications.map(n => {
-    const time = new Date(n.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
-    const clickable = n.listing_id ? `onclick="eqCloseNotifPanel();eqOpenDetail('${n.listing_id}')" style="cursor:pointer"` : '';
-    return `
-    <div class="eq-notif-item${n.is_read ? '' : ' unread'}" ${clickable}>
-      <div class="eq-notif-title">${n.title}</div>
-      ${n.body ? `<div class="eq-notif-body">${n.body}</div>` : ''}
-      <div class="eq-notif-time">${time}</div>
-    </div>`;
-  }).join('');
-}
-
-async function eqMarkNotifsRead() {
-  const unreadIds = eqNotifications.filter(n => !n.is_read).map(n => n.id);
-  if (unreadIds.length === 0) return;
-  await eqSb.from('notifications').update({ is_read: true })
-    .in('id', unreadIds).eq('owner_id', eqUser.id.toString());
-  eqNotifications.forEach(n => { n.is_read = true; });
-  eqUpdateNotifBadge();
-}
+/* تم نقل نظام الإشعارات إلى notifications.js (وحدة GN الموحّدة) */

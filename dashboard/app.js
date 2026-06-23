@@ -826,9 +826,9 @@ function initDashboard() {
   /* كل البيانات من Supabase: loadOwnerData يحمّل المساحات + العقود + المدفوعات
      + المخالفات + التقييمات + الإعدادات + الحجوزات، ثم يحسب الفراغ ويرسم كل شيء. */
   loadOwnerData().then(() => loadOwnerRatings());
-  loadNotifications();
+  GN.init(getSB(), currentOwner.id);
   subscribeNotificationsRealtime();
-  cleanupOldNotifications(); /* حذف الإشعارات المقروءة الأقدم من 30 يوم */
+  cleanupOldNotifications(); /* حذف الإشعارات الأقدم من 90 يوم */
 
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('visible');
@@ -3218,7 +3218,7 @@ function renderAlerts() {
 async function deleteNotification(nid) {
   const sb = getSB();
   if (sb && currentOwner?.id) {
-    try { await sb.from('notifications').delete().eq('id', nid).eq('owner_id', currentOwner.id); }
+    try { await sb.from('notifications').delete().eq('id', nid).eq('user_id', currentOwner.id); }
     catch (e) { console.warn('[Makani] delete notif:', e.message); }
   }
   supabaseNotifications = supabaseNotifications.filter(n => n.id !== nid);
@@ -3242,7 +3242,7 @@ async function clearAllAlerts() {
   if (sb && currentOwner?.id && supabaseNotifications.length) {
     const ids = supabaseNotifications.map(n => n.id).filter(Boolean);
     if (ids.length) {
-      try { await sb.from('notifications').delete().in('id', ids).eq('owner_id', currentOwner.id); }
+      try { await sb.from('notifications').delete().in('id', ids).eq('user_id', currentOwner.id); }
       catch (e) { console.warn('[Makani] clear notifs:', e.message); }
     }
     supabaseNotifications = [];
@@ -3717,7 +3717,7 @@ async function cleanupOldNotifications() {
   const sb = getSB();
   if (!sb) return;
   try {
-    await sb.rpc('cleanup_old_notifications', { p_days: 30 });
+    await sb.rpc('cleanup_old_notifications', { p_days: 90 });
   } catch { /* صامت — الدالة اختيارية */ }
 }
 
@@ -4330,8 +4330,9 @@ async function submitAddSpace(e) {
     /* إشعار لصاحب المساحة */
     try {
       await sb.from('notifications').insert({
-        owner_id: currentOwner.id,
+        user_id:  currentOwner.id,
         type:     'space_submitted',
+        source:   'spaces',
         title:    'طلب إضافة مساحة جديدة',
         body:     `تم إرسال طلب إضافة المساحة "${spaceName}" — في انتظار المراجعة.`,
       });
@@ -5132,7 +5133,7 @@ async function loadNotifications() {
     const { data, error } = await sb
       .from('notifications')
       .select('*')
-      .eq('owner_id', currentOwner.id)
+      .eq('user_id', currentOwner.id)
       .eq('is_read', false)
       .order('created_at', { ascending: false })
       .limit(20);
@@ -5163,7 +5164,7 @@ function subscribeNotificationsRealtime() {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
-        filter: `owner_id=eq.${currentOwner.id}`,
+        filter: `user_id=eq.${currentOwner.id}`,
       }, payload => {
         if (!payload.new) return;
         supabaseNotifications.unshift(payload.new);
@@ -5211,7 +5212,7 @@ async function markNotificationsRead() {
     await sb.from('notifications')
       .update({ is_read: true })
       .in('id', ids)
-      .eq('owner_id', currentOwner.id);
+      .eq('user_id', currentOwner.id);
     supabaseNotifications = [];
     updateNotifBadge();
   } catch { /* silent */ }

@@ -2222,6 +2222,7 @@ async function initAuth() {
       currentProfile = profile;
       currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
+      GN.init(sbClient, session.user.id);
     } else {
       setNavUser(null, null);
     }
@@ -2236,6 +2237,7 @@ async function initAuth() {
       currentProfile = profile;
       currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
+      GN.init(sbClient, session.user.id);
 
       const isOnAuthPage = ['pg-login', 'pg-signup'].some(
         id => document.getElementById(id)?.classList.contains('active')
@@ -2251,6 +2253,7 @@ async function initAuth() {
       currentProfile = null;
       currentAvatarUrl = null;
       setNavUser(null, null);
+      GN.destroy();
     }
   });
 }
@@ -2291,6 +2294,9 @@ function setNavUser(user, profile) {
     if (ownerBtn) ownerBtn.style.display = profile?.role === 'owner' ? 'flex' : 'none';
 
     updateBnUser(user, profile);
+
+    // جرس الإشعارات الموحّد
+    GN.mount(document.getElementById('nav-logged'));
   }
 }
 

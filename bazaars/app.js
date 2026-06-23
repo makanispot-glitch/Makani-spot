@@ -62,8 +62,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
   if (currentUser) bzLoadPostponeAlerts();
 
-  // M14: تحميل إشعارات البازار
-  if (currentUser) bzLoadNotifications();
+  // GN: تهيئة نظام الإشعارات الموحّد
+  if (currentUser) GN.init(sbClient, currentUser.id);
 
   // التنقل عبر URL parameter: /bazaars/?detail=ID
   const urlParams = new URLSearchParams(window.location.search);
@@ -89,9 +89,13 @@ async function bzInitAuth() {
     sbClient.auth.onAuthStateChange(async (_e, sess) => {
       currentUser = sess?.user || null;
       currentProfile = null;
-      if (currentUser) await _loadBzProfile();
+      if (currentUser) {
+        await _loadBzProfile();
+        GN.init(sbClient, currentUser.id);
+      } else {
+        GN.destroy();
+      }
       bzRenderNavUser();
-      if (currentUser) bzLoadNotifications();
     });
   } catch (e) {
     console.warn('تعذّر تهيئة المصادقة:', e.message);
@@ -197,10 +201,8 @@ function bzRenderNavUser() {
       </button>`;
   }
   bzUpdateBnUser();
-  // تحميل عدد الإشعارات للمنظمين الموثّقين
-  if (currentUser && currentProfile?.is_verified) {
-    _bzLoadNotifCount();
-  }
+  // جرس الإشعارات الموحّد
+  if (currentUser) GN.mount(document.getElementById('bz-nav-user'));
 }
 
 function bzToggleAccountMenu(e) {
@@ -231,114 +233,8 @@ async function bzSignOut() {
 }
 
 /* ── إشعارات المنظم ── */
-let _bzNotifCache = [];
-
-async function _bzLoadNotifCount() {
-  if (!sbClient || !currentUser) return;
-  try {
-    const { data } = await sbClient
-      .from('organizer_notifications')
-      .select('id')
-      .eq('organizer_id', currentUser.id)
-      .eq('read', false)
-      .limit(20);
-    const count  = data?.length || 0;
-    const badge  = document.getElementById('bz-notif-badge');
-    if (badge) {
-      badge.textContent = count > 9 ? '9+' : String(count);
-      badge.style.display = count > 0 ? 'flex' : 'none';
-    }
-  } catch(_) {}
-}
-
-async function bzToggleNotifPanel(e) {
-  e.stopPropagation();
-  const panel = document.getElementById('bz-notif-panel');
-  const btn   = document.getElementById('bz-notif-btn');
-  if (!panel) return;
-
-  const isOpen = panel.classList.contains('open');
-  if (isOpen) { panel.classList.remove('open'); return; }
-
-  panel.classList.add('open');
-  if (!sbClient || !currentUser) return;
-
-  const listEl = document.getElementById('bz-notif-list');
-  if (listEl) listEl.innerHTML = '<div class="bz-notif-empty">⏳ جاري التحميل…</div>';
-
-  try {
-    const { data } = await sbClient
-      .from('organizer_notifications')
-      .select('id,title,message,read,created_at,bazaar_id')
-      .eq('organizer_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(15);
-
-    _bzNotifCache = data || [];
-    _bzRenderNotifList(_bzNotifCache);
-
-    // علّم الكل كمقروء بعد فتح اللوحة
-    if (_bzNotifCache.some(n => !n.read)) {
-      const ids = _bzNotifCache.filter(n => !n.read).map(n => n.id);
-      sbClient.from('organizer_notifications').update({ read: true }).in('id', ids)
-        .then(() => {
-          const badge = document.getElementById('bz-notif-badge');
-          if (badge) badge.style.display = 'none';
-        }).catch(() => {});
-    }
-  } catch(_) {
-    if (listEl) listEl.innerHTML = '<div class="bz-notif-empty">تعذّر التحميل</div>';
-  }
-}
-
-function _bzRenderNotifList(notifs) {
-  const listEl = document.getElementById('bz-notif-list');
-  if (!listEl) return;
-  if (!notifs?.length) {
-    listEl.innerHTML = '<div class="bz-notif-empty">🔔 لا توجد إشعارات</div>';
-    return;
-  }
-  listEl.innerHTML = notifs.map(n => {
-    const ago = _bzTimeAgo(n.created_at);
-    const unread = !n.read ? 'background:rgba(243,100,24,.05);border-right:3px solid var(--orange);' : '';
-    return `
-      <div class="bz-notif-item" style="${unread}">
-        <div class="bz-notif-item-title">${_esc(n.title) || 'إشعار'}</div>
-        ${n.message ? `<div class="bz-notif-item-msg">${_esc(n.message)}</div>` : ''}
-        <div class="bz-notif-item-time">${_esc(ago)}</div>
-      </div>`;
-  }).join('');
-}
-
-async function bzMarkAllNotifsRead() {
-  if (!sbClient || !currentUser) return;
-  try {
-    await sbClient.from('organizer_notifications')
-      .update({ read: true })
-      .eq('organizer_id', currentUser.id)
-      .eq('read', false);
-    _bzNotifCache.forEach(n => n.read = true);
-    _bzRenderNotifList(_bzNotifCache);
-    const badge = document.getElementById('bz-notif-badge');
-    if (badge) badge.style.display = 'none';
-  } catch(_) {}
-}
-
-function _bzTimeAgo(isoStr) {
-  if (!isoStr) return '';
-  const diff = Date.now() - new Date(isoStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)   return 'الآن';
-  if (m < 60)  return `منذ ${m} دقيقة`;
-  const h = Math.floor(m / 60);
-  if (h < 24)  return `منذ ${h} ساعة`;
-  const d = Math.floor(h / 24);
-  return `منذ ${d} يوم`;
-}
-
-document.addEventListener('click', () => {
-  document.getElementById('bz-notif-panel')?.classList.remove('open');
-});
+/* إشعارات المنظم (organizer_notifications) — تم إزالة الكود الميّت
+   الإشعارات الآن موحّدة في جدول notifications عبر وحدة GN */
 
 
 /* ================================================================
@@ -1913,19 +1809,18 @@ async function submitBazaarBooking() {
     // تحديث available_slots بشكل atomic (RPC تضمن عدم التعارض بين مستخدمين)
     await sbClient.rpc('decrement_available_slots', { p_bazaar_id: String(currentBazaar.id) });
 
-    // إشعار المنظم بالحجز الجديد (في الخلفية — لا نتوقف لو فشل)
+    // إشعار المنظم بالحجز الجديد → جدول notifications الموحّد
     if (currentBazaar.organizer_id) {
       const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`)
         ?.dataset?.slotLabel || selectedSlotId;
-      sbClient.from('organizer_notifications').insert({
-        organizer_id: currentBazaar.organizer_id,
-        type:         'new_booking',
-        title:        `حجز جديد — ${currentBazaar.name}`,
-        message:      `${name} (${phone}) طلب حجز مكان ${slotLabel}`,
-        bazaar_id:    String(currentBazaar.id),
-      }).then(() => {
-        // تنظيف الإشعارات القديمة في الخلفية
-        sbClient.rpc('cleanup_old_notifications').then(null, () => {});
+      sbClient.from('notifications').insert({
+        user_id:    currentBazaar.organizer_id,
+        type:       'new_booking',
+        source:     'bazaar',
+        title:      `حجز جديد — ${currentBazaar.name}`,
+        body:       `${name} (${phone}) طلب حجز مكان ${slotLabel}`,
+        action_url: `/?p=dashboard`,
+        metadata:   { bazaar_id: String(currentBazaar.id) },
       }).catch(() => {});
     }
 
@@ -2403,166 +2298,6 @@ function _bzTimeAgo(date) {
    🔔 القسم 19: M14 — إشعارات user_bazaar_notifications
    ================================================================ */
 
-let _bzNotifCount = 0;
-
-async function bzLoadNotifications() {
-  if (!currentUser || !sbClient) return;
-
-  const { data, error } = await sbClient
-    .from('user_bazaar_notifications')
-    .select('id,type,title,body,action_url,is_read,created_at,bazaar_id')
-    .eq('user_id', String(currentUser.id))
-    .order('created_at', { ascending: false })
-    .limit(30);
-
-  if (error || !data) return;
-
-  const unread = data.filter(n => !n.is_read);
-  _bzNotifCount = unread.length;
-  _renderNotifBell(unread.length);
-  _renderNotifPanel(data);
-}
-
-function _renderNotifBell(count) {
-  // نضيف bell في الـ nav إذا لم يكن موجوداً
-  let bell = document.getElementById('bz-notif-bell');
-  if (!bell) {
-    const navUser = document.getElementById('bz-nav-user');
-    if (!navUser) return;
-    bell = document.createElement('div');
-    bell.id = 'bz-notif-bell';
-    bell.style.cssText = 'position:relative;cursor:pointer;margin-left:4px;padding:6px;border-radius:50%;transition:background .2s';
-    bell.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:block;color:var(--ink2)">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      <span id="bz-notif-badge" style="display:none;position:absolute;top:2px;left:2px;min-width:16px;height:16px;border-radius:50%;background:#dc2626;color:#fff;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;padding:0 3px"></span>`;
-    bell.addEventListener('mouseenter', () => { bell.style.background = 'var(--orange-ultra)'; });
-    bell.addEventListener('mouseleave', () => { bell.style.background = ''; });
-    bell.addEventListener('click', () => toggleNotifPanel());
-    navUser.insertBefore(bell, navUser.firstChild);
-  }
-
-  const badge = document.getElementById('bz-notif-badge');
-  if (badge) {
-    if (count > 0) {
-      badge.textContent  = count > 9 ? '9+' : count;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-}
-
-function toggleNotifPanel() {
-  let panel = document.getElementById('bz-notif-panel');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'bz-notif-panel';
-    panel.style.cssText = `
-      position:fixed;top:70px;left:16px;width:320px;max-width:calc(100vw - 32px);
-      background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-xl);
-      box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:400;max-height:70vh;display:flex;flex-direction:column;
-      animation:bz-notif-in .2s ease;
-    `;
-    if (!document.getElementById('bz-notif-style')) {
-      const s = document.createElement('style');
-      s.id = 'bz-notif-style';
-      s.textContent = '@keyframes bz-notif-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}';
-      document.head.appendChild(s);
-    }
-    document.body.appendChild(panel);
-    document.addEventListener('click', _bzNotifOutside, true);
-  } else {
-    panel.remove();
-    document.removeEventListener('click', _bzNotifOutside, true);
-    return;
-  }
-
-  // إعادة رندر المحتوى
-  sbClient.from('user_bazaar_notifications')
-    .select('id,type,title,body,action_url,is_read,created_at')
-    .eq('user_id', String(currentUser.id))
-    .order('created_at', { ascending: false })
-    .limit(20)
-    .then(({ data }) => _renderNotifPanel(data || [], panel));
-}
-
-function _bzNotifOutside(e) {
-  const panel = document.getElementById('bz-notif-panel');
-  const bell  = document.getElementById('bz-notif-bell');
-  if (panel && !panel.contains(e.target) && !bell?.contains(e.target)) {
-    panel.remove();
-    document.removeEventListener('click', _bzNotifOutside, true);
-  }
-}
-
-function _renderNotifPanel(notifs, panelEl) {
-  const panel = panelEl || document.getElementById('bz-notif-panel');
-  if (!panel) return;
-
-  const TYPE_ICO = {
-    bazaar_cancelled: '🚫',
-    bazaar_postponed: '📅',
-    slot_reserved:    '🔒',
-    general:          '📢',
-  };
-
-  const items = notifs.length
-    ? notifs.map(n => `
-<div onclick="bzNotifClick('${n.id}','${n.action_url || ''}')"
-     style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:${n.is_read ? 'transparent' : 'var(--orange-ultra)'}"
-     onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='${n.is_read ? 'transparent' : 'var(--orange-ultra)'}'">
-  <div style="font-size:20px;flex-shrink:0;margin-top:1px">${TYPE_ICO[n.type] || '📢'}</div>
-  <div style="flex:1;min-width:0">
-    <div style="font-size:12.5px;font-weight:${n.is_read ? '600' : '900'};color:var(--dark);margin-bottom:2px">${_bzEsc(n.title)}</div>
-    <div style="font-size:11px;color:var(--ink3);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_bzEsc(n.body)}</div>
-    <div style="font-size:10px;color:var(--ink3);margin-top:4px">${_bzTimeAgo(new Date(n.created_at))}</div>
-  </div>
-  ${!n.is_read ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:6px"></div>' : ''}
-</div>`).join('')
-    : '<div style="text-align:center;padding:32px 16px;color:var(--ink3);font-size:13px">لا توجد إشعارات</div>';
-
-  panel.innerHTML = `
-<div style="padding:12px 14px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-  <span style="font-size:13px;font-weight:900;color:var(--dark)">🔔 الإشعارات</span>
-  ${_bzNotifCount > 0 ? `<button onclick="bzMarkAllRead()" style="font-size:11px;font-weight:700;color:var(--orange);background:none;border:none;cursor:pointer;font-family:var(--font-display)">تحديد الكل كمقروء</button>` : ''}
-</div>
-<div style="overflow-y:auto;flex:1">${items}</div>`;
-}
-
-async function bzNotifClick(notifId, actionUrl) {
-  // mark as read
-  await sbClient.from('user_bazaar_notifications')
-    .update({ is_read: true })
-    .eq('id', notifId)
-    .eq('user_id', String(currentUser.id));
-
-  _bzNotifCount = Math.max(0, _bzNotifCount - 1);
-  _renderNotifBell(_bzNotifCount);
-
-  const panel = document.getElementById('bz-notif-panel');
-  if (panel) panel.remove();
-  document.removeEventListener('click', _bzNotifOutside, true);
-
-  if (actionUrl) window.location.href = actionUrl;
-}
-
-async function bzMarkAllRead() {
-  await sbClient.from('user_bazaar_notifications')
-    .update({ is_read: true })
-    .eq('user_id', String(currentUser.id))
-    .eq('is_read', false);
-
-  _bzNotifCount = 0;
-  _renderNotifBell(0);
-
-  const panel = document.getElementById('bz-notif-panel');
-  if (panel) {
-    const items = panel.querySelectorAll('[style*="var(--orange-ultra)"]');
-    items.forEach(el => { el.style.background = 'transparent'; });
-    panel.querySelector('button')?.remove();
-  }
-}
+/* نظام M14 للإشعارات (user_bazaar_notifications) — تم إزالته
+   الإشعارات الآن موحّدة في جدول notifications عبر وحدة GN */
 
