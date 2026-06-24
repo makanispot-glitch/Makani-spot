@@ -1064,29 +1064,35 @@ function renderRevenue() {
   const active    = contractsList.filter(c => c.status !== 'expired');
   const expected  = active.reduce((sum, c) => sum + (parseFloat(c.rent) || 0), 0);
 
-  /* المحصّل الفعلي هذا الشهر لكل عقد (من جدول المدفوعات) */
   const collectedFor = id => paymentsList
     .filter(p => p.contractId === id && p.month === thisMonth && (p.status === 'paid' || p.status === 'partial'))
     .reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
   const hasLate = id => paymentsList.some(p => p.contractId === id && p.month === thisMonth && p.status === 'late');
 
-  const collected = active.reduce((s, c) => s + collectedFor(c.id), 0);
-  const due       = Math.max(0, expected - collected);
-  const rate      = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+  const collected  = active.reduce((s, c) => s + collectedFor(c.id), 0);
+  const due        = Math.max(0, expected - collected);
+  const rate       = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+  const paidFull   = active.filter(c => collectedFor(c.id) >= (parseFloat(c.rent) || 1) && (parseFloat(c.rent) || 0) > 0).length;
+  const lateCount  = active.filter(c => hasLate(c.id)).length;
 
   const fmt = n => n ? Math.round(n).toLocaleString('ar-EG') + ' ج' : '—';
-  setTxt('rev-expected',  fmt(expected));
-  setTxt('rev-collected', fmt(collected));
-  setTxt('rev-rate',      rate + '%');
-  setTxt('rev-due',       fmt(due));
-  setTxt('rev-expected-sub', `${active.length} عقد نشط`);
+  setTxt('rev-expected',      fmt(expected));
+  setTxt('rev-collected',     fmt(collected));
+  setTxt('rev-rate',          rate + '%');
+  setTxt('rev-due',           fmt(due));
+  setTxt('rev-expected-sub',  `${active.length} عقد نشط`);
+  setTxt('rev-collected-sub', paidFull > 0 ? `${paidFull} عقد مدفوع بالكامل` : 'في انتظار الدفعات');
+  setTxt('rev-due-sub',       lateCount > 0 ? `${lateCount} عقد متأخر` : due > 0 ? 'في انتظار التحصيل' : '✓ لا مستحقات');
+
+  const collectedEl = document.getElementById('rev-collected');
+  if (collectedEl) collectedEl.style.color = collected > 0 ? 'var(--green)' : 'var(--text3)';
+  const dueEl = document.getElementById('rev-due');
+  if (dueEl) dueEl.style.color = due > 0 ? 'var(--red)' : 'var(--green)';
   const rateBar = document.getElementById('rev-rate-bar');
   if (rateBar) {
     rateBar.style.width = Math.min(100, rate) + '%';
     rateBar.className = 'prog-fill ' + (rate >= 80 ? 'green' : rate >= 40 ? 'yellow' : 'red');
   }
-  const dueEl = document.getElementById('rev-due');
-  if (dueEl) dueEl.style.color = due > 0 ? 'var(--red)' : 'var(--green)';
 
   const tbody = document.getElementById('revenue-tbody');
   if (!tbody) return;
@@ -1280,44 +1286,7 @@ function renderPayments() {
 
   const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
                      'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  const now       = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const activeContracts = contractsList.filter(c => c.status !== 'expired');
-  const expectedMonthly = activeContracts.reduce((s,c) => s + (parseFloat(c.rent)||0), 0);
-  const collectedThisMonth = paymentsList
-    .filter(p => p.month === thisMonth && p.status === 'paid')
-    .reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
-  const partialThisMonth = paymentsList
-    .filter(p => p.month === thisMonth && p.status === 'partial')
-    .reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
-  const remaining = Math.max(0, expectedMonthly - collectedThisMonth - partialThisMonth);
   const fmt = n => n ? n.toLocaleString('ar-EG') + ' ج' : '—';
-
-  const kpiHtml = `
-    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
-      <div class="kpi-card">
-        <div class="kpi-ico">📅</div>
-        <div class="kpi-label">المتوقع هذا الشهر</div>
-        <div class="kpi-value" style="font-size:20px">${fmt(expectedMonthly)}</div>
-        <div style="margin-top:6px;font-size:10px;color:var(--text3)">${activeContracts.length} عقد نشط</div>
-      </div>
-      <div class="kpi-card" style="${collectedThisMonth>=expectedMonthly&&expectedMonthly>0?'border-color:rgba(34,212,110,0.35)':''}">
-        <div class="kpi-ico">✅</div>
-        <div class="kpi-label">محصّل بالكامل</div>
-        <div class="kpi-value" style="font-size:20px;color:var(--green)">${fmt(collectedThisMonth)}</div>
-        <div style="margin-top:6px;font-size:10px;color:var(--text3)">${expectedMonthly>0?Math.round((collectedThisMonth/expectedMonthly)*100):0}% من المتوقع</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-ico">⚡</div>
-        <div class="kpi-label">دفع جزئي</div>
-        <div class="kpi-value" style="font-size:20px;color:var(--yellow)">${fmt(partialThisMonth)}</div>
-      </div>
-      <div class="kpi-card" style="${remaining>0?'border-color:rgba(255,77,77,0.30)':''}">
-        <div class="kpi-ico">⏳</div>
-        <div class="kpi-label">متبقي / غير محصّل</div>
-        <div class="kpi-value" style="font-size:20px;color:${remaining>0?'var(--red)':'var(--green)'}">${fmt(remaining)}</div>
-      </div>
-    </div>`;
 
   const sortedPayments = [...paymentsList].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
   const stMap = {
@@ -1417,7 +1386,7 @@ function renderPayments() {
       </div>
     </div>`;
 
-  container.innerHTML = kpiHtml + tableHtml + formHtml;
+  container.innerHTML = tableHtml + formHtml;
 }
 
 /* ══════════════════════════════════════════
@@ -1767,7 +1736,7 @@ function renderViolations() {
   };
 
   const kpiHtml = `
-    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+    <div class="kpi-row kpi-row--3" style="margin-bottom:20px">
       <div class="kpi-card" style="${sevCounts.high>0?'border-color:rgba(255,77,77,0.35)':''}">
         <div class="kpi-ico">🚨</div>
         <div class="kpi-label">مخالفات خطيرة</div>
@@ -2596,10 +2565,10 @@ const VIEW_TITLES = {
   'spaces':     'المساحات',
   'bookings':   'طلبات الحجز',
   'contracts':  'العقود',
-  'ratings':    'التقييمات',
-  'revenue':    'الإيرادات',
-  'payments':   'تسجيل الدفعات',
-  'violations': 'سجل المخالفات',
+  'ratings':    'التقييمات والمخالفات',
+  'revenue':    'الإدارة المالية',
+  'payments':   'الإدارة المالية',
+  'violations': 'التقييمات والمخالفات',
   'insights':   'الرؤى والتوصيات',
   'reports':    'التقارير الشهرية',
   'add-space':  'إضافة مساحة جديدة',
@@ -2623,11 +2592,12 @@ function goTo(viewId, navEl) {
   if (window.innerWidth <= 900) closeSidebar();
 
   /* عند فتح التنبيهات: أعد رسمها ثم اعتبرها مقروءة */
-  if (viewId === 'alerts')     { renderAlerts(); setTimeout(markNotificationsRead, 1500); }
-  if (viewId === 'add-bazaar') renderAddBazaarView();
-  if (viewId === 'ratings')    loadOwnerRatings();   /* تحديث القائمة والسجل من Supabase */
-  if (viewId === 'bookings')   { loadBookingsRemote().then(renderBookings); }
+  if (viewId === 'alerts')        { renderAlerts(); setTimeout(markNotificationsRead, 1500); }
+  if (viewId === 'add-bazaar')    renderAddBazaarView();
+  if (viewId === 'ratings')       loadOwnerRatings();
+  if (viewId === 'bookings')      { loadBookingsRemote().then(renderBookings); }
   if (viewId === 'public-profile') renderProfileView();
+  if (viewId === 'add-space')     initAddSpaceForm();
 }
 
 function setPeriod(p, btn) {
@@ -2651,31 +2621,34 @@ function renderSpaces() {
         <div class="pcard" style="border-color:rgba(255,184,0,0.35)">
           <div class="pcard-head" style="background:rgba(255,184,0,0.06)">
             <div>
-              <div class="pcard-title" style="color:var(--yellow)">⏳ طلبات المساحات المُرسلة (${ownerPendingSpaces.length})</div>
-              <div class="pcard-sub">فريق مكاني Spot سيراجعها ويضيفها خلال 24 ساعة</div>
+              <div class="pcard-title" style="color:var(--orange)">📋 المساحات المضافة حديثاً (${ownerPendingSpaces.length})</div>
+              <div class="pcard-sub">المساحات المنشورة تظهر للزوار مباشرةً — يمكن لفريق مكاني إيقافها عند الحاجة</div>
             </div>
           </div>
           <div class="pcard-body" style="padding:0">
             <table class="data-table">
-              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>الحالة</th><th>تاريخ الإرسال</th><th></th></tr></thead>
+              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>الحالة</th><th>تاريخ الإضافة</th><th></th></tr></thead>
               <tbody>
                 ${ownerPendingSpaces.map(p => {
-                  const typeLabels = { mall:'🏬 مول', club:'🏊 نادي', school:'🏫 مدرسة' };
+                  const typeLabels = { mall:'🏬 مول', club:'🏊 نادي', school:'🏫 مدرسة', hotel:'🏨 فندق' };
                   const sentDate   = p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('ar-EG') : '—';
                   const isRejected = p.status === 'rejected';
+                  const isActive   = p.status === 'active';
                   const statusBadge = isRejected
                     ? `<span class="badge badge-red">❌ مرفوض</span>`
+                    : isActive
+                    ? `<span class="badge badge-green">✅ منشور</span>`
                     : `<span class="badge badge-yellow">⏳ قيد المراجعة</span>`;
-                  return `<tr style="background:${isRejected ? 'rgba(255,77,77,0.03)' : 'rgba(255,184,0,0.03)'}">
+                  return `<tr style="background:${isRejected ? 'rgba(255,77,77,0.03)' : isActive ? 'rgba(0,200,100,0.02)' : 'rgba(255,184,0,0.03)'}">
                     <td style="font-weight:700">${p.name}</td>
-                    <td>${typeLabels[p.type] || p.type}</td>
+                    <td>${typeLabels[p.type] || p.type || '—'}</td>
                     <td>${p.loc}</td>
                     <td style="font-size:11px;color:var(--text3)">${p.sizes || '—'}</td>
                     <td style="font-family:'Space Mono',monospace">${p.price ? p.price.toLocaleString('ar-EG')+' ج' : '—'}</td>
                     <td style="text-align:center">${p.subCount > 0 ? `<span class="badge badge-blue">${p.subCount} وحدة</span>` : '—'}</td>
                     <td>${statusBadge}</td>
                     <td style="font-size:11px;color:var(--text3)">${sentDate}</td>
-                    <td>${!isRejected ? `<button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">إلغاء</button>` : ''}</td>
+                    <td>${!isRejected ? `<button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">حذف</button>` : ''}</td>
                   </tr>`;
                 }).join('')}
               </tbody>
@@ -3901,6 +3874,59 @@ function updateSpaceIcon() {
   if (defaults[type]) iconSel.value = defaults[type];
 }
 
+/* ── map profile entityType (Arabic string) → space type code ── */
+function entityTypeToSpaceType(entityType) {
+  const t = (entityType || '').toLowerCase();
+  if (t.includes('مول') || t.includes('mall') || t.includes('تجار')) return 'mall';
+  if (t.includes('نادي') || t.includes('club') || t.includes('رياض') || t.includes('sport')) return 'club';
+  if (t.includes('مدرسة') || t.includes('school')) return 'school';
+  if (t.includes('فندق') || t.includes('hotel')) return 'hotel';
+  return 'mall';
+}
+
+/* ── تهيئة فورم إضافة المساحة عند فتح الصفحة ── */
+function initAddSpaceForm() {
+  if (!currentOwner) return;
+
+  /* نوع المكان — من البروفايل */
+  const spaceType = entityTypeToSpaceType(currentOwner.entityType);
+  const typeInput = document.getElementById('as-type');
+  const typeChip  = document.getElementById('as-type-chip');
+  if (typeInput) typeInput.value = spaceType;
+  if (typeChip) {
+    const labels = { mall:'🏬 مول تجاري', club:'🏊 نادي رياضي', school:'🏫 مدرسة', hotel:'🏨 فندق' };
+    const display = labels[spaceType] || (currentOwner.entityType ? `🏢 ${currentOwner.entityType}` : '🏢 كيان تجاري');
+    typeChip.textContent = display;
+    typeChip.style.color = 'var(--text1)';
+  }
+  updateSpaceIcon();
+
+  /* المنطقة/المدينة — من البروفايل (بدون تغيير لو الحقل فيه قيمة بالفعل) */
+  const locEl = document.getElementById('as-loc');
+  if (locEl && !locEl.value && currentOwner.place) locEl.value = currentOwner.place;
+
+  /* بانر السياق: اسم المنشأة ونوعها */
+  const ctx = document.getElementById('as-venue-context');
+  if (ctx && currentOwner.entityName) {
+    ctx.style.display = 'flex';
+    const nameEl = document.getElementById('as-ctx-name');
+    const typeEl = document.getElementById('as-ctx-type');
+    if (nameEl) nameEl.textContent = currentOwner.entityName;
+    if (typeEl) typeEl.textContent = currentOwner.entityType ? `(${currentOwner.entityType})` : '';
+  }
+
+  /* أضف صفاً واحداً افتراضياً في الأحجام لو لا يوجد شيء */
+  const sizesCont = document.getElementById('as-sizes-container');
+  if (sizesCont && !sizesCont.children.length) addSizeRow();
+}
+
+/* ── إخفاء حقل الأنشطة عند تفعيل "يصلح لجميع الأنشطة" ── */
+function toggleAllActs() {
+  const allActs = document.getElementById('as-all-acts')?.checked;
+  const section = document.getElementById('as-acts-section');
+  if (section) section.style.display = allActs ? 'none' : 'block';
+}
+
 /* ══════════════════════════════════════════
    ➕  ADD SPACE FORM — الوحدات الفرعية
    ══════════════════════════════════════════ */
@@ -4236,10 +4262,13 @@ async function submitAddSpace(e) {
   const spaceType = get('as-type');
   const spaceLoc  = get('as-loc');
 
-  if (!spaceName || !spaceType || !spaceLoc) {
+  /* نوع المكان يُكمَّل تلقائياً من البروفايل لو لم يُحدد */
+  const resolvedType = spaceType || entityTypeToSpaceType(currentOwner?.entityType || '');
+
+  if (!spaceName || !spaceLoc) {
     msg.className = 'alert-item danger';
     msg.style.display = 'flex';
-    msg.innerHTML = `<span class="alert-ico">❌</span><div class="alert-text"><strong>اسم المساحة ونوعها ومنطقتها مطلوبة.</strong></div>`;
+    msg.innerHTML = `<span class="alert-ico">❌</span><div class="alert-text"><strong>اسم المساحة ومنطقتها مطلوبان.</strong></div>`;
     return;
   }
 
@@ -4278,8 +4307,10 @@ async function submitAddSpace(e) {
       mall:   { badge:'متاح', badgeClass:'badge-avail', thumbClass:'thumb-mall' },
       club:   { badge:'متاح', badgeClass:'badge-info',  thumbClass:'thumb-club' },
       school: { badge:'متاح', badgeClass:'badge-warn',  thumbClass:'thumb-school' },
+      hotel:  { badge:'متاح', badgeClass:'badge-blue',  thumbClass:'thumb-mall' },
+      other:  { badge:'متاح', badgeClass:'badge-avail', thumbClass:'thumb-mall' },
     };
-    const tm = typeMap[spaceType] || typeMap.mall;
+    const tm = typeMap[resolvedType] || typeMap.mall;
 
     const actsRaw = get('as-acts');
     const actsArr = actsRaw ? actsRaw.split('·').map(s => s.trim()).filter(Boolean) : [];
@@ -4289,7 +4320,7 @@ async function submitAddSpace(e) {
     const spacePayload = {
       owner_id:     currentOwner.id,
       name:         spaceName,
-      type:         spaceType,
+      type:         resolvedType,
       region:       spaceLoc,
       badge:        get('as-badge') || tm.badge,
       badge_class:  tm.badgeClass,
@@ -4304,8 +4335,8 @@ async function submitAddSpace(e) {
       description:  get('as-desc') || null,
       amenities:    amenArr,
       sort_order:   parseInt(get('as-order')) || 99,
-      status:       'pending',
-      is_active:    false,
+      status:       'active',
+      is_active:    true,
       image_url:    asMainImgUrl || null,
       extra_images: asExtraImgUrls.filter(Boolean),
     };
@@ -4342,8 +4373,8 @@ async function submitAddSpace(e) {
         user_id:  currentOwner.id,
         type:     'space_submitted',
         source:   'spaces',
-        title:    'طلب إضافة مساحة جديدة',
-        body:     `تم إرسال طلب إضافة المساحة "${spaceName}" — في انتظار المراجعة.`,
+        title:    'مساحة جديدة مُنشورة',
+        body:     `تم نشر مساحتك "${spaceName}" على منصة مكاني Spot مباشرةً.`,
       });
     } catch { /* notifications table optional */ }
 
@@ -4351,23 +4382,23 @@ async function submitAddSpace(e) {
     ownerPendingSpaces.push({
       id:          newSpace.id,
       name:        spaceName,
-      type:        spaceType,
+      type:        resolvedType,
       loc:         spaceLoc,
       sizes:       getSizesString(),
       price:       parseInt(get('as-default-price')) || 0,
       subCount:    subUnits.length,
-      status:      'pending',
+      status:      'active',
       submittedAt: new Date().toISOString(),
     });
     renderSpaces();
 
     msg.className     = 'alert-item success';
     msg.style.display = 'flex';
-    msg.innerHTML     = `<span class="alert-ico">✅</span>
+    msg.innerHTML     = `<span class="alert-ico">⚡</span>
       <div class="alert-text">
-        <strong>تم إرسال طلب إضافة المساحة بنجاح!</strong><br>
-        المساحة في قائمة الانتظار — فريق مكاني Spot سيراجعها خلال 24 ساعة.<br>
-        <div style="margin-top:6px;font-size:11px;color:var(--text3)">للمتابعة: واتساب 01103467711</div>
+        <strong>تم نشر المساحة على المنصة!</strong><br>
+        "<em>${spaceName}</em>" منشورة الآن وتظهر للزوار ومتاحة للحجز مباشرةً.<br>
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)">فريق مكاني Spot يتابع جميع المساحات من لوحة الأدمن. للمساعدة: واتساب 01103467711</div>
       </div>`;
 
     /* إعادة ضبط النموذج */
@@ -4396,7 +4427,7 @@ async function submitAddSpace(e) {
   }
 
   btn.disabled  = false;
-  btn.innerHTML = '🚀 إرسال طلب إضافة المساحة';
+  btn.innerHTML = '<span style="font-size:20px">⚡</span> نشر المساحة على المنصة الآن';
 }
 
 /* ══════════════════════════════════════════

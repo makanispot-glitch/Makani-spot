@@ -1349,7 +1349,7 @@ body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; text-
     radial-gradient(900px 520px at 100% -6%, rgba(255,106,26,0.10), transparent 60%),
     radial-gradient(720px 600px at -8% 112%, rgba(90,169,255,0.05), transparent 55%);
 }
-.sidebar, .main-area { position: relative; z-index: 1; }
+.main-area { position: relative; z-index: 1; }
 
 /* refined scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -1646,6 +1646,115 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
   .pcard-body { padding: 12px 14px; }
   .page-content { padding: 14px 14px 28px; }
 }
+
+/* ================================================================
+   ✦ RESPONSIVE COMPLETE — TABLET + MOBILE COMPREHENSIVE FIXES
+   ================================================================ */
+
+/* ── kpi-row--3: 3-column variant that responds correctly ──
+   Uses double-class (.kpi-row.kpi-row--3) for higher specificity
+   so it properly overrides the base .kpi-row media query rules.   */
+.kpi-row.kpi-row--3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1100px) {
+  /* stays 3 on wide tablet — no collapse needed here */
+  .kpi-row.kpi-row--3 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  /* 2 cols on tablet/large mobile */
+  .kpi-row.kpi-row--3 { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+@media (max-width: 390px) {
+  /* single column on very small phones */
+  .kpi-row.kpi-row--3 { grid-template-columns: 1fr; }
+}
+
+/* ── Amenities grid (add-space form) ── */
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  background: var(--bg3);
+  border-radius: var(--r);
+  padding: 12px;
+}
+@media (max-width: 600px) { .amenities-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 390px) { .amenities-grid { grid-template-columns: 1fr; } }
+
+/* ── Topbar title: prevent overflow on small screens ── */
+@media (max-width: 760px) {
+  .topbar-title {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100vw - 160px);
+  }
+}
+
+/* ── Contract cards on mobile ── */
+@media (max-width: 600px) {
+  .contract-head    { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .contract-bar-top { font-size: 9px; }
+}
+
+/* ── Booking info grid: collapse to single column on small phones ── */
+@media (max-width: 480px) {
+  .bk-info-grid { grid-template-columns: 1fr; gap: 3px; }
+  .bk-card-space { font-size: 13px; }
+  .bk-card-head  { padding: 10px 12px 8px; }
+  .bk-card-body  { padding: 0 12px 8px; }
+  .bk-card-actions { padding: 8px 12px 10px; gap: 6px; }
+  .bk-tabs { padding: 10px 12px 0; gap: 5px; }
+  .bk-tab  { padding: 5px 10px; font-size: 11px; }
+}
+
+/* ── Tenant row on mobile ── */
+@media (max-width: 480px) {
+  .tenant-row { flex-wrap: wrap; gap: 10px; }
+  .tenant-av  { width: 34px; height: 34px; font-size: 16px; }
+}
+
+/* ── Score circle on mobile ── */
+@media (max-width: 480px) {
+  .score-circle { width: 48px; height: 48px; }
+  .score-inner  { width: 36px; height: 36px; font-size: 11px; }
+}
+
+/* ── Banner blocks inside views: smaller gap on mobile ── */
+@media (max-width: 600px) {
+  [style*="border-radius:var(--r2)"][style*="display:flex"][style*="align-items"] {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+}
+
+/* ── Data table wrapper: enforce scroll on all mobile ── */
+@media (max-width: 900px) {
+  .pcard-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 480px; }
+}
+
+/* ── Form row: single column below 600px (belt-and-suspenders) ── */
+@media (max-width: 600px) {
+  .form-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+}
+
+/* ── kpi-row last-child dim: disable on mobile (all cards equally important) ── */
+@media (max-width: 600px) {
+  .kpi-row .kpi-card:last-child { opacity: 1; }
+  .kpi-row .kpi-card:last-child .kpi-ico { filter: none; }
+}
+
+/* ── Merge-divider spacing on mobile ── */
+@media (max-width: 600px) {
+  .merge-divider { margin: 18px 0 12px; font-size: 10px; }
+}
+
+/* ── Section label spacing on mobile ── */
+@media (max-width: 600px) {
+  .section-label { margin-bottom: 10px; }
+}
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -1764,18 +1873,12 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         <span class="nav-item-ico">📄</span> العقود
         <span class="nav-item-badge" id="nb-expiring" style="background:var(--red)">2</span>
       </button>
-      <button class="nav-item" onclick="goTo('ratings', this)">
-        <span class="nav-item-ico">⭐</span> التقييمات
-      </button>
-      <button class="nav-item" onclick="goTo('revenue', this)">
-        <span class="nav-item-ico">💰</span> الإيرادات
-      </button>
-      <button class="nav-item" id="nav-payments" onclick="goTo('revenue', this)">
-        <span class="nav-item-ico">💳</span> الدفعات
+      <button class="nav-item" id="nav-violations" onclick="goTo('ratings', this)">
+        <span class="nav-item-ico">📋</span> التقييمات والمخالفات
         <span class="nav-lock" style="display:none;margin-right:auto;font-size:11px">🔒</span>
       </button>
-      <button class="nav-item" id="nav-violations" onclick="goTo('ratings', this)">
-        <span class="nav-item-ico">⚠️</span> المخالفات
+      <button class="nav-item" id="nav-payments" onclick="goTo('revenue', this)">
+        <span class="nav-item-ico">📊</span> الإدارة المالية
         <span class="nav-lock" style="display:none;margin-right:auto;font-size:11px">🔒</span>
       </button>
 
@@ -2088,7 +2191,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
       <div class="view" id="view-bookings">
         <div class="section-label">طلبات الحجز الواردة</div>
 
-        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-row kpi-row--3">
           <div class="kpi-card">
             <div class="kpi-ico">📬</div>
             <div class="kpi-label">طلبات معلقة</div>
@@ -2165,7 +2268,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
            ============================================================ -->
       <div class="view" id="view-spaces">
         <div class="section-label">خريطة المساحات</div>
-        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-row">
           <div class="kpi-card">
             <div class="kpi-ico">✅</div>
             <div class="kpi-label">مؤجّرة</div>
@@ -2315,7 +2418,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         </div>
 
         <!-- KPI Cards — dynamic -->
-        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-row">
           <div class="kpi-card">
             <div class="kpi-ico">📄</div>
             <div class="kpi-label">إجمالي العقود</div>
@@ -2405,21 +2508,21 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
            🔗 DB-LINK: جدول ratings مرتبط بـ tenants
            ============================================================ -->
       <div class="view" id="view-ratings">
-        <div class="section-label">نظام التقييم الشهري</div>
+        <div class="section-label">التقييمات والمخالفات</div>
 
-        <!-- Explanatory Banner -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px">
-          <div style="font-size:28px;flex-shrink:0">⭐</div>
+        <!-- Header Banner -->
+        <div style="background:linear-gradient(135deg,rgba(255,197,61,0.10),transparent);border:1px solid rgba(255,197,61,0.20);border-radius:var(--r2);padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">📋</div>
           <div>
-            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">كيف تعمل صفحة التقييمات؟</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              ① اختر المستأجر من عقودك المسجّلة وحدّد الشهر &nbsp;·&nbsp;
-              ② قيّم تعامله على ٥ معايير (نجوم من ١ إلى ٥) &nbsp;·&nbsp;
-              ③ أضف ملاحظة إن أردت &nbsp;·&nbsp;
-              ④ احفظ — يُحدَّث تقييم المستأجر في كل صفحات لوحتك فوراً.
+            <div style="font-size:13px;font-weight:800;color:var(--yellow);margin-bottom:4px">التقييمات والمخالفات — إدارة أداء المستأجرين</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              سجّل <strong style="color:var(--text)">تقييم شهري</strong> لكل مستأجر على ٥ معايير، وتوثيق <strong style="color:var(--text)">المخالفات والتحذيرات</strong> — سجل كامل يُحتسب عند تجديد العقد.
             </div>
           </div>
         </div>
+
+        <!-- ── القسم الأول: التقييمات ── -->
+        <div class="section-label">⭐ التقييمات الشهرية</div>
 
         <div class="grid-2">
           <!-- Rating Form -->
@@ -2429,7 +2532,6 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
               <span class="db-tag">DB: ratings</span>
             </div>
             <div class="pcard-body">
-              <!-- المستأجرون = عقودك المسجّلة (مصدر موحّد مع باقي اللوحة) -->
               <div class="form-row">
                 <div class="form-group" style="margin:0">
                   <label>المستأجر (من عقودك)</label>
@@ -2446,7 +2548,6 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
               <div class="section-label" style="margin-top:16px">معايير التقييم (كل معيار من ١ إلى ٥ نجوم)</div>
 
-              <!-- Rating criteria — تُبنى ديناميكياً من renderRateStars() -->
               <div id="rate-criteria"></div>
 
               <div style="background:var(--bg3);border-radius:var(--r);padding:12px;margin-bottom:14px;text-align:center">
@@ -2470,7 +2571,6 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
               <span class="db-tag">DB: ratings</span>
             </div>
             <div class="pcard-body" style="padding:0">
-              <!-- 🔗 DB-LINK: يُحدَّث من renderRatingsHistory() في makani-dashboard-app.js -->
               <table class="data-table">
                 <thead>
                   <tr><th>المستأجر</th><th>المساحة</th><th>التقييم</th><th>ملاحظة</th><th>التاريخ</th></tr>
@@ -2483,8 +2583,8 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
           </div>
         </div>
 
-        <!-- ── المخالفات: مدمجة مع صفحة التقييمات ── -->
-        <div class="merge-divider">⚠️ سجل المخالفات والتحذيرات</div>
+        <!-- ── القسم الثاني: المخالفات ── -->
+        <div class="merge-divider">⚠️ المخالفات والتحذيرات</div>
         <div id="violations-content">
           <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
         </div>
@@ -2495,25 +2595,45 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
            🔗 DB-LINK: جدول payments أو حسابات من contracts
            ============================================================ -->
       <div class="view" id="view-revenue">
-        <div class="section-label">تحليل الإيرادات</div>
+        <div class="section-label">الإدارة المالية</div>
 
-        <!-- Explanatory Banner -->
-        <div style="background:linear-gradient(135deg,rgba(34,212,110,0.10),transparent);border:1px solid rgba(34,212,110,0.20);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px">
-          <div style="font-size:28px;flex-shrink:0">💰</div>
+        <!-- Header Banner -->
+        <div style="background:linear-gradient(135deg,rgba(255,106,26,0.10),transparent);border:1px solid rgba(255,106,26,0.20);border-radius:var(--r2);padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:28px;flex-shrink:0">📊</div>
           <div>
-            <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:4px">صفحة الإيرادات — كيف تعمل؟</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8">
-              <strong style="color:var(--text)">ماذا ستجد هنا؟</strong> مقارنة بين الإيجار <strong>المتوقع</strong> من عقودك و<strong>المحصّل فعلياً</strong> من الدفعات التي سجّلتها — مع نسبة التحصيل والمتبقّي.
-              <br><strong style="color:var(--text)">ماذا يجب أن تفعل؟</strong> أضف عقودك، ثم سجّل كل دفعة من صفحة المدفوعات لترى التحصيل الحقيقي هنا.
+            <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:4px">الإدارة المالية — نظرة شاملة</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              متابعة <strong style="color:var(--text)">الإيرادات المتوقعة</strong> مقابل <strong style="color:var(--text)">المحصّل فعلياً</strong>، وسجل جميع دفعات المستأجرين — كل شيء في مكان واحد.
             </div>
           </div>
         </div>
 
+        <!-- ── Financial Overview KPIs ── -->
         <div class="kpi-row">
-          <div class="kpi-card"><div class="kpi-ico">📅</div><div class="kpi-label">المتوقع هذا الشهر</div><div class="kpi-value" id="rev-expected">—</div><div style="margin-top:4px;font-size:10px;color:var(--text3)" id="rev-expected-sub"></div></div>
-          <div class="kpi-card"><div class="kpi-ico">✅</div><div class="kpi-label">المحصّل فعلياً</div><div class="kpi-value" style="color:var(--green)" id="rev-collected">—</div></div>
-          <div class="kpi-card"><div class="kpi-ico">📊</div><div class="kpi-label">نسبة التحصيل</div><div class="kpi-value" id="rev-rate">—</div><div style="margin-top:7px"><div class="prog-bar"><div class="prog-fill green" id="rev-rate-bar" style="width:0%"></div></div></div></div>
-          <div class="kpi-card"><div class="kpi-ico">⏳</div><div class="kpi-label">متبقٍّ غير محصّل</div><div class="kpi-value" id="rev-due">—</div></div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📅</div>
+            <div class="kpi-label">الإيراد المتوقع</div>
+            <div class="kpi-value" id="rev-expected">—</div>
+            <div style="margin-top:4px;font-size:10px;color:var(--text3)" id="rev-expected-sub"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">✅</div>
+            <div class="kpi-label">المحصّل فعلياً</div>
+            <div class="kpi-value" id="rev-collected">—</div>
+            <div style="margin-top:4px;font-size:10px;color:var(--text3)" id="rev-collected-sub"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">⚠️</div>
+            <div class="kpi-label">المبالغ غير المحصّلة</div>
+            <div class="kpi-value" id="rev-due">—</div>
+            <div style="margin-top:4px;font-size:10px;color:var(--text3)" id="rev-due-sub"></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📈</div>
+            <div class="kpi-label">نسبة التحصيل</div>
+            <div class="kpi-value" id="rev-rate">—</div>
+            <div style="margin-top:8px"><div class="prog-bar"><div class="prog-fill green" id="rev-rate-bar" style="width:0%"></div></div></div>
+          </div>
         </div>
 
         <div class="pcard">
@@ -2532,8 +2652,8 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
           </div>
         </div>
 
-        <!-- ── الدفعات: مدمجة مع صفحة الإيرادات ── -->
-        <div class="merge-divider">💳 الدفعات المسجّلة</div>
+        <!-- ── سجل الدفعات ── -->
+        <div class="merge-divider">💳 سجل المدفوعات</div>
         <div id="payments-content">
           <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
         </div>
@@ -2580,13 +2700,23 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         <div class="section-label">➕ إضافة مساحة جديدة</div>
 
         <!-- Banner -->
-        <div style="background:linear-gradient(135deg,rgba(255,107,0,0.10),transparent);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
-          <div style="font-size:32px">📋</div>
+        <div style="background:linear-gradient(135deg,rgba(255,107,0,0.12),transparent);border:1px solid rgba(255,107,0,0.25);border-radius:var(--r2);padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:32px">⚡</div>
           <div>
-            <div style="font-size:14px;font-weight:800;color:var(--orange)">سجّل بيانات مساحتك لإضافتها على المنصة</div>
+            <div style="font-size:14px;font-weight:800;color:var(--orange)">المساحة تُنشر فوراً على المنصة بعد الإرسال</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px">
-              بعد الإرسال تظهر المساحة في الشيت بحالة <strong>غير ظاهر</strong>. فريق مكاني Spot يراجعها وينشرها خلال <strong style="color:var(--orange)">24 ساعة</strong>. الصور تُرفع تلقائياً على Google Drive.
+              بمجرد الإرسال تظهر مساحتك للزوار وتستقبل الحجوزات <strong style="color:var(--orange)">مباشرةً</strong>. فريق مكاني Spot يتابع ويمكنه التدخل من لوحة الأدمن عند الحاجة.
             </div>
+          </div>
+        </div>
+
+        <!-- Venue context: يُملأ تلقائياً من البروفايل عند فتح الصفحة -->
+        <div id="as-venue-context" style="display:none;align-items:center;gap:12px;background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.14);border-radius:var(--r);padding:10px 14px;margin-bottom:18px">
+          <div style="font-size:20px">🏢</div>
+          <div style="font-size:12px;line-height:1.6">
+            <span style="color:var(--text3)">إضافة مساحة تابعة لـ</span>
+            <strong id="as-ctx-name" style="color:var(--text1);font-size:13px;margin-right:5px">—</strong>
+            <span id="as-ctx-type" style="color:var(--orange);font-size:11px;margin-right:4px"></span>
           </div>
         </div>
 
@@ -2607,17 +2737,18 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <!-- name + type -->
                 <div class="form-row">
                   <div class="form-group" style="margin:0">
-                    <label>اسم المساحة <span style="color:var(--red)">*</span></label>
-                    <input type="text" id="as-name" placeholder="مثال: كشك مول مدينة نصر" required>
+                    <label>اسم / موقع المساحة <span style="color:var(--red)">*</span></label>
+                    <input type="text" id="as-name" placeholder="مثال: كشك الدور الأول، وحدة B-12، كشك أمام المصعد" required>
+                    <div style="font-size:10px;color:var(--text3);margin-top:4px">حدّد الموقع داخل منشأتك — الدور أو الكود أو الوصف</div>
                   </div>
                   <div class="form-group" style="margin:0">
-                    <label>نوع المكان <span style="color:var(--red)">*</span></label>
-                    <select id="as-type" required onchange="updateSpaceIcon()">
-                      <option value="">اختر النوع</option>
-                      <option value="mall">🏬 مول تجاري</option>
-                      <option value="club">🏊 نادي رياضي</option>
-                      <option value="school">🏫 مدرسة</option>
-                    </select>
+                    <label>نوع المكان</label>
+                    <!-- hidden — يُملأ تلقائياً من currentOwner.entityType عند initAddSpaceForm -->
+                    <input type="hidden" id="as-type" value="">
+                    <div id="as-type-chip" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;font-size:13px;color:var(--text1);min-height:38px">
+                      — جاري التحميل
+                    </div>
+                    <div style="font-size:10px;color:var(--text3);margin-top:4px">مأخوذ من بروفايلك تلقائياً</div>
                   </div>
                 </div>
 
@@ -2626,11 +2757,12 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                   <div class="form-group" style="margin:0">
                     <label>المنطقة / المدينة <span style="color:var(--red)">*</span></label>
                     <input type="text" id="as-loc" placeholder="مثال: مدينة نصر، الزمالك" required>
+                    <div style="font-size:10px;color:var(--text3);margin-top:4px">مأخوذ من بروفايلك — يمكن تغييره لهذه المساحة تحديداً</div>
                   </div>
                   <div class="form-group" style="margin:0">
-                    <label>أيقونة المساحة</label>
+                    <label>أيقونة النشاط</label>
                     <select id="as-icon">
-                      <option value="🏬">🏬 متجر</option>
+                      <option value="🏬">🏬 متجر عام</option>
                       <option value="☕">☕ قهوة / مقهى</option>
                       <option value="🥤">🥤 مشروبات</option>
                       <option value="🍬">🍬 حلويات</option>
@@ -2645,15 +2777,18 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 </div>
 
                 <!-- allActs toggle -->
-                <div class="form-group" style="margin-top:12px">
-                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
-                    <input type="checkbox" id="as-all-acts" style="width:16px;height:16px;accent-color:var(--orange);flex-shrink:0">
-                    <span>يصلح لجميع الأنشطة (allActs = نعم)</span>
+                <div class="form-group" style="margin-top:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--r)">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;margin:0">
+                    <input type="checkbox" id="as-all-acts" style="width:16px;height:16px;accent-color:var(--orange);flex-shrink:0" onchange="toggleAllActs()">
+                    <div>
+                      <span style="color:var(--text1);font-weight:600">يصلح لجميع الأنشطة</span>
+                      <div style="font-size:11px;color:var(--text3);margin-top:1px">فعّله لو المساحة مفتوحة لأي نشاط تجاري بدون قيود</div>
+                    </div>
                   </label>
                 </div>
 
-                <!-- activities -->
-                <div class="form-group">
+                <!-- activities — مخفي لما allActs مفعّل -->
+                <div id="as-acts-section" class="form-group">
                   <label>الأنشطة المسموحة <span style="font-size:10px;color:var(--text3)">(افصل بـ · )</span></label>
                   <input type="text" id="as-acts" placeholder="مثال: قهوة · مشروبات · حلويات">
                   <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:5px">
@@ -2681,7 +2816,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                     <input type="text" id="as-season" placeholder="مثال: صيف، رمضان، سنة كاملة">
                   </div>
                   <div class="form-group" style="margin:0">
-                    <label>نصيحة/Insight <span style="font-size:10px;color:var(--text3)">(اختياري)</span></label>
+                    <label>نصيحة للمستأجر <span style="font-size:10px;color:var(--text3)">(اختياري)</span></label>
                     <input type="text" id="as-insight" placeholder="مثال: حركة مميزة أمام المصعد">
                   </div>
                 </div>
@@ -2689,7 +2824,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <!-- amenities -->
                 <div class="form-group" style="margin-top:4px">
                   <label>المرافق المتاحة</label>
-                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;background:var(--bg3);border-radius:var(--r);padding:12px">
+                  <div class="amenities-grid">
                     <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-wifi"    value="واي فاي"   style="accent-color:var(--orange)"> 📶 واي فاي</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-elec"    value="كهرباء"    style="accent-color:var(--orange)"> ⚡ كهرباء</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-sec"     value="أمن"       style="accent-color:var(--orange)"> 🔒 أمن ٢٤/٧</label>
@@ -2702,11 +2837,11 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                   </div>
                 </div>
 
-                <!-- notes -->
-                <div class="form-group">
-                  <label>ملاحظات داخلية <span style="font-size:10px;color:var(--text3)">(للتواصل الداخلي — لا تظهر للمستأجرين)</span></label>
-                  <textarea id="as-notes" rows="2" placeholder="أي ملاحظات تريد إيصالها لفريق مكاني…"></textarea>
-                </div>
+                <!-- notes: مُدمجة في آخر الكارد — أصغر -->
+                <details style="margin-top:8px">
+                  <summary style="font-size:11px;color:var(--text3);cursor:pointer;padding:4px 0">ملاحظات داخلية (اختياري)</summary>
+                  <textarea id="as-notes" rows="2" placeholder="أي ملاحظات تريد إيصالها لفريق مكاني — لا تظهر للمستأجرين" style="margin-top:6px"></textarea>
+                </details>
 
                 <!-- Hidden fields -->
                 <input type="hidden" id="as-default-price" value="0">
@@ -2807,13 +2942,19 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             </div>
           </div>
 
-          <!-- ═══ زر الإرسال ═══ -->
-          <div style="margin-top:22px">
-            <button type="submit" id="add-space-btn" class="btn btn-primary" style="width:100%;font-size:15px;padding:14px">
-              🚀 إرسال طلب إضافة المساحة
+          <!-- ═══ زر النشر ═══ -->
+          <div style="margin-top:28px">
+            <button type="submit" id="add-space-btn"
+                    style="width:100%;padding:16px 24px;font-size:16px;font-weight:800;letter-spacing:0.3px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,var(--orange) 0%,#e8650a 100%);color:#fff;cursor:pointer;box-shadow:0 4px 22px rgba(255,107,0,0.38);transition:opacity 0.15s,transform 0.12s;display:flex;align-items:center;justify-content:center;gap:10px"
+                    onmouseenter="this.style.opacity='0.92';this.style.transform='translateY(-1px)'"
+                    onmouseleave="this.style.opacity='1';this.style.transform='translateY(0)'">
+              <span style="font-size:20px">⚡</span>
+              نشر المساحة على المنصة الآن
             </button>
-            <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text3)">
-              للمساعدة: <a href="https://wa.me/201103467711" target="_blank" style="color:var(--green);text-decoration:none;font-weight:700">واتساب 01103467711</a>
+            <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:12px">
+              <span>🔒 آمن — يُنشر على حسابك مباشرةً</span>
+              <span style="color:var(--border2)">|</span>
+              للمساعدة: <a href="https://wa.me/201103467711" target="_blank" style="color:var(--green);text-decoration:none;font-weight:700">واتساب</a>
             </div>
           </div>
 
