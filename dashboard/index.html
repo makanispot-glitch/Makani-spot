@@ -988,8 +988,407 @@ body {
 .bk-int-chip--w { background:rgba(255,184,0,.10); color:var(--yellow); }
 .bk-int-chip--c { background:var(--green-bg); color:var(--green); }
 
+/* ── Workflow guide (collapsible) ── */
+.bk-workflow-guide summary::-webkit-details-marker { display:none; }
+.bk-workflow-guide summary::marker { display:none; }
+.bk-workflow-guide { margin-bottom:14px; border-radius:var(--r); overflow:hidden; }
+.bk-workflow-guide summary {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  padding:10px 14px; background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--r); font-size:12px; font-weight:600; color:var(--text2);
+  list-style:none; user-select:none; transition:background .15s;
+}
+.bk-workflow-guide summary:hover { background:var(--bg3); }
+.bk-workflow-guide[open] summary { border-radius:var(--r) var(--r) 0 0; }
+.bk-workflow-guide .wf-body {
+  padding:14px; background:var(--bg2);
+  border:1px solid var(--border2); border-top:none;
+  border-radius:0 0 var(--r) var(--r);
+}
+.wf-steps { display:flex; align-items:flex-start; overflow-x:auto; padding-bottom:4px; gap:0; }
+.wf-step  { display:flex; align-items:center; gap:0; min-width:0; }
+.wf-step-inner {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  min-width:80px; max-width:120px; text-align:center; padding:0 8px;
+}
+.wf-step-num {
+  width:30px; height:30px; border-radius:50%; flex-shrink:0;
+  background:rgba(255,107,0,0.10); border:1.5px solid rgba(255,107,0,0.30);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:var(--orange);
+}
+.wf-step-title { font-size:10.5px; font-weight:700; color:var(--text1); line-height:1.3; }
+.wf-step-sub   { font-size:9.5px;  color:var(--text3); line-height:1.4; }
+.wf-arrow      { flex:1; height:1px; background:var(--border2); margin-top:15px; min-width:8px; }
+.wf-highlight .wf-step-num { background:rgba(255,107,0,0.20); border-color:var(--orange); }
+.wf-note {
+  margin-top:12px; padding:8px 12px;
+  background:rgba(255,107,0,0.06); border-radius:var(--r);
+  border-right:3px solid var(--orange); font-size:11px; color:var(--text2); line-height:1.6;
+}
+
+/* ── Contact strip inside booking card ── */
+.bk-contact-strip {
+  display:flex; flex-direction:column; gap:6px;
+  padding:10px 14px; margin:0;
+  background:rgba(255,107,0,0.03);
+  border-top:1px solid var(--border2); border-bottom:1px solid var(--border2);
+}
+.bk-contact-label {
+  font-size:9.5px; color:var(--text3); font-weight:700;
+  letter-spacing:0.5px; text-transform:uppercase;
+}
+.bk-contact-actions { display:flex; gap:6px; flex-wrap:wrap; }
+.bk-contact-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 10px; border-radius:var(--r);
+  background:var(--bg3); border:1px solid var(--border2);
+  color:var(--text1); font-size:11px; text-decoration:none;
+  transition:background .15s, border-color .15s; cursor:pointer; white-space:nowrap;
+}
+.bk-contact-btn:hover { background:var(--bg4); border-color:var(--border); }
+.bk-contact-btn--wa {
+  background:rgba(37,211,102,0.08); border-color:rgba(37,211,102,0.30);
+  color:#2ecc71; font-weight:700;
+}
+.bk-contact-btn--wa:hover { background:rgba(37,211,102,0.15); }
+.bk-contact-btn--mail {
+  background:rgba(255,107,0,0.07); border-color:rgba(255,107,0,0.25);
+  color:var(--orange);
+}
+.bk-contact-btn--mail:hover { background:rgba(255,107,0,0.14); }
+.bk-contact-btn--copy {
+  background:transparent; border-color:transparent;
+  color:var(--text3); font-size:12px; padding:4px 6px;
+}
+.bk-contact-btn--copy:hover { color:var(--text1); }
+@media (max-width:480px) {
+  .bk-contact-actions { flex-direction:column; }
+  .bk-contact-btn { width:100%; justify-content:center; }
+}
+
+/* ── Rejection form (inline in booking card) ── */
+.bk-card--rejecting { border-color: rgba(255,65,65,0.30); }
+.bk-reject-form {
+  padding:12px 14px 14px;
+  background:rgba(255,65,65,0.04);
+  border-top:1px solid rgba(255,65,65,0.18);
+}
+.bk-reject-title {
+  font-size:12px; font-weight:700; color:var(--text1); margin-bottom:9px;
+  display:flex; align-items:center; gap:6px;
+}
+.bk-reject-reasons { display:flex; flex-direction:column; gap:3px; }
+.bk-reject-option {
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  padding:6px 8px; border-radius:6px; transition:background .12s;
+}
+.bk-reject-option:hover { background:rgba(255,65,65,0.08); }
+.bk-reject-option input[type="radio"] { accent-color:var(--red,#e53e3e); flex-shrink:0; }
+.bk-reject-opt-text { font-size:11.5px; color:var(--text2); }
+.rj-other-input {
+  width:100%; box-sizing:border-box;
+  padding:7px 10px; margin-top:6px;
+  border-radius:var(--r); border:1px solid rgba(255,65,65,0.30);
+  background:var(--bg3); color:var(--text1); font-size:12px;
+}
+.rj-other-input:focus { outline:none; border-color:rgba(255,65,65,0.60); }
+.bk-reject-submit-row { display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; }
+.bk-btn-confirm-reject {
+  padding:6px 14px; border-radius:var(--r); border:none;
+  background:var(--red,#e53e3e); color:#fff;
+  font-size:12px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.bk-btn-confirm-reject:hover { opacity:0.88; }
+
+/* Toast confirmation after rejection */
+.bk-reject-toast {
+  padding:10px 14px; margin-bottom:10px;
+  background:rgba(255,65,65,0.08); border:1px solid rgba(255,65,65,0.22);
+  border-radius:var(--r); font-size:12px; color:var(--red,#e53e3e);
+  animation:bk-fade-in-out 5s ease forwards;
+}
+@keyframes bk-fade-in-out {
+  0%   { opacity:0; transform:translateY(-5px); }
+  12%  { opacity:1; transform:translateY(0); }
+  80%  { opacity:1; }
+  100% { opacity:0; }
+}
+
 /* ── Waitlist specifics ── */
 .bk-card--wl { border-color:rgba(255,184,0,.30); }
+
+/* ══════════════════════════════════════════
+   🔄  CONTRACT RENEWAL — زر التجديد والأرشيف
+   ══════════════════════════════════════════ */
+.btn-renew {
+  background: linear-gradient(135deg, rgba(0,200,120,0.12), rgba(0,180,110,0.18));
+  border: 1px solid rgba(0,200,120,0.35);
+  color: #00c878;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-renew:hover { background:rgba(0,200,120,0.25); transform:translateY(-1px); }
+
+/* أرشيف العقود المنتهية */
+.contract-archive-section {
+  margin-top: 24px;
+  border-top: 1px dashed var(--border2);
+  padding-top: 16px;
+}
+.archive-toggle {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; padding: 10px 14px;
+  background: var(--bg3); border-radius: var(--r);
+  user-select: none; transition: background .15s;
+}
+.archive-toggle:hover { background: var(--bg2); }
+.archive-chevron { transition: transform .25s; display:inline-block; }
+.contract-archive-section.open .archive-chevron { transform: rotate(180deg); }
+.archive-body { display: none; margin-top: 12px; }
+.contract-archive-section.open .archive-body { display: block; }
+
+/* بطاقة العقد المؤرشَف */
+.ccard-archived {
+  opacity: 0.72;
+  border-style: dashed;
+  border-color: var(--border2);
+}
+.ccard-archived:hover { opacity: 0.92; }
+
+/* زر طباعة الإيصال في رسالة النجاح */
+.pay-print-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg,var(--orange),#e05a00);
+  color: #fff; border: none; border-radius: 7px;
+  padding: 4px 13px; font-size: 11.5px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: opacity .15s;
+}
+.pay-print-btn:hover { opacity: 0.88; }
+
+/* ══════════════════════════════════════════
+   📊  REPORTS — نظام التقارير المالية
+   ══════════════════════════════════════════ */
+.rpt-period-bar {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  margin-bottom: 22px;
+}
+.rpt-presets {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0;
+}
+.rpt-preset {
+  padding: 7px 16px; border-radius: 20px;
+  border: 1px solid var(--border2); background: var(--bg3);
+  color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.rpt-preset:hover { background: var(--bg2); color: var(--text); }
+.rpt-preset.active {
+  background: linear-gradient(135deg, var(--orange), #e05a00);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 3px 10px -2px rgba(255,107,0,0.45);
+}
+
+/* مخطط الأعمدة */
+.rpt-chart-wrap {
+  background: var(--bg3); border-radius: 10px; padding: 16px 12px 10px;
+}
+.rpt-chart {
+  display: flex; align-items: flex-end; gap: 6px;
+  height: 130px; direction: ltr;
+}
+.rpt-bar-col {
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; height: 100%;
+}
+.rpt-bar-val {
+  font-size: 9px; font-family: 'Space Mono', monospace;
+  color: var(--text3); text-align: center; margin-bottom: 4px;
+  min-height: 13px; line-height: 1;
+}
+.rpt-bar-wrap {
+  flex: 1; width: 100%; display: flex; align-items: flex-end;
+}
+.rpt-bar-fill {
+  width: 100%; border-radius: 4px 4px 0 0;
+  background: linear-gradient(to top, var(--orange), rgba(255,140,40,0.55));
+  transition: height .4s ease; min-height: 3px;
+}
+.rpt-bar-lbl {
+  font-size: 9px; color: var(--text3); margin-top: 5px;
+  text-align: center; font-family: 'Cairo', sans-serif; direction: rtl;
+}
+
+/* ══════════════════════════════════════════
+   🏢  SPACE CARDS — بطاقات إدارة المساحات
+   ══════════════════════════════════════════ */
+.space-card {
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: var(--bg2);
+  transition: border-color .2s;
+}
+.space-card:hover { border-color: rgba(255,107,0,0.35); }
+.space-card--paused {
+  opacity: .75;
+  border-style: dashed;
+  border-color: var(--border2);
+}
+.sc-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; padding: 16px 18px; flex-wrap: wrap;
+}
+.sc-meta { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0; }
+.sc-thumb {
+  width: 72px; height: 72px; object-fit: cover;
+  border-radius: 10px; border: 1px solid var(--border2); flex-shrink: 0;
+}
+.sc-thumb-ph {
+  width: 72px; height: 72px; border-radius: 10px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; flex-shrink: 0;
+}
+.sc-info { flex: 1; min-width: 0; }
+.sc-name { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.sc-region { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+.sc-stats { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sc-actions {
+  display: flex; flex-direction: column; gap: 7px; flex-shrink: 0;
+}
+.sc-btn-edit   { border-color: rgba(255,107,0,0.35); color: var(--orange); }
+.sc-btn-pause  { border-color: rgba(255,184,0,0.35); color: #c9910a; background: rgba(255,184,0,0.08); }
+.sc-btn-resume { border-color: rgba(0,200,120,0.35); color: #00a651; background: rgba(0,200,120,0.08); }
+.sc-btn-delete { border-color: rgba(255,65,65,0.25); color: var(--red); }
+.sc-btn-edit:hover   { background: rgba(255,107,0,0.1); }
+.sc-btn-pause:hover  { background: rgba(255,184,0,0.18); }
+/* ── Analytics mini-strip داخل بطاقة المساحة ── */
+.sc-analytics-strip {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 9px 18px; background: rgba(90,169,255,0.05);
+  border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+  font-size: 11px; color: var(--text2);
+}
+.sc-an-item { display: inline-flex; align-items: center; gap: 3px; }
+.sc-an-item b { color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; }
+.sc-an-sep { color: var(--border-strong); }
+.sc-btn-resume:hover { background: rgba(0,200,120,0.16); }
+.sc-btn-delete:hover { background: rgba(255,65,65,0.1); }
+.sc-units-wrap { border-top: 1px solid var(--border2); background: var(--bg3); }
+.sc-no-units {
+  border-top: 1px solid var(--border2); padding: 10px 18px;
+  font-size: 11px; color: var(--text3); background: var(--bg3);
+}
+
+/* Space Edit Modal */
+.se-section-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--orange);
+  padding-bottom: 8px; border-bottom: 1px solid rgba(255,107,0,0.15);
+  margin-bottom: 12px;
+}
+.se-amenities-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+.se-amen-opt {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; cursor: pointer; padding: 6px 8px;
+  border-radius: 7px; border: 1px solid var(--border2);
+  background: var(--bg3); transition: background .15s;
+}
+.se-amen-opt:hover { background: var(--bg2); }
+.se-upload-btn {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  border: 1px solid rgba(255,107,0,0.30); color: var(--orange);
+  background: rgba(255,107,0,0.07); transition: background .15s;
+}
+.se-upload-btn:hover { background: rgba(255,107,0,0.14); }
+
+/* ══════════════════════════════════════════
+   🔒  DEPOSIT — نظام التأمين
+   ══════════════════════════════════════════ */
+.deposit-section {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: rgba(255,184,0,0.06);
+  border: 1px solid rgba(255,184,0,0.22);
+  border-radius: var(--r);
+}
+.deposit-section-label {
+  font-size: 11px; font-weight: 700; color: var(--yellow,#e6b800);
+  margin-bottom: 10px; letter-spacing: 0.3px;
+}
+
+/* بادج حالة التأمين في بطاقة العقد */
+.dep-badge {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 8px 12px;
+  border-radius: 8px; font-size: 12px; font-weight: 600;
+  flex-wrap: wrap;
+}
+.dep-held     { background: rgba(255,184,0,0.09); border: 1px solid rgba(255,184,0,0.28); color: #c9910a; }
+.dep-returned { background: rgba(0,200,120,0.08); border: 1px solid rgba(0,200,120,0.25); color: #00a651; }
+.dep-partial  { background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.22); color: var(--orange); }
+.dep-kept     { background: rgba(255,65,65,0.08);  border: 1px solid rgba(255,65,65,0.22);  color: var(--red); }
+.dep-settle-btn {
+  margin-right: auto; padding: 3px 10px;
+  background: rgba(255,184,0,0.15); border: 1px solid rgba(255,184,0,0.35);
+  color: #c9910a; border-radius: 6px; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.dep-settle-btn:hover { background: rgba(255,184,0,0.25); }
+
+/* نموذج تسوية التأمين */
+.dep-settle-form {
+  margin-top: 12px; padding: 14px 16px;
+  background: rgba(255,184,0,0.05);
+  border: 1px solid rgba(255,184,0,0.22);
+  border-radius: 10px;
+}
+.dep-settle-title {
+  font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 12px;
+}
+.dep-settle-options { display: flex; flex-direction: column; gap: 8px; }
+.dep-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 12px; background: var(--bg3);
+  border: 1px solid var(--border2); transition: background .15s;
+}
+.dep-opt:hover { background: var(--bg2); }
+.dep-opt input[type="radio"] { accent-color: var(--orange); flex-shrink: 0; }
+
+/* ══════════════════════════════════════════
+   💰  PARTIAL PAYMENT — مؤشر الدفع الجزئي
+   ══════════════════════════════════════════ */
+.pf-hint-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding: 9px 14px; margin-bottom: 12px;
+  background: rgba(255,107,0,0.06);
+  border: 1px solid rgba(255,107,0,0.20);
+  border-radius: 8px; font-size: 12px;
+}
+.pf-hint-lbl  { color: var(--text3); }
+.pf-hint-val  { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--text); }
+.pf-hint-rem  { font-size: 12px; color: var(--red); }
+.pf-hint-status { margin-right: auto; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.pf-hint-status.ok   { background: rgba(0,200,120,0.12); color: #00a651; }
+.pf-hint-status.warn { background: rgba(255,107,0,0.12); color: var(--orange); }
+
+/* صف الدفعة الجزئية في الجدول */
+tr.tr-partial { background: rgba(255,184,0,0.04); }
+tr.tr-partial td:nth-child(4) { color: var(--yellow,#e6b800); }
 .bk-wl-banner { margin:12px 16px 6px; background:var(--yellow-bg); color:var(--yellow);
                 border:1px solid rgba(255,184,0,.30); border-radius:10px;
                 padding:9px 13px; font-size:12px; font-weight:600; }
@@ -1883,6 +2282,9 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
       </button>
 
       <div class="nav-section-label">تحليل وتطوير</div>
+      <button class="nav-item" onclick="goTo('analytics', this)">
+        <span class="nav-item-ico">📈</span> إحصائيات الأداء
+      </button>
       <button class="nav-item" onclick="goTo('insights', this)">
         <span class="nav-item-ico">🧠</span> الرؤى والتوصيات
       </button>
@@ -2323,27 +2725,14 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
         <div class="pcard">
           <div class="pcard-head">
-            <div class="pcard-title">📍 جميع المساحات</div>
+            <div>
+              <div class="pcard-title">📍 جميع المساحات</div>
+              <div class="pcard-sub">تحكم كامل: تعديل البيانات · إيقاف مؤقت · حذف نهائي</div>
+            </div>
             <span class="db-tag">DB: spaces</span>
           </div>
-          <div class="pcard-body" style="padding:0">
-            <!-- 🔗 DB-LINK: جلب من جدول spaces -->
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>كود</th>
-                  <th>الموقع</th>
-                  <th>الحجم</th>
-                  <th>النشاط المناسب</th>
-                  <th>الإيجار</th>
-                  <th>الحالة</th>
-                  <th>الأداء</th>
-                </tr>
-              </thead>
-              <tbody id="spaces-tbody">
-                <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">⏳ جاري تحميل المساحات…</td></tr>
-              </tbody>
-            </table>
+          <div id="spaces-container" style="padding:16px">
+            <div style="text-align:center;color:var(--text3);padding:30px">⏳ جاري تحميل المساحات…</div>
           </div>
         </div>
 
@@ -2397,6 +2786,109 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             </div>
           </div>
         </div>
+        <!-- Space Edit Modal -->
+        <div id="se-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+          <div class="pcard" style="max-width:700px;width:100%;margin:auto">
+            <div class="pcard-head" style="position:sticky;top:0;z-index:2;background:var(--bg2)">
+              <div>
+                <div class="pcard-title" id="se-title">✏️ تعديل المساحة</div>
+                <div class="pcard-sub">التعديلات تنعكس فوراً على الموقع دون إعادة مراجعة</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="closeSpaceEdit()">✕ إغلاق</button>
+            </div>
+            <div class="pcard-body">
+              <div id="se-msg" class="alert-item" style="display:none;margin-bottom:12px"></div>
+              <input type="hidden" id="se-id">
+
+              <!-- بيانات أساسية -->
+              <div class="se-section-title">📋 البيانات الأساسية</div>
+              <div class="form-row">
+                <div class="form-group" style="margin:0"><label>اسم المساحة *</label><input type="text" id="se-name" placeholder="مثال: مول الخليج — الجناح الغربي"></div>
+                <div class="form-group" style="margin:0"><label>المنطقة *</label><input type="text" id="se-region" placeholder="مثال: مدينة نصر، القاهرة"></div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
+                <label>وصف المساحة</label>
+                <textarea id="se-desc" style="min-height:72px" placeholder="اكتب وصفاً جذاباً يشرح مزايا الموقع والحركة التجارية…"></textarea>
+              </div>
+
+              <!-- الأسعار -->
+              <div class="se-section-title" style="margin-top:20px">💰 الأسعار والأحجام</div>
+              <div class="form-row">
+                <div class="form-group" style="margin:0">
+                  <label>أدنى سعر (ج.م./شهر)</label>
+                  <input type="number" id="se-price" min="0" style="font-family:'Space Mono',monospace" placeholder="5000">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label>جدول الأحجام والأسعار</label>
+                  <input type="text" id="se-sizes" placeholder="صغير 3000 · متوسط 5000 · كبير 8000">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:12px">
+                <div class="form-group" style="margin:0"><label>الموسم / التوقيت</label><input type="text" id="se-season" placeholder="رمضان · الصيف"></div>
+                <div class="form-group" style="margin:0"><label>تلميح تسويقي</label><input type="text" id="se-insight" placeholder="موقع حيوي قرب المصليات"></div>
+              </div>
+
+              <!-- الأنشطة -->
+              <div class="se-section-title" style="margin-top:20px">🏷️ الأنشطة المسموح بها</div>
+              <div class="form-group" style="margin:0">
+                <label>الأنشطة (افصل بنقطة وسطى ·)</label>
+                <input type="text" id="se-acts" placeholder="مطعم · مقهى · متجر ملابس · عطور">
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;cursor:pointer">
+                <input type="checkbox" id="se-all-acts" style="accent-color:var(--orange)">
+                <span>جميع الأنشطة مسموح بها</span>
+              </label>
+
+              <!-- المرافق -->
+              <div class="se-section-title" style="margin-top:20px">🏗️ المرافق والخدمات</div>
+              <div class="se-amenities-grid">
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-wifi"    value="واي فاي"   style="accent-color:var(--orange)"> 📶 واي فاي</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-elec"    value="كهرباء"    style="accent-color:var(--orange)"> ⚡ كهرباء</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-sec"     value="أمن"       style="accent-color:var(--orange)"> 🔒 أمن ٢٤/٧</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-clean"   value="نظافة"     style="accent-color:var(--orange)"> 🧹 نظافة يومية</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-table"   value="ترابيزات"  style="accent-color:var(--orange)"> 🪑 ترابيزات</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-storage" value="مخزن"      style="accent-color:var(--orange)"> 📦 مخزن</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-cam"     value="كاميرات"   style="accent-color:var(--orange)"> 📷 كاميرات</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-ac"      value="تبريد"     style="accent-color:var(--orange)"> ❄️ تكييف</label>
+                <label class="se-amen-opt"><input type="checkbox" id="se-amen-light"   value="إضاءة"     style="accent-color:var(--orange)"> 💡 إضاءة</label>
+              </div>
+              <div class="form-group" style="margin-top:8px">
+                <input type="text" id="se-amen-custom" placeholder="مرفق مخصص (اختياري)…" style="font-size:12px">
+              </div>
+
+              <!-- الصور -->
+              <div class="se-section-title" style="margin-top:20px">🖼️ إدارة الصور</div>
+
+              <div style="margin-bottom:16px">
+                <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">الصورة الرئيسية</div>
+                <div id="se-main-img-wrap"></div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+                  <label class="se-upload-btn">
+                    📤 رفع صورة رئيسية جديدة
+                    <input type="file" accept="image/*" style="display:none" onchange="handleSeMainImg(this)">
+                  </label>
+                  <span id="se-main-img-status" style="font-size:11px"></span>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">صور إضافية (حتى ٥)</div>
+                <div id="se-extra-imgs" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;min-height:30px"></div>
+                <label class="se-upload-btn">
+                  📤 إضافة صور إضافية
+                  <input type="file" accept="image/*" multiple style="display:none" onchange="handleSeExtraImgs(this)">
+                </label>
+              </div>
+
+              <!-- حفظ -->
+              <div style="display:flex;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border2)">
+                <button class="btn btn-primary" id="se-save-btn" onclick="submitSpaceEdit()">💾 حفظ التعديلات</button>
+                <button class="btn btn-ghost" onclick="closeSpaceEdit()">إلغاء</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div><!-- end spaces -->
 
       <!-- ============================================================
@@ -2455,6 +2947,37 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
           </div>
           <div class="pcard-body">
             <div id="contract-msg" class="alert-item" style="display:none;margin-bottom:14px"></div>
+
+            <!-- بانر تجديد العقد -->
+            <div id="contract-renewal-banner" style="display:none;align-items:center;gap:10px;background:rgba(0,200,120,0.07);border:1px solid rgba(0,200,120,0.28);border-radius:var(--r);padding:10px 14px;margin-bottom:14px">
+              <span style="font-size:18px">🔄</span>
+              <div style="flex:1;font-size:12px;line-height:1.6">
+                <span style="color:var(--green,#00c878);font-weight:700">تجديد العقد</span>
+                <br>
+                <span style="color:var(--text3)">سيتم تحديث تاريخ انتهاء عقد </span>
+                <strong class="crb-name" style="color:var(--text1)"></strong>
+                <span style="color:var(--text3)"> — التاريخ المقترح للانتهاء: </span>
+                <strong class="crb-date" style="color:var(--text1)"></strong>
+                <span style="color:var(--text3)">. عدّل الحقول كما تشاء ثم اضغط تجديد.</span>
+              </div>
+              <button type="button" onclick="cancelEditContract()" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 6px" title="إلغاء التجديد">✕</button>
+            </div>
+
+            <!-- بانر الملء التلقائي من حجز -->
+            <div id="contract-from-booking-banner" style="display:none;align-items:center;gap:10px;background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.25);border-radius:var(--r);padding:10px 14px;margin-bottom:14px">
+              <span style="font-size:18px">⚡</span>
+              <div style="flex:1;font-size:12px;line-height:1.6">
+                <span style="color:var(--orange);font-weight:700">تم الملء التلقائي من طلب الحجز</span>
+                <br>
+                <span style="color:var(--text3)">البيانات مأخوذة من ملف </span>
+                <strong class="cfb-name" style="color:var(--text1)"></strong>
+                <span style="color:var(--text3)"> — مساحة: </span>
+                <strong class="cfb-space" style="color:var(--text1)"></strong>
+                <span style="color:var(--text3)">. راجع البيانات قبل الحفظ.</span>
+              </div>
+              <button type="button" onclick="_clearContractFromBookingBanner()" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 6px" title="إغلاق">✕</button>
+            </div>
+
             <form id="contract-form" onsubmit="submitContract(event)">
               <div class="form-row">
                 <div class="form-group" style="margin:0">
@@ -2469,11 +2992,17 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                   <div style="font-size:10px;color:var(--text3);margin-top:4px">تظهر هنا وحداتك المعتمدة فقط — أضف مساحة أولاً إن لم تجد وحداتك.</div>
                 </div>
               </div>
-              <div class="form-row" style="margin-top:12px;grid-template-columns:1fr 1fr 1fr">
+              <div class="form-row" style="margin-top:12px">
                 <div class="form-group" style="margin:0">
                   <label>رقم هاتف المستأجر</label>
                   <input type="tel" id="cf-phone" dir="ltr" placeholder="مثال: 01012345678">
                 </div>
+                <div class="form-group" style="margin:0">
+                  <label>البريد الإلكتروني</label>
+                  <input type="email" id="cf-email" dir="ltr" placeholder="مثال: client@example.com">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:12px">
                 <div class="form-group" style="margin:0">
                   <label>نوع النشاط</label>
                   <input type="text" id="cf-activity" placeholder="مثال: قهوة، إكسسوار، حلويات">
@@ -2491,6 +3020,21 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <div class="form-group" style="margin:0">
                   <label>تاريخ انتهاء العقد *</label>
                   <input type="date" id="cf-end" required>
+                </div>
+              </div>
+              <!-- قسم التأمين -->
+              <div class="deposit-section">
+                <div class="deposit-section-label">🔒 التأمين (Deposit) — اختياري</div>
+                <div class="form-row">
+                  <div class="form-group" style="margin:0">
+                    <label>مبلغ التأمين (ج.م.)</label>
+                    <input type="number" id="cf-deposit" placeholder="مثال: 10000" min="0"
+                      style="font-family:'Space Mono',monospace">
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>تاريخ استلام التأمين</label>
+                    <input type="date" id="cf-deposit-date">
+                  </div>
                 </div>
               </div>
               <div class="form-group" style="margin-top:12px">
@@ -3342,6 +3886,83 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
       <!-- view-violations: stub — content moved to view-ratings -->
       <div class="view" id="view-violations"></div>
+
+      <!-- ============================================================
+           VIEW: ANALYTICS — إحصائيات أداء المساحات
+           🔗 DB-LINK: space_analytics + bookings
+           ============================================================ -->
+      <div class="view" id="view-analytics">
+        <div class="section-label">إحصائيات أداء المساحات</div>
+
+        <!-- KPIs -->
+        <div class="kpi-row" style="margin-bottom:20px">
+          <div class="kpi-card">
+            <div class="kpi-ico">👁️</div>
+            <div class="kpi-label">إجمالي المشاهدات</div>
+            <div class="kpi-value" id="an-total-views">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">زوار شافوا بطاقاتك</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">🔍</div>
+            <div class="kpi-label">ضغطات على التفاصيل</div>
+            <div class="kpi-value" id="an-total-clicks" style="color:var(--blue)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">مهتمّون فعلاً</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📬</div>
+            <div class="kpi-label">إجمالي طلبات الحجز</div>
+            <div class="kpi-value" id="an-total-bookings" style="color:var(--green)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">طلبات وصلتك</div>
+          </div>
+          <div class="kpi-card" style="border-color:rgba(255,106,26,0.25)">
+            <div class="kpi-ico">📊</div>
+            <div class="kpi-label">متوسط معدل التحويل</div>
+            <div class="kpi-value" id="an-avg-conversion" style="color:var(--orange)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">مشاهدة → حجز</div>
+          </div>
+        </div>
+
+        <!-- جدول تفصيلي لكل مساحة -->
+        <div class="pcard">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">📊 أداء كل مساحة</div>
+              <div class="pcard-sub">بيانات مباشرة من سلوك الزوار على المنصة</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadSpaceAnalytics(true)">🔄 تحديث</button>
+          </div>
+          <div class="pcard-body" style="padding:0;overflow-x:auto">
+            <table class="data-table" style="min-width:700px">
+              <thead>
+                <tr>
+                  <th>المساحة</th>
+                  <th style="text-align:center">👁️ مشاهدات</th>
+                  <th style="text-align:center">🔍 ضغطات تفاصيل</th>
+                  <th style="text-align:center">📬 طلبات حجز</th>
+                  <th style="text-align:center">📈 معدل التحويل</th>
+                  <th style="text-align:center">تقييم الأداء</th>
+                </tr>
+              </thead>
+              <tbody id="analytics-tbody">
+                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:36px 20px">⏳ جاري تحميل الإحصائيات…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- بانر توضيحي -->
+        <div style="margin-top:16px;padding:16px 20px;background:rgba(90,169,255,0.06);border:1px solid rgba(90,169,255,0.15);border-radius:var(--r);display:flex;gap:14px;align-items:flex-start">
+          <span style="font-size:22px;flex-shrink:0">💡</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">كيف تُحسّن أداء إعلانك؟</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.9">
+              🔸 <b>مشاهدات منخفضة:</b> أضف صور احترافية وتفاصيل كاملة لتظهر أكثر في نتائج البحث.<br>
+              🔸 <b>ضغطات منخفضة:</b> اجعل عنوان المساحة والسعر جذّابَين — هما أول ما يراه الزائر.<br>
+              🔸 <b>معدل تحويل منخفض:</b> راجع وصف المساحة والصور الإضافية — الزائر مهتم لكن يحتاج إقناعاً أكثر.
+            </div>
+          </div>
+        </div>
+      </div><!-- end analytics -->
 
       <!-- ============================================================
            VIEW: REPORTS — التقارير الشهرية (Pro فقط)

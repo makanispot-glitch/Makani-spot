@@ -40,6 +40,52 @@ const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlB
 const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 
+/* ══════════════════════════════════════════════════════
+   📊  SPACE ANALYTICS TRACKING
+   يتتبع مشاهدات البطاقات والضغطات على "تفاصيل"
+   مرة واحدة لكل مساحة لكل جلسة متصفّح
+   ══════════════════════════════════════════════════════ */
+const _ANALYTICS_SID = (() => {
+  try {
+    let s = sessionStorage.getItem('ms_asid');
+    if (!s) { s = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('ms_asid', s); }
+    return s;
+  } catch { return 'x' + Date.now(); }
+})();
+const _analyticsViewed  = new Set();
+const _analyticsClicked = new Set();
+
+async function _trackSpaceEvent(spaceId, ownerId, eventType) {
+  if (!spaceId || !ownerId) return;
+  if (eventType === 'view'         && _analyticsViewed.has(spaceId))  return;
+  if (eventType === 'detail_click' && _analyticsClicked.has(spaceId)) return;
+  if (eventType === 'view')         _analyticsViewed.add(spaceId);
+  if (eventType === 'detail_click') _analyticsClicked.add(spaceId);
+  try {
+    fetch(SUPABASE_URL + '/rest/v1/space_analytics', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Prefer':'return=minimal' },
+      body: JSON.stringify({ space_id:spaceId, owner_id:ownerId, event_type:eventType, session_id:_ANALYTICS_SID })
+    });
+  } catch {}
+}
+
+let _cardObserver = null;
+function _initCardViewTracking() {
+  if (!window.IntersectionObserver) return;
+  if (_cardObserver) _cardObserver.disconnect();
+  _cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const card = e.target;
+        _trackSpaceEvent(card.dataset.sid, card.dataset.oid, 'view');
+        _cardObserver.unobserve(card);
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('.space-card[data-sid]').forEach(c => _cardObserver.observe(c));
+}
+
 
 /* ================================================================
    🗄️ القسم الثاني: المتغيرات العامة
@@ -609,7 +655,7 @@ function buildCardHtml(s, fromPage) {
 
   // التفاصيل والحجز يتمّان في صفحة المساحات الرسمية (/spaces/) لتوحيد التجربة
   const detailsBtnHtml = `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
-              onclick="event.stopPropagation();window.location.href='/spaces/?space=${s.id}'">
+              onclick="event.stopPropagation();_trackSpaceEvent('${s.id}','${s.ownerId||''}','detail_click');window.location.href='/spaces/?space=${s.id}'">
          تفاصيل ←
        </button>`;
 
@@ -625,7 +671,7 @@ function buildCardHtml(s, fromPage) {
   const _cardClass = _planCardClass(s);
 
   return `
-  <div class="space-card${_cardClass}">
+  <div class="space-card${_cardClass}" data-sid="${s.id}" data-oid="${s.ownerId||''}">
     <div class="card-thumb">
       ${thumbHtml}
       <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
@@ -686,6 +732,7 @@ function renderCards(data, gridId, showViewAll, fromPage) {
     </div>` : '';
 
   grid.innerHTML = data.map(s => buildCardHtml(s, fromPage)).join('') + viewAllHtml;
+  requestAnimationFrame(_initCardViewTracking);
 }
 
 
