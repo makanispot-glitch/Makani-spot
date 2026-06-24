@@ -13,7 +13,7 @@
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 /* ================================================================
@@ -22,40 +22,77 @@
    ================================================================ */
 
 :root {
-  --orange:       #F36418;
-  --orange-dim:   #cc5500;
-  --orange-glow:  rgba(255,107,0,0.18);
-  --orange-pale:  rgba(255,107,0,0.08);
+  /* ── Brand (premium orange + gradient) ── */
+  --orange:       #FF6A1A;
+  --orange-2:     #FF8A3D;
+  --orange-dim:   #E2540B;
+  --orange-glow:  rgba(255,106,26,0.22);
+  --orange-pale:  rgba(255,106,26,0.10);
+  --grad-orange:  linear-gradient(135deg, #FF8A3D 0%, #FF6A1A 52%, #F0540A 100%);
 
-  --bg:           #0D0D0F;
-  --bg2:          #111114;
-  --bg3:          #18181D;
-  --panel:        #1C1C22;
-  --panel2:       #222229;
-  --border:       rgba(255,255,255,0.07);
-  --border2:      rgba(255,107,0,0.25);
+  /* ── Surfaces (layered depth) ── */
+  --bg:           #08080A;
+  --bg2:          #0C0C10;
+  --bg3:          #131318;
+  --panel:        #141419;
+  --panel2:       #1B1B22;
+  --panel-elev:   #20202A;
+  --panel-grad:   linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0));
 
-  --text:         #F0F0F5;
-  --text2:        #9090A0;
-  --text3:        #55555F;
+  /* ── Borders / hairlines ── */
+  --border:       rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.14);
+  --border2:      rgba(255,106,26,0.30);
+  --hairline:     rgba(255,255,255,0.05);
 
-  --green:        #22D46E;
-  --green-bg:     rgba(34,212,110,0.12);
-  --red:          #FF4D4D;
-  --red-bg:       rgba(255,77,77,0.12);
-  --yellow:       #FFB800;
-  --yellow-bg:    rgba(255,184,0,0.12);
-  --blue:         #4D9FFF;
-  --blue-bg:      rgba(77,159,255,0.12);
+  /* ── Text ── */
+  --text:         #F4F4F8;
+  --text2:        #9A9AA8;
+  --text3:        #60606D;
 
-  --r:            10px;
-  --r2:           16px;
-  --r3:           22px;
-  --shadow:       0 4px 24px rgba(0,0,0,0.40);
-  --shadow-o:     0 4px 24px rgba(255,107,0,0.25);
+  /* ── Semantic ── */
+  --green:        #2BD576;
+  --green-bg:     rgba(43,213,118,0.12);
+  --red:          #FF5A5A;
+  --red-bg:       rgba(255,90,90,0.12);
+  --yellow:       #FFC53D;
+  --yellow-bg:    rgba(255,197,61,0.12);
+  --blue:         #5AA9FF;
+  --blue-bg:      rgba(90,169,255,0.12);
+  --purple:       #A98BFF;
+  --purple-bg:    rgba(169,139,255,0.12);
 
-  --sidebar-w:    260px;
-  --topbar-h:     64px;
+  /* ── Radii ── */
+  --r:            12px;
+  --r2:           18px;
+  --r3:           24px;
+  --r-pill:       999px;
+
+  /* ── Shadows (soft, layered, premium) ── */
+  --shadow-sm:    0 1px 2px rgba(0,0,0,0.45);
+  --shadow:       0 8px 28px -8px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.35);
+  --shadow-lg:    0 28px 70px -16px rgba(0,0,0,0.72), 0 10px 24px rgba(0,0,0,0.5);
+  --shadow-o:     0 10px 28px -8px rgba(255,106,26,0.5);
+  --ring:         0 0 0 3px var(--orange-glow);
+
+  /* ── Glass ── */
+  --glass-bg:     rgba(12,12,16,0.72);
+  --glass-blur:   saturate(170%) blur(16px);
+
+  /* ── Fonts ── */
+  --font:         'Cairo', sans-serif;
+  --font-body:    'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+  --font-mono:    'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-num:     'Inter', 'Space Mono', sans-serif;
+
+  /* ── Motion ── */
+  --ease:         cubic-bezier(.4,0,.2,1);
+  --ease-out:     cubic-bezier(.22,1,.36,1);
+  --dur:          .2s;
+
+  /* ── Layout ── */
+  --sidebar-w:    264px;
+  --topbar-h:     66px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1294,6 +1331,324 @@ body {
   .login-box    { padding: 22px 14px; margin: 10px; }
   .data-table   { min-width: 400px; }
 }
+
+/* ================================================================
+   ✦ PREMIUM REDESIGN LAYER — Linear / Vercel-dark
+   Appearance-only overrides. All JS hooks (ids, onclick, data-view,
+   functional classes: active/visible/open/on/show) are untouched.
+   ================================================================ */
+
+/* ── Base polish ── */
+body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+::selection { background: rgba(255,106,26,0.30); color: #fff; }
+
+/* ambient light behind the app */
+#app::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(900px 520px at 100% -6%, rgba(255,106,26,0.10), transparent 60%),
+    radial-gradient(720px 600px at -8% 112%, rgba(90,169,255,0.05), transparent 55%);
+}
+.sidebar, .main-area { position: relative; z-index: 1; }
+
+/* refined scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); background-clip: padding-box; }
+
+/* keyboard focus ring */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* mono + numeric typography (Space Mono now loaded) */
+.kpi-label, .nav-section-label, .section-label, .db-tag, .bar-label, .bar-val,
+.tenant-meta, .contract-meta, .form-group label, .score-inner { font-family: var(--font-mono); }
+.kpi-value { font-family: var(--font-num); font-feature-settings: 'tnum' 1; letter-spacing: -0.02em; }
+
+/* ── SIDEBAR ── */
+.sidebar { background: linear-gradient(180deg, #0B0B0F, #090909); border-left: 1px solid var(--hairline); }
+.sidebar-logo { padding: 22px 20px 18px; border-bottom: 1px solid var(--hairline); }
+.sidebar-logo-ar { font-size: 21px; letter-spacing: -0.01em; }
+.sidebar-logo-en, .login-logo-en { font-family: var(--font-mono); }
+.sidebar-badge { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+.sidebar-owner-info {
+  margin: 14px 14px 4px; padding: 14px; border: 1px solid var(--border); border-radius: var(--r2);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0)); position: relative; overflow: hidden;
+}
+.sidebar-owner-info::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(140px 70px at 92% 0%, var(--orange-pale), transparent 70%);
+}
+.sidebar-owner-av {
+  width: 44px; height: 44px; border-radius: 13px; background: var(--grad-orange); font-size: 18px;
+  box-shadow: 0 6px 16px -4px rgba(255,106,26,0.55), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; z-index: 1;
+}
+.sidebar-owner-name { font-size: 14px; }
+.sidebar-nav { padding: 10px 12px 16px; }
+.nav-section-label { margin: 16px 8px 8px; }
+.nav-item {
+  border-radius: 11px; padding: 9px 11px; font-family: var(--font-body); font-size: 13.5px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform .12s var(--ease);
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.nav-item:active { transform: scale(0.985); }
+.nav-item.active {
+  background: linear-gradient(100deg, var(--orange-pale), rgba(255,106,26,0.03));
+  color: #FFD9BE; border: 1px solid var(--border2); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.nav-item.active::before {
+  content: ''; position: absolute; inset-inline-end: -1px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: 3px; background: var(--grad-orange); box-shadow: 0 0 10px rgba(255,106,26,0.7);
+}
+.nav-item.active .nav-item-ico { background: rgba(255,106,26,0.16); filter: drop-shadow(0 0 6px rgba(255,106,26,0.45)); }
+.nav-item-ico {
+  width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; border-radius: 8px; background: rgba(255,255,255,0.045);
+}
+.nav-item-badge { font-family: var(--font-mono); background: var(--grad-orange); box-shadow: 0 2px 8px -2px rgba(255,106,26,0.6); }
+.sidebar-bottom { border-top: 1px solid var(--hairline); }
+
+/* ── TOPBAR (glass) ── */
+.topbar {
+  background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--hairline); padding: 0 24px; gap: 14px;
+}
+.topbar-title { font-family: var(--font); font-size: 17px; letter-spacing: -0.01em; }
+.topbar-right { gap: 10px; }
+.topbar-search {
+  display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 0 12px; height: 38px; min-width: 200px;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background var(--dur);
+}
+.topbar-search:focus-within { border-color: var(--orange); box-shadow: var(--ring); background: var(--bg2); }
+.topbar-search svg { color: var(--text3); flex-shrink: 0; }
+.topbar-search input { border: none; background: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 13px; width: 100%; }
+.topbar-search input::placeholder { color: var(--text3); }
+.topbar-search kbd { font-family: var(--font-mono); font-size: 10px; color: var(--text3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; background: rgba(255,255,255,0.03); }
+.topbar-cta {
+  display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: var(--r);
+  background: var(--grad-orange); color: #fff; border: none; font-family: var(--font); font-weight: 800; font-size: 13px;
+  cursor: pointer; box-shadow: var(--shadow-o); white-space: nowrap;
+  transition: transform .15s var(--ease), box-shadow .15s var(--ease), filter .15s;
+}
+.topbar-cta:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 14px 32px -8px rgba(255,106,26,0.6); }
+.topbar-cta:active { transform: translateY(0); }
+.topbar-period { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
+.period-btn { border-radius: 7px; font-family: var(--font-body); transition: all .15s var(--ease); }
+.period-btn:hover { color: var(--text); }
+.period-btn.on { background: var(--grad-orange); color: #fff; box-shadow: 0 4px 12px -3px rgba(255,106,26,0.55); }
+.topbar-notif, .menu-toggle { width: 38px; height: 38px; border-radius: var(--r); background: var(--bg3); border: 1px solid var(--border); color: var(--text2); transition: all .15s var(--ease); }
+.topbar-notif:hover, .menu-toggle:hover, .menu-toggle.is-open { border-color: var(--orange); color: var(--orange); background: var(--orange-pale); }
+.notif-badge { background: var(--grad-orange); border: 2px solid var(--bg2); font-family: var(--font-mono); }
+.topbar-back { background: var(--orange-pale); border: 1px solid var(--border2); border-radius: var(--r); }
+
+/* ── PAGE CONTENT / VIEW ── */
+.page-content { padding: 26px 28px 40px; }
+.view.active { animation: viewIn .35s var(--ease-out); }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.section-label { font-size: 10.5px; margin-bottom: 16px; }
+.section-label::after { background: linear-gradient(90deg, var(--border), transparent); }
+
+/* ── KPI CARDS ── */
+.kpi-row { gap: 18px; margin-bottom: 26px; }
+.kpi-card {
+  background: var(--panel); background-image: var(--panel-grad); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 20px 20px 18px; box-shadow: var(--shadow);
+  transition: transform .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.kpi-card::before { background: radial-gradient(380px 130px at 88% -12%, var(--orange-pale), transparent 70%); }
+.kpi-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent); }
+.kpi-card:hover { transform: translateY(-3px); border-color: var(--border2); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,106,26,0.10); }
+.kpi-ico {
+  width: 42px; height: 42px; margin-bottom: 14px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; border-radius: 12px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid var(--border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+}
+.kpi-label { font-size: 10.5px; letter-spacing: 0.06em; }
+.kpi-value { font-size: 30px; font-weight: 800; line-height: 1.1; }
+.kpi-delta { font-family: var(--font-mono); padding: 3px 9px; border-radius: 999px; font-size: 11.5px; }
+.kpi-delta.up::before { content: '▲'; font-size: 8px; }
+.kpi-delta.down::before { content: '▼'; font-size: 8px; }
+.prog-bar { height: 7px; background: rgba(255,255,255,0.06); box-shadow: inset 0 1px 2px rgba(0,0,0,0.4); }
+.prog-fill { background: var(--grad-orange); box-shadow: 0 0 10px rgba(255,106,26,0.45); }
+.prog-fill.green { background: linear-gradient(90deg, #1fae5f, var(--green)); box-shadow: 0 0 10px rgba(43,213,118,0.4); }
+.prog-fill.yellow { background: linear-gradient(90deg, #e0a722, var(--yellow)); box-shadow: 0 0 10px rgba(255,197,61,0.35); }
+.prog-fill.red { background: linear-gradient(90deg, #e04646, var(--red)); }
+
+/* ── PANEL CARDS ── */
+.grid-2, .grid-3, .grid-1-2, .grid-2-1 { gap: 18px; margin-bottom: 18px; }
+.pcard { background: var(--panel); background-image: var(--panel-grad); border: 1px solid var(--border); border-radius: var(--r2); box-shadow: var(--shadow); }
+.pcard-head { padding: 16px 20px; border-bottom: 1px solid var(--hairline); }
+.pcard-title { font-size: 14.5px; letter-spacing: -0.01em; }
+.pcard-sub { font-size: 11.5px; }
+.pcard-body { padding: 18px 20px; }
+.db-tag { font-family: var(--font-mono); background: rgba(90,169,255,0.10); border: 1px solid rgba(90,169,255,0.22); color: var(--blue); }
+
+/* ── BUTTONS ── */
+.btn { border-radius: 10px; padding: 9px 16px; font-family: var(--font); border: 1px solid var(--border); background: var(--panel2); color: var(--text2); transition: all .15s var(--ease); }
+.btn:hover { border-color: var(--border-strong); color: var(--text); background: var(--panel-elev); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary, .btn-primary:hover { background: var(--grad-orange); color: #fff; border-color: transparent; box-shadow: var(--shadow-o); }
+.btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 14px 32px -8px rgba(255,106,26,0.6); }
+.btn-ghost { background: transparent; border-color: var(--border); }
+.btn-ghost:hover { background: rgba(255,255,255,0.05); }
+
+/* ── BADGES ── */
+.badge { padding: 4px 11px; font-size: 11px; }
+.badge-orange { background: var(--orange-pale); border: 1px solid var(--border2); }
+
+/* ── TABLES ── */
+.data-table th { background: rgba(255,255,255,0.025); font-size: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.data-table td { padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
+.data-table tbody tr { transition: background .12s; }
+.data-table tbody tr:hover td { background: rgba(255,106,26,0.045); }
+
+/* ── ALERTS ── */
+.alert-item { border-radius: var(--r); position: relative; padding-inline-start: 16px; }
+.alert-item::before { content: ''; position: absolute; inset-block: 8px; inset-inline-start: 0; width: 3px; border-radius: 3px; background: currentColor; opacity: .7; }
+
+/* ── FORMS ── */
+.form-group label { font-size: 10.5px; }
+.form-group input, .form-group select, .form-group textarea { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; transition: border-color .15s var(--ease), box-shadow .15s var(--ease), background .15s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--orange); box-shadow: var(--ring); background: var(--bg2); }
+.form-group select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2360606D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 14px center; padding-inline-end: 36px; }
+
+/* ── BOOKINGS ── */
+.bk-tabs { padding: 14px 16px 4px; }
+.bk-tab { border-radius: 9px; transition: all .15s var(--ease); }
+.bk-tab.bk-tab-on { background: var(--orange-pale); border-color: var(--orange); color: var(--orange); box-shadow: inset 0 0 0 1px rgba(255,106,26,0.2); }
+.bk-card { background: var(--panel2); border-radius: 14px; box-shadow: var(--shadow-sm); transition: border-color .18s, transform .18s, box-shadow .18s; }
+.bk-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+/* ── CHARTS ── */
+.bar { background: linear-gradient(180deg, rgba(255,106,26,0.30), rgba(255,106,26,0.08)); border: 1px solid var(--border2); border-radius: 6px 6px 0 0; }
+.bar:hover { background: linear-gradient(180deg, rgba(255,106,26,0.55), rgba(255,106,26,0.2)); }
+.bar.high { background: var(--grad-orange); box-shadow: 0 0 16px rgba(255,106,26,0.5); }
+.donut { box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); }
+.donut::after { background: var(--panel); }
+
+/* ── INSIGHT / CONTRACT CARDS ── */
+.insight-card { border-radius: var(--r2); background: linear-gradient(135deg, rgba(255,106,26,0.10), rgba(255,106,26,0.02)); border: 1px solid var(--border2); }
+.contract-card { background: var(--panel2); border-radius: var(--r); transition: border-color .15s, transform .15s; }
+.contract-card:hover { border-color: var(--border2); transform: translateX(-2px); }
+
+/* ── NOTIFICATION PANEL (GN) — previously unstyled in dashboard ── */
+.gn-panel {
+  position: fixed; top: calc(var(--topbar-h) + 8px); inset-inline-start: 18px;
+  width: min(380px, calc(100vw - 32px)); max-height: 70vh; overflow: hidden;
+  background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-strong); border-radius: var(--r2); box-shadow: var(--shadow-lg);
+  z-index: 200; display: flex; flex-direction: column; animation: gnIn .2s var(--ease-out);
+}
+@keyframes gnIn { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+.gn-hd { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--hairline); font-weight: 800; font-size: 14px; color: var(--text); }
+.gn-mark-btn { background: var(--orange-pale); border: 1px solid var(--border2); color: var(--orange); border-radius: 8px; padding: 5px 10px; font-family: var(--font); font-size: 11px; font-weight: 700; cursor: pointer; }
+.gn-mark-btn:hover { background: var(--orange); color: #fff; }
+.gn-list { overflow-y: auto; padding: 6px; }
+.gn-item { display: flex; gap: 11px; padding: 11px 12px; border-radius: 12px; cursor: pointer; transition: background .14s; position: relative; }
+.gn-item:hover { background: rgba(255,255,255,0.045); }
+.gn-unread { background: rgba(255,106,26,0.05); }
+.gn-ico { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+.gn-body { flex: 1; min-width: 0; }
+.gn-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.gn-msg { font-size: 12px; color: var(--text2); margin-top: 2px; line-height: 1.5; }
+.gn-time { font-size: 10.5px; color: var(--text3); margin-top: 4px; font-family: var(--font-mono); }
+.gn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); flex-shrink: 0; align-self: center; box-shadow: 0 0 8px rgba(255,106,26,0.7); }
+.gn-empty { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 13px; }
+.gn-ft { padding: 10px 16px; border-top: 1px solid var(--hairline); text-align: center; }
+.gn-view-all { color: var(--orange); font-size: 12px; font-weight: 700; text-decoration: none; }
+.gn-view-all:hover { text-decoration: underline; }
+
+/* ── SKELETON ── */
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.04) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 8px; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* ── LOGIN / ACCESS GATE polish ── */
+.login-box { border-radius: var(--r3); box-shadow: var(--shadow-lg); background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--border-strong); }
+.login-logo-ar { font-size: 30px; }
+.btn-login, .btn-login:hover { background: var(--grad-orange); border-radius: 12px; }
+.btn-login:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.lf-group input:focus { box-shadow: var(--ring); }
+
+/* ── RESPONSIVE additions for new topbar elements ── */
+@media (max-width: 1040px) { .topbar-search { display: none; } }
+@media (max-width: 760px)  { .topbar-cta span { display: none; } .topbar-cta { padding: 0 12px; } }
+@media (max-width: 600px)  {
+  .page-content { padding: 16px 14px 32px; }
+  .kpi-value { font-size: 23px; }
+  .gn-panel { inset-inline-start: 10px; top: calc(var(--topbar-h) + 6px); }
+}
+
+/* ── reduced motion ── */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ═══════════════════════════════════════════════════════════
+   ✦ PHASE 2 — OPERATIONAL UX  (Makani Spot — Space Owners)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Topbar: tighten gap + clip tooltip overflow so items never shift ── */
+.topbar-right { gap: 6px; overflow: hidden; }
+.topbar-search { max-width: 210px; min-width: 0; }
+@media (max-width: 1399px) { .topbar-cta span { display: none; } .topbar-cta { padding: 0 12px; } }
+@media (max-width: 1399px) { .topbar-back span { display: none; } }
+
+/* ── Operational Action Strip ── */
+.ops-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+.ops-chip {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border-radius: var(--r2);
+  background: var(--panel2); border: 1px solid var(--border);
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s;
+}
+.ops-chip::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity .18s; }
+.ops-chip:hover { transform: translateY(-2px); }
+.ops-chip:hover::before { opacity: 1; }
+.ops-chip--urgent { border-color: rgba(255,106,26,.28); }
+.ops-chip--urgent::before { background: rgba(255,106,26,.04); }
+.ops-chip--urgent .ops-chip-ico { background: rgba(255,106,26,.14); }
+.ops-chip--urgent .ops-chip-val { color: var(--orange); }
+.ops-chip--urgent:hover { border-color: rgba(255,106,26,.55); box-shadow: var(--shadow-o); }
+.ops-chip--warn { border-color: rgba(255,197,61,.25); }
+.ops-chip--warn::before { background: rgba(255,197,61,.04); }
+.ops-chip--warn .ops-chip-ico { background: rgba(255,197,61,.12); }
+.ops-chip--warn .ops-chip-val { color: var(--yellow); }
+.ops-chip--warn:hover { border-color: rgba(255,197,61,.45); }
+.ops-chip--danger { border-color: rgba(255,90,90,.22); }
+.ops-chip--danger::before { background: rgba(255,90,90,.04); }
+.ops-chip--danger .ops-chip-ico { background: rgba(255,90,90,.12); }
+.ops-chip--danger .ops-chip-val { color: var(--red); }
+.ops-chip--danger:hover { border-color: rgba(255,90,90,.45); }
+.ops-chip--neutral { border-color: rgba(90,169,255,.20); }
+.ops-chip--neutral::before { background: rgba(90,169,255,.04); }
+.ops-chip--neutral .ops-chip-ico { background: rgba(90,169,255,.10); }
+.ops-chip--neutral .ops-chip-val { color: var(--blue); }
+.ops-chip--neutral:hover { border-color: rgba(90,169,255,.40); }
+.ops-chip-ico { width:42px; height:42px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.ops-chip-body { flex:1; min-width:0; }
+.ops-chip-label { font-size:11.5px; color:var(--text2); font-weight:600; margin-bottom:3px; }
+.ops-chip-val { font-size:22px; font-weight:800; font-family:var(--font-num); line-height:1.1; }
+.ops-chip-arr { color:var(--text3); opacity:.45; flex-shrink:0; transition:opacity .14s,transform .14s var(--ease); }
+.ops-chip:hover .ops-chip-arr { opacity:1; transform:translateX(-3px); }
+
+/* ── Overview internal zone labels ── */
+.overview-zone-label {
+  font-size:10.5px; font-weight:700; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.09em;
+  margin:22px 0 10px; display:flex; align-items:center; gap:8px;
+}
+.overview-zone-label::after { content:''; flex:1; height:1px; background:var(--hairline); }
+
+/* ── Alerts card elevated (moved to top of overview for operational priority) ── */
+.pcard--alerts-elevated { border-color: rgba(255,90,90,.18); margin-bottom:4px; }
+
+/* ── Revenue KPI: last-in-grid = leftmost in RTL = visually de-prioritised ── */
+.kpi-row .kpi-card:last-child { opacity:.80; }
+.kpi-row .kpi-card:last-child .kpi-ico { filter:grayscale(.25); }
+
+/* ── Ops strip responsive ── */
+@media (max-width:900px)  { .ops-strip { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:500px)  { .ops-strip { gap:8px; } .ops-chip { padding:12px; } .ops-chip-val { font-size:18px; } }
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -1470,6 +1825,15 @@ body {
       </button>
       <div class="topbar-title" id="topbar-title">نظرة عامة</div>
       <div class="topbar-right">
+        <div class="topbar-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="dash-quick-search" placeholder="بحث سريع في اللوحة…" oninput="__dashNavFilter(this.value)" autocomplete="off" aria-label="بحث في اللوحة">
+          <kbd>/</kbd>
+        </div>
+        <button class="topbar-cta" onclick="goTo('add-space', document.querySelector('[data-view=add-space]'))" title="إضافة مساحة جديدة">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>إضافة مساحة</span>
+        </button>
         <a href="/" class="topbar-back">
           🏠 <span>الرجوع إلى المنصة</span>
         </a>
@@ -1500,17 +1864,47 @@ body {
            🔗 DB-LINK: جلب الـ KPIs من Google Sheets أو Supabase
            ============================================================ -->
       <div class="view active" id="view-overview">
-        <div class="section-label">مؤشرات الأداء الرئيسية</div>
 
+        <!-- ── ① OPERATIONAL ACTION STRIP ── -->
+        <div class="ops-strip">
+          <div class="ops-chip ops-chip--urgent" onclick="goTo('bookings', document.querySelector('[onclick*=bookings]'))" title="طلبات الحجز المعلّقة">
+            <div class="ops-chip-ico">📬</div>
+            <div class="ops-chip-body">
+              <div class="ops-chip-label">طلبات حجز معلّقة</div>
+              <div class="ops-chip-val" id="ov-bk-count">—</div>
+            </div>
+            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+          <div class="ops-chip ops-chip--warn" onclick="goTo('contracts', document.querySelector('[onclick*=contracts]'))" title="عقود تنتهي قريباً">
+            <div class="ops-chip-ico">📄</div>
+            <div class="ops-chip-body">
+              <div class="ops-chip-label">عقود تنتهي قريباً</div>
+              <div class="ops-chip-val" id="ov-exp-count">—</div>
+            </div>
+            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+          <div class="ops-chip ops-chip--danger" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))" title="تنبيهات نشطة">
+            <div class="ops-chip-ico">🚨</div>
+            <div class="ops-chip-body">
+              <div class="ops-chip-label">تنبيهات نشطة</div>
+              <div class="ops-chip-val" id="ov-alert-count">—</div>
+            </div>
+            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+          <div class="ops-chip ops-chip--neutral" onclick="goTo('tenants', document.querySelector('[onclick*=tenants]'))" title="إدارة المستأجرين">
+            <div class="ops-chip-ico">👥</div>
+            <div class="ops-chip-body">
+              <div class="ops-chip-label">مستأجرون نشطون</div>
+              <div class="ops-chip-val" id="ov-tenants-count">—</div>
+            </div>
+            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+        </div>
+
+        <!-- ── ② KPI STATUS — occupancy first, revenue last ── -->
+        <div class="overview-zone-label">مؤشرات الحالة التشغيلية</div>
         <!-- 🔗 DB-LINK: KPIs → جلب من جدول spaces + bookings + payments -->
         <div class="kpi-row">
-          <div class="kpi-card">
-            <div class="kpi-ico">💰</div>
-            <div class="kpi-label">الإيراد الشهري</div>
-            <div class="kpi-value" id="kpi-revenue">—</div>
-            <span class="kpi-delta flat" id="kpi-rev-delta">← جارٍ الحساب</span>
-            <div style="margin-top:6px;font-size:10px;color:var(--text3)">ج.م. / الشهر الحالي</div>
-          </div>
           <div class="kpi-card">
             <div class="kpi-ico">📍</div>
             <div class="kpi-label">إشغال المساحات</div>
@@ -1534,8 +1928,36 @@ body {
             <span class="kpi-delta flat" id="kpi-score-delta">← جارٍ الحساب</span>
             <div class="stars-sm" id="kpi-score-stars" style="margin-top:6px">☆☆☆☆☆</div>
           </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">💰</div>
+            <div class="kpi-label">الإيراد الشهري</div>
+            <div class="kpi-value" id="kpi-revenue">—</div>
+            <span class="kpi-delta flat" id="kpi-rev-delta">← جارٍ الحساب</span>
+            <div style="margin-top:6px;font-size:10px;color:var(--text3)">ج.م. / الشهر الحالي</div>
+          </div>
         </div>
 
+        <!-- ── ③ ALERTS — immediate attention, above analytics ── -->
+        <div class="pcard pcard--alerts-elevated">
+          <div class="pcard-head">
+            <div>
+              <div class="pcard-title">🚨 أحدث التنبيهات</div>
+            </div>
+            <button class="btn btn-sm" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">كل التنبيهات</button>
+          </div>
+          <div class="pcard-body">
+            <div class="alert-list" id="overview-alerts-list">
+              <!-- تُملأ ديناميكياً من renderOverview() -->
+              <div class="alert-item info">
+                <span class="alert-ico">⏳</span>
+                <div class="alert-text"><strong>جارٍ تحليل بياناتك…</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ④ ANALYTICS — secondary, below operational blocks ── -->
+        <div class="overview-zone-label">التحليلات والمؤشرات المالية</div>
         <div class="grid-2-1">
           <!-- إيرادات شهرية بالرسم -->
           <div class="pcard">
@@ -1575,7 +1997,7 @@ body {
           </div>
         </div>
 
-        <!-- Top Tenants quick view -->
+        <!-- ── ⑤ TOP TENANTS — reference data ── -->
         <div class="pcard" style="margin-bottom:20px">
           <div class="pcard-head">
             <div>
@@ -1605,24 +2027,6 @@ body {
           </div>
         </div>
 
-        <!-- Smart Alerts Preview -->
-        <div class="pcard">
-          <div class="pcard-head">
-            <div>
-              <div class="pcard-title">🚨 أحدث التنبيهات</div>
-            </div>
-            <button class="btn btn-sm" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))">كل التنبيهات</button>
-          </div>
-          <div class="pcard-body">
-            <div class="alert-list" id="overview-alerts-list">
-              <!-- تُملأ ديناميكياً من renderOverview() -->
-              <div class="alert-item info">
-                <span class="alert-ico">⏳</span>
-                <div class="alert-text"><strong>جارٍ تحليل بياناتك…</strong></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div><!-- end overview -->
 
       <!-- ============================================================
@@ -2905,6 +3309,56 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+</script>
+<script>
+/* ── UI-only quick search (filters the sidebar nav by label) ──
+   Self-contained: touches no business logic, data, or API. Safe to remove. */
+function __dashNavFilter(q){
+  q = (q || '').trim().toLowerCase();
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(it){
+    var t = (it.textContent || '').toLowerCase();
+    it.style.display = (!q || t.indexOf(q) > -1) ? '' : 'none';
+  });
+  document.querySelectorAll('.sidebar-nav .nav-section-label').forEach(function(lbl){
+    var visible = false, n = lbl.nextElementSibling;
+    while (n && !n.classList.contains('nav-section-label')){
+      if (n.classList.contains('nav-item') && n.style.display !== 'none'){ visible = true; break; }
+      n = n.nextElementSibling;
+    }
+    lbl.style.display = visible ? '' : 'none';
+  });
+}
+/* press "/" to focus quick search */
+document.addEventListener('keydown', function(e){
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')){
+    var s = document.getElementById('dash-quick-search');
+    if (s){ e.preventDefault(); s.focus(); }
+  }
+});
+</script>
+<script>
+/* ── Phase 2: ops-strip sync — mirrors sidebar badge counts to overview action tiles ──
+   Pure display sync: touches no business logic, data, or API. Safe to remove. */
+(function __syncOpsStrip(){
+  function sync(srcId, dstId){
+    var src = document.getElementById(srcId), dst = document.getElementById(dstId);
+    if (!dst) return;
+    var v = src ? (src.textContent || '').trim() : '';
+    dst.textContent = (v && v !== '0') ? v : '—';
+  }
+  function doSync(){
+    sync('nb-bookings', 'ov-bk-count');
+    sync('nb-expiring', 'ov-exp-count');
+    sync('nb-alerts',   'ov-alert-count');
+    sync('nb-tenants',  'ov-tenants-count');
+  }
+  doSync();
+  var mo = new MutationObserver(doSync);
+  ['nb-bookings', 'nb-expiring', 'nb-alerts', 'nb-tenants'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) mo.observe(el, {childList:true, characterData:true, subtree:true});
+  });
+})();
 </script>
 </body>
 </html>
