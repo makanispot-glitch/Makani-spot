@@ -1583,72 +1583,69 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* ═══════════════════════════════════════════════════════════
-   ✦ PHASE 2 — OPERATIONAL UX  (Makani Spot — Space Owners)
+   ✦ PHASE 2 — UX REFINEMENTS  (Makani Spot — Space Owners)
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Topbar: tighten gap + clip tooltip overflow so items never shift ── */
-.topbar-right { gap: 6px; overflow: hidden; }
+/* ── Topbar: 3-column layout — title | back-center | controls ── */
+.topbar { justify-content: flex-start; }
+.topbar-title { flex: 1; }
+.topbar > .topbar-back { padding: 8px 22px; font-size: 13px; flex-shrink: 0; }
+.topbar-back:hover { transform: translateY(-1px); }
+.topbar-right { flex: 1; gap: 6px; overflow: hidden; justify-content: flex-end; }
 .topbar-search { max-width: 210px; min-width: 0; }
 @media (max-width: 1399px) { .topbar-cta span { display: none; } .topbar-cta { padding: 0 12px; } }
-@media (max-width: 1399px) { .topbar-back span { display: none; } }
+@media (max-width: 760px) { .topbar > .topbar-back { display: none; } }
 
-/* ── Operational Action Strip ── */
-.ops-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
-.ops-chip {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 18px; border-radius: var(--r2);
-  background: var(--panel2); border: 1px solid var(--border);
-  cursor: pointer; position: relative; overflow: hidden;
-  transition: transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s;
-}
-.ops-chip::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity .18s; }
-.ops-chip:hover { transform: translateY(-2px); }
-.ops-chip:hover::before { opacity: 1; }
-.ops-chip--urgent { border-color: rgba(255,106,26,.28); }
-.ops-chip--urgent::before { background: rgba(255,106,26,.04); }
-.ops-chip--urgent .ops-chip-ico { background: rgba(255,106,26,.14); }
-.ops-chip--urgent .ops-chip-val { color: var(--orange); }
-.ops-chip--urgent:hover { border-color: rgba(255,106,26,.55); box-shadow: var(--shadow-o); }
-.ops-chip--warn { border-color: rgba(255,197,61,.25); }
-.ops-chip--warn::before { background: rgba(255,197,61,.04); }
-.ops-chip--warn .ops-chip-ico { background: rgba(255,197,61,.12); }
-.ops-chip--warn .ops-chip-val { color: var(--yellow); }
-.ops-chip--warn:hover { border-color: rgba(255,197,61,.45); }
-.ops-chip--danger { border-color: rgba(255,90,90,.22); }
-.ops-chip--danger::before { background: rgba(255,90,90,.04); }
-.ops-chip--danger .ops-chip-ico { background: rgba(255,90,90,.12); }
-.ops-chip--danger .ops-chip-val { color: var(--red); }
-.ops-chip--danger:hover { border-color: rgba(255,90,90,.45); }
-.ops-chip--neutral { border-color: rgba(90,169,255,.20); }
-.ops-chip--neutral::before { background: rgba(90,169,255,.04); }
-.ops-chip--neutral .ops-chip-ico { background: rgba(90,169,255,.10); }
-.ops-chip--neutral .ops-chip-val { color: var(--blue); }
-.ops-chip--neutral:hover { border-color: rgba(90,169,255,.40); }
-.ops-chip-ico { width:42px; height:42px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.ops-chip-body { flex:1; min-width:0; }
-.ops-chip-label { font-size:11.5px; color:var(--text2); font-weight:600; margin-bottom:3px; }
-.ops-chip-val { font-size:22px; font-weight:800; font-family:var(--font-num); line-height:1.1; }
-.ops-chip-arr { color:var(--text3); opacity:.45; flex-shrink:0; transition:opacity .14s,transform .14s var(--ease); }
-.ops-chip:hover .ops-chip-arr { opacity:1; transform:translateX(-3px); }
+/* ── Compact layout — reduce excessive whitespace ── */
+.page-content { padding: 20px 24px 36px; }
+.kpi-row { gap: 12px; margin-bottom: 18px; }
+.kpi-card { padding: 16px 18px 14px; }
+.kpi-ico { margin-bottom: 8px; }
+.kpi-value { font-size: 27px; }
+.grid-2, .grid-3, .grid-1-2, .grid-2-1 { gap: 14px; margin-bottom: 14px; }
+.pcard-head { padding: 12px 18px; }
+.pcard-body { padding: 14px 18px; }
 
-/* ── Overview internal zone labels ── */
+/* ── Overview analytics zone label ── */
 .overview-zone-label {
-  font-size:10.5px; font-weight:700; color:var(--text3);
-  text-transform:uppercase; letter-spacing:.09em;
-  margin:22px 0 10px; display:flex; align-items:center; gap:8px;
+  font-size: 10.5px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .09em;
+  margin: 16px 0 10px; display: flex; align-items: center; gap: 8px;
 }
-.overview-zone-label::after { content:''; flex:1; height:1px; background:var(--hairline); }
+.overview-zone-label::after { content: ''; flex: 1; height: 1px; background: var(--hairline); }
 
-/* ── Alerts card elevated (moved to top of overview for operational priority) ── */
-.pcard--alerts-elevated { border-color: rgba(255,90,90,.18); margin-bottom:4px; }
+/* ── Alerts card — subtle red accent ── */
+.pcard--alerts-elevated { border-color: rgba(255,90,90,.18); }
 
 /* ── Revenue KPI: last-in-grid = leftmost in RTL = visually de-prioritised ── */
-.kpi-row .kpi-card:last-child { opacity:.80; }
-.kpi-row .kpi-card:last-child .kpi-ico { filter:grayscale(.25); }
+.kpi-row .kpi-card:last-child { opacity: .80; }
+.kpi-row .kpi-card:last-child .kpi-ico { filter: grayscale(.25); }
 
-/* ── Ops strip responsive ── */
-@media (max-width:900px)  { .ops-strip { grid-template-columns:repeat(2,1fr); } }
-@media (max-width:500px)  { .ops-strip { gap:8px; } .ops-chip { padding:12px; } .ops-chip-val { font-size:18px; } }
+/* ── Merged section divider (used in finance + quality merged pages) ── */
+.merge-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 24px 0 16px;
+  font-size: 10.5px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.merge-divider::before, .merge-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--hairline);
+}
+
+/* ── Mobile/Tablet layout fixes ── */
+@media (max-width: 900px) {
+  #app { overflow-x: hidden; }
+  .main-area { width: 100%; }
+  .page-content { padding: 16px 16px 32px; }
+  .kpi-row { gap: 10px; }
+}
+@media (max-width: 600px) {
+  .kpi-card { padding: 12px 14px 10px; }
+  .kpi-value { font-size: 22px; }
+  .pcard-head { padding: 10px 14px; }
+  .pcard-body { padding: 12px 14px; }
+  .page-content { padding: 14px 14px 28px; }
+}
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -1773,11 +1770,11 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
       <button class="nav-item" onclick="goTo('revenue', this)">
         <span class="nav-item-ico">💰</span> الإيرادات
       </button>
-      <button class="nav-item" id="nav-payments" onclick="goTo('payments', this)">
+      <button class="nav-item" id="nav-payments" onclick="goTo('revenue', this)">
         <span class="nav-item-ico">💳</span> الدفعات
         <span class="nav-lock" style="display:none;margin-right:auto;font-size:11px">🔒</span>
       </button>
-      <button class="nav-item" id="nav-violations" onclick="goTo('violations', this)">
+      <button class="nav-item" id="nav-violations" onclick="goTo('ratings', this)">
         <span class="nav-item-ico">⚠️</span> المخالفات
         <span class="nav-lock" style="display:none;margin-right:auto;font-size:11px">🔒</span>
       </button>
@@ -1824,6 +1821,9 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         </svg>
       </button>
       <div class="topbar-title" id="topbar-title">نظرة عامة</div>
+      <a href="/" class="topbar-back">
+        🏠 <span>الرجوع إلى المنصة</span>
+      </a>
       <div class="topbar-right">
         <div class="topbar-search">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -1834,9 +1834,6 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span>إضافة مساحة</span>
         </button>
-        <a href="/" class="topbar-back">
-          🏠 <span>الرجوع إلى المنصة</span>
-        </a>
         <div class="topbar-period">
           <button class="period-btn on" onclick="setPeriod('month',this)">هذا الشهر</button>
           <button class="period-btn"    onclick="setPeriod('quarter',this)">ربع سنوي</button>
@@ -1865,44 +1862,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
            ============================================================ -->
       <div class="view active" id="view-overview">
 
-        <!-- ── ① OPERATIONAL ACTION STRIP ── -->
-        <div class="ops-strip">
-          <div class="ops-chip ops-chip--urgent" onclick="goTo('bookings', document.querySelector('[onclick*=bookings]'))" title="طلبات الحجز المعلّقة">
-            <div class="ops-chip-ico">📬</div>
-            <div class="ops-chip-body">
-              <div class="ops-chip-label">طلبات حجز معلّقة</div>
-              <div class="ops-chip-val" id="ov-bk-count">—</div>
-            </div>
-            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-          </div>
-          <div class="ops-chip ops-chip--warn" onclick="goTo('contracts', document.querySelector('[onclick*=contracts]'))" title="عقود تنتهي قريباً">
-            <div class="ops-chip-ico">📄</div>
-            <div class="ops-chip-body">
-              <div class="ops-chip-label">عقود تنتهي قريباً</div>
-              <div class="ops-chip-val" id="ov-exp-count">—</div>
-            </div>
-            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-          </div>
-          <div class="ops-chip ops-chip--danger" onclick="goTo('alerts', document.querySelector('[onclick*=alerts]'))" title="تنبيهات نشطة">
-            <div class="ops-chip-ico">🚨</div>
-            <div class="ops-chip-body">
-              <div class="ops-chip-label">تنبيهات نشطة</div>
-              <div class="ops-chip-val" id="ov-alert-count">—</div>
-            </div>
-            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-          </div>
-          <div class="ops-chip ops-chip--neutral" onclick="goTo('tenants', document.querySelector('[onclick*=tenants]'))" title="إدارة المستأجرين">
-            <div class="ops-chip-ico">👥</div>
-            <div class="ops-chip-body">
-              <div class="ops-chip-label">مستأجرون نشطون</div>
-              <div class="ops-chip-val" id="ov-tenants-count">—</div>
-            </div>
-            <svg class="ops-chip-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-          </div>
-        </div>
-
-        <!-- ── ② KPI STATUS — occupancy first, revenue last ── -->
-        <div class="overview-zone-label">مؤشرات الحالة التشغيلية</div>
+        <!-- ── KPI STATUS — occupancy first, revenue last ── -->
         <!-- 🔗 DB-LINK: KPIs → جلب من جدول spaces + bookings + payments -->
         <div class="kpi-row">
           <div class="kpi-card">
@@ -2522,6 +2482,12 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             </div>
           </div>
         </div>
+
+        <!-- ── المخالفات: مدمجة مع صفحة التقييمات ── -->
+        <div class="merge-divider">⚠️ سجل المخالفات والتحذيرات</div>
+        <div id="violations-content">
+          <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
+        </div>
       </div><!-- end ratings -->
 
       <!-- ============================================================
@@ -2564,6 +2530,12 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- ── الدفعات: مدمجة مع صفحة الإيرادات ── -->
+        <div class="merge-divider">💳 الدفعات المسجّلة</div>
+        <div id="payments-content">
+          <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
         </div>
       </div><!-- end revenue -->
 
@@ -3224,39 +3196,11 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         </div>
       </div><!-- end settings -->
 
-      <!-- ============================================================
-           VIEW: PAYMENTS — تسجيل وتتبع الدفعات (Growth+)
-           ============================================================ -->
-      <div class="view" id="view-payments">
-        <div class="section-label">تسجيل وتتبع الدفعات</div>
-        <div style="background:linear-gradient(135deg,rgba(34,212,110,0.10),transparent);border:1px solid rgba(34,212,110,0.20);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px">
-          <div style="font-size:28px;flex-shrink:0">💰</div>
-          <div>
-            <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:4px">نظام تتبع الدفعات</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8">سجّل كل دفعة تحصلها من مستأجريك — ستظهر تلقائياً في التقارير الشهرية وتساعدك على متابعة المديونيات.</div>
-          </div>
-        </div>
-        <div id="payments-content">
-          <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
-        </div>
-      </div><!-- end payments -->
+      <!-- view-payments: stub — content moved to view-revenue -->
+      <div class="view" id="view-payments"></div>
 
-      <!-- ============================================================
-           VIEW: VIOLATIONS — سجل المخالفات والتحذيرات (Growth+)
-           ============================================================ -->
-      <div class="view" id="view-violations">
-        <div class="section-label">تسجيل المخالفات والتحذيرات</div>
-        <div style="background:linear-gradient(135deg,rgba(255,77,77,0.08),transparent);border:1px solid rgba(255,77,77,0.18);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px">
-          <div style="font-size:28px;flex-shrink:0">🚨</div>
-          <div>
-            <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:4px">سجل المخالفات والتحذيرات الرسمية</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8">وثّق أي مخالفة من مستأجريك — تأخر الدفع، نظافة، انتهاك شروط العقد. يظهر في تقرير نهاية العقد.</div>
-          </div>
-        </div>
-        <div id="violations-content">
-          <div class="pcard"><div class="pcard-body" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">⏳</div><div style="color:var(--text3)">جاري التحميل…</div></div></div>
-        </div>
-      </div><!-- end violations -->
+      <!-- view-violations: stub — content moved to view-ratings -->
+      <div class="view" id="view-violations"></div>
 
       <!-- ============================================================
            VIEW: REPORTS — التقارير الشهرية (Pro فقط)
@@ -3335,30 +3279,6 @@ document.addEventListener('keydown', function(e){
     if (s){ e.preventDefault(); s.focus(); }
   }
 });
-</script>
-<script>
-/* ── Phase 2: ops-strip sync — mirrors sidebar badge counts to overview action tiles ──
-   Pure display sync: touches no business logic, data, or API. Safe to remove. */
-(function __syncOpsStrip(){
-  function sync(srcId, dstId){
-    var src = document.getElementById(srcId), dst = document.getElementById(dstId);
-    if (!dst) return;
-    var v = src ? (src.textContent || '').trim() : '';
-    dst.textContent = (v && v !== '0') ? v : '—';
-  }
-  function doSync(){
-    sync('nb-bookings', 'ov-bk-count');
-    sync('nb-expiring', 'ov-exp-count');
-    sync('nb-alerts',   'ov-alert-count');
-    sync('nb-tenants',  'ov-tenants-count');
-  }
-  doSync();
-  var mo = new MutationObserver(doSync);
-  ['nb-bookings', 'nb-expiring', 'nb-alerts', 'nb-tenants'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) mo.observe(el, {childList:true, characterData:true, subtree:true});
-  });
-})();
 </script>
 </body>
 </html>
