@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>فرص استضافة بازارات — مكاني Spot</title>
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css?v=27">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+<style>
+/* ── Standalone Nav ── */
+.bz-standalone-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(250,250,247,0.96); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; box-shadow: var(--shadow);
+}
+.bz-nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; font-family: var(--font-display); color: var(--dark); }
+.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--orange); }
+.bz-nav-title {
+  font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2);
+  padding: 4px 12px; background: var(--orange-ultra); border-radius: var(--radius-pill);
+}
+.bz-nav-right { display: flex; align-items: center; gap: 12px; }
+.bz-nav-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 700; font-family: var(--font-display);
+  color: var(--ink2); text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.bz-nav-back:hover { color: var(--orange); }
+@media (max-width: 640px) {
+  .bz-standalone-nav { padding: 0 16px; height: 58px; }
+  .bz-nav-title { display: none; }
+}
+
+/* ── Page ── */
+.opp-page { min-height: 100vh; background: var(--surface2); padding-bottom: 80px; }
+
+/* Hero */
+.opp-hero {
+  background: var(--navy-700);
+  padding: 44px 32px 40px; text-align: center; color: #fff;
+  position: relative; overflow: hidden;
+}
+.opp-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(243,100,24,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243,100,24,0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.opp-hero::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 80% at 50% -10%, rgba(243,100,24,0.16) 0%, transparent 65%);
+}
+.opp-hero > * { position: relative; z-index: 1; }
+.opp-hero-icon { font-size: 48px; margin-bottom: 12px; display: block; }
+.opp-hero h1 { font-size: 26px; font-weight: 900; font-family: var(--font-display); margin-bottom: 8px; }
+.opp-hero h1 span { color: var(--orange); }
+.opp-hero p { font-size: 14px; color: rgba(255,255,255,0.65); font-family: var(--font-body); max-width: 500px; margin: 0 auto; }
+
+/* ── الفرص ── */
+.opp-content { max-width: 980px; margin: 32px auto 0; padding: 0 20px; }
+
+.opp-top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
+}
+.opp-heading { font-size: 18px; font-weight: 900; color: var(--dark); }
+.opp-count-badge {
+  background: var(--orange); color: #fff;
+  font-size: 12px; font-weight: 800; padding: 4px 14px;
+  border-radius: 50px;
+}
+
+/* Grid */
+.bzopp-pub-grid { display: grid; gap: 16px; }
+@media (min-width: 600px)  { .bzopp-pub-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 900px)  { .bzopp-pub-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* Card */
+.bzopp-pub-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 16px;
+  transition: border-color .18s, box-shadow .18s;
+  display: flex; flex-direction: column;
+}
+.bzopp-pub-card:hover { border-color: var(--orange); box-shadow: 0 4px 20px rgba(243,100,24,.10); }
+.bzopp-card-img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
+.bzopp-type-tag {
+  display: inline-block; background: rgba(243,100,24,.10); color: var(--orange);
+  font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 50px; margin-bottom: 8px;
+}
+.bzopp-pub-card-title { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 3px; }
+.bzopp-pub-card-city { font-size: 12px; color: var(--ink3); margin-bottom: 10px; }
+.bzopp-pub-card-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.bzopp-chip {
+  font-size: 11px; color: var(--ink2); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 50px; padding: 3px 9px;
+}
+.bzopp-chip.orange { color: var(--orange); border-color: rgba(243,100,24,.25); background: rgba(243,100,24,.06); }
+.bzopp-pub-card-dates {
+  font-size: 11px; color: var(--ink3);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; margin-bottom: 12px;
+}
+.bzopp-pub-card-spacer { flex: 1; }
+.bzopp-already-applied {
+  text-align: center; padding: 9px;
+  background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25);
+  border-radius: 10px; font-size: 12px; color: #16a34a; font-weight: 700;
+}
+.bzopp-apply-btn {
+  width: 100%; padding: 11px; background: var(--orange); color: #fff;
+  border: none; border-radius: 12px; font-size: 14px; font-weight: 800;
+  cursor: pointer; font-family: var(--font-body); transition: opacity .15s;
+}
+.bzopp-apply-btn:hover { opacity: .85; }
+.bzopp-access-msg {
+  grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+  color: var(--ink3); font-size: 15px; font-weight: 700;
+}
+.bzopp-access-msg p { margin: 12px 0 0; }
+</style>
+</head>
+
+<body>
+
+<!-- ══ ناف ══ -->
+<nav class="bz-standalone-nav">
+  <a class="bz-nav-logo" href="/bazaars/">
+    <span class="logo-ar">مكاني</span>
+    <span class="logo-en">Spot</span>
+  </a>
+  <span class="bz-nav-title">فرص استضافة بازارات</span>
+  <div class="bz-nav-right">
+    <div id="bz-nav-user"></div>
+  </div>
+</nav>
+
+<!-- ══ الصفحة ══ -->
+<div class="opp-page">
+
+  <!-- Hero -->
+  <div class="opp-hero">
+    <span class="opp-hero-icon">🏪</span>
+    <h1>فرص <span>استضافة بازارات</span></h1>
+    <p>مساحات يبحث أصحابها عن منظمي بازارات — راجع التفاصيل وقدّم عرضك مباشرة</p>
+  </div>
+
+  <!-- المحتوى -->
+  <div class="opp-content">
+
+    <div class="opp-top-bar">
+      <span class="opp-heading">الفرص المتاحة</span>
+      <span id="bz-opp-count-badge" class="opp-count-badge" style="display:none"></span>
+    </div>
+
+    <div id="bz-opp-cards" class="bzopp-pub-grid">
+      <div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--ink3)">⏳ جاري التحميل…</div>
+    </div>
+
+  </div>
+</div><!-- end opp-page -->
+
+
+<!-- ══ مودال تقديم عرض ══ -->
+<div id="bz-proposal-modal" class="modal-overlay" onclick="if(event.target===this)closeBzProposalModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-header-inner">
+        <div class="modal-icon">📤</div>
+        <div>
+          <div class="modal-title" id="bz-prop-modal-title">قدّم عرضك</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px" id="bz-prop-modal-sub"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeBzProposalModal()">✕</button>
+    </div>
+    <div style="padding:20px 24px 24px">
+      <div id="bz-prop-msg" class="alert-item" style="display:none;margin-bottom:14px"></div>
+      <form id="bz-proposal-form" onsubmit="submitBzProposal(event)">
+        <input type="hidden" id="bz-prop-request-id">
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">رقم هاتفك للتواصل <span style="color:var(--red)">*</span></label>
+          <input type="tel" id="bz-prop-phone" placeholder="01xxxxxxxxx" required
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:14px;font-family:var(--font-body);background:var(--surface);outline:none"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">مفهوم البازار المقترح</label>
+          <textarea id="bz-prop-concept" rows="3" placeholder="نوع البازار، فئة العارضين، الأجواء المتوقعة، الجمهور المستهدف…"
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">الإيجار المقترح (ج.م.)</label>
+            <input type="number" id="bz-prop-rent" placeholder="مثال: 15000" min="0"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">عدد العارضين المتوقع</label>
+            <input type="number" id="bz-prop-exhibitors" placeholder="مثال: 30" min="1"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ البداية المقترح</label>
+            <input type="date" id="bz-prop-start"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ النهاية</label>
+            <input type="date" id="bz-prop-end"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">ملاحظات إضافية</label>
+          <textarea id="bz-prop-notes" rows="2" placeholder="أي تفاصيل إضافية لصاحب المساحة…"
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+        <button type="submit" id="bz-prop-submit-btn"
+          style="width:100%;padding:13px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-lg);font-size:15px;font-weight:900;cursor:pointer;font-family:var(--font-body);transition:opacity .15s">
+          إرسال العرض ←
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script src="/notifications.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

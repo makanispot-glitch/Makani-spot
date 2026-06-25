@@ -59,11 +59,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   // تحميل البازارات
   await loadBazaars();
 
-  // قسم الفرص المتاحة — للمنظمين فقط
-  if (currentUser) bzCheckOrganizerSection();
-
-  // شريط CTA — لأصحاب المساحات فقط
-  if (currentUser) bzCheckOwnerCta();
 
   // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
   if (currentUser) bzLoadPostponeAlerts();
@@ -91,6 +86,7 @@ async function bzInitAuth() {
     currentUser = session?.user || null;
     if (currentUser) await _loadBzProfile();
     bzRenderNavUser();
+    if (document.getElementById('bz-opp-cards')) _bzInitOpportunitiesPage();
 
     sbClient.auth.onAuthStateChange(async (_e, sess) => {
       currentUser = sess?.user || null;
@@ -106,6 +102,20 @@ async function bzInitAuth() {
   } catch (e) {
     console.warn('تعذّر تهيئة المصادقة:', e.message);
   }
+}
+
+function _bzInitOpportunitiesPage() {
+  const grid = document.getElementById('bz-opp-cards');
+  if (!grid) return;
+  if (!currentUser) {
+    grid.innerHTML = '<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>يجب تسجيل الدخول أولاً</p><a href="/?p=login" style="display:inline-block;margin-top:12px;padding:10px 22px;background:var(--orange);color:#fff;border-radius:var(--radius-pill);font-weight:800;text-decoration:none">تسجيل الدخول</a></div>';
+    return;
+  }
+  if (!_bzIsOrganizer()) {
+    grid.innerHTML = '<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>هذه الصفحة مخصصة لمنظمي البازارات فقط</p></div>';
+    return;
+  }
+  bzLoadOpportunities();
 }
 
 async function _loadBzProfile() {
@@ -141,7 +151,14 @@ function bzRenderNavUser() {
       <div class="bz-nav-user-wrap">
 
 
-        ${currentProfile?.is_verified ? `
+        ${_bzIsOrganizer() ? `
+        <a class="bz-org-pill" href="/bazaars/opportunities.html">
+          <span class="bz-org-ico">🏪</span>
+          <span class="bz-org-texts">
+            <span class="bz-org-title">فرص استضافة</span>
+            <span class="bz-org-sub">مساحات متاحة للبازار</span>
+          </span>
+        </a>
         <a class="bz-org-pill" href="/bazaars/organize.html">
           <span class="bz-org-ico">🎪</span>
           <span class="bz-org-texts">
@@ -2324,22 +2341,6 @@ function _bzIsOrganizer() {
   return Array.isArray(currentProfile?.roles) && currentProfile.roles.includes('bazaar_organizer');
 }
 
-/* عرض قسم الفرص إذا كان المستخدم منظماً */
-async function bzCheckOrganizerSection() {
-  if (!currentUser || !currentProfile) return;
-  if (!_bzIsOrganizer()) return;
-  const sec = document.getElementById('bz-opp-section');
-  if (sec) sec.style.display = '';
-  await bzLoadOpportunities();
-}
-
-/* عرض شريط CTA لأصحاب المساحات */
-function bzCheckOwnerCta() {
-  if (!currentUser || !currentProfile) return;
-  if (currentProfile.role !== 'owner') return;
-  const cta = document.getElementById('bz-owner-cta');
-  if (cta) cta.style.display = '';
-}
 
 /* تحميل الفرص المتاحة عبر RPC */
 async function bzLoadOpportunities() {
