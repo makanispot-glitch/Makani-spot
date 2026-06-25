@@ -59,6 +59,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   // تحميل البازارات
   await loadBazaars();
 
+  // قسم الفرص المتاحة — للمنظمين فقط
+  if (currentUser) bzCheckOrganizerSection();
+
   // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
   if (currentUser) bzLoadPostponeAlerts();
 
@@ -106,14 +109,14 @@ async function _loadBzProfile() {
   if (!sbClient || !currentUser) return;
   try {
     const [profRes, orgRes] = await Promise.all([
-      sbClient.from('profiles').select('full_name, phone, avatar_url, is_verified').eq('id', currentUser.id).single(),
+      sbClient.from('profiles').select('full_name, phone, avatar_url, is_verified, roles').eq('id', currentUser.id).single(),
       sbClient.from('organizer_profiles').select('avatar_url, logo, image, is_verified').eq('user_id', currentUser.id).single()
     ]);
     currentProfile = {
       ...(profRes.data || {}),
-      /* 🪪 المصدر الموحّد: profiles.avatar_url أولاً ثم organizer_profiles كاحتياط للبيانات القديمة */
       avatar_url:  profRes.data?.avatar_url || orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
       is_verified: (profRes.data?.is_verified === true) || (orgRes.data?.is_verified === true),
+      roles:       profRes.data?.roles || [],
     };
   } catch (_) {}
 }
@@ -2300,4 +2303,165 @@ function _bzTimeAgo(date) {
 
 /* نظام M14 للإشعارات (user_bazaar_notifications) — تم إزالته
    الإشعارات الآن موحّدة في جدول notifications عبر وحدة GN */
+
+
+/* ================================================================
+   🎪 القسم 20: فرص المساحات — للمنظمين فقط (B2B Marketplace)
+   ================================================================ */
+
+const _BZ_VENUE_MAP = {
+  mall:'🏬 مول تجاري', club:'🏊 نادي', compound:'🏘️ كومباوند',
+  company:'🏢 مبنى تجاري', outdoor:'🌳 فضاء خارجي', other:'📍 مكان آخر',
+};
+const _BZ_FOOT_MAP = { low:'🚶 منخفض', medium:'🚶🚶 متوسط', high:'🚶🚶🚶 عالٍ' };
+
+/* هل المستخدم منظم بازار؟ */
+function _bzIsOrganizer() {
+  return Array.isArray(currentProfile?.roles) && currentProfile.roles.includes('bazaar_organizer');
+}
+
+/* عرض قسم الفرص إذا كان المستخدم منظماً */
+async function bzCheckOrganizerSection() {
+  if (!currentUser || !currentProfile) return;
+  if (!_bzIsOrganizer()) return;
+  const sec = document.getElementById('bz-opp-section');
+  if (sec) sec.style.display = '';
+  await bzLoadOpportunities();
+}
+
+/* تحميل الفرص المتاحة عبر RPC */
+async function bzLoadOpportunities() {
+  if (!sbClient || !currentUser) return;
+  try {
+    const { data, error } = await sbClient.rpc('organizer_get_open_opportunities');
+    if (error) throw error;
+    bzRenderOpportunityCards(data || []);
+  } catch (e) {
+    const el = document.getElementById('bz-opp-cards');
+    if (el) el.innerHTML = `<div style="color:red;padding:14px;font-size:12px">تعذّر تحميل الفرص: ${e.message}</div>`;
+  }
+}
+
+/* رندر بطاقات الفرص */
+function bzRenderOpportunityCards(opps) {
+  const grid  = document.getElementById('bz-opp-cards');
+  const badge = document.getElementById('bz-opp-count-badge');
+  if (!grid) return;
+
+  if (badge) {
+    if (opps.length) { badge.textContent = opps.length + ' فرصة'; badge.style.display = ''; }
+    else             { badge.style.display = 'none'; }
+  }
+
+  if (!opps.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px 20px;color:var(--ink3)">
+      <div style="font-size:28px;margin-bottom:8px">📭</div>
+      <div>لا توجد فرص مفتوحة حالياً — تابع الإشعارات عند نشر فرص جديدة.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = opps.map(opp => {
+    const imgHtml = opp.image_url
+      ? `<img src="${_bzEsc(opp.image_url)}" class="bzopp-card-img" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : '';
+    const appliedHtml = opp.already_applied
+      ? `<div class="bzopp-already-applied">✅ قدّمت عرضاً على هذه الفرصة</div>`
+      : `<button onclick="openBzProposalModal('${opp.id}','${_bzEsc(opp.place_name)}')"
+           style="width:100%;padding:11px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-lg);font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:opacity .15s"
+           onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+           📤 قدّم عرضك
+         </button>`;
+
+    return `
+      <div class="bzopp-pub-card">
+        ${imgHtml}
+        <div class="bzopp-pub-card-title">${_bzEsc(opp.place_name)}</div>
+        <div class="bzopp-pub-card-city">${opp.city ? _bzEsc(opp.city) : ''}${opp.venue_type ? ' · ' + (_BZ_VENUE_MAP[opp.venue_type] || opp.venue_type) : ''}</div>
+        <div class="bzopp-pub-card-chips">
+          ${opp.available_area ? `<span class="bzopp-chip orange">📐 ${opp.available_area} م²</span>` : ''}
+          <span class="bzopp-chip">${opp.is_indoor ? '🏠 مغلق/مكيّف' : '🌳 فضاء خارجي'}</span>
+          ${opp.has_electricity ? '<span class="bzopp-chip">⚡ كهرباء</span>' : ''}
+          ${opp.has_setup ? '<span class="bzopp-chip">🪑 تجهيزات</span>' : ''}
+          ${opp.expected_footfall ? `<span class="bzopp-chip">${_BZ_FOOT_MAP[opp.expected_footfall] || opp.expected_footfall}</span>` : ''}
+        </div>
+        <div class="bzopp-pub-card-dates">📅 ${opp.available_start} ← ${opp.available_end} · ${opp.days_count} يوم</div>
+        ${opp.notes ? `<div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.6">${_bzEsc(opp.notes)}</div>` : ''}
+        ${appliedHtml}
+      </div>`;
+  }).join('');
+}
+
+/* فتح مودال تقديم عرض */
+function openBzProposalModal(requestId, placeName) {
+  if (!currentUser) {
+    alert('يجب تسجيل الدخول أولاً لتقديم عرض.');
+    return;
+  }
+  document.getElementById('bz-prop-request-id').value = requestId;
+  document.getElementById('bz-prop-modal-title').textContent = 'قدّم عرضك على: ' + placeName;
+  document.getElementById('bz-prop-modal-sub').textContent = 'بياناتك ستُرسل لصاحب المساحة مباشرةً';
+  document.getElementById('bz-proposal-form')?.reset();
+  const msg = document.getElementById('bz-prop-msg');
+  if (msg) msg.style.display = 'none';
+  const modal = document.getElementById('bz-proposal-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeBzProposalModal() {
+  const modal = document.getElementById('bz-proposal-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+/* إرسال العرض */
+async function submitBzProposal(e) {
+  e.preventDefault();
+  if (!currentUser) { alert('يجب تسجيل الدخول أولاً.'); return; }
+
+  const btn = document.getElementById('bz-prop-btn');
+  const msg = document.getElementById('bz-prop-msg');
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإرسال…';
+  if (msg) msg.style.display = 'none';
+
+  try {
+    const { error } = await sbClient.rpc('submit_bazaar_proposal', {
+      p_request_id:                get('bz-prop-request-id'),
+      p_organizer_phone:           get('bz-prop-phone'),
+      p_concept_description:       get('bz-prop-concept')    || null,
+      p_proposed_rent:             parseFloat(document.getElementById('bz-prop-rent')?.value) || null,
+      p_proposed_start:            get('bz-prop-start')       || null,
+      p_proposed_end:              get('bz-prop-end')         || null,
+      p_proposed_exhibitors_count: parseInt(document.getElementById('bz-prop-exhibitors')?.value) || null,
+      p_notes:                     get('bz-prop-notes')       || null,
+    });
+
+    if (error) throw error;
+
+    if (msg) {
+      msg.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.3);border-radius:10px;font-size:13px;color:#166534';
+      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">✅</span><div><strong>تم إرسال عرضك بنجاح!</strong><br>سيتواصل معك صاحب المساحة عبر رقمك إذا اختار عرضك.</div>`;
+    }
+
+    setTimeout(() => { closeBzProposalModal(); bzLoadOpportunities(); }, 2200);
+
+  } catch (err) {
+    if (msg) {
+      msg.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;font-size:13px;color:#991b1b';
+      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">❌</span><div><strong>تعذّر الإرسال</strong><br>${_bzEsc(err.message || 'حاول مرة أخرى')}</div>`;
+    }
+  }
+
+  btn.disabled    = false;
+  btn.textContent = '📤 إرسال العرض';
+}
+
+/* escape helper محلي للصفحة */
+function _bzEsc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 

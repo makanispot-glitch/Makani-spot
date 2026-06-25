@@ -385,6 +385,10 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="nl">الدعم</div>
     <div class="ni" onclick="gp('org-support')" id="ni-org-support"><span class="ic">🛡️</span>دعم المنظّمين<span class="nb g" id="nb-org-support" style="display:none">0</span></div>
 
+    <div class="nl">🏪 سوق الفرص (B2B)</div>
+    <div class="ni" onclick="gp('mkt')" id="ni-mkt"><span class="ic">🏪</span>كل الفرص<span class="nb" id="nb-mkt" style="display:none">0</span></div>
+    <div class="ni" onclick="gp('mkt-log')"><span class="ic">📋</span>سجل النشاط</div>
+
     <div class="nl">التحليل والتتبع</div>
     <div class="ni" onclick="gp('audit')"><span class="ic">📋</span>سجل التغييرات</div>
     <div class="ni" onclick="gp('cancelled')"><span class="ic">🚫</span>البازارات الملغاة</div>
@@ -1101,6 +1105,62 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+  <!-- ═══ MARKETPLACE B2B — كل الفرص ═══ -->
+  <div class="pg" id="pg-mkt">
+    <div class="sh">
+      <div class="st">🏪 سوق الفرص <span>B2B — جميع أصحاب المساحات</span></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <select class="fc-s" id="mkt-filter-status" onchange="_mktPage=1;loadMktOpportunities()">
+          <option value="">كل الحالات</option>
+          <option value="open">🟢 مفتوحة</option>
+          <option value="organizer_selected">✓ تم الاختيار</option>
+          <option value="closed">🔒 مغلقة</option>
+          <option value="expired">⏰ منتهية</option>
+        </select>
+        <button class="btn btn-gh btn-sm" onclick="loadMktOpportunities()">🔄 تحديث</button>
+        <button class="btn btn-sm" style="border-color:rgba(255,184,0,.3);color:var(--yw)" onclick="gp('mkt-log')">📋 سجل النشاط</button>
+      </div>
+    </div>
+    <div class="sg sg-5" style="margin-bottom:16px">
+      <div class="scard"><div class="sc-ico">🏪</div><div class="sc-lbl">إجمالي الفرص</div><div class="sc-val" id="mst-total">—</div></div>
+      <div class="scard"><div class="sc-ico">🟢</div><div class="sc-lbl">مفتوحة</div><div class="sc-val" id="mst-open" style="color:var(--gr)">—</div></div>
+      <div class="scard"><div class="sc-ico">✓</div><div class="sc-lbl">تم الاختيار</div><div class="sc-val" id="mst-sel" style="color:var(--bl)">—</div></div>
+      <div class="scard"><div class="sc-ico">📬</div><div class="sc-lbl">إجمالي العروض</div><div class="sc-val" id="mst-props" style="color:var(--or)">—</div></div>
+      <div class="scard"><div class="sc-ico">⏰</div><div class="sc-lbl">منتهية/مغلقة</div><div class="sc-val" id="mst-closed" style="color:var(--mu)">—</div></div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>المكان والنوع</th><th>صاحب المساحة</th><th>المدينة</th>
+          <th>التواريخ</th><th>الحالة</th><th>العروض</th><th>إجراء</th>
+        </tr></thead>
+        <tbody id="mkt-tbody"><tr><td colspan="7" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pag" id="mkt-pag"></div>
+  </div>
+
+  <!-- ═══ MARKETPLACE AUDIT LOG ═══ -->
+  <div class="pg" id="pg-mkt-log">
+    <div class="sh">
+      <div class="st">📋 سجل نشاط <span>سوق الفرص B2B</span></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-gh btn-sm" onclick="loadMktLog()">🔄 تحديث</button>
+        <button class="btn btn-sm" style="border-color:rgba(77,159,255,.3);color:var(--bl)" onclick="gp('mkt')">← العودة للفرص</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>التاريخ والوقت</th><th>الإجراء</th><th>المكان</th>
+          <th>المنظم / الطرف الثاني</th><th>التغيير</th><th>منفّذ بواسطة</th>
+        </tr></thead>
+        <tbody id="mkt-log-tbody"><tr><td colspan="6" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pag" id="mkt-log-pag"></div>
+  </div>
+
 </main>
 
 <!-- ═══ MODALS ═══ -->
@@ -1318,6 +1378,17 @@ tbody tr:hover .row-acts{opacity:1}
       <div id="sup-submit-res"></div>
 
     </div>
+  </div>
+</div>
+
+<!-- MARKETPLACE PROPOSALS MODAL -->
+<div class="mov" id="modal-mkt-proposals">
+  <div class="mod" style="max-width:920px">
+    <div class="mhd">
+      <div class="mtt">📬 عروض الفرصة — <span id="mkt-prop-title" style="color:var(--or)"></span></div>
+      <button class="mx" onclick="closeModal('modal-mkt-proposals')">✕</button>
+    </div>
+    <div class="mbd" id="mkt-prop-body" style="padding:0"></div>
   </div>
 </div>
 
@@ -2789,6 +2860,8 @@ function gp(tab){
   if(tab==='cancelled')   loadCancelledBazaars();
   if(tab==='postpone')    loadPostponements();
   if(tab==='override')    loadOverridePage();
+  if(tab==='mkt')         { _mktPage=1; loadMktOpportunities(); }
+  if(tab==='mkt-log')     { _mktLogPage=1; loadMktLog(); }
 }
 
 /* ══════════════════════════════════════════
@@ -3538,6 +3611,232 @@ async function submitBazaarForOrg() {
   }
   btn.disabled = false; btn.textContent = '✅ إنشاء البازار بالنيابة';
 }
+/* ══════════════════════════════════════════
+   🏪  MARKETPLACE B2B — إدارة فرص المساحات
+══════════════════════════════════════════ */
+let _mktPage    = 1;
+let _mktLogPage = 1;
+const _MKT_PER  = 25;
+
+const _MKT_STATUS_LABELS = {
+  open:'مفتوحة', closed:'مغلقة', expired:'منتهية', organizer_selected:'✓ تم الاختيار'
+};
+const _MKT_STATUS_COLORS = {
+  open:'var(--gr)', closed:'var(--mu)', expired:'var(--yw)', organizer_selected:'var(--bl)'
+};
+const _MKT_ACTION_LABELS = {
+  opportunity_created:   '📢 نشر فرصة',
+  opportunity_closed:    '🔒 إغلاق فرصة',
+  opportunity_expired:   '⏰ انتهاء تلقائي',
+  opportunity_reopened:  '🔓 إعادة فتح',
+  organizer_selected:    '✓ اختيار منظم',
+  proposal_submitted:    '📤 تقديم عرض',
+  proposal_accepted:     '✅ قبول عرض',
+  proposal_rejected:     '❌ رفض عرض',
+  proposal_withdrawn:    '↩️ سحب عرض',
+  admin_cancel:          '🚫 إلغاء إداري',
+  status_changed:        '🔄 تغيير حالة',
+  proposal_status_changed:'🔄 تغيير حالة عرض',
+};
+const _MKT_ROLE_LABELS = {
+  owner:'صاحب مساحة', organizer:'منظم بازار',
+  system:'النظام', admin:'الإدارة', owner_or_admin:'صاحب/إدارة'
+};
+
+async function loadMktOpportunities() {
+  const status = document.getElementById('mkt-filter-status')?.value || null;
+  const offset = (_mktPage - 1) * _MKT_PER;
+  const tbody  = document.getElementById('mkt-tbody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
+
+  /* إحصائيات */
+  const { data: stats } = await db.rpc('admin_marketplace_stats').single();
+  if (stats) {
+    const s = typeof stats === 'object' ? stats : JSON.parse(stats);
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
+    set('mst-total',  s.total);
+    set('mst-open',   s.open);
+    set('mst-sel',    s.selected);
+    set('mst-props',  s.proposals_total);
+    set('mst-closed', (s.closed || 0) + (s.expired || 0));
+    const nb = document.getElementById('nb-mkt');
+    if (nb) { nb.textContent = s.total; nb.style.display = s.total > 0 ? '' : 'none'; }
+  }
+
+  /* جدول الفرص */
+  const { data: rows, error } = await db.rpc('admin_get_marketplace_opportunities', {
+    p_status: status || null,
+    p_limit:  _MKT_PER,
+    p_offset: offset,
+  });
+
+  if (error) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="color:var(--rd);padding:20px">خطأ: ${escHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  const list = rows || [];
+  if (!list.length) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="ld">لا توجد فرص بهذا الفلتر</td></tr>`;
+    _renderMktPag(0);
+    return;
+  }
+
+  if (tbody) tbody.innerHTML = list.map(r => {
+    const sLbl = _MKT_STATUS_LABELS[r.status] || r.status;
+    const sClr = _MKT_STATUS_COLORS[r.status] || 'var(--tx)';
+    const cnt  = r.proposals_count || 0;
+    const propBtn = cnt > 0
+      ? `<button class="btn btn-sm" onclick="viewMktProposals('${r.id}','${escHtml(r.place_name)}')">👁️ ${cnt} عرض</button>`
+      : `<span style="color:var(--tx3);font-size:11px">—</span>`;
+    const canCancel = !['closed','expired'].includes(r.status);
+    const cancelBtn = canCancel
+      ? `<button class="btn btn-sm" style="color:var(--rd);border-color:rgba(239,68,68,.3)" onclick="adminCancelMktOpportunity('${r.id}','${escHtml(r.place_name)}')">🚫 إلغاء</button>`
+      : `<span style="color:var(--tx3);font-size:11px">—</span>`;
+    return `<tr>
+      <td>
+        <div style="font-weight:700;font-size:13px">${escHtml(r.place_name)}</div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:2px">${escHtml(r.venue_type || '')}</div>
+      </td>
+      <td>
+        <div style="font-size:12px">${escHtml(r.owner_name || '—')}</div>
+        <div style="font-size:10px;color:var(--tx3)">${escHtml(r.owner_email || '')}</div>
+      </td>
+      <td style="font-size:12px">${escHtml(r.city || '—')}</td>
+      <td style="font-size:11px">
+        ${r.available_start || '—'} → ${r.available_end || '—'}
+        <div style="color:var(--tx3);font-size:10px">${r.days_count || 0} يوم</div>
+      </td>
+      <td><span style="color:${sClr};font-weight:700;font-size:12px;white-space:nowrap">● ${sLbl}</span></td>
+      <td>${propBtn}</td>
+      <td style="display:flex;gap:6px;align-items:center;padding:10px 8px">${cancelBtn}</td>
+    </tr>`;
+  }).join('');
+
+  _renderMktPag(list.length);
+}
+
+function _renderMktPag(rowsCount) {
+  const pag = document.getElementById('mkt-pag');
+  if (!pag) return;
+  const hasNext = rowsCount === _MKT_PER;
+  pag.innerHTML = `
+    <button class="btn btn-sm" ${_mktPage === 1 ? 'disabled' : ''} onclick="_mktPage--;loadMktOpportunities()">← السابق</button>
+    <span style="font-size:12px;color:var(--tx3)">صفحة ${_mktPage}</span>
+    <button class="btn btn-sm" ${!hasNext ? 'disabled' : ''} onclick="_mktPage++;loadMktOpportunities()">التالي →</button>`;
+}
+
+async function viewMktProposals(requestId, placeName) {
+  document.getElementById('mkt-prop-title').textContent = placeName;
+  const body = document.getElementById('mkt-prop-body');
+  body.innerHTML = `<div class="ld" style="padding:30px"><div class="spin"></div>جارٍ التحميل…</div>`;
+  openModal('modal-mkt-proposals');
+
+  const { data: rows, error } = await db.rpc('admin_get_request_proposals', { p_request_id: requestId });
+  if (error) { body.innerHTML = `<div style="color:var(--rd);padding:20px">خطأ: ${escHtml(error.message)}</div>`; return; }
+
+  const list = rows || [];
+  if (!list.length) {
+    body.innerHTML = `<div class="ld" style="padding:30px">لا توجد عروض على هذه الفرصة بعد</div>`;
+    return;
+  }
+
+  const PROP_STATUS = { pending:'⏳ معلّق', accepted:'✅ مقبول', rejected:'❌ مرفوض', withdrawn:'↩️ مسحوب' };
+  body.innerHTML = `
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bd);font-size:12px;color:var(--tx3)">${list.length} عرض مستلم</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="border-bottom:1px solid var(--bd);background:var(--bg3)">
+        <th style="padding:10px 12px;text-align:right;font-weight:600">المنظم</th>
+        <th style="padding:10px 8px;font-weight:600">السعر</th>
+        <th style="padding:10px 8px;font-weight:600">التواريخ المقترحة</th>
+        <th style="padding:10px 8px;font-weight:600">العارضون</th>
+        <th style="padding:10px 8px;font-weight:600">الحالة</th>
+        <th style="padding:10px 8px;font-weight:600">تاريخ التقديم</th>
+      </tr></thead>
+      <tbody>
+        ${list.map(p => `<tr style="border-bottom:1px solid var(--bd);${p.proposal_status==='accepted'?'background:rgba(34,197,94,.06)':''}">
+          <td style="padding:12px">
+            <div style="font-weight:700">${escHtml(p.organizer_name || '—')}</div>
+            <div style="font-size:11px;color:var(--tx3)">${escHtml(p.organizer_phone || '')}</div>
+            ${p.concept_description ? `<div style="font-size:11px;color:var(--tx2);margin-top:5px;line-height:1.5;max-width:260px">${escHtml(p.concept_description)}</div>` : ''}
+            ${p.notes ? `<div style="font-size:10px;color:var(--tx3);margin-top:3px;font-style:italic">${escHtml(p.notes)}</div>` : ''}
+          </td>
+          <td style="padding:12px;color:var(--gr);font-weight:700;font-family:monospace;white-space:nowrap">
+            ${p.proposed_rent != null ? Number(p.proposed_rent).toLocaleString('ar-EG') + ' ج.م.' : '—'}
+          </td>
+          <td style="padding:12px;font-size:12px;white-space:nowrap">
+            ${p.proposed_start || '—'}${p.proposed_end ? '<br>' + p.proposed_end : ''}
+          </td>
+          <td style="padding:12px;text-align:center">${p.proposed_exhibitors_count || '—'}</td>
+          <td style="padding:12px;font-weight:700">${PROP_STATUS[p.proposal_status] || p.proposal_status}</td>
+          <td style="padding:12px;font-size:11px;color:var(--tx3)">${new Date(p.submitted_at).toLocaleDateString('ar-EG')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function adminCancelMktOpportunity(id, placeName) {
+  if (!confirm(`إلغاء فرصة "${placeName}"؟\nسيتم إغلاقها وإشعار المنظمين بالرفض.`)) return;
+  const reason = prompt('سبب الإلغاء (اختياري):', 'مخالفة سياسة المنصة') ?? 'إلغاء إداري';
+  const { error } = await db.rpc('admin_cancel_marketplace_opportunity', {
+    p_request_id: id,
+    p_reason:     reason || 'إلغاء إداري',
+  });
+  if (error) { toast('خطأ: ' + error.message, 'e'); return; }
+  toast('تم إلغاء الفرصة وتسجيله في سجل النشاط', 's');
+  loadMktOpportunities();
+}
+
+async function loadMktLog() {
+  const offset = (_mktLogPage - 1) * 50;
+  const tbody  = document.getElementById('mkt-log-tbody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
+
+  const { data: rows, error } = await db.rpc('admin_get_marketplace_log', {
+    p_request_id: null,
+    p_limit:      50,
+    p_offset:     offset,
+  });
+
+  if (error) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:var(--rd);padding:20px">خطأ: ${escHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  const list = rows || [];
+  if (!list.length) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="ld">لا توجد سجلات بعد — ستُملأ تلقائياً عند أي نشاط في سوق الفرص</td></tr>`;
+    return;
+  }
+
+  if (tbody) tbody.innerHTML = list.map(r => {
+    const actionLbl = _MKT_ACTION_LABELS[r.action] || r.action;
+    const roleLbl   = _MKT_ROLE_LABELS[r.actor_role] || r.actor_role || '—';
+    const changeStr = r.old_status
+      ? `${r.old_status} → ${r.new_status}`
+      : (r.new_status || '—');
+    const dt = new Date(r.created_at).toLocaleString('ar-EG', { dateStyle:'short', timeStyle:'short' });
+    return `<tr style="border-bottom:1px solid var(--bd)">
+      <td style="font-size:11px;color:var(--tx3);white-space:nowrap;padding:10px 8px">${dt}</td>
+      <td style="font-weight:600;padding:10px 8px;white-space:nowrap">${actionLbl}</td>
+      <td style="padding:10px 8px">${escHtml(r.place_name || '—')}</td>
+      <td style="padding:10px 8px;font-size:12px">${escHtml(r.organizer_name || '—')}</td>
+      <td style="font-size:11px;font-family:monospace;color:var(--or);padding:10px 8px">${escHtml(changeStr)}</td>
+      <td style="font-size:11px;padding:10px 8px"><span style="background:var(--bg3);border:1px solid var(--bd);border-radius:4px;padding:2px 7px">${roleLbl}</span></td>
+    </tr>`;
+  }).join('');
+
+  /* Pagination */
+  const logPag = document.getElementById('mkt-log-pag');
+  if (logPag) {
+    const hasNext = list.length === 50;
+    logPag.innerHTML = `
+      <button class="btn btn-sm" ${_mktLogPage===1?'disabled':''} onclick="_mktLogPage--;loadMktLog()">← السابق</button>
+      <span style="font-size:12px;color:var(--tx3)">صفحة ${_mktLogPage}</span>
+      <button class="btn btn-sm" ${!hasNext?'disabled':''} onclick="_mktLogPage++;loadMktLog()">التالي →</button>`;
+  }
+}
+
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));

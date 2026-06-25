@@ -118,6 +118,50 @@
 /* صفحتا التوثيق والبروفايل أصبحتا في ملفات مستقلة:
    verification.html + profile.html */
 
+/* ── قسم الفرص المتاحة للمنظمين ── */
+.bzopp-pub-wrap {
+  max-width: 920px; margin: 20px auto 0; padding: 0 20px;
+}
+.bzopp-pub-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.bzopp-pub-title { font-size: 16px; font-weight: 900; color: var(--dark); }
+.bzopp-pub-sub { font-size: 12px; color: var(--ink3); margin-top: 3px; }
+.bzopp-pub-badge {
+  background: var(--orange); color: #fff;
+  font-size: 12px; font-weight: 800; padding: 3px 12px;
+  border-radius: 20px; white-space: nowrap;
+}
+.bzopp-pub-grid { display: grid; gap: 14px; }
+@media (min-width: 640px) { .bzopp-pub-grid { grid-template-columns: 1fr 1fr; } }
+.bzopp-pub-card {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl); padding: 18px;
+  transition: border-color .18s, box-shadow .18s;
+}
+.bzopp-pub-card:hover { border-color: var(--orange); box-shadow: 0 4px 20px rgba(243,100,24,0.10); }
+.bzopp-pub-card-title { font-size: 15px; font-weight: 800; color: var(--dark); }
+.bzopp-pub-card-city { font-size: 12px; color: var(--ink3); margin-top: 3px; }
+.bzopp-pub-card-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;
+}
+.bzopp-chip {
+  font-size: 11px; color: var(--ink2); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px;
+}
+.bzopp-chip.orange { color: var(--orange); border-color: rgba(243,100,24,.25); background: rgba(243,100,24,.06); }
+.bzopp-pub-card-dates { font-size: 12px; color: var(--ink2); margin-bottom: 12px; }
+.bzopp-card-img {
+  width: 100%; height: 130px; object-fit: cover;
+  border-radius: var(--radius-lg); margin-bottom: 12px;
+}
+.bzopp-already-applied {
+  text-align: center; padding: 10px; background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.25); border-radius: var(--radius-lg);
+  font-size: 12px; color: #16a34a; font-weight: 700;
+}
+
 /* ================================================================
    🎪 قسم المنظم في الكارد — محسّن
    ================================================================ */
@@ -305,6 +349,22 @@
           <span id="bz-postpone-count" style="background:#f97316;color:#fff;font-size:11px;font-weight:900;padding:2px 8px;border-radius:50px;margin-right:auto"></span>
         </div>
         <div id="bz-postpone-items" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ قسم الفرص المتاحة — للمنظمين المسجّلين فقط ═══ -->
+    <div id="bz-opp-section" style="display:none">
+      <div class="bzopp-pub-wrap">
+        <div class="bzopp-pub-header">
+          <div>
+            <div class="bzopp-pub-title">🏪 فرص مساحات متاحة لبازار</div>
+            <div class="bzopp-pub-sub">أصحاب مساحات يبحثون عن منظمي بازارات — راجع التفاصيل وقدّم عرضك</div>
+          </div>
+          <span id="bz-opp-count-badge" class="bzopp-pub-badge" style="display:none"></span>
+        </div>
+        <div id="bz-opp-cards" class="bzopp-pub-grid">
+          <div style="padding:30px;text-align:center;color:var(--ink3)">⏳ جاري التحميل…</div>
+        </div>
       </div>
     </div>
 
@@ -590,6 +650,85 @@
 
 
 
+<!-- ═══ مودال تقديم عرض على فرصة بازار ═══ -->
+<div id="bz-proposal-modal" class="modal-overlay" onclick="if(event.target===this)closeBzProposalModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-header-inner">
+        <div class="modal-icon">📤</div>
+        <div>
+          <div class="modal-title" id="bz-prop-modal-title">قدّم عرضك</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px" id="bz-prop-modal-sub"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeBzProposalModal()">✕</button>
+    </div>
+    <div style="padding:20px 24px 24px">
+      <div id="bz-prop-msg" class="alert-item" style="display:none;margin-bottom:14px"></div>
+      <form id="bz-proposal-form" onsubmit="submitBzProposal(event)">
+        <input type="hidden" id="bz-prop-request-id">
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">رقم هاتفك للتواصل <span style="color:var(--red)">*</span></label>
+          <input type="tel" id="bz-prop-phone" placeholder="01xxxxxxxxx" required
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:14px;font-family:var(--font-body);background:var(--surface);outline:none"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">مفهوم البازار المقترح</label>
+          <textarea id="bz-prop-concept" rows="3" placeholder="نوع البازار، فئة العارضين، الأجواء المتوقعة، الجمهور المستهدف…"
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">الإيجار المقترح (ج.م.)</label>
+            <input type="number" id="bz-prop-rent" placeholder="مثال: 15000" min="0"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">عدد العارضين المتوقع</label>
+            <input type="number" id="bz-prop-exhibitors" placeholder="مثال: 30" min="1"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ البداية المقترح</label>
+            <input type="date" id="bz-prop-start"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ النهاية</label>
+            <input type="date" id="bz-prop-end"
+              style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
+              onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">ملاحظات إضافية</label>
+          <textarea id="bz-prop-notes" rows="2" placeholder="أي تفاصيل إضافية لصاحب المساحة…"
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+
+        <button type="submit" id="bz-prop-btn"
+          style="width:100%;padding:14px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-lg);font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:opacity .15s"
+          onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
+          📤 إرسال العرض
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">
@@ -706,7 +845,37 @@
 </nav>
 
 <script src="/notifications.js?v=20260623" defer></script>
-<script src="app.js?v=202606171812" defer></script>
+<script src="app.js?v=20260625" defer></script>
+
+<!-- ═══ Service Worker + Update Bar ═══ -->
+<div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
+  <span style="font-size:20px">🚀</span>
+  <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+</div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
+    setInterval(() => reg.update(), 30 * 60 * 1000);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) {
+          const b = document.getElementById('sw-update-bar');
+          if (b) b.style.display = 'flex';
+        }
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SW_UPDATED') {
+      const b = document.getElementById('sw-update-bar');
+      if (b) b.style.display = 'flex';
+    }
+  });
+}
+</script>
 </body>
 </html>
 

@@ -1534,8 +1534,133 @@ tr.tr-partial td:nth-child(4) { color: var(--yellow,#e6b800); }
 .contract-card:hover { border-color: rgba(255,107,0,0.20); }
 .contract-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
 .contract-name { font-size: 13px; font-weight: 800; color: var(--text); }
+.ccard-entity { font-size: 11px; font-weight: 500; color: var(--text3); }
 .contract-space { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.ccard-phone { font-size: 11px; color: var(--text2); margin-top: 3px; display: flex; align-items: center; gap: 5px; direction: ltr; text-align: right; }
+.ccard-live-tag { font-size: 9px; background: rgba(34,197,94,0.15); color: var(--green); border-radius: 4px; padding: 1px 5px; font-weight: 700; }
+.ccard-linked-badge { font-size: 9px; color: var(--orange); font-weight: 700; margin-top: 4px; text-align: left; }
 .contract-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text3); font-family: 'Space Mono', monospace; }
+
+/* ── Read-Only Banner ── */
+#readonly-banner {
+  position: sticky; top: 0; z-index: 999;
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(90deg, #7f1d1d, #991b1b);
+  border-bottom: 1px solid rgba(255,100,100,0.35);
+  padding: 10px 20px; font-size: 13px; color: #fecaca;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+}
+#readonly-banner .ro-icon { font-size: 18px; flex-shrink: 0; }
+#readonly-banner .ro-text { flex: 1; line-height: 1.4; }
+#readonly-banner .ro-text strong { color: #fff; }
+#readonly-banner .ro-status { color: #fca5a5; }
+#readonly-banner .ro-cta {
+  white-space: nowrap; background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25); color: #fff;
+  padding: 5px 14px; border-radius: 6px; font-size: 12px;
+  font-weight: 700; text-decoration: none; transition: background .2s;
+}
+#readonly-banner .ro-cta:hover { background: rgba(255,255,255,0.22); }
+
+/* ── Read-Only Toast ── */
+#readonly-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1e1e1e; color: #fca5a5; border: 1px solid rgba(255,100,100,0.35);
+  padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  z-index: 9999; opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s; white-space: nowrap;
+}
+#readonly-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Bazaar Marketplace (B2B) ── */
+.bzopp-tabs { display:flex; gap:6px; margin-bottom:22px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.bzopp-tab {
+  background:none; border:none; border-bottom:2px solid transparent;
+  color:var(--text3); font-size:13px; font-weight:600; cursor:pointer;
+  padding:8px 16px; transition:color .15s, border-color .15s;
+  display:flex; align-items:center; gap:6px;
+}
+.bzopp-tab:hover { color:var(--text); }
+.bzopp-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+.bzopp-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--blue); color:#fff; border-radius:20px;
+  font-size:10px; font-weight:700; padding:1px 7px; min-width:18px;
+}
+.bzopp-intro {
+  display:flex; align-items:flex-start; gap:16px;
+  background:linear-gradient(135deg,rgba(77,159,255,0.10),transparent);
+  border:1px solid rgba(77,159,255,0.20); border-radius:var(--r2);
+  padding:18px 22px; margin-bottom:22px;
+}
+.bzopp-check {
+  display:flex; align-items:center; gap:7px;
+  font-size:13px; color:var(--text2); cursor:pointer;
+  user-select:none;
+}
+.bzopp-check input[type=checkbox] { accent-color:var(--blue); width:15px; height:15px; cursor:pointer; }
+.bzopp-card {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r2);
+  margin-bottom:16px; overflow:hidden; transition:border-color .2s;
+}
+.bzopp-card:hover { border-color:rgba(77,159,255,0.35); }
+.bzopp-card-head {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:16px 18px 12px; border-bottom:1px solid var(--border);
+}
+.bzopp-card-title { font-size:15px; font-weight:700; color:var(--text); }
+.bzopp-card-sub { font-size:11px; color:var(--text3); margin-top:3px; }
+.bzopp-card-meta {
+  padding:10px 18px; display:flex; flex-wrap:wrap; gap:10px;
+  font-size:11px; color:var(--text2); border-bottom:1px solid var(--border);
+}
+.bzopp-card-meta span { display:inline-flex; align-items:center; gap:4px; }
+.bzopp-card-actions { padding:12px 18px; display:flex; gap:8px; flex-wrap:wrap; }
+/* Proposals modal */
+.bzopp-modal-box { max-width:680px; width:95%; padding:0; }
+.bzopp-proposal-card {
+  border:1px solid var(--border); border-radius:var(--r2);
+  margin-bottom:14px; overflow:hidden;
+}
+.bzopp-proposal-head {
+  display:flex; align-items:center; gap:12px;
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  background:var(--bg2);
+}
+.bzopp-proposal-avatar {
+  width:42px; height:42px; border-radius:50%;
+  object-fit:cover; flex-shrink:0; background:var(--bg3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:var(--text3);
+}
+.bzopp-proposal-body { padding:14px 18px; }
+.bzopp-proposal-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:10px; }
+.bzopp-proposal-field { flex:1; min-width:140px; }
+.bzopp-proposal-label { font-size:10px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.bzopp-proposal-val { font-size:13px; color:var(--text); font-weight:600; }
+.bzopp-org-socials { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.bzopp-org-socials a {
+  font-size:11px; color:var(--blue); text-decoration:none;
+  background:var(--blue-bg); padding:3px 10px; border-radius:20px;
+}
+.bzopp-org-socials a:hover { text-decoration:underline; }
+
+/* شريط ترتيب المقترحات */
+.bzopp-sort-bar {
+  display:flex; align-items:center; gap:8px; padding:10px 16px 12px;
+  border-bottom:1px solid var(--border); flex-wrap:wrap;
+}
+.bzopp-sort-btn {
+  border:1px solid var(--border); background:var(--surface);
+  color:var(--text2); border-radius:20px; padding:4px 12px;
+  font-size:11px; font-weight:600; cursor:pointer; transition:all .2s;
+}
+.bzopp-sort-btn:hover { border-color:var(--blue); color:var(--blue); }
+.bzopp-sort-btn.active {
+  background:rgba(77,159,255,.15); border-color:var(--blue);
+  color:var(--blue);
+}
+
 .contract-bar { margin-top: 10px; }
 .contract-bar-top { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-bottom: 5px; }
 
@@ -2223,6 +2348,17 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
      MAIN APP
      ================================================================ -->
 <div id="app">
+
+  <!-- ══ بانر انتهاء الاشتراك (يظهر فقط في وضع القراءة) ══ -->
+  <div id="readonly-banner" style="display:none">
+    <span class="ro-icon">⛔</span>
+    <div class="ro-text">
+      <strong>اشتراكك <span class="ro-status">منتهٍ</span></strong> — أنت في وضع القراءة فقط. بياناتك محفوظة بالكامل.
+    </div>
+    <a href="https://wa.me/201103467711?text=أريد تجديد اشتراكي في مكاني Spot" target="_blank" class="ro-cta">تجديد الاشتراك ←</a>
+  </div>
+  <!-- toast read-only -->
+  <div id="readonly-toast"></div>
 
   <!-- ── Sidebar Overlay (موبايل فقط) ── -->
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -3506,204 +3642,205 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
       </div><!-- end add-space -->
 
       <!-- ============================================================
-           VIEW: ADD BAZAAR
-           🔗 DB-LINK: يرسل البيانات لشيت البازارات للمراجعة قبل النشر
+           VIEW: ADD BAZAAR (Marketplace B2B — Space Owner posts availability)
+           🔗 DB-LINK: space_bazaar_requests + bazaar_opportunity_proposals
            ============================================================ -->
       <div class="view" id="view-add-bazaar">
-        <div class="section-label">🎪 تنظيم بازار جديد</div>
+        <div class="section-label">🎪 إتاحة مساحتك لبازار</div>
 
-        <!-- Intro banner -->
-        <div style="background:linear-gradient(135deg,rgba(77,159,255,0.12),transparent);border:1px solid rgba(77,159,255,0.22);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
-          <div style="font-size:32px">🎪</div>
-          <div>
-            <div style="font-size:14px;font-weight:800;color:var(--blue)">سجّل بيانات بازارك وأرسل طلبك</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px">
-              بعد الإرسال تظهر البيانات في شيت البازارات بحالة <strong>pending</strong>، وفور موافقة فريق مكاني Spot ينشر البازار تلقائياً على المنصة ويبدأ العارضون في الحجز.
-            </div>
-          </div>
+        <!-- Tab bar -->
+        <div class="bzopp-tabs">
+          <button class="bzopp-tab active" id="bzt-new" onclick="switchBzTab('new')">📢 نشر فرصة جديدة</button>
+          <button class="bzopp-tab" id="bzt-my" onclick="switchBzTab('my')">
+            📋 فرصي المنشورة
+            <span id="bz-opps-badge" class="bzopp-badge" style="display:none"></span>
+          </button>
         </div>
 
-        <div class="grid-2">
+        <!-- ══ Panel: New Opportunity ══ -->
+        <div id="bz-panel-new">
 
-          <!-- ═══ LEFT: Main form ═══ -->
-          <div class="pcard">
-            <div class="pcard-head">
-              <div class="pcard-title">📝 بيانات البازار</div>
-              <span class="db-tag">Sheet: Bazaars</span>
-            </div>
-            <div class="pcard-body">
-              <div id="add-bazaar-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
-
-              <form id="add-bazaar-form" onsubmit="submitAddBazaar(event)">
-
-                <!-- Row: name + venueType -->
-                <div class="form-row">
-                  <div class="form-group" style="margin:0">
-                    <label>اسم البازار <span style="color:var(--red)">*</span></label>
-                    <input type="text" id="bz-name" placeholder="مثال: بازار الصيف ٢٠٢٦" required>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>نوع المكان <span style="color:var(--red)">*</span></label>
-                    <select id="bz-venue-type" required>
-                      <option value="">اختر النوع</option>
-                      <option value="mall">🏬 مول تجاري</option>
-                      <option value="club">🏊 نادي رياضي</option>
-                      <option value="school">🏫 مدرسة</option>
-                      <option value="hotel">🏨 فندق</option>
-                      <option value="openair">🌳 هواء طلق / حديقة</option>
-                      <option value="other">📍 مكان آخر</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Row: venueName + area -->
-                <div class="form-row" style="margin-top:12px">
-                  <div class="form-group" style="margin:0">
-                    <label>اسم المكان / الفرع <span style="color:var(--red)">*</span></label>
-                    <input type="text" id="bz-venue-name" placeholder="مثال: مول العرب، نادي الجزيرة" required>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>المنطقة / المدينة <span style="color:var(--red)">*</span></label>
-                    <input type="text" id="bz-area" placeholder="مثال: مدينة نصر، الزمالك" required>
-                  </div>
-                </div>
-
-                <!-- Row: dates -->
-                <div class="form-row" style="margin-top:12px">
-                  <div class="form-group" style="margin:0">
-                    <label>تاريخ البداية <span style="color:var(--red)">*</span></label>
-                    <input type="date" id="bz-start" required oninput="updateBazaarCalc()">
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>تاريخ النهاية <span style="color:var(--red)">*</span></label>
-                    <input type="date" id="bz-end" required oninput="updateBazaarCalc()">
-                  </div>
-                </div>
-
-                <!-- Auto: days count -->
-                <div id="bz-days-display" style="display:none;margin-top:8px;padding:8px 14px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--text2)">
-                  📅 مدة البازار: <strong id="bz-days-val" style="color:var(--orange);font-family:'Space Mono',monospace"></strong> يوم
-                </div>
-
-                <!-- Row: totalSlots + price -->
-                <div class="form-row" style="margin-top:12px">
-                  <div class="form-group" style="margin:0">
-                    <label>عدد الوحدات المتاحة <span style="color:var(--red)">*</span></label>
-                    <input type="number" id="bz-total-slots" placeholder="مثال: 35" min="1" required oninput="updateBazaarCalc()">
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>سعر الوحدة (ج.م.) <span style="color:var(--red)">*</span></label>
-                    <input type="number" id="bz-price" placeholder="مثال: 1200" min="0" required oninput="updateBazaarCalc()">
-                  </div>
-                </div>
-
-                <!-- Auto: expected revenue -->
-                <div id="bz-rev-display" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.18);border-radius:var(--r);font-size:12px;color:var(--green)">
-                  💰 الإيراد المتوقع (إشغال ١٠٠٪): <strong id="bz-rev-val" style="font-family:'Space Mono',monospace;font-size:14px"></strong> ج.م.
-                </div>
-
-                <!-- Row: minSpace + tags -->
-                <div class="form-row" style="margin-top:12px">
-                  <div class="form-group" style="margin:0">
-                    <label>أدنى مساحة وحدة (م²)</label>
-                    <input type="number" id="bz-min-space" placeholder="مثال: 2" min="1" value="2">
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>الأنشطة المناسبة (tags)</label>
-                    <input type="text" id="bz-tags" placeholder="مثال: ملابس، أكل، هاند ميد">
-                  </div>
-                </div>
-
-                <!-- Address -->
-                <div class="form-group" style="margin-top:12px">
-                  <label>العنوان التفصيلي</label>
-                  <input type="text" id="bz-address" placeholder="أقرب علامة مميزة أو وصف موقع البازار">
-                </div>
-
-                <!-- Description -->
-                <div class="form-group">
-                  <label>وصف البازار وتفاصيله <span style="color:var(--red)">*</span></label>
-                  <textarea id="bz-description" rows="4" placeholder="نبذة تظهر للزوار والعارضين: طبيعة البازار، الأجواء، الجمهور المستهدف، الخدمات المتاحة، شروط المشاركة…" required></textarea>
-                </div>
-
-                <button type="submit" id="add-bazaar-btn" class="btn btn-primary" style="width:100%;margin-top:4px;font-size:15px;padding:14px">
-                  🚀 إرسال طلب تنظيم البازار
-                </button>
-              </form>
+          <div class="bzopp-intro">
+            <div style="font-size:36px;line-height:1">🏪</div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--blue)">أعلن عن مساحتك لمنظمي البازارات</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px">
+                أنشر تفاصيل المكان المتاح وسيتلقى جميع منظمي البازارات المسجلين إشعاراً فورياً — يقدّمون عروضهم وأنت تختار الأنسب.
+              </div>
             </div>
           </div>
 
-          <!-- ═══ RIGHT column ═══ -->
-          <div>
+          <div class="grid-2">
 
-            <!-- Image upload -->
-            <div class="pcard" style="margin-bottom:20px">
+            <!-- ═══ LEFT: Form ═══ -->
+            <div class="pcard">
               <div class="pcard-head">
-                <div>
-                  <div class="pcard-title">📷 صورة البازار</div>
-                  <div class="pcard-sub">صورة الغلاف — تُرفع على Google Drive</div>
-                </div>
-                <span id="bz-img-status" style="font-size:11px;color:var(--text3);white-space:nowrap">لم تُرفع بعد</span>
+                <div class="pcard-title">📝 تفاصيل المكان المتاح</div>
+                <span class="db-tag">Supabase · فوري</span>
               </div>
               <div class="pcard-body">
-                <div id="bz-upload-zone"
-                     style="border:2px dashed rgba(77,159,255,0.35);border-radius:var(--r);padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--blue-bg)"
-                     onclick="document.getElementById('bz-img-input').click()"
-                     onmouseenter="this.style.borderColor='var(--blue)';this.style.background='rgba(77,159,255,0.14)'"
-                     onmouseleave="this.style.borderColor='rgba(77,159,255,0.35)';this.style.background='var(--blue-bg)'">
-                  <div id="bz-upload-ico" style="font-size:36px;margin-bottom:8px">📤</div>
-                  <div style="font-size:13px;color:var(--blue);font-weight:700">اضغط لاختيار صورة الغلاف</div>
-                  <div style="font-size:11px;color:var(--text3);margin-top:5px">JPG · PNG · WEBP — حتى 5 ميجا</div>
-                </div>
-                <input type="file" id="bz-img-input" accept="image/jpeg,image/png,image/webp,image/jpg" style="display:none" onchange="handleBazaarImageUpload(this)">
-                <div id="bz-img-preview" style="margin-top:10px"></div>
-                <div style="margin-top:10px;background:var(--yellow-bg);border:1px solid rgba(255,184,0,0.22);border-radius:var(--r);padding:10px 12px;font-size:11px;color:var(--yellow);line-height:1.7">
-                  📌 الصورة تُضغَط تلقائياً وتُرسَل مع الطلب لتُحفظ في Google Drive.
-                </div>
+                <div id="bzopp-msg" class="alert-item" style="display:none;margin-bottom:16px"></div>
+
+                <form id="bzopp-form" onsubmit="submitBazaarOpportunity(event)">
+
+                  <!-- place_name + venue_type -->
+                  <div class="form-row">
+                    <div class="form-group" style="margin:0">
+                      <label>اسم المكان <span style="color:var(--red)">*</span></label>
+                      <input type="text" id="bzopp-place" placeholder="مثال: نادي الجزيرة، مول العرب" required>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label>نوع المكان <span style="color:var(--red)">*</span></label>
+                      <select id="bzopp-type" required>
+                        <option value="">اختر النوع</option>
+                        <option value="mall">🏬 مول تجاري</option>
+                        <option value="club">🏊 نادي رياضي / اجتماعي</option>
+                        <option value="compound">🏘️ كومباوند سكني</option>
+                        <option value="company">🏢 مقر شركة / مبنى تجاري</option>
+                        <option value="outdoor">🌳 فضاء خارجي / حديقة</option>
+                        <option value="other">📍 مكان آخر</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- city + area -->
+                  <div class="form-row" style="margin-top:12px">
+                    <div class="form-group" style="margin:0">
+                      <label>المدينة / المنطقة <span style="color:var(--red)">*</span></label>
+                      <input type="text" id="bzopp-city" placeholder="مثال: القاهرة · الزمالك" required>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label>المساحة المتاحة (م²) <span style="color:var(--red)">*</span></label>
+                      <input type="number" id="bzopp-area" placeholder="مثال: 500" min="1" required>
+                    </div>
+                  </div>
+
+                  <!-- checkboxes -->
+                  <div style="margin-top:14px;display:flex;gap:20px;flex-wrap:wrap">
+                    <label class="bzopp-check"><input type="checkbox" id="bzopp-indoor" checked> 🏠 مغلق / مكيّف</label>
+                    <label class="bzopp-check"><input type="checkbox" id="bzopp-electric"> ⚡ يوجد كهرباء</label>
+                    <label class="bzopp-check"><input type="checkbox" id="bzopp-setup"> 🪑 يوجد تجهيزات</label>
+                  </div>
+
+                  <!-- expected_footfall -->
+                  <div class="form-group" style="margin-top:14px">
+                    <label>الإقبال المتوقع على المكان</label>
+                    <select id="bzopp-footfall">
+                      <option value="">غير محدد</option>
+                      <option value="low">🚶 منخفض (أقل من 500 زائر/يوم)</option>
+                      <option value="medium">🚶🚶 متوسط (500 – 2000 زائر/يوم)</option>
+                      <option value="high">🚶🚶🚶 عالٍ (أكثر من 2000 زائر/يوم)</option>
+                    </select>
+                  </div>
+
+                  <!-- dates -->
+                  <div class="form-row" style="margin-top:12px">
+                    <div class="form-group" style="margin:0">
+                      <label>تاريخ البداية <span style="color:var(--red)">*</span></label>
+                      <input type="date" id="bzopp-start" required oninput="updateBzOppDays()">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label>تاريخ النهاية <span style="color:var(--red)">*</span></label>
+                      <input type="date" id="bzopp-end" required oninput="updateBzOppDays()">
+                    </div>
+                  </div>
+
+                  <!-- days display -->
+                  <div id="bzopp-days-display" style="display:none;margin-top:8px;padding:8px 14px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--text2)">
+                    📅 مدة الإتاحة: <strong id="bzopp-days-val" style="color:var(--orange);font-family:'Space Mono',monospace"></strong> يوم
+                  </div>
+
+                  <!-- image URL -->
+                  <div class="form-group" style="margin-top:14px">
+                    <label>رابط صورة المكان (اختياري)</label>
+                    <input type="url" id="bzopp-image" placeholder="https:// — رابط صورة من Drive أو Dropbox أو أي رابط مباشر">
+                    <div style="font-size:11px;color:var(--text3);margin-top:4px">الصورة تُعرض للمنظمين مع تفاصيل الفرصة لجذب عروض أكثر</div>
+                  </div>
+
+                  <!-- notes -->
+                  <div class="form-group" style="margin-top:12px">
+                    <label>ملاحظات إضافية للمنظمين</label>
+                    <textarea id="bzopp-notes" rows="3" placeholder="شروط خاصة، ساعات الفتح، تفاصيل الوصول، أي معلومات مفيدة للمنظم…"></textarea>
+                  </div>
+
+                  <!-- مؤشر المسودة -->
+                  <div id="bzopp-draft-badge" style="display:none;align-items:center;justify-content:space-between;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--yellow);font-weight:600"></div>
+
+                  <button type="submit" id="bzopp-btn" class="btn btn-primary" style="width:100%;margin-top:8px;font-size:15px;padding:14px">
+                    📢 نشر الفرصة وإشعار المنظمين فوراً
+                  </button>
+                </form>
               </div>
             </div>
 
-            <!-- Tips card -->
-            <div class="pcard" style="margin-bottom:20px">
-              <div class="pcard-head"><div class="pcard-title">💡 نصائح للموافقة الأسرع</div></div>
-              <div class="pcard-body" style="padding:14px">
-                <div class="insight-card" style="margin-bottom:10px">
-                  <div class="insight-ico">📍</div>
-                  <div><div class="insight-title">حدّد المكان بدقة</div><div class="insight-body">اسم المكان + المنطقة + العنوان يساعد العارضين على الوصول بسهولة.</div></div>
-                </div>
-                <div class="insight-card" style="margin-bottom:10px">
-                  <div class="insight-ico">🎟️</div>
-                  <div><div class="insight-title">وضّح الأسعار والوحدات</div><div class="insight-body">عدد الأماكن وسعر كل وحدة يسرّع الحجز فور نشر البازار.</div></div>
-                </div>
-                <div class="insight-card">
-                  <div class="insight-ico">📸</div>
-                  <div><div class="insight-title">أرفق صورة واضحة</div><div class="insight-body">صورة أفقية للمكان تزيد معدل تسجيل العارضين بشكل ملحوظ.</div></div>
-                </div>
-              </div>
-            </div>
+            <!-- ═══ RIGHT: info ═══ -->
+            <div>
 
-            <!-- WhatsApp support -->
-            <div class="pcard" style="border-color:rgba(37,211,102,0.30);background:linear-gradient(135deg,rgba(37,211,102,0.07),transparent)">
-              <div class="pcard-head">
-                <div class="pcard-title" style="color:#128C7E">💬 تواصل مع الدعم</div>
-              </div>
-              <div class="pcard-body" style="padding:18px;text-align:center">
-                <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
-                  عندك سؤال أو محتاج مساعدة في تسجيل البازار؟<br>تواصل مع فريق مكاني Spot على واتساب مباشرةً.
+              <!-- How it works -->
+              <div class="pcard" style="margin-bottom:20px">
+                <div class="pcard-head"><div class="pcard-title">💡 كيف تعمل العملية؟</div></div>
+                <div class="pcard-body" style="padding:14px">
+                  <div class="insight-card" style="margin-bottom:12px">
+                    <div class="insight-ico">📢</div>
+                    <div><div class="insight-title">تنشر الفرصة</div><div class="insight-body">بمجرد الضغط يُخطَر كل منظمي البازارات المسجلين فوراً بالإشعارات.</div></div>
+                  </div>
+                  <div class="insight-card" style="margin-bottom:12px">
+                    <div class="insight-ico">📬</div>
+                    <div><div class="insight-title">يتلقى المنظمون</div><div class="insight-body">كل مهتم يُقدّم مقترحه: مفهوم البازار، السعر المقترح، ورقم التواصل.</div></div>
+                  </div>
+                  <div class="insight-card" style="margin-bottom:12px">
+                    <div class="insight-ico">👁️</div>
+                    <div><div class="insight-title">تراجع العروض</div><div class="insight-body">من "فرصي المنشورة" تشوف كل العروض مع بروفايل المنظم وعدد بازاراته السابقة.</div></div>
+                  </div>
+                  <div class="insight-card">
+                    <div class="insight-ico">📞</div>
+                    <div><div class="insight-title">تتواصل مباشرة</div><div class="insight-body">تختار الأنسب وتتصل به مباشرةً — التنسيق يتم خارج المنصة بالكامل.</div></div>
+                  </div>
                 </div>
-                <a href="https://wa.me/201103467711" target="_blank" rel="noopener"
-                   style="display:inline-flex;align-items:center;gap:10px;background:#25D366;color:#fff;border-radius:30px;padding:13px 28px;text-decoration:none;font-weight:800;font-size:15px;box-shadow:0 4px 18px rgba(37,211,102,0.30);transition:opacity 0.15s;letter-spacing:0.5px"
-                   onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">
-                  <svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  011 03467711
-                </a>
-                <div style="font-size:11px;color:var(--text3);margin-top:10px">متاح من ٩ ص حتى ٩ م يومياً</div>
               </div>
-            </div>
 
-          </div><!-- end right column -->
+              <!-- Tips -->
+              <div class="pcard" style="border-color:rgba(255,184,0,0.25);background:linear-gradient(135deg,rgba(255,184,0,0.07),transparent)">
+                <div class="pcard-head"><div class="pcard-title" style="color:var(--yellow)">📌 نصائح سريعة</div></div>
+                <div class="pcard-body" style="padding:12px 14px;font-size:12px;color:var(--text2);line-height:2.2">
+                  <div>• حدّد المساحة والتواريخ بدقة لجذب العروض المناسبة</div>
+                  <div>• أضف رابط صورة للمكان — يضاعف عدد العروض المُستلمة</div>
+                  <div>• الفرصة تُغلق تلقائياً عند انتهاء تاريخ الإتاحة</div>
+                  <div>• يمكنك إغلاق الفرصة يدوياً من "فرصي المنشورة" في أي وقت</div>
+                </div>
+              </div>
+
+            </div><!-- end right -->
+          </div>
+        </div><!-- end bz-panel-new -->
+
+        <!-- ══ Panel: My Opportunities ══ -->
+        <div id="bz-panel-my" style="display:none">
+          <div id="bzopp-list">
+            <div style="text-align:center;padding:60px 20px;color:var(--text3)">
+              <div style="font-size:40px;margin-bottom:12px">🎪</div>
+              <div>لا توجد فرص منشورة بعد</div>
+            </div>
+          </div>
         </div>
-      </div><!-- end add-bazaar -->
+
+      </div><!-- end view-add-bazaar -->
+
+      <!-- ══ Proposals Modal ══ -->
+      <div id="bzopp-proposals-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeBzProposalsModal()">
+        <div class="modal-box bzopp-modal-box">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title" id="bzopp-modal-title">عروض المنظمين</div>
+              <div class="modal-sub" id="bzopp-modal-sub" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+            </div>
+            <button class="modal-close" onclick="closeBzProposalsModal()">✕</button>
+          </div>
+          <div id="bzopp-proposals-body" style="padding:0 20px 20px;max-height:65vh;overflow-y:auto">
+            <div style="text-align:center;padding:40px;color:var(--text3)">⏳ جاري التحميل…</div>
+          </div>
+        </div>
+      </div>
 
       <!-- ============================================================
            VIEW: ALERTS
@@ -3982,12 +4119,12 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=202606171812"></script>
+<script src="../media-handler.js?v=20260625"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
 <script src="/notifications.js?v=20260623"></script>
-<script src="app.js?v=202606171812"></script>
+<script src="app.js?v=20260625"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
