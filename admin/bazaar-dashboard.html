@@ -2196,6 +2196,17 @@ async function saveBazaarEdit(){
     toast('خطأ في الحفظ: ' + error.message, 'e');
     return;
   }
+
+  /* تحديث أسعار الوحدات العادية (غير المميزة) لتتطابق مع السعر الجديد */
+  await db.from('bazaar_slots')
+    .update({ price: bz.price })
+    .eq('bazaar_id', bz._dbId)
+    .eq('is_featured', false);
+
+  /* تحديث الأسعار في الذاكرة المحلية لتعكس التغيير فوراً */
+  SLOTS.filter(s => s.bazaarId === bz.id && !s.is_featured)
+       .forEach(s => { s.price = bz.price; });
+
   document.getElementById('mebz-status').textContent='✅ تم الحفظ في Supabase';
   document.getElementById('mebz-status').style.color='var(--gr)';
   renderBazaars(); renderOv(); renderFinancial();

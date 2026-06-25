@@ -2251,9 +2251,10 @@
             تسجيل الدخول باستخدام Google
           </button>
           <div class="auth-or">أو بالبريد الإلكتروني</div>
+          <form id="login-form" onsubmit="doEmailLogin(); return false;" autocomplete="on" novalidate>
           <div class="afg">
             <label>البريد الإلكتروني</label>
-            <input type="email" id="li-email" placeholder="example@email.com" dir="ltr">
+            <input type="email" id="li-email" placeholder="example@email.com" dir="ltr" autocomplete="email">
           </div>
           <div class="afg">
             <label>كلمة المرور</label>
@@ -2264,10 +2265,11 @@
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg></span>
-              <input type="password" id="li-pass" placeholder="••••••••" dir="ltr">
+              <input type="password" id="li-pass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
             </div>
           </div>
-          <button class="btn-auth-submit" id="btn-login-submit" onclick="doEmailLogin()">تسجيل الدخول ←</button>
+          <button type="submit" class="btn-auth-submit" id="btn-login-submit">تسجيل الدخول ←</button>
+          </form>
           <div class="auth-switch-link" style="margin-top:18px">
             ليس لديك حساب؟ <a onclick="showPage('signup')">أنشئ حساب مجاني</a>
           </div>

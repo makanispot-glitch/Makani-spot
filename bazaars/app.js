@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   // قسم الفرص المتاحة — للمنظمين فقط
   if (currentUser) bzCheckOrganizerSection();
 
+  // شريط CTA — لأصحاب المساحات فقط
+  if (currentUser) bzCheckOwnerCta();
+
   // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
   if (currentUser) bzLoadPostponeAlerts();
 
@@ -159,7 +162,7 @@ function bzRenderNavUser() {
             <div class="nav-dropdown-header">
               <div class="nav-dropdown-name">${name || 'حسابي'}</div>
               <div class="nav-dropdown-email">${email}</div>
-              <div class="nav-dropdown-role">مستخدم البازارات</div>
+              <div class="nav-dropdown-role">${currentProfile?.is_verified ? 'منظم بازارات موثّق ✓' : _bzIsOrganizer() ? 'منظم بازارات' : 'مستخدم البازارات'}</div>
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
@@ -714,8 +717,8 @@ async function searchOrganizers(q) {
     try {
       const { data, error } = await sbClient
         .from('organizer_profiles')
-        .select('user_id, display_name, logo, whatsapp, bio')
-        .ilike('display_name', `%${q.trim()}%`)
+        .select('user_id, full_name, logo, whatsapp, bio')
+        .ilike('full_name', `%${q.trim()}%`)
         .eq('is_verified', true)
         .limit(8);
 
@@ -726,7 +729,7 @@ async function searchOrganizers(q) {
       }
 
       results.innerHTML = data.map(org => {
-        const name    = org.display_name || 'منظم';
+        const name    = org.full_name || 'منظم';
         const initial = (name[0] || '?').toUpperCase();
         const logo    = org.logo ? `<img src="${org.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : initial;
         // عدد بازارات هذا المنظم من البيانات المحملة
@@ -749,7 +752,8 @@ async function searchOrganizers(q) {
           </div>`;
       }).join('');
     } catch(e) {
-      results.innerHTML = `<div style="padding:10px;font-size:13px;color:var(--ink3)">حدث خطأ: ${e.message}</div>`;
+      console.warn('searchOrganizers error:', e.message);
+      results.innerHTML = '<div style="padding:12px;font-size:13px;color:var(--ink3);text-align:center">تعذّر البحث، حاول مرة أخرى</div>';
     }
   }, 320);
 }
@@ -1360,7 +1364,7 @@ async function _loadOrganizerCard(userId, fallbackName) {
   try {
     const [orgRes, reviewsRes, bazaarsRes] = await Promise.all([
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
-      sbClient.from('organizer_reviews').select('rating, comment, reviewer_name, created_at').eq('organizer_id', userId).order('created_at', { ascending: false }).limit(3),
+      sbClient.from('organizer_reviews').select('rating, comment, created_at').eq('organizer_id', userId).order('created_at', { ascending: false }).limit(3),
       sbClient.from('bazaars').select('id, status').eq('organizer_id', userId).eq('is_deleted', false),
     ]);
 
@@ -2329,6 +2333,14 @@ async function bzCheckOrganizerSection() {
   await bzLoadOpportunities();
 }
 
+/* عرض شريط CTA لأصحاب المساحات */
+function bzCheckOwnerCta() {
+  if (!currentUser || !currentProfile) return;
+  if (currentProfile.role !== 'owner') return;
+  const cta = document.getElementById('bz-owner-cta');
+  if (cta) cta.style.display = '';
+}
+
 /* تحميل الفرص المتاحة عبر RPC */
 async function bzLoadOpportunities() {
   if (!sbClient || !currentUser) return;
@@ -2365,28 +2377,31 @@ function bzRenderOpportunityCards(opps) {
     const imgHtml = opp.image_url
       ? `<img src="${_bzEsc(opp.image_url)}" class="bzopp-card-img" alt="" loading="lazy" onerror="this.style.display='none'">`
       : '';
+    const typeLabel = _BZ_VENUE_MAP[opp.venue_type] || opp.venue_type || '';
+    const cityLine  = [opp.city ? _bzEsc(opp.city) : '', typeLabel].filter(Boolean).join(' · ');
     const appliedHtml = opp.already_applied
       ? `<div class="bzopp-already-applied">✅ قدّمت عرضاً على هذه الفرصة</div>`
-      : `<button onclick="openBzProposalModal('${opp.id}','${_bzEsc(opp.place_name)}')"
-           style="width:100%;padding:11px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-lg);font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:opacity .15s"
-           onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+      : `<button class="bzopp-apply-btn" onclick="openBzProposalModal('${opp.id}','${_bzEsc(opp.place_name)}')">
            📤 قدّم عرضك
          </button>`;
 
     return `
       <div class="bzopp-pub-card">
         ${imgHtml}
+        ${typeLabel ? `<span class="bzopp-type-tag">${typeLabel}</span>` : ''}
         <div class="bzopp-pub-card-title">${_bzEsc(opp.place_name)}</div>
-        <div class="bzopp-pub-card-city">${opp.city ? _bzEsc(opp.city) : ''}${opp.venue_type ? ' · ' + (_BZ_VENUE_MAP[opp.venue_type] || opp.venue_type) : ''}</div>
+        ${cityLine && !typeLabel ? `<div class="bzopp-pub-card-city">${cityLine}</div>` : ''}
+        ${opp.city && typeLabel ? `<div class="bzopp-pub-card-city">${_bzEsc(opp.city)}</div>` : ''}
         <div class="bzopp-pub-card-chips">
           ${opp.available_area ? `<span class="bzopp-chip orange">📐 ${opp.available_area} م²</span>` : ''}
-          <span class="bzopp-chip">${opp.is_indoor ? '🏠 مغلق/مكيّف' : '🌳 فضاء خارجي'}</span>
+          <span class="bzopp-chip">${opp.is_indoor ? '🏠 مغلق' : '🌳 خارجي'}</span>
           ${opp.has_electricity ? '<span class="bzopp-chip">⚡ كهرباء</span>' : ''}
           ${opp.has_setup ? '<span class="bzopp-chip">🪑 تجهيزات</span>' : ''}
-          ${opp.expected_footfall ? `<span class="bzopp-chip">${_BZ_FOOT_MAP[opp.expected_footfall] || opp.expected_footfall}</span>` : ''}
+          ${opp.expected_footfall ? `<span class="bzopp-chip">${_BZ_FOOT_MAP[opp.expected_footfall] || ''}</span>` : ''}
         </div>
-        <div class="bzopp-pub-card-dates">📅 ${opp.available_start} ← ${opp.available_end} · ${opp.days_count} يوم</div>
-        ${opp.notes ? `<div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.6">${_bzEsc(opp.notes)}</div>` : ''}
+        <div class="bzopp-pub-card-dates">📅 ${opp.available_start} — ${opp.available_end} · ${opp.days_count || '?'} يوم</div>
+        ${opp.notes ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">${_bzEsc(opp.notes)}</div>` : ''}
+        <div class="bzopp-pub-card-spacer"></div>
         ${appliedHtml}
       </div>`;
   }).join('');

@@ -1,0 +1,26 @@
+{
+  "name": "makani-spot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/makanispot-glitch/Makani-spot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/makanispot-glitch/Makani-spot/issues"
+  },
+  "homepage": "https://github.com/makanispot-glitch/Makani-spot#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
