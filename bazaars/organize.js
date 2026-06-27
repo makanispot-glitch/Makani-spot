@@ -599,6 +599,7 @@ async function orgSubmit() {
       </div>`;
     btn.style.display = 'none';
     document.querySelector('#org-panel-3 .org-nav-back').style.display = 'none';
+    document.getElementById('org-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   } catch (err) {
     document.getElementById('org-result').innerHTML = `

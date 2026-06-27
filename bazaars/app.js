@@ -313,8 +313,8 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price')
-      .eq('status', 'published')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,event_links')
+      .in('status', ['published', 'live'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
       .order('date_start', { ascending: true });
@@ -1113,6 +1113,43 @@ function _renderBazaarInfo(b) {
         </div>
       </div>` : ''}
 
+      ${(b.status === 'completed' || b.status === 'live') ? (() => {
+        const links = Array.isArray(b.event_links) ? b.event_links.filter(u => u) : [];
+        if (links.length > 0) {
+          const icons = { 'facebook.com':'📘','fb.com':'📘','instagram.com':'📸','tiktok.com':'🎵','youtube.com':'▶️','youtu.be':'▶️','x.com':'🐦','twitter.com':'🐦','snapchat.com':'👻','linkedin.com':'💼' };
+          const getIcon = u => { try { const d = new URL(u).hostname.replace('www.',''); return Object.entries(icons).find(([k]) => d.includes(k))?.[1] || '🔗'; } catch { return '🔗'; } };
+          return `<div class="sd-info-card sd-info-full" style="border-color:#86efac;background:#f0fdf4">
+            <div class="sd-info-title" style="color:#15803d;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+              <span>🟢 أضاف المنظم روابط لهذا الحدث</span>
+              <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="هذه الروابط يضيفها المنظم مباشرة، والمنصة لا تتحقق منها تلقائياً">
+                ℹ️ تُضاف من المنظم مباشرة
+              </span>
+            </div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+              ${links.map(u => `<a href="${u}" target="_blank" rel="noopener noreferrer" dir="ltr"
+                style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none;word-break:break-all">
+                <span>${getIcon(u)}</span><span>${u}</span>
+              </a>`).join('')}
+            </div>
+          </div>`;
+        }
+        return b.status === 'completed'
+          ? `<div class="sd-info-card sd-info-full" style="border-color:#fde047;background:#fefce8">
+              <div class="sd-info-title" style="color:#92400e">🟡 لم يُضف المنظم روابط لهذا الحدث</div>
+              <div style="font-size:12px;color:#a16207;margin-top:6px">لم يُضف المنظّم روابط للحدث حتى الآن.</div>
+            </div>`
+          : '';
+      })() : ''}
+
+    </div>
+
+    <!-- زر الإبلاغ -->
+    <div style="text-align:center;margin-top:10px">
+      <button onclick="openReportAbuseDialog('${b.id}')"
+        style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--ink3);font-family:inherit;padding:4px 8px;border-radius:6px;transition:color .18s"
+        onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--ink3)'">
+        🚩 الإبلاغ عن خطأ أو محتوى مضلل
+      </button>
     </div>
 
     <!-- ═══ مربع المنظّم ═══ -->
@@ -1382,18 +1419,31 @@ async function _loadOrganizerCard(userId, fallbackName) {
     const [orgRes, reviewsRes, bazaarsRes] = await Promise.all([
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('rating, comment, created_at').eq('organizer_id', userId).order('created_at', { ascending: false }).limit(3),
-      sbClient.from('bazaars').select('id, status').eq('organizer_id', userId).eq('is_deleted', false),
+      sbClient.from('bazaars').select('id, status, event_links').eq('organizer_id', userId).eq('is_deleted', false),
     ]);
 
     const org     = orgRes.data;
     const reviews = reviewsRes.data || [];
     const bazaars = bazaarsRes.data || [];
 
+    /* إحصائيات الحجوزات المكتملة */
+    let completedBookings = 0;
+    if (bazaars.length > 0) {
+      const bzIds = bazaars.map(b => b.id);
+      try {
+        const { count } = await sbClient.from('bazaar_bookings')
+          .select('id', { count: 'exact', head: true })
+          .in('bazaar_id', bzIds)
+          .eq('status', 'confirmed');
+        completedBookings = count || 0;
+      } catch (_) { /* غير حرج */ }
+    }
+
     if (!org) { _renderOrganizerCardBasic(fallbackName, false); return; }
 
     /* خزّن في الـ cache وارسم */
-    _orgCardCache.set(userId, { data: { org, reviews, bazaars }, ts: Date.now() });
-    _renderOrganizerCardData(el, { org, reviews, bazaars }, userId, fallbackName);
+    _orgCardCache.set(userId, { data: { org, reviews, bazaars, completedBookings }, ts: Date.now() });
+    _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings }, userId, fallbackName);
 
   } catch (err) {
     console.warn('تعذّر تحميل بيانات المنظّم:', err.message);
@@ -1401,12 +1451,18 @@ async function _loadOrganizerCard(userId, fallbackName) {
   }
 }
 
-function _renderOrganizerCardData(el, { org, reviews, bazaars }, userId, fallbackName) {
+function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings = 0 }, userId, fallbackName) {
   const name = org?.name || fallbackName || 'منظّم البازار';
   if (!org) { _renderOrganizerCardBasic(fallbackName, false); return; }
 
   const totalBazaars  = bazaars.length;
-  const activeBazaars = bazaars.filter(bz => ['published','approved','active'].includes(String(bz.status||'').toLowerCase())).length;
+  const activeBazaars = bazaars.filter(bz => ['published','approved','active','live'].includes(String(bz.status||'').toLowerCase())).length;
+  const completedBazaars = bazaars.filter(bz => bz.status === 'completed');
+  const docsCount  = completedBazaars.filter(bz => bz.event_links && bz.event_links.length > 0).length;
+  const nodocsCount = completedBazaars.length - docsCount;
+  const postponedCount = bazaars.filter(bz => bz.status === 'postponed').length;
+  const cancelledCount = bazaars.filter(bz => bz.status === 'cancelled').length;
+  const hasReputation  = completedBazaars.length > 0;
   const avgRating     = reviews.length
     ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1)
     : null;
@@ -1492,6 +1548,18 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars }, userId, fallbac
           <div style="font-size:10px;color:var(--ink3)">تاريخ الانضمام</div>
         </div>` : ''}
       </div>
+      ${hasReputation ? `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px">سجل الأداء</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          ${completedBazaars.length > 0 ? `<span style="font-size:12px;font-weight:700;color:#1d4ed8">📅 ${completedBazaars.length} بازار تمّ</span>` : ''}
+          ${completedBookings > 0 ? `<span style="font-size:12px;font-weight:700;color:#047857">✅ ${completedBookings} حجز مكتمل</span>` : ''}
+          ${docsCount > 0   ? `<span style="font-size:12px;font-weight:700;color:#059669">🔗 ${docsCount} أضاف روابط</span>` : ''}
+          ${nodocsCount > 0 ? `<span style="font-size:12px;color:#92400e">🟡 ${nodocsCount} بدون روابط</span>` : ''}
+          ${postponedCount > 0 ? `<span style="font-size:12px;color:var(--ink3)">⏸ ${postponedCount} مؤجّل</span>` : ''}
+          ${cancelledCount > 0 ? `<span style="font-size:12px;color:#dc2626">❌ ${cancelledCount} ملغي</span>` : ''}
+        </div>
+      </div>` : ''}
       ${reviewsHtml}
     </div>
   </div>`;
@@ -1740,11 +1808,11 @@ async function submitBazaarBooking() {
   const notes    = document.getElementById('bzb-notes')?.value.trim();
 
   const errorEl = document.getElementById('bzb-error');
-  const showBzbError = msg => {
+  const showBzbError = (msg, focusEl) => {
     if (!errorEl) return;
     errorEl.textContent   = '⚠ ' + msg;
     errorEl.style.display = 'block';
-    errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    (focusEl || errorEl).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
   if (errorEl) errorEl.style.display = 'none';
 
@@ -1752,7 +1820,7 @@ async function submitBazaarBooking() {
   if (!phone || phone.replace(/\D/g, '').length < 10) {
     showBzbError('ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
-  if (!activity) { showBzbError('من فضلك اختر نوع النشاط'); return; }
+  if (!activity) { showBzbError('من فضلك اختر نوع النشاط', document.getElementById('bzb-activity')); return; }
   if (!business) { showBzbError('من فضلك اكتب اسم نشاطك أو مشروعك'); return; }
   if (!sbClient) {
     showBzbError('في مشكلة في الاتصال — حاول تاني'); return;
@@ -2472,6 +2540,98 @@ async function submitBzProposal(e) {
 
   btn.disabled    = false;
   btn.textContent = '📤 إرسال العرض';
+}
+
+/* ══════════════════════════════════════════════
+   🚩 نظام الإبلاغ عن إساءة / محتوى مضلل
+══════════════════════════════════════════════ */
+function openReportAbuseDialog(bazaarId) {
+  const existing = document.getElementById('abuse-report-modal');
+  if (existing) existing.remove();
+
+  const REASONS = [
+    { val: 'fake_event',       lbl: '🎭 حدث وهمي أو لم يحدث فعلاً' },
+    { val: 'misleading_info',  lbl: '📋 معلومات مضللة أو غير دقيقة' },
+    { val: 'fraud',            lbl: '💸 محاولة احتيال أو نصب' },
+    { val: 'inappropriate',    lbl: '🚫 محتوى غير لائق' },
+    { val: 'other',            lbl: '📝 سبب آخر' },
+  ];
+
+  const modal = document.createElement('div');
+  modal.id = 'abuse-report-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--surface,#fff);border-radius:20px;border:1px solid var(--border,#e5e7eb);max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden">
+      <div style="padding:16px 22px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:16px;font-weight:900;color:var(--dark,#111);font-family:'Cairo',sans-serif">🚩 الإبلاغ عن مشكلة</div>
+        <button onclick="document.getElementById('abuse-report-modal').remove()" style="background:none;border:none;cursor:pointer;font-size:24px;color:var(--ink3,#9ca3af);font-family:'Cairo',sans-serif;line-height:1">×</button>
+      </div>
+      <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12.5px;color:var(--ink3,#6b7280);line-height:1.7;background:var(--surface2,#f9f9f7);border-radius:10px;padding:10px 12px">
+          سيُراجَع التقرير من فريقنا. بعد <strong>3 تقارير مختلفة</strong> يُوضع البازار قيد المراجعة تلقائياً.
+        </div>
+        <div id="abuse-reasons" style="display:flex;flex-direction:column;gap:6px">
+          ${REASONS.map(r => `
+            <label id="ar-lbl-${r.val}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1.5px solid var(--border,#e5e7eb);border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Cairo',sans-serif;transition:border-color .15s"
+              onclick="document.querySelectorAll('#abuse-reasons label').forEach(l=>l.style.borderColor='var(--border,#e5e7eb)');this.style.borderColor='#F47432';document.getElementById('ar-inp-${r.val}').checked=true">
+              <input type="radio" id="ar-inp-${r.val}" name="abuse-reason" value="${r.val}" style="display:none"> ${r.lbl}
+            </label>`).join('')}
+        </div>
+        <textarea id="abuse-note" rows="2" placeholder="ملاحظة إضافية (اختياري)…" maxlength="300"
+          style="padding:9px 12px;border:1.5px solid var(--border,#e5e7eb);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;resize:vertical;width:100%;box-sizing:border-box;background:var(--surface2,#f9f9f7)"></textarea>
+        <div id="abuse-msg" style="display:none;font-size:12.5px;padding:9px 12px;border-radius:10px;font-family:'Cairo',sans-serif"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
+          <button onclick="document.getElementById('abuse-report-modal').remove()"
+            style="padding:9px 20px;border-radius:50px;background:var(--surface2,#f9f9f7);border:1.5px solid var(--border,#e5e7eb);font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;font-weight:700">إلغاء</button>
+          <button onclick="submitAbuseReport('${bazaarId}')" id="abuse-submit-btn"
+            style="padding:9px 24px;border-radius:50px;background:linear-gradient(180deg,#F47432,#F36418);color:#fff;border:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer">إرسال التقرير</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+async function submitAbuseReport(bazaarId) {
+  const reason = document.querySelector('input[name="abuse-reason"]:checked')?.value;
+  const msg    = document.getElementById('abuse-msg');
+  const btn    = document.getElementById('abuse-submit-btn');
+
+  const showMsg = (text, isErr) => {
+    if (!msg) return;
+    msg.style.display = 'block';
+    msg.style.cssText += isErr
+      ? ';background:#fef2f2;color:#dc2626;border:1px solid #fecaca'
+      : ';background:#ecfdf5;color:#047857;border:1px solid #6ee7b7';
+    msg.textContent = text;
+  };
+
+  if (!reason) { showMsg('يرجى اختيار سبب الإبلاغ', true); return; }
+  if (!sbClient) { showMsg('يرجى تسجيل الدخول أولاً', true); return; }
+
+  const note = document.getElementById('abuse-note')?.value.trim() || null;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الإرسال…'; }
+
+  const { data, error } = await sbClient.rpc('report_bazaar_abuse', {
+    p_bazaar_id: bazaarId,
+    p_reason:    reason,
+    p_note:      note,
+  });
+
+  if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقرير'; }
+
+  if (error || !data?.ok) {
+    const errMsgs = {
+      already_reported:   'لقد أبلغت عن هذا البازار من قبل',
+      not_authenticated:  'يرجى تسجيل الدخول أولاً',
+      bazaar_not_found:   'البازار غير موجود',
+    };
+    showMsg(errMsgs[data?.error || ''] || 'تعذّر إرسال التقرير، حاول مرة أخرى', true);
+    return;
+  }
+
+  showMsg('✅ تم إرسال التقرير — شكراً لمساعدتنا في الحفاظ على جودة المنصة', false);
+  setTimeout(() => document.getElementById('abuse-report-modal')?.remove(), 2800);
 }
 
 /* escape helper محلي للصفحة */

@@ -82,6 +82,9 @@
 .mn-status.closed{background:var(--surface2);color:var(--ink3);border:1px solid var(--border)}
 .mn-status.pending_review{background:#fefce8;color:#a16207;border:1px solid #fde047}
 .mn-status.active{background:#ecfdf5;color:#047857;border:1px solid #6ee7b7}
+.mn-status.live{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd}
+.mn-status.completed{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.mn-status.documented{background:#ecfdf5;color:#047857;border:1px solid #34d399}
 
 /* Buttons */
 .mn-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border);background:var(--surface);color:var(--ink2);cursor:pointer;transition:all var(--dur-fast) var(--ease-out)}
@@ -274,6 +277,31 @@
 .mn-feed-time{font-size:10.5px;color:var(--ink3);white-space:nowrap;margin-top:2px}
 .mn-feed-new{display:inline-flex;align-items:center;background:#ecfdf5;color:#047857;font-size:10px;font-weight:900;padding:1px 6px;border-radius:10px;margin-right:5px;vertical-align:middle}
 
+/* ── Verification (Docs) Tab ── */
+.mn-docs-banner{display:none;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #34d399;border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px;gap:12px;align-items:flex-start}
+.mn-docs-banner.show{display:flex}
+.mn-docs-banner-ico{font-size:26px;flex-shrink:0}
+.mn-docs-banner-body{flex:1}
+.mn-docs-banner-title{font-size:13px;font-weight:900;color:#065f46;margin-bottom:3px}
+.mn-docs-banner-desc{font-size:12px;color:#047857;line-height:1.6}
+.mn-docs-banner-deadline{font-weight:700;color:#065f46}
+.mn-card-docs-cta{background:linear-gradient(135deg,#fff7ed,#ffedd5);border-top:1px solid rgba(243,100,24,.2);padding:9px 14px;font-size:12px;font-weight:700;color:var(--orange);cursor:pointer;transition:background .18s;text-align:center}
+.mn-card-docs-cta:hover{background:linear-gradient(135deg,#ffedd5,#fed7aa)}
+.mn-docs-link-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mn-docs-link-item:last-child{border-bottom:none}
+.mn-docs-link-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.mn-docs-link-input{flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;color:var(--ink);background:var(--surface2);outline:none;font-family:var(--font-body);direction:ltr;transition:border-color var(--dur-fast)}
+.mn-docs-link-input:focus{border-color:var(--orange);background:var(--surface);box-shadow:var(--ring-focus)}
+.mn-docs-link-input.warn{border-color:#f59e0b;background:#fffbeb}
+.mn-docs-warn-icon{font-size:14px;flex-shrink:0;cursor:help}
+.mn-docs-link-remove{background:none;border:1.5px solid var(--border);border-radius:var(--radius-md);padding:6px 8px;cursor:pointer;font-size:13px;color:var(--ink3);transition:all var(--dur-fast);flex-shrink:0}
+.mn-docs-link-remove:hover:not(:disabled){border-color:#fca5a5;color:#dc2626;background:#fef2f2}
+.mn-docs-link-remove:disabled{opacity:.35;cursor:not-allowed}
+.mn-docs-status-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:800;margin-bottom:10px}
+.mn-docs-status-pill.green{background:#ecfdf5;color:#047857;border:1.5px solid #86efac}
+.mn-docs-status-pill.yellow{background:#fefce8;color:#92400e;border:1.5px solid #fde047}
+.mn-docs-status-pill.gray{background:var(--surface2);color:var(--ink3);border:1.5px solid var(--border)}
+
 /* ── Toast ── */
 #mn-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(14px);background:#059669;color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:12px 28px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px rgba(5,150,105,.35);opacity:0;transition:all .3s;pointer-events:none}
 #mn-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -335,6 +363,8 @@
     <div class="mn-filters" id="mn-filters">
       <button class="mn-filter-btn active" onclick="applyFilter('all',this)">الكل</button>
       <button class="mn-filter-btn" onclick="applyFilter('published',this)">منشور</button>
+      <button class="mn-filter-btn" onclick="applyFilter('live',this)">⚡ جاري الآن</button>
+      <button class="mn-filter-btn" onclick="applyFilter('completed',this)">✅ انتهى</button>
       <button class="mn-filter-btn" onclick="applyFilter('active',this)">نشط</button>
       <button class="mn-filter-btn" onclick="applyFilter('upcoming',this)">قادم</button>
       <button class="mn-filter-btn" onclick="applyFilter('postponed',this)">مؤجّل</button>
@@ -380,11 +410,24 @@
       </div>
     </div>
 
+    <!-- Docs banner — يظهر فوق التبويبات مباشرةً عند اكتمال البازار -->
+    <div class="mn-docs-banner" id="docs-banner" style="margin:0 0 4px">
+      <div class="mn-docs-banner-ico">🎉</div>
+      <div class="mn-docs-banner-body">
+        <div class="mn-docs-banner-title">مبروك على انتهاء البازار!</div>
+        <div class="mn-docs-banner-desc">
+          يمكنك إضافة روابط مرتبطة بالحدث لتظهر في ملفك الشخصي وتُعزز مصداقيتك لدى العملاء.
+          <br><span class="mn-docs-banner-deadline" id="docs-banner-deadline"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab Bar -->
     <div class="mn-tabs">
       <div class="mn-tab active" onclick="switchTab('info')"    id="tab-btn-info">    📝 المعلومات</div>
       <div class="mn-tab"        onclick="switchTab('slots')"   id="tab-btn-slots">   📦 الأماكن</div>
       <div class="mn-tab"        onclick="switchTab('status')"  id="tab-btn-status">  ⚙️ الحالة</div>
+      <div class="mn-tab"        onclick="switchTab('docs')"    id="tab-btn-docs">    🔗 التوثيق <span class="mn-tab-badge" id="docs-badge"></span></div>
       <div class="mn-tab"        onclick="switchTab('log')"     id="tab-btn-log">     📋 السجل</div>
       <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings">🧾 الحجوزات <span class="mn-tab-badge" id="bk-badge"></span></div>
     </div>
@@ -449,6 +492,11 @@
         </div>
 
         <div id="edit-msg" class="mn-msg"></div>
+
+        <div class="mn-warn-box orange" id="edit-completed-notice" style="display:none">
+          <div class="mn-warn-title orange">🔒 وضع القراءة فقط</div>
+          <div class="mn-warn-text orange">البازار انتهى — لا يمكن تعديل المعلومات. يمكنك إضافة روابط التوثيق من تبويب <strong>🔗 التوثيق</strong>.</div>
+        </div>
 
         <div class="mn-form-actions">
           <button class="mn-btn primary" id="edit-save-btn" onclick="saveEditInfo()">💾 حفظ التعديلات</button>
@@ -699,7 +747,39 @@
     </div>
 
     <!-- ────────────────────────────
-         TAB 4: السجل
+         TAB 4: التوثيق
+    ──────────────────────────────── -->
+    <div class="mn-tab-panel" id="tab-docs">
+
+      <!-- Links form -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">🔗 روابط الحدث</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.7;margin-bottom:16px">
+          أضف روابط تُثبت وجود الحدث — منشورات Facebook أو Instagram أو TikTok أو YouTube أو X.
+          ستظهر في ملفك الشخصي ليتمكن العملاء من تقييم تجاربك السابقة.
+        </div>
+        <div id="docs-links-container" style="margin-bottom:12px"></div>
+        <button class="mn-btn" id="docs-add-btn" onclick="docsAddLink()">+ إضافة رابط</button>
+        <div class="mn-warn-box orange" id="docs-domain-warn" style="display:none;margin-top:12px">
+          <div class="mn-warn-title orange">⚠️ رابط غير معروف</div>
+          <div class="mn-warn-text orange" id="docs-domain-warn-text"></div>
+        </div>
+        <div id="docs-msg" class="mn-msg" style="margin-top:10px"></div>
+        <div class="mn-form-actions">
+          <button class="mn-btn primary" id="docs-save-btn" onclick="docsSaveLinks()">💾 حفظ الروابط</button>
+        </div>
+      </div>
+
+      <!-- Status card -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">📊 حالة التوثيق</div>
+        <div id="docs-status-content"></div>
+      </div>
+
+    </div>
+
+    <!-- ────────────────────────────
+         TAB 5: السجل
     ──────────────────────────────── -->
     <div class="mn-tab-panel" id="tab-log">
       <div class="mn-form-card">
@@ -734,6 +814,6 @@
 
 <!-- ── Scripts ── -->
 <script src="../media-handler.js" defer></script>
-<script src="manage.js?v=202606171812" defer></script>
+<script src="manage.js?v=202606270900" defer></script>
 </body>
 </html>

@@ -956,7 +956,7 @@ async function _loadPublicProfile(userId) {
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
-      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots,status,is_archived')
+      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots,available_slots,status,is_archived,event_links')
               .eq('organizer_id', userId).eq('is_deleted', false).order('date_start', { ascending: false }),
       sbClient.rpc('get_user_reputation', { p_user_id: userId }),
       sbClient.from('user_ratings').select('*')
@@ -1044,11 +1044,26 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     b.is_archived || b.status === 'archived' ||
     (b.date_end && b.date_end < today)
   );
-  const pastCount    = pastBazaars.length;
-  const totalVendors = bazaars.reduce((s,b) => s + (b.total_slots||0), 0);
-  const avgRating    = reviews.length
+  const pastCount      = pastBazaars.length;
+  const totalVendors   = bazaars.reduce((s,b) => s + (b.total_slots||0), 0);
+  const avgRating      = reviews.length
     ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
     : null;
+
+  /* إحصائيات الأداء */
+  const completedBazaars = bazaars.filter(b => b.status === 'completed');
+  const docsCount        = completedBazaars.filter(b => Array.isArray(b.event_links) && b.event_links.filter(u => u).length > 0).length;
+  const totalBooked      = bazaars.reduce((s, b) => s + ((b.total_slots || 0) - (typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0))), 0);
+  const cancelledCount   = bazaars.filter(b => b.status === 'cancelled').length;
+  const hasPerf          = completedBazaars.length > 0 || totalBooked > 0;
+
+  /* معدل نجاح التنظيم */
+  const totalFinalized  = completedBazaars.length + cancelledCount;
+  const successRate     = totalFinalized >= 2 ? Math.round((completedBazaars.length / totalFinalized) * 100) : null;
+
+  /* تحذير الإلغاء الحديث — آخر 60 يوم */
+  const _cancelThreshold    = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
+  const recentCancelWarning = bazaars.some(b => b.status === 'cancelled' && b.date_start && b.date_start >= _cancelThreshold);
 
   /* أوسمة عامة */
   const isVerified    = organizer?.is_verified === true;
@@ -1059,6 +1074,15 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     listings: [], avgRating: avgRating ? parseFloat(avgRating) : 0,
     reviewsCount: reviews.length,
   });
+
+  /* شارة أداء المنظم (🥉/🥈/🥇) */
+  if (completedBazaars.length >= 6 && successRate !== null && successRate >= 90 && avgRating && parseFloat(avgRating) >= 4.0) {
+    secBadges.unshift({ id: 'top-org', emoji: '🥇', label: 'منظم متميز', tier: 'gold' });
+  } else if (completedBazaars.length >= 3 && successRate !== null && successRate >= 75) {
+    secBadges.unshift({ id: 'reliable-org', emoji: '🥈', label: 'منظم موثوق', tier: 'silver' });
+  } else if (completedBazaars.length >= 1) {
+    secBadges.unshift({ id: 'active-org', emoji: '🥉', label: 'منظم نشط', tier: '' });
+  }
 
   /* شارة الاسم */
   const nameBadge = isVerified ? `<span class="op-verified-badge">✓ منظم موثّق</span>` : '';
@@ -1077,14 +1101,28 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
              style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
              onerror="this.style.display='none'">`
       : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎪</div>`;
+
+    /* إحصائيات الأداء */
+    const booked   = (b.total_slots || 0) - (b.available_slots ?? b.total_slots ?? 0);
+    const fillRate = b.total_slots > 0 ? Math.round((booked / b.total_slots) * 100) : null;
+    const hasLinks = Array.isArray(b.event_links) && b.event_links.filter(u => u).length > 0;
+    const isCompleted = b.status === 'completed';
+
+    const statsBadges = [
+      fillRate !== null ? `<span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:50px;padding:1px 7px">🎫 ${fillRate}%</span>` : '',
+      isCompleted && hasLinks  ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px">🟢 وثّق</span>` : '',
+      isCompleted && !hasLinks ? `<span style="font-size:10px;color:#92400e;background:#fefce8;border:1px solid #fde68a;border-radius:50px;padding:1px 7px">🟡 بدون روابط</span>` : '',
+    ].filter(Boolean).join('');
+
     return `
-      <div class="op-bazaar-item" onclick="window.location.href='/bazaars/?bazaar=${b.id}'">
+      <div class="op-bazaar-item" onclick="window.location.href='/bazaars/?id=${b.id}'">
         ${imgHtml}
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
-          <div style="font-size:11px;color:var(--ink3)">📅 ${dateLabel} · 📍 ${b.location||'—'}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">📅 ${dateLabel} · 📍 ${b.location||'—'}</div>
+          ${statsBadges ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${statsBadges}</div>` : ''}
         </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="14" height="14" style="flex-shrink:0"><path d="M15 18l-6-6 6-6"/></svg>
       </div>`;
   }
 
@@ -1178,6 +1216,49 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
 
   <!-- ═══════ السمعة كمستأجر (تقييمات أصحاب المساحات والمنظمين) ═══════ -->
   ${_pubRepPanelHtml(reputation, recvRatings)}
+
+  <!-- ═══════ سجل الأداء ═══════ -->
+  ${hasPerf ? `
+  <div class="op-section-card" style="margin-bottom:16px">
+    <div class="op-section-title"><span>📊 سجل الأداء</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
+      ${completedBazaars.length > 0 ? `
+      <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:900;color:#1d4ed8">📅 ${completedBazaars.length}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">بازار اكتمل</div>
+      </div>` : ''}
+      ${totalBooked > 0 ? `
+      <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:900;color:#047857">✅ ${totalBooked}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">مكان محجوز</div>
+      </div>` : ''}
+      ${docsCount > 0 ? `
+      <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:900;color:#059669">🔗 ${docsCount}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">أضاف روابط</div>
+      </div>` : ''}
+      ${cancelledCount > 0 ? `
+      <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
+        <div style="font-size:22px;font-weight:900;color:#dc2626">❌ ${cancelledCount}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">إلغاء</div>
+      </div>` : ''}
+      ${successRate !== null ? `
+      <div style="text-align:center;background:${successRate >= 80 ? '#f0fdf4' : successRate >= 60 ? '#fefce8' : '#fef2f2'};border-radius:12px;padding:12px 8px;border:1px solid ${successRate >= 80 ? '#86efac' : successRate >= 60 ? '#fde68a' : '#fecaca'}">
+        <div style="font-size:22px;font-weight:900;color:${successRate >= 80 ? '#047857' : successRate >= 60 ? '#92400e' : '#dc2626'}">${successRate >= 80 ? '🎯' : successRate >= 60 ? '📊' : '⚠️'} ${successRate}%</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">معدل نجاح التنظيم</div>
+      </div>` : ''}
+    </div>
+  </div>` : ''}
+
+  <!-- ═══════ تحذير الإلغاء الحديث ═══════ -->
+  ${recentCancelWarning ? `
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:18px;flex-shrink:0">⚠️</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#b91c1c">تنبيه موثوقية</div>
+      <div style="font-size:12px;color:#dc2626;margin-top:3px;line-height:1.6">قام هذا المنظم بإلغاء بازار خلال آخر 60 يوماً — تأكد من التواصل معه قبل الحجز</div>
+    </div>
+  </div>` : ''}
 
   <!-- ═══════ البازارات النشطة/القادمة ═══════ -->
   <div class="op-section-card" style="margin-bottom:16px">

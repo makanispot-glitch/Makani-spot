@@ -373,6 +373,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('add-sl')"><span class="ic">🔲</span>إضافة وحدات</div>
     <div class="ni" onclick="gp('req')" id="ni-req"><span class="ic">📬</span>طلبات التنظيم<span class="nb" id="nb-req" style="display:none">0</span></div>
     <div class="ni" onclick="gp('org-ver')" id="ni-org-ver"><span class="ic">🎪</span>طلبات التوثيق<span class="nb" id="nb-org-ver" style="display:none">0</span></div>
+    <div class="ni" onclick="gp('abuse')" id="ni-abuse"><span class="ic">🚩</span>بلاغات المستخدمين<span class="nb r" id="nb-abuse" style="display:none">0</span></div>
 
     <div class="nl">الواجهة</div>
     <div class="ni" onclick="gp('featured')" id="ni-featured"><span class="ic">⭐</span>البازار المميّز
@@ -397,6 +398,9 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="nl">⚡ الطوارئ</div>
     <div class="ni" onclick="gp('override')"><span class="ic">🚨</span>Emergency Override</div>
   </nav>
+  <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px">
+    <button onclick="mkLogout()" style="width:100%;padding:9px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:8px;color:#f87171;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(239,68,68,.22)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">🚪 تسجيل الخروج</button>
+  </div>
   <div class="sb-api" style="display:none"></div>
 </aside>
 
@@ -455,6 +459,8 @@ tbody tr:hover .row-acts{opacity:1}
       <select class="fc-s" id="bz-fst" onchange="renderBazaars()">
         <option value="">كل الحالات</option>
         <option value="published">✅ منشور</option>
+        <option value="live">⚡ جاري الآن</option>
+        <option value="completed">✔️ انتهى</option>
         <option value="draft">📝 مسودة</option>
         <option value="pending">⏳ بانتظار</option>
         <option value="pending_review">📬 طلب تنظيم</option>
@@ -824,6 +830,16 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+
+  <!-- ═══ ABUSE REPORTS ═══ -->
+  <div class="pg" id="pg-abuse">
+    <div class="sh">
+      <div class="st">🚩 بلاغات <span>المستخدمين</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadAbusePage()">🔄 تحديث</button>
+    </div>
+    <div class="hint" style="margin-bottom:16px">كل 3 بلاغات من مستخدمين مختلفين تنقل البازار تلقائياً إلى "قيد المراجعة" — راجع الأسباب ثم استعد أو أبقِ القرار</div>
+    <div id="abuse-list"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
+  </div>
 
   <!-- ═══ FEATURED BAZAAR ═══ -->
   <div class="pg" id="pg-featured">
@@ -1546,6 +1562,14 @@ async function loadData() {
     const nbOrgVer = document.getElementById('nb-org-ver');
     if (nbOrgVer) { nbOrgVer.textContent = orgVerPending; nbOrgVer.style.display = orgVerPending ? '' : 'none'; }
 
+    /* شارة البلاغات — عدد البازارات التي تلقّت بلاغات */
+    db.from('bazaar_abuse_reports').select('bazaar_id').then(({ data: ar }) => {
+      if (!ar) return;
+      const distinct = new Set(ar.map(r => r.bazaar_id)).size;
+      const nb = document.getElementById('nb-abuse');
+      if (nb) { nb.textContent = distinct; nb.style.display = distinct ? '' : 'none'; }
+    }).catch(() => {});
+
     _refreshArchiveBadge();
 
     // تنظيف الإشعارات القديمة + الحجوزات المنتهية في الخلفية
@@ -1733,10 +1757,14 @@ function renderBazaars() {
       <td><span class="pr">${fmt(rev)} ج</span><div style="font-size:10px;color:var(--mu)">من ${fmt((bz.price||0)*(bz.totalSlots||0))} متوقع</div></td>
       <td>
         <select class="ie-sel" onchange="changeBzStatus('${bz.id}',this.value)" onclick="event.stopPropagation()">
-          <option value="published" ${bz.status==='published'?'selected':''}>✅ منشور</option>
-          <option value="draft" ${bz.status==='draft'?'selected':''}>📝 مسودة</option>
-          <option value="pending" ${bz.status==='pending'?'selected':''}>⏳ بانتظار</option>
+          <option value="published"  ${bz.status==='published' ?'selected':''}>✅ منشور</option>
+          <option value="live"       ${bz.status==='live'      ?'selected':''}>⚡ جاري</option>
+          <option value="completed"  ${bz.status==='completed' ?'selected':''}>✔️ انتهى</option>
+          <option value="draft"      ${bz.status==='draft'     ?'selected':''}>📝 مسودة</option>
+          <option value="pending"    ${bz.status==='pending'   ?'selected':''}>⏳ بانتظار</option>
+          <option value="cancelled"  ${bz.status==='cancelled' ?'selected':''}>❌ ملغي</option>
         </select>
+        ${(bz.status==='completed'||bz.status==='live') ? ((bz.event_links&&bz.event_links.length>0)?'<div style="font-size:10px;color:#047857;margin-top:2px">🟢 موثّق</div>':'<div style="font-size:10px;color:#92400e;margin-top:2px">🟡 غير موثّق</div>') : ''}
       </td>
       <td>
         <div class="row-acts">
@@ -2038,8 +2066,19 @@ async function dbUpdateBazaarStatus(dbId, status) {
   if (error) toast('خطأ: ' + error.message, 'e');
 }
 async function dbUpdateSlotStatus(dbId, status) {
-  const { error } = await db.from('bazaar_slots').update({ status }).eq('id', dbId);
-  if (error) toast('خطأ: ' + error.message, 'e');
+  const { data, error } = await db.from('bazaar_slots').update({ status }).eq('id', dbId).select('id');
+  if (error) { toast('خطأ: ' + error.message, 'e'); return false; }
+  if (!data || data.length === 0) {
+    const { data: authData } = await db.auth.getSession();
+    if (!authData?.session) {
+      toast('⚠️ انتهت الجلسة — سجّل دخولك من جديد', 'e');
+      document.getElementById('mk-login').style.display = 'flex';
+    } else {
+      toast('⚠️ لم يتم تحديث الوحدة — تحقق من الصلاحيات', 'e');
+    }
+    return false;
+  }
+  return true;
 }
 async function dbUpdateSlotField(dbId, field, value) {
   const fieldMap = { traderName:'trader_name', activity:'activity', notes:'notes', is_featured:'is_featured' };
@@ -2050,8 +2089,17 @@ async function dbUpdateSlotField(dbId, field, value) {
 async function dbUpdateBookingStatus(dbId, field, value) {
   const fieldMap = { payStatus:'pay_status', bookStatus:'status' };
   const dbField = fieldMap[field] || field;
-  const { error } = await db.from('bazaar_bookings').update({ [dbField]: value }).eq('id', dbId);
-  if (error) toast('خطأ: ' + error.message, 'e');
+  const { data, error } = await db.from('bazaar_bookings').update({ [dbField]: value }).eq('id', dbId).select('id');
+  if (error) { toast('خطأ: ' + error.message, 'e'); return false; }
+  if (!data || data.length === 0) {
+    const { data: authData } = await db.auth.getSession();
+    if (!authData?.session) {
+      toast('⚠️ انتهت الجلسة — سجّل دخولك من جديد', 'e');
+      document.getElementById('mk-login').style.display = 'flex';
+    }
+    return false;
+  }
+  return true;
 }
 
 /* ══════════════════════════════════════════
@@ -2061,8 +2109,10 @@ function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.statu
 async function changeSlotStatus(id, val) {
   const s = SLOTS.find(x => x.slotId === id);
   if (!s) return;
+  const prevStatus = s.status;
   s.status = val;
-  await dbUpdateSlotStatus(s._dbId, val);
+  const ok = await dbUpdateSlotStatus(s._dbId, val);
+  if (!ok) { s.status = prevStatus; renderSlots(); return; }
   /* مزامنة الحجز المرتبط بالوحدة — المصدر الموحد للحقيقة */
   const bk = BOOKINGS.find(b => b.slotId === s.slotId && b.bookStatus !== 'cancelled');
   if (bk) {
@@ -2070,10 +2120,14 @@ async function changeSlotStatus(id, val) {
     bk.bookStatus = bkNewStatus;
     await dbUpdateBookingStatus(bk._dbId, 'bookStatus', bkNewStatus);
     if (bkNewStatus === 'cancelled') {
-      db.rpc('increment_available_slots', { p_bazaar_id: String(s.bazaarId) });
       const bz = BAZAARS.find(x => x.id === s.bazaarId);
       if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
     }
+  } else if (val === 'available' && prevStatus !== 'available') {
+    /* وحدة مجمّدة (orphan) بدون حجز في الذاكرة — حدّث العداد المحلي فقط */
+    /* trigger trg_sync_bazaar_available_slots يُحدّث DB تلقائياً */
+    const bz = BAZAARS.find(x => x.id === s.bazaarId);
+    if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
   }
   renderSlots(); renderBookings(); updateAll();
   toast('تم تحديث الوحدة', 's');
@@ -2209,7 +2263,7 @@ async function saveBazaarEdit(){
 
   document.getElementById('mebz-status').textContent='✅ تم الحفظ في Supabase';
   document.getElementById('mebz-status').style.color='var(--gr)';
-  renderBazaars(); renderOv(); renderFinancial();
+  renderBazaars(); renderSlots(); renderOv(); renderFinancial();
   toast('✅ تم حفظ البيانات في Supabase','s');
   setTimeout(()=>closeModal('modal-bz'),800);
 }
@@ -2578,6 +2632,105 @@ function submitCost(){
 /* ══════════════════════════════════════════
    ORGANIZE REQUESTS
 ══════════════════════════════════════════ */
+async function loadAbusePage() {
+  const list = document.getElementById('abuse-list');
+  if (!list) return;
+  list.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل...</div>';
+  try {
+    const { data, error } = await db
+      .from('bazaar_abuse_reports')
+      .select('bazaar_id, reason, note, created_at, bazaars(id, name, organizer, status, date_start)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    /* تجميع حسب البازار */
+    const grouped = {};
+    (data || []).forEach(r => {
+      if (!grouped[r.bazaar_id]) grouped[r.bazaar_id] = { bz: r.bazaars, reports: [] };
+      grouped[r.bazaar_id].reports.push(r);
+    });
+    const groups = Object.values(grouped).sort((a, b) => b.reports.length - a.reports.length);
+
+    /* تحديث الشارة */
+    const flaggedCount = groups.filter(g => g.reports.length >= 3).length;
+    const nb = document.getElementById('nb-abuse');
+    if (nb) { nb.textContent = flaggedCount || groups.length; nb.style.display = groups.length ? '' : 'none'; }
+
+    if (!groups.length) {
+      list.innerHTML = `<div style="text-align:center;padding:60px 24px;color:var(--mu)">
+        <div style="font-size:44px;margin-bottom:12px;opacity:.25">🚩</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">لا توجد بلاغات حالياً</div>
+        <div style="font-size:12px">ستظهر هنا البلاغات التي يرسلها المستخدمون عن البازارات</div>
+      </div>`;
+      return;
+    }
+
+    const REASON_LABELS = {
+      fake_event: '🎭 حدث مزيف', misleading_info: '📋 معلومات مضللة',
+      fraud: '💸 احتيال', inappropriate: '⛔ محتوى غير لائق', other: '📝 أخرى',
+    };
+    const STATUS_LABEL = { published:'✅ منشور', live:'⚡ جاري', completed:'✔️ انتهى',
+      pending_review:'⏳ قيد المراجعة', cancelled:'❌ ملغي', draft:'📝 مسودة' };
+
+    list.innerHTML = groups.map(({ bz, reports }) => {
+      if (!bz) return '';
+      const isHigh = reports.length >= 3;
+      const lastReport = new Date(reports[0].created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+      const reasonCounts = {};
+      reports.forEach(r => { reasonCounts[r.reason] = (reasonCounts[r.reason] || 0) + 1; });
+      const notes = reports.filter(r => r.note && r.note.trim());
+      const safeId   = bz.id;
+      const safeName = (bz.name || '').replace(/'/g, "\\'");
+      return `
+      <div style="background:var(--bg2);border:1px solid ${isHigh ? 'rgba(239,68,68,.4)' : 'var(--bd)'};border-radius:var(--r);padding:20px;margin-bottom:14px;transition:border-color .2s"
+           onmouseenter="this.style.borderColor='${isHigh ? '#ef4444' : 'var(--bdo)'}'" onmouseleave="this.style.borderColor='${isHigh ? 'rgba(239,68,68,.4)' : 'var(--bd)'}'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:var(--tx)">${bz.name}</div>
+            <div style="font-size:11.5px;color:var(--mu);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+              <span>المنظم: <strong style="color:var(--or)">${bz.organizer || '—'}</strong></span>
+              <span>${STATUS_LABEL[bz.status] || bz.status}</span>
+              <span>آخر بلاغ: ${lastReport}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <div style="background:${isHigh ? 'rgba(239,68,68,.15)' : 'rgba(245,158,11,.1)'};color:${isHigh ? '#ef4444' : '#d97706'};border:1px solid ${isHigh ? 'rgba(239,68,68,.3)' : 'rgba(245,158,11,.3)'};border-radius:8px;padding:5px 12px;font-size:13px;font-weight:900">
+              🚩 ${reports.length} بلاغ${isHigh ? ' ⚠️' : ''}
+            </div>
+            ${bz.status === 'pending_review' ? `<button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)"
+              onclick="reinstateFromAbuse('${safeId}','${safeName}')">♻️ استعادة</button>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:${notes.length ? '10px' : '0'}">
+          ${Object.entries(reasonCounts).map(([r, c]) =>
+            `<span style="background:var(--bg3);border:1px solid var(--bd);border-radius:50px;padding:3px 10px;font-size:11.5px">${REASON_LABELS[r] || r} ×${c}</span>`
+          ).join('')}
+        </div>
+        ${notes.length ? `
+        <div style="padding:10px 12px;background:var(--bg3);border-radius:8px;font-size:11.5px;color:var(--mu);line-height:1.8">
+          <div style="font-weight:700;margin-bottom:4px;color:var(--tx);font-size:12px">ملاحظات المستخدمين:</div>
+          ${notes.map(r => `<div>— ${r.note}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div class="hint">❌ خطأ في تحميل البلاغات: ${e.message}</div>`;
+  }
+}
+
+async function reinstateFromAbuse(id, name) {
+  if (!confirm(`♻️ استعادة "${name}" من قائمة المراجعة وإعادة نشره؟\n\nسيظهر للمستخدمين مجدداً.`)) return;
+  toast('جارٍ الاستعادة...', 'i');
+  try {
+    const { error } = await db.from('bazaars').update({ status: 'published' }).eq('id', id);
+    if (error) throw error;
+    toast(`♻️ تمت استعادة "${name}"`, 's');
+    loadAbusePage();
+  } catch(e) {
+    toast('❌ فشلت الاستعادة: ' + e.message, 'e');
+  }
+}
+
 async function loadOrgRequests() {
   const list = document.getElementById('req-list');
   if (!list) return;
@@ -2873,6 +3026,7 @@ function gp(tab){
   if(tab==='override')    loadOverridePage();
   if(tab==='mkt')         { _mktPage=1; loadMktOpportunities(); }
   if(tab==='mkt-log')     { _mktLogPage=1; loadMktLog(); }
+  if(tab==='abuse')       loadAbusePage();
 }
 
 /* ══════════════════════════════════════════
@@ -3660,16 +3814,16 @@ async function loadMktOpportunities() {
   const tbody  = document.getElementById('mkt-tbody');
   if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="ld"><div class="spin"></div>جارٍ التحميل…</td></tr>`;
 
-  /* إحصائيات */
-  const { data: stats } = await db.rpc('admin_marketplace_stats').single();
-  if (stats) {
-    const s = typeof stats === 'object' ? stats : JSON.parse(stats);
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
-    set('mst-total',  s.total);
-    set('mst-open',   s.open);
-    set('mst-sel',    s.selected);
-    set('mst-props',  s.proposals_total);
-    set('mst-closed', (s.closed || 0) + (s.expired || 0));
+  /* إحصائيات — admin_marketplace_stats تُعيد json scalar مُغلَّف في مفتاح باسم الدالة */
+  const { data: _statsRow } = await db.rpc('admin_marketplace_stats').single();
+  if (_statsRow) {
+    const s = _statsRow.admin_marketplace_stats ?? _statsRow;
+    const _set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
+    _set('mst-total',  s.total);
+    _set('mst-open',   s.open);
+    _set('mst-sel',    s.selected);
+    _set('mst-props',  s.proposals_total);
+    _set('mst-closed', (s.closed || 0) + (s.expired || 0));
     const nb = document.getElementById('nb-mkt');
     if (nb) { nb.textContent = s.total; nb.style.display = s.total > 0 ? '' : 'none'; }
   }
@@ -3779,8 +3933,8 @@ async function viewMktProposals(requestId, placeName) {
             ${p.proposed_start || '—'}${p.proposed_end ? '<br>' + p.proposed_end : ''}
           </td>
           <td style="padding:12px;text-align:center">${p.proposed_exhibitors_count || '—'}</td>
-          <td style="padding:12px;font-weight:700">${PROP_STATUS[p.proposal_status] || p.proposal_status}</td>
-          <td style="padding:12px;font-size:11px;color:var(--tx3)">${new Date(p.submitted_at).toLocaleDateString('ar-EG')}</td>
+          <td style="padding:12px;font-weight:700">${PROP_STATUS[p.status] || p.status}</td>
+          <td style="padding:12px;font-size:11px;color:var(--tx3)">${new Date(p.created_at).toLocaleDateString('ar-EG')}</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -4773,31 +4927,56 @@ document.getElementById('nb-area').addEventListener('input',updatePreview);
 document.getElementById('nb-vname').addEventListener('input',updatePreview);
 document.getElementById('nb-ds').addEventListener('change',()=>{calcDays();updatePreview();});
 
-/* ── Admin Login ── */
-const MK_HASH='a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
-const MK_SALT='MkSpot_2026_Salt';
-let mkTries=0,mkLocked=false;
-async function mkSha256(msg){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-async function mkLogin(){
-  if(mkLocked)return;
-  const pw=document.getElementById('mk-pw').value;
-  if(!pw)return;
-  document.getElementById('mk-btn').disabled=true;
-  const h=await mkSha256(MK_SALT+pw);
-  if(h===MK_HASH){
-    sessionStorage.setItem('mkadmin',MK_HASH.slice(0,16));
-    document.getElementById('mk-login').style.display='none';
-  }else{
+/* ── Admin Login (Supabase Auth) ── */
+const ADMIN_EMAIL = 'makanispot@gmail.com';
+let mkTries = 0, mkLocked = false;
+
+async function mkLogin() {
+  if (mkLocked) return;
+  const pw = document.getElementById('mk-pw').value;
+  if (!pw) return;
+  document.getElementById('mk-btn').disabled = true;
+
+  const { error } = await db.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pw });
+
+  if (!error) {
+    document.getElementById('mk-login').style.display = 'none';
+    loadData(); // أعد تحميل البيانات مع الـ session الجديدة
+  } else {
     mkTries++;
-    document.getElementById('mk-pw').value='';
-    document.getElementById('mk-err').style.display='block';
-    const left=5-mkTries;
-    if(left<=0){mkLocked=true;document.getElementById('mk-err').textContent='🔒 تم القفل — انتظر دقيقة';document.getElementById('mk-pw').disabled=true;setTimeout(()=>{mkLocked=false;mkTries=0;document.getElementById('mk-pw').disabled=false;document.getElementById('mk-err').style.display='none';document.getElementById('mk-tries').textContent='';},60000);}
-    else{document.getElementById('mk-tries').textContent=`محاولات متبقية: ${left}`;}
-    document.getElementById('mk-btn').disabled=false;
+    document.getElementById('mk-pw').value = '';
+    document.getElementById('mk-err').style.display = 'block';
+    const left = 5 - mkTries;
+    if (left <= 0) {
+      mkLocked = true;
+      document.getElementById('mk-err').textContent = '🔒 تم القفل — انتظر دقيقة';
+      document.getElementById('mk-pw').disabled = true;
+      setTimeout(() => {
+        mkLocked = false; mkTries = 0;
+        document.getElementById('mk-pw').disabled = false;
+        document.getElementById('mk-err').style.display = 'none';
+        document.getElementById('mk-tries').textContent = '';
+      }, 60000);
+    } else {
+      document.getElementById('mk-tries').textContent = `محاولات متبقية: ${left}`;
+    }
+    document.getElementById('mk-btn').disabled = false;
   }
 }
-(function(){const s=sessionStorage.getItem('mkadmin');if(s&&s===MK_HASH.slice(0,16))document.getElementById('mk-login').style.display='none';})();
+
+async function mkLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+// استعادة الجلسة عند تحديث الصفحة — يُخفي اللوجين ويُعيد تحميل البيانات بتوكن محدَّث
+(async function () {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    document.getElementById('mk-login').style.display = 'none';
+    loadData(); // إعادة تحميل بالـ session المُحدَّثة (تحل مشكلة التوكن المنتهي)
+  }
+})();
 </script>
 </body>
 </html>
