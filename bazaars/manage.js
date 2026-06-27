@@ -274,6 +274,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   _buildExtraGrid();
   await loadMyBazaars();
+
+  /* deep-link: /manage.html?id=xxx يفتح البازار مباشرة */
+  const _deepId = new URLSearchParams(window.location.search).get('id');
+  if (_deepId) {
+    const _found = myBazaars.find(x => x.id === _deepId);
+    if (_found) openBazaarDetail(_deepId);
+  }
 });
 
 /* ════════════════════════════════════════════════════════

@@ -545,7 +545,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
              style="font-size:10px;font-weight:700;color:var(--orange);text-decoration:none;padding:3px 9px;border:1px solid rgba(243,100,24,.3);border-radius:50px;background:var(--orange-ultra)">
             عرض
           </a>
-          ${canManage ? `<a href="/bazaars/manage.html"
+          ${canManage ? `<a href="/bazaars/manage.html?id=${b.id}"
              style="font-size:10px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 9px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">
             إدارة
           </a>` : ''}

@@ -877,13 +877,21 @@ async function openBazaarDetail(bazaarId) {
     ? `🕐 ${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}`
     : '';
 
+  const isMyBazaar = currentUser && b.organizer_id && String(currentUser.id) === String(b.organizer_id);
+
   const headerEl = document.getElementById('bzd-header');
   if (headerEl) {
     headerEl.innerHTML = `
       <div class="sd-header-inner">
         <div class="sd-back-row">
           <button class="sd-back-btn" onclick="closeBazaarDetail()">→ العودة للبازارات</button>
-          <div class="sd-breadcrumb">
+          ${isMyBazaar ? `
+          <a href="/bazaars/manage.html?id=${b.id}"
+             style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-pill);border:1.5px solid var(--orange);background:var(--orange);color:#fff;font-family:var(--font-display);font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap;transition:opacity .15s;flex-shrink:0"
+             onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            ✏️ تعديل البازار
+          </a>` : ''}
+          <div class="sd-breadcrumb" style="${isMyBazaar ? 'margin-inline-start:auto' : ''}">
             <span onclick="window.location.href='/'" style="cursor:pointer">الرئيسية</span>
             <span class="sd-bc-sep">·</span>
             <span onclick="closeBazaarDetail()" style="cursor:pointer">البازارات</span>

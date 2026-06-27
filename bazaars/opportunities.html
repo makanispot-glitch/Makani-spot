@@ -130,6 +130,42 @@
   color: var(--ink3); font-size: 15px; font-weight: 700;
 }
 .bzopp-access-msg p { margin: 12px 0 0; }
+
+/* ══ إصلاحات ناف الفرص ══ */
+
+/* 1) جرس GN + user-wrap جنب بعض (inline) بدل فوق بعض → يحل تداخل الناف مع الهيرو */
+#bz-nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 2) إخفاء الإيميل + تحديد عرض الاسم → صندوق الحساب أصغر وأنيق */
+.bz-standalone-nav .nav-avatar-email { display: none; }
+.bz-standalone-nav .nav-avatar-name  { max-width: 80px; }
+
+/* 3) padding متوازن على الجانبين → السهم مش ملتصق بالحافة اليسرى */
+.bz-standalone-nav .nav-avatar-btn { padding: 5px 10px 5px 10px; }
+
+/* 4) محاذاة النص صح داخل صندوق الحساب */
+.bz-standalone-nav .nav-avatar-info { text-align: start; }
+
+/* 5) فاصل بصري بين الـ pills وصندوق الحساب */
+.bz-standalone-nav .nav-avatar-btn::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(100% + 6px);
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+
+/* 6) Hero: تأكيد عدم تداخل الأيقونة مع العنوان */
+.opp-hero-icon { display: block; font-size: 44px; line-height: 1; margin-bottom: 16px; }
+.opp-hero h1   { margin-top: 0; }
 </style>
 </head>
 
