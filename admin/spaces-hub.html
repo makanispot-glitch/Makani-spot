@@ -433,18 +433,6 @@ textarea.fc{resize:vertical;min-height:72px}
 <body>
 <div class="bg-grid"></div>
 
-<!-- ══ LOGIN ══ -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">🏢</div>
-    <div class="login-title">إدارة المساحات</div>
-    <div class="login-sub">مكاني Spot — لوحة التحكم الشاملة</div>
-    <input id="pw-inp" class="login-inp" type="password" placeholder="كلمة المرور"
-           onkeydown="if(event.key==='Enter')tryLogin()">
-    <button class="login-btn" id="login-btn" onclick="tryLogin()">دخول ←</button>
-    <div id="login-err" class="login-err"></div>
-  </div>
-</div>
 
 <!-- ══ APP ══ -->
 <div id="app">
@@ -672,35 +660,19 @@ let notifPickedIds  = new Set();
 /* ═══════════════════════════════
    LOGIN
 ═══════════════════════════════ */
-async function tryLogin() {
-  const pw  = document.getElementById('pw-inp').value.trim();
-  const btn = document.getElementById('login-btn');
-  const err = document.getElementById('login-err');
-  if (!pw) { err.textContent = 'أدخل كلمة المرور'; return; }
-  btn.disabled = true; btn.textContent = '⏳…';
-  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PW_SALT + pw));
-  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  if (hash === PW_HASH) {
-    adminHash = hash;
-    sessionStorage.setItem('ms_sphub', hash.slice(0,16));
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').classList.add('visible');
-    loadAll();
-  } else {
-    err.textContent = '❌ كلمة المرور خاطئة';
-    btn.disabled = false; btn.textContent = 'دخول ←';
-  }
+function doLogout() {
+  localStorage.removeItem('mks_hub_tok');
+  window.location.replace('./admin-hub.html');
 }
-function doLogout() { sessionStorage.removeItem('ms_sphub'); location.reload(); }
 
 (function() {
-  const s = sessionStorage.getItem('ms_sphub');
-  if (s && s === PW_HASH.slice(0,16)) {
-    adminHash = PW_HASH;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').classList.add('visible');
-    setTimeout(loadAll, 100);
+  if (!localStorage.getItem('mks_hub_tok')) {
+    window.location.replace('./admin-hub.html');
+    return;
   }
+  adminHash = PW_HASH;
+  document.getElementById('app').classList.add('visible');
+  setTimeout(loadAll, 100);
 })();
 
 /* ═══════════════════════════════

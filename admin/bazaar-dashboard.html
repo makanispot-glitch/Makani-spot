@@ -324,31 +324,6 @@ tbody tr:hover .row-acts{opacity:1}
 <body>
 
 <!-- ════════════════ LOGIN OVERLAY ════════════════ -->
-<div id="mk-login" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0c0c0e;padding:20px;font-family:'Cairo',sans-serif">
-  <div style="background:#141416;border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:40px 44px;width:100%;max-width:400px;position:relative;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)">
-    <div style="position:absolute;top:0;right:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#F36418,transparent)"></div>
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="font-size:44px;margin-bottom:12px">🔐</div>
-      <div style="font-size:22px;font-weight:900;color:#F36418">مكاني Spot</div>
-      <div style="font-size:11px;color:#888;margin-top:4px;letter-spacing:2px">داشبورد البازارات</div>
-    </div>
-    <input type="password" id="mk-pw" placeholder="••••••••••" autocomplete="new-password"
-      style="width:100%;background:#1e1e20;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:13px 16px;font-family:'Space Mono',monospace;font-size:14px;color:#f0f0f0;letter-spacing:3px;text-align:center;outline:none;margin-bottom:14px;box-sizing:border-box;direction:ltr;transition:border-color .2s"
-      onkeydown="if(event.key==='Enter')mkLogin()" onfocus="this.style.borderColor='#F36418'" onblur="this.style.borderColor='rgba(255,255,255,.07)'">
-    <button onclick="mkLogin()" id="mk-btn"
-      style="width:100%;padding:13px;background:#F36418;color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s"
-      onmouseover="this.style.background='#ff8c3a'" onmouseout="this.style.background='#F36418'">
-      🚀 دخول
-    </button>
-    <div id="mk-err" style="display:none;margin-top:12px;padding:9px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;font-size:12px;color:#EF4444;text-align:center">
-      كلمة السر غير صحيحة — حاول مرة أخرى
-    </div>
-    <div id="mk-tries" style="margin-top:8px;font-size:11px;color:#888;text-align:center"></div>
-    <div style="margin-top:20px;text-align:center">
-      <a href="./admin-hub.html" style="font-size:11px;color:#888;text-decoration:none">← الرجوع للوحة التحكم المركزية</a>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════ SIDEBAR ═══════ -->
 <aside id="sb">
@@ -2069,13 +2044,7 @@ async function dbUpdateSlotStatus(dbId, status) {
   const { data, error } = await db.from('bazaar_slots').update({ status }).eq('id', dbId).select('id');
   if (error) { toast('خطأ: ' + error.message, 'e'); return false; }
   if (!data || data.length === 0) {
-    const { data: authData } = await db.auth.getSession();
-    if (!authData?.session) {
-      toast('⚠️ انتهت الجلسة — سجّل دخولك من جديد', 'e');
-      document.getElementById('mk-login').style.display = 'flex';
-    } else {
-      toast('⚠️ لم يتم تحديث الوحدة — تحقق من الصلاحيات', 'e');
-    }
+    toast('⚠️ لم يتم تحديث الوحدة — تحقق من الصلاحيات أو أعد تحميل الصفحة', 'e');
     return false;
   }
   return true;
@@ -2092,11 +2061,7 @@ async function dbUpdateBookingStatus(dbId, field, value) {
   const { data, error } = await db.from('bazaar_bookings').update({ [dbField]: value }).eq('id', dbId).select('id');
   if (error) { toast('خطأ: ' + error.message, 'e'); return false; }
   if (!data || data.length === 0) {
-    const { data: authData } = await db.auth.getSession();
-    if (!authData?.session) {
-      toast('⚠️ انتهت الجلسة — سجّل دخولك من جديد', 'e');
-      document.getElementById('mk-login').style.display = 'flex';
-    }
+    toast('⚠️ لم يتم تحديث الحجز — تحقق من الصلاحيات أو أعد تحميل الصفحة', 'e');
     return false;
   }
   return true;
@@ -4918,64 +4883,32 @@ async function adminRestoreSnapshot(bazaarId, logId) {
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
-// تحميل البيانات من Supabase مباشرة عند فتح الداشبورد
-loadData();
-
 // تحديث المعاينة عند الكتابة
 document.getElementById('nb-name').addEventListener('input',updatePreview);
 document.getElementById('nb-area').addEventListener('input',updatePreview);
 document.getElementById('nb-vname').addEventListener('input',updatePreview);
 document.getElementById('nb-ds').addEventListener('change',()=>{calcDays();updatePreview();});
 
-/* ── Admin Login (Supabase Auth) ── */
-const ADMIN_EMAIL = 'makanispot@gmail.com';
-let mkTries = 0, mkLocked = false;
-
-async function mkLogin() {
-  if (mkLocked) return;
-  const pw = document.getElementById('mk-pw').value;
-  if (!pw) return;
-  document.getElementById('mk-btn').disabled = true;
-
-  const { error } = await db.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pw });
-
-  if (!error) {
-    document.getElementById('mk-login').style.display = 'none';
-    loadData(); // أعد تحميل البيانات مع الـ session الجديدة
-  } else {
-    mkTries++;
-    document.getElementById('mk-pw').value = '';
-    document.getElementById('mk-err').style.display = 'block';
-    const left = 5 - mkTries;
-    if (left <= 0) {
-      mkLocked = true;
-      document.getElementById('mk-err').textContent = '🔒 تم القفل — انتظر دقيقة';
-      document.getElementById('mk-pw').disabled = true;
-      setTimeout(() => {
-        mkLocked = false; mkTries = 0;
-        document.getElementById('mk-pw').disabled = false;
-        document.getElementById('mk-err').style.display = 'none';
-        document.getElementById('mk-tries').textContent = '';
-      }, 60000);
-    } else {
-      document.getElementById('mk-tries').textContent = `محاولات متبقية: ${left}`;
-    }
-    document.getElementById('mk-btn').disabled = false;
-  }
-}
-
+/* ── Auto Auth — حماية عبر Cloudflare Access + admin-hub ── */
 async function mkLogout() {
   await db.auth.signOut();
-  location.reload();
+  localStorage.removeItem('mks_hub_tok');
+  window.location.replace('./admin-hub.html');
 }
 
-// استعادة الجلسة عند تحديث الصفحة — يُخفي اللوجين ويُعيد تحميل البيانات بتوكن محدَّث
 (async function () {
-  const { data: { session } } = await db.auth.getSession();
-  if (session) {
-    document.getElementById('mk-login').style.display = 'none';
-    loadData(); // إعادة تحميل بالـ session المُحدَّثة (تحل مشكلة التوكن المنتهي)
+  if (!localStorage.getItem('mks_hub_tok')) {
+    window.location.replace('./admin-hub.html');
+    return;
   }
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+    await db.auth.signInWithPassword({
+      email: 'makanispot@gmail.com',
+      password: 'MksAdm!n2026#Bz'
+    });
+  }
+  loadData();
 })();
 </script>
 </body>
