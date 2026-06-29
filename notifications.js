@@ -120,11 +120,12 @@
     if (!_sb || !_uid) return;
     var ids = _notifs.filter(function (n) { return !n.is_read; }).map(function (n) { return n.id; });
     if (!ids.length) return;
-    await _sb.from('notifications')
-      .update({ is_read: true })
-      .in('id', ids)
-      .eq('user_id', _uid)
-      .catch(function () {});
+    try {
+      await _sb.from('notifications')
+        .update({ is_read: true })
+        .in('id', ids)
+        .eq('user_id', _uid);
+    } catch (e) { /* صامت */ }
     _notifs = _notifs.map(function (n) { return Object.assign({}, n, { is_read: true }); });
     _count  = 0;
     _syncBadge();
@@ -134,11 +135,12 @@
   /* click(notifId, actionUrl) — يُعلّم إشعاراً كمقروء + يُحدّث badge فوراً + ينتقل */
   async function click(notifId, actionUrl) {
     if (!_sb || !_uid) return;
-    await _sb.from('notifications')
-      .update({ is_read: true })
-      .eq('id', notifId)
-      .eq('user_id', _uid)
-      .catch(function () {});
+    try {
+      await _sb.from('notifications')
+        .update({ is_read: true })
+        .eq('id', notifId)
+        .eq('user_id', _uid);
+    } catch (e) { /* صامت */ }
     var wasUnread = _notifs.some(function (n) { return n.id === notifId && !n.is_read; });
     _notifs = _notifs.map(function (n) {
       return n.id === notifId ? Object.assign({}, n, { is_read: true }) : n;

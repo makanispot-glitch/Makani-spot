@@ -2828,6 +2828,8 @@ async function loadUserBookings(userId) {
 
     const normalizedSpaces = (spaceBookings || []).map(b => ({
       kind: 'space',
+      id: b.id,
+      isWaitlist: !!b.is_waitlist,
       title: b.space_name || '—',
       loc: b.space_loc || '—',
       price: b.price || '—',
@@ -2875,19 +2877,25 @@ async function loadUserBookings(userId) {
     }
 
     const statusMap = {
-      pending: { label: 'قيد المراجعة ⏳', cls: 'status-pending' },
-      confirmed: { label: 'مؤكد ✅', cls: 'status-confirmed' },
-      cancelled: { label: 'ملغي ❌', cls: 'status-cancelled' },
-      completed: { label: 'مكتمل 🏁', cls: 'status-confirmed' },
+      pending:         { label: 'قيد المراجعة ⏳',      cls: 'status-pending'   },
+      viewing_pending: { label: 'طلب معاينة ⏳',         cls: 'status-pending'   },
+      waitlist:        { label: 'قائمة الانتظار ⏳',     cls: 'status-waitlist'  },
+      confirmed:       { label: 'مؤكد ✅',              cls: 'status-confirmed' },
+      cancelled:       { label: 'ملغي ❌',               cls: 'status-cancelled' },
+      completed:       { label: 'مكتمل 🏁',             cls: 'status-confirmed' },
     };
 
     // بناء HTML لكل حجز
     const allCards = bookings.map(b => {
-      const st = statusMap[b.status] || statusMap.pending;
+      const st = (b.kind === 'space' && b.isWaitlist)
+        ? statusMap.waitlist
+        : (statusMap[b.status] || statusMap.pending);
       const dateStr = b.created_at
         ? new Date(b.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
       const kindLabel = b.kind === 'bazaar' ? 'بازار' : 'مساحة';
+      const canWithdraw = b.kind === 'space' && b.id &&
+        (b.isWaitlist || b.status === 'pending' || b.status === 'viewing_pending');
       return `
       <div class="booking-card ${b.kind === 'bazaar' ? 'booking-card-bazaar' : ''}">
         <div class="booking-card-header">
@@ -2903,6 +2911,9 @@ async function loadUserBookings(userId) {
           <span>⏱ ${b.duration}</span>
           <span>📅 ${dateStr}</span>
         </div>
+        ${canWithdraw ? `<div class="booking-card-actions">
+          <button class="btn-withdraw" onclick="withdrawBooking('${b.id}')">↩ سحب الطلب</button>
+        </div>` : ''}
       </div>`;
     });
 
@@ -2918,6 +2929,27 @@ async function loadUserBookings(userId) {
 
   } catch (e) {
     if (contEl) contEl.innerHTML = '<div class="no-bookings">تعذّر تحميل الحجوزات</div>';
+  }
+}
+
+async function withdrawBooking(bookingId) {
+  if (!sbClient || !bookingId) return;
+  if (!confirm('هل تريد سحب طلب الحجز هذا؟\nبعد السحب لن يظهر الطلب في قائمة المراجعة لصاحب المساحة.')) return;
+
+  const btn = document.querySelector(`[onclick="withdrawBooking('${bookingId}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = 'جاري السحب…'; }
+
+  try {
+    const { data: { user }, error: authErr } = await sbClient.auth.getUser();
+    if (authErr || !user) throw new Error('يجب تسجيل الدخول أولاً');
+
+    const { error } = await sbClient.rpc('user_cancel_booking', { p_booking_id: bookingId });
+    if (error) throw error;
+
+    await loadUserBookings(user.id);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '↩ سحب الطلب'; }
+    alert('تعذّر سحب الطلب: ' + (e.message || 'خطأ غير معروف'));
   }
 }
 

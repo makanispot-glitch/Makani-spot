@@ -901,6 +901,26 @@ tbody tr:hover .row-acts{opacity:1}
       البيانات محفوظة كاملاً. يمكنك استعادة أي بازار أو حذفه نهائياً لتوفير المساحة.
     </div>
 
+    <!-- إعداد مدة الظهور قبل الأرشفة التلقائية -->
+    <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:800;color:var(--yw);margin-bottom:3px">⏰ مدة ظهور البازار بعد انتهائه</div>
+        <div style="font-size:11.5px;color:var(--mu);line-height:1.6">
+          البازارات المنتهية تظل مرئية للزوار لهذه المدة قبل أن يؤرشفها النظام تلقائياً كل يوم الساعة 2 صباحاً
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <input type="number" id="arch-days-input" min="1" max="365" value="21"
+               style="width:72px;padding:7px 10px;border-radius:var(--r);border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:var(--tx);font-size:14px;font-weight:800;text-align:center;font-family:inherit">
+        <span style="font-size:12px;color:var(--mu)">يوم</span>
+        <button class="btn btn-sm" id="arch-days-save-btn" onclick="saveArchiveDays()"
+                style="background:rgba(245,158,11,.2);color:var(--yw);border:1px solid rgba(245,158,11,.4)">
+          حفظ
+        </button>
+        <span id="arch-days-status" style="font-size:11px;color:var(--gr);display:none">✓ حُفظ</span>
+      </div>
+    </div>
+
     <!-- auto-suggest banner -->
     <div id="arch-suggest" style="display:none;margin-bottom:16px"></div>
 
@@ -2984,7 +3004,7 @@ function gp(tab){
   if(tab==='org-ver')     loadOrgVerRequests();
   if(tab==='org-support') loadSupportOrganizers();
   if(tab==='featured')    loadFeaturedPage();
-  if(tab==='archive')     loadArchivePage();
+  if(tab==='archive')     { loadArchiveDays(); loadArchivePage(); }
   if(tab==='audit')       { _auditPage=1; loadAuditLog(); }
   if(tab==='cancelled')   loadCancelledBazaars();
   if(tab==='postpone')    loadPostponements();
@@ -3061,6 +3081,35 @@ async function archiveBazaar(id, name) {
   }
 }
 
+async function loadArchiveDays() {
+  try {
+    const { data } = await db.from('platform_settings').select('value').eq('key', 'bazaar_archive_days').single();
+    const days = parseInt(data?.value) || 21;
+    const inp = document.getElementById('arch-days-input');
+    if (inp) inp.value = days;
+  } catch(_) {}
+}
+
+async function saveArchiveDays() {
+  const inp = document.getElementById('arch-days-input');
+  const btn = document.getElementById('arch-days-save-btn');
+  const st  = document.getElementById('arch-days-status');
+  const days = parseInt(inp?.value);
+  if (!days || days < 1 || days > 365) { toast('❌ أدخل عدداً بين 1 و 365', 'e'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await db.from('platform_settings')
+      .upsert({ key: 'bazaar_archive_days', value: String(days), label: 'عدد أيام الظهور بعد انتهاء البازار', updated_at: new Date().toISOString() });
+    if (error) throw error;
+    if (st) { st.style.display = ''; setTimeout(() => { st.style.display = 'none'; }, 2500); }
+    toast(`✅ تم الحفظ — الأرشفة التلقائية بعد ${days} يوم`, 's');
+  } catch(e) {
+    toast('❌ فشل الحفظ: ' + e.message, 'e');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 async function _refreshArchiveBadge() {
   try {
     const { data } = await db.from('bazaars').select('id').eq('is_archived', true);
@@ -3105,13 +3154,14 @@ async function loadArchivePage() {
     const badge = document.getElementById('nb-archive');
     if (badge) { badge.textContent = archived.length; badge.style.display = archived.length ? '' : 'none'; }
 
-    // اقتراح أرشفة البازارات المنتهية منذ فترة
+    // اقتراح أرشفة البازارات المنتهية منذ فترة (باستخدام الإعداد من قاعدة البيانات)
     const today = new Date();
+    const archDays = parseInt(document.getElementById('arch-days-input')?.value) || 21;
     const endedBazaars = BAZAARS.filter(b => {
       if (!b.dateEnd) return false;
       const end = new Date(b.dateEnd);
       const diff = (today - end) / (1000 * 60 * 60 * 24);
-      return diff >= 7;
+      return diff >= archDays;
     });
     if (suggestEl) {
       if (endedBazaars.length) {
@@ -3119,7 +3169,7 @@ async function loadArchivePage() {
         suggestEl.innerHTML = `
           <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--r);padding:14px 16px;font-size:12.5px">
             <strong style="color:var(--yw)">💡 اقتراح تلقائي:</strong>
-            يوجد <strong>${endedBazaars.length}</strong> بازار انتهى منذ أكثر من 7 أيام ولم يُؤرشف بعد:
+            يوجد <strong>${endedBazaars.length}</strong> بازار انتهى منذ أكثر من <strong>${archDays} يوم</strong> ولم يُؤرشف بعد:
             <ul style="margin:8px 0 10px 0;padding-right:16px;line-height:1.8">
               ${endedBazaars.map(b => `<li><strong>${b.name}</strong> — انتهى ${b.dateEnd}</li>`).join('')}
             </ul>
@@ -4909,6 +4959,7 @@ async function mkLogout() {
     });
   }
   loadData();
+  loadArchiveDays();
 })();
 </script>
 </body>

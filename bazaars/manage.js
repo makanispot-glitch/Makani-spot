@@ -1274,6 +1274,30 @@ function _populateVerificationTab(b) {
   _docsCurrentLinks = Array.isArray(b.event_links) ? [...b.event_links] : [];
   _renderDocsLinks();
 
+  /* تنبيه بارز: البازار انتهى دون إضافة روابط توثيق */
+  const _today_docs    = new Date().toISOString().split('T')[0];
+  const _endD_docs     = b.date_end || b.end_date;
+  const _expiredByDate = _endD_docs && _endD_docs < _today_docs;
+  const _isEnded       = _expiredByDate || b.status === 'completed';
+  document.getElementById('docs-ended-alert')?.remove();
+  if (_isEnded && !_docsCurrentLinks.length) {
+    const _refEl = document.getElementById('docs-banner');
+    const _alertHtml = `<div id="docs-ended-alert"
+      style="background:#fef2f2;border:2px solid #fca5a5;border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:26px;flex-shrink:0">⚠️</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:900;color:#b91c1c;margin-bottom:4px">انتهى البازار دون توثيق</div>
+        <div style="font-size:12.5px;color:#dc2626;line-height:1.65;margin-bottom:12px">إضافة روابط الفعالية (فيديوهات، صور، تغطيات) تُعزّز مصداقيتك لدى العارضين في البازارات القادمة</div>
+        <button onclick="document.getElementById('docs-add-btn')?.click()"
+                style="padding:9px 18px;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);font-family:var(--font-display);font-size:13px;font-weight:800;cursor:pointer">
+          📎 توثيق الحدث الآن
+        </button>
+      </div>
+    </div>`;
+    if (_refEl) _refEl.insertAdjacentHTML('afterend', _alertHtml);
+    else document.getElementById('docs-status-content')?.insertAdjacentHTML('beforebegin', _alertHtml);
+  }
+
   /* 7-day banner */
   const banner   = document.getElementById('docs-banner');
   const deadline = document.getElementById('docs-banner-deadline');
@@ -1304,7 +1328,7 @@ function _populateVerificationTab(b) {
     const updatedAt = b.links_last_updated_at ? new Date(b.links_last_updated_at).toLocaleDateString('ar-EG') : null;
     sc.innerHTML = `<div class="mn-docs-status-pill green">🟢 تمت إضافة ${_docsCurrentLinks.length} ${_docsCurrentLinks.length === 1 ? 'رابط' : 'روابط'}</div>
       <div style="font-size:11.5px;color:var(--ink3)">أُضيفت لأول مرة: ${addedAt}${updatedAt ? ` &nbsp;·&nbsp; آخر تحديث: ${updatedAt}` : ''}</div>`;
-  } else if (DOCS_ALLOWED.includes(b.status)) {
+  } else if (DOCS_ALLOWED.includes(b.status) || _expiredByDate) {
     const wasDeleted = b.links_deleted_at;
     sc.innerHTML = `<div class="mn-docs-status-pill yellow">🟡 ${wasDeleted ? '⚠️ كان هذا الحدث يحتوي سابقاً على روابط قام المنظم بإزالتها لاحقاً' : 'لم تُضف روابط بعد'}</div>
       <div style="font-size:11.5px;color:var(--ink3);margin-top:4px">${wasDeleted ? `تاريخ الإزالة: ${new Date(wasDeleted).toLocaleDateString('ar-EG')} — يمكنك إعادة الإضافة في أي وقت` : 'إضافة الروابط اختيارية — تُعزز مصداقيتك لدى العملاء'}</div>`;
@@ -1315,7 +1339,7 @@ function _populateVerificationTab(b) {
   /* hide save button if docs not yet meaningful */
   const saveBtn = document.getElementById('docs-save-btn');
   const addBtn  = document.getElementById('docs-add-btn');
-  const canDoc  = DOCS_ALLOWED.includes(b.status);
+  const canDoc  = DOCS_ALLOWED.includes(b.status) || _expiredByDate;
   if (saveBtn) saveBtn.style.display = canDoc ? '' : 'none';
   if (addBtn)  addBtn.style.display  = canDoc ? '' : 'none';
 }

@@ -3740,6 +3740,45 @@ body {
   color: var(--red);
 }
 
+.status-waitlist {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}
+
+.booking-card-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-withdraw {
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.btn-withdraw:hover {
+  border-color: var(--red, #e53e3e);
+  color: var(--red, #e53e3e);
+  background: rgba(229, 62, 62, 0.07);
+}
+
+.btn-withdraw:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .booking-card-details {
   display: flex;
   gap: 14px;

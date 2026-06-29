@@ -225,7 +225,10 @@ function bzRenderNavUser() {
   }
   bzUpdateBnUser();
   // جرس الإشعارات الموحّد
-  if (currentUser) GN.mount(document.getElementById('bz-nav-user'));
+  if (currentUser) GN.mount(
+    document.querySelector('#bz-nav-user .bz-nav-user-wrap') ||
+    document.getElementById('bz-nav-user')
+  );
 }
 
 function bzToggleAccountMenu(e) {
@@ -350,6 +353,7 @@ async function loadBazaars() {
       sketch_url:           _toDirectImgUrl(b.sketch_url || ''),
       event_image_url:      _toDirectImgUrl(b.event_image_url || b.image || ''),
       status:               b.status || 'published',
+      event_links:          Array.isArray(b.event_links) ? b.event_links : [],
     }));
 
     console.log(`✅ تم تحميل ${BAZAARS.length} بازار من Supabase`);
@@ -642,6 +646,15 @@ function applyBzFilters() {
   if (sort === 'price-asc')  data.sort((a, b) => (a.price_per_slot||0) - (b.price_per_slot||0));
   if (sort === 'price-desc') data.sort((a, b) => (b.price_per_slot||0) - (a.price_per_slot||0));
   if (sort === 'slots-desc') data.sort((a, b) => (b.available_slots||0) - (a.available_slots||0));
+
+  /* البازارات المنتهية تظهر في الأسفل دائماً بغض النظر عن الترتيب */
+  { const _td = new Date().toISOString().split('T')[0];
+    data.sort((x, y) => {
+      const xE = (x.date_end || x.date_start || '') < _td ? 1 : 0;
+      const yE = (y.date_end || y.date_start || '') < _td ? 1 : 0;
+      return xE - yE;
+    });
+  }
 
   bzFiltered = data;
   bzPage     = 1;
@@ -954,7 +967,9 @@ async function openBazaarDetail(bazaarId) {
           <button class="btn btn-primary" style="padding:12px 28px" onclick="closeBazaarDetail()">
             ← عرض البازارات المتاحة
           </button>
-        </div>`;
+        </div>
+        <div id="bzd-past-org-bazaars" style="margin-top:20px"></div>`;
+      if (b.organizer_id && sbClient) _loadOrgPastBazaars(b.organizer_id, b.id);
     }
     if (panel) panel.style.display = 'none';
     showBzPage('bazaar-detail');
@@ -1121,7 +1136,11 @@ function _renderBazaarInfo(b) {
         </div>
       </div>` : ''}
 
-      ${(b.status === 'completed' || b.status === 'live') ? (() => {
+      ${(() => {
+        const _rl_today = new Date().toISOString().split('T')[0];
+        const _rl_end   = b.date_end || b.date_start;
+        const _rl_exp   = _rl_end && _rl_end < _rl_today;
+        if (!_rl_exp && b.status !== 'completed' && b.status !== 'live') return '';
         const links = Array.isArray(b.event_links) ? b.event_links.filter(u => u) : [];
         if (links.length > 0) {
           const icons = { 'facebook.com':'📘','fb.com':'📘','instagram.com':'📸','tiktok.com':'🎵','youtube.com':'▶️','youtu.be':'▶️','x.com':'🐦','twitter.com':'🐦','snapchat.com':'👻','linkedin.com':'💼' };
@@ -1141,13 +1160,13 @@ function _renderBazaarInfo(b) {
             </div>
           </div>`;
         }
-        return b.status === 'completed'
+        return (_rl_exp || b.status === 'completed')
           ? `<div class="sd-info-card sd-info-full" style="border-color:#fde047;background:#fefce8">
               <div class="sd-info-title" style="color:#92400e">🟡 لم يُضف المنظم روابط لهذا الحدث</div>
               <div style="font-size:12px;color:#a16207;margin-top:6px">لم يُضف المنظّم روابط للحدث حتى الآن.</div>
             </div>`
           : '';
-      })() : ''}
+      })()}
 
     </div>
 
@@ -1174,6 +1193,57 @@ function _renderBazaarInfo(b) {
   const timelineEl = document.getElementById('bzd-timeline');
   if (timelineEl) { timelineEl.style.display = 'none'; timelineEl.innerHTML = ''; }
   if (sbClient && b.id) _loadBazaarTimeline(b.id);
+}
+
+async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
+  const el = document.getElementById('bzd-past-org-bazaars');
+  if (!el || !sbClient) return;
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data: past } = await sbClient
+      .from('bazaars')
+      .select('id,name,date_start,date_end,event_links')
+      .eq('organizer_id', organizerId)
+      .neq('id', currentBazaarId)
+      .lt('date_end', todayStr)
+      .in('status', ['published', 'live', 'completed'])
+      .eq('is_deleted', false)
+      .order('date_end', { ascending: false })
+      .limit(5);
+
+    if (!past?.length) { el.remove(); return; }
+
+    const icons = { 'facebook.com':'📘','fb.com':'📘','instagram.com':'📸','tiktok.com':'🎵','youtube.com':'▶️','youtu.be':'▶️','x.com':'🐦','twitter.com':'🐦','snapchat.com':'👻','linkedin.com':'💼' };
+    const getIcon = u => { try { const d = new URL(u).hostname.replace('www.',''); return Object.entries(icons).find(([k]) => d.includes(k))?.[1] || '🔗'; } catch { return '🔗'; } };
+
+    const rows = past.map(pb => {
+      const links   = Array.isArray(pb.event_links) ? pb.event_links.filter(u => u) : [];
+      const dateStr = pb.date_end
+        ? new Date(pb.date_end).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+        : '—';
+      return `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:3px">${pb.name}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:${links.length ? '8px' : '0'}">📅 ${dateStr}</div>
+          ${links.length
+            ? `<div style="display:flex;flex-direction:column;gap:6px">
+                ${links.map(u => `<a href="${u}" target="_blank" rel="noopener noreferrer" dir="ltr"
+                  style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none;word-break:break-all">
+                  <span>${getIcon(u)}</span><span>${u}</span>
+                </a>`).join('')}
+              </div>`
+            : `<div style="font-size:11px;color:var(--ink3);font-style:italic">لم يُضف المنظم روابط لهذا الحدث</div>`}
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="sd-info-card sd-info-full">
+        <div class="sd-info-title" style="color:var(--ink2)">📁 فعاليات سابقة لهذا المنظم</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">${rows}</div>
+      </div>`;
+  } catch(e) {
+    el.remove();
+  }
 }
 
 function closeBazaarDetail() {
