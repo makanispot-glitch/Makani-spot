@@ -2244,6 +2244,9 @@ async function initAuth() {
 }
 
 function setNavUser(user, profile) {
+  // يُزامن الـ class مع الحالة النهائية (بعد تأكيد getSession)
+  document.documentElement.classList.toggle('sb-authed', !!user);
+
   const guestEl = document.getElementById('nav-guest');
   const loggedEl = document.getElementById('nav-logged');
   if (!guestEl || !loggedEl) return;

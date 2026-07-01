@@ -46,6 +46,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
+  <!-- Auth Flicker Prevention: يقرأ الجلسة من localStorage قبل أول رسمة -->
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem('sb-rxqkpjuvudweyovekvvx-auth-token');
+        if (raw) {
+          var s = JSON.parse(raw);
+          if (s && s.expires_at && Math.floor(Date.now() / 1000) < s.expires_at) {
+            document.documentElement.classList.add('sb-authed');
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- ملف التصميم المشترك — من المجلد الأب -->
   <link rel="stylesheet" href="../style.css?v=27">
 

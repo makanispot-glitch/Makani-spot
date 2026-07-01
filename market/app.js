@@ -1232,6 +1232,7 @@ async function eqIncrementContact(id) {
    ================================================================ */
 
 function eqOpenReport(id) {
+  if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
   document.getElementById('eq-report-id').value = id;
   document.getElementById('eq-report-reason').value = '';
   document.getElementById('eq-report-modal').classList.add('open');
@@ -1245,8 +1246,9 @@ async function eqSubmitReport() {
   const id     = document.getElementById('eq-report-id').value;
   const reason = document.getElementById('eq-report-reason').value.trim();
   if (!reason) { alert('من فضلك اكتب سبب الإبلاغ'); return; }
+  if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
 
-  const reportData = { listing_id: id, reason, reporter_id: eqUser?.id || null };
+  const reportData = { listing_id: id, reason, user_id: eqUser.id };
   const { error } = await eqSb.from('listing_reports').insert(reportData);
   if (error) { alert('حدث خطأ، حاول مرة أخرى'); return; }
 
