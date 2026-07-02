@@ -91,6 +91,8 @@ let eqDrawerDraft   = {
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+  eqInitFilterBarSticky();
+
   /* ── Sidebar events — attached first, before any early return ── */
   const _sidebarTab     = document.getElementById('eq-sidebar-tab');
   const _mobileFilterBtn = document.getElementById('eq-mobile-filter-btn');
@@ -186,6 +188,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       setTimeout(() => {
         eqOpenDetail(listingId);
       }, 500);
+    } else if (urlParams.get('myListings') && eqUser) {
+      setTimeout(() => {
+        eqOpenMyListings();
+      }, 500);
     }
   } catch (e) {
     eqShowError('حدث خطأ في تحميل الصفحة. حاول إعادة التحميل.');
@@ -251,7 +257,10 @@ function eqRenderNavUser() {
       : initial;
 
     area.innerHTML = `
-      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">❤️</button>
+      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.4 5.4 0 0 0-7.6 0L12 6.1l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.5a5.4 5.4 0 0 0 0-7.6Z"/></svg>
+        <span class="eq-fav-badge" id="eq-fav-badge"></span>
+      </button>
       <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
         <div class="nav-avatar-circle">${circleHtml}</div>
         <div class="nav-avatar-info">
@@ -623,8 +632,36 @@ function eqFabPriceChange(inp) {
 
 
 /* ================================================================
-   📱 Mobile Filter Sidebar Drawer
+   📌 Desktop Sticky Filters Bar
+   بدل ما نفترض ارتفاع .nav برقم ثابت (كان 68px مكرر في ملفين ومنفصل
+   عن القيمة الحقيقية)، نقيسه فعليًا ونمرره كـ CSS var — لو ارتفاع الناف
+   اتغيّر لأي سبب مستقبلاً، شريط الفلتر بيتبعه تلقائيًا بدون فجوة أو تراكب.
    ================================================================ */
+
+function eqInitFilterBarSticky() {
+  const nav = document.querySelector('.nav');
+  const bar = document.getElementById('eq-filters-bar');
+  const sentinel = document.getElementById('eq-filters-sentinel');
+  if (!nav || !bar) return;
+
+  const syncNavHeight = () => {
+    document.documentElement.style.setProperty('--eq-nav-h', nav.offsetHeight + 'px');
+  };
+  syncNavHeight();
+  if (window.ResizeObserver) {
+    new ResizeObserver(syncNavHeight).observe(nav);
+  } else {
+    window.addEventListener('resize', syncNavHeight);
+  }
+
+  /* is-stuck: يُفعَّل فقط لما الشريط يبقى فعلاً ملتصق تحت الناف —
+     يظهر الظل وقتها بس، بدل ما يبان دايمًا كأنه عنصر عائم منفصل */
+  if (sentinel && window.IntersectionObserver) {
+    new IntersectionObserver(([entry]) => {
+      bar.classList.toggle('is-stuck', entry.boundingClientRect.top < nav.offsetHeight);
+    }, { threshold: [0, 1] }).observe(sentinel);
+  }
+}
 
 function eqToggleSidebar() {
   if (document.body.classList.contains('filter-open')) {
@@ -978,7 +1015,6 @@ function eqBuildCard(listing) {
   } else {
     const slides = allImgs.map((u, i) =>
       `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${listing.title}"${_imgAttrs(true)}
-        onclick="eqOpenLightbox('${lid}',${i});event.stopPropagation()"
         onerror="this.parentNode.style.display='none'"></div>`
     ).join('');
     const navHtml = allImgs.length > 1 ? `
@@ -1172,8 +1208,8 @@ function eqShare(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
   const price = Number(listing.price).toLocaleString('ar-EG');
-  const pageUrl = window.location.origin + window.location.pathname;
-  const text  = `🔖 *${listing.title}*\n💰 السعر: ${price} ج\n📍 ${listing.region || ''}\n\n🛒 تصفح المزيد: ${pageUrl}`;
+  const pageUrl = `${window.location.origin}${window.location.pathname}?listing=${id}`;
+  const text  = `🔖 *${listing.title}*\n💰 السعر: ${price} ج\n📍 ${listing.region || ''}\n\n🛒 شاهد الإعلان: ${pageUrl}`;
 
   if (navigator.share) {
     navigator.share({ title: listing.title, text, url: pageUrl }).catch(() => {});
@@ -1598,9 +1634,10 @@ async function eqTogglePause(id, currentStatus) {
    ================================================================ */
 
 async function eqRunLifecycle() {
-  /* RPC يجاوز RLS — يتطلب دالة expire_listings في Supabase */
+  /* RPC يجاوز RLS — دالة expire_old_listings في Supabase (cron يومي هو الخط الأساسي،
+     وهذا النداء تفاعلي إضافي عشان يتفعّل بسرعة أكبر أثناء تصفّح المستخدمين) */
   try {
-    await eqSb.rpc('expire_listings');
+    await eqSb.rpc('expire_old_listings');
   } catch (_) {
     /* Lifecycle is best-effort and must not block the market page. */
   }
@@ -1640,13 +1677,13 @@ document.addEventListener('click', e => {
 function eqUpdateFavBtn() {
   const btn = document.getElementById('eq-fav-nav-btn');
   if (!btn) return;
-  if (eqFavorites.size > 0) {
-    btn.classList.add('has-favs');
-    btn.title = `المفضلة (${eqFavorites.size})`;
-  } else {
-    btn.classList.remove('has-favs');
-    btn.title = 'المفضلة';
+  const count = eqFavorites.size;
+  const badge = document.getElementById('eq-fav-badge');
+  if (badge) {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.classList.toggle('show', count > 0);
   }
+  btn.title = count > 0 ? `المفضلة (${count})` : 'المفضلة';
 }
 
 async function eqLoadFavorites() {

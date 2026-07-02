@@ -187,6 +187,15 @@ body { background: var(--surface2); }
 #pa-suspended-guard p { font-size: 14px; color: var(--ink2); margin-bottom: 10px; max-width: 420px; margin-inline: auto; }
 #pa-suspended-guard .reason-box { background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 12px 16px; margin: 16px auto; max-width: 420px; font-size: 13px; color: #991B1B; }
 
+/* ── Listing Limit Guard ── */
+#pa-limit-guard {
+  display: none; text-align: center; padding: 80px 20px;
+}
+#pa-limit-guard .guard-icon { font-size: 56px; margin-bottom: 16px; }
+#pa-limit-guard h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--orange); }
+#pa-limit-guard p { font-size: 14px; color: var(--ink2); margin-bottom: 10px; max-width: 420px; margin-inline: auto; }
+#pa-limit-guard .reason-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin: 16px auto; max-width: 420px; font-size: 13px; color: var(--dark); font-weight: 700; }
+
 /* ── Success ── */
 #pa-success { display: none; text-align: center; padding: 60px 20px; }
 #pa-success .success-icon { font-size: 60px; margin-bottom: 16px; }
@@ -266,6 +275,14 @@ body { background: var(--surface2); }
     <p>لا يمكنك نشر أو تعديل إعلانات في قسم مشاريع كاملة للبيع حالياً.</p>
     <div class="reason-box" id="pa-suspend-reason"></div>
     <p style="font-size:12.5px">إذا كنت تعتقد أن هذا خطأ، تواصل معنا عبر واتساب لمراجعة الأمر.</p>
+  </div>
+
+  <!-- ── Listing Limit Guard ── -->
+  <div id="pa-limit-guard">
+    <div class="guard-icon">⏳</div>
+    <h2 id="pa-limit-title">لا يمكنك نشر إعلان جديد الآن</h2>
+    <div class="reason-box" id="pa-limit-reason"></div>
+    <a href="/market/?myListings=1" class="pa-btn pa-btn-outline" style="text-decoration:none;display:inline-block;padding:11px 28px;border-radius:12px;margin-top:8px">إدارة إعلاناتي</a>
   </div>
 
   <!-- ── Success ── -->
@@ -516,9 +533,52 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  const limitReason = await paCheckListingLimit();
+  if (limitReason) {
+    document.getElementById('pa-wizard').style.display = 'none';
+    document.getElementById('pa-limit-reason').textContent = limitReason;
+    document.getElementById('pa-limit-guard').style.display = 'block';
+    return;
+  }
+
   paFillGovs();
   paUpdateProgress();
 });
+
+/* ── Listing Limit Precheck ──
+   تحقّق UX فقط لتوفير وقت المستخدم — التطبيق الفعلي والملزم يتم عبر
+   trigger على مستوى قاعدة البيانات (enforce_listing_rate_limit) لا يمكن تجاوزه. */
+async function paCheckListingLimit() {
+  try {
+    const { data: isExempt } = await paSb.rpc('am_i_listing_rate_limit_exempt');
+    if (isExempt) return null;
+
+    const { count: activeCount } = await paSb.from('listings')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', paUser.id).in('status', ['approved', 'paused']);
+
+    if ((activeCount || 0) >= 3) {
+      return 'لديك حالياً 3 إعلانات نشطة (الحد الأقصى المسموح به). احذف أو أنهِ أحد إعلاناتك أولاً قبل نشر إعلان جديد.';
+    }
+
+    const { data: lastListing } = await paSb.from('listings')
+      .select('created_at').eq('user_id', paUser.id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+    if (lastListing?.created_at) {
+      const waitMs = (12 * 60 * 60 * 1000) - (Date.now() - new Date(lastListing.created_at).getTime());
+      if (waitMs > 0) {
+        const h = Math.floor(waitMs / 3600000);
+        const m = Math.floor((waitMs % 3600000) / 60000);
+        return `يمكنك نشر إعلان جديد بعد مرور 12 ساعة من آخر إعلان قمت بنشره. الوقت المتبقي: ${h} ساعة و${m} دقيقة.`;
+      }
+    }
+    return null;
+  } catch (e) {
+    /* الفحص المسبق best-effort — عند أي خطأ نترك الفورم يفتح، والـ trigger هو الحارس الحقيقي */
+    return null;
+  }
+}
 
 function paFillGovs() {
   const sel = document.getElementById('pa-governorate');
@@ -775,7 +835,8 @@ async function paSubmit() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch (e) {
-    alert('حدث خطأ: ' + e.message);
+    /* P0001 = رسالة مقصودة من trigger القيود (الحد الأقصى / فترة الانتظار) — تُعرض كما هي */
+    alert(e.code === 'P0001' ? e.message : ('حدث خطأ: ' + e.message));
     btn.disabled = false;
     btn.textContent = '🚀 إرسال الإعلان';
   }
