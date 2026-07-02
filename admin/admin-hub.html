@@ -850,9 +850,15 @@ body {
 .aq-goto { font-size: 11.5px; color: var(--or); font-weight: 700; white-space: nowrap; text-decoration: none; }
 .aq-goto:hover { text-decoration: underline; }
 .aq-items { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bd); display: flex; flex-direction: column; gap: 8px; }
-.aq-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--bg3); border-radius: 8px; padding: 8px 12px; }
+.aq-item { display: flex; flex-direction: column; gap: 6px; background: var(--bg3); border-radius: 8px; padding: 8px 12px; }
+.aq-item-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .aq-item-label { flex: 1; min-width: 120px; font-size: 12.5px; color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aq-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.aq-item-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.aq-meta-chip { font-size: 11px; color: var(--mu); }
+.aq-meta-chip b { color: var(--mu); font-weight: 600; }
+.aq-meta-chip a { color: var(--or); text-decoration: none; font-weight: 700; }
+.aq-meta-chip a:hover { text-decoration: underline; }
 .aq-more { font-size: 12px; color: var(--mu); padding: 2px 4px; }
 .aq-more a { color: var(--or); font-weight: 700; text-decoration: none; }
 .aq-more a:hover { text-decoration: underline; }
@@ -1810,6 +1816,31 @@ async function refreshAdminMetricsNow() {
   } catch(err) { toast('خطأ: ' + err.message, 'e'); }
 }
 
+/* أسماء العرض والتهيئة لكل مفتاح meta ممكن يوصل من admin_metrics_items */
+const AQ_META_LABELS = {
+  phone:        { label: 'الهاتف',        fmt: v => `<a href="tel:${esc(v)}" onclick="event.stopPropagation()">${esc(v)} 📞</a>` },
+  selected_plan:{ label: 'الباقة المطلوبة', fmt: v => esc(v) },
+  plan:         { label: 'الباقة',         fmt: v => esc(v) },
+  type:         { label: 'النوع',          fmt: v => esc(v) },
+  region:       { label: 'المنطقة',        fmt: v => esc(v) },
+  owner_name:   { label: 'صاحب المساحة',   fmt: v => esc(v) },
+  organizer:    { label: 'المنظّم',         fmt: v => esc(v) },
+  total_slots:  { label: 'عدد الأماكن',    fmt: v => esc(v) },
+  price:        { label: 'السعر',          fmt: v => esc(v) },
+  category:     { label: 'الفئة',          fmt: v => esc(v) },
+  date_start:   { label: 'تاريخ البدء',    fmt: v => new Date(v).toLocaleDateString('ar-EG', {day:'2-digit', month:'short'}) },
+  date_end:     { label: 'تاريخ الانتهاء', fmt: v => new Date(v).toLocaleDateString('ar-EG', {day:'2-digit', month:'short'}) },
+  ends_at:      { label: 'ينتهي في',       fmt: v => new Date(v).toLocaleDateString('ar-EG', {day:'2-digit', month:'short'}) },
+};
+
+function formatAqMeta(meta) {
+  if (!meta) return '';
+  const parts = Object.entries(meta)
+    .filter(([k, v]) => v !== null && v !== undefined && v !== '' && AQ_META_LABELS[k])
+    .map(([k, v]) => `<span class="aq-meta-chip"><b>${AQ_META_LABELS[k].label}:</b> ${AQ_META_LABELS[k].fmt(v)}</span>`);
+  return parts.length ? `<div class="aq-item-meta">${parts.join('')}</div>` : '';
+}
+
 function renderActionQueue() {
   const el = document.getElementById('aq-section');
   if (!el) return;
@@ -1824,21 +1855,23 @@ function renderActionQueue() {
     const gotoUrl = cfg.gotoFile + '?goto=' + encodeURIComponent(cfg.gotoParam);
     let itemsHtml = '';
 
-    if (cfg.action) {
-      const items = (aqItems[cfg.key] || []).slice(0, 2);
-      if (items.length) {
-        const cards = items.map(it => `
-          <div class="aq-item">
+    const items = (aqItems[cfg.key] || []).slice(0, 2);
+    if (items.length) {
+      const cards = items.map(it => `
+        <div class="aq-item">
+          <div class="aq-item-top">
             <div class="aq-item-label" title="${esc(it.label)}">${esc(it.label || '—')}</div>
+            ${cfg.action ? `
             <div class="aq-item-actions">
               <button class="sp-btn sp-btn-ok"  onclick="aqApprove('${cfg.action}','${it.id}',this)">✅ قبول</button>
               <button class="sp-btn sp-btn-err" onclick="aqReject('${cfg.action}','${it.id}',this)">❌ رفض</button>
-            </div>
-          </div>`).join('');
-        const more = count > items.length
-          ? `<div class="aq-more">+${count - items.length} أخرى — <a href="${gotoUrl}" target="_blank">عرض الكل ←</a></div>` : '';
-        itemsHtml = `<div class="aq-items">${cards}${more}</div>`;
-      }
+            </div>` : ''}
+          </div>
+          ${formatAqMeta(it.meta)}
+        </div>`).join('');
+      const more = count > items.length
+        ? `<div class="aq-more">+${count - items.length} أخرى — <a href="${gotoUrl}" target="_blank">عرض الكل ←</a></div>` : '';
+      itemsHtml = `<div class="aq-items">${cards}${more}</div>`;
     }
 
     return `

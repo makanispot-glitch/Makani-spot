@@ -69,10 +69,9 @@ export async function onRequest(context) {
         return json(errMsg, res.status);
       }
 
-      return new Response(text || '{}', {
-        status: res.status,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      // PostgREST returns 204 No Content here (Prefer: return=minimal) — nothing to forward,
+      // and pairing a body with a 204 status violates the Response spec. Just ack success.
+      return json({ ok: true }, 200);
     }
 
     /* ── DELETE: hard-delete listing + R2 images ── */
