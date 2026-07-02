@@ -1567,6 +1567,12 @@ async function loadData() {
 
     _refreshArchiveBadge();
 
+    if (!window.__gotoApplied) {
+      window.__gotoApplied = true;
+      const _goto = new URLSearchParams(location.search).get('goto');
+      if (_goto) gp(_goto);
+    }
+
     // تنظيف الإشعارات القديمة + الحجوزات المنتهية في الخلفية
     db.rpc('cleanup_old_notifications').then(null, () => {});
     db.rpc('cleanup_expired_bookings')
@@ -2918,30 +2924,10 @@ async function approveOrgRequest(id, name, totalSlots, fromModal) {
   if (!confirm(`قبول طلب تنظيم "${name}"؟\nسيصبح البازار منشوراً وستُنشأ خريطة الأماكن تلقائياً.`)) return;
   if (fromModal) closeModal('modal-org-req');
   try {
-    /* جلب بيانات البازار الكاملة */
-    const { data: bz, error: bzErr } = await db.from('bazaars').select('*').eq('id', id).single();
-    if (bzErr) throw bzErr;
-
-    const total        = bz.total_slots    || 0;
-    const pricePerSlot = bz.price_per_slot || 0;
-    const premiumSlots = bz.premium_slots  || 0;
-    const premiumPrice = bz.premium_price  || 0;
-
-    /* نشر البازار */
-    const { error } = await db.from('bazaars').update({
-      status:          'published',
-      available_slots: total,
-    }).eq('id', id);
+    /* عبر RPC (is_admin() فعليًا لا "أي مستخدم مسجّل دخول") — نفس منطق النشر وتوليد الأماكن كان هنا سابقًا */
+    const { data, error } = await db.rpc('admin_manage_bazaar_request', { p_bazaar_id: id, p_action: 'approve' });
     if (error) throw error;
-
-    /* توليد خريطة الأماكن إذا لم تكن موجودة */
-    const { data: existing } = await db.from('bazaar_slots').select('id').eq('bazaar_id', id).limit(1);
-    if (!existing?.length && total > 0) {
-      await _generateBazaarSlots(id, total, pricePerSlot, premiumSlots, premiumPrice);
-      toast('✅ تم القبول والنشر · تم إنشاء ' + total + ' مكان في الخريطة', 's');
-    } else {
-      toast('✅ تم القبول — البازار منشور الآن', 's');
-    }
+    toast(data?.slots_generated ? '✅ تم القبول والنشر · تم إنشاء ' + data.slots_generated + ' مكان في الخريطة' : '✅ تم القبول — البازار منشور الآن', 's');
 
     loadOrgRequests();
     loadData();
@@ -2981,9 +2967,7 @@ async function rejectOrgRequest(id, name, fromModal) {
   if (reason === null) return;
   if (fromModal) closeModal('modal-org-req');
   try {
-    const updateObj = { status: 'cancelled' };
-    if (reason.trim()) updateObj.organizer_notes = '[مرفوض] ' + reason.trim();
-    const { error } = await db.from('bazaars').update(updateObj).eq('id', id);
+    const { error } = await db.rpc('admin_manage_bazaar_request', { p_bazaar_id: id, p_action: 'reject', p_reason: reason.trim() || null });
     if (error) throw error;
     toast('تم رفض الطلب وإلغاؤه', 'i');
     loadOrgRequests();
@@ -4218,20 +4202,9 @@ async function approveOrgVerRequest(reqId, userId) {
   const tag = document.getElementById(`orv-ast-${reqId}`);
   if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
   try {
-    // نسخ بيانات الطلب (الاسم، الهاتف، المنطقة) إلى organizer_profiles
-    const req = _orgVerRequests.find(r => r.id === reqId);
-    const profilePayload = {
-      user_id:     userId,
-      is_verified: true,
-      ...(req?.full_name && { full_name: req.full_name }),
-      ...(req?.phone     && { whatsapp:  req.phone }),
-      ...(req?.region    && { region:    req.region }),
-    };
-
-    const updates = [db.from('organizer_requests').update({ status: 'approved' }).eq('id', reqId)];
-    if (userId) updates.push(db.from('organizer_profiles').upsert(profilePayload, { onConflict: 'user_id' }));
-    const results = await Promise.all(updates);
-    for (const r of results) if (r.error) throw r.error;
+    /* عبر RPC — تنسخ بيانات الطلب إلى organizer_profiles وتفعّل is_verified داخل الدالة نفسها */
+    const { error } = await db.rpc('admin_manage_organizer_request', { p_request_id: reqId, p_action: 'approve' });
+    if (error) throw error;
     toast('✅ تم قبول الطلب وتفعيل حساب المنظّم', 's');
     loadOrgVerRequests();
   } catch(e) {
@@ -4245,10 +4218,8 @@ async function rejectOrgVerRequest(reqId, userId) {
   const tag = document.getElementById(`orv-ast-${reqId}`);
   if (tag) tag.textContent = '⏳ جارٍ المعالجة…';
   try {
-    const updates = [db.from('organizer_requests').update({ status: 'rejected' }).eq('id', reqId)];
-    if (userId) updates.push(db.from('organizer_profiles').update({ is_verified: false }).eq('user_id', userId));
-    const results = await Promise.all(updates);
-    for (const r of results) if (r.error) throw r.error;
+    const { error } = await db.rpc('admin_manage_organizer_request', { p_request_id: reqId, p_action: 'reject' });
+    if (error) throw error;
     toast('❌ تم رفض الطلب وسحب صلاحيات المنظّم', 'e');
     loadOrgVerRequests();
   } catch(e) {

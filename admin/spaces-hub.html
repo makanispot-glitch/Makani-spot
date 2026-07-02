@@ -625,6 +625,7 @@ const EG_GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية',
 let subSearch = '', subPlanFilter = 'all', subStatusFilter = 'all', subExpiringOnly = false;
 let editingSubOwner = null;
 let currentPage = 'overview';
+let _gotoApplied = false;
 let editingId   = null;
 let fMainImgUrl   = null;
 let fExtraImgUrls = [];
@@ -717,6 +718,11 @@ async function loadAll() {
     const sync = document.getElementById('sb-last-sync');
     if (sync) sync.textContent = 'آخر تحديث: ' + now;
     renderCurrentPage();
+    if (!_gotoApplied) {
+      _gotoApplied = true;
+      const _goto = new URLSearchParams(location.search).get('goto');
+      if (_goto) gp(_goto);
+    }
   } catch(e) {
     setPageContent(currentPage, `<div class="empty-state"><div class="empty-ico">⚠️</div><div class="empty-title">${esc(e.message)}</div><button class="btn btn-neu" style="margin-top:12px" onclick="loadAll()">🔄 حاول تاني</button></div>`);
   }

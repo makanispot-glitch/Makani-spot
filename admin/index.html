@@ -607,6 +607,12 @@ async function admLoad() {
     admRender();
     const now = new Date().toLocaleTimeString('ar-EG');
     document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + now;
+
+    if (!window.__gotoApplied) {
+      window.__gotoApplied = true;
+      const _goto = new URLSearchParams(location.search).get('goto');
+      if (_goto) admSwitchTab(_goto, document.querySelector(`.adm-tab[onclick*="'${_goto}'"]`));
+    }
   } catch (cfErr) {
     document.getElementById('adm-table-container').innerHTML =
       `<div class="adm-empty">⚠️ تعذّر الاتصال بالخادم — تحقق من الإنترنت وأعد المحاولة</div>`;

@@ -838,6 +838,42 @@ body {
 .sp-reject-input:focus { outline: none; border-color: var(--rd); }
 
 /* ══════════════════════════════════════
+   ACTION QUEUE (مهام تحتاج تدخل فوري)
+══════════════════════════════════════ */
+.aq-total-badge { background: rgba(239,68,68,.15); color: var(--rd); border: 1px solid rgba(239,68,68,.3); border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+.aq-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.aq-empty { background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--r); padding: 24px; text-align: center; color: var(--mu); font-size: 13px; }
+.aq-row { background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--r); padding: 14px 18px; transition: border-color .2s; }
+.aq-row:hover { border-color: var(--bdo); }
+.aq-row-head { display: flex; align-items: center; gap: 12px; }
+.aq-row-title { flex: 1; font-size: 13.5px; font-weight: 700; color: var(--tx); }
+.aq-goto { font-size: 11.5px; color: var(--or); font-weight: 700; white-space: nowrap; text-decoration: none; }
+.aq-goto:hover { text-decoration: underline; }
+.aq-items { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bd); display: flex; flex-direction: column; gap: 8px; }
+.aq-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--bg3); border-radius: 8px; padding: 8px 12px; }
+.aq-item-label { flex: 1; min-width: 120px; font-size: 12.5px; color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aq-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.aq-more { font-size: 12px; color: var(--mu); padding: 2px 4px; }
+.aq-more a { color: var(--or); font-weight: 700; text-decoration: none; }
+.aq-more a:hover { text-decoration: underline; }
+
+/* ══════════════════════════════════════
+   PLATFORM ANALYTICS
+══════════════════════════════════════ */
+.pa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.pa-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--r); padding: 16px 18px; text-align: center; }
+.pa-card-value { font-family: 'Space Mono', monospace; font-size: 24px; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
+.pa-card-label { font-size: 11.5px; color: var(--mu); }
+.pa-card.pa-good .pa-card-value { color: var(--gr); }
+.pa-card.pa-bad  .pa-card-value { color: var(--rd); }
+.pa-card.pa-visitors { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.pa-ga-btn { display: inline-block; margin-top: 4px; background: rgba(255,107,0,.12); color: var(--or); border: 1px solid rgba(255,107,0,.3); border-radius: 6px; padding: 6px 12px; font-size: 11.5px; font-weight: 700; text-decoration: none; }
+.pa-ga-btn:hover { background: rgba(255,107,0,.22); }
+.pa-updated { text-align: left; font-size: 10.5px; color: var(--mu); margin-top: 10px; }
+.aq-refresh-btn { margin-right: auto; background: none; border: 1px solid var(--bd); color: var(--or); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Cairo', sans-serif; }
+.aq-refresh-btn:hover { border-color: var(--or); }
+
+/* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 900px) {
@@ -846,11 +882,14 @@ body {
   .systems-grid { grid-template-columns: 1fr; }
   .docs-grid { grid-template-columns: 1fr; }
   .ext-links { grid-template-columns: repeat(2,1fr); }
+  .pa-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {
   .quick-grid { grid-template-columns: 1fr; }
   .status-grid { grid-template-columns: 1fr 1fr; }
   .ext-links { grid-template-columns: 1fr 1fr; }
+  .pa-grid { grid-template-columns: 1fr; }
+  .aq-row-head { flex-wrap: wrap; }
   #dashboard { padding: 16px 14px 40px; }
 }
 </style>
@@ -939,6 +978,18 @@ body {
     </div>
   </div>
 
+  <!-- ─── PENDING ACTIONS (Global Action Queue) ─── -->
+  <div class="sec-title">🔔 مهام تحتاج تدخل فوري <span id="aq-total-badge" class="aq-total-badge" style="display:none"></span></div>
+  <div class="aq-section" id="aq-section">
+    <div class="aq-empty"><div style="font-size:22px;margin-bottom:8px">🔄</div>جاري تحميل المهام المعلّقة…</div>
+  </div>
+
+  <!-- ─── PLATFORM ANALYTICS ─── -->
+  <div class="sec-title">📊 إحصائيات المنصة <button class="aq-refresh-btn" onclick="refreshAdminMetricsNow()">🔄 تحديث الآن</button></div>
+  <div id="pa-section" style="margin-bottom:32px">
+    <div class="aq-empty"><div style="font-size:22px;margin-bottom:8px">🔄</div>جاري تحميل الإحصائيات…</div>
+  </div>
+
   <!-- ─── STATUS ─── -->
   <div class="sec-title">حالة الأنظمة</div>
   <div class="status-grid">
@@ -1004,22 +1055,6 @@ body {
       <div class="quick-arrow">فتح صفحة المراجعة ←</div>
     </a>
 
-    <a href="./bazaar-dashboard.html" target="_blank" class="quick-card">
-      <span class="quick-badge" style="background:rgba(167,139,250,.15);color:#A78BFA;border:1px solid rgba(167,139,250,.3)">منظّمون</span>
-      <div class="quick-icon">🎪</div>
-      <div class="quick-title">طلبات التوثيق والتنظيم</div>
-      <div class="quick-desc">مراجعة طلبات توثيق المنظّمين وطلبات تنظيم البازارات — داخل داشبورد البازارات في تبويبَي "طلبات التوثيق" و"طلبات التنظيم".</div>
-      <div class="quick-arrow">فتح داشبورد البازارات ←</div>
-    </a>
-
-    <a href="./spaces-hub.html" target="_blank" class="quick-card">
-      <span class="quick-badge qb-new">NEW</span>
-      <div class="quick-icon">💳</div>
-      <div class="quick-title">إدارة الاشتراكات</div>
-      <div class="quick-desc">التحكم الكامل في باقات أصحاب المساحات — Starter / Growth / Pro — مع تواريخ الاشتراك والتجديد التلقائي والفلاتر السريعة.</div>
-      <div class="quick-arrow">فتح لوحة إدارة المساحات ←</div>
-    </a>
-
     <a href="./ratings.html" target="_blank" class="quick-card">
       <span class="quick-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">سُمعة</span>
       <div class="quick-icon">⭐</div>
@@ -1030,14 +1065,13 @@ body {
 
   </div>
 
-  <!-- ─── SPACES MANAGEMENT ─── -->
-  <div class="sec-title" id="spaces-mgmt">🏢 إدارة المساحات <span id="spaces-pending-badge" style="display:none;background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3);border-radius:5px;padding:2px 8px;font-size:11px;margin-right:8px;font-weight:700"></span></div>
+  <!-- ─── SPACES MANAGEMENT (كل المساحات + أصحاب الحسابات — قائمة "بانتظار الموافقة" انتقلت لقسم مهام تحتاج تدخل فوري أعلى الصفحة) ─── -->
+  <div class="sec-title" id="spaces-mgmt">🏢 كل المساحات وأصحاب الحسابات</div>
   <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:32px;overflow:hidden">
 
     <div class="sp-tabs" id="sp-tab-bar">
-      <button class="sp-tab active" onclick="switchSpTab('pending',this)">⏳ بانتظار الموافقة</button>
       <button class="sp-tab" onclick="switchSpTab('all',this)">📋 جميع المساحات</button>
-      <button class="sp-tab" onclick="switchSpTab('owners',this)">👥 أصحاب الحسابات</button>
+      <button class="sp-tab active" onclick="switchSpTab('owners',this)">👥 أصحاب الحسابات</button>
       <button style="margin-right:auto;padding:10px 16px;font-size:12px;background:none;border:none;color:var(--or);cursor:pointer;font-family:Cairo,sans-serif;font-weight:700" onclick="loadSpacesData()">🔄 تحديث</button>
     </div>
 
@@ -1581,10 +1615,6 @@ body {
       <div class="ext-icon">🏢</div>
       <div><div class="ext-name">إدارة المساحات</div><div class="ext-desc">spaces-hub — لوحة التحكم الشاملة</div></div>
     </a>
-    <a class="ext-link" href="./spaces-hub.html" target="_blank">
-      <div class="ext-icon">💳</div>
-      <div><div class="ext-name">إدارة الاشتراكات</div><div class="ext-desc">Starter · Growth · Pro — مدمجة في لوحة المساحات</div></div>
-    </a>
     <a class="ext-link" href="https://docs.google.com/spreadsheets/d/14rwJFHDdywVR6rXJtTaxie1ttOJXew-q5Ztca2mVe74/edit" target="_blank">
       <div class="ext-icon">📊</div>
       <div><div class="ext-name">شيت المساحات</div><div class="ext-desc">Google Sheets — Spaces</div></div>
@@ -1622,7 +1652,7 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 let attempts   = 0;
 let locked     = false;
 let adminHash  = null;   // legacy flag some render code checks for truthiness — no longer used for auth
-let spCurrentTab = 'pending';
+let spCurrentTab = 'owners';
 let spAllSpaces  = [];
 let spAllOwners  = [];
 
@@ -1652,6 +1682,7 @@ async function tryLogin() {
       toast('أهلاً بك في لوحة التحكم 👋', 's');
       checkSystemStatus();
       loadSpacesData();
+      loadAdminMetrics();
       startAdminAutoRefresh();
     }, 400);
   } else {
@@ -1700,6 +1731,7 @@ async function tryLogin() {
     document.getElementById('build-date').textContent = new Date().toLocaleDateString('ar-EG');
     checkSystemStatus();
     loadSpacesData();
+    loadAdminMetrics();
     startAdminAutoRefresh();
   }
 })();
@@ -1715,7 +1747,179 @@ function startAdminAutoRefresh() {
   setInterval(() => {
     if (!adminHash) return;
     loadSpacesData();
+    loadAdminMetrics();
   }, 300000); /* كل 5 دقائق */
+}
+
+/* ══════════════════════════════════════
+   PENDING ACTIONS + PLATFORM ANALYTICS
+   البيانات مُجهَّزة مسبقًا في admin_metrics (يُحدَّثها pg_cron كل 15 دقيقة)
+   — لا نحسب أي شيء مباشرة من الجداول هنا، فقط نقرأ اللقطة الجاهزة.
+══════════════════════════════════════ */
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let aqMetrics = {};
+let aqItems   = {};
+
+/* action -> [اسم الـ RPC, اسم باراميتر المُعرّف] */
+const AQ_ACTION_RPC = {
+  upgrade_request: ['admin_manage_upgrade_request',  'p_request_id'],
+  space:           ['admin_manage_space',             'p_space_id'],
+  bazaar:          ['admin_manage_bazaar_request',    'p_bazaar_id'],
+  organizer:       ['admin_manage_organizer_request',  'p_request_id'],
+  listing:         ['admin_manage_listing',           'p_listing_id'],
+};
+
+const AQ_ROWS = [
+  { key:'spaces_owner_verification_pending',        label:'طلبات توثيق أصحاب مساحات جديدة',                domain:'spaces',   icon:'🏢', severity:'warn', action:'upgrade_request', gotoFile:'./spaces-hub.html',      gotoParam:'owner-requests' },
+  { key:'spaces_subscription_activation_pending',   label:'طلبات تم التواصل معها — تحتاج تفعيل الاشتراك',    domain:'spaces',   icon:'🏢', severity:'warn', action:'upgrade_request', gotoFile:'./spaces-hub.html',      gotoParam:'owner-requests' },
+  { key:'spaces_pending_publish',                   label:'مساحات جديدة تحتاج مراجعة قبل النشر',            domain:'spaces',   icon:'🏢', severity:'warn', action:'space',           gotoFile:'./spaces-hub.html',      gotoParam:'pending' },
+  { key:'spaces_subscriptions_expiring_soon',       label:'اشتراكات ستنتهي قريبًا (خلال 7 أيام)',           domain:'spaces',   icon:'🏢', severity:'warn', action:null,              gotoFile:'./spaces-hub.html',      gotoParam:'subscriptions' },
+  { key:'spaces_subscriptions_expired_needing_action', label:'اشتراكات منتهية تحتاج متابعة',                domain:'spaces',   icon:'🏢', severity:'err',  action:null,              gotoFile:'./spaces-hub.html',      gotoParam:'subscriptions' },
+  { key:'bazaars_pending_publish',                  label:'بازارات جديدة تحتاج موافقة قبل النشر',           domain:'bazaars',  icon:'🛍️', severity:'warn', action:'bazaar',          gotoFile:'./bazaar-dashboard.html', gotoParam:'req' },
+  { key:'bazaars_organizer_verification_pending',   label:'طلبات توثيق/اعتماد منظّمي بازارات جدد',          domain:'bazaars',  icon:'🛍️', severity:'warn', action:'organizer',       gotoFile:'./bazaar-dashboard.html', gotoParam:'org-ver' },
+  { key:'bazaars_flagged',                          label:'بازارات عليها بلاغات مستخدمين (3 فأكثر)',        domain:'bazaars',  icon:'🛍️', severity:'err',  action:null,              gotoFile:'./bazaar-dashboard.html', gotoParam:'abuse' },
+  { key:'bazaars_ending_soon',                      label:'بازارات يقترب موعد انتهائها (خلال 3 أيام)',      domain:'bazaars',  icon:'🛍️', severity:'warn', action:null,              gotoFile:'./bazaar-dashboard.html', gotoParam:'bz' },
+  { key:'listings_pending_review',                  label:'إعلانات مشاريع جديدة تحتاج موافقة',              domain:'listings', icon:'🏪', severity:'warn', action:'listing',        gotoFile:'./index.html',            gotoParam:'listings' },
+  { key:'listings_flagged_reports',                 label:'إعلانات تم الإبلاغ عنها من مستخدمين',           domain:'listings', icon:'🏪', severity:'err',  action:null,              gotoFile:'./index.html',            gotoParam:'reports' },
+  { key:'listings_display_period_ended',            label:'إعلانات انتهت مدة عرضها',                        domain:'listings', icon:'🏪', severity:'idle', action:null,              gotoFile:'./index.html',            gotoParam:'listings' },
+];
+
+async function loadAdminMetrics() {
+  if (!adminHash) return;
+  try {
+    const snap = await sbRpc('admin_get_metrics_snapshot', { p_secret: adminHash });
+    aqMetrics = snap?.metrics || {};
+    aqItems   = snap?.items   || {};
+    renderActionQueue();
+    renderPlatformAnalytics();
+  } catch(err) {
+    const aqEl = document.getElementById('aq-section');
+    if (aqEl) aqEl.innerHTML = `<div class="aq-empty" style="color:var(--rd)">⚠️ تعذّر تحميل المهام المعلّقة: ${esc(err.message)}</div>`;
+    const paEl = document.getElementById('pa-section');
+    if (paEl) paEl.innerHTML = `<div class="aq-empty" style="color:var(--rd)">⚠️ تعذّر تحميل الإحصائيات: ${esc(err.message)}</div>`;
+  }
+}
+
+async function refreshAdminMetricsNow() {
+  if (!adminHash) return;
+  try {
+    await sbRpc('admin_refresh_metrics_now', { p_secret: adminHash });
+    await loadAdminMetrics();
+    toast('🔄 تم تحديث الإحصائيات', 's');
+  } catch(err) { toast('خطأ: ' + err.message, 'e'); }
+}
+
+function renderActionQueue() {
+  const el = document.getElementById('aq-section');
+  if (!el) return;
+  let total = 0;
+
+  const rows = AQ_ROWS.map(cfg => {
+    const count = aqMetrics[cfg.key]?.count || 0;
+    total += count;
+    if (count === 0) return '';
+
+    const dotCls  = cfg.severity === 'err' ? 'dot-err' : cfg.severity === 'warn' ? 'dot-warn' : 'dot-idle';
+    const gotoUrl = cfg.gotoFile + '?goto=' + encodeURIComponent(cfg.gotoParam);
+    let itemsHtml = '';
+
+    if (cfg.action) {
+      const items = (aqItems[cfg.key] || []).slice(0, 2);
+      if (items.length) {
+        const cards = items.map(it => `
+          <div class="aq-item">
+            <div class="aq-item-label" title="${esc(it.label)}">${esc(it.label || '—')}</div>
+            <div class="aq-item-actions">
+              <button class="sp-btn sp-btn-ok"  onclick="aqApprove('${cfg.action}','${it.id}',this)">✅ قبول</button>
+              <button class="sp-btn sp-btn-err" onclick="aqReject('${cfg.action}','${it.id}',this)">❌ رفض</button>
+            </div>
+          </div>`).join('');
+        const more = count > items.length
+          ? `<div class="aq-more">+${count - items.length} أخرى — <a href="${gotoUrl}" target="_blank">عرض الكل ←</a></div>` : '';
+        itemsHtml = `<div class="aq-items">${cards}${more}</div>`;
+      }
+    }
+
+    return `
+      <div class="aq-row">
+        <div class="aq-row-head">
+          <span class="status-dot-wrap ${dotCls}" style="width:30px;height:30px;font-size:14px;flex-shrink:0">${cfg.icon}</span>
+          <div class="aq-row-title">${count} — ${esc(cfg.label)}</div>
+          <a class="aq-goto" href="${gotoUrl}" target="_blank">فتح القسم ←</a>
+        </div>
+        ${itemsHtml}
+      </div>`;
+  }).filter(Boolean).join('');
+
+  const badge = document.getElementById('aq-total-badge');
+  if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'inline' : 'none'; }
+
+  el.innerHTML = rows || `<div class="aq-empty">✅ لا توجد مهام معلّقة حاليًا — كل شيء تحت السيطرة</div>`;
+}
+
+function renderPlatformAnalytics() {
+  const el = document.getElementById('pa-section');
+  if (!el) return;
+  const g = k => aqMetrics[k]?.count ?? '—';
+
+  el.innerHTML = `
+    <div class="pa-grid">
+      <div class="pa-card pa-visitors">
+        <div class="pa-card-label">زوار الموقع (اليوم / الأسبوع / الشهر)</div>
+        <a class="pa-ga-btn" href="https://analytics.google.com/" target="_blank">📊 فتح تقارير الزيارات (GA4) ←</a>
+      </div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_total_users')}</div><div class="pa-card-label">إجمالي المستخدمين</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_new_signups_7d')}</div><div class="pa-card-label">حسابات جديدة (٧ أيام)</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_space_owners')}</div><div class="pa-card-label">أصحاب مساحات</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_bazaar_organizers')}</div><div class="pa-card-label">منظّمو بازارات</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_project_owners')}</div><div class="pa-card-label">أصحاب مشاريع للبيع</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_published_spaces')}</div><div class="pa-card-label">مساحات منشورة</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_active_bazaars')}</div><div class="pa-card-label">بازارات نشطة</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_listed_projects')}</div><div class="pa-card-label">مشاريع معروضة للبيع</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_bookings_today')}</div><div class="pa-card-label">حجوزات اليوم</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_pending_requests_total')}</div><div class="pa-card-label">طلبات معلّقة تحتاج مراجعة</div></div>
+      <div class="pa-card pa-good"><div class="pa-card-value">${g('platform_accepted_today')}</div><div class="pa-card-label">طلبات مقبولة اليوم</div></div>
+      <div class="pa-card pa-bad"><div class="pa-card-value">${g('platform_rejected_today')}</div><div class="pa-card-label">طلبات مرفوضة اليوم</div></div>
+    </div>
+    <div class="pa-updated" id="pa-updated"></div>`;
+
+  const anyMetric = Object.values(aqMetrics)[0];
+  const updatedEl = document.getElementById('pa-updated');
+  if (updatedEl && anyMetric?.computed_at) {
+    updatedEl.textContent = 'آخر تحديث للإحصائيات: ' + new Date(anyMetric.computed_at).toLocaleString('ar-EG', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
+  }
+}
+
+async function aqApprove(actionType, itemId, btnEl) {
+  const cfg = AQ_ACTION_RPC[actionType];
+  if (!cfg) return;
+  if (btnEl) btnEl.disabled = true;
+  try {
+    await sbRpc(cfg[0], { [cfg[1]]: itemId, p_action: 'approve', p_reason: null, p_secret: adminHash });
+    toast('✅ تم القبول', 's');
+    await loadAdminMetrics();
+  } catch(err) {
+    toast('خطأ: ' + err.message, 'e');
+    if (btnEl) btnEl.disabled = false;
+  }
+}
+
+async function aqReject(actionType, itemId, btnEl) {
+  const cfg = AQ_ACTION_RPC[actionType];
+  if (!cfg) return;
+  const reason = prompt('سبب الرفض' + (actionType === 'listing' ? ' (مطلوب):' : ' (اختياري):'));
+  if (reason === null) return;
+  if (actionType === 'listing' && !reason.trim()) { toast('سبب الرفض مطلوب لهذا النوع من الطلبات', 'e'); return; }
+  if (btnEl) btnEl.disabled = true;
+  try {
+    await sbRpc(cfg[0], { [cfg[1]]: itemId, p_action: 'reject', p_reason: reason.trim() || null, p_secret: adminHash });
+    toast('❌ تم الرفض', 'i');
+    await loadAdminMetrics();
+  } catch(err) {
+    toast('خطأ: ' + err.message, 'e');
+    if (btnEl) btnEl.disabled = false;
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1877,13 +2081,6 @@ async function loadSpacesData() {
     spAllSpaces = spaces || [];
     spAllOwners = owners || [];
 
-    const pendingCount = spAllSpaces.filter(s => s.status === 'pending').length;
-    const badge = document.getElementById('spaces-pending-badge');
-    if (badge) {
-      badge.textContent = pendingCount + ' جديد';
-      badge.style.display = pendingCount > 0 ? 'inline' : 'none';
-    }
-
     renderSpTab(spCurrentTab);
   } catch(err) {
     showSpError(err.message);
@@ -1898,10 +2095,7 @@ function switchSpTab(tab, el) {
 }
 
 function renderSpTab(tab) {
-  if (tab === 'pending') {
-    const pending = spAllSpaces.filter(s => s.status === 'pending');
-    renderPendingSpaces(pending);
-  } else if (tab === 'all') {
+  if (tab === 'all') {
     renderAllSpaces(spAllSpaces);
   } else if (tab === 'owners') {
     renderOwners(spAllOwners);
