@@ -456,15 +456,21 @@ body {
   opacity: 0.6;
 }
 
-/* زر تنظيم البازار — يظهر بجانب أيقونة الحساب للمنظمين الموثّقين */
+/* زر تنظيم البازار — نص فقط بدون أيقونات، يظهر بجانب أيقونة الحساب للمنظمين الموثّقين.
+   حالة الراحة محايدة (مثل .mn-btn) — البرتقالي يظهر فقط عند hover/focus، وليس دائماً. */
 .bz-org-pill {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 5px 14px 5px 10px;
+  padding: 8px 15px;
   border-radius: 40px;
-  border: 1.5px solid rgba(243, 100, 24, 0.35);
-  background: var(--orange-ultra);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink2);
+  line-height: 1.2;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
@@ -474,36 +480,18 @@ body {
 .bz-org-pill:hover {
   background: var(--orange);
   border-color: var(--orange);
+  color: #fff;
   box-shadow: 0 4px 14px rgba(243, 100, 24, 0.30);
   transform: translateY(-1px);
 }
 
-.bz-org-pill:hover .bz-org-ico,
-.bz-org-pill:hover .bz-org-title,
-.bz-org-pill:hover .bz-org-sub {
-  color: #fff;
+.bz-org-pill:focus-visible {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: var(--ring-focus);
 }
 
-.bz-org-ico {
-  font-size: 18px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.bz-org-texts {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.bz-org-title {
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--orange);
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
+/* (قواعد قديمة أبقيناها لعناصر الكروت) */
 .bz-org-sub {
   font-size: 10px;
   color: var(--ink3);
@@ -517,13 +505,119 @@ body {
   gap: 10px;
 }
 
+/* ── موبايل: الأزرار تحتفظ بالنص بحجم مضغوط + ضغط منطقة المستخدم لمنع تجاوز عرض الشاشة ── */
 @media (max-width: 640px) {
-  .bz-org-texts {
-    display: none;
+  .bz-nav-user-wrap {
+    gap: 6px;
   }
 
   .bz-org-pill {
     padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* الأفاتار: دائرة فقط داخل ناف البازارات — الاسم والإيميل في القائمة المنسدلة */
+  .bz-nav-user-wrap .nav-avatar-info {
+    display: none;
+  }
+
+  .bz-nav-user-wrap .nav-avatar-btn {
+    padding: 4px 8px 4px 8px;
+    gap: 5px;
+  }
+
+  .bz-nav-user-wrap .nav-avatar-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .bz-nav-user-wrap .gn-bell {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* شاشات ضيقة جداً */
+@media (max-width: 400px) {
+  .nav {
+    padding: 0 12px;
+  }
+
+  .bz-org-pill {
+    padding: 5px 7px;
+    font-size: 10px;
+  }
+
+  .bz-nav-user-wrap {
+    gap: 3px;
+  }
+
+  .bz-nav-user-wrap .nav-avatar-caret {
+    display: none;
+  }
+
+  .bz-nav-user-wrap .nav-avatar-btn {
+    padding: 3px 6px;
+  }
+
+  .bz-nav-user-wrap .nav-avatar-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .bz-nav-user-wrap .gn-bell {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* أضيق الشاشات (320px): إخفاء لاحقة الشعار فقط في الناف الذي يحمل أزرار المنظم */
+@media (max-width: 340px) {
+  .nav:has(.bz-nav-user-wrap) .logo-en,
+  .bz-standalone-nav:has(.bz-nav-user-wrap) .logo-en {
+    display: none;
+  }
+}
+
+/* ── ديسكتوب/لابتوب: عندما يحمل الناف أزرار المنظم يضيق المحتوى تدريجياً
+     (مقيّد بـ :has حتى لا يتأثر المستخدم العادي) ── */
+@media (max-width: 1460px) and (min-width: 769px) {
+  .nav:has(.bz-org-pill) .nsb-text small {
+    display: none;
+  }
+
+  .nav:has(.bz-org-pill) .nav-section-btn {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 1360px) and (min-width: 769px) {
+  .nav:has(.bz-org-pill) .nav-links > a:not(.nav-section-btn),
+  .nav:has(.bz-org-pill) .nav-divider {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .nav:has(.bz-org-pill) .nav-avatar-info {
+    display: none;
+  }
+
+  .nav:has(.bz-org-pill) .bz-org-pill {
+    font-size: 11px;
+    padding: 7px 11px;
+  }
+}
+
+@media (max-width: 880px) and (min-width: 769px) {
+  .nav:has(.bz-org-pill) .nsb-icon {
+    display: none;
+  }
+
+  .nav:has(.bz-org-pill) .nav-section-btn {
+    padding: 7px 9px;
   }
 }
 
@@ -7039,13 +7133,21 @@ footer {
   .sd-sticky-footer {
     flex-direction: column;
     padding: 10px 16px;
+    /* padding-bottom منفصل حتى لا يُلغي shorthand أعلاه قيمة safe-area-inset */
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
     gap: 8px;
   }
 
   .sd-book-btn,
+  .sd-visit-btn,
   .sd-back-btn-footer {
     width: 100%;
     justify-content: center;
+  }
+
+  /* مساحة كافية أسفل المحتوى حتى لا يغطّيه الشريط الثابت (3 أزرار متراصة ~200px) */
+  .sd-page {
+    padding-bottom: 230px;
   }
 }
 

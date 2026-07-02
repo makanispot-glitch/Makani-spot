@@ -4,17 +4,17 @@
  * مصادقة: X-Cron-Secret header يطابق CRON_SECRET (متغيّر بيئة مستقل عن ADM_SECRET)
  *
  * المهام:
- *  1) حذف نهائي للإعلانات rejected/expired الأقدم من 7 أيام + صورها من R2
- *     (بديل مستقل عن admAutoCleanup اليدوي في admin/index.html)
+ *  1) حذف نهائي للإعلانات rejected/expired (كل حالة بمدة احتفاظ مستقلة، قابلة للتعديل
+ *     من admin/index.html → إعدادات الحذف التلقائي → جدول listing_cleanup_settings) + صورها من R2
  *  2) تنظيف صور R2 يتيمة — رُفعت أثناء معالج نشر إعلان ثم لم يُكمل المستخدم النشر
  */
 
-const R2_BASE           = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
+const R2_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
 /* مسار صور المشاريع للبيع فقط: <user_id uuid>/<ts>_<i>_<rand>_<c|d|f>.webp — بدون بادئة اسمية،
    على عكس بازارات/مساحات/أفاتار اللي بتستخدم بادئات صريحة (bazaars/ covers/ avatars/ ...) */
-const LISTING_KEY_RE    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/\d+_\d+_[a-z0-9]{4}_[cdf]\.webp$/;
-const ORPHAN_GRACE_MS   = 24 * 60 * 60 * 1000; // لا تحذف صور أُرفعت خلال آخر 24 ساعة (المستخدم لسه يمكن بيملأ النموذج)
-const STALE_CUTOFF_DAYS = 7;
+const LISTING_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/\d+_\d+_[a-z0-9]{4}_[cdf]\.webp$/;
+/* قيم احتياطية فقط لو تعذّر جلب جدول الإعدادات لأي سبب */
+const FALLBACK_SETTINGS = { reject_retention_days: 5, expired_retention_days: 7, orphan_image_grace_hours: 24 };
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -42,39 +42,54 @@ export async function onRequestPost(context) {
 
   const result = { stale_deleted: 0, orphans_deleted: 0, errors: [] };
 
-  /* ── 1) حذف نهائي للإعلانات المرفوضة/المنتهية الأقدم من 7 أيام ── */
+  /* ── 0) إعدادات الاحتفاظ — من الجدول، مع قيم احتياطية لو فشل الجلب ── */
+  let settings = FALLBACK_SETTINGS;
   try {
-    const cutoff = new Date(Date.now() - STALE_CUTOFF_DAYS * 86400000).toISOString();
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?status=in.(rejected,expired)&updated_at=lt.${encodeURIComponent(cutoff)}&select=id,cover_image,images`,
-      { headers: sbHeaders }
-    );
-    const stale = await res.json().catch(() => []);
+    const sres = await fetch(`${SUPABASE_URL}/rest/v1/listing_cleanup_settings?id=eq.1&select=*`, { headers: sbHeaders });
+    const srows = await sres.json().catch(() => []);
+    if (srows?.[0]) settings = srows[0];
+  } catch (e) {
+    result.errors.push('settings-fetch (using fallback defaults): ' + (e.message || String(e)));
+  }
 
-    for (const l of Array.isArray(stale) ? stale : []) {
-      if (bucket) {
-        const urls = [l.cover_image, ...(l.images || [])].filter(Boolean);
-        for (const url of new Set(urls)) {
-          if (typeof url === 'string' && url.startsWith(R2_BASE)) {
-            const path = url.slice(R2_BASE.length);
-            try { await bucket.delete(path); } catch {}
-            if (path.endsWith('_f.webp')) {
-              try { await bucket.delete(path.replace('_f.webp', '_c.webp')); } catch {}
-              try { await bucket.delete(path.replace('_f.webp', '_d.webp')); } catch {}
+  /* ── 1) حذف نهائي للإعلانات المرفوضة/المنتهية — كل حالة بمدتها الخاصة ── */
+  for (const [status, days] of [
+    ['rejected', settings.reject_retention_days],
+    ['expired',  settings.expired_retention_days],
+  ]) {
+    try {
+      const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/listings?status=eq.${status}&updated_at=lt.${encodeURIComponent(cutoff)}&select=id,cover_image,images`,
+        { headers: sbHeaders }
+      );
+      const stale = await res.json().catch(() => []);
+
+      for (const l of Array.isArray(stale) ? stale : []) {
+        if (bucket) {
+          const urls = [l.cover_image, ...(l.images || [])].filter(Boolean);
+          for (const url of new Set(urls)) {
+            if (typeof url === 'string' && url.startsWith(R2_BASE)) {
+              const path = url.slice(R2_BASE.length);
+              try { await bucket.delete(path); } catch {}
+              if (path.endsWith('_f.webp')) {
+                try { await bucket.delete(path.replace('_f.webp', '_c.webp')); } catch {}
+                try { await bucket.delete(path.replace('_f.webp', '_d.webp')); } catch {}
+              }
             }
           }
         }
-      }
 
-      const delRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(l.id)}`,
-        { method: 'DELETE', headers: sbHeaders }
-      );
-      if (delRes.ok) result.stale_deleted++;
-      else result.errors.push(`delete listing ${l.id} failed (${delRes.status})`);
+        const delRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(l.id)}`,
+          { method: 'DELETE', headers: sbHeaders }
+        );
+        if (delRes.ok) result.stale_deleted++;
+        else result.errors.push(`delete listing ${l.id} failed (${delRes.status})`);
+      }
+    } catch (e) {
+      result.errors.push(`stale-cleanup (${status}): ` + (e.message || String(e)));
     }
-  } catch (e) {
-    result.errors.push('stale-cleanup: ' + (e.message || String(e)));
   }
 
   /* ── 2) تنظيف صور R2 يتيمة (رُفعت ولم يُنشر إعلان بيها) ── */
@@ -96,7 +111,7 @@ export async function onRequestPost(context) {
       }
 
       let cursor;
-      const graceCutoff = Date.now() - ORPHAN_GRACE_MS;
+      const graceCutoff = Date.now() - settings.orphan_image_grace_hours * 3600000;
       do {
         const page = await bucket.list({ cursor, limit: 1000 });
         for (const obj of page.objects) {

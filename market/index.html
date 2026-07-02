@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=27">
+<link rel="stylesheet" href="../style.css?v=29">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <style>
@@ -1507,7 +1507,27 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <div class="eq-report-box">
     <h3>إبلاغ عن إعلان</h3>
     <input type="hidden" id="eq-report-id">
-    <textarea id="eq-report-reason" placeholder="اكتب سبب الإبلاغ…"></textarea>
+    <div id="eq-report-reasons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="spam"> نشر متكرر / سبام
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="fake"> إعلان وهمي / غير حقيقي
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="wrong_info"> معلومات أو سعر مضلل
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="sold_elsewhere"> تم البيع / لم يعد متاحاً
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="inappropriate"> محتوى غير لائق
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
+        <input type="radio" name="eq-report-cat" value="other"> سبب آخر
+      </label>
+    </div>
+    <textarea id="eq-report-reason" placeholder="ملاحظة إضافية (اختياري)…" rows="2"></textarea>
     <div class="eq-report-actions">
       <button class="eq-btn eq-btn-ghost" onclick="eqCloseReport()">إلغاء</button>
       <button class="eq-btn eq-btn-danger" onclick="eqSubmitReport()">إرسال البلاغ</button>
@@ -1678,8 +1698,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
       </svg>
     </span>
-    <span class="bn-label" style="color:var(--orange);font-weight:800">مشاريع</span>
-    <span class="bn-desc" style="color:rgba(243,100,24,0.65)">كاملة للبيع</span>
+    <span class="bn-label">مشاريع</span>
+    <span class="bn-desc">كاملة للبيع</span>
   </a>
 
   <!-- دخول / حساب -->

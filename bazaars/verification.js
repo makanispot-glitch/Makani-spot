@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  /* جرس الإشعارات الموحّد — نفس موقعه في كل صفحات البازارات */
+  try { GN.init(sbClient, currentUser.id); GN.mount(document.querySelector('.bz-nav-right')); } catch (_) {}
+
   // Pre-fill name & phone from profile
   try {
     const { data } = await sbClient

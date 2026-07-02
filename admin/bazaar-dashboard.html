@@ -4939,24 +4939,17 @@ document.getElementById('nb-area').addEventListener('input',updatePreview);
 document.getElementById('nb-vname').addEventListener('input',updatePreview);
 document.getElementById('nb-ds').addEventListener('change',()=>{calcDays();updatePreview();});
 
-/* ── Auto Auth — حماية عبر Cloudflare Access + admin-hub ── */
+/* ── Auto Auth — تسجيل الدخول الحقيقي يتم من admin-hub.html، هنا نتحقق فقط من وجود جلسة صالحة ── */
 async function mkLogout() {
   await db.auth.signOut();
-  localStorage.removeItem('mks_hub_tok');
   window.location.replace('./admin-hub.html');
 }
 
 (async function () {
-  if (!localStorage.getItem('mks_hub_tok')) {
-    window.location.replace('./admin-hub.html');
-    return;
-  }
   const { data: { session } } = await db.auth.getSession();
   if (!session) {
-    await db.auth.signInWithPassword({
-      email: 'makanispot@gmail.com',
-      password: 'MksAdm!n2026#Bz'
-    });
+    window.location.replace('./admin-hub.html');
+    return;
   }
   loadData();
   loadArchiveDays();

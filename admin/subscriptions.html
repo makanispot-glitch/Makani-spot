@@ -192,6 +192,7 @@ input:checked+.toggle-sl::before{transform:translateX(-20px)}
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -385,9 +386,9 @@ input:checked+.toggle-sl::before{transform:translateX(-20px)}
 ═══════════════════════════════════ */
 const SB_URL  = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-const PW_HASH = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
-const PW_SALT = 'MkSpot_2026_Salt';
+const ADMIN_EMAIL = 'makanispot@gmail.com';
 const MAX_TRIES = 5;
+const db = supabase.createClient(SB_URL, SB_KEY);
 
 /* ═══════════════════════════════════
    STATE
@@ -402,11 +403,6 @@ let locked         = false;
 /* ═══════════════════════════════════
    AUTH
 ═══════════════════════════════════ */
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
 async function tryLogin() {
   if (locked) return;
   const pw  = document.getElementById('pw-inp').value;
@@ -415,15 +411,14 @@ async function tryLogin() {
   btn.disabled = true;
   btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:inline-block"></div>';
 
-  const hashed = await sha256(PW_SALT + pw);
-  if (hashed === PW_HASH) {
-    adminHash = hashed;
+  const { data, error } = await db.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pw });
+  if (data?.session && !error) {
+    adminHash = 'authenticated';
     const scr = document.getElementById('login-screen');
     scr.style.animation = 'fadeOut .4s ease forwards';
     setTimeout(() => {
       scr.style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
-      sessionStorage.setItem('mkadmin', hashed.slice(0, 16));
       toast('أهلاً — إدارة الاشتراكات 💳', 's');
       loadAll();
     }, 400);
@@ -453,17 +448,17 @@ async function tryLogin() {
 
 // Auto-login من الـ session
 (async () => {
-  const sess = sessionStorage.getItem('mkadmin');
-  if (sess && sess === PW_HASH.slice(0, 16)) {
-    adminHash = PW_HASH;
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    adminHash = 'authenticated';
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     loadAll();
   }
 })();
 
-function doLogout() {
-  sessionStorage.removeItem('mkadmin');
+async function doLogout() {
+  await db.auth.signOut();
   adminHash = null;
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
@@ -476,10 +471,11 @@ function doLogout() {
    SUPABASE RPC HELPER
 ═══════════════════════════════════ */
 async function sbRpc(fn, params) {
+  const { data: { session } } = await db.auth.getSession();
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
     method:  'POST',
     headers: {
-      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + (session?.access_token || SB_KEY),
       'Content-Type': 'application/json', 'Accept': 'application/json',
     },
     body: JSON.stringify(params),

@@ -429,6 +429,7 @@ textarea.fc{resize:vertical;min-height:72px}
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -596,11 +597,13 @@ textarea.fc{resize:vertical;min-height:72px}
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */
-const PW_HASH  = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
-const PW_SALT  = 'MkSpot_2026_Salt';
 const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-const SB_HDR   = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+const db = supabase.createClient(SB_URL, SB_KEY);
+async function sbHeaders() {
+  const { data: { session } } = await db.auth.getSession();
+  return {'apikey':SB_KEY,'Authorization':'Bearer '+(session?.access_token||SB_KEY),'Content-Type':'application/json'};
+}
 const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة',announcements:'الإعلانات الرسمية','ann-form':'نموذج إعلان رسمي'};
 const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
@@ -660,17 +663,18 @@ let notifPickedIds  = new Set();
 /* ═══════════════════════════════
    LOGIN
 ═══════════════════════════════ */
-function doLogout() {
-  localStorage.removeItem('mks_hub_tok');
+async function doLogout() {
+  await db.auth.signOut();
   window.location.replace('./admin-hub.html');
 }
 
-(function() {
-  if (!localStorage.getItem('mks_hub_tok')) {
+(async function() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
     window.location.replace('./admin-hub.html');
     return;
   }
-  adminHash = PW_HASH;
+  adminHash = 'authenticated';
   document.getElementById('app').classList.add('visible');
   setTimeout(loadAll, 100);
 })();
@@ -680,7 +684,7 @@ function doLogout() {
 ═══════════════════════════════ */
 async function sbRpc(fn, params) {
   const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method:'POST', headers:SB_HDR, body:JSON.stringify(params)
+    method:'POST', headers: await sbHeaders(), body:JSON.stringify(params)
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message||e.hint||`HTTP ${res.status}`); }
   return res.json();
@@ -743,7 +747,7 @@ async function fetchActivities() {
 async function sbTable(method, table, body, query='') {
   const res = await fetch(`${SB_URL}/rest/v1/${table}${query}`, {
     method,
-    headers: {...SB_HDR, Prefer:'return=representation'},
+    headers: {...(await sbHeaders()), Prefer:'return=representation'},
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {

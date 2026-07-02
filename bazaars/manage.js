@@ -258,6 +258,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  /* جرس الإشعارات الموحّد — نفس موقعه في كل صفحات البازارات */
+  try { GN.init(sb, me.id); GN.mount(document.querySelector('.bz-nav-right')); } catch (_) {}
+
   const { data: prof } = await sb
     .from('organizer_profiles')
     .select('is_verified')

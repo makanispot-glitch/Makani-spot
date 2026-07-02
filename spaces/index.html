@@ -62,7 +62,7 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="../style.css?v=27">
+  <link rel="stylesheet" href="../style.css?v=29">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -83,6 +83,13 @@
         align-items: center !important;
       }
       .mp-page { padding-bottom: 64px; }
+
+      /* صفحة تفاصيل المساحة/الإعلان: الشريط السفلي (bottom-nav) كان يغطّي
+         زر "→ العودة" في .sd-sticky-footer لأن الاثنين fixed;bottom:0 معاً.
+         نُخفي bottom-nav هنا حتى لا يتصادما — showPage() يضيف الكلاس. */
+      body.sd-detail-open #bottom-nav {
+        display: none !important;
+      }
     }
 
     /* ── تحسين Header Title وSubtitle ── */
@@ -1415,7 +1422,7 @@
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
   <script src="/notifications.js?v=20260623" defer></script>
-  <script src="app.js?v=202606202100" defer></script>
+  <script src="app.js?v=20260702" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -1442,8 +1449,8 @@
           <circle cx="12" cy="10" r="3" />
         </svg>
       </span>
-      <span class="bn-label" style="color:var(--orange);font-weight:800">مساحات</span>
-      <span class="bn-desc" style="color:rgba(243,100,24,0.65)">ثابتة وتجارية</span>
+      <span class="bn-label">مساحات</span>
+      <span class="bn-desc">ثابتة وتجارية</span>
     </button>
 
     <!-- البازارات -->

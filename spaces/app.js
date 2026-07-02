@@ -2231,6 +2231,9 @@ function showPage(p) {
   const target = document.getElementById('pg-' + p);
   if (target) target.classList.add('active');
 
+  // صفحات فيها .sd-sticky-footer (زر عودة ثابت) — نخفي bottom-nav حتى لا يغطّيه على الموبايل
+  document.body.classList.toggle('sd-detail-open', p === 'space-detail' || p === 'announcement-detail');
+
   // تحديث الـ Nav
   document.querySelectorAll('.nav-section-btn').forEach(b => b.classList.remove('active'));
   if (p === 'market' || p === 'space-detail' || p === 'announcement-detail') {

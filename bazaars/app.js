@@ -152,20 +152,8 @@ function bzRenderNavUser() {
 
 
         ${_bzIsOrganizer() ? `
-        <a class="bz-org-pill" href="/bazaars/opportunities.html">
-          <span class="bz-org-ico">🏪</span>
-          <span class="bz-org-texts">
-            <span class="bz-org-title">فرص استضافة</span>
-            <span class="bz-org-sub">مساحات متاحة للبازار</span>
-          </span>
-        </a>
-        <a class="bz-org-pill" href="/bazaars/organize.html">
-          <span class="bz-org-ico">🎪</span>
-          <span class="bz-org-texts">
-            <span class="bz-org-title">نظّم بازار</span>
-            <span class="bz-org-sub">زوّد دخلك الآن</span>
-          </span>
-        </a>` : ''}
+        <a class="bz-org-pill" href="/bazaars/organize.html">نظّم بازارك</a>
+        <a class="bz-org-pill" href="/bazaars/opportunities.html">فرص الاستضافة</a>` : ''}
 
         <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
           <div class="nav-avatar-circle">${avatarHtml}</div>

@@ -23,11 +23,21 @@ export async function onRequest(context) {
 
     const method = context.request.method;
 
-    /* ── GET: load all listings ── */
+    /* ── GET: load listings — enriched with seller info, optional search/filter (§11) ── */
     if (method === 'GET') {
+      const qp = new URL(context.request.url).searchParams;
       const res  = await fetch(
-        `${SUPABASE_URL}/rest/v1/listings?status=neq.deleted&order=created_at.desc&select=*`,
-        { headers: sbHeaders }
+        `${SUPABASE_URL}/rest/v1/rpc/admin_get_listings_enriched`,
+        {
+          method: 'POST',
+          headers: { ...sbHeaders, Prefer: 'return=representation' },
+          body: JSON.stringify({
+            p_search:   qp.get('search')   || null,
+            p_status:   qp.get('status')   || null,
+            p_category: qp.get('category') || null,
+            p_region:   qp.get('region')   || null,
+          }),
+        }
       );
       const text = await res.text();
       return new Response(text, {

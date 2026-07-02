@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=27">
+<link rel="stylesheet" href="../style.css?v=29">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <!-- Google Analytics -->
@@ -307,13 +307,121 @@
 #mn-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #mn-toast.error{background:#dc2626;box-shadow:0 6px 28px rgba(220,38,38,.35)}
 
+/* ── MOBILE RESPONSIVE — 768px ── */
+@media(max-width:768px){
+  .mn-hero{padding:20px 18px 15px}
+  .mn-hero h1{font-size:19px}
+  .mn-hero p{font-size:11.5px}
+  .mn-wrap{padding:14px 14px;width:100%}
+  .mn-filter-btn{padding:6px 13px;font-size:11.5px}
+  .mn-form-card{padding:16px}
+  .mn-status-section{padding:16px}
+  .mn-lock-banner{padding:11px 14px}
+  .mn-activity{padding:13px 15px}
+  .mn-detail-name{font-size:15px}
+  .mn-detail-hdr{padding:12px 0 10px;gap:10px}
+  .mn-back-btn{padding:6px 12px;font-size:12px}
+  .mn-slots-info-val{font-size:19px}
+  .mn-tab{padding:11px 15px;font-size:12.5px}
+  .sm-grid{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+}
+
+/* ── MOBILE RESPONSIVE — 640px ── */
+@media(max-width:640px){
+  .mn-hero{padding:15px 14px 12px}
+  .mn-hero h1{font-size:17px}
+  .mn-hero p{font-size:11px;max-width:100%}
+  .mn-wrap{padding:12px 12px}
+  .mn-filter-btn{padding:5px 10px;font-size:11px}
+  .mn-form-card{padding:14px;margin-bottom:12px}
+  .mn-form-card-title{font-size:13px;margin-bottom:12px}
+  .mn-status-section{padding:14px;margin-bottom:12px}
+  .mn-status-title{font-size:13.5px}
+  .mn-lock-banner{padding:10px 12px;gap:8px}
+  .mn-lock-banner-ico{font-size:18px;margin-top:0}
+  .mn-lock-banner-title{font-size:11.5px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;line-height:1.5}
+  .mn-lock-banner-desc{font-size:11px;line-height:1.5}
+  .mn-lock-badge{font-size:9px;padding:2px 6px}
+  .mn-docs-banner{padding:12px 14px;gap:8px}
+  .mn-docs-banner-title{font-size:12px}
+  .mn-docs-banner-desc{font-size:11px;line-height:1.55}
+  .mn-activity{padding:12px 13px}
+  .mn-activity-title{font-size:12.5px}
+  .mn-activity-see-all{padding:3px 10px;font-size:10.5px}
+  .mn-feed-text{font-size:12px}
+  .mn-feed-sub{font-size:10.5px}
+  .mn-detail-hdr{padding:10px 0 8px;gap:8px}
+  .mn-detail-name{font-size:14px}
+  .mn-back-btn{padding:6px 10px;font-size:11px}
+  .mn-detail-sub{gap:5px}
+  .mn-detail-view-link{font-size:10.5px}
+  .mn-reason-chips{gap:5px}
+  .mn-reason-chip{padding:5px 10px;font-size:11px}
+  .mn-warn-box{padding:11px 13px}
+  .mn-warn-title{font-size:12.5px}
+  .mn-warn-text{font-size:11.5px}
+  .mn-disabled-note{font-size:11px;padding:9px 11px}
+  .mn-log-dot{width:28px;height:28px;font-size:13px}
+  .mn-log-type{font-size:12.5px}
+  .mn-log-note{font-size:11.5px}
+  .mn-log-date{font-size:10.5px}
+  .mn-form-actions{flex-wrap:wrap;gap:8px}
+  .sm-sub-tab{padding:7px 14px;font-size:12px}
+  .mn-card-actions{padding:9px 14px;gap:6px}
+  .mn-slots-info{padding:10px 12px}
+  .mn-slots-info-val{font-size:18px}
+  .mn-slots-info-lbl{font-size:10px}
+  .mn-section-lbl{font-size:10.5px}
+  .mn-fg input,.mn-fg select{padding:9px 11px;font-size:13px}
+  .mn-fg textarea{padding:9px 11px;font-size:13px}
+  .mn-fg label{font-size:12.5px}
+  .mn-hint{font-size:10.5px}
+  .mn-docs-status-pill{font-size:11.5px;padding:7px 12px}
+  .mn-docs-link-input{font-size:12.5px;padding:7px 9px}
+  .mn-tab-panel{padding:18px 0}
+}
+
+/* ── MOBILE RESPONSIVE — 560px ── */
 @media(max-width:560px){
   .mn-card-top{flex-direction:column}
-  .mn-card-img{width:100%;height:160px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+  .mn-card-img{width:100%;height:150px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
   .mn-imgs-grid{grid-template-columns:repeat(3,1fr)}
-  .sm-slot{width:38px;height:38px}
-  .mn-tab{padding:10px 13px;font-size:12px}
+  .sm-slot{width:36px;height:36px;font-size:9px}
+  .sm-slot .sm-num{font-size:9px}
+  .mn-tab{padding:9px 11px;font-size:11.5px}
   .mn-bk-table{font-size:11.5px}
+  .mn-form-actions{flex-direction:column}
+  .mn-form-actions .mn-btn{width:100%;justify-content:center}
+  .mn-detail-info{min-width:0}
+  .mn-slots-info{flex-wrap:wrap}
+  .mn-slots-info-item{flex:1;min-width:0;padding:4px 0}
+  .mn-bk-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  .mn-bk-table{min-width:460px}
+  .sm-legend{flex-wrap:wrap;gap:7px}
+  .mn-lock-banner-body{width:100%}
+}
+
+/* ── MOBILE RESPONSIVE — 480px ── */
+@media(max-width:480px){
+  .mn-hero{padding:13px 12px 10px}
+  .mn-hero h1{font-size:15px}
+  .mn-wrap{padding:10px 10px}
+  .mn-filter-btn{padding:4px 9px;font-size:10.5px}
+  .mn-filters{gap:5px;margin-bottom:14px}
+  .mn-imgs-grid{grid-template-columns:repeat(2,1fr)}
+  .mn-card-top{padding:12px 12px}
+  .mn-card-actions{padding:8px 12px;gap:5px;flex-wrap:wrap}
+  .mn-btn{padding:6px 11px;font-size:11.5px}
+  .mn-form-card{padding:12px}
+  .mn-status-section{padding:11px}
+  .mn-lock-banner{padding:9px 11px}
+  .mn-tab{padding:8px 9px;font-size:11px;gap:3px}
+  .mn-activity{padding:10px 11px}
+  .mn-activity-hdr{margin-bottom:10px}
+  .sm-row-lbl{width:18px;font-size:9px}
+  .sm-slot{width:32px;height:32px;border-radius:6px}
+  .mn-warn-box{padding:9px 10px}
+  .mn-docs-banner{flex-direction:column;gap:6px}
 }
 </style>
 </head>
@@ -813,6 +921,7 @@
 <div id="mn-toast"></div>
 
 <!-- ── Scripts ── -->
+<script src="/notifications.js?v=20260623" defer></script>
 <script src="../media-handler.js" defer></script>
 <script src="manage.js?v=202606270900" defer></script>
 </body>

@@ -886,6 +886,7 @@ body {
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -1612,31 +1613,18 @@ body {
 <div id="toasts"></div>
 
 <script>
-// الصفحة محمية عبر Cloudflare Access — نضع التوكن ليعرف الداشبوردات الفرعية أن المستخدم مرّ من هنا
-localStorage.setItem('mks_hub_tok', 'mks2026');
-
-const PW_HASH   = "a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2";
-const PW_SALT   = "MkSpot_2026_Salt";
+const ADMIN_EMAIL = 'makanispot@gmail.com';
 const MAX_TRIES = 5;
 const SB_URL    = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const db = supabase.createClient(SB_URL, SB_KEY);
 
 let attempts   = 0;
 let locked     = false;
-let adminHash  = null;   // set after successful login
+let adminHash  = null;   // legacy flag some render code checks for truthiness — no longer used for auth
 let spCurrentTab = 'pending';
 let spAllSpaces  = [];
 let spAllOwners  = [];
-
-/* ══════════════════════════════════════
-   SHA-256 implementation (pure JS)
-══════════════════════════════════════ */
-async function sha256(message) {
-  const msgBuffer  = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray  = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 /* ══════════════════════════════════════
    LOGIN
@@ -1650,11 +1638,11 @@ async function tryLogin() {
   btn.disabled = true;
   btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;display:inline-block"></div>';
 
-  const hashed = await sha256(PW_SALT + pw);
+  const { data, error } = await db.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pw });
 
-  if (hashed === PW_HASH) {
+  if (data?.session && !error) {
     // ✅ صح
-    adminHash = hashed;
+    adminHash = 'authenticated';
     document.getElementById('login-screen').style.animation = 'fadeOut .4s ease forwards';
     setTimeout(() => {
       document.getElementById('login-screen').style.display = 'none';
@@ -1666,7 +1654,6 @@ async function tryLogin() {
       loadSpacesData();
       startAdminAutoRefresh();
     }, 400);
-    sessionStorage.setItem('mkadmin', hashed.slice(0,16));
   } else {
     // ❌ خطأ
     attempts++;
@@ -1704,9 +1691,9 @@ async function tryLogin() {
    AUTO-LOGIN (session)
 ══════════════════════════════════════ */
 (async function() {
-  const sess = sessionStorage.getItem('mkadmin');
-  if (sess && sess === PW_HASH.slice(0,16)) {
-    adminHash = PW_HASH;
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    adminHash = 'authenticated';
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     startClock();
@@ -1734,8 +1721,8 @@ function startAdminAutoRefresh() {
 /* ══════════════════════════════════════
    LOGOUT
 ══════════════════════════════════════ */
-function doLogout() {
-  sessionStorage.removeItem('mkadmin');
+async function doLogout() {
+  await db.auth.signOut();
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pw-input').value = '';
@@ -1863,10 +1850,11 @@ document.head.appendChild(style);
 ══════════════════════════════════════ */
 
 async function sbRpc(fn, params) {
+  const { data: { session } } = await db.auth.getSession();
   const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
     headers: {
-      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + (session?.access_token || SB_KEY),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(params),

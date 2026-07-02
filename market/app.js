@@ -1231,10 +1231,17 @@ async function eqIncrementContact(id) {
    🚩 القسم 18: الإبلاغ عن إعلان
    ================================================================ */
 
+const EQ_REPORT_CAT_LABELS = {
+  spam: 'نشر متكرر / سبام', fake: 'إعلان وهمي / غير حقيقي',
+  wrong_info: 'معلومات أو سعر مضلل', sold_elsewhere: 'تم البيع / لم يعد متاحاً',
+  inappropriate: 'محتوى غير لائق', other: 'سبب آخر',
+};
+
 function eqOpenReport(id) {
   if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
   document.getElementById('eq-report-id').value = id;
   document.getElementById('eq-report-reason').value = '';
+  document.querySelectorAll('input[name="eq-report-cat"]').forEach(r => r.checked = false);
   document.getElementById('eq-report-modal').classList.add('open');
 }
 
@@ -1243,11 +1250,13 @@ function eqCloseReport() {
 }
 
 async function eqSubmitReport() {
-  const id     = document.getElementById('eq-report-id').value;
-  const reason = document.getElementById('eq-report-reason').value.trim();
-  if (!reason) { alert('من فضلك اكتب سبب الإبلاغ'); return; }
+  const id       = document.getElementById('eq-report-id').value;
+  const category = document.querySelector('input[name="eq-report-cat"]:checked')?.value;
+  const note     = document.getElementById('eq-report-reason').value.trim();
+  if (!category) { alert('من فضلك اختر سبب الإبلاغ'); return; }
   if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
 
+  const reason = EQ_REPORT_CAT_LABELS[category] + (note ? ' — ' + note : '');
   const reportData = { listing_id: id, reason, user_id: eqUser.id };
   const { error } = await eqSb.from('listing_reports').insert(reportData);
   if (error) { alert('حدث خطأ، حاول مرة أخرى'); return; }
@@ -1420,9 +1429,20 @@ async function eqDeleteListing(id, status) {
    ✏️ القسم 23: تعديل الإعلان
    ================================================================ */
 
-function eqOpenEdit(id) {
+async function eqOpenEdit(id) {
   const l = eqMyListings.find(x => x.id === id);
   if (!l) return;
+
+  const { data: profile } = await eqSb.from('profiles')
+    .select('is_suspended, suspension_reason, suspended_until')
+    .eq('id', eqUser.id).single();
+  const isSuspended = profile?.is_suspended &&
+    (!profile.suspended_until || new Date(profile.suspended_until) > new Date());
+  if (isSuspended) {
+    const until = profile.suspended_until ? 'حتى ' + new Date(profile.suspended_until).toLocaleDateString('ar-EG') : 'حتى مراجعة إضافية من الإدارة';
+    alert('🚫 تم إيقاف صلاحية تعديل الإعلانات مؤقتاً' + (profile.suspension_reason ? '\nالسبب: ' + profile.suspension_reason : '') + '\n' + until);
+    return;
+  }
 
   document.getElementById('eq-edit-id').value     = id;
   document.getElementById('eq-edit-orig-status').value = l.status;

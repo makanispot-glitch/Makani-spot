@@ -209,12 +209,73 @@ tr:hover td { background: #FAFAFA; }
 .adm-preview-row { display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px; border-bottom: 1px solid #F0F0F0; padding-bottom: 8px; }
 .adm-preview-row strong { color: #666; min-width: 130px; font-size: 13px; }
 
+/* ── Tabs ── */
+.adm-tabs {
+  display: flex; gap: 4px; padding: 0 28px; background: #fff;
+  border-bottom: 1px solid #E8E8E8; overflow-x: auto;
+}
+.adm-tab {
+  padding: 14px 16px; border: none; background: none; cursor: pointer;
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; color: #999;
+  border-bottom: 3px solid transparent; white-space: nowrap; transition: all .2s;
+}
+.adm-tab:hover { color: #333; }
+.adm-tab.on { color: #F36418; border-bottom-color: #F36418; }
+.adm-page { display: none; }
+.adm-page.on { display: block; }
+
+/* ── Cards / KPI grid (analytics, seller cards) ── */
+.adm-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 14px; margin-bottom: 20px; }
+.adm-kpi-card { background: #fff; border: 1px solid #E8E8E8; border-radius: 12px; padding: 16px 18px; }
+.adm-kpi-card .n { font-size: 24px; font-weight: 900; color: #1A1A1A; }
+.adm-kpi-card .l { font-size: 12px; color: #888; font-weight: 700; margin-top: 4px; }
+.adm-breakdown { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-breakdown-chip { background: #F7F7F7; border: 1px solid #E8E8E8; border-radius: 50px; padding: 6px 14px; font-size: 12.5px; }
+.adm-breakdown-chip b { color: #F36418; }
+
+/* ── Featured badge ── */
+.adm-badge-featured { display:inline-flex; align-items:center; gap:3px; background:#FEF3C7; color:#92400E; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:800; margin-inline-start:6px; }
+.adm-badge-suspended { display:inline-flex; align-items:center; gap:3px; background:#FEE2E2; color:#991B1B; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:800; margin-inline-start:6px; }
+
+/* ── Seller cell in listings table ── */
+.adm-seller-cell { font-size:12.5px; cursor:pointer; }
+.adm-seller-cell strong { display:block; color:#1A1A1A; }
+.adm-seller-cell span { color:#999; }
+.adm-seller-cell:hover strong { color:#F36418; }
+
+/* ── Generic simple tables (sellers / suspicious / reports) ── */
+.adm-simple-table th, .adm-simple-table td { font-size: 13px; }
+.adm-flag-chip { background:#FEE2E2; color:#991B1B; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:700; margin:2px; display:inline-block; }
+.adm-empty-tab { text-align:center; padding:50px 20px; color:#aaa; }
+
+/* ── Seller detail modal ── */
+.adm-seller-modal { background:#fff; border-radius:16px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:24px; }
+.adm-seller-head { display:flex; gap:14px; align-items:center; margin-bottom:18px; }
+.adm-seller-avatar { width:56px; height:56px; border-radius:50%; object-fit:cover; background:#F3F4F6; }
+.adm-seller-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+.adm-seller-stat { background:#F7F7F7; border-radius:10px; padding:10px; text-align:center; }
+.adm-seller-stat b { display:block; font-size:18px; color:#1A1A1A; }
+.adm-seller-stat span { font-size:11px; color:#888; }
+.adm-suspend-form { background:#FFF7ED; border:1px solid #FED7AA; border-radius:10px; padding:14px; margin-top:14px; }
+.adm-suspend-form select, .adm-suspend-form input, .adm-suspend-form textarea {
+  width:100%; padding:9px 12px; border:1.5px solid #E8E8E8; border-radius:8px;
+  font-family:'Cairo',sans-serif; font-size:13px; margin-top:6px; margin-bottom:10px; outline:none;
+}
+
+/* ── Settings form ── */
+.adm-settings-form { background:#fff; border:1px solid #E8E8E8; border-radius:14px; padding:24px; max-width:520px; }
+.adm-settings-row { margin-bottom:16px; }
+.adm-settings-row label { display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#333; }
+.adm-settings-row input { width:140px; padding:9px 12px; border:1.5px solid #E8E8E8; border-radius:8px; font-family:'Cairo',sans-serif; font-size:14px; outline:none; }
+.adm-settings-row small { display:block; color:#999; font-size:11.5px; margin-top:4px; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .adm-nav, .adm-stats, .adm-toolbar, .adm-content { padding-left: 14px; padding-right: 14px; }
+  .adm-nav, .adm-stats, .adm-toolbar, .adm-content, .adm-tabs { padding-left: 14px; padding-right: 14px; }
   .adm-content { padding: 14px; }
-  th:nth-child(5), td:nth-child(5),
-  th:nth-child(6), td:nth-child(6) { display: none; }
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(6), td:nth-child(6),
+  th:nth-child(7), td:nth-child(7) { display: none; }
 }
 </style>
 
@@ -278,42 +339,110 @@ tr:hover td { background: #FAFAFA; }
     </div>
   </nav>
 
-  <!-- Stats -->
-  <div class="adm-stats" id="adm-stats">
-    <div class="adm-stat pending">
-      <div class="adm-stat-num" id="stat-pending">—</div>
-      <div class="adm-stat-lbl">⏳ قيد المراجعة</div>
+  <!-- Tabs -->
+  <div class="adm-tabs">
+    <button class="adm-tab on" onclick="admSwitchTab('listings',this)">📋 الإعلانات</button>
+    <button class="adm-tab" onclick="admSwitchTab('sellers',this)">⭐ الأكثر نشاطًا</button>
+    <button class="adm-tab" onclick="admSwitchTab('analytics',this)">📊 تحليل السوق</button>
+    <button class="adm-tab" onclick="admSwitchTab('suspicious',this)">🚨 حسابات مشبوهة</button>
+    <button class="adm-tab" onclick="admSwitchTab('reports',this)">🚩 البلاغات <span id="tab-reports-badge"></span></button>
+    <button class="adm-tab" onclick="admSwitchTab('settings',this)">⚙️ الحذف التلقائي</button>
+  </div>
+
+  <!-- ═══ صفحة: الإعلانات ═══ -->
+  <div class="adm-page on" id="page-listings">
+    <!-- Stats -->
+    <div class="adm-stats" id="adm-stats">
+      <div class="adm-stat pending">
+        <div class="adm-stat-num" id="stat-pending">—</div>
+        <div class="adm-stat-lbl">⏳ قيد المراجعة</div>
+      </div>
+      <div class="adm-stat approved">
+        <div class="adm-stat-num" id="stat-approved">—</div>
+        <div class="adm-stat-lbl">✅ منشور</div>
+      </div>
+      <div class="adm-stat rejected">
+        <div class="adm-stat-num" id="stat-rejected">—</div>
+        <div class="adm-stat-lbl">❌ مرفوض</div>
+      </div>
+      <div class="adm-stat expired">
+        <div class="adm-stat-num" id="stat-expired">—</div>
+        <div class="adm-stat-lbl">⌛ منتهي</div>
+      </div>
     </div>
-    <div class="adm-stat approved">
-      <div class="adm-stat-num" id="stat-approved">—</div>
-      <div class="adm-stat-lbl">✅ منشور</div>
+
+    <!-- Toolbar -->
+    <div class="adm-toolbar">
+      <button class="adm-filter-btn on" onclick="admSetFilter('pending',this)">⏳ قيد المراجعة</button>
+      <button class="adm-filter-btn" onclick="admSetFilter('approved',this)">✅ منشور</button>
+      <button class="adm-filter-btn" onclick="admSetFilter('rejected',this)">❌ مرفوض</button>
+      <button class="adm-filter-btn" onclick="admSetFilter('expired',this)">⌛ منتهي</button>
+      <button class="adm-filter-btn" onclick="admSetFilter('',this)">الكل</button>
+      <input class="adm-search" id="adm-search" type="text" placeholder="بحث بالاسم / البريد / الهاتف / رقم الإعلان / العنوان…" oninput="admFilterTable()">
+      <button class="adm-refresh" onclick="admLoad()">🔄 تحديث</button>
+      <button class="adm-refresh" onclick="admAutoCleanup()" title="التنظيف التلقائي بيشتغل يوميًا عبر cron مستقل — الزرار ده لتنظيف فوري إضافي عند الحاجة">🧹 تنظيف الآن</button>
     </div>
-    <div class="adm-stat rejected">
-      <div class="adm-stat-num" id="stat-rejected">—</div>
-      <div class="adm-stat-lbl">❌ مرفوض</div>
-    </div>
-    <div class="adm-stat expired">
-      <div class="adm-stat-num" id="stat-expired">—</div>
-      <div class="adm-stat-lbl">⌛ منتهي</div>
+
+    <!-- Table -->
+    <div class="adm-content">
+      <div class="adm-table-wrap">
+        <div id="adm-table-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Toolbar -->
-  <div class="adm-toolbar">
-    <button class="adm-filter-btn on" onclick="admSetFilter('pending',this)">⏳ قيد المراجعة</button>
-    <button class="adm-filter-btn" onclick="admSetFilter('approved',this)">✅ منشور</button>
-    <button class="adm-filter-btn" onclick="admSetFilter('rejected',this)">❌ مرفوض</button>
-    <button class="adm-filter-btn" onclick="admSetFilter('expired',this)">⌛ منتهي</button>
-    <button class="adm-filter-btn" onclick="admSetFilter('',this)">الكل</button>
-    <input class="adm-search" id="adm-search" type="text" placeholder="بحث في الإعلانات…" oninput="admFilterTable()">
-    <button class="adm-refresh" onclick="admLoad()">🔄 تحديث</button>
-    <button class="adm-refresh" onclick="admAutoCleanup()" title="التنظيف التلقائي بيشتغل يوميًا عبر cron مستقل — الزرار ده لتنظيف فوري إضافي عند الحاجة">🧹 تنظيف الآن</button>
+  <!-- ═══ صفحة: الأكثر نشاطًا ═══ -->
+  <div class="adm-page" id="page-sellers">
+    <div class="adm-content">
+      <div class="adm-table-wrap">
+        <div id="sellers-table-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Table -->
-  <div class="adm-content">
-    <div class="adm-table-wrap">
-      <div id="adm-table-container">
+  <!-- ═══ صفحة: تحليل السوق ═══ -->
+  <div class="adm-page" id="page-analytics">
+    <div class="adm-content" id="analytics-container">
+      <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ صفحة: حسابات مشبوهة ═══ -->
+  <div class="adm-page" id="page-suspicious">
+    <div class="adm-content">
+      <p style="font-size:12.5px;color:#888;margin-bottom:14px">🚨 حسابات ظهر عليها نشاط غير معتاد: نشر سريع متكرر (+3 إعلانات خلال 24 ساعة)، إعلانات مكررة بنفس العنوان والسعر، أو حذف وإعادة نشر نفس الإعلان 3 مرات فأكثر.</p>
+      <div class="adm-table-wrap">
+        <div id="suspicious-table-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ صفحة: البلاغات ═══ -->
+  <div class="adm-page" id="page-reports">
+    <div class="adm-content">
+      <div class="adm-toolbar" style="padding:0 0 14px 0;border:none">
+        <button class="adm-filter-btn on" onclick="admLoadReports(null,this)">الكل</button>
+        <button class="adm-filter-btn" onclick="admLoadReports('approved',this)">إعلانات منشورة</button>
+        <button class="adm-filter-btn" onclick="admLoadReports('paused',this)">موقوفة مؤقتاً</button>
+      </div>
+      <div class="adm-table-wrap">
+        <div id="reports-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ صفحة: إعدادات الحذف التلقائي ═══ -->
+  <div class="adm-page" id="page-settings">
+    <div class="adm-content">
+      <div class="adm-settings-form" id="settings-form">
         <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
       </div>
     </div>
@@ -344,6 +473,34 @@ tr:hover td { background: #FAFAFA; }
     </div>
     <div id="adm-preview-body"></div>
     <div style="display:flex;gap:10px;margin-top:18px;justify-content:center" id="adm-preview-actions"></div>
+  </div>
+</div>
+
+<!-- ── Seller Detail Modal ── -->
+<div class="adm-overlay" id="adm-seller-modal">
+  <div class="adm-seller-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:18px;font-weight:900">بيانات صاحب الإعلان</h3>
+      <button onclick="admCloseSeller()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999">✕</button>
+    </div>
+    <div id="adm-seller-body">
+      <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Featured Modal ── -->
+<div class="adm-overlay" id="adm-feature-modal">
+  <div class="adm-modal">
+    <h3>⭐ تمييز الإعلان</h3>
+    <input type="hidden" id="adm-feature-id">
+    <p style="font-size:13px;color:#666;margin-bottom:12px">اختياري: حدّد تاريخ انتهاء للتمييز — اتركه فارغاً لتمييز بلا مدة محددة.</p>
+    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px">تاريخ انتهاء التمييز (اختياري)</label>
+    <input type="date" id="adm-feature-until" style="width:100%;padding:11px 14px;border:1.5px solid #E8E8E8;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;outline:none">
+    <div class="adm-modal-btns">
+      <button class="adm-btn adm-btn-preview" onclick="admCloseFeatureModal()">إلغاء</button>
+      <button class="adm-btn adm-btn-approve" onclick="admConfirmFeature()" style="padding:10px 20px">✅ تفعيل التمييز</button>
+    </div>
   </div>
 </div>
 
@@ -483,7 +640,12 @@ function admRender() {
   if (admSearch) list = list.filter(l =>
     (l.title || '').toLowerCase().includes(admSearch) ||
     (l.phone || '').includes(admSearch) ||
-    (l.region || '').toLowerCase().includes(admSearch)
+    (l.region || '').toLowerCase().includes(admSearch) ||
+    (l.category || '').toLowerCase().includes(admSearch) ||
+    (l.id || '').toLowerCase().includes(admSearch) ||
+    (l.seller_name || '').toLowerCase().includes(admSearch) ||
+    (l.seller_email || '').toLowerCase().includes(admSearch) ||
+    (l.seller_phone || '').includes(admSearch)
   );
   admFiltered = list;
   admBuildTable(list);
@@ -522,12 +684,28 @@ function admBuildTable(list) {
       ? `<button class="adm-btn adm-btn-reject" onclick="admOpenReject('${safeId}')">❌ رفض</button>` : '';
     const deleteBtn = ['rejected','expired','deleted'].includes(l.status)
       ? `<button class="adm-btn adm-btn-delete" onclick="admHardDelete('${safeId}')">🗑 حذف نهائي</button>` : '';
+    const featureBtn = l.is_featured
+      ? `<button class="adm-btn adm-btn-preview" onclick="admUnfeature('${safeId}')">⭐ إزالة التمييز</button>`
+      : `<button class="adm-btn adm-btn-preview" onclick="admOpenFeatureModal('${safeId}')">⭐ تمييز</button>`;
+    const pauseBtn = l.status === 'approved'
+      ? `<button class="adm-btn adm-btn-preview" onclick="admQuickPause('${safeId}')">⏸ إيقاف مؤقت</button>` : '';
+    const safeUserId = escHtml(l.user_id || '');
+    const sellerBtn = safeUserId
+      ? `<button class="adm-btn adm-btn-preview" onclick="admOpenSeller('${safeUserId}')">👤 صاحب الإعلان</button>
+         <button class="adm-btn adm-btn-preview" onclick="admFilterBySeller('${escHtml(l.seller_email||'')}')">📂 إعلاناته الأخرى</button>` : '';
+
+    const featuredBadge   = l.is_featured ? `<span class="adm-badge-featured">⭐ مميز</span>` : '';
+    const suspendedBadge  = l.seller_is_suspended ? `<span class="adm-badge-suspended">🚫 موقوف</span>` : '';
 
     return `<tr>
       <td>${imgHtml}</td>
       <td class="adm-title-cell">
-        <strong>${escHtml(l.title)}</strong>
+        <strong>${escHtml(l.title)}${featuredBadge}${suspendedBadge}</strong>
         <span>${cat} — ${COND_LABELS[l.condition] || escHtml(l.condition)}</span>
+      </td>
+      <td class="adm-seller-cell" onclick="${safeUserId ? `admOpenSeller('${safeUserId}')` : ''}">
+        <strong>${escHtml(l.seller_name || '—')}</strong>
+        <span>${escHtml(l.seller_email || '')}</span>
       </td>
       <td style="font-weight:800;color:#F36418">${Number(l.price).toLocaleString('ar-EG')} ج</td>
       <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || escHtml(l.status)}</span></td>
@@ -538,6 +716,9 @@ function admBuildTable(list) {
           ${approveBtn}
           ${rejectBtn}
           <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${safeId}')">👁 معاينة</button>
+          ${featureBtn}
+          ${pauseBtn}
+          ${sellerBtn}
           ${deleteBtn}
         </div>
       </td>
@@ -550,6 +731,7 @@ function admBuildTable(list) {
         <tr>
           <th>الصورة</th>
           <th>الإعلان</th>
+          <th>صاحب الإعلان</th>
           <th>السعر</th>
           <th>الحالة</th>
           <th>المحافظة</th>
@@ -629,6 +811,7 @@ function admShowPreview(id) {
 
   document.getElementById('adm-preview-body').innerHTML = `
     ${imgsHtml}
+    <div class="adm-preview-row"><strong>صاحب الإعلان</strong><span>${escHtml(l.seller_name || '—')} — ${escHtml(l.seller_email || '')} ${l.seller_is_suspended ? '<span class=\"adm-badge-suspended\">🚫 موقوف</span>' : ''}</span></div>
     <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${escHtml(l.title)}</span></div>
     <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || escHtml(l.category)}</span></div>
     <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || escHtml(l.condition)}</span></div>
@@ -650,7 +833,12 @@ function admShowPreview(id) {
     ? `<button class="adm-btn adm-btn-reject" style="padding:10px 24px" onclick="admClosePreview();admOpenReject('${safeId}')">❌ رفض</button>` : '';
   const deleteBtn2 = ['rejected','expired','deleted'].includes(l.status)
     ? `<button class="adm-btn adm-btn-delete" style="padding:10px 24px" onclick="admHardDelete('${safeId}');admClosePreview()">🗑 حذف نهائي</button>` : '';
-  actionsEl.innerHTML = approveBtn + rejectBtn + deleteBtn2 +
+  const featureBtn2 = l.is_featured
+    ? `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admUnfeature('${safeId}');admClosePreview()">⭐ إزالة التمييز</button>`
+    : `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview();admOpenFeatureModal('${safeId}')">⭐ تمييز</button>`;
+  const sellerBtn2 = l.user_id
+    ? `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview();admOpenSeller('${escHtml(l.user_id)}')">👤 صاحب الإعلان</button>` : '';
+  actionsEl.innerHTML = approveBtn + rejectBtn + featureBtn2 + sellerBtn2 + deleteBtn2 +
     `<button class="adm-btn adm-btn-preview" style="padding:10px 24px" onclick="admClosePreview()">إغلاق</button>`;
 
   document.getElementById('adm-preview-modal').classList.add('open');
@@ -718,10 +906,367 @@ async function admAutoCleanup() {
     : 'لا توجد إعلانات مرفوضة/منتهية أقدم من 7 أيام حاليًا');
 }
 
+/* ── Tabs ── */
+function admSwitchTab(tab, el) {
+  document.querySelectorAll('.adm-tab').forEach(b => b.classList.remove('on'));
+  if (el) el.classList.add('on');
+  document.querySelectorAll('.adm-page').forEach(p => p.classList.remove('on'));
+  document.getElementById('page-' + tab).classList.add('on');
+
+  if (tab === 'sellers')     admLoadSellers();
+  if (tab === 'analytics')   admLoadAnalytics();
+  if (tab === 'suspicious')  admLoadSuspicious();
+  if (tab === 'reports')     admLoadReports(null);
+  if (tab === 'settings')    admLoadSettings();
+}
+
+function admFilterBySeller(email) {
+  admSwitchTab('listings', document.querySelector('.adm-tab'));
+  document.getElementById('adm-search').value = email;
+  admFilterTable();
+}
+
+/* ── الأكثر نشاطًا ── */
+async function admLoadSellers() {
+  const cont = document.getElementById('sellers-table-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res = await fetch('/admin/listing-insights?type=top_users', { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const data = await res.json();
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(data.error || 'خطأ')}</div>`; return; }
+    if (!data.length) { cont.innerHTML = '<div class="adm-empty-tab">لا يوجد بائعون بعد</div>'; return; }
+
+    const rows = data.map(s => `<tr>
+      <td class="adm-seller-cell" onclick="admOpenSeller('${escHtml(s.user_id)}')">
+        <strong>${escHtml(s.full_name)}${s.is_suspended ? '<span class="adm-badge-suspended">🚫</span>' : ''}</strong>
+        <span>${escHtml(s.email)}</span>
+      </td>
+      <td>${s.total_listings}</td>
+      <td>${s.active_listings}</td>
+      <td>👁 ${s.total_views}</td>
+      <td>📞 ${s.total_contacts}</td>
+      <td style="font-size:12px;color:#999">${s.last_activity_at ? new Date(s.last_activity_at).toLocaleDateString('ar-EG') : '—'}</td>
+      <td>${s.is_active ? '<span class="adm-status adm-status-approved">نشط</span>' : '<span class="adm-status adm-status-expired">غير نشط</span>'}</td>
+    </tr>`).join('');
+
+    cont.innerHTML = `<table class="adm-simple-table"><thead><tr>
+      <th>البائع</th><th>إعلانات</th><th>نشطة</th><th>مشاهدات</th><th>تواصل</th><th>آخر نشاط</th><th>الحالة</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+/* ── تحليل السوق ── */
+async function admLoadAnalytics() {
+  const cont = document.getElementById('analytics-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res = await fetch('/admin/listing-insights?type=stats', { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const s = await res.json();
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(s.error || 'خطأ')}</div>`; return; }
+
+    const kpi = (n, l) => `<div class="adm-kpi-card"><div class="n">${n ?? 0}</div><div class="l">${l}</div></div>`;
+    const chip = (items, labelKey, valKey) => (items||[]).map(i => `<span class="adm-breakdown-chip">${escHtml(i[labelKey])} <b>${i[valKey]}</b></span>`).join('');
+
+    cont.innerHTML = `
+      <div class="adm-kpi-grid">
+        ${kpi(s.total, 'إجمالي الإعلانات')}
+        ${kpi(s.active, '✅ نشطة')}
+        ${kpi(s.pending, '⏳ قيد المراجعة')}
+        ${kpi(s.rejected, '❌ مرفوضة')}
+        ${kpi(s.expired, '⌛ منتهية')}
+        ${kpi(s.paused, '⏸ موقوفة')}
+        ${kpi(s.deleted_total, '🗑 محذوفة (كل الوقت)')}
+        ${kpi(s.total_sellers, '👤 عدد البائعين')}
+        ${kpi(s.avg_per_seller, 'متوسط إعلانات/بائع')}
+      </div>
+      <div class="adm-table-wrap" style="padding:20px;margin-bottom:16px">
+        <h3 style="font-size:14px;margin-bottom:10px">📍 التوزيع حسب المحافظة ${s.top_region ? `— الأكثر: <span style="color:#F36418">${escHtml(s.top_region)}</span>` : ''}</h3>
+        <div class="adm-breakdown">${chip(s.by_region,'region','count') || '<span style="color:#999">لا توجد بيانات</span>'}</div>
+      </div>
+      <div class="adm-table-wrap" style="padding:20px">
+        <h3 style="font-size:14px;margin-bottom:10px">🏷️ التوزيع حسب التصنيف ${s.top_category ? `— الأكثر: <span style="color:#F36418">${CAT_LABELS[s.top_category]||escHtml(s.top_category)}</span>` : ''}</h3>
+        <div class="adm-breakdown">${(s.by_category||[]).map(i => `<span class="adm-breakdown-chip">${CAT_LABELS[i.category]||escHtml(i.category)} <b>${i.count}</b></span>`).join('') || '<span style="color:#999">لا توجد بيانات</span>'}</div>
+      </div>`;
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+/* ── حسابات مشبوهة ── */
+async function admLoadSuspicious() {
+  const cont = document.getElementById('suspicious-table-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res = await fetch('/admin/listing-insights?type=suspicious', { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const data = await res.json();
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(data.error || 'خطأ')}</div>`; return; }
+    if (!data.length) { cont.innerHTML = '<div class="adm-empty-tab">✅ لا توجد حسابات مشبوهة حالياً</div>'; return; }
+
+    const rows = data.map(u => `<tr>
+      <td class="adm-seller-cell" onclick="admOpenSeller('${escHtml(u.user_id)}')">
+        <strong>${escHtml(u.full_name)}</strong><span>${escHtml(u.email)}</span>
+      </td>
+      <td>${(u.flags||[]).map(f => `<span class="adm-flag-chip">${escHtml(f)}</span>`).join('')}</td>
+      <td style="text-align:center">${u.rapid_posts_24h}</td>
+      <td style="text-align:center">${u.duplicate_groups}</td>
+      <td style="text-align:center">${u.repeated_deletes}</td>
+      <td><button class="adm-btn adm-btn-preview" onclick="admOpenSeller('${escHtml(u.user_id)}')">👤 عرض التفاصيل</button></td>
+    </tr>`).join('');
+
+    cont.innerHTML = `<table class="adm-simple-table"><thead><tr>
+      <th>الحساب</th><th>الأسباب</th><th>نشر سريع (24س)</th><th>إعلانات مكررة</th><th>حذف وإعادة نشر</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+/* ── البلاغات ── */
+async function admLoadReports(status, el) {
+  if (el) { document.querySelectorAll('#page-reports .adm-filter-btn').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+  const cont = document.getElementById('reports-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const url = '/admin/listing-reports' + (status ? `?status=${encodeURIComponent(status)}` : '');
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const data = await res.json();
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(data.error || 'خطأ')}</div>`; return; }
+
+    const badge = document.getElementById('tab-reports-badge');
+    if (badge) badge.textContent = data.length ? `(${data.length})` : '';
+
+    if (!data.length) { cont.innerHTML = '<div class="adm-empty-tab">لا توجد بلاغات حالياً</div>'; return; }
+
+    /* تجميع حسب الإعلان */
+    const grouped = {};
+    data.forEach(r => { (grouped[r.listing_id] ??= { listing_id:r.listing_id, title:r.listing_title, status:r.listing_status, reports:[] }).reports.push(r); });
+    const groups = Object.values(grouped).sort((a,b) => b.reports.length - a.reports.length);
+
+    const statusLabel = { pending:'قيد المراجعة', approved:'منشور', rejected:'مرفوض', expired:'منتهي', paused:'موقوف مؤقتاً' };
+
+    cont.innerHTML = groups.map(g => `
+      <div style="padding:18px 20px;border-bottom:1px solid #F0F0F0">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div>
+            <strong style="font-size:14px">${escHtml(g.title)}</strong>
+            <span class="adm-status adm-status-${g.status}" style="margin-right:8px">${statusLabel[g.status]||escHtml(g.status)}</span>
+          </div>
+          <span class="adm-flag-chip">🚩 ${g.reports.length} بلاغ${g.reports.length>=3?' ⚠️':''}</span>
+        </div>
+        <div style="font-size:12.5px;color:#666;margin-bottom:10px;line-height:1.9">
+          ${g.reports.map(r => `<div>— <strong>${escHtml(r.reporter_name)}</strong> (${escHtml(r.reporter_email)}): ${escHtml(r.reason)} <span style="color:#aaa">(${new Date(r.reported_at).toLocaleDateString('ar-EG')})</span></div>`).join('')}
+        </div>
+        <div class="adm-actions">
+          <button class="adm-btn adm-btn-preview" onclick="admShowPreview('${escHtml(g.listing_id)}');admLoad()">👁 معاينة الإعلان</button>
+          <button class="adm-btn adm-btn-reject" onclick="admReportAction('${escHtml(g.listing_id)}','hide')">⏸ إخفاء مؤقت</button>
+          <button class="adm-btn adm-btn-preview" onclick="admReportAction('${escHtml(g.listing_id)}','review')">🔎 وضعه تحت المراجعة</button>
+          <button class="adm-btn adm-btn-delete" onclick="admHardDelete('${escHtml(g.listing_id)}');setTimeout(()=>admLoadReports(null),400)">🗑 حذف نهائي</button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+async function admReportAction(listingId, action) {
+  try {
+    const res = await fetch('/admin/listing-reports', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body: JSON.stringify({ listing_id: listingId, action }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+    admLoadReports(null);
+    admLoad();
+  } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+/* ── إعدادات الحذف التلقائي ── */
+async function admLoadSettings() {
+  const cont = document.getElementById('settings-form');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res = await fetch('/admin/listing-settings', { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const s = await res.json();
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(s.error || 'خطأ')}</div>`; return; }
+
+    cont.innerHTML = `
+      <div class="adm-settings-row">
+        <label>حذف الإعلانات المرفوضة بعد (أيام)</label>
+        <input type="number" min="1" id="set-reject-days" value="${s.reject_retention_days ?? 5}">
+        <small>الإعلان المرفوض يُحذف نهائياً (مع صوره من R2) تلقائياً بعد هذه المدة من تاريخ الرفض.</small>
+      </div>
+      <div class="adm-settings-row">
+        <label>حذف الإعلانات المنتهية بعد (أيام)</label>
+        <input type="number" min="1" id="set-expired-days" value="${s.expired_retention_days ?? 7}">
+        <small>الإعلان الذي تنتهي مدة عرضه (60 يوماً) يُحذف نهائياً تلقائياً بعد هذه المدة.</small>
+      </div>
+      <div class="adm-settings-row">
+        <label>مهلة صور الرفع غير المكتمل (ساعات)</label>
+        <input type="number" min="1" id="set-orphan-hours" value="${s.orphan_image_grace_hours ?? 24}">
+        <small>صور تُرفع أثناء تعبئة نموذج نشر إعلان ثم لا يُكمل المستخدم النشر — تُحذف من R2 بعد هذه المهلة.</small>
+      </div>
+      <p style="font-size:11.5px;color:#999;margin-bottom:14px">🕒 التنظيف التلقائي يعمل يومياً الساعة 3:30 صباحاً عبر مهمة مجدولة مستقلة — أي تعديل هنا يُطبَّق من التشغيلة التالية.</p>
+      <button class="adm-btn adm-btn-approve" style="padding:11px 24px" onclick="admSaveSettings()">💾 حفظ الإعدادات</button>
+      <span id="settings-saved-msg" style="margin-right:10px;font-size:13px;color:#15803D;display:none">✅ تم الحفظ</span>`;
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+async function admSaveSettings() {
+  const body = {
+    reject_retention_days:    Number(document.getElementById('set-reject-days').value) || 5,
+    expired_retention_days:   Number(document.getElementById('set-expired-days').value) || 7,
+    orphan_image_grace_hours: Number(document.getElementById('set-orphan-hours').value) || 24,
+  };
+  try {
+    const res = await fetch('/admin/listing-settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+    const msg = document.getElementById('settings-saved-msg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2500);
+  } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+/* ── بروفايل صاحب الإعلان + التعليق ── */
+async function admOpenSeller(userId) {
+  document.getElementById('adm-seller-modal').classList.add('open');
+  const body = document.getElementById('adm-seller-body');
+  body.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res = await fetch(`/admin/listing-detail?user_id=${encodeURIComponent(userId)}`, { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const d = await res.json();
+    if (!res.ok || d.error) { body.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(d.error || 'تعذّر جلب البيانات')}</div>`; return; }
+
+    const joined = d.account_created_at ? new Date(d.account_created_at).toLocaleDateString('ar-EG', {year:'numeric',month:'long',day:'numeric'}) : '—';
+    const avatar = safeUrl(d.avatar_url) || '';
+
+    body.innerHTML = `
+      <div class="adm-seller-head">
+        ${avatar ? `<img class="adm-seller-avatar" src="${escHtml(avatar)}">` : `<div class="adm-seller-avatar" style="display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>`}
+        <div>
+          <div style="font-size:16px;font-weight:900">${escHtml(d.full_name || '—')} ${d.is_suspended ? '<span class="adm-badge-suspended">🚫 موقوف</span>' : ''}</div>
+          <div style="font-size:12.5px;color:#888">${escHtml(d.email || '—')} ${d.phone ? ' — ' + escHtml(d.phone) : ''}</div>
+          <div style="font-size:11.5px;color:#aaa;margin-top:2px">عضو منذ ${joined}</div>
+        </div>
+      </div>
+      <div class="adm-seller-stats-grid">
+        <div class="adm-seller-stat"><b>${d.total_listings}</b><span>إجمالي الإعلانات</span></div>
+        <div class="adm-seller-stat"><b>${d.active_listings}</b><span>نشطة</span></div>
+        <div class="adm-seller-stat"><b>${d.pending_listings}</b><span>قيد المراجعة</span></div>
+        <div class="adm-seller-stat"><b>${d.rejected_listings}</b><span>مرفوضة</span></div>
+        <div class="adm-seller-stat"><b>${d.expired_listings}</b><span>منتهية</span></div>
+        <div class="adm-seller-stat"><b>${d.deleted_listings}</b><span>محذوفة سابقاً</span></div>
+        <div class="adm-seller-stat"><b>${d.total_views}</b><span>مشاهدات</span></div>
+        <div class="adm-seller-stat"><b>${d.total_contacts}</b><span>مرات تواصل</span></div>
+        <div class="adm-seller-stat"><b>${d.paused_listings}</b><span>موقوفة مؤقتاً</span></div>
+      </div>
+      ${d.is_suspended ? `
+        <div class="adm-suspend-form">
+          <strong style="color:#92400E;font-size:13px">🚫 هذا الحساب موقوف حالياً</strong>
+          ${d.suspension_reason ? `<p style="font-size:12.5px;margin-top:6px">السبب: ${escHtml(d.suspension_reason)}</p>` : ''}
+          ${d.suspended_until ? `<p style="font-size:12.5px">حتى: ${new Date(d.suspended_until).toLocaleDateString('ar-EG')}</p>` : '<p style="font-size:12.5px">بدون تاريخ انتهاء محدد</p>'}
+          <button class="adm-btn adm-btn-approve" style="margin-top:8px" onclick="admSuspendUser('${escHtml(userId)}',false)">✅ رفع الإيقاف</button>
+        </div>
+      ` : `
+        <div class="adm-suspend-form">
+          <strong style="font-size:13px">🚫 تعليق صلاحية النشر لهذا الحساب</strong>
+          <label style="font-size:12px;font-weight:700">سبب الإيقاف</label>
+          <textarea id="suspend-reason" rows="2" placeholder="مثال: نشر متكرر لنفس الإعلان بعد التنبيه"></textarea>
+          <label style="font-size:12px;font-weight:700">المدة</label>
+          <select id="suspend-duration">
+            <option value="3">3 أيام</option>
+            <option value="7" selected>7 أيام</option>
+            <option value="14">14 يوم</option>
+            <option value="30">30 يوم</option>
+            <option value="">دائم (حتى المراجعة اليدوية)</option>
+          </select>
+          <button class="adm-btn adm-btn-reject" onclick="admSuspendUser('${escHtml(userId)}',true)">🚫 تعليق الحساب</button>
+        </div>
+      `}
+      <div style="margin-top:14px">
+        <button class="adm-btn adm-btn-preview" onclick="admCloseSeller();admFilterBySeller('${escHtml(d.email||'')}')">📂 عرض كل إعلاناته</button>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<div class="adm-empty-tab">⚠️ تعذّر الاتصال</div>`;
+  }
+}
+
+function admCloseSeller() { document.getElementById('adm-seller-modal').classList.remove('open'); }
+
+async function admSuspendUser(userId, suspend) {
+  const reason   = suspend ? document.getElementById('suspend-reason')?.value.trim() : null;
+  const durVal   = suspend ? document.getElementById('suspend-duration')?.value : null;
+  const duration = durVal ? Number(durVal) : null;
+
+  if (suspend && !confirm('🚫 تعليق هذا الحساب سيمنعه من نشر أو تعديل أي إعلان حتى تُلغي الإيقاف. متأكد؟')) return;
+
+  try {
+    const res = await fetch('/admin/listing-suspend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body: JSON.stringify({ user_id: userId, suspend, reason, duration_days: duration }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+    admOpenSeller(userId);
+    admLoad();
+  } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+/* ── التمييز ── */
+function admOpenFeatureModal(id) {
+  document.getElementById('adm-feature-id').value = id;
+  document.getElementById('adm-feature-until').value = '';
+  document.getElementById('adm-feature-modal').classList.add('open');
+}
+function admCloseFeatureModal() { document.getElementById('adm-feature-modal').classList.remove('open'); }
+
+async function admConfirmFeature() {
+  const id    = document.getElementById('adm-feature-id').value;
+  const until = document.getElementById('adm-feature-until').value;
+  try {
+    const res = await fetch('/admin/listing-feature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body: JSON.stringify({ listing_id: id, featured: true, featured_until: until ? new Date(until).toISOString() : null }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+    admCloseFeatureModal();
+    admLoad();
+  } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+async function admUnfeature(id) {
+  try {
+    const res = await fetch('/admin/listing-feature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body: JSON.stringify({ listing_id: id, featured: false }),
+    });
+    if (!res.ok) { alert('خطأ: ' + (await res.text())); return; }
+    admLoad();
+  } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+/* ── إيقاف مؤقت سريع من صف الجدول (يعيد استخدام مسار البلاغات نفسه) ── */
+async function admQuickPause(id) {
+  if (!confirm('⏸ إيقاف هذا الإعلان مؤقتاً؟ لن يظهر للمستخدمين حتى تُعيد تفعيله (قبول مجدداً).')) return;
+  await admReportAction(id, 'hide');
+}
+
 /* ── Close on backdrop ── */
 document.addEventListener('click', e => {
   if (e.target.id === 'adm-reject-modal')  admCloseReject();
   if (e.target.id === 'adm-preview-modal') admClosePreview();
+  if (e.target.id === 'adm-seller-modal')  admCloseSeller();
+  if (e.target.id === 'adm-feature-modal') admCloseFeatureModal();
 });
 
 /* ── Enter key login ── */

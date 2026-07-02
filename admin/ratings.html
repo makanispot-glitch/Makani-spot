@@ -288,13 +288,10 @@ tr.row-hidden td { background: #FFF8F8; opacity: .72; }
 <div class="adm-toast" id="adm-toast"></div>
 
 <script>
-const ADM_TOKEN_KEY = 'makani_admin_token';
-
-/* ── Supabase (RLS مُتجاوَز عبر دوال SECURITY DEFINER) ── */
+/* ── Supabase (RLS مُتجاوَز عبر دوال SECURITY DEFINER + is_admin()) ── */
 const ADM_SB_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
 const ADM_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-/* السر الخاص بدوال إشراف التقييمات (admin_list_user_ratings / admin_set_rating_status) */
-const RATINGS_SECRET = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
+const ADMIN_EMAIL = 'makanispot@gmail.com';
 
 let sbDirect = null;
 
@@ -323,42 +320,35 @@ let admAll      = [];
 let admFilter   = 'all';
 let admSearch   = '';
 
-/* ── Auth (نفس بوابة /admin/auth المستخدمة في باقي صفحات الإدارة) ── */
+/* ── Auth (Supabase Auth حقيقي — نفس حساب الأدمن المستخدم في باقي صفحات الإدارة) ── */
 async function admLogin() {
   const pass  = document.getElementById('adm-pass').value;
   const errEl = document.getElementById('adm-login-err');
   errEl.style.display = 'none';
   try {
-    const res = await fetch('/admin/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass }),
-    });
-    if (!res.ok) {
+    const { data, error } = await sbDirect.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pass });
+    if (error || !data?.session) {
       errEl.style.display = 'block';
       document.getElementById('adm-pass').value = '';
       return;
     }
-    const { token } = await res.json();
-    sessionStorage.setItem(ADM_TOKEN_KEY, token);
     admShowDash();
   } catch {
     errEl.textContent = 'خطأ في الاتصال — حاول مرة أخرى';
     errEl.style.display = 'block';
   }
 }
-function admLogout() { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); }
-function admGetToken() { return sessionStorage.getItem(ADM_TOKEN_KEY) || ''; }
-function admCheckAuth() { return !!admGetToken(); }
+async function admLogout() { await sbDirect.auth.signOut(); location.reload(); }
 function admShowDash() {
   document.getElementById('adm-login').style.display = 'none';
   document.getElementById('adm-main').style.display = 'block';
   admLoad();
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   sbDirect = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
-  if (admCheckAuth()) admShowDash();
+  const { data: { session } } = await sbDirect.auth.getSession();
+  if (session) admShowDash();
 });
 
 /* ── Load ── */
@@ -366,7 +356,7 @@ async function admLoad() {
   document.getElementById('adm-table-container').innerHTML =
     '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
   try {
-    const { data, error } = await sbDirect.rpc('admin_list_user_ratings', { p_secret: RATINGS_SECRET });
+    const { data, error } = await sbDirect.rpc('admin_list_user_ratings', { p_secret: '' });
     if (error) throw error;
     admAll = data || [];
     admUpdateStats();
@@ -504,7 +494,7 @@ async function admSetStatus(id, status, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
   try {
     const { error } = await sbDirect.rpc('admin_set_rating_status', {
-      p_rating_id: id, p_status: status, p_secret: RATINGS_SECRET,
+      p_rating_id: id, p_status: status, p_secret: '',
     });
     if (error) throw error;
     const row = admAll.find(r => r.id === id);
