@@ -7,8 +7,8 @@
    ⚙️ القسم 1: الإعدادات
    ================================================================ */
 
-const EQ_SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const EQ_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const EQ_SUPABASE_URL = SUPABASE_URL;
+const EQ_SUPABASE_KEY = SUPABASE_KEY;
 const R2_PUBLIC       = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
 
 

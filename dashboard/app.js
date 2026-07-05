@@ -7,9 +7,6 @@
 /* ══════════════════════════════════════════
    ⚙️  CONFIG
    ══════════════════════════════════════════ */
-const BOOKING_URL    = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
-const ADD_BAZAAR_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlByCAn2ESbF-6md7h1E-pTJtIph8jfYfeZTkY7GAJNM5RPSNHxbFsqOcA/exec";
-
 let ABANDONED_THRESHOLD = 30; // يوم — بعده تُعتبر المساحة "مهملة" (تُحدَّث من إعدادات المالك)
 let currentPeriod = 'month'; // نطاق الفترة في النظرة العامة: month | quarter | year
 
@@ -138,12 +135,11 @@ async function loadContractsRemote() {
   if (error) console.warn('[Makani] contracts load:', error.message);
   contractsList = (error || !data) ? [] : data.map(mapContractRow);
 
-  /* جلب البيانات الحية من profiles للعقود المرتبطة بحسابات */
+  /* جلب البيانات الحية من profiles للعقود المرتبطة بحسابات — عبر RPC مُقيَّد
+     بوجود عقد فعلي يربط المستأجر بهذا المالك (بديل profiles_public_read_basic المحذوفة) */
   const linkedIds = [...new Set(contractsList.map(c => c.tenantUserId).filter(Boolean))];
   if (linkedIds.length) {
-    const { data: profiles } = await sb.from('profiles')
-      .select('id, phone, entity_name')
-      .in('id', linkedIds);
+    const { data: profiles } = await sb.rpc('owner_get_contract_tenant_profiles', { p_ids: linkedIds });
     if (profiles?.length) {
       const profMap = Object.fromEntries(profiles.map(p => [p.id, p]));
       contractsList = contractsList.map(c => {
@@ -197,15 +193,15 @@ const BOOKER_PROFILE_FIELDS =
 /* الحالات التي تُحمّل في صندوق الحجوزات (الطلبات النشطة + قوائم الانتظار) */
 const BOOKING_LOAD_STATUSES = ['pending', 'confirmed', 'viewing_pending'];
 
-/* يجلب بروفايلات الحاجزين دفعة واحدة عبر user_id.
-   ملاحظة: سياسة RLS «profiles_public_read_basic» تسمح بقراءة البروفايلات العامة،
-   لذا لا نعتمد على PostgREST embed (الذي يفشل لأن FK يشير إلى auth.users لا profiles). */
+/* يجلب بروفايلات الحاجزين دفعة واحدة عبر user_id، عبر RPC مُقيَّد بوجود حجز
+   فعلي يربط الحاجز بهذا المالك (بديل profiles_public_read_basic المحذوفة —
+   الحقول هنا حسّاسة phone/email/role فلا يصح كشفها عبر view عام). */
 async function _fetchBookerProfiles(rows) {
   const sb = getSB();
   const ids = [...new Set((rows || []).map(r => r.user_id).filter(Boolean))];
   if (!sb || !ids.length) return {};
   try {
-    const { data } = await sb.from('profiles').select(BOOKER_PROFILE_FIELDS).in('id', ids);
+    const { data } = await sb.rpc('owner_get_booker_profiles', { p_ids: ids });
     const map = {};
     (data || []).forEach(p => { map[p.id] = p; });
     return map;
@@ -814,11 +810,8 @@ function _contractLedger(contractId) {
 }
 
 /* ══════════════════════════════════════════
-   🔐  SUPABASE — إعداد العميل
+   🔐  SUPABASE — إعداد العميل (SUPABASE_URL/KEY من shared/sb-config.js)
    ══════════════════════════════════════════ */
-const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
-
 let sbClient = null;
 
 function getSB() {
@@ -1160,16 +1153,16 @@ async function loadOwnerData() {
   if (!sb || !currentOwner?.id) { applyEmptyData(); return; }
 
   try {
-    /* كل المساحات المعتمدة (active + paused) + وحداتها */
+    /* كل مساحات المالك غير المحذوفة (بأي حالة نشر) + وحداتها — النشر فوري، لا مراجعة مسبقة */
     const { data: spacesData, error: spacesErr } = await sb
       .from('spaces')
-      .select(`id, name, type, region, sort_order, is_active,
+      .select(`id, name, type, region, sort_order, status, reject_reason,
                description, activities, amenities, image_url, extra_images,
                min_price, sizes_prices, all_acts, season, insight,
                badge, icon_emoji,
                space_units(id, unit_id, name, floor, size, price, status, location, notes, image_url, created_at)`)
       .eq('owner_id', currentOwner.id)
-      .eq('status', 'approved')
+      .eq('is_deleted', false)
       .order('sort_order');
 
     if (spacesErr) throw spacesErr;
@@ -1192,13 +1185,15 @@ async function loadOwnerData() {
       insight:     s.insight    || '',
       badge:       s.badge      || '',
       iconEmoji:   s.icon_emoji || '🏬',
-      isActive:    s.is_active !== false,
+      status:      s.status || 'live',
+      rejectReason: s.reject_reason || '',
+      isActive:    s.status === 'live',
       units:       s.space_units || [],
     }));
 
     ownerSpacesPaused = ownerSpacesFull.filter(s => !s.isActive);
 
-    /* تحويل الوحدات من المساحات النشطة فقط لمصفوفة ownerSpaces */
+    /* تحويل الوحدات من المساحات المنشورة فعلياً (live) فقط لمصفوفة ownerSpaces */
     ownerSpaces = [];
     ownerSpacesFull.filter(s => s.isActive).forEach(space => {
       (space.units || []).forEach(u => {
@@ -1226,26 +1221,9 @@ async function loadOwnerData() {
       });
     });
 
-    /* مساحات معلقة / مرفوضة */
-    const { data: pendingData } = await sb
-      .from('spaces')
-      .select('id, name, type, region, min_price, sizes_prices, status, reject_reason, created_at')
-      .eq('owner_id', currentOwner.id)
-      .in('status', ['pending', 'rejected'])
-      .order('created_at', { ascending: false });
-
-    ownerPendingSpaces = (pendingData || []).map(s => ({
-      id:          s.id,
-      name:        s.name || '—',
-      type:        s.type || '',
-      loc:         s.region || '—',
-      sizes:       s.sizes_prices || '',
-      price:       s.min_price || 0,
-      subCount:    0,
-      status:      s.status,
-      rejectReason: s.reject_reason || '',
-      submittedAt: s.created_at,
-    }));
+    /* لا مرحلة "قيد المراجعة" بعد الآن — النشر فوري. المساحات المخفية من الأدمن
+       تظهر ضمن ownerSpacesFull نفسها بحالة hidden_by_admin مع سبب الإخفاء. */
+    ownerPendingSpaces = [];
 
     /* كل البيانات التشغيلية من Supabase */
     await Promise.all([
@@ -3565,12 +3543,13 @@ function renderKPIs() {
   const occBar = document.getElementById('kpi-occ-bar');
   if (occBar) occBar.style.width = occ + '%';
 
-  /* Spaces view KPIs (pending = ownerPendingSpaces) */
+  /* Spaces view KPIs (pending = مساحات تحتاج انتباهك: مخفية من الإدارة أو مؤرشفة) */
   const totalSpaces = ownerSpaces.length || 1;
+  const needsAttention = ownerSpacesFull.filter(s => s.status === 'hidden_by_admin' || s.status === 'archived').length;
   setTxt('kpi-main',    String(rented.length));
   setTxt('kpi-avail',   String(avail.length));
   setTxt('kpi-maint',   String(maint.length));
-  setTxt('kpi-pending', String(ownerPendingSpaces.length));
+  setTxt('kpi-pending', String(needsAttention));
   const mainBar  = document.getElementById('kpi-main-bar');
   const availBar = document.getElementById('kpi-avail-bar');
   const maintBar = document.getElementById('kpi-maint-bar');
@@ -4101,94 +4080,41 @@ async function submitSpaceEdit() {
 }
 
 /* ── إيقاف / إعادة تفعيل المساحة ── */
+/* ── إيقاف/إعادة تفعيل/إعادة نشر — عبر RPC owner_set_space_publish_state
+      (لا تعديل مباشر على status: العمود محمي عمودياً، والمالك لا يملك صلاحية
+      فك إخفاء أدمن بنفسه) ── */
 async function togglePauseSpace(spaceId) {
-  const s  = ownerSpacesFull.find(x => x.id === spaceId);
+  const s = ownerSpacesFull.find(x => x.id === spaceId);
   if (!s) return;
-  const willPause = s.isActive;
+
+  if (s.status === 'hidden_by_admin') {
+    alert('هذه المساحة مخفية من إدارة مكاني Spot' + (s.rejectReason ? ' — السبب: ' + s.rejectReason : '') + '.\nتواصل معنا على واتساب 01103467711 لمراجعتها.');
+    return;
+  }
+
+  const willPause = s.status === 'live';
   const label     = willPause ? 'إيقاف مؤقت' : 'إعادة التفعيل';
-  const confirm   = willPause
+  const confirmMsg = willPause
     ? `سيُخفى إعلان المساحة "${s.name}" مؤقتاً من الموقع. يمكنك إعادة تفعيله في أي وقت.\nهل تريد المتابعة؟`
     : `سيعود إعلان "${s.name}" للظهور على الموقع.\nهل تريد المتابعة؟`;
-  if (!window.confirm(confirm)) return;
+  if (!window.confirm(confirmMsg)) return;
 
   const sb = getSB();
   if (!sb || !currentOwner?.id) { alert('تعذّر الاتصال.'); return; }
 
-  const { error } = await sb.from('spaces')
-    .update({ is_active: !willPause })
-    .eq('id', spaceId).eq('owner_id', currentOwner.id);
+  const { error } = await sb.rpc('owner_set_space_publish_state', {
+    p_space_id: spaceId,
+    p_state:    willPause ? 'paused' : 'live',
+  });
 
   if (error) { alert('تعذّر ' + label + ': ' + error.message); return; }
   await loadOwnerData();
 }
 
-/* ── حذف نهائي ── */
-async function deleteSpaceConfirmed(spaceId) {
-  const s = ownerSpacesFull.find(x => x.id === spaceId);
-  if (!s) return;
-  const ok = window.confirm(
-    `⚠️ حذف نهائي: "${s.name}"\n\nسيتم حذف المساحة وجميع وحداتها من قاعدة البيانات.\nلا يمكن استعادتها بعد الحذف.\n\nهل أنت متأكد تماماً؟`
-  );
-  if (!ok) return;
-
-  const sb = getSB();
-  if (!sb || !currentOwner?.id) { alert('تعذّر الاتصال.'); return; }
-
-  /* حذف الوحدات أولاً ثم المساحة */
-  await sb.from('space_units').delete().eq('space_id', spaceId);
-  const { error } = await sb.from('spaces').delete().eq('id', spaceId).eq('owner_id', currentOwner.id);
-  if (error) { alert('تعذّر الحذف: ' + error.message); return; }
-  await loadOwnerData();
-}
-
 function renderSpaces() {
-  /* ── طلبات الإضافة المعلقة ── */
+  /* لا مرحلة "قيد المراجعة" بعد الآن — النشر فوري؛ إخفاء الأدمن يظهر كبانر داخل بطاقة كل مساحة */
   const pendingSec = document.getElementById('pending-spaces-section');
-  if (pendingSec) {
-    if (ownerPendingSpaces.length) {
-      pendingSec.style.display = 'block';
-      pendingSec.innerHTML = `
-        <div class="pcard" style="border-color:rgba(255,184,0,0.35)">
-          <div class="pcard-head" style="background:rgba(255,184,0,0.06)">
-            <div>
-              <div class="pcard-title" style="color:var(--orange)">📋 المساحات المضافة حديثاً (${ownerPendingSpaces.length})</div>
-              <div class="pcard-sub">المساحات المنشورة تظهر للزوار مباشرةً — يمكن لفريق مكاني إيقافها عند الحاجة</div>
-            </div>
-          </div>
-          <div class="pcard-body" style="padding:0">
-            <table class="data-table">
-              <thead><tr><th>اسم المساحة</th><th>النوع</th><th>المنطقة</th><th>الأحجام</th><th>السعر</th><th>الوحدات</th><th>الحالة</th><th>تاريخ الإضافة</th><th></th></tr></thead>
-              <tbody>
-                ${ownerPendingSpaces.map(p => {
-                  const typeLabels = { mall:'🏬 مول', club:'🏊 نادي', school:'🏫 مدرسة', hotel:'🏨 فندق' };
-                  const sentDate   = p.submittedAt ? new Date(p.submittedAt).toLocaleDateString('ar-EG') : '—';
-                  const isRejected = p.status === 'rejected';
-                  const isActive   = p.status === 'active';
-                  const statusBadge = isRejected
-                    ? `<span class="badge badge-red">❌ مرفوض</span>`
-                    : isActive
-                    ? `<span class="badge badge-green">✅ منشور</span>`
-                    : `<span class="badge badge-yellow">⏳ قيد المراجعة</span>`;
-                  return `<tr style="background:${isRejected ? 'rgba(255,77,77,0.03)' : isActive ? 'rgba(0,200,100,0.02)' : 'rgba(255,184,0,0.03)'}">
-                    <td style="font-weight:700">${p.name}</td>
-                    <td>${typeLabels[p.type] || p.type || '—'}</td>
-                    <td>${p.loc}</td>
-                    <td style="font-size:11px;color:var(--text3)">${p.sizes || '—'}</td>
-                    <td style="font-family:'Space Mono',monospace">${p.price ? p.price.toLocaleString('ar-EG')+' ج' : '—'}</td>
-                    <td style="text-align:center">${p.subCount > 0 ? `<span class="badge badge-blue">${p.subCount} وحدة</span>` : '—'}</td>
-                    <td>${statusBadge}</td>
-                    <td style="font-size:11px;color:var(--text3)">${sentDate}</td>
-                    <td>${!isRejected ? `<button class="btn btn-sm" style="background:none;border:1px solid var(--red);color:var(--red);font-size:11px" onclick="removePendingSpace('${p.id}')">حذف</button>` : ''}</td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>`;
-    } else {
-      pendingSec.style.display = 'none';
-    }
-  }
+  if (pendingSec) pendingSec.style.display = 'none';
 
   const spacesCont     = document.getElementById('spaces-container');
   const abandonedSec   = document.getElementById('abandoned-section');
@@ -4240,12 +4166,25 @@ function renderSpaces() {
     const imgThumb    = space.imageUrl
       ? `<img src="${space.imageUrl.replace('_f.webp','_d.webp')}" class="sc-thumb">`
       : `<div class="sc-thumb-ph">${space.iconEmoji || '🏬'}</div>`;
-    const pauseBadge  = isPaused
-      ? `<span class="badge badge-red" style="font-size:10px">⏸ موقوفة</span>`
-      : `<span class="badge badge-green" style="font-size:10px">● نشطة</span>`;
-    const pauseBtn = isPaused
+    const statusBadgeMap = {
+      live:            `<span class="badge badge-green" style="font-size:10px">● نشطة</span>`,
+      paused:          `<span class="badge badge-red" style="font-size:10px">⏸ موقوفة</span>`,
+      hidden_by_admin: `<span class="badge badge-red" style="font-size:10px">🚫 مخفية من الإدارة</span>`,
+      archived:        `<span class="badge badge-yellow" style="font-size:10px">🗄 مؤرشفة</span>`,
+    };
+    const pauseBadge = statusBadgeMap[space.status] || statusBadgeMap.live;
+    const pauseBtn = space.status === 'hidden_by_admin'
+      ? ''
+      : space.status === 'archived'
+      ? `<button class="btn btn-sm sc-btn-resume" onclick="togglePauseSpace('${space.id}')">▶ إعادة تفعيل من الأرشيف</button>`
+      : isPaused
       ? `<button class="btn btn-sm sc-btn-resume" onclick="togglePauseSpace('${space.id}')">▶ إعادة التفعيل</button>`
       : `<button class="btn btn-sm sc-btn-pause"  onclick="togglePauseSpace('${space.id}')">⏸ إيقاف مؤقت</button>`;
+    const adminNoticeHtml = space.status === 'hidden_by_admin'
+      ? `<div class="alert-item danger" style="margin:10px 14px 0;font-size:12px">🚫 أخفتها إدارة مكاني Spot${space.rejectReason ? ' — السبب: ' + space.rejectReason : ''}. تواصل عبر واتساب 01103467711 للمراجعة.</div>`
+      : space.status === 'archived'
+      ? `<div class="alert-item warning" style="margin:10px 14px 0;font-size:12px">🗄 أُرشفت تلقائياً لعدم النشاط. بياناتها محفوظة — اضغط "إعادة تفعيل" لنشرها مجدداً.</div>`
+      : '';
 
     /* وحدات المساحة */
     const unitsHtml = space.units.length ? `
@@ -4305,9 +4244,9 @@ function renderSpaces() {
           <div class="sc-actions">
             <button class="btn btn-sm sc-btn-edit" onclick="openSpaceEdit('${space.id}')">✏️ تعديل</button>
             ${pauseBtn}
-            <button class="btn btn-sm sc-btn-delete" onclick="deleteSpaceConfirmed('${space.id}')">🗑️ حذف</button>
           </div>
         </div>
+        ${adminNoticeHtml}
         ${anHtml}
         ${unitsHtml}
       </div>`;
@@ -5544,33 +5483,19 @@ function _cancelReject(bookingId) {
   renderBookings();
 }
 
-/* حذف الإشعارات المقروءة الأقدم من 30 يوم */
+/* حذف الإشعارات القديمة — مقروء بعد 60 يوماً، غير مقروء بعد 90 يوماً */
 async function cleanupOldNotifications() {
   const sb = getSB();
   if (!sb) return;
   try {
-    await sb.rpc('cleanup_old_notifications', { p_days: 90 });
+    await sb.rpc('cleanup_old_platform_notifications', { p_read_days: 60, p_unread_days: 90 });
   } catch { /* صامت — الدالة اختيارية */ }
 }
 
 /* ══════════════════════════════════════════
-   📦  PENDING SPACES — Supabase
+   📦  (لم يعد هناك مفهوم "مساحات معلّقة" — النشر فوري، والإخفاء يُدار
+        عبر togglePauseSpace/الأدمن فقط)
    ══════════════════════════════════════════ */
-function loadPendingSpaces() { /* loaded from Supabase in loadOwnerData() */ }
-function savePendingSpaces() { /* deprecated — stored in Supabase */ }
-
-async function removePendingSpace(id) {
-  if (!confirm('هل تريد إلغاء هذا الطلب؟')) return;
-  const sb = getSB();
-  if (sb && currentOwner?.id) {
-    await sb.from('spaces').delete()
-      .eq('id', id)
-      .eq('owner_id', currentOwner.id)
-      .eq('status', 'pending');
-  }
-  ownerPendingSpaces = ownerPendingSpaces.filter(p => p.id !== id);
-  renderSpaces();
-}
 
 /* ══════════════════════════════════════════
    ✏️  تعديل وحدة مساحة معتمدة (UPDATE space_units)
@@ -6136,7 +6061,7 @@ async function submitAddSpace(e) {
       .from('spaces')
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', currentOwner.id)
-      .neq('status', 'rejected');
+      .eq('is_deleted', false);
 
     if (!countErr && count >= 8) {
       msg.className = 'alert-item danger';
@@ -6185,8 +6110,6 @@ async function submitAddSpace(e) {
       description:  get('as-desc') || null,
       amenities:    amenArr,
       sort_order:   parseInt(get('as-order')) || 99,
-      status:       'active',
-      is_active:    true,
       image_url:    asMainImgUrl || null,
       extra_images: asExtraImgUrls.filter(Boolean),
     };
@@ -6228,17 +6151,28 @@ async function submitAddSpace(e) {
       });
     } catch { /* notifications table optional */ }
 
-    /* تحديث الحالة المحلية */
-    ownerPendingSpaces.push({
+    /* تحديث الحالة المحلية — المساحة منشورة فعلياً (live) فور نجاح الإدراج */
+    ownerSpacesFull.push({
       id:          newSpace.id,
       name:        spaceName,
       type:        resolvedType,
-      loc:         spaceLoc,
-      sizes:       getSizesString(),
-      price:       parseInt(get('as-default-price')) || 0,
-      subCount:    subUnits.length,
-      status:      'active',
-      submittedAt: new Date().toISOString(),
+      region:      spaceLoc,
+      description: get('as-desc') || '',
+      activities:  actsArr,
+      amenities:   amenArr,
+      imageUrl:    asMainImgUrl || null,
+      extraImages: asExtraImgUrls.filter(Boolean),
+      minPrice:    parseInt(get('as-default-price')) || 0,
+      sizesStr:    getSizesString(),
+      allActs:     document.getElementById('as-all-acts')?.checked || false,
+      season:      get('as-season') || '',
+      insight:     get('as-insight') || '',
+      badge:       get('as-badge') || tm.badge,
+      iconEmoji:   get('as-icon') || '🏬',
+      status:      'live',
+      rejectReason: '',
+      isActive:    true,
+      units:       [],
     });
     renderSpaces();
 
@@ -6248,7 +6182,7 @@ async function submitAddSpace(e) {
       <div class="alert-text">
         <strong>تم نشر المساحة على المنصة!</strong><br>
         "<em>${spaceName}</em>" منشورة الآن وتظهر للزوار ومتاحة للحجز مباشرةً.<br>
-        <div style="margin-top:6px;font-size:11px;color:var(--text3)">فريق مكاني Spot يتابع جميع المساحات من لوحة الأدمن. للمساعدة: واتساب 01103467711</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)">فريق مكاني Spot يراجع المساحات الجديدة دورياً وقد يوقف أي مساحة تخالف الشروط. للمساعدة: واتساب 01103467711</div>
       </div>`;
 
     /* إعادة ضبط النموذج */

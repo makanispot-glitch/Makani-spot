@@ -8044,6 +8044,44 @@ footer {
   text-align: center;
 }
 
+.bz-home-empty-pro {
+  width: 100%;
+  background: #fff;
+  border: 1.5px dashed var(--orange-pale);
+  border-radius: var(--radius-xl);
+  padding: 48px 28px;
+  text-align: center;
+}
+
+.bz-home-empty-pro-icon {
+  font-size: 44px;
+  margin-bottom: 14px;
+  opacity: 0.85;
+}
+
+.bz-home-empty-pro-title {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--dark);
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+}
+
+.bz-home-empty-pro-sub {
+  font-size: 13px;
+  color: var(--ink3);
+  line-height: 1.7;
+  max-width: 420px;
+  margin: 0 auto 22px;
+}
+
+.bz-home-empty-pro-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .bz-home-section+.search-wrap {
   margin-top: 22px;
 }
@@ -12956,6 +12994,29 @@ footer {
   padding: 4px 12px;
   border-radius: 20px;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.bz-featured-star-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  white-space: nowrap;
+}
+
+.bz-featured-live-badge {
+  background: var(--green);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  white-space: nowrap;
+  animation: pulse 1.6s infinite;
 }
 
 /* العداد التنازلي التفاعلي (Countdown Box) */

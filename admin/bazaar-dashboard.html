@@ -357,6 +357,7 @@ tbody tr:hover .row-acts{opacity:1}
 
     <div class="nl">الأرشيف</div>
     <div class="ni" onclick="gp('archive')" id="ni-archive"><span class="ic">📦</span>الأرشيف<span class="nb" id="nb-archive" style="display:none;background:var(--mu);color:#fff">0</span></div>
+    <div class="ni" onclick="gp('trash')" id="ni-trash"><span class="ic">🗑️</span>المحذوفة<span class="nb r" id="nb-trash" style="display:none">0</span></div>
 
     <div class="nl">الدعم</div>
     <div class="ni" onclick="gp('org-support')" id="ni-org-support"><span class="ic">🛡️</span>دعم المنظّمين<span class="nb g" id="nb-org-support" style="display:none">0</span></div>
@@ -945,6 +946,30 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+  <!-- ═══ TRASH ═══ -->
+  <div class="pg" id="pg-trash">
+    <div class="sh">
+      <div class="st">🗑️ <span>المحذوفة</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadTrashPage()">🔄 تحديث</button>
+    </div>
+
+    <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:var(--tx);line-height:1.7">
+      <strong style="color:#ef4444">🗑️ المحذوفة</strong> — بازارات نُقلت من الأرشيف هنا. البيانات (الحجوزات والأماكن) محفوظة بالكامل ويمكن استعادتها للأرشيف،
+      أو حذفها نهائياً بلا رجعة من هنا فقط.
+    </div>
+
+    <div class="sc" style="margin-bottom:18px">
+      <div class="sc-card">
+        <div class="sc-val" id="trash-s-total">0</div>
+        <div class="sc-lbl">إجمالي المحذوف</div>
+      </div>
+    </div>
+
+    <div id="trash-list">
+      <div class="ld"><div class="spin"></div>جارٍ التحميل…</div>
+    </div>
+  </div>
+
   <!-- ═══ AUDIT LOG ═══ -->
   <div class="pg" id="pg-audit">
     <div class="sh">
@@ -966,6 +991,11 @@ tbody tr:hover .row-acts{opacity:1}
           <option value="admin_restore_snapshot">🕐 استرجاع نسخة</option>
           <option value="reserve_slot">حجز داخلي</option>
           <option value="unreserve_slot">تحرير حجز داخلي</option>
+          <option value="status_change">🔁 تغيير الحالة (أدمن)</option>
+          <option value="archive">📦 أرشفة (أدمن)</option>
+          <option value="restore">♻️ استعادة من الأرشيف</option>
+          <option value="restore_from_trash">♻️ استعادة من المحذوفات</option>
+          <option value="permanent_delete">☠️ حذف نهائي</option>
         </select>
         <input type="date" class="fc-s" id="audit-filter-from" onchange="loadAuditLog()" style="font-family:'Cairo',sans-serif">
         <input type="date" class="fc-s" id="audit-filter-to"   onchange="loadAuditLog()" style="font-family:'Cairo',sans-serif">
@@ -1422,12 +1452,11 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
+<script src="../shared/sb-config.js"></script>
 <script>
 /* ══════════════════════════════════════════
-   SUPABASE CONFIG
+   SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
 ══════════════════════════════════════════ */
-const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ══════════════════════════════════════════
@@ -1529,7 +1558,7 @@ async function loadData() {
   toast('جارٍ التحميل...', 'i');
   try {
     const [bzRes, slRes, bkRes, orgVerRes] = await Promise.all([
-      db.from('bazaars').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
+      db.from('bazaars').select('*').eq('is_archived', false).eq('is_deleted', false).order('created_at', { ascending: false }),
       db.from('bazaar_slots').select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,trader_name,booked_by,activity,notes').limit(6000),
       db.from('bazaar_bookings').select('id,bazaar_id,slot_id,user_name,user_phone,user_email,business_name,activity,amount,pay_status,status,created_at').order('created_at', { ascending: false }).limit(3000),
       db.from('organizer_requests').select('id').eq('status', 'pending')
@@ -1573,8 +1602,8 @@ async function loadData() {
       if (_goto) gp(_goto);
     }
 
-    // تنظيف الإشعارات القديمة + الحجوزات المنتهية في الخلفية
-    db.rpc('cleanup_old_notifications').then(null, () => {});
+    // تنظيف إشعارات المنظمين القديمة + الحجوزات المنتهية في الخلفية
+    db.rpc('cleanup_old_organizer_notifications').then(null, () => {});
     db.rpc('cleanup_expired_bookings')
       .then(({ data }) => {
         if (data) {
@@ -1772,7 +1801,8 @@ function renderBazaars() {
           <button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openBzEdit('${bz.id}')">✏️</button>
           <button class="btn btn-gh btn-sm" onclick="event.stopPropagation();openSlotMap('${bz.id}')">🗺️</button>
           <button class="btn btn-sm" style="background:rgba(245,158,11,.15);color:var(--yw);border:1px solid rgba(245,158,11,.3)" onclick="event.stopPropagation();archiveBazaar('${bz.id}','${(bz.name||'').replace(/'/g,"\\'")}')">📦</button>
-          <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)" onclick="event.stopPropagation();deleteBazaar('${bz.id}','${(bz.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)" onclick="event.stopPropagation();moveBazaarToTrash('${bz.id}','${(bz.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+          <button class="btn btn-sm" style="background:rgba(99,102,241,.1);color:#818cf8;border:1px solid rgba(99,102,241,.25)" onclick="event.stopPropagation();duplicateBazaarAsNew('${bz.id}')" title="نسخ كبازار جديد">📄</button>
         </div>
       </td>
     </tr>`;
@@ -2066,6 +2096,16 @@ async function dbUpdateBazaarStatus(dbId, status) {
   const { error } = await db.from('bazaars').update({ status }).eq('id', dbId);
   if (error) toast('خطأ: ' + error.message, 'e');
 }
+/* سجلّ تدقيق — نفس جدول bazaar_change_log الذي تكتب فيه إجراءات المنظم (cancel_bazaar)،
+   عبر RPC لأن الجدول ليس له INSERT policy مباشرة (SECURITY DEFINER فقط) */
+async function _logBzChange(bazaarId, changeType, changeData, note) {
+  try {
+    await db.rpc('admin_log_bazaar_change', {
+      p_bazaar_id: bazaarId, p_change_type: changeType,
+      p_change_data: changeData || {}, p_note: note || null,
+    });
+  } catch (_) {}
+}
 async function dbUpdateSlotStatus(dbId, status) {
   const { data, error } = await db.from('bazaar_slots').update({ status }).eq('id', dbId).select('id');
   if (error) { toast('خطأ: ' + error.message, 'e'); return false; }
@@ -2096,7 +2136,7 @@ async function dbUpdateBookingStatus(dbId, field, value) {
 /* ══════════════════════════════════════════
    INLINE EDITS
 ══════════════════════════════════════════ */
-function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){b.status=val;dbUpdateBazaarStatus(b._dbId,val);renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
+function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){const oldStatus=b.status;b.status=val;dbUpdateBazaarStatus(b._dbId,val);_logBzChange(b._dbId,'status_change',{before:oldStatus,after:val});renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
 async function changeSlotStatus(id, val) {
   const s = SLOTS.find(x => x.slotId === id);
   if (!s) return;
@@ -2205,6 +2245,7 @@ function openBzEdit(id){
 async function saveBazaarEdit(){
   const id=document.getElementById('modal-bz').dataset.editId;
   const bz=BAZAARS.find(x=>x.id===id); if(!bz) return;
+  const _before={name:bz.name,dateStart:bz.dateStart,dateEnd:bz.dateEnd,status:bz.status,price:bz.price,totalSlots:bz.totalSlots};
   bz.name=       document.getElementById('mebz-nm').value.trim();
   bz.description=document.getElementById('mebz-dc').value.trim();
   bz.venueType=  document.getElementById('mebz-vt').value;
@@ -2241,6 +2282,11 @@ async function saveBazaarEdit(){
     toast('خطأ في الحفظ: ' + error.message, 'e');
     return;
   }
+
+  _logBzChange(bz._dbId, 'edit_info', {
+    before: _before,
+    after: {name:bz.name,dateStart:bz.dateStart,dateEnd:bz.dateEnd,status:bz.status,price:bz.price,totalSlots:bz.totalSlots},
+  });
 
   /* تحديث أسعار الوحدات العادية (غير المميزة) لتتطابق مع السعر الجديد */
   await db.from('bazaar_slots')
@@ -2989,6 +3035,7 @@ function gp(tab){
   if(tab==='org-support') loadSupportOrganizers();
   if(tab==='featured')    loadFeaturedPage();
   if(tab==='archive')     { loadArchiveDays(); loadArchivePage(); }
+  if(tab==='trash')       loadTrashPage();
   if(tab==='audit')       { _auditPage=1; loadAuditLog(); }
   if(tab==='cancelled')   loadCancelledBazaars();
   if(tab==='postpone')    loadPostponements();
@@ -3002,43 +3049,6 @@ function gp(tab){
    🗑️  DELETE / 📦 ARCHIVE — حذف وأرشفة
 ══════════════════════════════════════════ */
 
-async function deleteBazaar(id, name) {
-  const confirmed = confirm(
-    `⚠️ حذف نهائي: "${name}"\n\nسيتم حذف البازار + جميع وحداته + جميع حجوزاته من قاعدة البيانات.\nهذا الإجراء لا يمكن التراجع عنه.\n\nهل أنت متأكد؟`
-  );
-  if (!confirmed) return;
-
-  const doubleCheck = confirm(`تأكيد أخير — حذف "${name}" نهائياً؟`);
-  if (!doubleCheck) return;
-
-  toast('جارٍ الحذف...', 'i');
-  try {
-    // حذف البيانات المرتبطة بالترتيب الصحيح ثم البازار نفسه
-    const bkDel = await db.from('bazaar_bookings').delete().eq('bazaar_id', id);
-    if (bkDel.error) throw bkDel.error;
-
-    const slDel = await db.from('bazaar_slots').delete().eq('bazaar_id', id);
-    if (slDel.error) throw slDel.error;
-
-    // حذف إشعارات المنظم المرتبطة بهذا البازار
-    await db.from('organizer_notifications').delete().eq('bazaar_id', String(id)).then(null, () => {});
-
-    const bzDel = await db.from('bazaars').delete().eq('id', id);
-    if (bzDel.error) throw bzDel.error;
-
-    // تحديث الذاكرة المحلية
-    BAZAARS  = BAZAARS.filter(b => b.id !== id);
-    SLOTS    = SLOTS.filter(s => s.bazaarId !== id);
-    BOOKINGS = BOOKINGS.filter(b => b.bazaarId !== id);
-
-    updateAll();
-    toast(`✅ تم حذف "${name}" نهائياً`, 's');
-  } catch(e) {
-    toast('❌ فشل الحذف: ' + e.message, 'e');
-    console.error('deleteBazaar error:', e);
-  }
-}
-
 async function archiveBazaar(id, name) {
   const confirmed = confirm(
     `📦 أرشفة: "${name}"\n\nسيُخفى البازار من لوحة التحكم الرئيسية.\nجميع البيانات محفوظة ويمكن استعادته لاحقاً من قسم الأرشيف.\n\nمتابعة؟`
@@ -3049,6 +3059,7 @@ async function archiveBazaar(id, name) {
   try {
     const { error } = await db.from('bazaars').update({ is_archived: true, is_featured: false }).eq('id', id);
     if (error) throw error;
+    _logBzChange(id, 'archive', {}, null);
 
     BAZAARS  = BAZAARS.filter(b => b.id !== id);
     SLOTS    = SLOTS.filter(s => s.bazaarId !== id);
@@ -3085,6 +3096,7 @@ async function saveArchiveDays() {
     const { error } = await db.from('platform_settings')
       .upsert({ key: 'bazaar_archive_days', value: String(days), label: 'عدد أيام الظهور بعد انتهاء البازار', updated_at: new Date().toISOString() });
     if (error) throw error;
+    db.rpc('admin_log_action', { p_action: 'تعديل إعداد', p_target_id: 'bazaar_archive_days', p_target_name: `${days} يوم`, p_detail: '', p_secret: '' }).catch(()=>{});
     if (st) { st.style.display = ''; setTimeout(() => { st.style.display = 'none'; }, 2500); }
     toast(`✅ تم الحفظ — الأرشفة التلقائية بعد ${days} يوم`, 's');
   } catch(e) {
@@ -3096,7 +3108,7 @@ async function saveArchiveDays() {
 
 async function _refreshArchiveBadge() {
   try {
-    const { data } = await db.from('bazaars').select('id').eq('is_archived', true);
+    const { data } = await db.from('bazaars').select('id').eq('is_archived', true).eq('is_deleted', false);
     const count = data?.length || 0;
     const badge = document.getElementById('nb-archive');
     if (badge) { badge.textContent = count; badge.style.display = count ? '' : 'none'; }
@@ -3115,6 +3127,7 @@ async function loadArchivePage() {
       .from('bazaars')
       .select('id,name,image,date_start,date_end,status,organizer,region,total_slots,available_slots,created_at')
       .eq('is_archived', true)
+      .eq('is_deleted', false)
       .order('date_end', { ascending: false });
     if (error) throw error;
 
@@ -3209,7 +3222,7 @@ function renderArchiveList(list) {
                 <button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)"
                   onclick="restoreBazaar('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')">♻️ استعادة</button>
                 <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)"
-                  onclick="deleteArchivedBazaar('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')">🗑️ حذف نهائي</button>
+                  onclick="moveBazaarToTrash('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')">🗑️ نقل للمحذوفات</button>
               </div>
             </td>
           </tr>`;
@@ -3224,6 +3237,7 @@ async function restoreBazaar(id, name) {
   try {
     const { error } = await db.from('bazaars').update({ is_archived: false }).eq('id', id);
     if (error) throw error;
+    _logBzChange(id, 'restore', {}, null);
     toast(`♻️ تمت استعادة "${name}"`, 's');
     await loadData();
     loadArchivePage();
@@ -3232,29 +3246,186 @@ async function restoreBazaar(id, name) {
   }
 }
 
-async function deleteArchivedBazaar(id, name) {
+/* نسخ بازار قديم كبازار جديد — لإعادة إطلاق جولة جديدة بدون سحب أماكن/حجوزات الجولة القديمة معه.
+   الصف القديم يبقى سليماً تماماً كسجل تاريخي؛ الصف الجديد يبدأ draft بلا تواريخ ولا أماكن ولا حجوزات. */
+async function duplicateBazaarAsNew(id) {
+  try {
+    const { data: src, error: fetchErr } = await db.from('bazaars')
+      .select('name,description,venue_type,venue_name,region,address,venue_address,price_per_slot,min_space,image,extra_images,tags,category,organizer,organizer_id,is_organizer_verified,contact_phone,working_hours,maps_link')
+      .eq('id', id).single();
+    if (fetchErr) throw fetchErr;
+    if (!src) { toast('❌ تعذّر إيجاد البازار الأصلي', 'e'); return; }
+
+    if (!confirm(`📄 نسخ "${src.name}" كبازار جديد؟\n\nسيُنشأ بازار جديد (مسودة) بنفس بيانات المكان والوصف، بدون تواريخ أو أماكن أو حجوزات — البازار الأصلي يبقى كما هو تماماً كسجل تاريخي.\n\nمتابعة؟`)) return;
+
+    toast('جارٍ إنشاء النسخة...', 'i');
+    const { data: created, error: insErr } = await db.from('bazaars').insert({
+      ...src,
+      name:             `${src.name} (نسخة جديدة)`,
+      status:           'draft',
+      date_start:       null,
+      date_end:         null,
+      time_start:       null,
+      time_end:         null,
+      total_slots:      0,
+      available_slots:  0,
+      is_archived:      false,
+      is_deleted:       false,
+      is_featured:      false,
+      event_links:      [],
+    }).select('id').single();
+    if (insErr) throw insErr;
+
+    _logBzChange(created.id, 'edit_info', { note: `نُسخ من البازار الأصلي ${id}` }, `نسخة عن: ${src.name}`);
+    toast(`✅ تم إنشاء نسخة جديدة (مسودة) — عدّل التواريخ والأماكن قبل النشر`, 's');
+    await loadData();
+  } catch(e) {
+    toast('❌ فشل النسخ: ' + e.message, 'e');
+    console.error('duplicateBazaarAsNew error:', e);
+  }
+}
+
+async function moveBazaarToTrash(id, name) {
   const confirmed = confirm(
-    `⚠️ حذف نهائي: "${name}"\n\nسيتم حذف البازار + جميع وحداته + جميع حجوزاته بشكل نهائي.\nهذا الإجراء لا يمكن التراجع عنه.\n\nهل أنت متأكد؟`
+    `🗑️ نقل للمحذوفات: "${name}"\n\nسيُخفى البازار (وحجوزاته/أماكنه محفوظة بالكامل) وينتقل لقسم "المحذوفة".\nيمكن استعادته من هناك، أو حذفه نهائياً بلا رجعة لاحقاً.\n\nمتابعة؟`
   );
   if (!confirmed) return;
-  const doubleCheck = confirm(`تأكيد أخير — حذف "${name}" نهائياً؟`);
+
+  toast('جارٍ النقل للمحذوفات...', 'i');
+  try {
+    const adminId = (await db.auth.getUser())?.data?.user?.id || null;
+    const { error } = await db.from('bazaars').update({
+      is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: adminId,
+    }).eq('id', id);
+    if (error) throw error;
+    _logBzChange(id, 'admin_delete', {}, null);
+
+    BAZAARS = BAZAARS.filter(b => b.id !== id);
+    updateAll();
+    toast(`🗑️ تم نقل "${name}" إلى المحذوفات`, 's');
+    if (document.getElementById('pg-archive')?.classList.contains('active')) loadArchivePage();
+    _refreshTrashBadge();
+  } catch(e) {
+    toast('❌ فشل النقل للمحذوفات: ' + e.message, 'e');
+    console.error('moveBazaarToTrash error:', e);
+  }
+}
+
+async function restoreFromTrash(id, name) {
+  if (!confirm(`♻️ استعادة "${name}" إلى الأرشيف؟`)) return;
+  toast('جارٍ الاستعادة...', 'i');
+  try {
+    const { error } = await db.from('bazaars').update({ is_deleted: false }).eq('id', id);
+    if (error) throw error;
+    _logBzChange(id, 'restore_from_trash', {}, null);
+    toast(`♻️ تمت استعادة "${name}" إلى الأرشيف`, 's');
+    loadTrashPage();
+    _refreshArchiveBadge();
+  } catch(e) {
+    toast('❌ فشلت الاستعادة: ' + e.message, 'e');
+  }
+}
+
+async function permanentlyDeleteBazaar(id, name) {
+  const confirmed = confirm(
+    `⚠️ حذف نهائي: "${name}"\n\nسيتم حذف البازار + جميع وحداته + جميع حجوزاته من قاعدة البيانات.\nهذا الإجراء لا يمكن التراجع عنه أبداً.\n\nهل أنت متأكد؟`
+  );
+  if (!confirmed) return;
+  const doubleCheck = confirm(`تأكيد أخير — حذف "${name}" نهائياً ولا رجعة؟`);
   if (!doubleCheck) return;
 
   toast('جارٍ الحذف النهائي...', 'i');
   try {
+    _logBzChange(id, 'permanent_delete', { name }, null);
     const bkDel = await db.from('bazaar_bookings').delete().eq('bazaar_id', id);
     if (bkDel.error) throw bkDel.error;
     const slDel = await db.from('bazaar_slots').delete().eq('bazaar_id', id);
     if (slDel.error) throw slDel.error;
+    await db.from('organizer_notifications').delete().eq('bazaar_id', String(id)).then(null, () => {});
     const bzDel = await db.from('bazaars').delete().eq('id', id);
     if (bzDel.error) throw bzDel.error;
 
     toast(`✅ حُذف "${name}" نهائياً وتم توفير المساحة`, 's');
-    loadArchivePage();
+    loadTrashPage();
   } catch(e) {
     toast('❌ فشل الحذف: ' + e.message, 'e');
-    console.error('deleteArchivedBazaar error:', e);
+    console.error('permanentlyDeleteBazaar error:', e);
   }
+}
+
+async function loadTrashPage() {
+  const listEl = document.getElementById('trash-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+
+  try {
+    const { data: deleted, error } = await db
+      .from('bazaars')
+      .select('id,name,image,date_start,date_end,status,organizer,region,total_slots,available_slots,deleted_at,deleted_by')
+      .eq('is_deleted', true)
+      .order('deleted_at', { ascending: false });
+    if (error) throw error;
+
+    document.getElementById('trash-s-total').textContent = deleted.length;
+    _refreshTrashBadge();
+    renderTrashList(deleted || []);
+  } catch(e) {
+    listEl.innerHTML = `<div class="empty"><div class="ei">❌</div>فشل التحميل: ${e.message}</div>`;
+    console.error('loadTrashPage error:', e);
+  }
+}
+
+async function _refreshTrashBadge() {
+  try {
+    const { data } = await db.from('bazaars').select('id').eq('is_deleted', true);
+    const count = data?.length || 0;
+    const badge = document.getElementById('nb-trash');
+    if (badge) { badge.textContent = count; badge.style.display = count ? '' : 'none'; }
+  } catch(_) {}
+}
+
+function renderTrashList(list) {
+  const listEl = document.getElementById('trash-list');
+  if (!listEl) return;
+  if (!list.length) {
+    listEl.innerHTML = '<div class="empty"><div class="ei">🗑️</div>لا توجد بازارات محذوفة</div>';
+    return;
+  }
+  listEl.innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>البازار</th>
+        <th>المنطقة</th>
+        <th>التاريخ</th>
+        <th>وقت الحذف</th>
+        <th>الوحدات</th>
+        <th>الإجراءات</th>
+      </tr></thead>
+      <tbody>
+        ${list.map(b => {
+          const booked = (b.total_slots||0) - (b.available_slots||0);
+          const delDate = b.deleted_at ? new Date(b.deleted_at).toLocaleString('ar-EG') : '—';
+          return `<tr>
+            <td>
+              <div style="font-weight:700;font-size:13px">${b.name}</div>
+              <div style="font-size:10px;color:var(--mu)">${b.organizer||'—'}</div>
+            </td>
+            <td style="font-size:12px">${b.region||'—'}</td>
+            <td style="font-size:11.5px">${b.date_start||'—'}<br><span style="color:var(--mu);font-size:10px">→ ${b.date_end||''}</span></td>
+            <td style="font-size:10.5px;color:var(--mu)">${delDate}</td>
+            <td style="font-size:12px"><span style="color:var(--or);font-weight:700">${booked}</span>/${b.total_slots||0}</td>
+            <td>
+              <div class="row-acts">
+                <button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)"
+                  onclick="restoreFromTrash('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')">♻️ استعادة</button>
+                <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)"
+                  onclick="permanentlyDeleteBazaar('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')">☠️ حذف نهائي</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 }
 
 async function _archiveAllEnded(bazaars) {
@@ -3287,7 +3458,9 @@ async function loadFeaturedPage() {
     const { data, error } = await db
       .from('bazaars')
       .select('id,name,image,date_start,date_end,status,organizer,region,is_featured,available_slots,total_slots,category')
-      .in('status', ['published', 'pending_review', 'draft'])
+      .in('status', ['published', 'live', 'pending_review', 'draft'])
+      .eq('is_archived', false)
+      .eq('is_deleted', false)
       .order('date_start', { ascending: true });
     if (error) throw error;
 
@@ -4294,6 +4467,11 @@ const _AUDIT_LABELS = {
   admin_cancel_postponement:{ ico:'⏪', label:'إلغاء تأجيل إداري' },
   admin_force_close:        { ico:'🔒', label:'إغلاق قسري إداري' },
   admin_restore_snapshot:   { ico:'🕐', label:'استرجاع نسخة قديمة' },
+  status_change:            { ico:'🔁', label:'تغيير الحالة (أدمن)' },
+  archive:                  { ico:'📦', label:'أرشفة (أدمن)' },
+  restore:                  { ico:'♻️', label:'استعادة من الأرشيف' },
+  restore_from_trash:       { ico:'♻️', label:'استعادة من المحذوفات' },
+  permanent_delete:         { ico:'☠️', label:'حذف نهائي (لا رجعة)' },
 };
 
 let _auditPage = 1;

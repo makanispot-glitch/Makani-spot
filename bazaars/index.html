@@ -28,6 +28,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css?v=29">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="../shared/sb-config.js" defer></script>
 
 <style>
 /* ── Page wrapper ── */
@@ -343,6 +344,7 @@
           <button class="bz-time-btn bz-time-active" data-nav="all" onclick="setBzTimeNav('all')">جميع البازارات</button>
           <button class="bz-time-btn" data-nav="upcoming" onclick="setBzTimeNav('upcoming')">القادمة</button>
           <button class="bz-time-btn" data-nav="today" onclick="setBzTimeNav('today')">اليوم</button>
+          <button class="bz-time-btn" data-nav="past" onclick="setBzTimeNav('past')">السابقة</button>
         </div>
 
         <div class="bz-chips-divider"></div>

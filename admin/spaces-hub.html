@@ -593,12 +593,13 @@ textarea.fc{resize:vertical;min-height:72px}
 <div class="toast-wrap" id="toasts"></div>
 
 <script src="../media-handler.js?v=202606171812"></script>
+<script src="../shared/sb-config.js"></script>
 <script>
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */
-const SB_URL   = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const SB_URL   = SUPABASE_URL;
+const SB_KEY   = SUPABASE_KEY;
 const db = supabase.createClient(SB_URL, SB_KEY);
 async function sbHeaders() {
   const { data: { session } } = await db.auth.getSession();
@@ -729,7 +730,8 @@ async function loadAll() {
 }
 
 function updatePendingBadge() {
-  const n = allSpaces.filter(s=>s.status==='pending').length;
+  /* النشر فوري الآن — "قيد المراجعة" تعني مساحات لم يراجعها الأدمن بعد (reviewed_at فارغ) */
+  const n = allSpaces.filter(s=>!s.reviewed_at).length;
   const b = document.getElementById('pending-badge');
   if (b) { b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none'; }
 
@@ -830,23 +832,29 @@ function closeSidebar() {
    PAGE: OVERVIEW
 ═══════════════════════════════ */
 function renderOverview() {
-  const total    = allSpaces.length;
-  const approved = allSpaces.filter(s=>s.status==='approved').length;
-  const pending  = allSpaces.filter(s=>s.status==='pending').length;
-  const rejected = allSpaces.filter(s=>s.status==='rejected').length;
-  const visible  = allSpaces.filter(s=>s.status==='approved'&&s.is_active).length;
+  const total     = allSpaces.length;
+  const live      = allSpaces.filter(s=>s.status==='live').length;
+  const paused    = allSpaces.filter(s=>s.status==='paused').length;
+  const hidden    = allSpaces.filter(s=>s.status==='hidden_by_admin').length;
+  const archived  = allSpaces.filter(s=>s.status==='archived').length;
+  const unreviewed = allSpaces.filter(s=>!s.reviewed_at).length;
+  /* توافق خلفي: approved/pending/rejected لم تعد قيماً حقيقية — استُبدلت بـ live/unreviewed/hidden */
+  const approved = live;
+  const pending  = unreviewed;
+  const rejected = hidden;
+  const visible  = live;
   const totalUnits = allSpaces.reduce((sum,s)=>sum+(s.units_count||0),0);
 
   const totalOwners = allOwners.length;
   const activeOwnerIds = new Set(
-    allSpaces.filter(s=>s.status==='approved'&&s.is_active).map(s=>s.owner_id).filter(Boolean)
+    allSpaces.filter(s=>s.status==='live').map(s=>s.owner_id).filter(Boolean)
   );
   const activeOwners  = activeOwnerIds.size;
   const dormantOwners = totalOwners - activeOwners;
   const proOwners     = allOwners.filter(o=>o.plan_tier==='pro').length;
   const growthOwners  = allOwners.filter(o=>o.plan_tier==='growth').length;
 
-  const recentPending = allSpaces.filter(s=>s.status==='pending').slice(0,5);
+  const recentPending = allSpaces.filter(s=>!s.reviewed_at).slice(0,5);
   const recentSpaces  = [...allSpaces]
     .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
     .slice(0,6);
@@ -871,7 +879,7 @@ function renderOverview() {
 
   ${pending > 0 ? `
   <div class="ov-box" style="margin-bottom:20px;border-color:rgba(245,158,11,.3)">
-    <div class="ov-box-title">⏳ طلبات تنتظر المراجعة <span class="sb-badge" style="background:var(--yw)">${pending}</span></div>
+    <div class="ov-box-title">⏳ مساحات جديدة لم تُراجَع بعد <span class="sb-badge" style="background:var(--yw)">${pending}</span></div>
     ${recentPending.map(s=>`
       <div class="recent-item">
         <div class="recent-thumb">${s.image_url?`<img src="${s.image_url}" onerror="this.parentElement.innerHTML='🏪'">`:'🏪'}</div>
@@ -880,8 +888,8 @@ function renderOverview() {
           <div class="recent-meta">📍 ${esc(s.region||'—')} · ${typeLabel(s.type)} · ${s.is_broker?'🏛️ بروكر':'👤 '+esc(s.owner_name||'—')} · ${fmtDate(s.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅ قبول</button>
-          <button class="btn btn-err" onclick="promptReject('${s.id}','${esc(s.name)}')">❌ رفض</button>
+          <button class="btn btn-ok"  onclick="doReview('${s.id}')">👁 مُراجَع</button>
+          <button class="btn btn-err" onclick="promptHide('${s.id}','${esc(s.name)}')">🚫 إخفاء</button>
         </div>
       </div>`).join('')}
     <div style="margin-top:12px">
@@ -1038,10 +1046,10 @@ function renderSpaces() {
     });
   }
 
-  const approved = allSpaces.filter(s=>s.status==='approved').length;
-  const pending  = allSpaces.filter(s=>s.status==='pending').length;
-  const rejected = allSpaces.filter(s=>s.status==='rejected').length;
-  const active   = allSpaces.filter(s=>s.is_active).length;
+  const live     = allSpaces.filter(s=>s.status==='live').length;
+  const paused   = allSpaces.filter(s=>s.status==='paused').length;
+  const hidden   = allSpaces.filter(s=>s.status==='hidden_by_admin').length;
+  const archived = allSpaces.filter(s=>s.status==='archived').length;
 
   /* pagination */
   const totalPages = Math.max(1, Math.ceil(filtered.length / SPACES_PAGE_SIZE));
@@ -1060,25 +1068,28 @@ function renderSpaces() {
   let html = `
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${allSpaces.length}</span> إجمالي</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> معتمد</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending}</span> انتظار</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${rejected}</span> مرفوض</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--bl)">${active}</span> ظاهر</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${live}</span> منشورة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${paused}</span> موقوفة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${hidden}</span> مخفية</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--mu)">${archived}</span> مؤرشفة</div>
   </div>
   <div class="filter-bar">
     <input class="f-inp" placeholder="🔍 بحث…" value="${esc(fltSearch)}"
            oninput="fltSearch=this.value;spacesPage=1;renderSpaces()" style="min-width:200px">
     <select class="f-sel" onchange="fltStatus=this.value;spacesPage=1;renderSpaces()">
       <option value="" ${!fltStatus?'selected':''}>جميع الحالات</option>
-      <option value="approved" ${fltStatus==='approved'?'selected':''}>✅ معتمد</option>
-      <option value="pending"  ${fltStatus==='pending' ?'selected':''}>⏳ انتظار</option>
-      <option value="rejected" ${fltStatus==='rejected'?'selected':''}>❌ مرفوض</option>
+      <option value="live"            ${fltStatus==='live'?'selected':''}>✅ منشورة</option>
+      <option value="paused"          ${fltStatus==='paused' ?'selected':''}>⏸ موقوفة</option>
+      <option value="hidden_by_admin" ${fltStatus==='hidden_by_admin'?'selected':''}>🚫 مخفية</option>
+      <option value="archived"        ${fltStatus==='archived'?'selected':''}>🗄 مؤرشفة</option>
     </select>
     <select class="f-sel" onchange="fltType=this.value;spacesPage=1;renderSpaces()">
       <option value="" ${!fltType?'selected':''}>جميع الأنواع</option>
       <option value="mall"   ${fltType==='mall'  ?'selected':''}>🏬 مول</option>
       <option value="club"   ${fltType==='club'  ?'selected':''}>⚽ نادي</option>
       <option value="school" ${fltType==='school'?'selected':''}>🏫 مدرسة</option>
+      <option value="hotel"  ${fltType==='hotel' ?'selected':''}>🏨 فندق</option>
+      <option value="other"  ${fltType==='other' ?'selected':''}>🏪 أخرى</option>
     </select>
     <button class="btn btn-neu" onclick="fltStatus='';fltType='';fltSearch='';spacesPage=1;renderSpaces()">× مسح</button>
     <div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div>
@@ -1086,8 +1097,7 @@ function renderSpaces() {
 
   <div class="bulk-bar" id="bulk-action-bar" style="display:${selectedSpaceIds.size>0?'flex':'none'}">
     <span id="bulk-count">${selectedSpaceIds.size} محددة</span>
-    <button class="btn" onclick="bulkApprove()">✅ قبول</button>
-    <button class="btn" onclick="bulkToggle()">⏸ تبديل الظهور</button>
+    <button class="btn" onclick="bulkReview()">👁 وضع علامة مُراجَع</button>
     <button class="btn" style="background:rgba(239,68,68,.35)" onclick="bulkDelete()">🗑 حذف</button>
     <button class="btn" style="margin-right:auto" onclick="selectedSpaceIds.clear();renderSpaces()">× إلغاء التحديد</button>
   </div>`;
@@ -1105,7 +1115,7 @@ function renderSpaces() {
     ${thSort('region','المنطقة')}
     ${thSort('units_count','وحدات','text-align:center')}
     ${thSort('status','الحالة')}
-    <th>الظهور</th>
+    <th>المراجعة</th>
     ${thSort('owner_plan','الباقة')}
     <th>الصاحب</th>
     <th>الإجراءات</th>
@@ -1113,9 +1123,9 @@ function renderSpaces() {
 
   pageItems.forEach(s => {
     const stCls = statusCls(s.status);
-    const acLbl = s.is_active
-      ? '<span class="badge b-active">ظاهر</span>'
-      : '<span class="badge b-hidden">مخفي</span>';
+    const acLbl = s.reviewed_at
+      ? '<span class="badge b-active">✓ مُراجَع</span>'
+      : '<span class="badge b-pending">⏳ جديدة</span>';
     const isChecked = selectedSpaceIds.has(s.id) ? 'checked' : '';
     html += `
     <tr class="sp-row" id="srow-${s.id}" onclick="toggleSpaceRow('${s.id}')">
@@ -1145,9 +1155,15 @@ function renderSpaces() {
       </td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px;flex-wrap:wrap">
-          ${s.status!=='approved'?`<button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅</button>`:''}
-          ${s.status!=='rejected'?`<button class="btn btn-err" onclick="promptReject('${s.id}','${esc(s.name)}')">❌</button>`:''}
-          <button class="btn btn-neu" title="${s.is_active?'إخفاء':'إظهار'}" onclick="doToggle('${s.id}',${s.is_active})">${s.is_active?'⏸':'▶'}</button>
+          ${!s.reviewed_at?`<button class="btn btn-ok" title="وضع علامة مُراجَع" onclick="doReview('${s.id}')">👁</button>`:''}
+          ${s.status==='live'||s.status==='paused'
+            ?`<button class="btn btn-err" title="إخفاء (مخالفة)" onclick="promptHide('${s.id}','${esc(s.name)}')">🚫</button>`
+            :s.status==='hidden_by_admin'
+            ?`<button class="btn btn-ok" title="إعادة النشر" onclick="doUnhide('${s.id}')">↩️</button>`
+            :s.status==='archived'
+            ?`<button class="btn btn-ok" title="إعادة التفعيل من الأرشيف" onclick="doUnarchive('${s.id}')">↩️</button>`
+            :''}
+          ${s.status==='live'?`<button class="btn btn-neu" title="أرشفة" onclick="doArchive('${s.id}')">🗄</button>`:''}
           <button class="btn btn-yw"  onclick="editSpace('${s.id}')">✏️</button>
           <button class="btn btn-err" onclick="promptDelete('${s.id}','${esc(s.name)}')">🗑</button>
         </div>
@@ -1246,17 +1262,18 @@ function df(k, v) {
    PAGE: PENDING
 ═══════════════════════════════ */
 function renderPending() {
-  const pending  = allSpaces.filter(s=>s.status==='pending');
-  const approved = allSpaces.filter(s=>s.status==='approved').length;
+  /* النشر فوري — هذه الصفحة تعرض المساحات المنشورة التي لم يراجعها الأدمن بعد */
+  const pending = allSpaces.filter(s=>!s.reviewed_at);
+  const live    = allSpaces.filter(s=>s.status==='live').length;
 
   let html = `<div class="stats-bar">
-    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending.length}</span> انتظار</div>
-    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${approved}</span> معتمد</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--yw)">${pending.length}</span> غير مُراجَعة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${live}</span> منشورة</div>
     <div class="stat-chip"><span class="stat-num">${allSpaces.length}</span> إجمالي</div>
   </div>`;
 
   if (!pending.length) {
-    html += `<div class="empty-state"><div class="empty-ico">✅</div><div class="empty-title">لا توجد طلبات معلقة</div><div>جميع المساحات تمت مراجعتها</div></div>`;
+    html += `<div class="empty-state"><div class="empty-ico">✅</div><div class="empty-title">لا توجد مساحات تنتظر المراجعة</div><div>جميع المساحات تمت مراجعتها</div></div>`;
     setPageContent('pending', html); return;
   }
 
@@ -1283,14 +1300,14 @@ function renderPending() {
         🕐 ${fmtDate(s.created_at)}
       </div>
       <div class="p-actions">
-        <button class="btn btn-ok"  onclick="doApprove('${s.id}')">✅ قبول</button>
-        <button class="btn btn-err" onclick="toggleRejectRow('${s.id}')">❌ رفض</button>
+        <button class="btn btn-ok"  onclick="doReview('${s.id}')">👁 مُراجَع</button>
+        <button class="btn btn-err" onclick="toggleRejectRow('${s.id}')">🚫 إخفاء</button>
         <button class="btn btn-bl"  onclick="togglePendingDetail('${s.id}')">🔍 معاينة</button>
         <button class="btn btn-yw"  onclick="editSpace('${s.id}')">✏️ تعديل</button>
       </div>
       <div id="rrow-${s.id}" style="display:none;margin-top:8px;display:none;gap:8px;align-items:center">
-        <input id="rreason-${s.id}" style="flex:1;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--tx);outline:none" placeholder="سبب الرفض (اختياري)…" type="text">
-        <button class="btn btn-err" onclick="doReject('${s.id}')">تأكيد الرفض</button>
+        <input id="rreason-${s.id}" style="flex:1;background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--tx);outline:none" placeholder="سبب الإخفاء (اختياري)…" type="text">
+        <button class="btn btn-err" onclick="doHide('${s.id}')">تأكيد الإخفاء</button>
       </div>
       <div id="pdetail-${s.id}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px"></div>
     </div>
@@ -1331,7 +1348,7 @@ function renderOwners() {
   allSpaces.forEach(s => {
     if (s.owner_id) {
       ownerSpaceCount[s.owner_id] = (ownerSpaceCount[s.owner_id]||0) + 1;
-      if (s.status==='approved') ownerApprovedCount[s.owner_id] = (ownerApprovedCount[s.owner_id]||0) + 1;
+      if (s.status==='live') ownerApprovedCount[s.owner_id] = (ownerApprovedCount[s.owner_id]||0) + 1;
     }
   });
 
@@ -2840,7 +2857,7 @@ function renderExport() {
         <div class="export-col-list" id="spaces-col-list">
           ${[
             ['id','المعرف'],['name','الاسم'],['region','المنطقة'],['type','النوع'],
-            ['status','الحالة'],['is_active','مفعل؟'],['owner_id','ID المالك'],
+            ['status','الحالة'],['owner_id','ID المالك'],
             ['sizes_prices','الأحجام والأسعار'],['min_price','أقل سعر'],
             ['description','الوصف'],['created_at','تاريخ الإضافة'],
           ].map(([k,l])=>`<label class="export-col-item">
@@ -2852,9 +2869,10 @@ function renderExport() {
         <div style="font-size:11px;color:var(--mu);margin-bottom:6px;font-weight:700">فلتر الحالة:</div>
         <select class="fc" id="spaces-export-status" style="font-size:12px;padding:6px 10px">
           <option value="">كل المساحات</option>
-          <option value="approved">مقبولة فقط</option>
-          <option value="pending">قيد المراجعة</option>
-          <option value="rejected">مرفوضة</option>
+          <option value="live">منشورة فقط</option>
+          <option value="paused">موقوفة</option>
+          <option value="hidden_by_admin">مخفية</option>
+          <option value="archived">مؤرشفة</option>
         </select>
       </div>
       <button class="btn btn-or" onclick="exportSpacesCSV()">⬇ تنزيل CSV</button>
@@ -2935,17 +2953,14 @@ function exportSpacesCSV() {
   const approvedByOwner   = {};
   allSpaces.forEach(s => {
     spaceCountByOwner[s.owner_id] = (spaceCountByOwner[s.owner_id]||0) + 1;
-    if (s.status === 'approved') approvedByOwner[s.owner_id] = (approvedByOwner[s.owner_id]||0) + 1;
+    if (s.status === 'live') approvedByOwner[s.owner_id] = (approvedByOwner[s.owner_id]||0) + 1;
   });
 
   const rows = allSpaces
     .filter(s => !filter || s.status === filter)
-    .map(s => cols.map(c => {
-      if (c === 'is_active') return s.is_active ? 'نعم' : 'لا';
-      return s[c] ?? '';
-    }));
+    .map(s => cols.map(c => s[c] ?? ''));
 
-  const colLabels = {id:'المعرف',name:'الاسم',region:'المنطقة',type:'النوع',status:'الحالة',is_active:'مفعل؟',owner_id:'ID المالك',sizes_prices:'الأحجام والأسعار',min_price:'أقل سعر',description:'الوصف',created_at:'تاريخ الإضافة'};
+  const colLabels = {id:'المعرف',name:'الاسم',region:'المنطقة',type:'النوع',status:'الحالة',owner_id:'ID المالك',sizes_prices:'الأحجام والأسعار',min_price:'أقل سعر',description:'الوصف',created_at:'تاريخ الإضافة'};
   downloadCSV(`spaces-${new Date().toISOString().slice(0,10)}.csv`, [cols.map(c=>colLabels[c]||c), ...rows]);
   toast(`✅ تم تصدير ${rows.length} مساحة`,'s');
 }
@@ -3236,29 +3251,27 @@ async function doDeleteBooking(bookingId) {
 /* ═══════════════════════════════
    SPACE ACTIONS
 ═══════════════════════════════ */
-async function doApprove(id) {
+async function doReview(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'approve',p_reason:null,p_secret:adminHash});
-    addAuditEntry('قبول', id, allSpaces.find(s=>s.id===id)?.name||id);
-    toast('✅ تمت الموافقة — تم إرسال إشعار للصاحب','s');
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null,p_secret:adminHash});
+    addAuditEntry('مراجعة', id, allSpaces.find(s=>s.id===id)?.name||id);
+    toast('👁 تم وضع علامة "مُراجَع"','s');
     invalidateDetailCache(id);
     await loadAll();
   } catch(e) { toast('خطأ: '+e.message,'e'); }
 }
 
-async function doReject(id, reason) {
-  /* reason can be passed directly (from spaces table modal) or read from DOM (pending page) */
+async function doHide(id, reason) {
   const r = reason !== undefined ? reason : (document.getElementById('rreason-'+id)?.value.trim()||'');
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'reject',p_reason:r||null,p_secret:adminHash});
-    addAuditEntry('رفض', id, r||'—');
-    toast('❌ تم الرفض — تم إرسال إشعار للصاحب','s');
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'hide',p_reason:r||null,p_secret:adminHash});
+    addAuditEntry('إخفاء', id, r||'—');
+    toast('🚫 تم إخفاء المساحة — تم إرسال إشعار للصاحب','s');
     await loadAll();
   } catch(e) { toast('خطأ: '+e.message,'e'); }
 }
 
-function promptReject(id, name) {
-  /* Opens a proper modal with reason input — fixes the bug where rreason-{id} only exists in pending page */
+function promptHide(id, name) {
   const existing = document.getElementById('reject-reason-modal');
   if (existing) existing.remove();
   const modal = document.createElement('div');
@@ -3266,32 +3279,52 @@ function promptReject(id, name) {
   modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
   modal.innerHTML = `
     <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:28px;max-width:400px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
-      <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">❌ رفض المساحة</div>
+      <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">🚫 إخفاء المساحة</div>
       <div style="font-size:12px;color:var(--mu);margin-bottom:16px">${esc(name)}</div>
       <div class="fg" style="margin-bottom:20px">
-        <label class="fl">سبب الرفض (سيُرسل للمالك)</label>
-        <input id="rr-inp" class="fc" type="text" placeholder="سبب الرفض (اختياري)…">
+        <label class="fl">سبب الإخفاء (سيُرسل للمالك)</label>
+        <input id="rr-inp" class="fc" type="text" placeholder="سبب الإخفاء (اختياري)…">
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-neu" onclick="document.getElementById('reject-reason-modal').remove()">إلغاء</button>
-        <button class="btn btn-err" id="rr-ok">❌ تأكيد الرفض</button>
+        <button class="btn btn-err" id="rr-ok">🚫 تأكيد الإخفاء</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
   document.getElementById('rr-ok').onclick = async () => {
     const reason = document.getElementById('rr-inp').value.trim();
     modal.remove();
-    await doReject(id, reason);
+    await doHide(id, reason);
   };
   modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
   setTimeout(()=>document.getElementById('rr-inp')?.focus(), 50);
 }
 
-async function doToggle(id, isActive) {
+async function doUnhide(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'toggle_active',p_reason:null,p_secret:adminHash});
-    addAuditEntry(isActive?'إخفاء':'إظهار', id, allSpaces.find(s=>s.id===id)?.name||id);
-    toast(isActive?'⏸ تم إخفاء المساحة':'▶ تم إظهار المساحة','i');
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unhide',p_reason:null,p_secret:adminHash});
+    addAuditEntry('إعادة نشر', id, allSpaces.find(s=>s.id===id)?.name||id);
+    toast('↩️ تمت إعادة نشر المساحة','s');
+    invalidateDetailCache(id);
+    await loadAll();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+async function doArchive(id) {
+  try {
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'archive',p_reason:null,p_secret:adminHash});
+    addAuditEntry('أرشفة', id, allSpaces.find(s=>s.id===id)?.name||id);
+    toast('🗄 تمت أرشفة المساحة','s');
+    invalidateDetailCache(id);
+    await loadAll();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+
+async function doUnarchive(id) {
+  try {
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unarchive',p_reason:null,p_secret:adminHash});
+    addAuditEntry('إلغاء أرشفة', id, allSpaces.find(s=>s.id===id)?.name||id);
+    toast('↩️ تمت إعادة تفعيل المساحة','s');
     invalidateDetailCache(id);
     await loadAll();
   } catch(e) { toast('خطأ: '+e.message,'e'); }
@@ -3306,9 +3339,9 @@ function promptDelete(id, name) {
   modal.innerHTML = `
     <div style="background:var(--bg3);border:1.5px solid rgba(239,68,68,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
       <div style="font-size:28px;text-align:center;margin-bottom:10px">⚠️</div>
-      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف نهائي لا يمكن التراجع عنه</div>
+      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف المساحة</div>
       <div style="font-size:12px;color:var(--mu);margin-bottom:16px;text-align:center;line-height:1.7">
-        سيُحذف <b style="color:var(--tx)">"${esc(name)}"</b> مع جميع وحداته الفرعية من قاعدة البيانات نهائياً.
+        ستُحذف <b style="color:var(--tx)">"${esc(name)}"</b> من كل واجهات المنصة (حذف ناعم — البيانات تبقى محفوظة داخلياً ولا تظهر في أي مكان بعد الحذف).
       </div>
       <div class="fg" style="margin-bottom:20px">
         <label class="fl">اكتب اسم المساحة للتأكيد: <b style="color:var(--rd)">${esc(name)}</b></label>
@@ -3316,7 +3349,7 @@ function promptDelete(id, name) {
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-neu" onclick="document.getElementById('delete-space-modal').remove()">إلغاء</button>
-        <button class="btn btn-err" id="del-ok" disabled>🗑 حذف نهائي</button>
+        <button class="btn btn-err" id="del-ok" disabled>🗑 حذف</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -3388,38 +3421,20 @@ async function changeUnitStatus(unitId, spaceId, newStatus, selectEl) {
 /* ═══════════════════════════════
    BULK ACTIONS
 ═══════════════════════════════ */
-async function bulkApprove() {
+async function bulkReview() {
   const ids = [...selectedSpaceIds];
   if (!ids.length) return;
-  showConfirm(`قبول ${ids.length} مساحة`, 'سيتم قبول جميع المساحات المحددة وإرسال إشعار لأصحابها.', async () => {
+  showConfirm(`وضع علامة "مُراجَع" على ${ids.length} مساحة`, 'لن يتغيّر ظهورها — فقط تعليمها كمُراجَعة من الإدارة.', async () => {
     let ok = 0, fail = 0;
     for (const id of ids) {
       try {
-        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'approve',p_reason:null,p_secret:adminHash});
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null,p_secret:adminHash});
         ok++;
       } catch(e) { fail++; }
     }
-    addAuditEntry('قبول جماعي', '', `${ok} مساحة`);
+    addAuditEntry('مراجعة جماعية', '', `${ok} مساحة`);
     selectedSpaceIds.clear();
-    toast(`✅ تم قبول ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'s':'e');
-    await loadAll();
-  });
-}
-
-async function bulkToggle() {
-  const ids = [...selectedSpaceIds];
-  if (!ids.length) return;
-  showConfirm(`تبديل ظهور ${ids.length} مساحة`, 'سيتم تبديل حالة الظهور لجميع المساحات المحددة.', async () => {
-    let ok = 0, fail = 0;
-    for (const id of ids) {
-      try {
-        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'toggle_active',p_reason:null,p_secret:adminHash});
-        ok++;
-      } catch(e) { fail++; }
-    }
-    addAuditEntry('تبديل ظهور جماعي', '', `${ok} مساحة`);
-    selectedSpaceIds.clear();
-    toast(`⏸ تم تحديث ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'i':'e');
+    toast(`👁 تم وضع علامة مُراجَع على ${ok} مساحة${fail?' — فشل '+fail:''}`, ok?'s':'e');
     await loadAll();
   });
 }
@@ -3631,26 +3646,19 @@ function renderFormPage(sp, units) {
       ${!isEdit?`
       <div class="fg"><label class="fl">الحالة الابتدائية</label>
         <select class="fc" id="f-status">
-          <option value="approved" selected>✅ معتمد (يظهر فوراً)</option>
-          <option value="pending">⏳ انتظار</option>
+          <option value="live" selected>✅ منشورة (تظهر فوراً)</option>
+          <option value="paused">⏸ موقوفة</option>
         </select></div>` : `
       <div class="fg">
         <label class="fl">الحالة</label>
         <select class="fc" id="f-status">
-          <option value="approved" ${sp.status==='approved'?'selected':''}>✅ معتمد</option>
-          <option value="pending"  ${sp.status==='pending' ?'selected':''}>⏳ انتظار</option>
-          <option value="rejected" ${sp.status==='rejected'?'selected':''}>❌ مرفوض</option>
+          <option value="live"            ${sp.status==='live'?'selected':''}>✅ منشورة</option>
+          <option value="paused"          ${sp.status==='paused' ?'selected':''}>⏸ موقوفة</option>
+          <option value="hidden_by_admin" ${sp.status==='hidden_by_admin'?'selected':''}>🚫 مخفية</option>
+          <option value="archived"        ${sp.status==='archived'?'selected':''}>🗄 مؤرشفة</option>
         </select>
       </div>`}
     </div>
-    ${isEdit?`
-    <div class="fg2" style="margin-top:8px">
-      <div class="fg"><label class="fl">الظهور على الموقع</label>
-        <select class="fc" id="f-active">
-          <option value="true"  ${sp.is_active!==false?'selected':''}>👁 ظاهر</option>
-          <option value="false" ${sp.is_active===false?'selected':''}>🙈 مخفي</option>
-        </select></div>
-    </div>`:''}
   </div>
 
   <div class="form-sec">
@@ -4048,8 +4056,7 @@ async function submitSpaceForm() {
     description:  get('f-desc')||null,
     amenities:    amen,
     sort_order:   parseInt(get('f-order'))||0,
-    status:       get('f-status')||'approved',
-    is_active:    get('f-active')!=='false',
+    status:       get('f-status')||'live',
     image_url:    fMainImgUrl||null,
     extra_images: fExtraImgUrls.filter(Boolean),
   };
@@ -4250,9 +4257,9 @@ function toast(msg, type='i') {
 function loading() { return `<div style="text-align:center;padding:60px;color:var(--mu)"><span class="spin" style="font-size:28px">⏳</span><div style="margin-top:12px;font-size:13px">جاري التحميل…</div></div>`; }
 function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d){ return d?new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}):'—'; }
-function typeLabel(t) { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة'}[t]||t||'—'; }
-function statusLbl(s) { return {pending:'⏳ انتظار',approved:'✅ معتمد',rejected:'❌ مرفوض'}[s]||s; }
-function statusCls(s) { return {approved:'b-approved',pending:'b-pending',rejected:'b-rejected'}[s]||'b-pending'; }
+function typeLabel(t) { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة',hotel:'🏨 فندق',other:'🏪 أخرى'}[t]||t||'—'; }
+function statusLbl(s) { return {live:'✅ منشورة',paused:'⏸ موقوفة',hidden_by_admin:'🚫 مخفية',archived:'🗄 مؤرشفة'}[s]||s; }
+function statusCls(s) { return {live:'b-approved',paused:'b-pending',hidden_by_admin:'b-rejected',archived:'b-hidden'}[s]||'b-hidden'; }
 function planCls(p)   { return {starter:'b-starter',growth:'b-growth',pro:'b-pro'}[p]||'b-starter'; }
 function planLbl(p)   { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p||'Starter'; }
 function unitStatusLbl(s){ return {available:'متاحة',rented:'مؤجّرة',reserved:'محجوزة',maintenance:'صيانة'}[s]||s; }

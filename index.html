@@ -2138,7 +2138,7 @@
               <div class="slider-container slider-single" style="margin-top:14px">
                 <div class="slider-track" id="mp-slider-track"></div>
                 <input type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500"
-                  oninput="updateMpSlider();applyMpFilters()">
+                  oninput="updateMpSlider();clearTimeout(window._mpSliderDeb);window._mpSliderDeb=setTimeout(applyMpFilters,400)">
               </div>
               <div class="slider-hints" style="margin-top:6px">
                 <span>٠</span>
@@ -3046,7 +3046,10 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="app.js?v=202606171812" defer></script>
+  <script src="shared/sb-config.js?v=1" defer></script>
+  <script src="shared/space-model.js?v=1" defer></script>
+  <script src="shared/booking.js?v=1" defer></script>
+  <script src="app.js?v=202607041" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">

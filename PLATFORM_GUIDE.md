@@ -2,7 +2,7 @@
 
 > **الهدف:** هذا الملف هو المرجع التقني الشامل والمحدّث للمنصة. اقرأه **أولاً** قبل أي تعديل لتعرف أين تذهب مباشرةً دون البحث في الكود.
 >
-> **آخر تحديث كبير:** مايو 2026 — هجرة بيانات المساحات بالكامل من Google Sheets إلى **Supabase**، إضافة نظام الباقات (Starter/Growth/Pro)، نظام طلبات الترقية، مركز تحكم إداري متعدد الصفحات، وإعادة هيكلة لوحة تحكم المالك.
+> **آخر تحديث كبير:** يوليو 2026 — إعادة تصميم دورة حياة المساحة بالكامل: **نشر فوري (Post-Moderation)** بدل موافقة أدمن مسبقة، توحيد منطق الحجز/تحويل بيانات المساحة في طبقة `shared/` مشتركة، إزالة Google Sheets نهائياً من الحجوزات، وآلية أرشفة تدريجية للمساحات الخاملة.
 
 ---
 
@@ -10,7 +10,12 @@
 
 | التحديث | ماذا تغيّر | الملفات المتأثرة |
 |---------|-----------|------------------|
-| **🔴 هجرة المساحات إلى Supabase** | المساحات لم تعد تُقرأ من Google Sheets. الآن تُقرأ من جداول `spaces` + `space_units` + `space_activities` في Supabase مع **Realtime** (تحديث فوري) و polling احتياطي كل 5 دقائق. | `app.js`, `spaces/app.js`, `dashboard/app.js` |
+| **🔴 توحيد التكامل والترابط عبر المنصة (يوليو 2026)** | `shared/sb-config.js` عُمِّم على 12 ملفاً إضافياً (كل admin/*.html + bazaars/* + market/ + post-ad/). `bazaar_bookings.user_id` أصبح uuid حقيقي (كان نصاً). `notifications.owner_id` (نصي، قديم) **أُزيل نهائياً** — `user_id` (uuid) هو العمود الوحيد الآن، وسياسة احتفاظ موحّدة (60/90 يوم). `user_bazaar_notifications` (جدول قديم مواز) **حُذف بالكامل** — انظر `docs/adr/0001-*.md`. 5 دوال RPC مكررة الاسم بتوقيعات مختلفة نُظِّفت لنسخة واحدة لكل منها. | Migration DB، `docs/adr/`, `migrations/*.sql`، كل ملفات admin/bazaars/market/post-ad |
+| **🔴 دورة حياة المساحة الجديدة (يوليو 2026)** | النشر **فوري** عند الإضافة (`status` الافتراضي `'live'` — لا مراجعة أدمن قبل الظهور). عمود `is_active` **أُزيل نهائياً** — استُبدل بعمود `status` وحيد بقيم: `live`/`paused`/`hidden_by_admin`/`archived`. إضافة `is_deleted`+`deleted_at` (حذف ناعم فقط)، و`last_activity_at`+`dormancy_notice_sent`+`dormancy_reminder_sent` (أرشفة تلقائية بعد ~6 أشهر خمول عبر `pg_cron`). التحقق من صلاحية القيم بـ `spaces_status_check` (CHECK constraint). | Migration DB، `dashboard/app.js`, `admin/spaces-hub.html`, `admin/admin-hub.html` |
+| **🟢 طبقة JS مشتركة جديدة (`shared/`)** | `shared/sb-config.js` (مفاتيح Supabase موحّدة)، `shared/space-model.js` (`mapSpaceRow`, `fetchLiveSpaces`, `resolveSizePrice`, ثوابت `SPACE_STATUS`)، `shared/booking.js` (`submitSpaceBookingRequest` — نقطة إدراج حجز واحدة للرئيسية و`/spaces/`). لا build step — تحميل بـ `<script src>` عادي. | `index.html`, `spaces/index.html`, `dashboard/index.html` |
+| **🔴 إزالة Google Sheets من الحجوزات** | `BOOKING_URL` (Apps Script) أُزيل بالكامل من مسارات الحجز/المعاينة — Supabase `bookings` هو المصدر الوحيد الآن. سعر الحجز يُحسم من `sizePrices`/`resolveSizePrice` (رقم حقيقي، لا استخراج نصي)، ويوجد شبكة أمان في trigger `_bookings_fill_owner` تستبدل أي سعر فارغ/صفري بـ `spaces.min_price`. `BAZAAR_SHEET_URL` (بازارات legacy) **لم يُمس** — خارج نطاق هذا التغيير. | `app.js`, `spaces/app.js`, DB trigger |
+| **🟢 صلاحيات مشدّدة على `spaces`** | المالك يعدّل الحقول الوصفية فقط عبر GRANT عمودي صريح (لا يقدر يكتب `status` مباشرة). تغيير حالة النشر (live/paused) عبر RPC `owner_set_space_publish_state` فقط. لا حذف ذاتي مباشر للمالك — الإيقاف (pause) يغطي نفس الحاجة. | Migration DB (RLS + column GRANTs) |
+| ~~هجرة المساحات إلى Supabase~~ *(مايو 2026، تاريخي)* | المساحات لم تعد تُقرأ من Google Sheets. تُقرأ من `spaces`+`space_units`+`space_activities` مع Realtime + polling احتياطي كل 5 دقائق. | `app.js`, `spaces/app.js`, `dashboard/app.js` |
 | **🟠 نظام الباقات (Plans)** | ثلاث باقات: **Starter** (مجاني) · **Growth** (3,000ج) · **Pro** (4,500ج). صفحة أسعار `#pg-pricing`. تخزّن في `profiles.plan_tier`. | `index.html` (#pg-pricing), `style.css` (`pkg-*`) |
 | **🟠 Plan Gating** | قفل ميزات الداشبورد حسب الباقة (`canAccess()`, `planGateHtml()`). ترتيب المساحات في الواجهة حسب الباقة (`_sortByPlan`) + شارات ثقة (`_planTrustBadgeHtml`). | `dashboard/app.js`, `app.js`, `spaces/app.js` |
 | **🟠 طلبات الترقية / التحويل** | المالك يطلب عبر مودال → جدول `upgrade_requests` → الأدمن يراجع في `spaces-hub.html`/`subscriptions.html` → RPC `admin_set_plan_tier` يحدّث `profiles.plan_tier`. | `app.js`, `admin/spaces-hub.html`, `admin/subscriptions.html` |
@@ -124,15 +129,7 @@ Makani-spot/
 └────────────────────────────────────────────────────────────────┘
 ```
 
-**إعدادات الاتصال** (في رأس كل ملف JS، عدّلها في كل الملفات معاً عند التغيير):
-```javascript
-// app.js (أسطر ~28–41)
-const BOOKING_URL      = "https://script.google.com/macros/s/.../exec";  // الحجوزات
-const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/.../exec";  // بازارات legacy
-const SUPABASE_URL     = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY     = 'eyJhbGc...';  // anon key
-// نفس SUPABASE_URL/KEY مكرّرة في: spaces/app.js, dashboard/app.js, وكل صفحات admin/*.html
-```
+**إعدادات الاتصال:** `SUPABASE_URL`/`SUPABASE_KEY` أصبحا مركزيَّين في **`shared/sb-config.js`** (يوليو 2026) — لتغيير المفتاح، عدّل هذا الملف فقط. كل الصفحات (الرئيسية، spaces/, dashboard/, admin/*.html, bazaars/*, market/, post-ad/) تحمّله بـ `<script src="shared/sb-config.js">` قبل كودها الخاص. بعض الصفحات تُعرّف alias محلي (`SB_URL`, `ADM_SB_URL`, `EQ_SUPABASE_URL`...) يشير لنفس القيمة المركزية بدل تكرارها. `BAZAAR_SHEET_URL` (بازارات legacy fallback) لا يزال في `app.js` — خارج نطاق هذا التوحيد.
 
 ---
 
@@ -153,8 +150,10 @@ const SUPABASE_KEY     = 'eyJhbGc...';  // anon key
 | `description`, `amenities` (array) | تفاصيل |
 | `image_url`, `extra_images` (array), `icon_emoji`, `thumb_color` | الوسائط |
 | `sort_order` | ترتيب العرض |
-| **`status`** | `pending` / `approved` / `rejected` |
-| **`is_active`** | bool — يجب أن تكون `true` + status=`approved` ليظهر للعامة |
+| **`status`** | `live` (منشورة، الافتراضي) / `paused` (أوقفها المالك) / `hidden_by_admin` (أخفاها الأدمن + `reject_reason`) / `archived` (أرشفة تلقائية لعدم النشاط). قيد CHECK يمنع أي قيمة أخرى. **الظهور للعامة يتطلب `status='live' AND NOT is_deleted` فقط — لا يوجد عمود `is_active` بعد الآن.** |
+| `is_deleted`, `deleted_at`, `deleted_by` | حذف ناعم (أدمن فقط) — البيانات تبقى محفوظة |
+| `last_activity_at`, `dormancy_notice_sent`, `dormancy_reminder_sent` | تتبّع الخمول للأرشفة التلقائية (cron يومي `spaces_dormancy_lifecycle`) |
+| `reviewed_at`, `reject_reason` | هل راجعها الأدمن + سبب الإخفاء إن وُجد (النشر لا ينتظر المراجعة) |
 | `created_at` | تاريخ الإنشاء |
 
 ### `space_units` — الوحدات الفرعية داخل المساحة
@@ -192,8 +191,13 @@ const SUPABASE_KEY     = 'eyJhbGc...';  // anon key
 ### `user_ratings` — التقييمات
 مرتبطة بالحجوزات والملفات.
 
+### `notifications` — المصدر الوحيد لكل إشعارات المنصة (يوليو 2026)
+عمود واحد للهوية: **`user_id` (uuid)** فقط — عمود `owner_id` النصي القديم **أُزيل نهائياً** بعد التأكد أن صفر دالة/سياسة/كود يعتمد عليه. كل أنواع الإشعارات (owner/organizer/bazaar/listing/space) تُكتب هنا حصراً — لا يوجد أي جدول إشعارات مواز بعد الآن (`user_bazaar_notifications` القديم حُذف بالكامل، انظر `docs/adr/0001-remove-legacy-bazaar-notifications-table.md`).
+- **سياسة الاحتفاظ الموحّدة:** مقروء → 60 يوماً، غير مقروء → 90 يوماً، منتهي الصلاحية (`expires_at`) → فوراً. تُنفَّذ عبر `cleanup_old_platform_notifications(p_read_days=60, p_unread_days=90)` (cron يومي). `organizer_notifications` (جدول منفصل، إشعارات المنظّمين فقط) له دالة تنظيف مستقلة الاسم بوضوح `cleanup_old_organizer_notifications()` بنفس الفلسفة.
+- إشعارات البازار (إلغاء/تأجيل/اختيار منظّم/فرصة جديدة) تحمل `bazaar_id`/`booking_id`/`request_id` داخل عمود `metadata jsonb` بدل أعمدة مخصصة.
+
 ### جداول البازارات
-`bazaars`, `bazaar_slots` (الأكشاك), `bazaar_bookings` (حجز كشك), `organizer_requests` (توثيق منظّم), `organizer_profiles`.
+`bazaars`, `bazaar_slots` (الأكشاك), `bazaar_bookings` (حجز كشك — `user_id` أصبح **uuid** حقيقي بـFK لـ`auth.users`، لم يعد نصاً)، `organizer_requests` (توثيق منظّم), `organizer_profiles`.
 
 ---
 

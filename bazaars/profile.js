@@ -16,8 +16,7 @@
    • upgrade_requests      → حالة طلب صاحب المساحة
    ================================================================ */
 
-const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+/* SUPABASE_URL/SUPABASE_KEY أصبحت من shared/sb-config.js */
 
 let sbClient    = null;
 let currentUser = null;
@@ -957,7 +956,7 @@ async function _loadPublicProfile(userId) {
 
   try {
     const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes] = await Promise.all([
-      sbClient.from('profiles').select('full_name,created_at,role,city').eq('id', userId).single(),
+      sbClient.from('public_profiles').select('full_name,created_at,roles,city').eq('id', userId).single(),
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
@@ -1072,7 +1071,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
 
   /* أوسمة عامة */
   const isVerified    = organizer?.is_verified === true;
-  const isSpaceOwner  = publicUser?.role === 'owner';
+  const isSpaceOwner  = !!publicUser?.roles?.includes('space_owner');
   const { primary: primaryBadges, secondary: secBadges } = _computeBadges({
     isVerified, isSpaceOwner,
     hasBazaars: bazaars.length > 0,

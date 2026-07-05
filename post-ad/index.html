@@ -488,10 +488,11 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
+<script src="../shared/sb-config.js"></script>
 <script>
-/* ── Config ── */
-const PA_SB_URL  = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const PA_SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+/* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
+const PA_SB_URL  = SUPABASE_URL;
+const PA_SB_KEY  = SUPABASE_KEY;
 const PA_GOVS = ['القاهرة','الجيزة','الإسكندرية','الشرقية','الدقهلية','المنوفية','القليوبية','البحيرة','كفر الشيخ','الغربية','سوهاج','المنيا','أسيوط','قنا','الأقصر','أسوان','بورسعيد','السويس','الإسماعيلية','دمياط','الفيوم','بني سويف','مطروح','شمال سيناء','جنوب سيناء','الوادي الجديد','البحر الأحمر'];
 const CAT_LABELS = {'food-juice-cart':'عربية أكل / عصير','fast-food-partition':'بارتشن وجبات سريعة','beauty-partition':'بارتشن عناية شخصية','clothing-partition':'بارتشن ملابس / بوتيك',handmade:'هاند ميد',phones:'تليفونات وإكسسوار',gifts:'هدايا وديكور','corner-space':'كورنر سبيس',vending:'آلات بيع ذاتي',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};

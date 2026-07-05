@@ -287,10 +287,11 @@ tr.row-hidden td { background: #FFF8F8; opacity: .72; }
 
 <div class="adm-toast" id="adm-toast"></div>
 
+<script src="../shared/sb-config.js"></script>
 <script>
 /* ── Supabase (RLS مُتجاوَز عبر دوال SECURITY DEFINER + is_admin()) ── */
-const ADM_SB_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const ADM_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const ADM_SB_URL = SUPABASE_URL;
+const ADM_SB_KEY = SUPABASE_KEY;
 const ADMIN_EMAIL = 'makanispot@gmail.com';
 
 let sbDirect = null;

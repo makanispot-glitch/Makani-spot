@@ -11,8 +11,7 @@
       - لوحة التحكم: تعديل البيانات، الحجوزات، التقييمات
 
    📌 كيف تعدّل؟
-      - لتغيير رابط استقبال الحجوزات: غيّر BOOKING_URL
-      - لتغيير إعدادات Supabase: غيّر SUPABASE_URL و SUPABASE_KEY
+      - لتغيير إعدادات Supabase: غيّرها في shared/sb-config.js
    ================================================================ */
 
 
@@ -20,12 +19,6 @@
    ⚙️ القسم الأول: إعدادات وروابط المنصة
    (هنا كل الروابط المهمة — عدّلها من هنا فقط)
    ================================================================ */
-
-/**
- * 📬 رابط Google Apps Script الذي يستقبل طلبات الحجز ويحفظها في الشيت
- * لو غيّرت شيت الحجوزات، ضع الرابط الجديد هنا
- */
-const BOOKING_URL = "https://script.google.com/macros/s/AKfycbzZPnqZ4hjy8nzzGDcrQUpJK_pZn01lGIJXL-EfScxpGISLMjo6wL6xCLqNMviBpD69/exec";
 
 /**
  * 🎪 رابط Google Apps Script لبيانات البازارات من Google Sheets
@@ -37,8 +30,7 @@ const BAZAAR_SHEET_URL = "https://script.google.com/macros/s/AKfycbwb0eB118CzrlB
  * 🔐 إعدادات Supabase — قاعدة بيانات المستخدمين
  * هذه البيانات من لوحة تحكم Supabase الخاصة بك
  */
-const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+/* SUPABASE_URL/SUPABASE_KEY أصبحت من shared/sb-config.js */
 
 /* ══════════════════════════════════════════════════════
    📊  SPACE ANALYTICS TRACKING
@@ -92,7 +84,7 @@ function _initCardViewTracking() {
    (بيانات تُحفظ مؤقتاً أثناء تشغيل الصفحة)
    ================================================================ */
 
-let SPACES = [];    // قائمة المساحات المحمّلة من الشيت
+let heroItems = [];    // أهم 6 مساحات المعروضة حاليًا في هيرو الرئيسية
 let ACTIVITIES = [];    // قائمة الأنشطة التجارية
 let activeTab = '';    // التبويب النشط حالياً (مول / نادي / مدرسة)
 let selectedAct = '';    // النشاط المحدد في الفلتر
@@ -107,7 +99,8 @@ let _authRedirect = false; // هل وصلنا من redirect مصادقة (Google
 // ── متغيرات خاصة بصفحة الماركت بليس ──
 let mpPage = 1;      // رقم الصفحة الحالية في الماركت بليس
 const MP_PER_PAGE = 12;     // عدد المساحات في كل صفحة
-let mpFiltered = [];     // المساحات بعد تطبيق الفلاتر
+let mpCurrentItems = [];     // مساحات الصفحة الحالية (من الخادم مباشرة)
+let mpTotalCount = 0;     // إجمالي المطابق فعليًا في القاعدة (للترقيم)
 let mpActiveTypes = [];     // أنواع المكان المفلترة حالياً (mall / club / school)
 let mpActiveActs = [];     // الأنشطة المفلترة حالياً
 
@@ -162,8 +155,11 @@ document.addEventListener('DOMContentLoaded', function () {
   loadData();
   subscribeSpacesRealtime();
 
-  // تحميل البازارات من Supabase
+  // تحميل البازارات من Supabase (كاش عام لأسماء/أسعار البازارات — يستخدمه قسم حجوزات المستخدم)
   loadBazaars();
+
+  // اختيار وعرض بازار الصفحة الرئيسية — مصدر قرار مستقل تمامًا (get_homepage_featured_bazaar)
+  loadHomeFeaturedBazaar();
 
   // تحميل المشروعات المعروضة للبيع المتميزة
   loadMarketShowcase();
@@ -317,156 +313,26 @@ async function loadData() {
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
 
-    // تحميل المساحات المعتمدة مع وحداتها
-    const { data: spacesData, error: spacesErr } = await sbClient
-      .from('spaces')
-      .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
-      .eq('status', 'approved')
-      .eq('is_active', true)
-      .order('sort_order');
-    if (spacesErr) throw spacesErr;
-
-    // تحميل باقات أصحاب المساحات
-    const ownerIds = [...new Set((spacesData || []).map(s => s.owner_id).filter(Boolean))];
-    let profilesMap = {};
-    if (ownerIds.length > 0) {
-      const { data: profiles } = await sbClient
-        .from('profiles')
-        .select('id, plan_tier')
-        .in('id', ownerIds);
-      (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
-    }
-
-    SPACES = (spacesData || []).map(row => {
-      const sizes = row.sizes_prices
-        ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
-        : [];
-      return {
-        id: row.id,
-        name: row.name || '',
-        loc: row.region || '',
-        type: row.type || '',
-        price: row.min_price || 0,
-        sizes: sizes,
-        acts: row.activities || [],
-        allActs: row.all_acts || false,
-        badge: row.badge || 'متاح',
-        badgeClass: row.badge_class || 'badge-avail',
-        season: row.season || '',
-        insight: row.insight || '',
-        image: row.image_url || '',
-        icon: row.icon_emoji || '',
-        thumbClass: row.thumb_color || '',
-        extraImages: row.extra_images || [],
-        description: row.description || '',
-        amenities: row.amenities || [],
-        planTier: profilesMap[row.owner_id] || 'starter',
-        ownerId: row.owner_id || null,
-        subSpaces: (row.space_units || []).map(u => ({
-          unitId: u.unit_id || '',
-          name: u.name || '',
-          location: u.location || '',
-          size: u.size || '',
-          price: u.price || 0,
-          status: u.status || 'available',
-          image: u.image_url || '',
-          floor: u.floor || '',
-          notes: u.notes || '',
-        })),
-      };
-    });
-    _sortByPlan(SPACES);
-
     buildActivityFilters();
     buildModalActivityPicker();
     buildMpActivityFilters();
 
-    renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6, 'home');
+    // المساحات المنشورة تُجلب من الخادم مباشرة (بحث/فلترة/ترتيب/ترقيم خادمي —
+    // shared/space-model.js) — الهيرو (أهم 6) والشبكة الكاملة مستقلان ومتوازيان
+    await Promise.all([filterAndRender(), loadMarketplacePage()]);
     setTimeout(() => csInitAll(), 120);
-
-    const counter = document.getElementById('res-count');
-    if (counter) counter.textContent = SPACES.length + ' مساحة';
 
   } catch (err) {
     showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
   }
 }
 
-async function fetchVisibleSpacesFromSupabase() {
-  const { data: spacesData, error } = await sbClient
-    .from('spaces')
-    .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
-    .eq('status', 'approved')
-    .eq('is_active', true)
-    .order('sort_order');
-  if (error) throw error;
-
-  const ownerIds = [...new Set((spacesData || []).map(s => s.owner_id).filter(Boolean))];
-  let profilesMap = {};
-  if (ownerIds.length > 0) {
-    const { data: profiles } = await sbClient
-      .from('profiles')
-      .select('id, plan_tier')
-      .in('id', ownerIds);
-    (profiles || []).forEach(p => { profilesMap[p.id] = p.plan_tier || 'starter'; });
-  }
-
-  return (spacesData || []).map(row => {
-    const sizes = row.sizes_prices
-      ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
-      : [];
-    return {
-      id: row.id,
-      name: row.name || '',
-      loc: row.region || '',
-      type: row.type || '',
-      price: row.min_price || 0,
-      sizes: sizes,
-      acts: row.activities || [],
-      allActs: row.all_acts || false,
-      badge: row.badge || 'متاح',
-      badgeClass: row.badge_class || 'badge-avail',
-      season: row.season || '',
-      insight: row.insight || '',
-      image: row.image_url || '',
-      icon: row.icon_emoji || '',
-      thumbClass: row.thumb_color || '',
-      extraImages: row.extra_images || [],
-      description: row.description || '',
-      amenities: row.amenities || [],
-      planTier: profilesMap[row.owner_id] || 'starter',
-      subSpaces: (row.space_units || []).map(u => ({
-        unitId: u.unit_id || '',
-        name: u.name || '',
-        location: u.location || '',
-        size: u.size || '',
-        price: u.price || 0,
-        status: u.status || 'available',
-        image: u.image_url || '',
-        floor: u.floor || '',
-        notes: u.notes || '',
-      })),
-    };
-  });
-}
-
 async function silentRefreshSpaces() {
   if (document.hidden || !sbClient) return;
   try {
-    SPACES = await fetchVisibleSpacesFromSupabase();
-    _sortByPlan(SPACES);
-
-    filterAndRender();
-
+    await filterAndRender();
     const isMarketplaceActive = document.getElementById('pg-market')?.classList.contains('active');
-    if (isMarketplaceActive) {
-      applyMpFilters();
-    } else if (!mpFiltered.length) {
-      mpFiltered = [...SPACES];
-    }
-
-    const counter = document.getElementById('res-count');
-    if (counter) counter.textContent = SPACES.length + ' مساحة';
+    if (isMarketplaceActive) await loadMarketplacePage();
   } catch (_) {
     /* silent refresh intentionally keeps the current UI if the network blips */
   }
@@ -574,13 +440,8 @@ function buildMpActivityFilters() {
  * @returns {string} — HTML الكارد
  */
 /* ── نظام الباقات والبادجيات ── */
-
-/** ترتيب المساحات حسب الباقة: Pro أول، Growth ثاني، Starter أخير */
-function _sortByPlan(arr) {
-  const ord = { pro: 0, growth: 1, starter: 2 };
-  arr.sort((a, b) => (ord[a.planTier] ?? 2) - (ord[b.planTier] ?? 2));
-  return arr;
-}
+/* ترتيب المساحات حسب الباقة (Pro / Growth / البقية) صار جزءًا من ORDER BY
+   داخل search_public_spaces (RPC) — لا حاجة لترتيب محلي بعد الآن */
 
 /** يحلّ قيمة النشاط (مُعرّف أو اسم عربي) إلى تسمية للعرض */
 function _resolveActLabel(val) {
@@ -708,7 +569,7 @@ function buildCardHtml(s, fromPage) {
  * @param {boolean} showViewAll — هل يُظهر زرار "عرض الكل"؟
  * @param {string}  fromPage    — الصفحة المصدر (home / market)
  */
-function renderCards(data, gridId, showViewAll, fromPage) {
+function renderCards(data, gridId, totalCount, fromPage) {
   const grid = document.getElementById(gridId || 'spaces-grid');
   if (!grid) return;
   fromPage = fromPage || (gridId === 'spaces-grid' ? 'home' : 'market');
@@ -723,10 +584,10 @@ function renderCards(data, gridId, showViewAll, fromPage) {
     return;
   }
 
-  const viewAllHtml = showViewAll ? `
+  const viewAllHtml = totalCount > data.length ? `
     <div style="grid-column:1/-1;text-align:center;padding:14px 0 4px">
       <a class="btn-view-all" href="/spaces/">
-        <span>عرض جميع المساحات المتاحة (${SPACES.length})</span>
+        <span>عرض جميع المساحات المتاحة (${totalCount})</span>
         <span class="view-all-arrow">←</span>
       </a>
     </div>` : '';
@@ -812,8 +673,16 @@ function _showSpaceLoginGate(s, fromPage) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-function openSpaceDetail(spaceId, fromPage) {
-  const s = SPACES.find(x => x.id === spaceId);
+/* يبحث عن مساحة فيما هو معروض حاليًا (هيرو/شبكة)، وإلا يجلبها مباشرة بالمعرّف —
+   مصدر واحد لكل أزرار الإجراء السريع (تفاصيل/حجز/معاينة) بدل تكرار المنطق في كل واحد */
+async function findOrFetchSpace(spaceId) {
+  return heroItems.find(x => x.id === spaceId)
+      || mpCurrentItems.find(x => x.id === spaceId)
+      || await fetchSpaceById(sbClient, spaceId);
+}
+
+async function openSpaceDetail(spaceId, fromPage) {
+  const s = await findOrFetchSpace(spaceId);
   if (!s) return;
 
   if (!currentUser) {
@@ -1413,12 +1282,10 @@ function _typeLabel(type) {
  * @param {number} spaceId — id المساحة الرئيسية
  * @param {string} unitId  — رقم/كود الوحدة الفرعية
  */
-function openBookingForUnit(spaceId, unitId) {
-  const s = SPACES.find(x => x.id === spaceId);
-  if (!s) return;
-
+async function openBookingForUnit(spaceId, unitId) {
   // افتح مودال الحجز الاعتيادي أولاً
-  openBooking(spaceId);
+  const opened = await openBooking(spaceId);
+  if (!opened) return;
 
   // ثم حدّد الوحدة في حقل الحجم/الملاحظات
   setTimeout(() => {
@@ -1454,7 +1321,8 @@ function toggleMpType(type, el) {
     ? [...mpActiveTypes, type]
     : mpActiveTypes.filter(t => t !== type);
   mpPage = 1;
-  applyMpFilters();
+  loadMarketplacePage();
+  updateMpChips();
 }
 
 function toggleMpAct(id, el) {
@@ -1463,34 +1331,39 @@ function toggleMpAct(id, el) {
     ? [...mpActiveActs, id]
     : mpActiveActs.filter(a => a !== id);
   mpPage = 1;
-  applyMpFilters();
+  loadMarketplacePage();
+  updateMpChips();
 }
 
 function applyMpFilters() {
-  const region = document.getElementById('mp-region')?.value || '';
-  const minVal = 0; // الحد الأدنى ثابت عند الصفر دائماً
-  const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
-  const sort = document.getElementById('mp-sort')?.value || 'default';
-
-  let data = [...SPACES];
-
-  if (region) data = data.filter(s => s.loc === region);
-  if (mpActiveTypes.length) data = data.filter(s => mpActiveTypes.includes(s.type));
-  data = data.filter(s => {
-    const p = parseInt(s.price) || 0;
-    return p >= minVal && p <= maxVal;
-  });
-  if (mpActiveActs.length) {
-    data = data.filter(s => s.allActs || (s.acts && mpActiveActs.some(a => s.acts.includes(a))));
-  }
-
-  if (sort === 'price-asc') data.sort((a, b) => a.price - b.price);
-  if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
-
-  mpFiltered = data;
   mpPage = 1;
-  renderMarketplace();
+  loadMarketplacePage();
   updateMpChips();
+}
+
+/* الشبكة الكاملة — نفس مصدر البحث الموحّد search_public_spaces، صفحة واحدة في كل نداء */
+async function loadMarketplacePage() {
+  const region = document.getElementById('mp-region')?.value || '';
+  const maxVal = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
+  const sort   = document.getElementById('mp-sort')?.value || 'default';
+  const sliderMax = parseInt(document.getElementById('mp-slider-max')?.max || 50000);
+
+  try {
+    const { items, totalCount } = await searchPublicSpaces(sbClient, {
+      region:     region || null,
+      types:      mpActiveTypes,
+      activities: mpActiveActs,
+      maxPrice:   maxVal < sliderMax ? maxVal : null,
+      sort,
+      limit:      MP_PER_PAGE,
+      offset:     (mpPage - 1) * MP_PER_PAGE,
+    });
+    mpCurrentItems = items;
+    mpTotalCount = totalCount;
+    renderMarketplace();
+  } catch (err) {
+    showErrorState(err.message || 'خطأ في تحميل المساحات', 'mp-grid');
+  }
 }
 
 function clearMpFilters() {
@@ -1508,9 +1381,8 @@ function clearMpFilters() {
   const mpSort = document.getElementById('mp-sort');
   if (mpSort) mpSort.value = 'default';
 
-  mpFiltered = [...SPACES];
   mpPage = 1;
-  renderMarketplace();
+  loadMarketplacePage();
   updateMpChips();
 }
 
@@ -1536,12 +1408,9 @@ function renderMarketplace() {
   const countEl = document.getElementById('mp-count');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = mpFiltered.length + ' مساحة';
+  if (countEl) countEl.textContent = mpTotalCount + ' مساحة';
 
-  const start = (mpPage - 1) * MP_PER_PAGE;
-  const pageData = mpFiltered.slice(start, start + MP_PER_PAGE);
-
-  if (!pageData.length) {
+  if (!mpCurrentItems.length) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
         <div style="font-size:52px;margin-bottom:14px">🔍</div>
@@ -1553,7 +1422,7 @@ function renderMarketplace() {
     return;
   }
 
-  grid.innerHTML = pageData.map(s => buildCardHtml(s, 'market')).join('');
+  grid.innerHTML = mpCurrentItems.map(s => buildCardHtml(s, 'market')).join('');
   // تهيئة الـ sliders في الماركت بعد الرسم
   setTimeout(() => csInitAll(), 120);
   renderMpPagination();
@@ -1563,7 +1432,7 @@ function renderMpPagination() {
   const cont = document.getElementById('mp-pagination');
   if (!cont) return;
 
-  const totalPages = Math.ceil(mpFiltered.length / MP_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(mpTotalCount / MP_PER_PAGE));
   if (totalPages <= 1) { cont.innerHTML = ''; return; }
 
   let html = '';
@@ -1583,7 +1452,7 @@ function renderMpPagination() {
 
 function mpGoPage(n) {
   mpPage = n;
-  renderMarketplace();
+  loadMarketplacePage();
   document.getElementById('mp-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1642,26 +1511,29 @@ function doSearch() {
   showSearchChips();
 }
 
-function filterAndRender() {
-  let data = [...SPACES];
-
-  const reg = document.getElementById('f-region')?.value || '';
+/* أهم 6 مساحات (هيرو) — نفس مصدر البحث الموحّد search_public_spaces بحد limit=6 */
+async function filterAndRender() {
+  const reg  = document.getElementById('f-region')?.value || '';
   const type = document.getElementById('f-type')?.value || activeTab;
-  const minPrice = 0; // الحد الأدنى ثابت عند الصفر
   const maxPrice = parseInt(document.getElementById('slider-max')?.value) || 50000;
 
-  if (reg) data = data.filter(s => s.loc === reg);
-  if (type) data = data.filter(s => s.type === type);
-  data = data.filter(s => {
-    const price = parseInt(s.price) || 0;
-    return price >= minPrice && price <= maxPrice;
-  });
-  if (selectedAct) data = data.filter(s => s.allActs || (s.acts && s.acts.includes(selectedAct)));
+  try {
+    const { items, totalCount } = await searchPublicSpaces(sbClient, {
+      region:     reg || null,
+      types:      type ? [type] : null,
+      activities: selectedAct ? [selectedAct] : null,
+      maxPrice:   maxPrice < 50000 ? maxPrice : null,
+      limit:      6,
+    });
+    heroItems = items;
 
-  const counter = document.getElementById('res-count');
-  if (counter) counter.textContent = data.length + ' مساحة';
+    const counter = document.getElementById('res-count');
+    if (counter) counter.textContent = totalCount + ' مساحة';
 
-  renderCards(data.slice(0, 6), 'spaces-grid', data.length > 6, 'home');
+    renderCards(items, 'spaces-grid', totalCount, 'home');
+  } catch (err) {
+    showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
+  }
 }
 
 function showSearchChips() {
@@ -1703,9 +1575,7 @@ function clearAllFilters() {
   if (sliderMax) sliderMax.value = 50000;
   updateMainSlider();
 
-  renderCards(SPACES.slice(0, 6), 'spaces-grid', SPACES.length > 6, 'home');
-  const counter = document.getElementById('res-count');
-  if (counter) counter.textContent = SPACES.length + ' مساحة';
+  filterAndRender(); // نفس مسار الجلب — لا تكرار للمنطق
 }
 
 
@@ -1739,13 +1609,9 @@ function showPage(p) {
   if (p === 'owner') links[2]?.classList.add('active');
   if (p === 'market' || p === 'space-detail') document.getElementById('nsb-spaces')?.classList.add('active');
 
-  // لو فتحنا الماركت بليس
+  // لو فتحنا الماركت بليس — الشبكة مُحمَّلة مسبقًا من loadData()، لا حاجة لتهيئة هنا
   if (p === 'market') {
     setTimeout(initMpSlider, 120);
-    if (SPACES.length && !mpFiltered.length) {
-      mpFiltered = [...SPACES];
-      renderMarketplace();
-    }
   }
 
   if (p === 'pricing') {
@@ -1941,9 +1807,9 @@ function _oppBazaarCard(b) {
    📋 القسم الحادي عشر: مودال الحجز
    ================================================================ */
 
-function openBooking(spaceId) {
-  const s = SPACES.find(x => x.id === spaceId);
-  if (!s) return;
+async function openBooking(spaceId) {
+  const s = await findOrFetchSpace(spaceId);
+  if (!s) return null;
   currentBookingSpace = s;   /* لالتقاط owner_id/space_id عند الإرسال */
   trackEvent('booking_button_clicked', { space_id: spaceId, space_name: s.name });
 
@@ -2012,6 +1878,7 @@ function openBooking(spaceId) {
 
   document.getElementById('booking-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  return s;
 }
 
 function closeModal() {
@@ -2033,7 +1900,6 @@ async function submitBooking() {
   const phone = document.getElementById('bk-phone').value.trim();
   const email = document.getElementById('bk-email').value.trim();
   const actBtn = document.querySelector('.act-pick-btn.on');
-  const otherAct = document.getElementById('bk-other-act').value.trim();
   const size = document.getElementById('bk-size').value;
   const dur = document.getElementById('bk-dur').value;
   const date = document.getElementById('bk-date').value;
@@ -2045,6 +1911,7 @@ async function submitBooking() {
     showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
   }
   if (!actBtn) { showFormError('من فضلك اختار نوع نشاطك التجاري'); return; }
+  if (!currentUser) { showFormError('يجب تسجيل الدخول لإرسال طلب الحجز'); return; }
 
   document.getElementById('bk-error').style.display = 'none';
 
@@ -2054,105 +1921,46 @@ async function submitBooking() {
   submitBtn.disabled = true;
   submitBtn.style.opacity = '0.7';
 
-  // ── استخراج بيانات المساحة ──────────────────────────────────
-  const spaceName = document.getElementById('msi-name').textContent;
-  const metaText = document.getElementById('msi-meta').textContent;
-  const locMatch = metaText.match(/📍\s*([^·]+)/);
-  const priceMatch = metaText.match(/([\d,٠-٩]+\s*ج)/);
-  const spaceLoc = locMatch ? locMatch[1].trim() : '';
-  const spacePrice = priceMatch ? priceMatch[1].trim() : '';
+  // ── بيانات المساحة من الحالة الحقيقية (currentBookingSpace) لا من نص العرض ──
+  const spaceName = currentBookingSpace?.name || document.getElementById('msi-name').textContent;
+  const spaceLoc  = currentBookingSpace?.loc || '';
+  const price     = resolveSizePrice(currentBookingSpace, size);
 
-  // ── توليد bookingId مشترك بين الشيت و Supabase ──────────────
-  const bookingId = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  const payload = {
-    name, phone, email,
-    spaceName, spaceLoc, spacePrice,
+  // ── حفظ الحجز عبر الطبقة المشتركة (shared/booking.js) — بدون Google Sheets ──
+  const result = await submitSpaceBookingRequest(sbClient, currentUser, {
+    spaceId:  currentBookingSpace?.id,
+    ownerId:  currentBookingSpace?.ownerId,
+    spaceName, spaceLoc, price,
     activity: actBtn?.textContent || '',
-    otherAct, size,
-    duration: dur,
-    startDate: date,
-    notes,
-    userId: currentUser?.id || '',
-    bookingId,
-  };
+    size, duration: dur, startDate: date, notes,
+  });
 
-  try {
-
-    // ── 1) إرسال للشيت ─────────────────────────────────────────
-    // ✅ حذفنا no-cors عشان نعرف لو في خطأ حقيقي
-    // لو الشيت Apps Script بيرفع CORS error، فعّل CORS في doPost
-    let sheetOk = false;
-    try {
-      await fetch(BOOKING_URL, {
-        method: 'POST',
-        mode: 'no-cors',          // ← رجّعناه
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      sheetOk = true; // no-cors دايماً بيكمّل بدون error
-    } catch (sheetErr) {
-      sheetOk = true;
-    }
-
-    // ── 2) حفظ في Supabase (لو المستخدم مسجّل) ────────────────
-    if (sbClient && currentUser) {
-
-      const { error: bookingError } = await sbClient.from('bookings').insert({
-        id: bookingId,
-        user_id: currentUser.id,
-        owner_id: currentBookingSpace?.ownerId || null,  // ← ربط الحجز بصاحب المساحة (لنظام التقييمات)
-        space_id: currentBookingSpace?.id || null,        // ← ربط الحجز بالمساحة
-        space_name: spaceName,
-        space_loc: spaceLoc,
-        price: spacePrice,
-        activity: payload.activity,
-        size,
-        duration: dur,
-        start_date: date,
-        notes,
-        status: 'pending',
-        created_at: now,
-        updated_at: now,        // ← جديد: لتتبع آخر تحديث
-      });
-
-      if (bookingError) {
-        // خطأ Supabase في حفظ الحجز — نكمل ونعرض النجاح لأن الشيت استلم الطلب
-      }
-
-      // ── 3) تحديث الـ Profile لو في بيانات ناقصة ───────────────
-      const profileUpdate = {};
-      if (name && !currentProfile?.full_name) profileUpdate.full_name = name;
-      if (phone && !currentProfile?.phone) profileUpdate.phone = phone;
-      if (email && !currentProfile?.email) profileUpdate.email = email;
-
-      if (Object.keys(profileUpdate).length > 0) {
-        const { error: profileError } = await sbClient
-          .from('profiles')
-          .upsert({ id: currentUser.id, ...profileUpdate }, { onConflict: 'id' });
-
-        if (!profileError) {
-          currentProfile = { ...currentProfile, ...profileUpdate };
-        }
-      }
-
-      // ── 4) تحديث الداشبورد فوراً ───────────────────────────────
-      await loadDashboardData(currentUser);
-    }
-
-    // ── عرض شاشة النجاح ────────────────────────────────────────
-    trackEvent('booking_submitted', { space_id: currentBookingSpace?.id, space_name: currentBookingSpace?.name });
-    document.getElementById('modal-form-wrap').style.display = 'none';
-    document.getElementById('modal-success').style.display = 'block';
-
-  } catch (err) {
-    console.error('❌ خطأ غير متوقع في submitBooking:', err.message);
+  if (!result.ok) {
     submitBtn.innerHTML = origText;
     submitBtn.disabled = false;
     submitBtn.style.opacity = '1';
-    showFormError('في مشكلة في إرسال الطلب — تأكد من الاتصال بالإنترنت وحاول تاني');
+    showFormError(result.error);
+    return;
   }
+
+  // ── تحديث الـ Profile لو في بيانات ناقصة ───────────────
+  const profileUpdate = {};
+  if (name && !currentProfile?.full_name) profileUpdate.full_name = name;
+  if (phone && !currentProfile?.phone) profileUpdate.phone = phone;
+  if (email && !currentProfile?.email) profileUpdate.email = email;
+  if (Object.keys(profileUpdate).length > 0) {
+    const { error: profileError } = await sbClient
+      .from('profiles')
+      .upsert({ id: currentUser.id, ...profileUpdate }, { onConflict: 'id' });
+    if (!profileError) currentProfile = { ...currentProfile, ...profileUpdate };
+  }
+
+  await loadDashboardData(currentUser);
+
+  // ── عرض شاشة النجاح ────────────────────────────────────────
+  trackEvent('booking_submitted', { space_id: currentBookingSpace?.id, space_name: currentBookingSpace?.name });
+  document.getElementById('modal-form-wrap').style.display = 'none';
+  document.getElementById('modal-success').style.display = 'block';
 }
 
 
@@ -3275,8 +3083,8 @@ let _inspSelDate = null;
 const _INSP_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const _INSP_MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
-function openInspectionModal(spaceId) {
-  const s = SPACES.find(x => x.id === spaceId);
+async function openInspectionModal(spaceId) {
+  const s = await findOrFetchSpace(spaceId);
   if (!s) return;
   _inspSpaceId = spaceId;
   _inspSelDate = null;
@@ -3379,7 +3187,7 @@ function _inspSubmitForm() {
   if (!_inspSelDate) { errEl.textContent = '⚠ يرجى اختيار موعد للمعاينة'; return; }
   errEl.textContent = '';
 
-  const s = SPACES.find(x => x.id === _inspSpaceId);
+  const s = heroItems.find(x => x.id === _inspSpaceId) || mpCurrentItems.find(x => x.id === _inspSpaceId);
   const spaceName = s ? s.name : '—';
   const waMsg = `مرحباً، عايز أحجز معاينة 🏪\nالاسم: ${name}\nالمساحة: ${spaceName}\nالموعد: ${_inspSelDate}\nالنشاط: ${activity}\nتم التحويل 150 ج على انستاباي`;
   const waLink = document.getElementById('insp-wa-link');
@@ -3415,7 +3223,7 @@ function _inspConfirm() {
   const name = (document.getElementById('insp-name')?.value || '').trim();
   const phone = (document.getElementById('insp-phone')?.value || '').trim();
   const activity = (document.getElementById('insp-activity')?.value || '').trim();
-  const s = SPACES.find(x => x.id === _inspSpaceId);
+  const s = heroItems.find(x => x.id === _inspSpaceId) || mpCurrentItems.find(x => x.id === _inspSpaceId);
   const spaceName = s ? s.name : '—';
 
   const inspId = `INS-${Date.now().toString(36).toUpperCase().slice(-6)}`;
@@ -3555,8 +3363,9 @@ async function loadBazaars() {
       const { data, error } = await sbClient
         .from('bazaars')
         .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price')
-        .eq('status', 'published')
+        .in('status', ['published', 'live', 'completed'])
         .eq('is_archived', false)
+        .eq('is_deleted', false)
         .order('date_start', { ascending: true });
 
       if (!error && data && data.length > 0) {
@@ -3586,7 +3395,6 @@ async function loadBazaars() {
           is_featured: !!b.is_featured,
         }));
         console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Supabase للصفحة الرئيسية.`);
-        renderHomeBazaars();
         return;
       }
     } catch (sbErr) {
@@ -3604,7 +3412,6 @@ async function loadBazaars() {
       json = JSON.parse(text);
     } catch (parseErr) {
       console.error('❌ الشيت مش بيرجع JSON:', text.substring(0, 300));
-      _renderBazaarsEmpty();
       return;
     }
 
@@ -3624,7 +3431,6 @@ async function loadBazaars() {
     );
 
     if (!rows.length) {
-      _renderBazaarsEmpty();
       return;
     }
 
@@ -3640,11 +3446,9 @@ async function loadBazaars() {
 
     BAZAARS = rows;
     console.log(`🎪 تم تحميل ${BAZAARS.length} بازار من Google Sheets (Fallback).`);
-    renderHomeBazaars();
 
   } catch (err) {
     console.error('❌ خطأ في تحميل البازارات (Sheets):', err.message);
-    _renderBazaarsEmpty();
   }
 }
 
@@ -3653,111 +3457,138 @@ async function _loadBazaarsFromSupabase() {
   await loadBazaars();
 }
 
-function _renderBazaarsEmpty() {
-  const scroll = document.getElementById('bz-home-scroll');
-  if (scroll) {
-    scroll.innerHTML = `
-      <div class="bz-home-empty">
-        لا توجد بازارات قريبة الآن — تابعنا قريباً!
-      </div>`;
-  }
+/* تهريب HTML — يمنع XSS عند إدراج بيانات بازار (اسم/وصف/موقع يكتبها المنظم) في innerHTML */
+function _escBz(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
 
-function renderHomeBazaars() {
+function _renderHomeBazaarEmpty(message) {
+  const container = document.getElementById('bz-home-scroll');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="bz-home-empty-pro">
+      <div class="bz-home-empty-pro-icon">🎪</div>
+      <div class="bz-home-empty-pro-title">لا توجد فعاليات في الوقت الحالي</div>
+      <div class="bz-home-empty-pro-sub">${_escBz(message || 'لا يوجد بازار قادم أو جارٍ الآن — تابعنا لتصلك أحدث الفعاليات فور إضافتها.')}</div>
+      <div class="bz-home-empty-pro-actions">
+        <button class="btn btn-primary" onclick="window.location.href='/bazaars/'">عرض جميع البازارات</button>
+        <a class="btn" href="https://wa.me/201103467711?text=${encodeURIComponent('مرحبا، عايز أعرف لما يتضاف بازار جديد')}" target="_blank" rel="noopener noreferrer">تابعنا لمعرفة الجديد</a>
+      </div>
+    </div>`;
+}
+
+/* المصدر الوحيد لقرار "أي بازار يظهر في الصفحة الرئيسية" — عبر get_homepage_featured_bazaar()،
+   نفس الدالة الوحيدة في القاعدة، بلا أي منطق اختيار مكرر هنا */
+async function loadHomeFeaturedBazaar() {
   const container = document.getElementById('bz-home-scroll');
   if (!container) return;
 
-  const today = new Date().toISOString().split('T')[0];
-  const upcoming = BAZAARS
-    .filter(b => !b.date_start || b.date_start >= today)
-    .sort((a, b) => (a.date_start || '').localeCompare(b.date_start || ''));
-
-  if (!upcoming.length) {
-    container.innerHTML = `
-      <div class="bz-home-empty">
-        لا توجد بازارات قريبة الآن — تابعنا قريباً!
-      </div>`;
+  if (!sbClient) {
+    _renderHomeBazaarEmpty('تعذّر الاتصال بقاعدة البيانات حاليًا.');
     return;
   }
 
-  // البازار المميّز (is_featured) أولاً، fallback لأقرب قادم
-  const featured = BAZAARS.find(b => b.is_featured) || upcoming[0];
+  try {
+    const { data, error } = await sbClient.rpc('get_homepage_featured_bazaar');
+    if (error) throw error;
 
-  // تفاصيل البازار المتميز
-  const fAvailSlots = typeof featured.available_slots === 'number' ? featured.available_slots : (featured.total_slots || 0);
-  const fIsSoldOut = fAvailSlots === 0 && (featured.total_slots || 0) > 0;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) { _renderHomeBazaarEmpty(); return; }
 
-  const featuredHtml = `
-    <div class="bz-featured-wrapper" style="width:100%">
-      <div class="bz-featured-card" onclick="window.location.href='bazaars/?bazaar=${featured.id}'">
-        <div class="bz-featured-img-container">
-          ${featured.image
-      ? `<img src="${featured.image}" alt="${featured.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\' >🎪</div>'">`
-      : `<div class="bz-mini-placeholder">🎪</div>`}
+    renderFeaturedBazaarCard({
+      id: String(row.id),
+      name: row.name || '—',
+      location: row.venue_name || row.location || '',
+      region: row.region || '',
+      date_start: row.date_start || '',
+      date_end: row.date_end || '',
+      time_start: row.time_start || '',
+      time_end: row.time_end || '',
+      price_per_slot: Number(row.price_per_slot) || 0,
+      available_slots: Number(row.available_slots) || 0,
+      total_slots: Number(row.total_slots) || 0,
+      image: _toDirectImgUrl(row.image || ''),
+      description: row.description || '',
+      category: row.category || row.venue_type || '',
+      status: row.status || 'published',
+      is_featured: !!row.is_featured,
+    });
+  } catch (err) {
+    console.error('❌ خطأ في تحميل بازار الصفحة الرئيسية:', err.message);
+    _renderHomeBazaarEmpty('تعذّر تحميل البازارات حاليًا — حاول تحديث الصفحة.');
+  }
+}
 
-          <div class="bz-featured-badges">
-            <span class="bz-featured-cat">${featured.category || 'بازار قريب'}</span>
-            <span class="${fIsSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
-              ${fIsSoldOut ? 'مكتمل' : fAvailSlots + ' مكان متاح'}
-            </span>
+function renderFeaturedBazaarCard(featured) {
+  const container = document.getElementById('bz-home-scroll');
+  if (!container) return;
+
+  // حالة العرض تُشتق من بيانات البازار نفسه فقط — لا تخمين، ولا حاجة لرقم "أولوية" منفصل:
+  // is_featured=true → مميّز (بغض النظر عن الأولوية التي أوصلته)، status='live' → جارٍ الآن، غير ذلك → قادم (عداد تنازلي)
+  const isLive     = featured.status === 'live';
+  const availSlots = typeof featured.available_slots === 'number' ? featured.available_slots : (featured.total_slots || 0);
+  const isSoldOut  = availSlots === 0 && (featured.total_slots || 0) > 0;
+
+  const countdownHtml = (!isLive && featured.date_start) ? (() => {
+    const tStart = featured.time_start ? featured.time_start.substring(0, 5) : '10:00';
+    const endDay  = featured.date_end || featured.date_start;
+    const tEnd    = featured.time_end ? featured.time_end.substring(0, 5) : '23:59';
+    return `
+      <div class="bz-countdown" id="bz-countdown-timer" data-start="${featured.date_start}T${tStart}" data-end="${endDay}T${tEnd}">
+        <div class="bz-countdown-label" id="bz-countdown-label">انطلاق</div>
+        <div class="bz-countdown-units" id="bz-countdown-units">
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-days">00</span><span class="bz-countdown-lbl">أيام</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-hours">00</span><span class="bz-countdown-lbl">ساعات</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-minutes">00</span><span class="bz-countdown-lbl">دقائق</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-seconds">00</span><span class="bz-countdown-lbl">ثواني</span></div>
+        </div>
+      </div>`;
+  })() : '';
+
+  container.innerHTML = `
+    <div class="bz-home-split-grid bz-home-single">
+      <div class="bz-featured-wrapper" style="width:100%">
+        <div class="bz-featured-card" onclick="window.location.href='bazaars/?bazaar=${featured.id}'">
+          <div class="bz-featured-img-container">
+            ${featured.image
+              ? `<img src="${featured.image}" alt="${_escBz(featured.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\\'bz-mini-placeholder\\\'>🎪</div>'">`
+              : `<div class="bz-mini-placeholder">🎪</div>`}
+
+            <div class="bz-featured-badges">
+              <span class="bz-featured-cat">${_escBz(featured.category || 'بازار قريب')}</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                ${featured.is_featured ? '<span class="bz-featured-star-badge">⭐ فعالية مميزة</span>' : ''}
+                ${isLive ? '<span class="bz-featured-live-badge">🔴 جارٍ الآن</span>' : ''}
+                <span class="${isSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
+                  ${isSoldOut ? 'مكتمل' : availSlots + ' مكان متاح'}
+                </span>
+              </div>
+            </div>
+
+            ${countdownHtml}
           </div>
 
-          ${featured.date_start ? (() => {
-            const tStart = featured.time_start ? featured.time_start.substring(0,5) : '10:00';
-            const endDay = featured.date_end || featured.date_start;
-            const tEnd   = featured.time_end  ? featured.time_end.substring(0,5)  : '23:59';
-            return `
-          <div class="bz-countdown" id="bz-countdown-timer"
-               data-start="${featured.date_start}T${tStart}"
-               data-end="${endDay}T${tEnd}">
-            <div class="bz-countdown-label" id="bz-countdown-label">انطلاق</div>
-            <div class="bz-countdown-units" id="bz-countdown-units">
-              <div class="bz-countdown-unit">
-                <span class="bz-countdown-val" id="bz-days">00</span>
-                <span class="bz-countdown-lbl">أيام</span>
-              </div>
-              <div class="bz-countdown-unit">
-                <span class="bz-countdown-val" id="bz-hours">00</span>
-                <span class="bz-countdown-lbl">ساعات</span>
-              </div>
-              <div class="bz-countdown-unit">
-                <span class="bz-countdown-val" id="bz-minutes">00</span>
-                <span class="bz-countdown-lbl">دقائق</span>
-              </div>
-              <div class="bz-countdown-unit">
-                <span class="bz-countdown-val" id="bz-seconds">00</span>
-                <span class="bz-countdown-lbl">ثواني</span>
-              </div>
-            </div>
-          </div>`;
-          })() : ''}
-        </div>
+          <div class="bz-featured-body">
+            <h3 class="bz-featured-title">${_escBz(featured.name)}</h3>
+            <div class="bz-featured-location">📍 ${_escBz(featured.location || featured.region || 'سيتم تحديد المكان قريباً')}</div>
+            ${featured.description ? `<p class="bz-featured-desc">${_escBz(featured.description)}</p>` : '<p class="bz-featured-desc">لا يوجد وصف للبازار حالياً. انضم إلينا في هذه الفعالية المميزة واستكشف الأجنحة المتاحة.</p>'}
 
-        <div class="bz-featured-body">
-          <h3 class="bz-featured-title">${featured.name}</h3>
-          <div class="bz-featured-location">📍 ${featured.location || featured.region || 'سيتم تحديد المكان قريباً'}</div>
-          ${featured.description ? `<p class="bz-featured-desc">${featured.description}</p>` : '<p class="bz-featured-desc">لا يوجد وصف للبازار حالياً. انضم إلينا في هذه الفعالية المميزة واستكشف الأجنحة المتاحة.</p>'}
-
-          <div class="bz-featured-footer">
-            <div class="bz-featured-price">
-              ${Number(featured.price_per_slot || 0).toLocaleString('ar-EG')} <span>ج / مكان</span>
+            <div class="bz-featured-footer">
+              <div class="bz-featured-price">
+                ${Number(featured.price_per_slot || 0).toLocaleString('ar-EG')} <span>ج / مكان</span>
+              </div>
+              <button class="bz-featured-btn">${isLive ? 'احجز الآن — جارٍ حاليًا' : 'احجز مكانك الآن'}</button>
             </div>
-            <button class="bz-featured-btn">احجز مكانك الآن</button>
           </div>
         </div>
       </div>
     </div>
   `;
 
-  // بازار واحد فقط في الصفحة الرئيسية
-  container.innerHTML = `
-    <div class="bz-home-split-grid bz-home-single">
-      ${featuredHtml}
-    </div>
-  `;
-
-  // تشغيل مؤقت العداد التنازلي التفاعلي المباشر
-  initBazaarCountdown();
+  if (!isLive) initBazaarCountdown();
 }
 
 let _bzCountdownInterval = null;

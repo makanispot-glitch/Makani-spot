@@ -1147,7 +1147,7 @@ body {
         </div>
 
         <div class="info-box">
-          💡 المساحة تظهر على الموقع <strong>فقط</strong> عند <code style="font-size:10px">status = approved</code> و <code style="font-size:10px">is_active = true</code>
+          💡 النشر فوري — المساحة تظهر على الموقع بمجرد إضافتها، وتُخفى فقط عند <code style="font-size:10px">status = paused/hidden_by_admin/archived</code>
         </div>
       </div>
     </div>
@@ -1283,7 +1283,7 @@ body {
         <div class="arch-arrow">⟶</div>
         <div class="arch-node" style="cursor:pointer" onclick="window.open('./spaces-hub.html','_blank')"><div class="node-icon">🛡️</div>Admin Hub<div class="node-label">spaces-hub ↗</div></div>
         <div class="arch-arrow">⟶</div>
-        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=approved</div></div>
+        <div class="arch-node"><div class="node-icon">🗄️</div>Supabase<div class="node-label">status=live (فوري)</div></div>
         <div class="arch-arrow">⟶</div>
         <div class="arch-node"><div class="node-icon">🌐</div>app.js<div class="node-label">Supabase Query</div></div>
         <div class="arch-arrow">⟶</div>
@@ -1648,11 +1648,12 @@ body {
 
 <div id="toasts"></div>
 
+<script src="../shared/sb-config.js"></script>
 <script>
 const ADMIN_EMAIL = 'makanispot@gmail.com';
 const MAX_TRIES = 5;
-const SB_URL    = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+const SB_URL    = SUPABASE_URL;
+const SB_KEY    = SUPABASE_KEY;
 const db = supabase.createClient(SB_URL, SB_KEY);
 
 let attempts   = 0;
@@ -2170,12 +2171,12 @@ function renderPendingSpaces(spaces) {
             🕐 ${fmtDate(s.created_at)}
           </div>
           <div class="sp-pending-actions">
-            <button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','approve')">✅ قبول</button>
-            <button class="sp-btn sp-btn-err" onclick="toggleRejectRow('${s.id}')">❌ رفض</button>
+            <button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','review')">👁 مُراجَع</button>
+            <button class="sp-btn sp-btn-err" onclick="toggleRejectRow('${s.id}')">🚫 إخفاء</button>
           </div>
           <div id="reject-row-${s.id}" style="display:none" class="sp-reject-row">
-            <input class="sp-reject-input" id="reject-reason-${s.id}" placeholder="سبب الرفض (اختياري)…" type="text">
-            <button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','reject',document.getElementById('reject-reason-${s.id}').value)">تأكيد الرفض</button>
+            <input class="sp-reject-input" id="reject-reason-${s.id}" placeholder="سبب الإخفاء (اختياري)…" type="text">
+            <button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','hide',document.getElementById('reject-reason-${s.id}').value)">تأكيد الإخفاء</button>
           </div>
         </div>
       </div>`).join('') + `</div>`;
@@ -2202,14 +2203,15 @@ function renderAllSpaces(spaces) {
               <td>${typeLabel(s.type)}</td>
               <td>${s.region || '—'}</td>
               <td style="text-align:center">${s.units_count}</td>
-              <td><span class="sp-badge ${s.status === 'approved' ? 'sp-approved' : s.status === 'pending' ? 'sp-pending' : 'sp-rejected'}">${statusLabel(s.status)}</span></td>
+              <td><span class="sp-badge ${s.status === 'live' ? 'sp-approved' : s.status === 'paused' ? 'sp-pending' : 'sp-rejected'}">${statusLabel(s.status)}</span></td>
               <td><span class="sp-badge ${planClass(s.owner_plan)}">${planLabel(s.owner_plan)}</span></td>
               <td style="font-size:11px;color:var(--mu);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.owner_name}</td>
               <td>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  ${s.status !== 'approved' ? `<button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','approve')">قبول</button>` : ''}
-                  ${s.status !== 'rejected' ? `<button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','reject','')">رفض</button>` : ''}
-                  <button class="sp-btn sp-btn-neu" onclick="manageSpace('${s.id}','toggle_active')">${s.is_active ? '⏸ إيقاف' : '▶ تشغيل'}</button>
+                  ${!s.reviewed_at ? `<button class="sp-btn sp-btn-ok" onclick="manageSpace('${s.id}','review')">مُراجَع</button>` : ''}
+                  ${s.status==='live'||s.status==='paused' ? `<button class="sp-btn sp-btn-err" onclick="manageSpace('${s.id}','hide','')">إخفاء</button>` : ''}
+                  ${s.status==='hidden_by_admin' ? `<button class="sp-btn sp-btn-neu" onclick="manageSpace('${s.id}','unhide')">إعادة نشر</button>` : ''}
+                  ${s.status==='archived' ? `<button class="sp-btn sp-btn-neu" onclick="manageSpace('${s.id}','unarchive')">إعادة تفعيل</button>` : ''}
                 </div>
               </td>
             </tr>`).join('')}
@@ -2287,8 +2289,8 @@ function toggleRejectRow(spaceId) {
 }
 
 /* helpers */
-function typeLabel(t)  { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة'}[t]||t||'—'; }
-function statusLabel(s){ return {pending:'⏳ انتظار',approved:'✅ معتمد',rejected:'❌ مرفوض'}[s]||s; }
+function typeLabel(t)  { return {mall:'🏬 مول',club:'⚽ نادي',school:'🏫 مدرسة',hotel:'🏨 فندق',other:'🏪 أخرى'}[t]||t||'—'; }
+function statusLabel(s){ return {live:'✅ منشورة',paused:'⏸ موقوفة',hidden_by_admin:'🚫 مخفية',archived:'🗄 مؤرشفة'}[s]||s; }
 function planClass(p)  { return {starter:'plan-starter',growth:'plan-growth',pro:'plan-pro'}[p]||'plan-starter'; }
 function planLabel(p)  { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p; }
 function fmtDate(d)    { return d ? new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }

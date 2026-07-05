@@ -15,8 +15,7 @@
    ⚙️ القسم 1: الإعدادات والثوابت
    ================================================================ */
 
-const SUPABASE_URL = 'https://rxqkpjuvudweyovekvvx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cWtwanV2dWR3ZXlvdmVrdnZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjEyNDgsImV4cCI6MjA5MjEzNzI0OH0.rqwOP-6B4s2H9GmgmfE3QkYbaQpS5dFX_Yf-hz6R2IE';
+/* SUPABASE_URL/SUPABASE_KEY أصبحت من shared/sb-config.js */
 
 
 /* ================================================================
@@ -34,10 +33,17 @@ let bzPage         = 1;        // رقم الصفحة الحالية
 const BZ_PER_PAGE  = 9;        // عدد البازارات في كل صفحة
 let selectedSlotId = null;     // id المكان المختار في الخريطة
 let bzActiveChip   = '';       // الـ chip المفعّل
-let bzTimeNav        = 'all';  // التنقل الزمني: 'all' | 'today' | 'upcoming'
+let bzTimeNav        = 'all';  // التنقل الزمني: 'all' | 'today' | 'upcoming' | 'past'
 let bzOrgSearchOpen  = false;  // حالة لوحة البحث عن المنظم
 let _slotMapChannel  = null;   // قناة Realtime لخريطة الأماكن
 let _bzRenderPending = false;  // throttle للرندر بـ requestAnimationFrame
+
+/* "اليوم" بتوقيت القاهرة — نفس المنطقة الزمنية التي يعتمدها الكرون في قاعدة البيانات
+   (update_bazaar_statuses/auto_archive_expired_bazaars) لتفادي أي تعارض قرب منتصف الليل
+   بين حالة البازار المعروضة هنا وحالته الفعلية في القاعدة */
+function _cairoTodayStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
+}
 
 
 /* ================================================================
@@ -305,7 +311,7 @@ async function loadBazaars() {
     const { data, error } = await sbClient
       .from('bazaars')
       .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,event_links')
-      .in('status', ['published', 'live'])
+      .in('status', ['published', 'live', 'completed'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
       .order('date_start', { ascending: true });
@@ -390,7 +396,7 @@ function buildBazaarCard(b) {
   }
 
   /* ── حالة الوقت ── */
-  const todayStr   = new Date().toISOString().split('T')[0];
+  const todayStr   = _cairoTodayStr();
   const endDate    = b.date_end || b.date_start;
   const isExpired  = endDate ? endDate < todayStr : false;
   const isActiveNow = !isExpired && b.date_start && b.date_start <= todayStr
@@ -600,15 +606,21 @@ function applyBzFilters() {
   }
 
   if (bzTimeNav === 'today') {
-    const today = new Date().toISOString().split('T')[0];
+    const today = _cairoTodayStr();
     data = data.filter(b => b.date_start && (b.date_start === today ||
       (b.date_start <= today && (!b.date_end || b.date_end >= today))));
   } else if (bzTimeNav === 'upcoming') {
-    const today = new Date().toISOString().split('T')[0];
+    const today = _cairoTodayStr();
     data = data.filter(b => {
       const endDate = b.date_end || b.date_start;
       if (endDate && endDate < today) return false; // مستبعد — منتهي
       return !b.date_start || b.date_start >= today;
+    });
+  } else if (bzTimeNav === 'past') {
+    const today = _cairoTodayStr();
+    data = data.filter(b => {
+      const endDate = b.date_end || b.date_start;
+      return !!(endDate && endDate < today);
     });
   }
   // bzTimeNav === 'all' → يعرض كل شيء حتى المنتهية (مع شارة "انتهى" بصرياً)
@@ -635,13 +647,16 @@ function applyBzFilters() {
   if (sort === 'price-desc') data.sort((a, b) => (b.price_per_slot||0) - (a.price_per_slot||0));
   if (sort === 'slots-desc') data.sort((a, b) => (b.available_slots||0) - (a.available_slots||0));
 
-  /* البازارات المنتهية تظهر في الأسفل دائماً بغض النظر عن الترتيب */
-  { const _td = new Date().toISOString().split('T')[0];
-    data.sort((x, y) => {
-      const xE = (x.date_end || x.date_start || '') < _td ? 1 : 0;
-      const yE = (y.date_end || y.date_start || '') < _td ? 1 : 0;
-      return xE - yE;
-    });
+  /* ترتيب حسب حالة الوقت: الجارية الآن أولاً، ثم القادمة/العادية، والمنتهية دائماً في الأسفل —
+     بغض النظر عن الفرز المختار (فرز مستقر يحافظ على ترتيب كل مجموعة داخلياً) */
+  { const _td = _cairoTodayStr();
+    const _timeRank = (b) => {
+      const end = b.date_end || b.date_start || '';
+      if (end && end < _td) return 2; // منتهي
+      const isOngoing = b.date_start && b.date_start <= _td && (!b.date_end || b.date_end >= _td);
+      return isOngoing ? 0 : 1; // جارٍ الآن أولاً، ثم البقية
+    };
+    data.sort((x, y) => _timeRank(x) - _timeRank(y));
   }
 
   bzFiltered = data;
@@ -932,7 +947,7 @@ async function openBazaarDetail(bazaarId) {
   _renderBazaarInfo(b);
 
   /* ── تحقق من انتهاء البازار ── */
-  const _todayStr  = new Date().toISOString().split('T')[0];
+  const _todayStr  = _cairoTodayStr();
   const _endDate   = b.date_end || b.date_start;
   const _isExpired = _endDate && _endDate < _todayStr;
 
@@ -1125,7 +1140,7 @@ function _renderBazaarInfo(b) {
       </div>` : ''}
 
       ${(() => {
-        const _rl_today = new Date().toISOString().split('T')[0];
+        const _rl_today = _cairoTodayStr();
         const _rl_end   = b.date_end || b.date_start;
         const _rl_exp   = _rl_end && _rl_end < _rl_today;
         if (!_rl_exp && b.status !== 'completed' && b.status !== 'live') return '';
@@ -1187,7 +1202,7 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
   const el = document.getElementById('bzd-past-org-bazaars');
   if (!el || !sbClient) return;
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = _cairoTodayStr();
     const { data: past } = await sbClient
       .from('bazaars')
       .select('id,name,date_start,date_end,event_links')
@@ -1916,7 +1931,7 @@ async function submitBazaarBooking() {
       .from('bazaar_bookings')
       .select('id')
       .eq('bazaar_id', String(currentBazaar.id))
-      .eq('user_id', currentUser.id.toString())
+      .eq('user_id', currentUser.id)
       .in('status', ['pending', 'confirmed']);
 
     if ((existingBks?.length || 0) >= 2) {
@@ -1945,7 +1960,7 @@ async function submitBazaarBooking() {
       .insert({
         bazaar_id:     String(currentBazaar.id),
         slot_id:       _capturedSlotId,
-        user_id:       currentUser.id.toString(),
+        user_id:       currentUser.id,
         user_name:     name,
         user_phone:    phone,
         user_email:    email || null,
@@ -1985,7 +2000,7 @@ async function submitBazaarBooking() {
     const bazaarBookingRecord = {
       id: insertedBooking?.id || null,
       bazaar_id: String(currentBazaar.id), slot_id: selectedSlotId,
-      user_id: currentUser.id.toString(), user_name: name, user_phone: phone,
+      user_id: currentUser.id, user_name: name, user_phone: phone,
       user_email: email || null, business_name: business, notes: notes || null,
       status: 'pending', amount: _bookingAmount, created_at: now,
     };
