@@ -410,6 +410,35 @@ async function _resolveUploadUrl(stateObj) {
 }
 
 /* ──────────────────────────────────────────────────────
+   ما الذي يشمله الحجز — تبديل حقل عدد الكراسي
+────────────────────────────────────────────────────── */
+function orgToggleChairCount() {
+  const checked = document.getElementById('o-amen-chair')?.checked;
+  const row     = document.getElementById('o-chair-count-row');
+  if (row) row.style.display = checked ? '' : 'none';
+  if (!checked) document.getElementById('o-chair-count').value = '';
+}
+
+/* خريطة مفاتيح التجهيزات (id الشيك بوكس ← التسمية العربية المخزَّنة) */
+const AMENITY_MAP = [
+  ['o-amen-table',        'ترابيزة'],
+  ['o-amen-chair',        'كرسي'],
+  ['o-amen-pergola',      'برجولة'],
+  ['o-amen-canopy',       'مظلة'],
+  ['o-amen-electricity',  'كهرباء'],
+  ['o-amen-lighting',     'إنارة'],
+  ['o-amen-wifi',         'واي فاي'],
+  ['o-amen-water',        'مصدر مياه'],
+  ['o-amen-other_services','خدمات أخرى'],
+];
+
+function _collectIncludedAmenities() {
+  return AMENITY_MAP
+    .filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, label]) => label);
+}
+
+/* ──────────────────────────────────────────────────────
    ملخص التسعير (خطوة 2)
 ────────────────────────────────────────────────────── */
 function orgTogglePremium() {
@@ -477,6 +506,21 @@ function _buildSummary() {
   const regularSlots = Math.max(0, slots - premiumSlots);
   const totalRev     = (regularSlots * price) + (premiumSlots * premiumPrice);
 
+  const amenities   = _collectIncludedAmenities();
+  const chairCount  = document.getElementById('o-amen-chair')?.checked ? (Number(document.getElementById('o-chair-count').value) || 0) : 0;
+  const otherAmen   = document.getElementById('o-amen-other-note')?.value.trim() || '';
+  const amenitiesLbl = amenities.length
+    ? amenities.map(a => a === 'كرسي' && chairCount > 1 ? `${a} (×${chairCount})` : a).join('، ') + (otherAmen ? `، ${otherAmen}` : '')
+    : (otherAmen || '—');
+
+  const adBudgetSel  = document.getElementById('o-ad-budget');
+  const adBudgetLbl  = adBudgetSel?.value ? adBudgetSel.options[adBudgetSel.selectedIndex].text : '—';
+  const coverageBits = [
+    document.getElementById('o-ad-photography')?.checked ? 'تصوير الحدث' : null,
+    document.getElementById('o-ad-social')?.checked       ? 'تغطية سوشيال ميديا' : null,
+    document.getElementById('o-ad-paidads')?.checked      ? 'إعلانات ممولة' : null,
+  ].filter(Boolean);
+
   const rows = [
     ['اسم البازار',        document.getElementById('o-name').value.trim()],
     ['المكان',             document.getElementById('o-venue').value.trim()],
@@ -496,6 +540,9 @@ function _buildSummary() {
     ['صورة الغلاف',        hasCover  ? '✅ تم الرفع' : '—'],
     ['خريطة / اسكتش',      hasSketch ? '✅ مضاف'     : '—'],
     ...(extraCount > 0 ? [[`صور إضافية`, `${extraCount} صورة`]] : []),
+    ['🧰 ما يشمله الحجز',  amenitiesLbl],
+    ...(adBudgetSel?.value ? [['📢 ميزانية الدعاية', adBudgetLbl]] : []),
+    ...(coverageBits.length ? [['📸 التغطية الإعلامية', coverageBits.join('، ')]] : []),
   ];
 
   document.getElementById('org-summary-box').innerHTML = `
@@ -557,6 +604,19 @@ async function orgSubmit() {
       || (await sbClient.from('profiles').select('full_name').eq('id', currentUser.id).single()).data?.full_name
       || currentUser.email;
 
+    // ما الذي يشمله الحجز (التجهيزات)
+    const includedAmenities = _collectIncludedAmenities();
+    const chairCount = document.getElementById('o-amen-chair')?.checked
+      ? (Number(document.getElementById('o-chair-count').value) || null)
+      : null;
+    const otherAmenitiesNote = document.getElementById('o-amen-other-note')?.value.trim() || null;
+
+    // الدعاية والتغطية الإعلامية
+    const adBudgetTier = document.getElementById('o-ad-budget')?.value || null;
+    const willHavePhotography    = !!document.getElementById('o-ad-photography')?.checked;
+    const willHaveSocialCoverage = !!document.getElementById('o-ad-social')?.checked;
+    const willHavePaidAds        = !!document.getElementById('o-ad-paidads')?.checked;
+
     const payload = {
       name,
       organizer:             displayName,
@@ -582,6 +642,13 @@ async function orgSubmit() {
       extra_images:          validExtras.length > 0 ? validExtras : null,
       premium_slots:         premiumSlots || null,
       premium_price:         premiumPrice || null,
+      included_amenities:    includedAmenities,
+      chair_count:           chairCount,
+      other_amenities_note:  otherAmenitiesNote,
+      ad_budget_tier:        adBudgetTier,
+      will_have_photography:     willHavePhotography,
+      will_have_social_coverage: willHaveSocialCoverage,
+      will_have_paid_ads:        willHavePaidAds,
       status:                'pending_review',
     };
 
@@ -636,7 +703,15 @@ const _ORG_DRAFT_FIELDS = [
   'o-name','o-venue','o-addr','o-ds','o-de','o-maps','o-desc',
   'o-slots','o-price','o-dep1','o-dep2','o-contract',
   'o-premium-slots','o-premium-price',
+  'o-chair-count','o-amen-other-note','o-ad-budget',
   'o-phone','o-notes','o-sketch-url',
+];
+
+/* حقول checkbox — تُحفظ/تُستعاد عبر .checked لا .value */
+const _ORG_DRAFT_CHECKBOXES = [
+  'o-has-premium',
+  ...AMENITY_MAP.map(([id]) => id),
+  'o-ad-photography','o-ad-social','o-ad-paidads',
 ];
 
 function _orgDraftKey() {
@@ -650,8 +725,10 @@ function _orgSaveDraft() {
     const el = document.getElementById(id);
     if (el) data[id] = el.value;
   });
-  const prem = document.getElementById('o-has-premium');
-  if (prem) data['o-has-premium'] = prem.checked;
+  _ORG_DRAFT_CHECKBOXES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.checked;
+  });
   try {
     localStorage.setItem(_orgDraftKey(), JSON.stringify({ ...data, _ts: Date.now() }));
   } catch(_) {}
@@ -670,6 +747,11 @@ function _orgRestoreDraft() {
     const el = document.getElementById(id);
     if (el && draft[id] !== undefined) el.value = draft[id];
   });
+  _ORG_DRAFT_CHECKBOXES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && draft[id] !== undefined) el.checked = !!draft[id];
+  });
+  orgToggleChairCount();
 
   const prem = document.getElementById('o-has-premium');
   if (prem && draft['o-has-premium'] !== undefined) {
@@ -700,10 +782,13 @@ function orgDiscardDraft() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  const prem = document.getElementById('o-has-premium');
-  if (prem) { prem.checked = false; }
+  _ORG_DRAFT_CHECKBOXES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
   const premSection = document.getElementById('org-premium-fields');
   if (premSection) premSection.style.display = 'none';
+  orgToggleChairCount();
 }
 
 let _draftListenersAttached = false;
@@ -713,5 +798,7 @@ function _attachDraftListeners() {
   _ORG_DRAFT_FIELDS.forEach(id => {
     document.getElementById(id)?.addEventListener('input', _orgSaveDraft);
   });
-  document.getElementById('o-has-premium')?.addEventListener('change', _orgSaveDraft);
+  _ORG_DRAFT_CHECKBOXES.forEach(id => {
+    document.getElementById(id)?.addEventListener('change', _orgSaveDraft);
+  });
 }

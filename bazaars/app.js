@@ -310,7 +310,7 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,event_links')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
       .in('status', ['published', 'live', 'completed'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
@@ -946,39 +946,20 @@ async function openBazaarDetail(bazaarId) {
 
   _renderBazaarInfo(b);
 
-  /* ── تحقق من انتهاء البازار ── */
+  /* ── تحقق من حالة البازار: منتهي / جارٍ الآن (توقّف استقبال الحجوزات) / متاح للحجز ── */
   const _todayStr  = _cairoTodayStr();
   const _endDate   = b.date_end || b.date_start;
   const _isExpired = _endDate && _endDate < _todayStr;
+  const _isLiveNow = !_isExpired && b.status === 'live';
 
-  const slotmapEl = document.getElementById('bzd-slotmap');
-  const panel     = document.getElementById('bzd-booking-panel');
+  const slotmapEl        = document.getElementById('bzd-slotmap');
+  const panel            = document.getElementById('bzd-booking-panel');
+  const reviewsSectionEl = document.getElementById('bzd-reviews-section');
 
-  if (_isExpired) {
-    if (slotmapEl) {
-      const expDateFmt = new Date(_endDate).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
-      slotmapEl.innerHTML = `
-        <div style="text-align:center;padding:48px 24px;background:var(--surface);border-radius:16px;
-                    border:1.5px dashed var(--border);margin-top:16px">
-          <div style="font-size:52px;margin-bottom:14px">🔴</div>
-          <div style="font-size:18px;font-weight:900;color:var(--ink2);margin-bottom:8px;font-family:'Cairo',sans-serif">
-            انتهى هذا البازار
-          </div>
-          <div style="font-size:13px;color:var(--ink3);margin-bottom:20px">
-            انتهى في ${expDateFmt}
-          </div>
-          <button class="btn btn-primary" style="padding:12px 28px" onclick="closeBazaarDetail()">
-            ← عرض البازارات المتاحة
-          </button>
-        </div>
-        <div id="bzd-past-org-bazaars" style="margin-top:20px"></div>`;
-      if (b.organizer_id && sbClient) _loadOrgPastBazaars(b.organizer_id, b.id);
-    }
-    if (panel) panel.style.display = 'none';
-    showBzPage('bazaar-detail');
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    return;
-  }
+  _unsubscribeSlotMap();
+
+  if (reviewsSectionEl) reviewsSectionEl.style.display = 'none';
+  if (_isExpired) _loadBazaarReviews(bazaarId, b);
 
   if (slotmapEl) {
     slotmapEl.innerHTML = `
@@ -997,7 +978,7 @@ async function openBazaarDetail(bazaarId) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 
   if (!sbClient) {
-    if (slotmapEl) slotmapEl.innerHTML = _renderSlotMapFallback();
+    if (slotmapEl) slotmapEl.innerHTML = _isExpired ? _renderSlotMapEndedFallback(_endDate) : _renderSlotMapFallback();
     return;
   }
 
@@ -1009,13 +990,28 @@ async function openBazaarDetail(bazaarId) {
       .order('row_label', { ascending: true });
 
     if (error || !slots?.length) {
-      if (slotmapEl) slotmapEl.innerHTML = _renderSlotMapFallback();
+      if (slotmapEl) slotmapEl.innerHTML = _isExpired ? _renderSlotMapEndedFallback(_endDate) : _renderSlotMapFallback();
+      if (_isExpired && b.organizer_id) _loadOrgPastBazaars(b.organizer_id, b.id);
+    } else if (_isExpired) {
+      /* ── انتهى البازار: نعرض الخريطة كاملة في وضع عرض فقط (Read Only) ── */
+      const expDateFmt = new Date(_endDate).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+      renderSlotMap(slots, { mode: 'ended', endDateFmt: expDateFmt });
+      if (slotmapEl) {
+        const pastWrap = document.createElement('div');
+        pastWrap.id = 'bzd-past-org-bazaars';
+        pastWrap.style.marginTop = '20px';
+        slotmapEl.appendChild(pastWrap);
+      }
+      if (b.organizer_id) _loadOrgPastBazaars(b.organizer_id, b.id);
+    } else if (_isLiveNow) {
+      /* ── البازار جارٍ الآن: توقف استقبال الحجوزات، الخريطة للعرض فقط ── */
+      renderSlotMap(slots, { mode: 'live' });
     } else {
-      renderSlotMap(slots);
+      renderSlotMap(slots, { mode: 'open' });
       _subscribeSlotMap(bazaarId);
     }
   } catch (err) {
-    if (slotmapEl) slotmapEl.innerHTML = _renderSlotMapFallback();
+    if (slotmapEl) slotmapEl.innerHTML = _isExpired ? _renderSlotMapEndedFallback(_endDate) : _renderSlotMapFallback();
   }
 }
 
@@ -1043,6 +1039,50 @@ function _renderBazaarInfo(b) {
     || ((b.venue_address || b.location)
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue_address || b.location)}`
         : '');
+
+  /* ── المميزات التي يحصل عليها العارض (التجهيزات + الدعاية + التغطية الإعلامية) ── */
+  const _adBudgetLabels = {
+    limited: 'محدودة (أقل من 5,000 ج)',
+    medium:  'متوسطة (5,000 – 15,000 ج)',
+    good:    'جيدة (15,000 – 30,000 ج)',
+    large:   'كبيرة (أكثر من 30,000 ج)',
+  };
+  const _amenities   = Array.isArray(b.included_amenities) ? b.included_amenities.filter(Boolean) : [];
+  const _hasCoverage = !!(b.will_have_photography || b.will_have_social_coverage || b.will_have_paid_ads);
+  const _hasPerks    = _amenities.length > 0 || !!b.other_amenities_note || !!b.ad_budget_tier || _hasCoverage;
+
+  const perksHtml = _hasPerks ? `
+      <div class="sd-info-card sd-info-full">
+        <div class="sd-info-title">🎁 المميزات التي يحصل عليها العارض</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:16px">
+
+          ${(_amenities.length || b.other_amenities_note) ? `
+          <div>
+            <div class="bz-perk-group-title">🧰 التجهيزات المشمولة</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${_amenities.map(a => `<span class="bz-amenity-pill">✔ ${a === 'كرسي' && b.chair_count > 1 ? `${a} (×${b.chair_count})` : a}</span>`).join('')}
+              ${b.other_amenities_note ? `<span class="bz-amenity-pill">✔ ${b.other_amenities_note}</span>` : ''}
+            </div>
+          </div>` : ''}
+
+          ${b.ad_budget_tier ? `
+          <div>
+            <div class="bz-perk-group-title">📢 الدعاية والتسويق</div>
+            <div class="sd-extra-row"><span>ميزانية الدعاية المتوقعة</span><span style="font-weight:700">${_adBudgetLabels[b.ad_budget_tier] || b.ad_budget_tier}</span></div>
+          </div>` : ''}
+
+          ${_hasCoverage ? `
+          <div>
+            <div class="bz-perk-group-title">📸 التغطية الإعلامية</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${b.will_have_photography     ? `<div style="font-size:13px">✔ تصوير الحدث</div>` : ''}
+              ${b.will_have_social_coverage ? `<div style="font-size:13px">✔ تغطية على وسائل التواصل الاجتماعي</div>` : ''}
+              ${b.will_have_paid_ads        ? `<div style="font-size:13px">✔ حملات إعلانية ممولة</div>` : ''}
+            </div>
+          </div>` : ''}
+
+        </div>
+      </div>` : '';
 
   infoEl.innerHTML = `
     ${imgHtml}
@@ -1091,6 +1131,8 @@ function _renderBazaarInfo(b) {
           </div>
         </div>
       </div>
+
+      ${perksHtml}
 
       ${(b.venue_address || b.location) ? `
       <div class="sd-info-card sd-info-full">
@@ -1257,6 +1299,256 @@ function closeBazaarDetail() {
 }
 
 /* ================================================================
+   ⭐ تقييمات البازار — تُتاح فقط بعد انتهاء البازار فعلياً
+   ================================================================ */
+async function _loadBazaarReviews(bazaarId, b) {
+  const sectionEl = document.getElementById('bzd-reviews-section');
+  const el        = document.getElementById('bzd-reviews');
+  if (!sectionEl || !el || !sbClient) return;
+
+  sectionEl.style.display = 'block';
+  el.innerHTML = `
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
+    <div style="text-align:center;padding:30px 20px;color:var(--ink3)">
+      <div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
+      <div style="font-size:13px">جاري تحميل التقييمات…</div>
+    </div>`;
+
+  try {
+    const { data, error } = await sbClient.rpc('get_bazaar_rating_summary', { p_bazaar_id: bazaarId });
+    if (error) throw new Error(error.message);
+    _renderBazaarReviews(bazaarId, b, data || {});
+  } catch (err) {
+    el.innerHTML = `
+      <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
+      <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">تعذّر تحميل التقييمات — حاول تحديث الصفحة</div>`;
+  }
+}
+
+function _renderBazaarReviews(bazaarId, b, data) {
+  const el = document.getElementById('bzd-reviews');
+  if (!el) return;
+
+  const total   = data.total || 0;
+  const avg     = Number(data.avg_rating || 0);
+  const dist    = data.distribution || {};
+  const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+
+  const starsHtml = (val, size) => Array.from({ length: 5 }, (_, i) =>
+    `<span style="font-size:${size}px;color:${i < Math.round(val) ? '#f5c842' : 'var(--border)'}">★</span>`
+  ).join('');
+
+  const distBarsHtml = [5, 4, 3, 2, 1].map(n => {
+    const count = dist[String(n)] || 0;
+    const pct   = total > 0 ? Math.round(count / total * 100) : 0;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <span style="width:34px;color:var(--ink3);flex-shrink:0">${n} ⭐</span>
+        <span style="flex:1;height:8px;background:var(--surface2);border-radius:6px;overflow:hidden">
+          <span style="display:block;height:100%;width:${pct}%;background:#f5c842;border-radius:6px"></span>
+        </span>
+        <span style="width:24px;color:var(--ink3);text-align:left;flex-shrink:0">${count}</span>
+      </div>`;
+  }).join('');
+
+  const summaryHtml = total > 0 ? `
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:18px">
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-size:34px;font-weight:900;color:var(--dark);line-height:1">${avg.toFixed(1)}</div>
+        <div style="margin:5px 0">${starsHtml(avg, 16)}</div>
+        <div style="font-size:11px;color:var(--ink3);white-space:nowrap">بناءً على ${total} تقييم</div>
+      </div>
+      <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:5px">${distBarsHtml}</div>
+    </div>` : `
+    <div style="text-align:center;padding:24px 16px;background:var(--surface2);border-radius:var(--radius-lg);margin-bottom:18px">
+      <div style="font-size:32px;margin-bottom:8px">💬</div>
+      <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:4px">لا توجد تقييمات بعد</div>
+      <div style="font-size:12.5px;color:var(--ink3)">كن أول من يشارك تجربته مع هذا البازار</div>
+    </div>`;
+
+  const myReview   = currentUser ? reviews.find(r => r.reviewer_id === currentUser.id) : null;
+  const isMyBazaar = currentUser && b.organizer_id && String(currentUser.id) === String(b.organizer_id);
+
+  const reviewsListHtml = reviews.map(r => {
+    const dateStr = r.created_at
+      ? new Date(r.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
+      : '';
+    return `
+      <div class="op-review-item" id="bz-review-card-${r.id}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            <span style="font-weight:700;font-size:13px;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.reviewer_name)}</span>
+            ${r.is_verified_exhibitor ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px;white-space:nowrap;flex-shrink:0">✓ شارك فعلياً</span>` : ''}
+          </div>
+          <span style="font-size:11px;color:var(--ink3);flex-shrink:0">${dateStr}</span>
+        </div>
+        <div style="margin-bottom:6px">${starsHtml(r.rating, 13)}</div>
+        ${r.comment ? `<p style="font-size:13px;color:var(--ink2);line-height:1.7;margin:0">${_esc(r.comment)}</p>` : ''}
+        ${isMyBazaar ? `
+        <div style="margin-top:8px">
+          <button onclick="_toggleReportReviewBox('${r.id}')" id="bz-report-btn-${r.id}"
+            style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--ink3);font-family:inherit;padding:0;transition:color .15s"
+            onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--ink3)'">
+            🚩 الإبلاغ عن التعليق
+          </button>
+          <div id="bz-report-box-${r.id}" style="display:none;margin-top:8px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md)">
+            <textarea id="bz-report-reason-${r.id}" placeholder="سبب الإبلاغ (اختياري)…" maxlength="200"
+              style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface2);color:var(--ink);font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:12px;min-height:48px;resize:vertical;outline:none"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button onclick="reportBazaarReview('${r.id}')" style="background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--font-display)">تأكيد الإبلاغ</button>
+              <button onclick="_toggleReportReviewBox('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink3);font-family:var(--font-display)">إلغاء</button>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  const formHtml = isMyBazaar ? '' : !currentUser ? `
+    <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);margin-top:16px">
+      <a href="/?p=login" style="color:var(--orange);font-weight:700;font-size:13px;text-decoration:none">سجّل الدخول لتضيف تقييمك ←</a>
+    </div>`
+  : b.status !== 'completed' ? `
+    <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);margin-top:16px;font-size:12.5px;color:var(--ink3)">
+      سيُفتح باب التقييم خلال ساعات قليلة من انتهاء البازار
+    </div>`
+  : `
+    <div style="margin-top:16px;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);border:1.5px solid var(--border)">
+      <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:10px">⭐ قيّم تجربتك في هذا البازار</div>
+      ${myReview ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">لقد قيّمت هذا البازار من قبل بـ ${myReview.rating} ⭐ — إرسال تقييم جديد سيستبدله.</div>` : ''}
+      <div class="bz-star-picker" id="bz-review-star-picker" data-value="0">
+        ${[1, 2, 3, 4, 5].map(n => `<span class="bz-star-pick" data-star="${n}" onclick="_setBzReviewStar(${n})" onmouseover="_hoverBzReviewStar(${n})" onmouseout="_hoverBzReviewStar(0)">★</span>`).join('')}
+      </div>
+      <textarea id="bz-review-comment" placeholder="اكتب تعليقك (اختياري)…" maxlength="500" oninput="_updateBzReviewCharCount(this)"
+        style="width:100%;box-sizing:border-box;margin-top:10px;padding:10px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:13px;min-height:64px;resize:vertical;outline:none"></textarea>
+      <div id="bz-review-char-count" style="font-size:11px;color:var(--ink3);text-align:left;margin-top:3px">0 / 500</div>
+      <div id="bz-review-msg" style="display:none;font-size:12px;margin-top:8px"></div>
+      <button class="btn btn-primary" id="bz-review-submit-btn" onclick="submitBazaarReview('${bazaarId}')" style="margin-top:10px;padding:10px 22px">
+        إرسال التقييم
+      </button>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
+    ${summaryHtml}
+    ${reviewsListHtml ? `<div style="display:flex;flex-direction:column;gap:10px">${reviewsListHtml}</div>` : ''}
+    ${formHtml}
+  `;
+}
+
+function _setBzReviewStar(n) {
+  const picker = document.getElementById('bz-review-star-picker');
+  if (!picker) return;
+  picker.dataset.value = n;
+  _hoverBzReviewStar(n);
+}
+
+function _hoverBzReviewStar(n) {
+  const picker = document.getElementById('bz-review-star-picker');
+  if (!picker) return;
+  const selected = Number(picker.dataset.value || 0);
+  const show     = n || selected;
+  picker.querySelectorAll('.bz-star-pick').forEach(starEl => {
+    starEl.classList.toggle('active', Number(starEl.dataset.star) <= show);
+  });
+}
+
+function _updateBzReviewCharCount(el) {
+  const countEl = document.getElementById('bz-review-char-count');
+  if (countEl) countEl.textContent = `${el.value.length} / 500`;
+}
+
+/* ── الإبلاغ عن تعليق (متاح لمنظم البازار فقط) ── */
+function _toggleReportReviewBox(reviewId) {
+  const box = document.getElementById(`bz-report-box-${reviewId}`);
+  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+async function reportBazaarReview(reviewId) {
+  if (!sbClient) return;
+  const box    = document.getElementById(`bz-report-box-${reviewId}`);
+  const reason = document.getElementById(`bz-report-reason-${reviewId}`)?.value.trim() || null;
+
+  try {
+    const { data, error } = await sbClient.rpc('report_bazaar_review', {
+      p_review_id: reviewId,
+      p_reason:    reason,
+    });
+    if (error) throw new Error(error.message);
+
+    if (!data?.success) {
+      const map = {
+        not_authorized:      'لا يمكنك الإبلاغ عن هذا التعليق.',
+        review_not_found:    'تعذّر إيجاد هذا التعليق.',
+        already_under_review:'هذا التعليق قيد المراجعة بالفعل.',
+        unauthorized:        'سجّل الدخول من جديد.',
+      };
+      throw new Error(map[data?.error] || 'تعذّر إرسال البلاغ');
+    }
+
+    /* إخفاء فوري للتعليق من الواجهة — تحديث متفائل بلا الحاجة لإعادة تحميل الملخص كاملاً */
+    const card = document.getElementById(`bz-review-card-${reviewId}`);
+    if (card) {
+      card.innerHTML = `<div style="font-size:12.5px;color:var(--ink3);text-align:center;padding:8px">🚩 تم الإبلاغ عن هذا التعليق — قيد المراجعة من الإدارة</div>`;
+    }
+  } catch (err) {
+    if (box) box.style.display = 'none';
+    alert('⚠ ' + (err.message || 'تعذّر إرسال البلاغ'));
+  }
+}
+
+async function submitBazaarReview(bazaarId) {
+  const picker     = document.getElementById('bz-review-star-picker');
+  const rating     = Number(picker?.dataset?.value || 0);
+  const msgEl      = document.getElementById('bz-review-msg');
+  const btn        = document.getElementById('bz-review-submit-btn');
+  const commentEl  = document.getElementById('bz-review-comment');
+
+  const showMsg = (ok, text) => {
+    if (!msgEl) return;
+    msgEl.style.display = 'block';
+    msgEl.style.color   = ok ? '#15803d' : 'var(--red)';
+    msgEl.textContent   = (ok ? '✅ ' : '⚠ ') + text;
+  };
+
+  if (!rating) { showMsg(false, 'اختر تقييماً بالنجوم أولاً'); return; }
+  if (!currentUser || !sbClient) { showMsg(false, 'يجب تسجيل الدخول أولاً'); return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…'; }
+
+  try {
+    const { data, error } = await sbClient.rpc('submit_bazaar_review', {
+      p_bazaar_id: bazaarId,
+      p_rating:    rating,
+      p_comment:   commentEl?.value.trim() || null,
+    });
+    if (error) throw new Error(error.message);
+
+    if (!data?.success) {
+      const map = {
+        bazaar_not_completed:       'باب التقييم لسه ما فتحش — البازار لازم يخلص الأول.',
+        cannot_review_own_bazaar:   'لا يمكنك تقييم بازارك الخاص.',
+        bazaar_not_found:           'تعذّر إيجاد هذا البازار.',
+        invalid_rating:             'قيمة التقييم غير صحيحة.',
+        unauthorized:               'انتهت الجلسة — سجّل الدخول من جديد.',
+        comment_too_long:           'التعليق طويل جداً — الحد الأقصى 500 حرف.',
+        comment_contains_promo_link:'لا يمكن أن يحتوي التعليق على روابط أو حسابات تواصل اجتماعي.',
+        comment_looks_like_spam:    'التعليق يبدو غير مناسب (تكرار مفرط للحروف) — أعد صياغته.',
+        comment_contains_banned_word:'التعليق يحتوي على كلمات غير لائقة — أعد صياغته.',
+        comment_duplicate_content:  'نشرت نفس التعليق مؤخراً في بازار آخر — اكتب تجربتك الخاصة بهذا البازار.',
+        review_removed_by_admin:    'تم حذف هذا التقييم بواسطة الإدارة ولا يمكن تعديله.',
+      };
+      throw new Error(map[data?.error] || 'تعذّر حفظ التقييم');
+    }
+
+    showMsg(true, 'تم حفظ تقييمك، شكراً لمشاركتك!');
+    await _loadBazaarReviews(bazaarId, currentBazaar);
+  } catch (err) {
+    showMsg(false, err.message || 'حدث خطأ غير متوقع');
+    if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقييم'; }
+  }
+}
+
+/* ================================================================
    📡 القسم 11-ب: Realtime — تحديث خريطة الأماكن لحظياً
    ================================================================ */
 
@@ -1368,8 +1660,8 @@ async function refreshSlotMap() {
       selectedSlotId = null;
       const panel = document.getElementById('bzd-booking-panel');
       if (panel) panel.style.display = 'none';
-      renderSlotMap(slots);
-      _subscribeSlotMap(currentBazaar.id);
+      renderSlotMap(slots, { mode: _slotMapMode, endDateFmt: _slotMapEndDateFmt });
+      if (_slotMapMode === 'open') _subscribeSlotMap(currentBazaar.id);
       _showRealtimeToast('✅ تم تحديث الخريطة', '#16a34a');
     }
   } catch(_) {}
@@ -1692,12 +1984,42 @@ function _renderSlotMapFallback() {
     </div>`;
 }
 
+function _renderSlotMapEndedFallback(endDate) {
+  const expDateFmt = endDate
+    ? new Date(endDate).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+    : '';
+  return `
+    <div class="sd-subspaces-header">
+      <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
+    </div>
+    <div style="text-align:center;padding:48px 24px;background:var(--surface);border-radius:16px;
+                border:1.5px dashed var(--border);margin-top:16px">
+      <div style="font-size:52px;margin-bottom:14px">🔴</div>
+      <div style="font-size:18px;font-weight:900;color:var(--ink2);margin-bottom:8px;font-family:'Cairo',sans-serif">
+        انتهى هذا البازار
+      </div>
+      ${expDateFmt ? `<div style="font-size:13px;color:var(--ink3);margin-bottom:20px">انتهى في ${expDateFmt}</div>` : ''}
+      <button class="btn btn-primary" style="padding:12px 28px" onclick="closeBazaarDetail()">
+        ← عرض البازارات المتاحة
+      </button>
+    </div>
+    <div id="bzd-past-org-bazaars" style="margin-top:20px"></div>`;
+}
+
 
 /* ================================================================
    🪑 القسم 12: خريطة الأماكن البصرية
    ================================================================ */
 
-function renderSlotMap(slots) {
+let _slotMapMode       = 'open';  // 'open' | 'live' | 'ended' — تُستخدم عند إعادة تحديث الخريطة (refreshSlotMap)
+let _slotMapEndDateFmt = null;
+
+function renderSlotMap(slots, opts = {}) {
+  const { mode = 'open', endDateFmt = null } = opts;
+  const readOnly = mode !== 'open';
+  _slotMapMode       = mode;
+  _slotMapEndDateFmt = endDateFmt;
+
   const el = document.getElementById('bzd-slotmap');
   if (!el) return;
 
@@ -1730,18 +2052,25 @@ function renderSlotMap(slots) {
       for (let c = 0; c < maxCol; c++) {
         const slot = matrix[r][c];
         gridHtml += slot
-          ? _buildSlotHtml(slot, slotIdx++)
+          ? _buildSlotHtml(slot, slotIdx++, readOnly)
           : `<div class="bz-slot bz-slot-empty"></div>`;
       }
     }
     gridHtml += '</div>';
   } else {
     gridHtml = '<div class="bz-slot-grid">' +
-      slots.map((s, i) => _buildSlotHtml(s, i)).join('') +
+      slots.map((s, i) => _buildSlotHtml(s, i, readOnly)).join('') +
       '</div>';
   }
 
+  const bannerHtml = mode === 'live'
+    ? `<div class="bz-slotmap-banner bz-slotmap-banner-live">🔴 انتهى استقبال الحجوزات، والبازار جارٍ حالياً.</div>`
+    : mode === 'ended'
+    ? `<div class="bz-slotmap-banner bz-slotmap-banner-ended">⚪ انتهى هذا البازار${endDateFmt ? ' في ' + endDateFmt : ''} — الخريطة معروضة للاطلاع فقط</div>`
+    : '';
+
   el.innerHTML = `
+    ${bannerHtml}
     <div class="sd-subspaces-header">
       <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1756,21 +2085,21 @@ function renderSlotMap(slots) {
     </div>
 
     <div class="bz-legend">
-      <span class="bz-legend-item"><span class="bz-legend-dot available"></span> متاح — اضغط للحجز</span>
+      <span class="bz-legend-item"><span class="bz-legend-dot available"></span> متاح${readOnly ? '' : ' — اضغط للحجز'}</span>
       ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending"></span> حجز مبدئي ⏳</span>` : ''}
       <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> محجوز مؤكد</span>
-      <span class="bz-legend-item"><span class="bz-legend-dot selected"></span> مختارك</span>
+      ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected"></span> مختارك</span>` : ''}
       ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> مكان مميز ⭐</span>` : ''}
     </div>
 
-    <div class="bz-slotmap-scroll">${gridHtml}</div>
+    <div class="bz-slotmap-scroll${readOnly ? ' bz-readonly' : ''}">${gridHtml}</div>
 
-    <div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:10px;padding-bottom:4px">
+    ${!readOnly ? `<div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:10px;padding-bottom:4px">
       اضغط على أي مكان متاح لاختياره وإتمام الحجز
-    </div>`;
+    </div>` : ''}`;
 }
 
-function _buildSlotHtml(slot, index = 0) {
+function _buildSlotHtml(slot, index = 0, readOnly = false) {
   const isPending   = slot.status === 'pending';
   const isBooked    = slot.status === 'booked';
   const isAvailable = !isBooked && !isPending;
@@ -1783,13 +2112,15 @@ function _buildSlotHtml(slot, index = 0) {
 
   const displayLabel = (slot.row_label || '') + (slot.slot_number || '');
 
-  const clickAttr = isAvailable
+  const clickAttr = (isAvailable && !readOnly)
     ? `onclick="selectSlot('${slot.id}','${displayLabel || slot.id}')"`
     : '';
 
   const bookedLabel  = isFeatured ? `محجوز مؤكد (مميز ⭐)` : `محجوز مؤكد`;
   const pendingLabel = isFeatured ? `حجز مبدئي ⏳ (مميز ⭐)` : `حجز مبدئي ⏳`;
-  const availLabel   = isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`;
+  const availLabel   = readOnly
+    ? (isFeatured ? `متاح (مميز ⭐)` : `متاح`)
+    : (isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`);
   const titleAttr    = isBooked
     ? `title="مكان ${displayLabel} — ${bookedLabel}"`
     : isPending

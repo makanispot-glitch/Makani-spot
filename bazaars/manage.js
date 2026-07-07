@@ -338,6 +338,13 @@ async function loadMyBazaars() {
       'links_deleted_at',
       'created_at',
       'updated_at',
+      'included_amenities',
+      'chair_count',
+      'other_amenities_note',
+      'ad_budget_tier',
+      'will_have_photography',
+      'will_have_social_coverage',
+      'will_have_paid_ads',
     ].join(','))
     .eq('organizer_id', me.id)
     .eq('is_archived', false)
@@ -529,6 +536,26 @@ function _updateDetailHeader(b) {
   document.getElementById('nav-title').textContent = `⚙️ ${b.title || 'إدارة البازار'}`;
 }
 
+/* خريطة مفاتيح التجهيزات (id الشيك بوكس ← التسمية العربية المخزَّنة) — نفس الترتيب المستخدم في organize.js */
+const MN_AMENITY_MAP = [
+  ['e-amen-table',        'ترابيزة'],
+  ['e-amen-chair',        'كرسي'],
+  ['e-amen-pergola',      'برجولة'],
+  ['e-amen-canopy',       'مظلة'],
+  ['e-amen-electricity',  'كهرباء'],
+  ['e-amen-lighting',     'إنارة'],
+  ['e-amen-wifi',         'واي فاي'],
+  ['e-amen-water',        'مصدر مياه'],
+  ['e-amen-other_services','خدمات أخرى'],
+];
+
+function mnToggleChairCount() {
+  const checked = document.getElementById('e-amen-chair')?.checked;
+  const row     = document.getElementById('e-chair-count-row');
+  if (row) row.style.display = checked ? '' : 'none';
+  if (!checked) document.getElementById('e-chair-count').value = '';
+}
+
 /* ════════════════════════════════════════════════════════
    TAB 1: INFO (M5 — تعديل المعلومات)
 ════════════════════════════════════════════════════════ */
@@ -540,6 +567,25 @@ function _populateInfoTab(b) {
   _val('e-end-date',      b.end_date || '');
   _val('e-working-hours', b.working_hours || '');
   _val('e-description',   b.description || '');
+
+  /* ما الذي يشمله الحجز */
+  const includedAmenities = Array.isArray(b.included_amenities) ? b.included_amenities : [];
+  MN_AMENITY_MAP.forEach(([id, label]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = includedAmenities.includes(label);
+  });
+  _val('e-chair-count',      b.chair_count || '');
+  _val('e-amen-other-note',  b.other_amenities_note || '');
+  mnToggleChairCount();
+
+  /* الدعاية والتغطية الإعلامية */
+  _val('e-ad-budget', b.ad_budget_tier || '');
+  const photoEl = document.getElementById('e-ad-photography');
+  if (photoEl) photoEl.checked = !!b.will_have_photography;
+  const socialEl = document.getElementById('e-ad-social');
+  if (socialEl) socialEl.checked = !!b.will_have_social_coverage;
+  const paidAdsEl = document.getElementById('e-ad-paidads');
+  if (paidAdsEl) paidAdsEl.checked = !!b.will_have_paid_ads;
 
   /* cover preview */
   editCoverUrl = null;
@@ -711,6 +757,19 @@ async function saveEditInfo() {
       };
   if (!locked && startD) updates.start_date = startD;
   if (!locked && endD)   updates.end_date   = endD;
+
+  // ما الذي يشمله الحجز + الدعاية والتغطية الإعلامية — قابلة للتعديل دائماً (لا تتأثر بنافذة القفل)
+  updates.included_amenities = MN_AMENITY_MAP
+    .filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, label]) => label);
+  updates.chair_count = document.getElementById('e-amen-chair')?.checked
+    ? (Number(_val('e-chair-count')) || null)
+    : null;
+  updates.other_amenities_note      = _val('e-amen-other-note').trim() || null;
+  updates.ad_budget_tier            = _val('e-ad-budget') || null;
+  updates.will_have_photography     = !!document.getElementById('e-ad-photography')?.checked;
+  updates.will_have_social_coverage = !!document.getElementById('e-ad-social')?.checked;
+  updates.will_have_paid_ads        = !!document.getElementById('e-ad-paidads')?.checked;
 
   _setBtnState('edit-save-btn', true, '⏳ جارٍ الحفظ…');
   _hide('edit-msg');

@@ -349,6 +349,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('req')" id="ni-req"><span class="ic">📬</span>طلبات التنظيم<span class="nb" id="nb-req" style="display:none">0</span></div>
     <div class="ni" onclick="gp('org-ver')" id="ni-org-ver"><span class="ic">🎪</span>طلبات التوثيق<span class="nb" id="nb-org-ver" style="display:none">0</span></div>
     <div class="ni" onclick="gp('abuse')" id="ni-abuse"><span class="ic">🚩</span>بلاغات المستخدمين<span class="nb r" id="nb-abuse" style="display:none">0</span></div>
+    <div class="ni" onclick="gp('reported-comments')" id="ni-reported-comments"><span class="ic">💬</span>التعليقات المُبلغ عنها<span class="nb r" id="nb-reported-comments" style="display:none">0</span></div>
 
     <div class="nl">الواجهة</div>
     <div class="ni" onclick="gp('featured')" id="ni-featured"><span class="ic">⭐</span>البازار المميّز
@@ -815,6 +816,27 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
     <div class="hint" style="margin-bottom:16px">كل 3 بلاغات من مستخدمين مختلفين تنقل البازار تلقائياً إلى "قيد المراجعة" — راجع الأسباب ثم استعد أو أبقِ القرار</div>
     <div id="abuse-list"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
+  </div>
+
+  <!-- ═══ REPORTED BAZAAR REVIEWS/COMMENTS ═══ -->
+  <div class="pg" id="pg-reported-comments">
+    <div class="sh">
+      <div class="st">💬 التعليقات <span>المُبلغ عنها</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadReportedComments()">🔄 تحديث</button>
+    </div>
+    <div class="hint" style="margin-bottom:16px">تعليقات أبلغ عنها منظمو البازارات — مخفية عن الجميع حتى تتخذ قراراً: إعادة نشر، حذف نهائي، أو إبقاء مخفياً</div>
+    <div id="reported-comments-list"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
+
+    <!-- إدارة قاموس الكلمات المحظورة -->
+    <div class="sh" style="margin-top:28px">
+      <div class="st">🚫 الكلمات <span>المحظورة</span></div>
+    </div>
+    <div class="hint" style="margin-bottom:12px">أي كلمة هنا سترفض تلقائياً أي تعليق جديد يحتوي عليها — يُستخدم فقط عند إرسال تعليقات جديدة أو تعديلها</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;max-width:420px">
+      <input type="text" id="banned-word-input" placeholder="أضف كلمة محظورة…" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-family:'Cairo',sans-serif;font-size:13px" onkeydown="if(event.key==='Enter')addBannedWord()">
+      <button class="btn btn-or btn-sm" onclick="addBannedWord()">➕ إضافة</button>
+    </div>
+    <div id="banned-words-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
   </div>
 
   <!-- ═══ FEATURED BAZAAR ═══ -->
@@ -1592,6 +1614,12 @@ async function loadData() {
       const distinct = new Set(ar.map(r => r.bazaar_id)).size;
       const nb = document.getElementById('nb-abuse');
       if (nb) { nb.textContent = distinct; nb.style.display = distinct ? '' : 'none'; }
+    }).catch(() => {});
+
+    /* شارة التعليقات المُبلغ عنها — قيد المراجعة (reported/hidden) */
+    db.from('bazaar_reviews').select('id', { count: 'exact', head: true }).in('status', ['reported', 'hidden']).then(({ count }) => {
+      const nb = document.getElementById('nb-reported-comments');
+      if (nb) { nb.textContent = count || 0; nb.style.display = count ? '' : 'none'; }
     }).catch(() => {});
 
     _refreshArchiveBadge();
@@ -2768,6 +2796,134 @@ async function reinstateFromAbuse(id, name) {
   }
 }
 
+/* ══════════════════════════════════════════
+   💬 التعليقات المُبلغ عنها — تقييمات البازارات
+══════════════════════════════════════════ */
+async function loadReportedComments() {
+  const list = document.getElementById('reported-comments-list');
+  if (!list) return;
+  list.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل...</div>';
+  loadBannedWords();
+
+  try {
+    const { data, error } = await db.rpc('admin_list_reported_bazaar_reviews');
+    if (error) throw error;
+
+    const nb = document.getElementById('nb-reported-comments');
+    if (nb) { nb.textContent = (data || []).length; nb.style.display = (data || []).length ? '' : 'none'; }
+
+    if (!data || !data.length) {
+      list.innerHTML = `<div style="text-align:center;padding:60px 24px;color:var(--mu)">
+        <div style="font-size:44px;margin-bottom:12px;opacity:.25">💬</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">لا توجد تعليقات قيد المراجعة حالياً</div>
+        <div style="font-size:12px">ستظهر هنا التعليقات التي يُبلغ عنها منظمو البازارات</div>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = data.map(r => {
+      const stars = '⭐'.repeat(Math.max(0, Math.min(5, r.rating)));
+      const postedAt = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' }) : '—';
+      const reportedAt = r.reported_at ? new Date(r.reported_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' }) : '—';
+      const isHidden = r.status === 'hidden';
+      return `
+      <div id="rc-${r.id}" style="background:var(--bg2);border:1px solid ${isHidden ? 'var(--bd)' : 'rgba(239,68,68,.4)'};border-radius:var(--r);padding:18px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:15px;font-weight:900;color:var(--tx)">${escHtml(r.bazaar_name)}</div>
+            <div style="font-size:11.5px;color:var(--mu);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+              <span>صاحب التعليق: <strong style="color:var(--or)">${escHtml(r.reviewer_name)}</strong>${r.is_verified_exhibitor ? ' ✓ شارك فعلياً' : ''}</span>
+              <span>${stars} (${r.rating}/5)</span>
+              <span>نُشر: ${postedAt}</span>
+            </div>
+          </div>
+          <div style="background:${isHidden ? 'rgba(148,163,184,.15)' : 'rgba(239,68,68,.15)'};color:${isHidden ? 'var(--mu)' : '#ef4444'};border:1px solid ${isHidden ? 'var(--bd)' : 'rgba(239,68,68,.3)'};border-radius:8px;padding:5px 12px;font-size:12px;font-weight:900;flex-shrink:0">
+            ${isHidden ? '⏸️ مخفي مؤقتاً' : '🚩 مُبلَّغ عنه'}
+          </div>
+        </div>
+        <div style="padding:10px 12px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--tx);line-height:1.7;margin-bottom:10px">
+          ${r.comment ? escHtml(r.comment) : '<span style="color:var(--mu)">(بلا تعليق نصي)</span>'}
+        </div>
+        <div style="font-size:11.5px;color:var(--mu);margin-bottom:12px;line-height:1.8">
+          <div><strong style="color:var(--tx)">أبلغ عنه:</strong> ${escHtml(r.reported_by_name)} — ${reportedAt}</div>
+          ${r.report_reason ? `<div><strong style="color:var(--tx)">السبب:</strong> ${escHtml(r.report_reason)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)"
+            onclick="moderateBazaarReview('${r.id}','approve','${escHtml(r.bazaar_name)}')">✅ إعادة نشر</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3)"
+            onclick="moderateBazaarReview('${r.id}','remove','${escHtml(r.bazaar_name)}')">🗑️ حذف نهائي</button>
+          ${!isHidden ? `<button class="btn btn-gh btn-sm" onclick="moderateBazaarReview('${r.id}','keep_hidden','${escHtml(r.bazaar_name)}')">⏸️ إبقاء مخفياً</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div class="hint">❌ خطأ في تحميل التعليقات: ${e.message}</div>`;
+  }
+}
+
+async function moderateBazaarReview(reviewId, action, bazaarName) {
+  const labels = { approve: 'إعادة نشر', remove: 'حذف نهائي', keep_hidden: 'إبقاء مخفياً' };
+  if (action === 'remove' && !confirm(`🗑️ حذف هذا التعليق نهائياً من "${bazaarName}"؟\n\nلن يظهر للمستخدمين مرة أخرى.`)) return;
+
+  toast(`جارٍ ${labels[action] || action}...`, 'i');
+  try {
+    const { data, error } = await db.rpc('admin_moderate_bazaar_review', { p_review_id: reviewId, p_action: action });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'فشل الإجراء');
+
+    toast(`✅ تم "${labels[action] || action}"`, 's');
+    document.getElementById(`rc-${reviewId}`)?.remove();
+    loadReportedComments();
+  } catch(e) {
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
+/* ── قاموس الكلمات المحظورة ── */
+async function loadBannedWords() {
+  const list = document.getElementById('banned-words-list');
+  if (!list) return;
+  try {
+    const { data, error } = await db.from('banned_review_words').select('word').order('created_at', { ascending: false });
+    if (error) throw error;
+    list.innerHTML = (data || []).length
+      ? data.map(w => `
+        <span style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--bd);border-radius:50px;padding:5px 10px;font-size:12px;color:var(--tx)">
+          ${escHtml(w.word)}
+          <button onclick="removeBannedWord('${escHtml(w.word)}')" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:13px;padding:0;line-height:1" title="حذف">×</button>
+        </span>`).join('')
+      : `<span class="hint">لا توجد كلمات محظورة مضافة بعد</span>`;
+  } catch(e) {
+    list.innerHTML = `<span class="hint">❌ ${e.message}</span>`;
+  }
+}
+
+async function addBannedWord() {
+  const input = document.getElementById('banned-word-input');
+  const word = input?.value.trim();
+  if (!word) return;
+  try {
+    const { error } = await db.from('banned_review_words').insert({ word });
+    if (error) throw error;
+    input.value = '';
+    toast('✅ أُضيفت الكلمة', 's');
+    loadBannedWords();
+  } catch(e) {
+    toast('❌ ' + (e.message.includes('duplicate') ? 'الكلمة مضافة مسبقاً' : e.message), 'e');
+  }
+}
+
+async function removeBannedWord(word) {
+  try {
+    const { error } = await db.from('banned_review_words').delete().eq('word', word);
+    if (error) throw error;
+    loadBannedWords();
+  } catch(e) {
+    toast('❌ ' + e.message, 'e');
+  }
+}
+
 async function loadOrgRequests() {
   const list = document.getElementById('req-list');
   if (!list) return;
@@ -3043,6 +3199,7 @@ function gp(tab){
   if(tab==='mkt')         { _mktPage=1; loadMktOpportunities(); }
   if(tab==='mkt-log')     { _mktLogPage=1; loadMktLog(); }
   if(tab==='abuse')       loadAbusePage();
+  if(tab==='reported-comments') loadReportedComments();
 }
 
 /* ══════════════════════════════════════════

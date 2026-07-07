@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=29">
+<link rel="stylesheet" href="../style.css?v=30">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 
@@ -612,6 +612,64 @@
         </div>
       </div>
 
+      <!-- ما الذي يشمله الحجز (التجهيزات) -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">🧰 ما الذي يشمله الحجز؟</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه (اختياري)</div>
+
+        <div class="bz-chip-group">
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-table">🪑 ترابيزة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-chair" onchange="mnToggleChairCount()">💺 كرسي</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-pergola">⛱️ برجولة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-canopy">⛺ مظلة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-electricity">⚡ كهرباء</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-lighting">💡 إنارة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-wifi">📶 واي فاي</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-water">🚰 مصدر مياه</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-other_services">🛠️ خدمات أخرى</label>
+        </div>
+
+        <div class="mn-fg" id="e-chair-count-row" style="display:none;max-width:220px;margin-top:14px">
+          <label>عدد الكراسي لكل مكان</label>
+          <input type="number" id="e-chair-count" min="1" max="10" placeholder="مثال: 2">
+        </div>
+
+        <div class="mn-fg" style="margin-top:14px">
+          <label>➕ تجهيزات أخرى (اختياري)</label>
+          <input type="text" id="e-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" maxlength="150">
+        </div>
+      </div>
+
+      <!-- الدعاية والتغطية الإعلامية -->
+      <div class="mn-form-card">
+        <div class="mn-form-card-title">📢 الدعاية والتغطية الإعلامية</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
+
+        <div class="mn-fg" style="margin-bottom:12px">
+          <label>ميزانية الدعاية المتوقعة</label>
+          <select id="e-ad-budget">
+            <option value="">— غير محددة —</option>
+            <option value="limited">محدودة (أقل من 5,000 ج)</option>
+            <option value="medium">متوسطة (5,000 – 15,000 ج)</option>
+            <option value="good">جيدة (15,000 – 30,000 ج)</option>
+            <option value="large">كبيرة (أكثر من 30,000 ج)</option>
+          </select>
+        </div>
+
+        <label class="org-consent" style="margin-top:4px">
+          <input type="checkbox" id="e-ad-photography">
+          <div class="org-consent-text"><strong>تصوير الحدث</strong> — سيتم تصوير فوتوغرافي/فيديو للبازار</div>
+        </label>
+        <label class="org-consent" style="margin-top:10px">
+          <input type="checkbox" id="e-ad-social">
+          <div class="org-consent-text"><strong>تغطية وسائل التواصل الاجتماعي</strong> — سيتم نشر صور وفيديوهات أثناء الحدث</div>
+        </label>
+        <label class="org-consent" style="margin-top:10px">
+          <input type="checkbox" id="e-ad-paidads">
+          <div class="org-consent-text"><strong>إعلانات ممولة</strong> — سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</div>
+        </label>
+      </div>
+
       <!-- Images card -->
       <div class="mn-form-card">
         <div class="mn-form-card-title">🖼️ صور البازار</div>
@@ -924,6 +982,6 @@
 <!-- ── Scripts ── -->
 <script src="/notifications.js?v=20260623" defer></script>
 <script src="../media-handler.js" defer></script>
-<script src="manage.js?v=202606270900" defer></script>
+<script src="manage.js?v=202607070338" defer></script>
 </body>
 </html>

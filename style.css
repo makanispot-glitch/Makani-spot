@@ -6765,6 +6765,27 @@ footer {
   color: var(--ink);
 }
 
+/* ── عرض التجهيزات/المميزات (بطاقة "المميزات التي يحصل عليها العارض") ── */
+.bz-amenity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.bz-perk-group-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink2);
+  margin-bottom: 8px;
+}
+
 /* ============================================================
    الوحدات الفرعية (Sub-Spaces)
    ============================================================ */
@@ -8984,6 +9005,43 @@ footer {
   line-height: 1;
 }
 
+/* ── بانر إيقاف الحجز (البازار جارٍ الآن / انتهى) ── */
+.bz-slotmap-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.bz-slotmap-banner-live {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: #b91c1c;
+}
+
+.bz-slotmap-banner-ended {
+  background: var(--surface2);
+  border: 1.5px dashed var(--border);
+  color: var(--ink2);
+}
+
+/* خريطة أماكن للعرض فقط — بلا تفاعل */
+.bz-slotmap-scroll.bz-readonly .bz-slot {
+  cursor: not-allowed;
+}
+
+.bz-slotmap-scroll.bz-readonly .bz-slot.available:hover {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.55);
+  transform: none;
+  box-shadow: none;
+}
+
 /* ── أنيميشن ظهور الخريطة ── */
 @keyframes slotGridIn {
   from {
@@ -9364,6 +9422,77 @@ footer {
 .bz-maps-btn:hover {
   background: var(--orange);
   color: #fff;
+}
+
+
+/* ── منتقي متعدد على شكل حبوب (checkbox chips) — نموذج تنظيم/تعديل البازار ── */
+.bz-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bz-chip-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.bz-chip-checkbox input[type=checkbox] {
+  display: none;
+}
+
+.bz-chip-checkbox:hover {
+  border-color: var(--orange);
+}
+
+.bz-chip-checkbox:has(input:checked) {
+  background: var(--orange-ultra);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* ── صف موافقة/تفعيل كبير (نموذج تنظيم/تعديل البازار) — مُعرَّف أيضاً محلياً في organize.html، مكرَّر هنا لإتاحته في manage.html أيضاً ── */
+.org-consent {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; background: var(--surface2);
+  border: 1.5px solid var(--border); border-radius: var(--radius-lg); cursor: pointer;
+  user-select: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.org-consent:hover { border-color: var(--orange); }
+.org-consent input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--orange); flex-shrink: 0; margin-top: 2px; }
+.org-consent-text { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.org-consent-text strong { color: var(--dark); }
+
+/* ── منتقي النجوم التفاعلي (نموذج تقييم البازار) ── */
+.bz-star-picker {
+  display: flex;
+  gap: 4px;
+  font-size: 0;
+}
+
+.bz-star-pick {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: color .12s;
+}
+
+.bz-star-pick.active {
+  color: #f5c842;
 }
 
 

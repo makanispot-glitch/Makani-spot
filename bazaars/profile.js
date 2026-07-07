@@ -102,12 +102,13 @@ async function _loadMyProfile() {
   let bazaars      = [];
   let listings     = [];
   let isSpaceOwner = false;
+  let bazaarRating = { total: 0, avg_rating: 0 }; // متوسط تقييمي كمنظم — من bazaar_reviews
 
   try {
     const [
       orgProfileRes, userProfileRes, reviewsRes,
       reqRes, bazaarsRes, listingsRes, upgradeRes,
-      rateableRes, bzRatingsRes
+      rateableRes, bzRatingsRes, bazaarRatingRes
     ] = await Promise.all([
       sbClient.from('organizer_profiles').select('*')
               .eq('user_id', currentUser.id).single(),
@@ -135,6 +136,8 @@ async function _loadMyProfile() {
       sbClient.from('user_ratings').select('*')
               .eq('rater_id', currentUser.id).eq('context_type', 'bazaar')
               .order('created_at', { ascending: false }),
+      /* ⭐ متوسط تقييمي كمنظم — مبني على تقييمات كل بازاراتي (bazaar_reviews) */
+      sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: currentUser.id }),
     ]);
 
     profile     = orgProfileRes.data  || null;
@@ -143,6 +146,7 @@ async function _loadMyProfile() {
     reqStatus   = reqRes.data?.status || null;
     bazaars     = bazaarsRes.data     || [];
     listings    = listingsRes.data    || [];
+    bazaarRating = bazaarRatingRes.data || bazaarRating;
 
     /* تقييم المشاركين (حالة وحدات الوحدة على مستوى الموديول) */
     bzRateableParticipants = rateableRes.data || [];
@@ -190,7 +194,7 @@ async function _loadMyProfile() {
     myUserProfile = { ...(myUserProfile || {}), ...syncPayload };
   }
 
-  _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner);
+  _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating);
 }
 
 
@@ -246,7 +250,7 @@ function _buildCompletionCard(profile, userProfile, bazaars) {
 /* ================================================================
    🎨 عرض ملفي الشخصي
    ================================================================ */
-function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner) {
+function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating) {
   const content = document.getElementById('op-content');
 
   const isVerified  = profile?.is_verified === true;
@@ -304,8 +308,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     l.status !== 'sold' && l.status !== 'expired' &&
     !(l.expires_at && l.expires_at < now)
   ).length;
-  const avgRating = reviews.length
-    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
+  const avgRating = bazaarRating?.total
+    ? Number(bazaarRating.avg_rating).toFixed(1)
     : null;
 
   /* ── أوسمة ── */
@@ -313,7 +317,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     isVerified, isSpaceOwner,
     hasBazaars: totalBaz > 0,
     listings, avgRating: avgRating ? parseFloat(avgRating) : 0,
-    reviewsCount: reviews.length,
+    reviewsCount: bazaarRating?.total || 0,
   });
 
   /* ── شارة التوثيق (صغيرة في الاسم) ── */
@@ -428,7 +432,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     <div class="op-stat-card">
       <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
       <div class="op-stat-lbl">متوسط التقييم</div>
-      ${reviews.length > 0 ? `<div class="op-stat-note">بناءً على ${reviews.length} تقييم</div>` : ''}
+      ${bazaarRating?.total > 0 ? `<div class="op-stat-note">بناءً على ${bazaarRating.total} تقييم</div>` : ''}
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${activeListings}</div>
@@ -953,9 +957,11 @@ async function _loadPublicProfile(userId) {
   let bazaars    = [];
   let reputation = null;   // get_user_reputation (السمعة كمستأجر)
   let recvRatings = [];    // user_ratings المستلمة من أصحاب المساحات/المنظمين
+  let totalExhibitors = 0; // إجمالي الحجوزات المؤكدة في كل بازارات هذا المنظم
+  let bazaarRating = { total: 0, avg_rating: 0 }; // متوسط تقييمه كمنظم — من bazaar_reviews
 
   try {
-    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes] = await Promise.all([
+    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes, exhibitorsRes, bazaarRatingRes] = await Promise.all([
       sbClient.from('public_profiles').select('full_name,created_at,roles,city').eq('id', userId).single(),
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
@@ -966,6 +972,8 @@ async function _loadPublicProfile(userId) {
       sbClient.from('user_ratings').select('*')
               .eq('ratee_id', userId).eq('status', 'visible')
               .order('created_at', { ascending: false }),
+      sbClient.rpc('get_organizer_total_exhibitors', { p_organizer_id: userId }),
+      sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: userId }),
     ]);
 
     publicUser  = profileRes.data  || null;
@@ -974,14 +982,16 @@ async function _loadPublicProfile(userId) {
     bazaars     = bazaarsRes.data   || [];
     reputation  = repRes.data       || null;
     recvRatings = recvRes.data      || [];
+    totalExhibitors = exhibitorsRes.data || 0;
+    bazaarRating = bazaarRatingRes.data || bazaarRating;
   } catch (e) {
     console.warn('[profile] public load error:', e.message);
   }
 
-  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings);
+  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings, totalExhibitors, bazaarRating);
 }
 
-function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings) {
+function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings, totalExhibitors, bazaarRating) {
   const content = document.getElementById('op-content');
 
   /* اسم المستخدم — من profiles أو organizer_profiles */
@@ -1049,9 +1059,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     (b.date_end && b.date_end < today)
   );
   const pastCount      = pastBazaars.length;
-  const totalVendors   = bazaars.reduce((s,b) => s + (b.total_slots||0), 0);
-  const avgRating      = reviews.length
-    ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / reviews.length).toFixed(1)
+  const totalVendors   = totalExhibitors || 0;
+  const avgRating      = bazaarRating?.total
+    ? Number(bazaarRating.avg_rating).toFixed(1)
     : null;
 
   /* إحصائيات الأداء */
@@ -1076,7 +1086,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     isVerified, isSpaceOwner,
     hasBazaars: bazaars.length > 0,
     listings: [], avgRating: avgRating ? parseFloat(avgRating) : 0,
-    reviewsCount: reviews.length,
+    reviewsCount: bazaarRating?.total || 0,
   });
 
   /* شارة أداء المنظم (🥉/🥈/🥇) */
@@ -1214,7 +1224,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${totalVendors}</div>
-      <div class="op-stat-lbl">عارض إجمالي</div>
+      <div class="op-stat-lbl">إجمالي العارضين المشاركين</div>
     </div>
   </div>
 

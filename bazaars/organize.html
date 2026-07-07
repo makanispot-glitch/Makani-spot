@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=29">
+<link rel="stylesheet" href="../style.css?v=30">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 
@@ -716,6 +716,85 @@
       </div><!-- /org-media-body -->
     </div><!-- /org-media-section -->
 
+    <!-- ════════════════════════════════
+         ما الذي يشمله الحجز؟ (التجهيزات)
+    ════════════════════════════════ -->
+    <div class="org-media-section" style="margin-top:20px">
+      <div class="org-media-header">
+        <div class="org-media-header-ico">🧰</div>
+        <div class="org-media-header-text">
+          <div class="org-media-header-title">ما الذي يشمله الحجز؟</div>
+          <div class="org-media-header-sub">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه — تظهر له بوضوح في صفحة البازار قبل الحجز (اختياري)</div>
+        </div>
+      </div>
+      <div class="org-media-body">
+
+        <div class="bz-chip-group">
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-table">🪑 ترابيزة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-chair" onchange="orgToggleChairCount()">💺 كرسي</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-pergola">⛱️ برجولة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-canopy">⛺ مظلة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-electricity">⚡ كهرباء</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-lighting">💡 إنارة</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-wifi">📶 واي فاي</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-water">🚰 مصدر مياه</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-other_services">🛠️ خدمات أخرى</label>
+        </div>
+
+        <div class="org-fg" id="o-chair-count-row" style="display:none;max-width:220px;margin-top:14px">
+          <label>عدد الكراسي لكل مكان</label>
+          <input type="number" id="o-chair-count" min="1" max="10" placeholder="مثال: 2">
+        </div>
+
+        <div class="org-fg full" style="margin-top:14px">
+          <label>➕ تجهيزات أخرى (اختياري)</label>
+          <input type="text" id="o-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" maxlength="150">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         الدعاية والتغطية الإعلامية
+    ════════════════════════════════ -->
+    <div class="org-media-section" style="margin-top:20px">
+      <div class="org-media-header">
+        <div class="org-media-header-ico">📢</div>
+        <div class="org-media-header-text">
+          <div class="org-media-header-title">الدعاية والتغطية الإعلامية</div>
+          <div class="org-media-header-sub">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
+        </div>
+      </div>
+      <div class="org-media-body">
+
+        <div class="org-fg full">
+          <label>ميزانية الدعاية المتوقعة</label>
+          <select id="o-ad-budget">
+            <option value="">— غير محددة —</option>
+            <option value="limited">محدودة (أقل من 5,000 ج)</option>
+            <option value="medium">متوسطة (5,000 – 15,000 ج)</option>
+            <option value="good">جيدة (15,000 – 30,000 ج)</option>
+            <option value="large">كبيرة (أكثر من 30,000 ج)</option>
+          </select>
+          <div class="org-hint">تُعرض للعارضين كمستوى (محدودة / متوسطة / جيدة / كبيرة) دون كشف رقم دقيق</div>
+        </div>
+
+        <label class="org-consent" style="margin-top:14px">
+          <input type="checkbox" id="o-ad-photography">
+          <div class="org-consent-text"><strong>تصوير الحدث</strong> — سيتم تصوير فوتوغرافي/فيديو للبازار</div>
+        </label>
+        <label class="org-consent" style="margin-top:10px">
+          <input type="checkbox" id="o-ad-social">
+          <div class="org-consent-text"><strong>تغطية وسائل التواصل الاجتماعي</strong> — سيتم نشر صور وفيديوهات أثناء الحدث</div>
+        </label>
+        <label class="org-consent" style="margin-top:10px">
+          <input type="checkbox" id="o-ad-paidads">
+          <div class="org-consent-text"><strong>إعلانات ممولة</strong> — سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</div>
+        </label>
+
+      </div>
+    </div>
+
     <div class="org-nav">
       <button class="org-nav-back" onclick="orgBack(2)">← المنظم</button>
       <button class="org-nav-next" onclick="orgNext(2)">التالي — التسعير →</button>
@@ -868,6 +947,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="/notifications.js?v=20260623" defer></script>
 <script src="../media-handler.js" defer></script>
-<script src="organize.js?v=202606171812" defer></script>
+<script src="organize.js?v=202607070338" defer></script>
 </body>
 </html>
