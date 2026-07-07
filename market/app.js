@@ -184,9 +184,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // الربط العميق للمشروع من الرابط الرئيسي
     const urlParams = new URLSearchParams(window.location.search);
     const listingId = urlParams.get('listing');
+    const manageId  = urlParams.get('manage');
     if (listingId) {
       setTimeout(() => {
         eqOpenDetail(listingId);
+      }, 500);
+    } else if (manageId && eqUser) {
+      /* من إشعار "إعلانك أوشك على الانتهاء" — يفتح على شاشة تعديل الإعلان مباشرة */
+      setTimeout(async () => {
+        document.getElementById('eq-my-modal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        await eqLoadMyListings();
+        eqOpenEdit(manageId);
       }, 500);
     } else if (urlParams.get('myListings') && eqUser) {
       setTimeout(() => {
@@ -260,6 +269,9 @@ function eqRenderNavUser() {
       <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.4 5.4 0 0 0-7.6 0L12 6.1l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.5a5.4 5.4 0 0 0 0-7.6Z"/></svg>
         <span class="eq-fav-badge" id="eq-fav-badge"></span>
+      </button>
+      <button class="eq-fav-nav-btn" id="eq-mylistings-nav-btn" onclick="eqOpenMyListings()" title="إعلاناتي">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
       </button>
       <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
         <div class="nav-avatar-circle">${circleHtml}</div>

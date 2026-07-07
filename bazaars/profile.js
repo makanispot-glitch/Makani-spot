@@ -514,7 +514,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     <div class="op-section-card">
       <div class="op-section-title">
         <span>🛍️ إعلاناتي في السوق</span>
-        <a href="/market/" target="_blank">الكل ←</a>
+        <a href="/market/?myListings=1" target="_blank">إدارة الكل ←</a>
       </div>
       ${_renderListingsGrid(listings)}
     </div>
@@ -908,7 +908,7 @@ function _renderListingsGrid(listings) {
     return `<div class="op-empty">
       <div style="font-size:26px;margin-bottom:8px">🛍️</div>
       <div>لا توجد إعلانات بعد</div>
-      <a href="/market/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">أضف إعلاناً الآن ←</a>
+      <a href="/post-ad/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">أضف إعلاناً الآن ←</a>
     </div>`;
   }
 
@@ -928,7 +928,7 @@ function _renderListingsGrid(listings) {
         : `<span>🛍️</span>`;
 
       return `
-        <div class="op-listing-card" onclick="window.open('/market/','_blank')" title="${l.title}">
+        <div class="op-listing-card" onclick="window.open('/market/?manage=${l.id}','_blank')" title="إدارة إعلان: ${l.title}">
           <div class="op-listing-img">${imgHtml}</div>
           <div class="op-listing-info">
             <div class="op-listing-title">${l.title || 'إعلان'}</div>

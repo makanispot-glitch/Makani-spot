@@ -1,636 +1,746 @@
-# دليل منصة مكاني Spot — للذكاء الاصطناعي (الدليل الشامل)
+# دليل منصة مكاني Spot — المرجع الرسمي
 
-> **الهدف:** هذا الملف هو المرجع التقني الشامل والمحدّث للمنصة. اقرأه **أولاً** قبل أي تعديل لتعرف أين تذهب مباشرةً دون البحث في الكود.
+> هذا الملف هو **المرجع التقني الرسمي** لمنصة مكاني Spot كما تعمل اليوم. الغرض منه إجابة سؤال واحد: **كيف تعمل المنصة الآن؟** — وليس توثيق تاريخ تطويرها.
 >
-> **آخر تحديث كبير:** يوليو 2026 — إعادة تصميم دورة حياة المساحة بالكامل: **نشر فوري (Post-Moderation)** بدل موافقة أدمن مسبقة، توحيد منطق الحجز/تحويل بيانات المساحة في طبقة `shared/` مشتركة، إزالة Google Sheets نهائياً من الحجوزات، وآلية أرشفة تدريجية للمساحات الخاملة.
-
----
-
-## 0. ملخّص أحدث التحديثات (اقرأه إن كنت عائداً لمشروع تعرفه)
-
-| التحديث | ماذا تغيّر | الملفات المتأثرة |
-|---------|-----------|------------------|
-| **🔴 توحيد التكامل والترابط عبر المنصة (يوليو 2026)** | `shared/sb-config.js` عُمِّم على 12 ملفاً إضافياً (كل admin/*.html + bazaars/* + market/ + post-ad/). `bazaar_bookings.user_id` أصبح uuid حقيقي (كان نصاً). `notifications.owner_id` (نصي، قديم) **أُزيل نهائياً** — `user_id` (uuid) هو العمود الوحيد الآن، وسياسة احتفاظ موحّدة (60/90 يوم). `user_bazaar_notifications` (جدول قديم مواز) **حُذف بالكامل** — انظر `docs/adr/0001-*.md`. 5 دوال RPC مكررة الاسم بتوقيعات مختلفة نُظِّفت لنسخة واحدة لكل منها. | Migration DB، `docs/adr/`, `migrations/*.sql`، كل ملفات admin/bazaars/market/post-ad |
-| **🔴 دورة حياة المساحة الجديدة (يوليو 2026)** | النشر **فوري** عند الإضافة (`status` الافتراضي `'live'` — لا مراجعة أدمن قبل الظهور). عمود `is_active` **أُزيل نهائياً** — استُبدل بعمود `status` وحيد بقيم: `live`/`paused`/`hidden_by_admin`/`archived`. إضافة `is_deleted`+`deleted_at` (حذف ناعم فقط)، و`last_activity_at`+`dormancy_notice_sent`+`dormancy_reminder_sent` (أرشفة تلقائية بعد ~6 أشهر خمول عبر `pg_cron`). التحقق من صلاحية القيم بـ `spaces_status_check` (CHECK constraint). | Migration DB، `dashboard/app.js`, `admin/spaces-hub.html`, `admin/admin-hub.html` |
-| **🟢 طبقة JS مشتركة جديدة (`shared/`)** | `shared/sb-config.js` (مفاتيح Supabase موحّدة)، `shared/space-model.js` (`mapSpaceRow`, `fetchLiveSpaces`, `resolveSizePrice`, ثوابت `SPACE_STATUS`)، `shared/booking.js` (`submitSpaceBookingRequest` — نقطة إدراج حجز واحدة للرئيسية و`/spaces/`). لا build step — تحميل بـ `<script src>` عادي. | `index.html`, `spaces/index.html`, `dashboard/index.html` |
-| **🔴 إزالة Google Sheets من الحجوزات** | `BOOKING_URL` (Apps Script) أُزيل بالكامل من مسارات الحجز/المعاينة — Supabase `bookings` هو المصدر الوحيد الآن. سعر الحجز يُحسم من `sizePrices`/`resolveSizePrice` (رقم حقيقي، لا استخراج نصي)، ويوجد شبكة أمان في trigger `_bookings_fill_owner` تستبدل أي سعر فارغ/صفري بـ `spaces.min_price`. `BAZAAR_SHEET_URL` (بازارات legacy) **لم يُمس** — خارج نطاق هذا التغيير. | `app.js`, `spaces/app.js`, DB trigger |
-| **🟢 صلاحيات مشدّدة على `spaces`** | المالك يعدّل الحقول الوصفية فقط عبر GRANT عمودي صريح (لا يقدر يكتب `status` مباشرة). تغيير حالة النشر (live/paused) عبر RPC `owner_set_space_publish_state` فقط. لا حذف ذاتي مباشر للمالك — الإيقاف (pause) يغطي نفس الحاجة. | Migration DB (RLS + column GRANTs) |
-| ~~هجرة المساحات إلى Supabase~~ *(مايو 2026، تاريخي)* | المساحات لم تعد تُقرأ من Google Sheets. تُقرأ من `spaces`+`space_units`+`space_activities` مع Realtime + polling احتياطي كل 5 دقائق. | `app.js`, `spaces/app.js`, `dashboard/app.js` |
-| **🟠 نظام الباقات (Plans)** | ثلاث باقات: **Starter** (مجاني) · **Growth** (3,000ج) · **Pro** (4,500ج). صفحة أسعار `#pg-pricing`. تخزّن في `profiles.plan_tier`. | `index.html` (#pg-pricing), `style.css` (`pkg-*`) |
-| **🟠 Plan Gating** | قفل ميزات الداشبورد حسب الباقة (`canAccess()`, `planGateHtml()`). ترتيب المساحات في الواجهة حسب الباقة (`_sortByPlan`) + شارات ثقة (`_planTrustBadgeHtml`). | `dashboard/app.js`, `app.js`, `spaces/app.js` |
-| **🟠 طلبات الترقية / التحويل** | المالك يطلب عبر مودال → جدول `upgrade_requests` → الأدمن يراجع في `spaces-hub.html`/`subscriptions.html` → RPC `admin_set_plan_tier` يحدّث `profiles.plan_tier`. | `app.js`, `admin/spaces-hub.html`, `admin/subscriptions.html` |
-| **🟢 مركز تحكم إداري جديد** | `admin/admin-hub.html` صفحة رئيسية تربط: إدارة المساحات، الاشتراكات، البازارات، طلبات المنظّمين، التقييمات. | `admin/*.html` |
-| **🟢 إدارة المساحات للأدمن** | `admin/spaces-hub.html`: موافقة/رفض/تعديل/حذف المساحات والوحدات + إشعارات. الموافقة تُفعّل Realtime على الموقع العام. | `admin/spaces-hub.html` |
-| **🟢 صفحة إضافة مساحة في الداشبورد** | المالك يضيف مساحة + وحدات فرعية + صور → تُحفظ في Supabase بحالة `pending`. حد Growth = 8 مساحات. | `dashboard/` (`view-add-space`, `submitAddSpace`) |
-| **🟢 نظام المعاينة (Inspection)** | مودال حجز معاينة للمساحة (`#inspection-modal`, `_insp*`). | `app.js` |
-| **🟢 رفع الصور إلى Cloudflare R2** | `media-handler.js` يضغط الصور (WebP/Canvas) ويرفعها لـ **Cloudflare R2** عبر Pages Function `/upload` (وليس Supabase Storage). | `media-handler.js`, `functions/upload.js`, `dashboard/app.js` |
-| **🟢 تقييمات حقيقية** | `user_ratings` في Supabase + RPC `owner_list_rateable_tenants` + صفحة أدمن `ratings.html`. | `dashboard/app.js`, `admin/ratings.html` |
+> أي مطوّر (أو نموذج ذكاء اصطناعي) يقرأ هذا الملف يجب أن يفهم فلسفة كل منظومة وعلاقتها بباقي المنصة دون الحاجة للبحث في الكود. عند التعارض بين هذا الملف والكود الفعلي، **الكود هو المرجع الصحيح دائمًا** — هذا الملف يوصف حالة لحظة كتابته، ويجب تحديثه كلما تغيّرت البنية الجوهرية للمنصة.
 
 ---
 
 ## 1. نظرة عامة على المنصة
 
-**مكاني Spot** منصة عربية (RTL) لاستئجار مساحات صغيرة في مولات، نوادٍ، ومدارس في مصر، بالإضافة إلى نظام بازارات وسوق مشاريع.
+**مكاني Spot** منصة عربية (RTL بالكامل) تُشغّل ثلاث منظومات سوق مترابطة تحت هوية موحّدة واحدة:
 
-- **المستخدمون:** مستأجرون (Tenants) · أصحاب مساحات (Owners) · منظّمو بازارات (Organizers) · مدراء (Admins)
-- **البنية التقنية:** Vanilla HTML/CSS/JS (بدون أي framework) · **Supabase** (Auth + Postgres DB + Realtime) · **Cloudflare** (Pages للاستضافة + Functions + R2 للصور) · Google Apps Script (الحجوزات فقط + بازارات legacy) · PWA.
-- **نموذج العمل:** اشتراك شهري لأصحاب المساحات (باقات)، بدون عمولة على الحجز.
+1. **تأجير مساحات صغيرة** (أكشاك/أركان داخل مولات، نوادٍ، مدارس) — بين أصحاب المساحات والمستأجرين.
+2. **بازارات وفعاليات** — بين منظّمي البازارات والعارضين/الزوار، بالإضافة لسوق B2B داخلي يربط أصحاب المساحات الفارغة بمنظّمي البازارات.
+3. **سوق مشاريع جاهزة للبيع** (Marketplace/Listings) — بين البائعين والمشترين، منفصل تمامًا عن المساحات والبازارات.
+
+بالإضافة إلى لوحة بيانات إعلانات رسمية/مناقصات حكومية معروضة كنوع محتوى إضافي داخل تصفّح المساحات.
+
+### المستخدمون
+
+- **زوار/مستأجرون** — الدور الافتراضي لأي حساب جديد.
+- **أصحاب مساحات** — عبر طلب تحويل يوافق عليه الأدمن.
+- **منظّمو بازارات** — عبر طلب توثيق (KYC) يوافق عليه الأدمن.
+- **مدراء** — حساب واحد بدور `admin`.
+
+حساب واحد يمكن أن يجمع أكثر من دور في آنٍ واحد (صاحب مساحة **و** منظّم بازار على نفس الحساب) — لا حسابات منفصلة لكل دور.
+
+### فلسفة المنصة
+
+- **بدون عمولة على الحجز.** نموذج العمل قائم على اشتراك شهري لأصحاب المساحات فقط (باقات Starter/Growth/Pro)، لا أي اقتطاع من قيمة الحجز أو الصفقة.
+- **Vanilla JS بلا أي إطار عمل (Framework).** كل صفحة HTML/CSS/JS خام، بدون خطوة بناء (build step) — أي ملف JS جديد يُحمَّل مباشرة عبر `<script src>`.
+- **مصدر واحد للحقيقة (Single Source of Truth)** لكل مفهوم حالة: نشر مساحة، حالة حجز، حالة كشك، إشعار، باقة — عمود أو جدول واحد فقط يُعتمد عليه، لا أعمدة موازية "احتياطية".
+- **طبقة مشتركة بدل التكرار.** أي منطق يتكرر عبر أكثر من صفحة (تحويل بيانات مساحة، إرسال حجز، عرض إشعار، رفع صورة) يعيش في ملف JS مشترك واحد، لا نسخ متوازية قابلة للتباعد بمرور الوقت.
+
+### فلسفة تقليل التكلفة
+
+المنصة مبنية بالكامل على خدمات مُدارة بدون أي خادم دائم يحتاج صيانة أو يُكلّف بغضّ النظر عن الاستخدام:
+
+- **Cloudflare Pages** يستضيف كل الملفات الثابتة مجانًا.
+- **Cloudflare R2** يخزّن كل صور المنصة بلا رسوم نقل بيانات خارجة (egress).
+- **Cloudflare Pages Functions** توفّر أي منطق سيرفري خفيف (رفع صور، مصادقة إدارية) بدون خادم دائم.
+- **Supabase** توفّر قاعدة بيانات Postgres + مصادقة + بث لحظي (Realtime) + جدولة مهام (pg_cron) كخدمة واحدة مُدارة.
+- المنطق الحسّاس (صلاحيات، حسابات، تنظيف بيانات) يعيش داخل قاعدة البيانات نفسها (دوال SQL + مهام مجدولة) بدل تشغيل عامل خلفي (worker) منفصل.
+
+### فلسفة قابلية التوسع
+
+كل قائمة عامة يُحتمَل نموّها لمئات أو آلاف الصفوف (المساحات هي المثال الأنضج اليوم) تُبنى على نمط: **استعلام خادمي واحد يطبّق الفلترة والترتيب والترقيم معًا، ويُعيد فقط الصفحة المطلوبة**، بدل تحميل كل البيانات إلى المتصفح ثم الفلترة محليًا. هذا النمط هو المعيار الذي يجب أن تتبعه أي قائمة عامة جديدة في المنصة منذ اليوم الأول.
+
+### البنية العامة (ملخّص)
+
+```
+المتصفح (HTML/CSS/JS خام، بلا Framework)
+   │
+   ├─ Supabase JS Client ──► Postgres (RLS + RPC + Realtime + Auth)
+   │                              │
+   │                              └─► pg_cron (مهام مجدولة داخل القاعدة)
+   │
+   └─ Cloudflare Pages Functions ──► Supabase (بمفتاح service_role، لعمليات إدارية حسّاسة)
+                                  └─► Cloudflare R2 (تخزين الصور)
+```
+
+يُفصَّل كل جزء من هذه البنية في القسم التالي.
 
 ---
 
-## 2. شجرة الملفات الكاملة
+## 2. البنية المعمارية العامة (Architecture Overview)
+
+### Frontend
+
+مجموعة صفحات HTML مستقلة، كل واحدة بملف JS خاص بها (لا مكوّنات مشتركة عبر إطار عمل — فقط ملفات JS تُحمَّل عالميًا). الصفحة الرئيسية (`index.html`) هي تطبيق صفحة واحدة (SPA) داخلي بالتنقل عبر دالة عرض/إخفاء أقسام، لكنها لا تتشارك هذا الـ Router مع باقي الصفحات؛ كل مجلد فرعي (`dashboard/`, `admin/`, `bazaars/`, `market/`, `spaces/`, `post-ad/`, `catalog/`) صفحة أو مجموعة صفحات قائمة بذاتها، تُحمَّل بتنقل حقيقي بين الروابط (لا SPA موحّد للمنصة كلها).
+
+هيكل المجلدات الرئيسي:
 
 ```
 Makani-spot/
-│
-├── index.html              ← التطبيق الرئيسي (SPA — كل صفحات الزائر/المستأجر) (~3,096 سطر)
-├── app.js                  ← منطق التطبيق الرئيسي (~3,459 سطر)
-├── style.css               ← نظام التصميم الكامل (~7,074 سطر)
-├── media-handler.js        ← ضغط الصور (WebP/Canvas) ورفعها إلى Cloudflare R2 عبر /upload
-├── sw.js                   ← Service Worker (PWA / offline)
-├── manifest.json           ← PWA manifest
-├── offline.html            ← صفحة Offline fallback
-├── _headers                ← Cloudflare Pages headers
-├── robots.txt
-├── favicon.jpg
-├── bump-version.ps1        ← سكربت رفع رقم نسخة الكاش (sw.js)
-├── market-filter-inline.tmp.js  ← ملف مؤقت (غير مستخدم في الإنتاج)
-│
-├── spaces/                 ← صفحة تصفّح المساحات المستقلة (Marketplace كامل)
-│   ├── index.html          (~1,199 سطر)
-│   └── app.js              (~1,928 سطر) — تحميل من Supabase + Realtime + مودال معاينة
-│
-├── dashboard/              ← لوحة تحكم صاحب المساحة (Owner Dashboard)
-│   ├── index.html          (~2,567 سطر) — التصميم الداكن + كل الـ views inline
-│   └── app.js              (~3,602 سطر) — Auth بالدور، Plan Gating، إضافة مساحة، تقييمات
-│
-├── admin/                  ← مركز التحكم الإداري (صفحات مستقلة، كل صفحة Supabase خاص بها)
-│   ├── admin-hub.html      ← 🏠 الصفحة الرئيسية للأدمن — بطاقات + إحصائيات عامة
-│   ├── spaces-hub.html     ← إدارة المساحات (موافقة/رفض/تعديل/حذف + وحدات)
-│   ├── subscriptions.html  ← إدارة الاشتراكات والباقات (طلبات الترقية)
-│   ├── ratings.html        ← إدارة التقييمات
-│   ├── bazaar-dashboard.html ← إدارة البازارات والأكشاك
-│   ├── organizer-requests.html ← طلبات توثيق المنظّمين
-│   └── index.html          ← (قديم) لوحة مراجعة الإعلانات الأصلية
-│
-├── bazaars/                ← نظام البازارات
-│   ├── index.html          ← تصفّح البازارات
-│   ├── app.js              ← منطق البازار (~72KB)
-│   ├── organize.html/.js   ← إنشاء بازار + محرر خريطة الأكشاك
-│   ├── profile.html/.js    ← ملف المنظّم العام
-│   └── verification.html/.js ← طلب توثيق المنظّم
-│
-├── market/                 ← سوق المشاريع الجاهزة (بيع/شراء مشاريع)
-│   ├── index.html
-│   └── app.js
-│
-├── post-ad/index.html      ← نشر مشروع للبيع
-├── catalog/index.html      ← كتالوج المشاريع
-├── policies/index.html     ← الشروط والسياسات
-│
-├── functions/              ← Cloudflare Pages Functions (Serverless endpoints)
-│   ├── admin/auth.js       ← مصادقة الأدمن (server-side)
-│   ├── admin/listings.js   ← إدارة الإعلانات (server-side)
-│   ├── delete-listing.js   ← حذف إعلان
-│   └── upload.js           ← رفع ملفات
-│
-└── icons/                  ← أيقونات PWA (icon-192, icon-512, icon.svg, maskable.svg)
+├── index.html, app.js, style.css       ← الواجهة الرئيسية (SPA داخلي)
+├── shared/                             ← الطبقة المشتركة (قسم 3)
+├── notifications.js                    ← وحدة الإشعارات الموحّدة (قسم 7)
+├── media-handler.js                    ← خط أنابيب رفع الصور (قسم 9)
+├── spaces/                             ← تصفّح المساحات + الإعلانات الرسمية (Marketplace كامل)
+├── dashboard/                          ← لوحة تحكم صاحب المساحة
+├── admin/                              ← مركز التحكم الإداري (صفحات مستقلة)
+├── bazaars/                            ← تصفّح/تنظيم/إدارة البازارات + سوق الفرص B2B
+├── market/, post-ad/, catalog/         ← سوق المشاريع الجاهزة للبيع
+├── functions/                          ← Cloudflare Pages Functions (رفع صور + طبقة إدارية بديلة)
+├── migrations/, docs/adr/              ← سجلّات ترحيل وقرارات معمارية موثّقة
+└── icons/, manifest.json, sw.js        ← PWA
 ```
+
+### Backend
+
+لا يوجد تطبيق خلفي تقليدي (لا Node/Python/إلخ يعمل بشكل دائم). منطق العمل موزَّع بين طبقتين:
+
+1. **قاعدة البيانات نفسها** — كل قواعد الصلاحيات، والتحقق، والحسابات المشتقة، والتنظيف الدوري تعيش كدوال SQL ومحفّزات (Triggers) ومهام مجدولة (pg_cron) داخل Postgres. هذه هي الطبقة الأساسية لأي منطق يحتاج ثقة (لا يمكن التلاعب به من المتصفح).
+2. **Cloudflare Pages Functions** — طبقة رقيقة serverless تُستدعى فقط حين يحتاج الإجراء سرًّا لا يجوز أن يصل إطلاقًا إلى المتصفح (مفتاح `service_role` لسوق المشاريع الإداري، كلمة سرّ الأدمن القديمة، رفع الصور إلى R2).
+
+### Supabase
+
+- **Auth** — تسجيل الدخول (Email/Password + Google OAuth) لكل المستخدمين، بما فيهم حساب الأدمن في معظم صفحات الإدارة.
+- **Postgres** — 44 جدولاً، RLS مفعّلة على الجميع بلا استثناء، 145+ دالة RPC، عشرات المحفّزات.
+- **Realtime** — بث تغييرات فورية على جداول محدَّدة (المساحات، الإشعارات، خريطة أكشاك البازار، حجوزات المالك) عبر قنوات مخصّصة لكل نطاق.
+- **RPC** — الوسيلة القياسية لأي عملية كتابة أو قراءة تتجاوز صلاحيات RLS الأساسية؛ كل دالة من هذا النوع تتحقق من الصلاحية داخليًا (`is_admin()`، أو `auth.uid() = owner_id`) بدل الاعتماد فقط على من يملك حق استدعائها.
+- **pg_cron** — 18 مهمة مجدولة تغطي كل التنظيف/الانتهاء/الأرشفة/الصيانة في المنصة (مفصّلة في قسم إدارة البيانات).
+- **Storage غير مُستخدَم إطلاقًا.** كل الصور على Cloudflare R2 حصرًا.
+
+### Cloudflare Pages
+
+استضافة كل الملفات الثابتة (HTML/CSS/JS/الصور المرفقة بالمستودع) بلا خادم مقابل.
+
+### Cloudflare R2
+
+مخزن الكائنات الوحيد لكل صور المنصة (مساحات، وحدات، إعلانات، بازارات، بروفايلات) — دلو (bucket) واحد، عرض عام عبر رابط `pub-...r2.dev` ثابت.
+
+### Realtime
+
+يُستخدم في نطاقات محدَّدة ومدروسة فقط، وليس بشكل شامل: قناة المساحات في الرئيسية، قناة المساحات في `/spaces/`، قناة إشعارات لكل مستخدم، قناة خريطة أكشاك البازار، قناة حجوزات المالك. كل قناة تُطبِّق تأخير تجميع (debounce) قبل إعادة الجلب، ولها نبض احتياطي (polling) كخط دفاع ثانٍ عند انقطاع الاتصال المباشر، وتتوقف عن العمل الزائد حين تكون الصفحة في الخلفية.
+
+### RPC
+
+الطبقة الأساسية لأي منطق يحتاج صلاحيات تتجاوز RLS العادي. نمطان واضحان:
+- **`SECURITY DEFINER`** (الغالبية الساحقة) — تُنفَّذ بصلاحيات مالك الدالة، مع تثبيت صريح لمسار البحث (`search_path`) في كل دالة لمنع أي تلاعب بجلسة المستدعي.
+- **`SECURITY INVOKER`** (استثناء متعمَّد، الأبرز: البحث العام عن المساحات) — تُنفَّذ بصلاحيات المستدعي نفسه، لتبقى خاضعة لنفس RLS التي يخضع لها أي زائر تلقائيًا.
+
+### Cron Jobs
+
+18 مهمة نشطة، من إعادة حساب مقاييس لوحة الأدمن كل 15 دقيقة إلى صيانة قاعدة البيانات الأسبوعية — القائمة الكاملة في قسم "إدارة البيانات".
+
+### Shared Layer
+
+أربعة ملفات JS مشتركة تُحمَّل عالميًا (بلا وحدات ES، بلا خطوة بناء):
+
+| الملف | الدور |
+|---|---|
+| `shared/sb-config.js` | مفاتيح Supabase + دالة إنشاء العميل — مصدر واحد بدل تكرار المفتاح في كل صفحة |
+| `shared/space-model.js` | تمثيل بيانات المساحة + البحث الموحّد (`searchPublicSpaces`) |
+| `shared/booking.js` | إرسال طلب حجز مساحة — نقطة واحدة للرئيسية و`/spaces/` معًا |
+| `notifications.js` | وحدة الإشعارات الموحّدة (`GN`) — مثبَّتة في كل صفحة مصادَق عليها |
+
+تفصيل كل واحد في القسم التالي.
 
 ---
 
-## 3. مصادر البيانات (مهم جداً — تغيّر جذرياً)
+## 3. الطبقات المشتركة (Shared Core)
 
-```
-┌─ Supabase (المصدر الأساسي الآن) ──────────────────────────────┐
-│  Auth          → تسجيل دخول/تسجيل (Email + Google OAuth)        │
-│  Postgres DB   → spaces, space_units, space_activities,        │
-│                  profiles, bookings, notifications,            │
-│                  user_ratings, upgrade_requests,              │
-│                  bazaars, bazaar_slots, bazaar_bookings,       │
-│                  organizer_requests, organizer_profiles        │
-│  Realtime      → بثّ تغييرات spaces + space_units فورياً        │
-│  RPC           → owner_list_rateable_tenants, admin_set_plan_tier │
-│  (Auth token من Supabase يُستخدم لتفويض رفع الصور إلى R2)        │
-└────────────────────────────────────────────────────────────────┘
+### Authentication
 
-┌─ Cloudflare (الاستضافة + الصور) ──────────────────────────────┐
-│  Pages         → استضافة الموقع كله                            │
-│  Pages Functions → /upload, /admin/auth, /admin/listings, ...  │
-│  R2 Storage    → صور المساحات/الوحدات/الإعلانات (bucket عبر /upload) │
-│                  العرض من R2_PUBLIC_BASE (pub-...r2.dev)        │
-└────────────────────────────────────────────────────────────────┘
+Supabase Auth (Email/Password + Google OAuth) هي آلية الدخول لكل المستخدمين العاديين. عند أي تسجيل جديد، محفّز على مستوى القاعدة ينشئ صفًّا في `profiles` تلقائيًا بدور افتراضي `tenant` — لا تدخّل يدوي مطلوب.
 
-┌─ Google Apps Script (متبقٍّ محدود) ───────────────────────────┐
-│  BOOKING_URL        → حفظ الحجوزات (submitBooking)             │
-│  BAZAAR_SHEET_URL   → بيانات بازارات قديمة (legacy fallback)   │
-│  ⚠️ ملاحظة: المساحات لم تعد من Sheets — SHEET_URL أُزيل.        │
-│  ⚠️ ملاحظة: الصور ليست على Supabase Storage — بل Cloudflare R2. │
-└────────────────────────────────────────────────────────────────┘
-```
+حساب الأدمن (واحد فقط) يُصادَق أيضًا عبر Supabase Auth (`signInWithPassword`) في معظم صفحات الإدارة، لكن صفحة سوق المشاريع الإدارية القديمة وكل أدواتها الحديثة تستخدم آلية منفصلة تمامًا (تفصيلها في قسم الأمان).
 
-**إعدادات الاتصال:** `SUPABASE_URL`/`SUPABASE_KEY` أصبحا مركزيَّين في **`shared/sb-config.js`** (يوليو 2026) — لتغيير المفتاح، عدّل هذا الملف فقط. كل الصفحات (الرئيسية، spaces/, dashboard/, admin/*.html, bazaars/*, market/, post-ad/) تحمّله بـ `<script src="shared/sb-config.js">` قبل كودها الخاص. بعض الصفحات تُعرّف alias محلي (`SB_URL`, `ADM_SB_URL`, `EQ_SUPABASE_URL`...) يشير لنفس القيمة المركزية بدل تكرارها. `BAZAAR_SHEET_URL` (بازارات legacy fallback) لا يزال في `app.js` — خارج نطاق هذا التوحيد.
+### Profiles
 
----
+`profiles` هو مصدر الهوية الوحيد لكل مستخدم، لكنه مقفل بالكامل بـ RLS على القراءة الذاتية فقط — أي قراءة لبيانات مستخدم آخر تمر عبر قناة آمنة مخصّصة (عرض عام أو دالة RPC)، لا عبر الجدول الخام مباشرة. التفصيل الكامل في قسم 8.
 
-## 4. مخطّط قاعدة بيانات Supabase (الجداول المرصودة)
+### Roles
 
-> هذه الأعمدة مستنتجة من استعلامات الكود الفعلية. استخدمها كمرجع عند كتابة استعلامات جديدة.
+عمود `role` (قيمة واحدة: `tenant`/`owner`/`admin`) للتحقق الأساسي من نوع الحساب، وعمود `roles` (مصفوفة نصية) للأدوار الإضافية التراكمية (مثل `bazaar_organizer`) التي يمكن أن تتراكب مع `role` الأساسي على نفس الحساب.
 
-### `spaces` — المساحات الرئيسية
-| العمود | الوصف |
-|--------|--------|
-| `id` | المعرّف |
-| `owner_id` | FK → profiles.id (صاحب المساحة) |
-| `name`, `type` (`mall`/`club`/`school`), `region` | بيانات أساسية |
-| `min_price` | أقل سعر (يُعرض كـ price) |
-| `sizes_prices` | نص الأحجام مفصول بـ `|` أو `·` |
-| `activities` (array), `all_acts` (bool) | الأنشطة المسموحة |
-| `badge`, `badge_class`, `season`, `insight` | شارات وعرض |
-| `description`, `amenities` (array) | تفاصيل |
-| `image_url`, `extra_images` (array), `icon_emoji`, `thumb_color` | الوسائط |
-| `sort_order` | ترتيب العرض |
-| **`status`** | `live` (منشورة، الافتراضي) / `paused` (أوقفها المالك) / `hidden_by_admin` (أخفاها الأدمن + `reject_reason`) / `archived` (أرشفة تلقائية لعدم النشاط). قيد CHECK يمنع أي قيمة أخرى. **الظهور للعامة يتطلب `status='live' AND NOT is_deleted` فقط — لا يوجد عمود `is_active` بعد الآن.** |
-| `is_deleted`, `deleted_at`, `deleted_by` | حذف ناعم (أدمن فقط) — البيانات تبقى محفوظة |
-| `last_activity_at`, `dormancy_notice_sent`, `dormancy_reminder_sent` | تتبّع الخمول للأرشفة التلقائية (cron يومي `spaces_dormancy_lifecycle`) |
-| `reviewed_at`, `reject_reason` | هل راجعها الأدمن + سبب الإخفاء إن وُجد (النشر لا ينتظر المراجعة) |
-| `created_at` | تاريخ الإنشاء |
+### Permissions
 
-### `space_units` — الوحدات الفرعية داخل المساحة
-`id`, `space_id` (FK→spaces), `unit_id`, `name`, `floor`, `size`, `price`, `status` (`available`/…), `location`, `image_url`, `notes`
+RLS هو خط الدفاع الأول دائمًا (مفعّل على كل الجداول)، ودالة `is_admin()` هي المرجع الوحيد لصلاحية الإدارة داخل أي RPC حديث — تتحقق أن `auth.uid()` الحالي يملك `role='admin'`. لا اعتماد على معرّف مستخدم مُرمَّز صراحة في الكود لهذا الغرض.
 
-### `space_activities` — قائمة الأنشطة التجارية
-`id`, `emoji`, `name_ar`, `is_active`, `sort_order`
+### Notifications
 
-### `profiles` — ملفات المستخدمين
-`id` (= auth.users.id), `name`, `phone`, `email`, **`role`** (`owner`/مستأجر/admin), **`plan_tier`** (`starter`/`growth`/`pro`), وحقول إضافية.
+جدول واحد (`notifications`)، عمود هوية واحد (`user_id`)، وحدة JS مشتركة واحدة (`GN`). التفصيل الكامل في قسم 7.
 
-### `upgrade_requests` — طلبات تحويل لحساب صاحب مساحة / اختيار باقة
-الأعمدة الفعلية (من `submitOwnerRequest`): `user_id`, `user_email`, `user_name`, `place_name`, `place_type`, `phone`, `notes`, `selected_plan` (`starter`/`growth`/`pro` — اختياري), `status` (`pending`/`approved`/`rejected`/`contacted`). يُنشأ من `app.js` (`submitOwnerRequest`/`requestOwnerUpgrade`)، ويُراجَع في `admin/subscriptions.html` و `admin/spaces-hub.html`.
+### Media Pipeline
 
-### `notifications` — إشعارات المالك
-`owner_id`, `type` (مثل `space_submitted`), `title`, `body`, علم القراءة.
+مكتبة رفع صور مشتركة واحدة (`media-handler.js`) لكل صورة تُرفع في المنصة، بلا استثناء. التفصيل الكامل في قسم 9.
 
-### `bookings` — الحجوزات (نظام إدارة طلبات الحجز) ⭐
-الأعمدة: `id`, `user_id` (FK→auth.users, الحاجز), `owner_id` (FK→auth.users, صاحب المساحة), `space_id` (FK→spaces), `space_name`, `space_loc`, `price` (numeric), `activity`, `size`, `duration`, `start_date`, `notes`, **`status`** (`pending`/`viewing_pending`/`confirmed`/`cancelled`/`completed`), **`is_waitlist`** (bool — قائمة الانتظار), `profile_link`, `created_at`, `updated_at`.
+### Storage
 
-**التدفّق:** نموذج الحجز (`submitBooking` في `app.js` و `spaces/app.js`) يُدرج صفّاً بـ `user_id`+`space_id`+`owner_id`. صاحب المساحة يراها في **لوحة التحكم → طلبات الحجز** (`view-bookings`).
+Cloudflare R2 حصرًا. لا استخدام لـ Supabase Storage في أي مكان بالمنصة.
 
-**Triggers (مهمة):**
-- `trg_bookings_fill_owner` (BEFORE INSERT) → `_bookings_fill_owner()`: يملأ `owner_id` تلقائياً من `spaces` عند توفّر `space_id` فقط (ضمان وصول الطلب للمالك الصحيح حتى لو لم يضبطه العميل).
-- `trg_notify_owner_on_booking` (AFTER INSERT) → `notify_owner_on_booking()`: يُنشئ إشعاراً للمالك (`booking_request`/`waitlist_request`)، ويشتق اسم الحاجز من `profiles` (entity_name/full_name). ⚠️ كان معطوباً يشير إلى `NEW.name` (عمود غير موجود) فيُفشل **كل** إدراج حجز — أُصلح.
+### Plans & Subscriptions
 
-**RPCs (SECURITY DEFINER، مفلترة بـ `auth.uid()=owner_id`):**
-- `owner_update_booking_status(p_booking_id, p_status)` — قبول/رفض (`confirmed`/`cancelled`/`completed`).
-- `owner_promote_waitlist(p_booking_id)` — ترقية طلب من قائمة الانتظار لحجز مؤكد.
-- `owner_set_booking_waitlist(p_booking_id, p_on)` — نقل طلب من/إلى قائمة الانتظار.
-- `owner_space_interest()` — تحليلات لكل مساحة: `total`/`pending`/`waitlist`/`confirmed` (شريط «المهتمون بمساحاتك»).
+ثلاث باقات لأصحاب المساحات: **Starter** (مجانية)، **Growth** (3,000 ج/شهر)، **Pro** (4,500 ج/شهر). تُخزَّن الباقة الحالية في `profiles.plan_tier`، وتفاصيل الاشتراك (بداية/نهاية/تجديد تلقائي) في جدول `subscriptions` منفصل يتزامن معه تلقائيًا عبر محفّز.
 
-⚠️ **ملاحظة قراءة:** لا يوجد FK من `bookings.user_id` إلى `public.profiles` (يشير لـ auth.users)، لذا **لا تستخدم** PostgREST embed `profiles!bookings_user_id_fkey` (يُرجع 400). تُجلب بروفايلات الحاجزين باستعلام منفصل `profiles.in('id', userIds)` (سياسة `profiles_public_read_basic` تسمح بالقراءة).
+لأن انتهاء الاشتراك قد يسبق تشغيل مهمة التنظيف اليومية، توجد دالة `get_my_effective_plan()` تحسب الباقة **الفعلية** لحظيًا (تتجاهل `plan_tier` المخزَّن وتُرجع `starter` لو كان تاريخ الانتهاء قد مضى فعلًا) لأي مكان يحتاج دقّة لحظية بدل الثقة العمياء بالعمود المخزَّن.
 
-### `user_ratings` — التقييمات
-مرتبطة بالحجوزات والملفات.
+نقطة الكتابة الوحيدة لتغيير باقة أي مستخدم هي RPC إدارية واحدة تُحدّث `profiles` و`subscriptions` معًا وترسل إشعارًا للمستخدم.
 
-### `notifications` — المصدر الوحيد لكل إشعارات المنصة (يوليو 2026)
-عمود واحد للهوية: **`user_id` (uuid)** فقط — عمود `owner_id` النصي القديم **أُزيل نهائياً** بعد التأكد أن صفر دالة/سياسة/كود يعتمد عليه. كل أنواع الإشعارات (owner/organizer/bazaar/listing/space) تُكتب هنا حصراً — لا يوجد أي جدول إشعارات مواز بعد الآن (`user_bazaar_notifications` القديم حُذف بالكامل، انظر `docs/adr/0001-remove-legacy-bazaar-notifications-table.md`).
-- **سياسة الاحتفاظ الموحّدة:** مقروء → 60 يوماً، غير مقروء → 90 يوماً، منتهي الصلاحية (`expires_at`) → فوراً. تُنفَّذ عبر `cleanup_old_platform_notifications(p_read_days=60, p_unread_days=90)` (cron يومي). `organizer_notifications` (جدول منفصل، إشعارات المنظّمين فقط) له دالة تنظيف مستقلة الاسم بوضوح `cleanup_old_organizer_notifications()` بنفس الفلسفة.
-- إشعارات البازار (إلغاء/تأجيل/اختيار منظّم/فرصة جديدة) تحمل `bazaar_id`/`booking_id`/`request_id` داخل عمود `metadata jsonb` بدل أعمدة مخصصة.
+**منفصل تمامًا** عن الباقة: `profiles.subscription_status` (`active`/`expired`/`cancelled`/`suspended`/فارغ) — يحرّك وضع "القراءة فقط" في لوحة المالك عند انقطاع الاشتراك، ولا علاقة له بالإيقاف الإداري العام لحساب المستخدم (`is_suspended`، وهو آلية مختلفة تمامًا تُفصَّل في قسم الأمان).
 
-### جداول البازارات
-`bazaars`, `bazaar_slots` (الأكشاك), `bazaar_bookings` (حجز كشك — `user_id` أصبح **uuid** حقيقي بـFK لـ`auth.users`، لم يعد نصاً)، `organizer_requests` (توثيق منظّم), `organizer_profiles`.
+### Realtime
+
+مذكور في القسم السابق — قنوات محدَّدة النطاق مع debounce + polling احتياطي.
+
+### Shared Utilities
+
+`shared/sb-config.js`، `shared/space-model.js`، `shared/booking.js`، `notifications.js` — الأربعة مفصَّلة أعلاه؛ `media-handler.js` مفصَّل في قسم 9.
 
 ---
 
-## 5. `index.html` — التطبيق الرئيسي (SPA)
+## 4. منظومة المساحات (Spaces)
 
-> كل الصفحات مضمّنة في ملف واحد، والتنقل عبر `showPage()` في `app.js`. الصفحة النشطة تحمل class `active`.
+### الهدف
 
-### 5-أ. الصفحات (Pages) — مع أرقام الأسطر التقريبية
+تمكين أصحاب المساحات الصغيرة (مولات، نوادٍ، مدارس) من عرض مساحاتهم للإيجار القصير، وتمكين الزوار من تصفّحها وحجزها مباشرة بلا أي عمولة على الحجز.
 
-| Page ID | السطر | الوصف | يُفعَّل عبر |
-|---------|-------|--------|-------------|
-| `#pg-home` | ~259 | الرئيسية: Hero + فلاتر + شبكة مساحات + بازارات | افتراضي |
-| `#pg-how` | ~782 | كيف يعمل المنصة | `showPage('how')` |
-| `#pg-owner` | ~946 | لأصحاب المساحات (تسويقية) | `showPage('owner')` |
-| `#pg-pricing` | ~1234 | **صفحة الباقات (جديدة)** Starter/Growth/Pro | `showPage('pricing')` |
-| `#pg-market` | ~1871 | سوق المساحات (Marketplace داخلي) | `showPage('market')` |
-| `#pg-login` | ~1972 | تسجيل الدخول | `showPage('login')` |
-| `#pg-signup` | ~2116 | إنشاء حساب | `showPage('signup')` |
-| `#pg-confirm` | ~2286 | **تأكيد البريد (جديدة)** بعد التسجيل | تلقائي بعد signup |
-| `#pg-dashboard` | ~2319 | لوحة المستخدم المصغّرة (حجوزاتي/تقييماتي/ترقية) | `goToDashboard()` |
-| `#pg-space-detail` | ~2738 | تفاصيل مساحة واحدة | `openSpaceDetail(id)` |
+### دورة حياة المساحة (Lifecycle) — نشر فوري (Post-Moderation)
 
-### 5-ب. المودالات (Modals)
+عند إضافة مساحة من لوحة المالك، تُدرَج فورًا بحالة **منشورة** وتظهر للعامة على الفور — **لا توجد أي مرحلة "قيد المراجعة" تمنع الظهور.** مراجعة الأدمن لاحقة وبأثر رجعي (علامة "تمت مراجعتها" فقط، لا بوابة نشر).
 
-| Modal ID | السطر | الوظيفة |
-|----------|-------|----------|
-| `#booking-modal` | ~2496 | مودال الحجز (مشترك) — `modal-form-wrap`, `modal-act-picker`, `modal-success` |
-| `#inspection-modal` | ~2585 | **مودال حجز المعاينة (جديد)** — متعدد الخطوات |
-| `#owner-request-modal` | ~3013 | **مودال طلب التحويل لصاحب مساحة / الترقية (جديد)** |
+عمود واحد (`status`) يحمل كل حالات النشر الممكنة (قيد صريح يمنع أي قيمة أخرى):
 
-### 5-ج. الأقسام العامة
-```
-<nav class="nav">              ← شريط التنقل العلوي
-  #nav-guest                  ← أزرار الزائر
-  #nav-logged                 ← أفاتار + قائمة المستخدم
-  #nav-dropdown               ← قائمة منسدلة (#dd-plan-badge يعرض الباقة)
-<bottom-nav>                  ← شريط تنقل سفلي للموبايل (updateBottomNav)
-```
+| الحالة | المعنى |
+|---|---|
+| `live` | منشورة وظاهرة للعامة (الافتراضي عند الإنشاء) |
+| `paused` | أوقفها المالك بنفسه مؤقتًا |
+| `hidden_by_admin` | أخفاها الأدمن مع سبب مسجَّل |
+| `archived` | مؤرشفة (يدويًا من الأدمن، أو تلقائيًا بسبب الخمول) |
 
----
+**لا يوجد عمود "تفعيل" منفصل على مستوى المساحة نفسها** — الظهور للعامة يتطلب `status='live'` فقط (بالإضافة لعدم الحذف الناعم أدناه). عمود "تفعيل" منفصل موجود فقط على مستوى **الوحدة الفرعية** داخل المساحة (وحدة معيّنة قد تكون معطّلة بينما باقي المساحة منشورة).
 
-## 6. `app.js` — خريطة الكود الكاملة (أرقام الأسطر فعلية)
+**الحذف الناعم منفصل تمامًا عن حالة النشر:** مساحة قد تكون `status='live'` لكنها محذوفة (`is_deleted=true`) — لا تظهر لأي أحد رغم ذلك. الحذف الوحيد المتاح هو حذف ناعم (يحتفظ بالبيانات ويمكن التراجع عنه من قِبل الأدمن).
 
-### 6-أ. الإعداد والتهيئة
-```
-~28–74    الثوابت: BOOKING_URL, BAZAAR_SHEET_URL, SUPABASE_URL/KEY,
-          SPACES[], ACTIVITIES[], MP_PER_PAGE=12, BAZAARS[], _sliders{}
-~90–125   DOMContentLoaded: إنشاء sbClient، loadData، loadBazaars،
-          initAuth، subscribeSpacesRealtime، init sliders/animations
-126 initPathAnimation · 166 initPriceSlider · 176 updateMainSlider
-```
+### Workflow إضافة مساحة
 
-### 6-ب. تحميل المساحات من Supabase (🔴 القلب الجديد)
-```
-231 loadData()                       ← يجلب space_activities + spaces(+space_units) + profiles.plan_tier
-321 fetchVisibleSpacesFromSupabase() ← نفس الاستعلام، يُعيد مصفوفة SPACES
-379 silentRefreshSpaces()            ← تحديث صامت (Realtime/polling) بدون إعادة ضبط الصفحة
-401 subscribeSpacesRealtime()        ← قناة Realtime على spaces + space_units (debounce 1.5s) + polling 5min
-418 showLoadingState · 432 showErrorState
-```
-**فلتر الظهور للعامة:** `status='approved' AND is_active=true`، مرتّبة بـ `sort_order` ثم بالباقة.
+المالك (من لوحة التحكم) يملأ بيانات المساحة + الوحدات الفرعية + الصور → تُدرَج المساحة والوحدات معًا → إشعار نظامي يُسجَّل → تظهر فورًا في الرئيسية و`/spaces/` دون أي انتظار. باقة **Growth** محدودة بـ8 مساحات كحد أقصى (يُحسب من كل المساحات غير المحذوفة، بصرف النظر عن حالة نشرها — موقوفة أو مؤرشفة تُحسب أيضًا ضمن الحد، فقط المحذوفة ناعمًا لا تُحسب).
 
-### 6-ج. الباقات والبطاقات
-```
-505 _sortByPlan(arr)         ← يرتّب: Pro ثم Growth ثم Starter
-512 _planTrustBadgeHtml(s)   ← شارة ثقة (Pro="شريك معتمد"، Growth="موثّق")
-520 _planCardClass(s)        ← class إضافي للبطاقة حسب الباقة
-524 buildCardHtml(s,fromPage)← HTML بطاقة المساحة (slider + شارة + أزرار)
-627 renderCards(...)         ← يملأ أي grid
-665 _showSpaceLoginGate(...) ← بوابة "سجّل لرؤية التفاصيل" للزوار
-```
-الأنشطة/الفلاتر: `451 buildActivityFilters`, `464 buildModalActivityPicker`, `479 buildMpActivityFilters`.
+### Workflow تعديلها
 
-### 6-د. تفاصيل المساحة + السلايدرات
-```
-730 openSpaceDetail · 806 closeSpaceDetail
-822 _renderDetailGallery · 1158 _renderDetailInfo · 1230 _renderSubSpaces · 1319 _typeLabel
-سلايدر البطاقات (cs*):  953 csInitAll · 970 csGoTo · 986 csNext · 988 csPrev · 1008 _csStartAuto · 1021 _csInitSwipe
-سلايدر التفاصيل (sd*):  1049 _sdInit · 1062 sdGoTo · 1117 _sdStartAuto · 1125 _sdInitSwipe · 1146 _sdCleanup
-ثوابت: CS_AUTO_DELAY=3800ms · SD_AUTO_DELAY=4500ms · الحالة في _sliders[id]={index,total,autoTimer,paused}
-```
+المالك يعدّل الحقول الوصفية (الاسم، الوصف، الأسعار، الصور، إلخ) عبر صلاحية كتابة محدودة على أعمدة بعينها — **لا يستطيع الكتابة المباشرة على عمود الحالة**. أي تعديل يُحدّث "آخر نشاط" (مهم لنظام الخمول أدناه).
 
-### 6-هـ. Marketplace + البحث
-```
-1363 goToMarketplace · 1367 toggleMpType · 1376 toggleMpAct · 1385 applyMpFilters
-1412 clearMpFilters · 1433 updateMpChips · 1450 renderMarketplace · 1478 renderMpPagination
-1500 mpGoPage · 1509 initMpSlider · 1517 updateMpSlider · 1536 toggleMpSidebar
-بحث الرئيسية: 1546 setTab · 1553 doSearch · 1558 filterAndRender · 1580 showSearchChips · 1602 clearAllFilters
-```
+### Workflow إيقافها وإخفائها
 
-### 6-و. التنقل والحجز
-```
-1635 showPage(p)        ← القيم: home|how|owner|pricing|market|login|signup|confirm|dashboard|space-detail
-1676 scrollToSearch · 1683 goToLogin · 1685 goToDashboard
-1696 openBooking · 1768 closeModal · 1782 submitBooking (تحقق + Apps Script + Supabase bookings + شاشة نجاح)
-1333 openBookingForUnit
-```
+- **إيقاف مؤقت (Pause) من المالك نفسه:** الوسيلة الوحيدة المتاحة له لتغيير حالة النشر ذاتيًا (`live` ⇄ `paused`). العملية تُرفض لو كانت المساحة مخفاة من الإدارة — لا يستطيع المالك فكّ إخفاء إداري بنفسه.
+- **إخفاء إداري (Hide):** الأدمن يُخفي مساحة مع سبب يُرسَل للمالك كإشعار. عكسه (`Unhide`) يعيدها للنشر.
 
-### 6-ز. المصادقة (Supabase Auth)
-```
-1920 initAuth · 2001 setNavUser · 2072 toggleUserDropdown
-2096 doEmailLogin · 2129 doEmailSignup · 2193 authWithGoogle · 2213 doLogout
-2823 updateBottomNav · 2829 handleBnUser · 2856 updateBnUser
-```
+### Workflow الأرشفة
 
-### 6-ح. لوحة المستخدم المصغّرة + الترقية + التقييمات
-```
-2229 loadDashboardData · 2268 renderBazaarCTA · 2319 loadMyBazaars
-2396 renderUpgradeSection(profile)  ← يعرض زر الترقية حسب الباقة
-2452 requestOwnerUpgrade            ← يكتب في upgrade_requests
-2481 loadUserBookings · 2639 _subscribeBookings · 2658 toggleBookings
-2700 loadUserRatings · 2691 repStarsHtml · 2682 REP_BADGES
-طلب التحويل لصاحب مساحة: 3381 handleOwnerUpgradeBtn · 3386 openOwnerRequestModal · 3415 submitOwnerRequest (→ upgrade_requests)
-```
+- **يدوية:** الأدمن يؤرشف/يستعيد أي مساحة مباشرة.
+- **تلقائية (نظام الخمول):** مهمة مجدولة يومية تتابع "آخر نشاط" لكل مساحة منشورة عبر 3 مراحل تصاعدية:
+  1. بعد 6 أشهر بلا أي تحديث من المالك → إشعار أول.
+  2. بعد أسبوعين إضافيين بلا استجابة → تذكير أخير.
+  3. بعد شهر إضافي بلا استجابة (~7.5 أشهر إجمالًا من آخر نشاط) → أرشفة تلقائية فعلية، مع إشعار نهائي يوضّح أن البيانات محفوظة وقابلة للاستعادة في أي وقت.
 
-### 6-ط. نظام المعاينة (Inspection) — جديد
-```
-2927 openInspectionModal · 2974 closeInspectionModal · 2986 _inspGoStep
-3000 _inspBuildDates · 3013 _inspSelectDate · 3019 _inspSubmitForm
-3040 _inspCopyNumber · 3044 _inspCopyId · 3063 _inspConfirm · 3094 _inspGetWorkingDays
-```
+  إعادة تفعيل مساحة (يدويًا أو عبر استعادتها) تُصفّر عدّاد الخمول بالكامل وتبدأ الحساب من جديد.
 
-### 6-ي. البازارات + المشاركة + أنيميشن الأسعار
-```
-3200 loadBazaars · 3254 _loadBazaarsFromSupabase · 3282 renderHomeBazaars · 2883 _normalizeBazaarRow
-3329 shareCard · 3355 _showShareToast
-3123 initPricingAnimations · 3165 _pkgCountUp  (أنيميشن أرقام صفحة الباقات)
-3185 _toDirectImgUrl (تحويل روابط Google Drive لروابط مباشرة)
-```
+### Workflow الحجز
+
+نقطة إرسال واحدة موحّدة (طبقة `shared/booking.js`) تُستخدم من الرئيسية و`/spaces/` معًا: طلب حجز جديد يُدرَج دائمًا بحالة "معلّق"، بسعر رقمي حقيقي (لا استخراج نصي من واجهة العرض)، مع شبكة أمان على مستوى القاعدة تستبدل أي سعر فارغ أو صفري بأقل سعر معلن للمساحة. صاحب المساحة يُملأ تلقائيًا من بيانات المساحة نفسها بمجرّد توفر معرّفها — لا اعتماد على أن يرسله العميل بشكل صحيح.
+
+عند وصول الطلب، يصل صاحب المساحة إشعارًا فوريًا. إن كانت كل الوحدات ممتلئة وقت الطلب، يتحوّل النموذج تلقائيًا لوضع **قائمة انتظار** (رابط بروفايل بديل بدل تفاصيل حجز فورية). صاحب المساحة يملك أدوات: قبول/رفض/إكمال الطلب، ترقية طلب من قائمة الانتظار لحجز مؤكَّد، نقل طلب من/إلى قائمة الانتظار. المستخدم نفسه يمكنه سحب طلبه المعلّق قبل أن يُبتّ فيه.
+
+شريط "المهتمون بمساحاتك" في لوحة المالك مبني على دالة تحليلات فورية تُلخّص (إجمالي / معلّق / قائمة انتظار / مؤكَّد) لكل مساحة.
+
+### العلاقة مع لوحة تحكم صاحب المساحة
+
+لوحة المالك هي الواجهة الوحيدة لإضافة المساحات وإدارتها وحجوزاتها وتحليلات أدائها (تتبّع مشاهدات/ضغطات/معدّل تحويل لكل مساحة عبر جدول تحليلات مخصّص، مبني على رصد ظهور البطاقة فعليًا في الشاشة).
+
+### العلاقة مع لوحة تحكم الأدمن
+
+كل إجراءات الإدارة (مراجعة، إخفاء/إظهار، أرشفة/استعادة، حذف، تعديل، إدارة الوحدات) تمرّ عبر دوال RPC مخصّصة تتحقق من صلاحية الأدمن داخليًا — لا تعديل مباشر على الجدول من واجهة الإدارة (باستثناء أداة صغيرة واحدة لإعادة تسمية منطقة بالجملة). **لا يوجد مفهوم "موافقة على معلّق" في هذا المسار** — الإجراءات المتاحة هي فقط: مراجعة (وسم "شوهدت")، إخفاء/إظهار، أرشفة/استعادة، حذف، تعديل — بما يتوافق تمامًا مع نموذج النشر الفوري.
+
+### الصلاحيات
+
+القراءة العامة مقيّدة صراحة بـ`status='live' AND NOT is_deleted`. المالك يكتب فقط مساحاته الخاصة. الأدمن عبر دوال محمية بفحص صلاحية داخلي. البحث العام نفسه يُنفَّذ بصلاحيات الزائر مباشرة (وليس بصلاحيات مرتفعة) بقصد: ليبقى خاضعًا لنفس قواعد الحماية على الجدول تلقائيًا مهما تغيّرت مستقبلًا.
+
+### البحث والفلترة والترتيب والترقيم (نقطة معمارية محورية)
+
+دالة بحث خادمية واحدة تُستخدم من الرئيسية (قسم الهيرو المصغّر، وقسم "أهم المساحات" الكامل) ومن صفحة `/spaces/` بالكامل — بلا استثناء. تطبّق الفلترة (منطقة، نوع، نشاط، سعر أقصى) والترتيب والترقيم كلها داخل استعلام واحد، وتُعيد فقط الصفحة المطلوبة (حد أقصى 100 صف لكل نداء) بالإضافة للعدد الإجمالي الحقيقي للنتائج المطابقة.
+
+الترتيب الافتراضي مبني داخل الاستعلام نفسه: مساحات باقة **Pro** أولًا، ثم **Growth**، ثم Starter/الوسيط، ثم بترتيب العرض اليدوي، ثم بالأحدث — **لا يوجد أي إعادة ترتيب من جهة المتصفح بعد اليوم.**
+
+فوق هذا البحث الخادمي، تعمل طبقة Realtime تكميلية: أي تغيير على المساحات أو وحداتها يُعاد معه تشغيل نفس استعلام البحث الحالي (بنفس الفلاتر والصفحة المعروضة) تلقائيًا، بتأخير تجميع قصير ونبض احتياطي كخط دفاع ثانٍ.
 
 ---
 
-## 7. نظام الباقات (Plans) — تفصيلي
+## 5. منظومة البازارات (Bazaars)
 
-### 7-أ. الباقات الثلاث (صفحة `#pg-pricing`)
-| الباقة | السعر | حد المساحات | أبرز المزايا |
-|--------|-------|-------------|--------------|
-| **Starter** | مجاناً | حتى 2 مساحة · 16م² | إدراج، ظهور في البحث، استقبال حجوزات |
-| **Growth** | 3,000 ج/شهر | 8 مساحات · 16م² | أولوية ظهور، badge موثّق، 3 مستأجرين/شهر، منشورات، صفحة مدفوعات/مخالفات |
-| **Pro** | 4,500 ج/شهر | غير محدود | أولوية قصوى، Featured أسبوعي، badge "شريك معتمد"، تقارير AI، دعم بازار، مدير حساب |
+### الحسابات المسموح لها بإنشاء بازار والتحقق من المنظّم
 
-- **CTAs:** كلها تذهب لواتساب `wa.me/201103467711` (لا دفع آلي بعد).
-- **الـ classes:** `pkg-hero`, `pkg-card`, `pkg-card--starter/--pro`, `pkg-features-list`, `pkg-feat--on`, `pkg-table`, `pkg-th`, `pkg-tr`, `pkg-td`, `pkg-cell-x`/`pkg-cell-check`, `pkg-pitch`, `pkg-cta`. (ابحث في `style.css` بالبادئة `pkg-`).
-- **أنيميشن:** `initPricingAnimations()` + `_pkgCountUp()` في `app.js`.
+أي مستخدم مسجَّل يمكنه تقديم طلب توثيق كمنظّم بازارات (بيانات + مستندات هوية). الأدمن يراجع الطلب؛ عند القبول يُفعَّل توثيقه ويُضاف دور "منظّم بازارات" إلى أدواره التراكمية — عندها فقط يصبح بإمكانه إنشاء بازارات.
 
-### 7-ب. Plan Gating في الداشبورد (`dashboard/app.js`)
-```javascript
-getPlan()                       // ← currentOwner.planTier || 'starter'
-const PLAN_LEVELS = { starter:0, growth:1, pro:2 };
-canAccess(minPlan)              // مقارنة المستويات
-planGateHtml(requiredPlan)      // شاشة "🔒 هذه الميزة في باقة …"
-_planBadgeHtml(tier)            // بادج الباقة في السايدبار
+### Workflow إنشاء بازار
+
+نموذج بيانات البازار (اسم، مكان، تواريخ، سعر الكشك، إلخ) مصحوب بمحرّر خريطة أكشاك ثنائي الأبعاد (شبكة صفوف/أعمدة) — كل خلية في الخريطة تصبح كشكًا قابلًا للحجز.
+
+### دورة حياة الحالة (State Machine) الكاملة
+
 ```
-**قفل عناصر التنقل** (في `initDashboard`):
-- `nav-payments`, `nav-violations` → تتطلب **growth**
-- `nav-bazaar`, `nav-reports` → تتطلب **pro**
+مسودّة → منشور → جارٍ الآن (تلقائيًا عند بدء الموعد) → منتهٍ (تلقائيًا عند انتهاء الموعد)
+                                                              │
+                                                    [أرشفة تلقائية بعد مهلة | أرشفة يدوية]
+                                                              │
+                                                    سلة محذوفات (حذف ناعم) → حذف نهائي (لا رجعة)
 
-**حد الإضافة:** في `submitAddSpace` — باقة Growth محدودة بـ 8 مساحات (يُعدّ عبر `count` على `spaces` لنفس `owner_id` مع `status != rejected`).
-
-### 7-ج. أثر الباقة على الواجهة العامة
-`_sortByPlan` يضع مساحات Pro أولاً، ثم Growth، ثم Starter. `_planTrustBadgeHtml` يضيف شارة الثقة. هذا يطبَّق في `app.js` و `spaces/app.js`.
-
-### 7-د. تدفّق الترقية (end-to-end)
+مسار جانبي من أي حالة نشطة: تأجيل (Postpone) — يعيد حساب الحالة تلقائيًا عند أي تعديل تاريخ لاحق
+مسار مستقل: إيقاف استقبال حجوزات جديدة مؤقتًا (Booking Pause) دون تغيير الحالة العامة
 ```
-المالك → زر ترقية (renderUpgradeSection / handleOwnerUpgradeBtn)
-   → مودال (#owner-request-modal) → submitOwnerRequest()
-   → INSERT upgrade_requests { user_id, selected_plan, status:'pending', place_name/type, phone, notes }
-الأدمن:
-   • admin/spaces-hub.html → renderOwnerRequests + promptApproveOwnerRequest/promptRejectOwnerRequest
-       + changeOwnerPlan() → RPC admin_set_plan_tier(p_user_id, p_plan_tier, p_status)
-   • admin/subscriptions.html → renderTable + saveSub() (تعديل باقة/حالة الاشتراك مباشرة)
-   → النتيجة: UPDATE profiles.plan_tier
-   → المالك يرى الباقة الجديدة عند إعادة تحميل الداشبورد؛ الواجهة العامة تُعيد الترتيب (_sortByPlan)
-```
-> **ملاحظة:** تغيير باقة أي مالك يتم عبر RPC `admin_set_plan_tier` (يحدّث `profiles.plan_tier` و قد يحدّث حالة الطلب). تستدعيه `changeOwnerPlan`/`setOwnerPlan` في صفحات الأدمن.
+
+الانتقال بين "منشور" و"جارٍ الآن" و"منتهٍ" تلقائي بالكامل (مهمة مجدولة كل 3 ساعات، بتوقيت القاهرة). **البازار المنتهي يبقى ظاهرًا للعامة** (بشارة "انتهى" باهتة، لا حجز/تفاعل جديد) وليس مخفيًا فورًا — القراءة العامة تشمل صراحة البازارات المنشورة والجارية والمنتهية (غير المؤرشفة وغير المحذوفة)، لإثبات نشاط المنصة أمام الزوار الجدد.
+
+### Workflow التأجيل (Postponement)
+
+نظام كامل من طرف لطرف:
+
+1. **المنظّم** يختار سببًا ويؤكّد تواريخ جديدة (حد أقصى مرّتان لكل بازار) → حالة البازار تصبح "مؤجَّل".
+2. **الحاجزون الحاليون** تنتقل حجوزاتهم لحالة "بانتظار الرد" — يظهر لهم تنبيه بالتاريخ القديم والجديد وسبب التأجيل، مع خيار قبول أو إلغاء الحجز.
+3. **مهلة الرد تنتهي تلقائيًا** (مهمة مجدولة على مستوى القاعدة) دون أي تدخّل من الواجهة — بعد انتهاء المهلة تختفي أزرار الاستجابة ويُطلب من الحاجز التواصل مع المنظّم مباشرة.
+4. **الأدمن** يملك صلاحية تجاوز طارئة: إلغاء تأجيل بالكامل يدويًا، مع إرجاع أي حجوزات معلَّقة إلى مؤكَّدة تلقائيًا، ويُسجَّل هذا التدخّل في سجلّ التغييرات العام.
+
+### Workflow الإلغاء
+
+إجراء ذرّي واحد من المنظّم: يُلغي البازار، يحرّر كل الأكشاك المحجوزة، يُشعر كل الحاجزين، ويسجّل الحدث في سجلّ التغييرات — كل ذلك في عملية واحدة لا تتجزّأ.
+
+### Workflow انتهاء البازار والتوثيق
+
+الانتهاء تلقائي بالكامل كما سبق. الأرشفة اللاحقة بعد مهلة قابلة للتعديل من لوحة الأدمن (بضعة أسابيع افتراضيًا). صفحة تفاصيل البازار العامة تعرض **سجلّ تحديثات مرئيًا للجميع عمدًا** (شفافية/إثبات نشاط) يدمج كل حدث تاريخي (تغييرات حالة، تعديلات، تأجيلات، أرشفة، استعادة) في خط زمني واحد مرتَّب.
+
+### Workflow فرص البازارات (سوق B2B منفصل)
+
+نظام مستقل تمامًا يربط أصحاب المساحات الفارغة بمنظّمي البازارات:
+
+1. **صاحب المساحة** ينشر "فرصة" (وصف المساحة المتاحة، المساحة، الفترة الزمنية، المرافق المتاحة).
+2. **منظّمو البازارات** (من صفحة مستقلة مخصّصة لهم) يتصفّحون الفرص المفتوحة ويقدّمون عروضًا (سعر مقترح، تواريخ، عدد عارضين متوقّع).
+3. **صاحب المساحة** يقارن العروض (فرز بالأحدث/الأقل سعرًا/الأكثر خبرة) ويختار منظّمًا واحدًا عبر إجراء ذرّي محمي من التزامن (قفل صفّي يمنع اختيار مزدوج لو ضغط المالك مرّتين أو حدث تعارض) — بقية العروض تُرفض تلقائيًا وتُشعر كل الأطراف.
+4. يمكن للمالك إغلاق الفرصة أو إعادة فتحها لاحقًا لاستقبال عروض جديدة. الفرص التي تنتهي صلاحيتها الزمنية دون اختيار تُغلَق تلقائيًا.
+
+كل حركة على هذا السوق (نشر، تقديم عرض، اختيار، إلغاء) تُسجَّل في سجلّ نشاط عام منفصل.
+
+### العلاقة مع لوحة تحكم المنظّم
+
+صفحات مستقلة لكل غرض: إدارة بازاراته الخاصة (تعديل، تأجيل، إيقاف استقبال حجوزات مؤقتًا، حجز أكشاك داخليًا بلا حجز عام حقيقي — لسبونسر أو صحافة مثلًا)، إنشاء بازار جديد مع محرّر الخريطة، ملفه العام، توثيقه.
+
+### العلاقة مع لوحة تحكم الأدمن
+
+مركز واحد يجمع: البازارات (رئيسية/أرشيف/محذوفات)، الأكشاك والحجوزات، طلبات توثيق المنظّمين، التأجيلات، سوق الفرص B2B وسجلّه الكامل، بلاغات إساءة الاستخدام.
+
+### الصلاحيات
+
+قراءة عامة مقيَّدة بالحالة (منشور/جارٍ/منتهٍ، غير مؤرشف وغير محذوف). المنظّم يكتب بازاراته فقط. الأدمن عبر دوال محمية بفحص صلاحية داخلي + سياسات وصول مخصّصة تغطي صراحة كل بازار بصرف النظر عمّن أنشأه.
+
+### نظام الحجوزات
+
+حالة الحجز هي **المصدر الوحيد للحقيقة** — حالة الكشك تُشتَق منها تلقائيًا (لا تُكتب يدويًا بمعزل عن الحجز أبدًا). حجز كشك عملية ذرّية (لا يمكن حجز نفس الكشك مرّتين في نفس اللحظة)، محدودة بحد أقصى لعدد الحجوزات لكل مستخدم لكل بازار. حالة الدفع مرتبطة منطقيًا بحالة الحجز: إلغاء حجز مدفوع يحوّله تلقائيًا لحالة "بانتظار استرداد" بدل تركه مدفوعًا خطأً.
+
+### نظام الأكشاك
+
+خريطة صفوف/أعمدة تفاعلية بحالات: متاح، معلّق (أثناء إتمام حجز)، محجوز، محجوز داخليًا من المنظّم (بلا حجز عام). المنظّم وحده يملك أداة الحجز الداخلي هذه — ليست أداة أدمن.
+
+### بلاغات إساءة الاستخدام
+
+أي مستخدم مسجَّل يمكنه الإبلاغ عن بازار (سبب + ملاحظة اختيارية، مع منع تكرار البلاغ من نفس المستخدم على نفس البازار) — تظهر البلاغات في لوحة الأدمن للمراجعة.
 
 ---
 
-## 8. لوحة تحكم المالك — `dashboard/`
+## 6. منظومة سوق المشاريع الجاهزة للبيع (Marketplace)
 
-> تصميم داكن (Charcoal + Orange). كل الـ views مضمّنة في `dashboard/index.html` (id=`view-*`)، والتنقل عبر `goTo(viewId, navEl)`.
+نظام بيع/شراء مشاريع جاهزة — **منفصل تمامًا** عن سوق المساحات وسوق فرص البازارات B2B، بمنطق حياة إعلان خاص به.
 
-### 8-أ. الـ Views المتاحة
-`view-overview` · `view-spaces` · `view-add-space` · `view-tenants` · **`view-bookings`** (طلبات الحجز) · `view-contracts` · `view-alerts` · `view-revenue` · `view-insights` · `view-ratings` · `view-payments` · `view-violations` · `view-reports` · `view-settings` · `view-add-bazaar`
+### Workflow إنشاء الإعلان
 
-> **`view-bookings` — نظام إدارة طلبات الحجز:** `loadBookingsRemote` (جلب الحجوزات + بروفايلات الحاجزين باستعلام منفصل) · `renderBookings` (تبويبات: معلقة/مؤكدة/قائمة انتظار/الكل + شريط المهتمين `_bkInterestPanel` + بطاقة هوية الحاجز `_bkBookerBlock` مع زر «عرض البروفايل» → `/?p=owner-profile&id=`) · إجراءات: `acceptBooking`/`rejectBooking`/`setBookingWaitlist`/`approveWaitlist`/`promoteWaitlist`/`convertBookingToContract` · تنبيهات الحجوزات تظهر في `_buildLocalAlerts` (📬 طلبات جديدة + ⏳ قائمة انتظار) وبادج السايدبار `nb-bookings`.
+نموذج مباشر يُدرج الإعلان مباشرة من المتصفح بحالة "معلّق"، محكوم بحارس حقيقي على مستوى القاعدة (لا يمكن تجاوزه من العميل): حد أقصى 3 إعلانات "نشطة" (معتمدة أو موقوفة مؤقتًا من صاحبها) في آن واحد، وفترة انتظار 12 ساعة بين أي محاولتي نشر متتاليتين بصرف النظر عن حالة كل منهما — لمنع إغراق طابور المراجعة. حسابات محدَّدة (تعبئة أولية للسوق) مستثناة من هذا الحد. طبقة تحقّق أولية في الواجهة تعرض نفس رسالة الحدّ قبل حتى إرسال النموذج، كتجربة استخدام أفضل فقط — الحارس الحقيقي يبقى دائمًا داخل القاعدة.
 
-### 8-ب. المصادقة بالدور (`dashboard/app.js`)
-```
-346 getSB · 441 checkRoleAndProceed  ← يتحقق profiles.role === 'owner'، وإلا signOut + بوابة منع
-516 doLogin · 529 doGoogleLogin · 548 doLogout · 410 showOwnerAccessGate · 3487 checkSessionOnLoad
-564 initDashboard  ← يضبط السايدبار، بادج الباقة، قفل التنقل، ويستدعي محمّلات البيانات
-```
+### Workflow المراجعة والنشر
 
-### 8-ج. تحميل بيانات المالك من Supabase
-```
-622 loadOwnerData()  ← مساحات المالك المعتمدة (+space_units) → ownerSpaces
-                       + المساحات المعلّقة/المرفوضة → ownerPendingSpaces
-694 applyDemoData()  ← fallback بيانات تجريبية لو لا اتصال
-710 renderAll()      ← يستدعي كل دوال الـ render
-```
-⚠️ **ملاحظة:** العقود والمستأجرون والمدفوعات والمخالفات لا تزال في **localStorage** (مفاتيح عبر `contractsKey()`, `paymentsKey()`, `violationsKey()`, `ratingsKey()`) ولم تُنقل لـ Supabase بعد. المساحات والتقييمات والإشعارات في Supabase.
+الأدمن يوافق أو يرفض من لوحة إدارية مخصّصة. الموافقة تمنح الإعلان صلاحية 60 يومًا من لحظة القبول. الرفض يتطلّب سببًا نصيًا يُعرض لصاحب الإعلان.
 
-### 8-د. إضافة مساحة (`view-add-space`)
-```
-2699 submitAddSpace(e)
-   ← تحقق الاسم/النوع/المنطقة + حد Growth (8)
-   ← يبني spacePayload (status:'pending', is_active:false)
-   ← INSERT spaces ثم INSERT space_units (collectSubUnits)
-   ← INSERT notifications (type:'space_submitted')
-الوحدات الفرعية: 2405 addSubUnitRow · 2483 removeSubUnitRow · 2661 collectSubUnits
-الأحجام: 2323 addSizeRow · 2351 calcDefaultPrice · 2368 getSizesString
-الصور (عبر media-handler → Cloudflare R2 عبر /upload):
-   2551 handleMainSpaceImageUpload · 2614 handleExtraSpaceImagesUpload · 2491 handleUnitImageUpload
-   (المتغيرات: asMainImgUrl, asExtraImgUrls[], asUnitImgUrls{})
-```
+### Workflow انتهاء الصلاحية والتجديد
 
-### 8-هـ. التقييمات والإشعارات
+انتهاء تلقائي يومي لأي إعلان تجاوز تاريخ صلاحيته. قبل الانتهاء بثلاث مراحل زمنية غير متداخلة (أسبوع، ثم 3 أيام، ثم 24 ساعة) تصل تنبيهات تدريجية عبر نظام الإشعارات الموحّد — كل مرحلة تُرسَل مرّة واحدة فقط بفضل أعلام تتبّع مخصّصة لكل نطاق زمني. تجديد الإعلان يُصفّر هذه الأعلام تلقائيًا فتُعاد دورة التنبيهات من جديد للفترة الجديدة.
+
+### Workflow البلاغات
+
+أي مستخدم مسجَّل يمكنه الإبلاغ عن إعلان (نموذج + سبب)، يظهر في تبويب بلاغات مخصّص لدى الأدمن.
+
+### العلاقة مع لوحة التحكم
+
+لا لوحة تحكم منفصلة للبائع — إدارة الإعلان (تعديل/إيقاف/حذف) من صفحة الإعلان نفسها. أي مستخدم مسجَّل يمكنه إضافة إعلانات لقائمة مفضّلته.
+
+### العلاقة مع الأدمن
+
+أوسع بكثير من مجرّد موافقة/رفض — لوحة إدارة سوق المشاريع تضمّ اليوم:
+
+- **تبويب الإعلانات** — الموافقة/الرفض/التمييز المؤقّت (Featured) لفترة محدَّدة.
+- **الأكثر نشاطًا** — أعلى البائعين نشاطًا (عدد إعلانات، إجمالي مشاهدات، إجمالي تواصل).
+- **تحليل السوق** — مؤشرات إجمالية للسوق بكل حالاته وتوزيعها حسب المحافظة والفئة.
+- **حسابات مشبوهة** — كشف تلقائي لأنماط مسيئة (نشر سريع جدًا، إعلانات مكرَّرة بنفس العنوان والسعر، حذف وإعادة نشر متكرِّر)، مع إجراء إيقاف حساب (مدّة محدَّدة أو دائم، بسبب مسجَّل) وصفحة تفصيلية كاملة لأي بائع.
+- **إعدادات الحذف التلقائي** — تحكّم مباشر في مدد الاحتفاظ بالإعلانات المرفوضة/المنتهية ومهلة السماح قبل حذف صورها، بالإضافة لزرّ تنظيف فوري يدوي خارج الجدولة التلقائية.
+
+### دورة حياة الإعلان الكاملة
+
 ```
-3165 loadOwnerRatings · 3188 populateRateTenantSelect (RPC owner_list_rateable_tenants)
-3229 submitRating (→ user_ratings) · 3126 renderRateStars · 891 renderRatingsHistory
-3365 loadNotifications · 3390 subscribeNotificationsRealtime · 3419 markNotificationsRead · 3434 updateNotifBadge
+إرسال (محكوم بحدّ المعدّل) → معلّق → معتمد (60 يوم) ⇄ موقوف مؤقتًا من صاحبه (يُحسب "نشطًا" ضمن الحدّ)
+                                        │
+                              [تجديد يُعيد الدورة] أو [تنبيهات تدريجية → انتهاء تلقائي]
+                                        │
+                                  (اختياري) تمييز لفترة
 ```
 
-### 8-و. باقي الأقسام (render*)
-`710 renderAll` يستدعي: `renderKPIs`, `renderOverview`, `renderSpaces`, `renderTenants`, `renderBestTenant`, `renderContracts`, `renderAlerts`, `renderRevenue`, `renderInsights`, `renderRatingsHistory`, `renderPayments`, `renderViolations`, `renderReports`. الإعدادات: `3299 saveSettings`, `3552 changePassword`.
+حذف أي إعلان (من صاحبه أو من الأدمن) يُسجَّل أولًا في سجلّ حذف دائم كأثر تدقيقي قبل الحذف الفعلي. صور الإعلانات المحذوفة/المنتهية/المرفوضة تُنظَّف تلقائيًا من التخزين بعد انقضاء مهلة السماح المحدَّدة في إعدادات الحذف التلقائي.
 
 ---
 
-## 9. مركز التحكم الإداري — `admin/`
+## 7. نظام الإشعارات
 
-> صفحات HTML **مستقلة**، كل صفحة قائمة بذاتها (CSS + JS مضمّنان). الدخول محمي بكلمة سر تُجزّأ بـ **`sha256`** عبر `tryLogin` (الجلسة في localStorage). **آلية الوصول لـ Supabase:** بدل عميل supabase-js، تستدعي هذه الصفحات REST API مباشرةً عبر دالتين مساعدتين:
-> - `sbTable(method, table, body, query)` → `fetch('${SB_URL}/rest/v1/<table>...')` لعمليات CRUD.
-> - `sbRpc(fn, params)` → `fetch('${SB_URL}/rest/v1/rpc/<fn>')` لاستدعاء الـ RPCs.
->
-> (الثوابت `SB_URL` و `SB_HDR` تحوي الـ apikey في رأس كل صفحة.)
+### فلسفة النظام
 
-### 9-أ. `admin-hub.html` — لوحة التحكم المركزية
-- **الوظيفة:** صفحة هبوط الأدمن — إحصائيات حيّة، فحص حالة النظام، نظرة سريعة على المساحات، بطاقات تنقّل (`quick-card` بـ `target="_blank"`)، ومخططات معمارية توضيحية للنظام.
-- **الروابط:** `spaces-hub.html`, `subscriptions.html`, `bazaar-dashboard.html`, `ratings.html`, `index.html`.
-- **الدوال:** `sha256`, `tryLogin`, `doLogout`, `loadSpacesData`, `renderPendingSpaces`, `renderAllSpaces`, `renderOwners`, `manageSpace`, `setOwnerPlan`, `switchSpTab`/`renderSpTab`, `checkSystemStatus`, `startAdminAutoRefresh`, `startClock`/`tick`, `copyText`, `toast`.
+**مصدر واحد فقط لكل إشعار على المنصة، بغض النظر عن نوعه أو المنظومة التي أنشأته.** لا استثناءات، ولا جداول موازية لأي نوع إشعار جديد — أي منظومة جديدة تحتاج إعلام مستخدم تكتب في نفس الجدول العام.
 
-### 9-ب. `spaces-hub.html` — إدارة المساحات (الأضخم) ⭐
-- **الوظيفة:** مركز شامل: نظرة عامة + موافقة/رفض المساحات + تعديل/إضافة مساحة + حذف وحدات + تفعيل/تعطيل + **إدارة باقات الأصحاب** + **طلبات تحويل الأصحاب (`upgrade_requests`)** + **إدارة الأنشطة (`space_activities`)**.
-- **دوال رئيسية:** `loadAll`, `renderOverview`, `renderSpaces`, `renderPending`, `renderOwners`, `renderOwnerRequests`, `renderActivities`; القرارات: `doApprove`, `doReject`/`promptReject`, `doToggle`, `promptDelete`/`doDeleteUnit`; الباقات: `changeOwnerPlan` (→ RPC `admin_set_plan_tier`); طلبات الأصحاب: `promptApproveOwnerRequest`, `promptRejectOwnerRequest`, `markContactedRequest`; الأنشطة: `saveActivity`, `toggleActivity`, `deleteActivity`; التعديل/الإضافة: `editSpace`, `openAddForm`, `buildDetailHtml`, `handleMainImg`/`handleExtraImgs`/`handleUnitImg` (رفع R2), `fetchActivities`, `loadSpaceDetail` (مع كاش).
-- **الجداول/الـ RPC:** `spaces`, `space_units`, `space_activities`, `profiles`, `notifications`, `bookings` + RPC `admin_set_plan_tier`.
-- **🔑 نقطة محورية:** عند `doApprove` تُضبط `status='approved'` و `is_active=true` → يُطلق Supabase Realtime → تظهر المساحة فوراً في `index.html` و `spaces/` بدون إعادة تحميل، ويُرسل إشعار للمالك.
+### Source of Truth
 
-### 9-ج. `subscriptions.html` — إدارة الاشتراكات والباقات ⭐
-- **الوظيفة:** عرض كل الأصحاب/الاشتراكات في جدول، KPIs، فلترة، إبراز الاشتراكات المنتهية قريباً، وتعديل باقة/حالة أي مالك عبر مودال.
-- **الدوال:** `loadAll`, `renderKPIs`, `applyFilters`, `toggleExpiring`, `renderTable`, `openModal`/`closeModal`, `saveSub` (الحفظ → RPC/تحديث `profiles`), `planLabel`/`planClass`, `statusLabel`/`statusClass`, `sbRpc`, `tryLogin`, `sha256`, `toast`.
-- **الجداول/الـ RPC:** `profiles` (`plan_tier`), `upgrade_requests`, + RPC `admin_set_plan_tier`.
+جدول `notifications` وحده. معرّف المستلم عمود واحد فقط (`user_id`، من نوع uuid) — لا يوجد أي عمود بديل أو موازٍ لتحديد المستلم.
 
-### 9-د. `ratings.html` — إشراف التقييمات والسمعة
-- **الوظيفة:** عرض كل التقييمات، إحصائيات، فلترة بالحالة، وإخفاء/إظهار تقييم (إشراف).
-- **الدوال (بادئة `adm`):** `admLogin`/`admCheckAuth`/`admGetToken`/`admShowDash`, `admLoad`, `admUpdateStats`, `admSetFilter`/`admFilterTable`, `admRender`/`admBuildTable`, `admSetStatus` (تغيير حالة التقييم), `escHtml`, `starStr`, `admToast`.
-- **الجداول:** `user_ratings`, `profiles`, `bookings`.
+### أنواع الإشعارات
 
-### 9-هـ. `bazaar-dashboard.html` + `organizer-requests.html` + `index.html`
-- `bazaar-dashboard.html`: إدارة البازارات والأكشاك (`bazaars`, `bazaar_slots`, `bazaar_bookings`) + طلبات المنظّمين (`organizer_requests`, `organizer_profiles`).
-- `organizer-requests.html`: مراجعة طلبات توثيق المنظّمين.
-- `index.html` (القديم): مراجعة إعلانات المشاريع للبيع — **محمي بـ Bearer Token من السيرفر** عبر `functions/admin/auth.js` + `functions/admin/listings.js` (أقوى من حماية كلمة السر في باقي صفحات الأدمن).
+مفتوحة (نص حرّ، لا قائمة قيم مقفلة) — كل منظومة تضيف أنواعها الخاصة عند الحاجة (حالة مساحة، حجز جديد، قائمة انتظار، تغييرات بازار، حالة إعلان، تغيير باقة، إيقاف/استعادة حساب، انتهاء اشتراك، إلخ). الواجهة تعرض أيقونة مناسبة عبر خريطة تربط نوع/مصدر الإشعار بأيقونة، وتقع افتراضيًا على أيقونة عامة لو النوع غير معروف لها — فإضافة نوع إشعار جديد لا تتطلب تعديل واجهة العرض بالضرورة.
 
----
+### Metadata
 
-## 10. الصفحات المستقلة الأخرى
+عمود `metadata` (jsonb) يحمل أي بيانات سياقية إضافية يحتاجها الإشعار (معرّف بازار، معرّف حجز، معرّف طلب، إلخ) بدل إضافة عمود مخصَّص لكل حالة استخدام جديدة — هذا هو النمط القياسي الذي يجب اتّباعه لأي إشعار جديد.
 
-### `spaces/` — تصفّح المساحات (Marketplace كامل)
-- تحميل من Supabase عبر `loadData()` + `mapSupabaseToSpaceObject(row, profilesMap)` (مساحات معتمدة فقط).
-- Realtime + polling مثل الرئيسية (`silentRefreshSpaces`, `subscribeSpacesRealtime`).
-- فلاتر sidebar + Pagination (12/صفحة) + سلايدر سعر.
-- **مودال معاينة خاص:** `openViewing`, `submitViewing`, `closeViewingModal` (إضافةً لمودال الحجز).
-- يكرّر أغلب دوال `app.js` (cs*/sd*، buildCardHtml، الفلاتر) بشكل مستقل.
+### Notification Preferences
 
-### `bazaars/` — البازارات
-عرض الفعاليات + حجز أكشاك. `organize.html` فيه محرر خريطة أكشاك 2D. `verification.html` لتوثيق المنظّم. `profile.html` ملف المنظّم العام.
+جدول تفضيلات إشعارات (قناة/مصدر/تفعيل لكل مستخدم) **موجود بالكامل على مستوى قاعدة البيانات لكنه غير مُستخدَم اليوم** — لا واجهة تقرأه أو تكتب فيه. يُعامَل كبنية تحتية جاهزة بانتظار ميزة تُفعِّلها مستقبلًا، لا كخلل.
 
-### `market/` + `post-ad/` + `catalog/` — سوق المشاريع
-بيع/شراء مشاريع جاهزة، نشر إعلان، كتالوج.
+### Organizer Notifications
+
+نظام منفصل عمدًا (جدول مستقلّ) لإشعارات منظّمي البازارات تحديدًا (كحجز جديد على أكشاكهم) — لا يندمج مع الجدول العام لأنه يخدم سياق استخدام مختلفًا. له سياسة احتفاظ مستقلّة بنفس فلسفة الجدول العام.
+
+### آلية إنشاء الإشعارات
+
+أي عملية خادمية (محفّز أو دالة RPC) تحتاج إعلام مستخدم تُدرج صفًّا مباشرة في الجدول العام دون طابور وسيط أو معالجة لاحقة. نقاط الإدراج هذه محاطة عادة بمعالجة استثناء صامتة، كي لا يتسبَّب فشل كتابة إشعار في فشل العملية الأساسية (حجز، تغيير حالة، إلخ) التي أطلقته.
+
+### آلية قراءتها
+
+وحدة JS مشتركة واحدة، مثبَّتة في كل صفحة مصادَق عليها (المساحات، البازارات، سوق المشاريع، لوحة المالك): تُهيَّأ بجلسة المستخدم عند الدخول، تجلب الإشعارات غير المقروءة بالإضافة للمقروءة خلال آخر 7 أيام، وتشترك في قناة بث لحظي خاصة بالمستخدم لتحديث فوري (جرس + عدّاد + قائمة) بلا أي حاجة لإعادة تحميل الصفحة.
+
+### آلية حذفها
+
+لا حذف يدوي فردي من المستخدم العادي — التنظيف بالكامل عبر سياسة الاحتفاظ المجدولة أدناه. لوحة المالك تحديدًا تسمح بإخفاء تنبيهات محلّية معيّنة من عرضها (يُحفَظ اختيار الإخفاء ضمن تفضيلات المالك) دون حذف السجلّ الفعلي من القاعدة.
+
+### سياسة الاحتفاظ (Retention Policy)
+
+مقروء يُحذف بعد **60 يومًا**، غير مقروء يُحذف بعد **90 يومًا**، وأي إشعار له تاريخ انتهاء صريح يُحذف فورًا عند بلوغه — عبر دالة تنظيف واحدة موحَّدة. إشعارات المنظّمين لها دالة تنظيف مستقلّة بوضوح لكن بنفس الفلسفة الزمنية.
+
+### Cron Jobs الخاصة بها
+
+تنظيف الإشعارات العامة **يوميًا**، وتنظيف إشعارات المنظّمين **أسبوعيًا**.
 
 ---
 
-## 11. ملفات مساعدة
+## 8. نظام البروفايلات
 
-### `media-handler.js` — ضغط ورفع الصور إلى **Cloudflare R2**
-```javascript
-const UPLOAD_ENDPOINT = '/upload';   // Cloudflare Pages Function (functions/upload.js)
-const R2_PUBLIC_BASE  = 'https://pub-...r2.dev';  // قاعدة عرض الصور من R2
-const MAX_W = 1280, MAX_H = 1280, WEBP_QUALITY = 0.83, MAX_FILE_BYTES = 20MB;
-// التدفق: قراءة EXIF orientation → ضغط/تصغير وتحويل WebP عبر Canvas → رفع عبر fetch إلى /upload
-// الدوال العامة: uploadImages(files, userId, onProgress, authToken),
-//                uploadSingleImageToR2(file, r2Path, authToken),
-//                compressImage / compressToWebP, uploadWithRetry, cancelUpload
-// يُستدعى من dashboard/app.js (handleMainSpaceImageUpload/handleExtraSpaceImagesUpload/handleUnitImageUpload)
-//   ومن post-ad. التفويض عبر Supabase access token يُمرَّر كـ authToken.
-```
-> ⚠️ لا يوجد رفع إلى Supabase Storage في المشروع — كل الصور على R2.
+### الفلسفة
 
-### `sw.js` — Service Worker
-Cache First للأصول الثابتة · Network First للـ API · fallback إلى `offline.html` · حذف الكاش القديم عند تغيير النسخة (استخدم `bump-version.ps1` لرفع الرقم).
+هوية رقمية موحّدة واحدة لكل مستخدم بغض النظر عن عدد أدواره — لا تكرار لبيانات الهوية (اسم، صورة، توثيق) بين المنظومات المختلفة التي ينشط فيها نفس الشخص.
 
-### `functions/` — Cloudflare Pages Functions
-endpoints سيرفرية: `admin/auth.js` (مصادقة أدمن), `admin/listings.js`, `delete-listing.js`, `upload.js`.
+### البروفايل العام مقابل الخاص
 
-### `manifest.json`
-PWA: الاسم العربي، `theme_color:#F36418`, `dir:rtl`, `lang:ar`, اختصارات (مشاريع/أعلن).
+الجدول الخام يحتوي كل بيانات المستخدم (بما فيها البريد والهاتف الحسّاسان)، لكنه **مقفل بالكامل بقواعد وصول تسمح فقط بقراءة صفّك الخاص** — لا صفّ آخر مرئي مباشرة مهما كانت صلاحية القارئ. أي عرض عام لبيانات مستخدم آخر يمرّ حصرًا عبر واحدة من قناتين آمنتين مصمَّمتين لهذا الغرض تحديدًا:
 
----
+1. **عرض عام** يستثني الحقول الحسّاسة تمامًا — يُستخدم داخليًا في أي استعلام يحتاج بيانات مالك ضمن نتيجة أكبر (كنتائج بحث المساحات).
+2. **دالة مخصَّصة** لصفحة البروفايل العام نفسها، تُعيد حزمة جاهزة (بيانات الملف + مساحاته + بازاراته + إحصائياته) بنداء واحد.
 
-## 12. `style.css` — خريطة التصميم (~7,074 سطر)
+### البيانات العامة
 
-> نظام التصميم مبني على **CSS Variables** في `:root`. بسبب نمو الملف، **أرقام الأسطر القديمة لم تعد دقيقة** — استخدم **Grep على بادئة الـ selector** للوصول السريع.
+الاسم، اسم/نوع الكيان، الصورة الشخصية وصورة الغلاف، النبذة التعريفية، حالة التوثيق، الباقة، المدينة، الأدوار، تاريخ الانضمام.
 
-### 12-أ. المتغيرات الجذرية (`:root` في أعلى الملف)
-```css
---orange-500:#F36418 · --orange-600:#D95A14
---navy-900:#0E1218 · --navy-700:#212833
---font-display:'Cairo' · --font-body:'IBM Plex Sans Arabic' · --font-latin:'Inter'
---shadow-sm/base/lg · --shadow-orange
---dur-instant:80ms · --dur-base:240ms · --dur-slow:360ms · --ease-out-quart
-```
-> الداشبورد له `:root` خاص داخل `dashboard/index.html` (ألوان داكنة: `--bg`, `--panel`, `--orange`, `--green`, `--sidebar-w:260px`).
+### البيانات الخاصة (لا تُعرض لغير صاحبها أبدًا)
 
-### 12-ب. عائلات الـ selectors (ابحث بالبادئة)
-| البادئة / الـ selector | المكوّن |
-|------------------------|---------|
-| `.nav`, `.nav-dropdown`, `.nav-avatar-btn` | شريط التنقل |
-| `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-tint` | الأزرار |
-| `.page`, `.page.active` | نظام الصفحات (fade-up) |
-| `.hero`, `.hero-pill`, `.hero-stats` | الـ Hero |
-| `.search-wrap`, `.price-slider-wrap`, `.chip` | البحث والفلاتر |
-| `.cards-grid`, `.space-card`, `.card-slider`, `.card-badge` | بطاقات المساحات |
-| `.pkg-*` | **صفحة الباقات** (hero/card/table/feat/cta) |
-| `.sd-*`, `.sub-*` | تفاصيل المساحة + الوحدات |
-| `.modal-*`, `.afg`, `.act-pick-btn` | مودال الحجز |
-| `.insp-*` | **مودال المعاينة** |
-| `.owner-*` | صفحة أصحاب المساحات |
-| `.auth-*`, `.btn-google-auth` | صفحات الدخول/التسجيل |
-| `.mp-*`, `.pg-btn` | Marketplace + Pagination |
-| `.bz-*` | البازارات |
-| `.bottom-nav`, `.bn-*` | شريط التنقل السفلي (موبايل) |
+البريد الإلكتروني، رقم الهاتف، حالة الإيقاف، حالة الاشتراك وتفاصيله.
+
+### من يستطيع رؤية ماذا
+
+صاحب الحساب يرى كل بياناته الخاصة عبر لوحته الخاصة. أي زائر أو مستخدم آخر يرى فقط البيانات العامة أعلاه — سواء من صفحة البروفايل العام المخصَّصة، أو ضمنيًا داخل بطاقات المساحات والبازارات. الأدمن وحده يرى كل شيء، عبر دوال محمية بفحص صلاحية داخلي.
+
+### نوع الكيان (Entity Type)
+
+جدول أنواع كيانات مصمَّم ليكون قابلًا للتوسّع من الأدمن، لكن **لا توجد واجهة إدارية فعلية له اليوم** — يُقرأ فقط (قائمة اختيار ضمن نموذج إعدادات البروفايل)، وتعديل قائمة الأنواع نفسها يتطلّب اليوم وصولًا مباشرًا لقاعدة البيانات.
+
+### الأدوار التراكمية
+
+مستخدم عادي قد يصبح صاحب مساحة (عبر طلب تحويل) و/أو منظّم بازارات (عبر توثيق) في آنٍ واحد على نفس الحساب بالضبط — لا حسابات منفصلة لكل دور، والأدوار تتراكب لا تتبادل.
+
+### نظام السمعة الموحَّد
+
+جدول تقييمات عام واحد (بحقلي سياق عامّين: نوع السياق ومعرّفه) يخدم أكثر من علاقة تقييم بنفس البنية: صاحب المساحة يقيّم مستأجريه (من عقوده)، ومنظّم البازار يقيّم مشاركيه الفعليين في بازاره (باتجاه واحد فقط: من المنظّم إلى المشارك، وضمن حجز حقيقي حصرًا — لا تقييم متبادل ولا تقييم بلا حجز فعلي). دالة موحَّدة تحوّل مجموع تقييمات أي مستخدم إلى شارة سمعة مبسَّطة (ممتاز/موثوق/جيد/ضعيف/جديد) تُعرض أينما ظهر ذلك المستخدم.
+
+> **ملاحظة تمييز مهمة:** لوحة المالك تحتوي أيضًا نظام تقييم داخليًا منفصلًا تمامًا، خاصًّا بعقود الإيجار تحديدًا (معايير شهرية متعدّدة: الالتزام، النظافة، التعامل، الدفع، الالتزام باللوائح) — لا يندمج مع نظام السمعة العام أعلاه، لأن عقود الإيجار قد تكون يدوية بالكامل (لمستأجر لا يملك حسابًا على المنصة إطلاقًا). يُفصَّل هذا النظام كجزء من عمليات لوحة المالك.
+
+### العلاقة بين Profiles وباقي المنظومات
+
+جدول البروفايلات هو المحور الذي تدور حوله كل بيانات الهوية في المنصة — كل مساحة، بازار، حجز، إعلان، وإشعار يشير إليه عبر معرّف المستخدم/المالك. أي منظومة جديدة يجب أن تعتمد عليه كمصدر هوية، لا أن تُنشئ جدول هوية موازيًا خاصًّا بها.
 
 ---
 
-## 13. دليل المهام السريعة — "أين أعدّل لكذا؟"
+## 9. نظام الصور (Media Pipeline)
 
-| التعديل المطلوب | الملف | القسم/الدالة |
-|----------------|-------|---------------|
-| تغيير لون/خط أساسي | `style.css` | `:root` أعلى الملف (والداشبورد: `dashboard/index.html` `:root`) |
-| **إضافة/تعديل باقة** | `index.html` (#pg-pricing) + `style.css` (`pkg-*`) + `dashboard/app.js` (`PLAN_LEVELS`, `canAccess`) |
-| **تغيير حد المساحات لباقة** | `dashboard/app.js` | `submitAddSpace` (شرط count) |
-| **قفل/فتح ميزة حسب الباقة** | `dashboard/app.js` | `initDashboard` (`_lockNav`) + `planGateHtml` |
-| **منطق ظهور المساحة للعامة** | `app.js` / `spaces/app.js` | `loadData` (`status='approved' & is_active=true`) |
-| **الموافقة على مساحة (أدمن)** | `admin/spaces-hub.html` | `doApprove` / `doReject` |
-| **تغيير باقة مالك (أدمن)** | `admin/spaces-hub.html` / `subscriptions.html` | `changeOwnerPlan` / `saveSub` → RPC `admin_set_plan_tier` |
-| **مراجعة طلب تحويل صاحب مساحة** | `admin/spaces-hub.html` | `renderOwnerRequests` + `promptApproveOwnerRequest` |
-| **إدارة الأنشطة التجارية** | `admin/spaces-hub.html` | `saveActivity` / `toggleActivity` / `deleteActivity` |
-| **تعديل ترتيب المساحات (الباقة)** | `app.js` | `_sortByPlan`, `_planTrustBadgeHtml` |
-| تعديل بطاقة المساحة (محتوى) | `app.js` | `buildCardHtml` |
-| تعديل بطاقة المساحة (تصميم) | `style.css` | `.space-card`, `.card-*` |
-| تعديل فلاتر الرئيسية | `app.js` | `doSearch` + `filterAndRender` |
-| تعديل Marketplace/Pagination | `app.js` | `renderMarketplace` + `renderMpPagination` |
-| تعديل مودال الحجز (منطق) | `app.js` | `openBooking` + `submitBooking` |
-| **تعديل مودال المعاينة** | `app.js` | `openInspectionModal` + `_insp*` |
-| تعديل تفاصيل المساحة | `app.js` | `openSpaceDetail` + `_render*` |
-| تعديل السلايدر | `app.js` | `cs*` و `sd*` |
-| **إضافة مساحة (نموذج المالك)** | `dashboard/` | `view-add-space` + `submitAddSpace` + `collectSubUnits` |
-| **رفع الصور** | `media-handler.js` (→ Cloudflare R2 عبر `/upload`) + handlers في `dashboard/app.js` + `functions/upload.js` |
-| تعديل تسجيل الدخول/التسجيل | `app.js` | `doEmailLogin`/`doEmailSignup`/`authWithGoogle` |
-| التحقق من دور المالك | `dashboard/app.js` | `checkRoleAndProceed` |
-| **إضافة view للداشبورد** | `dashboard/index.html` (id=`view-*`) + `dashboard/app.js` (`goTo` + `render*`) |
-| **إضافة صفحة أدمن** | `admin/*.html` جديدة + بطاقة في `admin-hub.html` |
-| التقييمات | `dashboard/app.js` (`submitRating`) + `admin/ratings.html` |
-| الإشعارات | `dashboard/app.js` (`loadNotifications`, `subscribeNotificationsRealtime`) |
-| تعديل صفحة الباقات (أنيميشن) | `app.js` | `initPricingAnimations` + `_pkgCountUp` |
-| تعديل PWA/الكاش | `manifest.json` + `sw.js` (+ `bump-version.ps1`) |
-| تغيير مفاتيح Supabase | **كل** ملفات JS وصفحات admin (مكرّرة) |
+> هذا القسم يصف **الفلسفة القياسية الملزمة** لأي رفع صورة في المنصة، حاليًا أو مستقبلًا — وليس فقط وصفًا لما هو مطبَّق اليوم.
+
+### الفلسفة العامة
+
+لا رفع خام أبدًا. كل صورة تمرّ بخط أنابيب واحد وموحَّد بلا استثناء:
+
+```
+قراءة اتجاه EXIF الصحيح → تصغير/ضغط عبر Canvas → تحويل WebP
+     → توليد نسخة واحدة أو عدّة نسخ حسب الاستخدام → رفع متوازٍ لكل النسخ إلى R2
+     → تخزين رابط النسخة الكاملة فقط (النسخ الأصغر تُشتقّ عند العرض)
+```
+
+### رفع الصور
+
+مكتبة JS مشتركة واحدة تُحمَّل عالميًا (بلا وحدات ES، عبر وسم برمجة نصية عادي) في كل صفحة ترفع صورًا — لا تكرار لمنطق الرفع في أي صفحة جديدة.
+
+### التحقق منها
+
+حدّ حجم للملف الخام **قبل** أي معالجة (على مستوى المتصفح)، وحدّ ثانٍ **بعد** الضغط (على مستوى نقطة الرفع الخادمية) — يُرفَض أي ملف يتجاوز أيًّا من الحدَّين بصرف النظر عن مصدر الطلب.
+
+### ضغط الصور وتحويلها لـWebP
+
+بالكامل داخل المتصفح عبر Canvas — لا معالجة خادمية للصورة نفسها؛ نقطة الرفع الخادمية تستقبل وتخزّن الناتج فقط.
+
+### إنشاء النسخ المختلفة
+
+- **صور متعدّدة لكيان واحد** (كصور مساحة): تُولَّد ثلاث مقاسات بالتوازي — مصغّرة للبطاقات، متوسطة للعرض التفصيلي، وكاملة للتكبير. الأصغر أخفّ بأضعاف من الأكبر لتوفير النطاق الترددي حسب موضع الاستخدام الفعلي.
+- **صورة مفردة** (كصورة أفاتار أو غلاف أو وحدة): نسخة واحدة فقط.
+
+### رفعها إلى Cloudflare R2
+
+نقطة رفع خادمية واحدة لكل صور المنصة بصرف النظر عن نوعها أو الميزة التي تستدعيها — لا نقاط رفع متعدّدة حسب الاستخدام. إعادة محاولة تلقائية عند فشل الشبكة، وقابلية إلغاء الرفع بالكامل أثناء تنفيذه.
+
+### تخزين الروابط
+
+يُخزَّن في قاعدة البيانات رابط **النسخة الكاملة فقط**؛ أي نسخة أصغر تُشتَقّ وقت العرض من نفس الرابط (باستبدال جزء من اسم الملف) بدل تخزين عمود منفصل لكل حجم.
+
+### حذف الصور وتنظيف غير المستخدم منها
+
+الحذف اليدوي يرافق حذف الكيان المرتبط بالصورة في بعض المسارات. بالإضافة لذلك، مهمة مجدولة مخصَّصة تكتشف صورًا رُفعت ثم لم تعد مرتبطة بأي سجلّ حيّ (مثال: صورة رُفعت ثم أُلغي النموذج قبل الحفظ) وتحذفها من التخزين بعد مهلة سماح قابلة للتعديل من لوحة الأدمن.
+
+### تعميم الفلسفة على أي ميزة مستقبلية
+
+أي ميزة جديدة (سواء نظام كامل جديد أو توسعة لموجود) تحتاج رفع صور **يجب** أن تُعيد استخدام نفس مكتبة الرفع المشتركة بنفس مسار الضغط/التحويل/الرفع الموصوف أعلاه — لا إنشاء منطق رفع موازٍ مهما بدا بسيطًا، ولا رفع مباشر لأي مزوّد تخزين آخر غير المذكور هنا.
 
 ---
 
-## 14. تدفّقات شاملة (End-to-End Flows)
+## 10. إدارة البيانات
 
-**أ) إضافة مساحة ونشرها:**
-```
-المالك (dashboard) → view-add-space → submitAddSpace
-  → spaces INSERT {status:'pending', is_active:false} + space_units + notification
-  → الأدمن (admin/spaces-hub.html) → doApprove
-  → spaces UPDATE {status:'approved', is_active:true} + إشعار للمالك
-  → Supabase Realtime → silentRefreshSpaces في index.html و spaces/
-  → المساحة تظهر للعامة فوراً (مرتّبة حسب باقة المالك)
-```
+### فلسفة حذف البيانات
 
-**ب) ترقية باقة:**
-```
-المالك → owner-request-modal → submitOwnerRequest → upgrade_requests INSERT {selected_plan, status:'pending'}
-  → الأدمن (spaces-hub.html: changeOwnerPlan أو subscriptions.html: saveSub)
-  → RPC admin_set_plan_tier → profiles.plan_tier UPDATE
-  → ميزات الداشبورد تُفتح (canAccess) + ترتيب أعلى في الواجهة (_sortByPlan)
-```
+لا حذف نهائي فوري لأي كيان "حيّ" في المنصة (مساحة، بازار، إعلان). الحذف يمرّ دائمًا بمرحلة ناعمة أولًا تتيح الاستعادة، والحذف النهائي فعل واعٍ منفصل، محدود الصلاحية (أدمن فقط)، ولا رجعة فيه.
 
-**ج) حجز مساحة:**
-```
-الزائر → openBooking → submitBooking → Apps Script (BOOKING_URL) + Supabase bookings → شاشة نجاح
-```
+### Soft Delete
 
-**هـ) رفع صورة مساحة:**
-```
-المالك (dashboard) → handle*ImageUpload → media-handler.uploadImages
-  → ضغط WebP (Canvas) → fetch POST /upload (functions/upload.js) → Cloudflare R2
-  → يُعاد public URL (R2_PUBLIC_BASE) → يُخزَّن في spaces.image_url / extra_images / space_units.image_url
-```
+نمط موحَّد عبر أكثر من منظومة: المساحات والبازارات تتبعان نفس البنية الثلاثية — **نشط ⇄ أرشيف ⇄ محذوفات → حذف نهائي حقيقي فقط من مرحلة المحذوفات**. سوق المشاريع له سجلّ حذف منفصل يُنشأ تلقائيًا قبل أي حذف فعلي، كأثر تدقيقي بديل عن الاستعادة المباشرة.
 
-**د) معاينة مساحة:**
-```
-المستخدم → openInspectionModal → خطوات (_inspGoStep) → _inspSubmitForm → _inspConfirm
-```
+### Hard Delete
+
+محصور دائمًا بالمرحلة الأخيرة (سلّة المحذوفات)، وبصلاحية الأدمن فقط. بعض المنظومات تملك أيضًا أداة "تطهير" أشدّ صرامة منفصلة، مخصَّصة لحالات استثنائية فقط.
+
+### Automatic Cleanup — كل المهام المجدولة على مستوى المنصة
+
+| المهمة | التكرار |
+|---|---|
+| انتهاء صلاحية إعلانات سوق المشاريع | يوميًا |
+| انتهاء تمييز الإعلانات المدفوع | يوميًا |
+| تنبيهات انتهاء الإعلانات التدريجية | كل 3 ساعات |
+| تنظيف صور الإعلانات اليتيمة | يوميًا (عبر نداء خادمي خارجي) |
+| انتهاء فرص سوق البازارات B2B | يوميًا |
+| تحديث الحالة الزمنية للبازارات (منشور→جارٍ→منتهٍ) | كل 3 ساعات |
+| أرشفة البازارات المنتهية تلقائيًا | يوميًا |
+| دورة خمول المساحات (تنبيه → تذكير → أرشفة) | يوميًا |
+| انتهاء الاشتراكات | يوميًا |
+| رفع الإيقافات المؤقتة المنتهية المدّة | يوميًا |
+| حذف الحجوزات القديمة المكتملة/الملغاة (أقدم من 90 يومًا) | أسبوعيًا |
+| صيانة قاعدة البيانات (تحسين أداء الجداول الكبرى) | أسبوعيًا |
+| إعادة حساب مقاييس لوحة الأدمن | كل 15 دقيقة |
+| تنظيف إشعارات المنصة العامة | يوميًا |
+| تنظيف إشعارات المنظّمين | أسبوعيًا |
+
+### Archiving
+
+منطقة رمادية مقصودة بين "نشط" و"محذوف" — الكيان لا يزال موجودًا وقابلًا للاستعادة الفورية، لكنه غير نشط تشغيليًا (لا حجوزات/تفاعل جديد، لا ظهور في التصفح الافتراضي).
+
+### Dormancy (الخمول)
+
+مفهوم خاص بالمساحات تحديدًا: غياب أي تحديث فعلي من المالك لفترة طويلة يُترجَم تلقائيًا لأرشفة تدريجية عبر ثلاث مراحل زمنية بإشعارات تصاعدية، بدل ترك مساحات مهملة تتصدَّر نتائج البحث إلى ما لا نهاية.
+
+### Retention Policies — لماذا هذه الفلسفة تحديدًا
+
+بيانات المنصة التشغيلية (حجوزات، عقود، تقييمات) قد تحمل قيمة تاريخية أو إثباتية لاحقة (نزاع بين مستأجر ومالك، تتبّع سمعة مستخدم بمرور الوقت) — الحذف الفوري يُفقدها للأبد بلا داعٍ حقيقي في أغلب الحالات. الموازنة المعتمدة: الاحتفاظ لمدّة كافية (أسابيع لبيانات تشغيلية عادية، أشهر لبيانات ذات قيمة إثباتية أطول) ثم تنظيف تلقائي مجدول، بدل تراكم غير محدود أو حذف فوري متهوّر.
 
 ---
 
-## 15. نقاط تقنية مهمة (Gotchas)
+## 11. قاعدة البيانات
 
-1. **RTL أولاً:** كل الكود للعربية — تجنّب `left/right`، استخدم `start/end`.
-2. **SPA بدون Router:** التنقل عبر `showPage()` وليس `<a href>` (داخل `index.html`). أما `dashboard/`, `spaces/`, `admin/` فصفحات مستقلة.
-3. **لا Frameworks:** Vanilla JS بالكامل (لا React/Vue/jQuery). كل صفحة مستقلة تكرّر دوالها الخاصة.
-4. **المساحات من Supabase وليس Sheets:** لا تبحث عن `SHEET_URL` للمساحات — أُزيل. استخدم جداول `spaces`/`space_units`.
-5. **شرط الظهور العام:** `status='approved' AND is_active=true` — أي مساحة بدونهما لن تظهر.
-6. **Realtime:** أي تغيير في `spaces`/`space_units` يُبَثّ تلقائياً (debounce 1.5s) + polling احتياطي 5 دقائق. عند إضافة جدول جديد يحتاج بثّاً، سجّله في `subscribeSpacesRealtime`.
-7. **مفاتيح Supabase مكرّرة** في كل ملف JS وكل صفحة admin — غيّرها في كلها معاً.
-8. **بيانات مختلطة:** المساحات/التقييمات/الإشعارات في Supabase، لكن العقود/المستأجرون/المدفوعات/المخالفات لا تزال **localStorage** في الداشبورد (مفاتيح `contractsKey`/`paymentsKey`/`violationsKey`/`ratingsKey`).
-9. **السلايدر الموحّد:** أي slider جديد يُسجَّل في `_sliders{}` ويتبع نمط `cs*` أو `sd*`.
-10. **الفلاتر تتراكم:** في Marketplace راعِ `mpActiveTypes`/`mpActiveActs`/`mpPage` عند أي تعديل.
-11. **الباقة تُقرأ من `profiles.plan_tier`** وتُخزّن في `currentOwner.planTier` / `currentProfile`. مستويات: `starter<growth<pro`.
-12. **رفع الصور** عبر `media-handler.js` (ضغط WebP بـ Canvas) إلى **Cloudflare R2** عبر `/upload` — لا ترفع صوراً خام، ولا تستخدم Supabase Storage.
-15. **صفحات الأدمن تتكلم REST مباشرةً** عبر `sbTable`/`sbRpc` (وليس supabase-js)، ومحميّة بكلمة سر `sha256` — عدا `admin/index.html` (المشاريع) المحمي بـ Bearer Token سيرفري. تغيير الباقات دائماً عبر RPC `admin_set_plan_tier`.
-13. **الترميز:** ملفات HTML بترميز **UTF-8 with BOM** و **CRLF**. حافظ عليه عند التعديل لتفادي مشاكل العربية.
-14. **روابط Google Drive للصور:** مرّرها عبر `_toDirectImgUrl()` لتحويلها لروابط عرض مباشرة.
+> بلا الدخول في تفاصيل SQL — الهدف خريطة ذهنية سريعة لموقع كل بيانات المنصة.
+
+### أهم الجداول (مصنَّفة حسب المنظومة)
+
+- **الهوية:** البروفايلات، أنواع الكيانات.
+- **المساحات:** المساحات، الوحدات الفرعية، الأنشطة التجارية، تحليلات المساحات.
+- **حجوزات المساحات:** الحجوزات.
+- **البازارات:** البازارات، الأكشاك، حجوزات الأكشاك، التأجيلات، سجلّ تغييرات البازار، بلاغات إساءة الاستخدام، الحجوزات الداخلية للمنظّم.
+- **سوق فرص البازارات B2B:** فرص المساحات، عروض المنظّمين، سجلّ نشاط هذا السوق.
+- **المنظّمون:** ملفات المنظّمين العامة، طلبات التوثيق، تقييمات المنظّمين.
+- **سوق المشاريع:** الإعلانات، بلاغات الإعلانات، تجديدات الإعلانات، سجلّ حذف الإعلانات، إعدادات الحذف التلقائي، قائمة استثناء حدّ المعدّل، المفضّلة.
+- **الإعلانات الرسمية:** جدول واحد للمناقصات/الإعلانات الرسمية.
+- **الإشعارات:** الإشعارات العامة، إشعارات المنظّمين، تفضيلات الإشعارات (غير مفعَّلة بعد).
+- **الباقات:** جدول الاشتراكات.
+- **عمليات لوحة المالك:** العقود، المدفوعات، المخالفات، تقييمات المستأجرين الداخلية، إعدادات المالك.
+- **التقييمات العامة:** جدول التقييمات الموحَّد (بالسياق العام).
+- **الإدارة والتدقيق:** سجلّ تدقيق الأدمن العام، مقاييس لوحة الأدمن (وعناصرها التفصيلية)، إعدادات المنصة العامة، طلبات ترقية الحساب.
+
+### العلاقات الرئيسية
+
+كل شيء تقريبًا يشير في النهاية إلى صفّ مستخدم واحد (صاحب/حاجز/منظّم/بائع). المساحة ترتبط بوحداتها الفرعية وبحجوزاتها. سلسلة البازار ثلاثية الاتجاه: البازار ← الكشك ← الحجز، والحالة تتدفّق دائمًا من الحجز إلى الكشك لا العكس. عقود لوحة المالك هي المحور الذي تتفرَّع منه المدفوعات والمخالفات والتقييمات الداخلية (حذف العقد يسحب معه تبعاته تلقائيًا).
+
+### Source of Truth لكل منظومة (تذكير مركَّز)
+
+- حالة الكشك ← تُشتَقّ من حالة الحجز، لا تُكتب مباشرة أبدًا.
+- حالة نشر المساحة ← عمود واحد فقط، لا عمود موازٍ.
+- الباقة الفعلية ← يجب حسابها لحظيًا عند الحاجة لدقّة تامة، لا الاكتفاء بقراءة العمود المخزَّن مباشرة.
+- أي إشعار من أي منظومة ← جدول واحد فقط.
+
+### أهم RPC (حسب الوظيفة)
+
+- **بحث عام:** دالة بحث المساحات الموحَّدة — الوحيدة المصمَّمة عمدًا لتعمل بصلاحيات الزائر نفسه لا بصلاحيات مرتفعة.
+- **كتابة محمية بالمالك:** عشرات الدوال، كل واحدة تتحقق أن المستدعي هو صاحب السجلّ فعليًا قبل أي تعديل.
+- **كتابة محمية بالأدمن:** عشرات الدوال، كل واحدة تتحقق من صلاحية الأدمن داخليًا بغض النظر عن أي معامل آخر يُمرَّر معها.
+- **عمليات ذرّية حسّاسة للتزامن:** اختيار منظّم بازار، حجز كشك — تُنفَّذ بقفل صفّي صريح يمنع التعارض عند طلبين متزامنين على نفس المورد.
+- **دوال حساب/اشتقاق:** الباقة الفعلية، سمعة المستخدم، البازار المميَّز في الرئيسية، حزمة بيانات البروفايل العام.
+
+### أهم Triggers
+
+تعبئة صاحب المساحة تلقائيًا عند إنشاء حجز، إرسال إشعار فوري عند أحداث محدَّدة (حجز جديد، تغيير حالة حجز بازار، تغيير حالة إعلان، بلوغ إعلان عتبة مشاهدات)، اشتقاق حالة الكشك من حالة الحجز، منع تداخل تواريخ عقدين على نفس الوحدة، إعادة حساب حالة البازار فور تعديل تاريخه، توليد أرقام فواتير تلقائيًا، تصفير أعلام التنبيه عند تجديد إعلان، إنفاذ حدود معدّل الإرسال (إعلانات، حجوزات بازار)، منع قفل كشك على بازار غير نشط.
+
+### أهم Cron Jobs
+
+القائمة الكاملة موثَّقة في قسم "إدارة البيانات" أعلاه — 18 مهمة تغطي كل التنظيف والانتهاء والأرشفة والصيانة في المنصة.
+
+---
+
+## 12. الأمان
+
+### Authentication
+
+Supabase Auth (Email/Password + Google OAuth) لعامة المستخدمين. حساب الأدمن الوحيد يُصادَق أيضًا عبره في معظم صفحات الإدارة.
+
+### Authorization
+
+طبقتان تعملان معًا دائمًا، لا بديل لإحداهما عن الأخرى:
+1. **RLS على مستوى الجدول** — خط الدفاع الأول، يعمل حتى لو استُدعي الجدول مباشرة عبر REST بلا المرور بأي دالة RPC.
+2. **فحص صريح داخل كل دالة RPC حسّاسة** — لا اعتماد على من يملك صلاحية استدعاء الدالة فقط، بل تحقّق فعلي من الهوية والملكية داخل جسم الدالة نفسها.
+
+### RLS
+
+مفعَّلة على كل الجداول بلا استثناء واحد. بعض الجداول الداخلية (سجلّات تدقيق ومقاييس) مقفلة تمامًا بلا أي سياسة وصول إطلاقًا — هذا **تصميم مقصود**: تعني أنها لا تُقرأ إلا عبر دوال RPC مخصَّصة بصلاحيات مرتفعة، وليست ثغرة.
+
+### Roles
+
+عمود دور أساسي واحد (قيمة واحدة) + عمود أدوار إضافية (مصفوفة تراكمية) — مفصَّلان في قسم البروفايلات.
+
+### `is_admin()`
+
+دالة SQL واحدة صغيرة تتحقق أن المستخدم الحالي يملك دور "أدمن" في جدول البروفايلات — هي **المرجع الوحيد** المستخدَم اليوم في كل دالة إدارية حديثة. هذا التعميم أفضل من الاعتماد على معرّف مستخدم مُرمَّز صراحة في الكود (نمط أقدم وأكثر هشاشة، لأنه ينكسر بصمت لو تغيّر من يحمل صلاحية الأدمن).
+
+### Public Views
+
+عرض واحد بارز يستثني كل الحقول الحسّاسة من جدول البروفايلات عمدًا — يُستخدم كبديل آمن لأي قراءة عابرة لهوية مستخدم آخر، بدل فتح صلاحية قراءة عامة على الجدول الخام نفسه.
+
+### SECURITY DEFINER مقابل SECURITY INVOKER
+
+- **`SECURITY DEFINER`** هو النمط الغالب لأي منطق كتابة يحتاج تجاوز RLS العادي (كل الدوال الإدارية، ودوال المالك الحسّاسة، ومحفّزات الإشعارات) — تُنفَّذ بصلاحيات مالك الدالة، مع تثبيت صريح لمسار البحث في كل دالة لمنع أي هجوم من فئة "اختطاف المخطط" عبر التلاعب بإعدادات جلسة المستدعي.
+- **`SECURITY INVOKER`** استثناء متعمَّد وحيد بارز: دالة البحث العام عن المساحات — تُنفَّذ بصلاحيات المستدعي نفسه بقصد صريح، لتبقى نتائجها خاضعة تلقائيًا لأي تغيير مستقبلي في قواعد الوصول على جدول المساحات دون الحاجة لتحديث الدالة نفسها.
+
+### حماية البيانات الحسّاسة
+
+الجدول الخام للبروفايلات مقفل بالكامل على القراءة الذاتية فقط — لا توجد أي سياسة "قراءة عامة أساسية" مفتوحة عليه. أي وصول لبيانات مستخدم آخر يمرّ حصرًا عبر العرض الآمن أو دالة مخصَّصة تُعيد فقط الحقول العامة المقصودة.
+
+### نماذج مصادقة الإدارة المتعدّدة
+
+نقطة يجب فهمها بوضوح كتصميم قائم، لا كتضارب: تتعايش اليوم **ثلاث آليات مختلفة** حسب الصفحة الإدارية:
+
+1. **جلسة Supabase Auth حقيقية + `is_admin()`** — لمعظم لوحة الإدارة (مركز التحكم الرئيسي، إدارة المساحات، الاشتراكات، التقييمات، البازارات).
+2. **توكن ذاتي التوقيع** (صادر من كلمة سرّ بيئة واحدة، صالح لساعات محدودة، محفوظ في تخزين الجلسة بالمتصفح) — يتحقق منه كل نداء خادمي إداري قبل استخدام مفتاح صلاحيات مرتفعة من جهة الخادم فقط. تستخدمه صفحة إدارة سوق المشاريع وكل أدواتها الحديثة (تحليلات، حسابات مشبوهة، إعدادات حذف).
+3. **سرّ منفصل عبر ترويسة مخصَّصة** — للمهمة المجدولة الوحيدة التي تستدعي نداءً خادميًا خارجيًا (تنظيف الصور اليتيمة) بدل دالة قاعدة بيانات مباشرة.
+
+هذا التعدّد ناتج طبيعي عن تطوّر المنصة عبر مراحل مختلفة، وليس خطأً يحتاج توحيدًا عاجلاً — لكنه يستحق أن يكون معروفًا بوضوح لأي مطوّر يضيف صفحة إدارية جديدة (اختيار الأسلوب الأول هو التوصية الافتراضية لأي إضافة مستقبلية، لسهولته وعدم حاجته لإدارة سرّ منفصل).
+
+---
+
+## 13. الأداء وقابلية التوسع
+
+### Pagination
+
+على مستوى الخادم لكل قوائم المساحات العامة — دالة واحدة موحَّدة، حدّ أقصى صريح لعدد الصفوف بكل نداء بصرف النظر عمّا يُطلب، لا تحميل جماعي إلى المتصفح في هذا المسار الأكثر ازدحامًا بالمنصة.
+
+### Server-side Filtering
+
+نفس الدالة تطبّق كل معايير الفلترة (منطقة، نوع، نشاط، سعر أقصى) داخل استعلام SQL واحد، لا فلترة لاحقة على مصفوفة محمَّلة مسبقًا في المتصفح.
+
+### Server-side Sorting
+
+الترتيب (بالباقة، ثم بترتيب العرض اليدوي، ثم بالأحدث؛ أو بالسعر تصاعديًا/تنازليًا عند الطلب) جزء من نفس استعلام SQL — لا توجد أي دالة ترتيب مكافئة من جهة العميل تُعيد فرز نتائج مُحمَّلة بالكامل بعد اليوم.
+
+### Realtime
+
+مستخدَم في نطاقات محدَّدة ومدروسة فقط (المساحات، الإشعارات، خريطة أكشاك البازار، حجوزات المالك) — دائمًا مع تأخير تجميع قصير لتفادي عاصفة تحديثات متتالية سريعة، ودائمًا مع نبض احتياطي (Polling) كخط دفاع ثانٍ عند انقطاع الاتصال المباشر، ودائمًا يتوقف عن العمل الزائد حين تكون الصفحة في الخلفية.
+
+### Shared Queries
+
+طبقة الملفات المشتركة تمنع تباعد أكثر من نسخة من نفس منطق التحويل أو الجلب بمرور الوقت — أي تعديل مستقبلي على شكل بيانات المساحة أو منطق إرسال الحجز يُعدَّل في مكان واحد فقط، ويسري تلقائيًا على كل الصفحات التي تستخدمه.
+
+### فلسفة التوسّع
+
+أي قائمة عامة جديدة يُحتمَل نموّها لمئات أو آلاف الصفوف (كما حدث بالفعل مع المساحات) يجب أن تُبنى من اليوم الأول على نمط "استعلام خادمي واحد يفلتر ويرتّب ويرقّم الصفحات بنفسه ويُعيد فقط الصفحة المطلوبة" — وليس "نحمّل كل شيء الآن ونُحسّن لاحقًا لو كبر الحجم". هذا النمط أثبت أنه الحلّ الوحيد المستدام في المسار الأكثر أهمية بالمنصة، ويجب أن يكون هو الافتراضي لأي قائمة عامة جديدة، لا استثناءً يُضاف لاحقًا عند الحاجة.
+
+---
+
+## 14. فلسفة التطوير
+
+المبادئ التالية ملزمة عند إضافة أي ميزة جديدة للمنصة:
+
+- **عدم تكرار المنطق.** أي منطق يُستخدَم في أكثر من صفحة (تحويل بيانات، إرسال حجز، عرض إشعار، رفع صورة) يعيش في ملف مشترك واحد، لا نسخ متوازية. النسخ المتكرر هو ما تسبَّب تاريخيًا أكثر من مرّة في تباعد نسختين من نفس المنطق بصمت مع كل تعديل جديد يُطبَّق على واحدة وليس الأخرى.
+- **مصدر واحد للحقيقة (Single Source of Truth).** لكل مفهوم حالة في المنصة عمود أو جدول واحد فقط يُعتمد عليه فعليًا. أي عمود آخر يبدو مشابهًا "للتوافق التاريخي" يجب إزالته فور التأكد أن لا اعتماد فعلي عليه، لا تركه "احتياطًا" إلى أجل غير مسمّى.
+- **مكوّنات/ملفات مشتركة.** أي ميزة جديدة تحتاج اتصالًا بقاعدة البيانات، أو تمثيل/بحث مساحات، أو إرسال حجز، أو عرض إشعار، أو رفع صورة — تستدعي الملف المشترك الموجود لهذا الغرض، ولا تكتب نسخة محلّية خاصة بها مهما بدا ذلك أسرع في اللحظة.
+- **أقلّ تكلفة تشغيل ممكنة.** الاعتماد الكامل على خدمات مُدارة بلا خادم دائم يعني عدم وجود تكلفة بنية تحتية ثابتة تتناسب مع حجم الاستخدام الحالي. أي إضافة جديدة تحتاج معالجة خلفية يجب أن تُفضّل دالة قاعدة بيانات مجدولة أو نداءً خادميًا خفيفًا، لا تشغيل خدمة أو عامل خلفي دائم جديد.
+- **الحفاظ على التوافق عند تغيير شكل بيانات موجود.** يُفضَّل ترك فترة انتقالية بمعاملات أو أعمدة قديمة تُقبل لكنها تصبح بلا أثر فعلي، بدل كسر كل نقاط الاستدعاء دفعة واحدة — بشرط توثيق أي معامل/عمود من هذا النوع بوضوح، لا تركه بلا تفسير لأي مطوّر مستقبلي (انظر أمثلة موثَّقة في الملاحظات الختامية أدناه).
+- **عدم كسر الـWorkflow الحالي.** أي تعديل على منظومة قائمة (كإضافة حالة جديدة لدورة حياة مساحة أو بازار) يجب أن يراجع كل مكان يفترض قائمة الحالات الحالية صراحة (قيود التحقق، شروط الصلاحيات، فلاتر الواجهة) بدل افتراض أن إضافة قيمة جديدة "غير مؤثرة" على ما هو قائم.
+- **الاعتماد على الطبقات المشتركة للصلاحيات.** أي صفحة إدارية جديدة يجب أن تستخدم فحص صلاحية الأدمن الموحَّد كوسيلتها الوحيدة (لا كلمة سرّ محلّية جديدة، ولا معرّف مستخدم مُرمَّز صراحة في الكود) — لتبقى صالحة تلقائيًا حتى لو تغيّر من يحمل صلاحية الأدمن مستقبلًا.
+- **التفكير في قابلية التوسّع منذ البداية.** أي قائمة يُحتمَل نموّها لمئات أو آلاف الصفوف يجب أن تُصمَّم من اليوم الأول كدالة خادمية واحدة تُنفّذ الفلترة والترتيب والترقيم بنفسها، على نمط بحث المساحات الحالي تمامًا — لا "سنُحسّنها لاحقًا لو كبرت".
+
+---
+
+## ملاحظات ختامية
+
+هذه ملاحظات تعارض أو فجوات حقيقية وُجدت أثناء إعداد هذا التقرير عبر مراجعة مباشرة للكود وقاعدة البيانات الحيّة، وليست جزءًا من وصف "الحالة الحالية المثالية" أعلاه. تُذكر هنا كي لا يُوثَّق شيء غير صحيح ضمن متن الدليل:
+
+1. **معامل `p_secret` في عشرات دوال RPC الإدارية بلا أثر فعلي.** لا يزال ظاهرًا في توقيع نحو 37+ دالة إدارية (تراثًا من نموذج مصادقة أقدم)، لكن التحقّق المباشر من كل جسم دالة يؤكّد أن لا دالة واحدة منها تفحصه فعليًا — الحماية الحقيقية الوحيدة دائمًا هي `is_admin()`. لا خطورة أمنية حالية من ذلك (الحماية الفعلية سليمة)، لكنه دَين تقني تجميلي يستحق تنظيفًا في جولة مخصَّصة مستقبلًا.
+2. **دالة `admin_manage_listing` (RPC) قد تكون بلا استخدام فعلي اليوم.** التحقّق من واجهة الإدارة الفعلية لسوق المشاريع يُظهر أن اعتماد/رفض الإعلانات يمرّ عمليًا عبر نداء خادمي (Cloudflare Function) يُحدّث الجدول مباشرة بمفتاح صلاحيات مرتفعة، وليس عبر هذه الدالة رغم وجودها وسلامة حمايتها الداخلية. يستحق تأكيدًا قبل حذفها إن كانت غير مستخدَمة فعلًا.
+3. **`notification_preferences` و آلية إدارة "أنواع الكيانات" بنية تحتية جاهزة بلا واجهة استخدام.** كلاهما مصمَّم بالكامل على مستوى قاعدة البيانات (مع صلاحيات وصول سليمة) لكن بلا أي شاشة تستخدمه اليوم — ينتظران ميزة تُفعّلهما، وليسا خللاً.
+4. **علم "إيقاف استقبال الحجوزات" في البازارات (`booking_paused`) بلا تحقّق واضح من جهة واجهة الحجز العامة.** أداة التفعيل موجودة وتعمل من جهة المنظّم، لكن لم يُعثر على أي فحص لهذا العلم داخل مسار الحجز العام نفسه من جهة العميل — إن كان الإنفاذ الفعلي يعتمد كليًا على قاعدة البيانات فهذا سليم معماريًا، لكنه يستحق تأكيدًا صريحًا قبل الاعتماد عليه كضمانة كاملة.
+5. **نقطة رفع الصور العامة لا تتحقق فعليًا من صحّة رمز الدخول المُرسَل معها.** تكتفي بفحص طول القيمة المرسَلة في ترويسة التفويض دون التحقّق أنها جلسة Supabase حقيقية وسارية — وبعض نقاط الاستدعاء في الواجهة ترسل المفتاح العام الافتراضي كبديل احتياطي عند غياب جلسة. هذه فجوة أمنية حقيقية قائمة اليوم في نقطة مشتركة تخدم كل المنصة، ويُنصح بمعالجتها قريبًا (التحقّق من صحة/صلاحية الرمز فعليًا قبل قبول أي رفع).
+6. **تنظيف الصور اليتيمة يغطي سوق المشاريع فقط.** صور المساحات والوحدات والبروفايلات والبازارات التي تُرفع ثم تُهجَر قبل الحفظ (نموذج أُلغي بعد اختيار صورة مثلًا) لا تُنظَّف تلقائيًا من التخزين اليوم — فجوة تكلفة تخزين تراكمية، لا خلل وظيفي.
+7. **بعض عمليات الكتابة في لوحة المالك لا تخضع لبوّابة "وضع القراءة فقط" عند انتهاء الاشتراك.** حذف عقد/دفعة/مخالفة، وإضافة/حذف تقييم مستأجر داخلي، وتحديث تفضيلات الإعدادات — كلها تعمل حاليًا حتى في وضع القراءة فقط، خلافًا لعمليات الإنشاء/التعديل المماثلة التي تخضع للبوّابة. قد يكون هذا مقصودًا (حذف بيانات ليس "كتابة" بالمعنى التجاري)، لكنه غير متّسق مع بقية النمط ويستحق قرارًا صريحًا.
+8. **جدول `ratings` (تقييمات قديم، صفّ واحد متبقٍّ) بلا أي استخدام في الكود.** يبدو نظام تقييم تراثيًا سبق نظام التقييمات الموحَّد الحالي بالكامل — مرشَّح آمن للحذف بعد تأكيد عدم وجود اعتماد خارجي عليه.
+9. **دالة تنظيف الحجوزات القديمة المحذوفة (`cleanup_expired_bookings`) بها خطأ برمجي حقيقي** (مقارنة نوع بيانات خاطئة تمنعها من العمل بنجاح لو استُدعيت) — أثرها محدود حاليًا لأنها غير مجدولة عبر أي مهمة تلقائية، لكن يجب إصلاحها قبل ربطها بأي جدولة مستقبلية.
+10. **عرض `public_profiles` لا يفعّل خيار "تنفيذ بصلاحيات القارئ" الحديث صراحة.** بما أنه يقتصر أصلًا على حقول عامة مقصودة، الخطورة الفعلية منخفضة جدًا، لكنه لا يتبع أحدث توصية معيارية لهذا النوع من العروض الآمنة — تعديل تجميلي منخفض التكلفة والمخاطر.
+11. **حماية كلمات المرور المسرَّبة معطَّلة على مستوى خدمة المصادقة نفسها.** إعداد يُفعَّل من لوحة تحكم مزوّد الخدمة مباشرة (لا يحتاج تعديل كود)، ولا يؤثر على أي مستخدم أو جلسة قائمة حاليًا — تفعيله يفحص فقط كلمات المرور الجديدة عند التسجيل أو التغيير مقابل قاعدة تسريبات معروفة.
+12. **ملاحظات أداء غير عاجلة موثَّقة من أدوات المراقبة:** عدد من سياسات الصلاحيات عبر المنصة يُعيد تقييم دالة التحقّق من الهوية لكل صفّ بدل مرّة واحدة لكل استعلام (تحسين قياسي معروف)، وتراكم أكثر من سياسة متساهلة على نفس الجدول/العملية في عدّة جداول (نتيجة طبيعية لإضافة قواعد صلاحية تباعًا بمرور الوقت لا تصميم خاطئ)، وعشرات الفهارس المُنشأة لم يستخدمها مخطِّط الاستعلامات فعليًا حتى الآن. كلها فرص تحسين، وليست أعطالًا.
+
+هذا الملف يصف حالة المنصة وقت إعداده. حدِّثه كلما تغيّرت فلسفة أو بنية جوهرية في أي منظومة — لا عند كل تعديل صغير.

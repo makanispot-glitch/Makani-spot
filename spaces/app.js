@@ -1768,7 +1768,7 @@ async function submitViewing() {
     const { error } = await sbClient.from('bookings').insert({
       id:         crypto.randomUUID(),
       user_id:    currentUser.id,
-      owner_id:   s?.ownerId || null,   // ربط طلب المعاينة بصاحب المساحة → يظهر في لوحة الملاك
+      owner_id:   s?.ownerId || null,   // ربط طلب المعاينة بصاحب المساحة → يظهر في لوحة أصحاب المساحات
       space_id:   s?.id || null,         // ربط بالمساحة
       space_name: s?.name || '',
       space_loc:  s?.loc  || '',

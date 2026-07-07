@@ -1179,7 +1179,7 @@ async function loadOwnerData() {
       imageUrl:    s.image_url   || null,
       extraImages: Array.isArray(s.extra_images) ? s.extra_images.filter(Boolean) : [],
       minPrice:    s.min_price   || 0,
-      sizesStr:    s.sizes_prices || '',
+      sizesStr:    _toLatinDigits(s.sizes_prices || ''),
       allActs:     !!s.all_acts,
       season:      s.season     || '',
       insight:     s.insight    || '',
@@ -1374,6 +1374,18 @@ async function loadSpaceAnalytics(forceRefresh) {
   _updateSpacesAnalyticsColumn();
 }
 
+function _analyticsTimeAgo(dateStr) {
+  if (!dateStr) return null;
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60)   return 'منذ دقائق';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24)  return `منذ ${hours} ساعة`;
+  const days = Math.floor(hours / 24);
+  if (days < 30)   return `منذ ${days} يوم`;
+  return 'منذ أكثر من شهر';
+}
+
 function _perfScore(views, clicks, bookings) {
   if (!views && !clicks && !bookings) return null;
   const conv = views > 0 ? (bookings / views) * 100 : 0;
@@ -1419,8 +1431,13 @@ function renderSpaceAnalytics() {
       ? `<div style="width:100%;background:var(--border);border-radius:99px;height:4px;margin-top:4px"><div style="height:4px;border-radius:99px;background:var(--blue);width:${Math.min(100, (views/Math.max(...spaceAnalyticsData.map(x=>Number(x.views_count||0)),1))*100)}%"></div></div>`
       : '';
 
+    const lastSeen = _analyticsTimeAgo(r.last_event_at);
+
     return `<tr>
-      <td style="font-weight:700">${r.space_name || '—'}</td>
+      <td>
+        <div style="font-weight:700">${r.space_name || '—'}</div>
+        ${lastSeen ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">آخر نشاط: ${lastSeen}</div>` : ''}
+      </td>
       <td style="text-align:center">
         <span style="font-family:'Space Mono',monospace;font-size:13px">${views.toLocaleString('ar-EG')}</span>
         ${viewsBar}
@@ -2169,6 +2186,30 @@ function renderRatingsHistory() {
         <td style="font-size:11px;color:var(--text3)">${mLbl} <button class="btn btn-sm" style="background:none;border:1px solid rgba(255,77,77,.25);color:var(--red);font-size:10px;padding:2px 7px;margin-right:6px" onclick="deleteRating('${r.id}')">🗑️</button></td>
       </tr>`;
   }).join('');
+
+  renderRatingsOverview();
+}
+
+/* نظرة عامة أعلى صفحة "التقييمات والمخالفات" — ملخّص موحّد لكلا القسمين */
+function renderRatingsOverview() {
+  const elAvg   = document.getElementById('rv-avg-rating');
+  const elCount = document.getElementById('rv-total-ratings');
+  const elHigh  = document.getElementById('rv-high-violations');
+  const elTotal = document.getElementById('rv-total-violations');
+  if (!elAvg && !elCount && !elHigh && !elTotal) return;
+
+  const count = ratingsList.length;
+  const avg   = count ? ratingsList.reduce((s, r) => s + (r.avgScore || 0), 0) / count : 0;
+  const high  = violationsList.filter(v => v.severity === 'high').length;
+  const total = violationsList.length;
+
+  if (elAvg)   elAvg.textContent   = count ? avg.toLocaleString('ar-EG', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—';
+  if (elCount) elCount.textContent = count.toLocaleString('ar-EG');
+  if (elHigh)  elHigh.textContent  = high.toLocaleString('ar-EG');
+  if (elTotal) elTotal.textContent = total.toLocaleString('ar-EG');
+
+  const highCard = document.getElementById('rv-high-card');
+  if (highCard) highCard.style.borderColor = high > 0 ? 'rgba(255,77,77,0.35)' : '';
 }
 
 /* ══════════════════════════════════════════
@@ -2685,36 +2726,11 @@ function renderViolations() {
   const activeContracts = contractsList.filter(c =>
     c.status !== 'expired' || (c.endDate && new Date(c.endDate) >= _vExpCutoff));
 
-  const sevCounts = { high:0, medium:0, low:0 };
-  violationsList.forEach(v => { if (sevCounts[v.severity] !== undefined) sevCounts[v.severity]++; });
-
   const sevMap = {
     high:   { cls:'badge-red',    lbl:'خطير',  ico:'🚨' },
     medium: { cls:'badge-yellow', lbl:'متوسط', ico:'⚠️' },
     low:    { cls:'badge-blue',   lbl:'خفيف',  ico:'📋' },
   };
-
-  const kpiHtml = `
-    <div class="kpi-row kpi-row--3" style="margin-bottom:20px">
-      <div class="kpi-card" style="${sevCounts.high>0?'border-color:rgba(255,77,77,0.35)':''}">
-        <div class="kpi-ico">🚨</div>
-        <div class="kpi-label">مخالفات خطيرة</div>
-        <div class="kpi-value" style="color:${sevCounts.high?'var(--red)':'var(--text)'}">${sevCounts.high}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">تتطلب إجراءً فورياً</div>
-      </div>
-      <div class="kpi-card" style="${sevCounts.medium>0?'border-color:rgba(255,184,0,0.35)':''}">
-        <div class="kpi-ico">⚠️</div>
-        <div class="kpi-label">تحذيرات رسمية</div>
-        <div class="kpi-value" style="color:${sevCounts.medium?'var(--yellow)':'var(--text)'}">${sevCounts.medium}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">متوسطة الخطورة</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-ico">📋</div>
-        <div class="kpi-label">ملاحظات خفيفة</div>
-        <div class="kpi-value">${sevCounts.low}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">للمتابعة فقط</div>
-      </div>
-    </div>`;
 
   const tableHtml = `
     <div class="pcard" style="margin-bottom:20px">
@@ -2809,7 +2825,8 @@ function renderViolations() {
       </div>
     </div>`;
 
-  container.innerHTML = kpiHtml + tableHtml + formHtml;
+  container.innerHTML = formHtml + tableHtml;
+  renderRatingsOverview();
 }
 
 function submitViolation(e) {
@@ -5570,6 +5587,30 @@ async function submitUnitEdit() {
 /* ══════════════════════════════════════════
    ➕  ADD SPACE FORM — الأحجام
    ══════════════════════════════════════════ */
+
+/* يحوّل الأرقام العربية/الفارسية إلى أرقام إنجليزية — يوحّد التخزين والعرض بغض النظر عن لوحة المفاتيح */
+function _toLatinDigits(str) {
+  if (!str) return str;
+  const arabic  = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  return String(str).replace(/[٠-٩۰-۹]/g, d => {
+    const ai = arabic.indexOf(d);
+    if (ai > -1) return ai;
+    return persian.indexOf(d);
+  });
+}
+
+/* يُطهّر حقل رقمي أثناء الكتابة: يقبل عربي/إنجليزي ويحوّله فوراً لإنجليزي، ويزيل أي حرف آخر */
+function _sanitizeNumericInput(el, allowDecimal) {
+  let v = _toLatinDigits(el.value);
+  v = allowDecimal ? v.replace(/[^0-9.]/g, '') : v.replace(/[^0-9]/g, '');
+  if (allowDecimal) {
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  }
+  el.value = v;
+}
+
 function addSizeRow() {
   const container = document.getElementById('as-sizes-container');
   const emptyMsg  = document.getElementById('as-sizes-empty-msg');
@@ -5579,14 +5620,30 @@ function addSizeRow() {
   const idx = asSizeRowCount++;
   const div = document.createElement('div');
   div.id = 'as-size-row-' + idx;
-  div.style.cssText = 'display:grid;grid-template-columns:2fr 2fr 40px;gap:8px;margin-bottom:8px;align-items:center';
+  div.className = 'as-size-row';
   div.innerHTML = `
-    <input type="text"   id="as-size-label-${idx}" placeholder="مثال: ١×١ م" style="width:100%" oninput="calcDefaultPrice()">
-    <input type="number" id="as-size-price-${idx}" placeholder="السعر/شهر" min="0" style="width:100%;font-family:'Space Mono',monospace" oninput="calcDefaultPrice()">
+    <div class="as-size-dims">
+      <input type="text" inputmode="numeric" id="as-size-w-${idx}" placeholder="1" oninput="_sanitizeNumericInput(this,true);calcDefaultPrice()">
+      <span>×</span>
+      <input type="text" inputmode="numeric" id="as-size-h-${idx}" placeholder="1" oninput="_sanitizeNumericInput(this,true);calcDefaultPrice()">
+      <span>م</span>
+    </div>
+    <input type="text" inputmode="numeric" id="as-size-price-${idx}" placeholder="السعر/شهر" style="width:100%;font-family:'Space Mono',monospace" oninput="_sanitizeNumericInput(this,false);calcDefaultPrice()">
     <button type="button" onclick="removeSizeRow(${idx})"
             style="background:none;border:1px solid var(--red);color:var(--red);border-radius:var(--r);padding:6px 10px;cursor:pointer;font-size:13px;line-height:1">✕</button>`;
   container.appendChild(div);
   calcDefaultPrice();
+  return idx;
+}
+
+/* يضيف صفاً جاهزاً بمقاس شائع (مثال: 2×3) ويركّز على حقل السعر مباشرةً */
+function addPresetSizeRow(w, h) {
+  const idx = addSizeRow();
+  const wEl = document.getElementById('as-size-w-' + idx);
+  const hEl = document.getElementById('as-size-h-' + idx);
+  if (wEl) wEl.value = w;
+  if (hEl) hEl.value = h;
+  document.getElementById('as-size-price-' + idx)?.focus();
 }
 
 function removeSizeRow(idx) {
@@ -5619,9 +5676,12 @@ function getSizesString() {
   const sizes = [];
   document.querySelectorAll('[id^="as-size-row-"]').forEach(row => {
     const idx   = row.id.replace('as-size-row-', '');
-    const label = document.getElementById('as-size-label-' + idx)?.value.trim();
+    const w     = document.getElementById('as-size-w-' + idx)?.value.trim();
+    const h     = document.getElementById('as-size-h-' + idx)?.value.trim();
     const price = document.getElementById('as-size-price-' + idx)?.value.trim();
-    if (label) sizes.push(price ? `${label}:${price}` : label);
+    if (!w && !h) return;
+    const label = (w && h) ? `${w}×${h} م` : `${w || h} م`;
+    sizes.push(price ? `${label}:${price}` : label);
   });
   return sizes.join(' · ');
 }

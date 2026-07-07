@@ -11,6 +11,18 @@ const SPACE_STATUS = Object.freeze({
   ARCHIVED: 'archived',
 });
 
+/** يحوّل الأرقام العربية/الفارسية إلى أرقام إنجليزية — يوحّد عرض المقاسات والأسعار بغض النظر عن طريقة إدخالها */
+function _toLatinDigits(str) {
+  if (!str) return str;
+  const arabic  = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  return String(str).replace(/[٠-٩۰-۹]/g, d => {
+    const ai = arabic.indexOf(d);
+    if (ai > -1) return ai;
+    return persian.indexOf(d);
+  });
+}
+
 /**
  * يحوّل صفّ spaces (+ space_units المضمّنة) إلى كائن العرض المستخدم في الكروت/التفاصيل.
  * profilesMap: { [owner_id]: { plan_tier, full_name, avatar_url, entity_name, is_verified } }
@@ -18,7 +30,7 @@ const SPACE_STATUS = Object.freeze({
 function mapSpaceRow(row, profilesMap) {
   profilesMap = profilesMap || {};
   const sizes = row.sizes_prices
-    ? row.sizes_prices.split(/[|·]/).map(s => s.trim()).filter(Boolean)
+    ? _toLatinDigits(row.sizes_prices).split(/[|·]/).map(s => s.trim()).filter(Boolean)
     : [];
   const ownerProfile = (row.owner_id && profilesMap[row.owner_id]) || {};
   const isBroker = row.is_broker || false;

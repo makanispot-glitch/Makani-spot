@@ -2192,17 +2192,79 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
   .kpi-row.kpi-row--3 { grid-template-columns: 1fr; }
 }
 
-/* ── Amenities grid (add-space form) ── */
-.amenities-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  background: var(--bg3);
-  border-radius: var(--r);
-  padding: 12px;
+/* ── Amenities chips (add-space form) ── */
+.amenities-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-@media (max-width: 600px) { .amenities-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 390px) { .amenities-grid { grid-template-columns: 1fr; } }
+.amenity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+  user-select: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.amenity-chip:hover { border-color: var(--orange); }
+.amenity-chip input { display: none; }
+.amenity-chip:has(input:checked) {
+  background: var(--orange-pale);
+  border-color: var(--orange);
+  color: var(--orange);
+  font-weight: 700;
+}
+.amenity-chip .chip-check { display: none; }
+.amenity-chip:has(input:checked) .chip-check { display: inline; }
+
+/* ── Size presets + rows (add-space form) ── */
+.size-preset-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.size-preset-chip:hover { border-color: var(--orange); color: var(--orange); }
+.as-size-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 38px;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.as-size-dims {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+}
+.as-size-dims input {
+  width: 34px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text1);
+}
+.as-size-dims input:focus { outline: none; }
+.as-size-dims span { font-size: 12px; color: var(--text3); flex-shrink: 0; }
 
 /* ── Topbar title: prevent overflow on small screens ── */
 @media (max-width: 760px) {
@@ -3201,6 +3263,34 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
           </div>
         </div>
 
+        <!-- ── نظرة عامة: إحصائيات التقييمات والمخالفات ── -->
+        <div class="kpi-row" style="margin-bottom:22px">
+          <div class="kpi-card">
+            <div class="kpi-ico">⭐</div>
+            <div class="kpi-label">متوسط التقييم العام</div>
+            <div class="kpi-value" id="rv-avg-rating" style="color:var(--orange)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">من ١٠</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">📋</div>
+            <div class="kpi-label">إجمالي التقييمات المسجّلة</div>
+            <div class="kpi-value" id="rv-total-ratings">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">لكل المستأجرين</div>
+          </div>
+          <div class="kpi-card" id="rv-high-card">
+            <div class="kpi-ico">🚨</div>
+            <div class="kpi-label">مخالفات خطيرة</div>
+            <div class="kpi-value" id="rv-high-violations" style="color:var(--red)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">تتطلب إجراءً فورياً</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-ico">⚠️</div>
+            <div class="kpi-label">إجمالي المخالفات المسجّلة</div>
+            <div class="kpi-value" id="rv-total-violations" style="color:var(--yellow)">—</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">كل الدرجات</div>
+          </div>
+        </div>
+
         <!-- ── القسم الأول: التقييمات ── -->
         <div class="section-label">⭐ التقييمات الشهرية</div>
 
@@ -3410,7 +3500,6 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             <div class="pcard">
               <div class="pcard-head">
                 <div class="pcard-title">📝 بيانات المساحة</div>
-                <span class="db-tag">Sheet: 🏢 المساحات</span>
               </div>
               <div class="pcard-body">
 
@@ -3503,17 +3592,17 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
                 <!-- amenities -->
                 <div class="form-group" style="margin-top:4px">
-                  <label>المرافق المتاحة</label>
-                  <div class="amenities-grid">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-wifi"    value="واي فاي"   style="accent-color:var(--orange)"> 📶 واي فاي</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-elec"    value="كهرباء"    style="accent-color:var(--orange)"> ⚡ كهرباء</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-sec"     value="أمن"       style="accent-color:var(--orange)"> 🔒 أمن ٢٤/٧</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-clean"   value="نظافة"     style="accent-color:var(--orange)"> 🧹 نظافة يومية</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-table"   value="ترابيزات"  style="accent-color:var(--orange)"> 🪑 ترابيزات</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-storage" value="مخزن"      style="accent-color:var(--orange)"> 📦 مخزن</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-cam"     value="كاميرات"   style="accent-color:var(--orange)"> 📷 كاميرات</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-ac"      value="تبريد"     style="accent-color:var(--orange)"> ❄️ تكييف</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="as-amen-light"   value="إضاءة"     style="accent-color:var(--orange)"> 💡 إضاءة</label>
+                  <label>المرافق المتاحة <span style="font-size:10px;color:var(--text3)">(اختر كل ما ينطبق)</span></label>
+                  <div class="amenities-chips">
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-wifi"    value="واي فاي">   📶 واي فاي   <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-elec"    value="كهرباء">    ⚡ كهرباء    <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-sec"     value="أمن">       🔒 أمن ٢٤/٧ <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-clean"   value="نظافة">     🧹 نظافة يومية <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-table"   value="ترابيزات">  🪑 ترابيزات  <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-storage" value="مخزن">      📦 مخزن      <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-cam"     value="كاميرات">   📷 كاميرات   <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-ac"      value="تبريد">     ❄️ تكييف     <span class="chip-check">✓</span></label>
+                    <label class="amenity-chip"><input type="checkbox" id="as-amen-light"   value="إضاءة">     💡 إضاءة     <span class="chip-check">✓</span></label>
                   </div>
                 </div>
 
@@ -3587,19 +3676,24 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             <div class="pcard-head">
               <div>
                 <div class="pcard-title">📐 الأحجام والأسعار</div>
-                <div class="pcard-sub">كل سطر = خيار حجم بسعره — يظهر للمستأجر في صفحة المساحة (عمود K في الشيت)</div>
+                <div class="pcard-sub">أضف كل مقاس متاح مع سعره الشهري — تظهر للمستأجر ليختار الأنسب له</div>
               </div>
-              <button type="button" class="btn btn-primary btn-sm" onclick="addSizeRow()">+ إضافة حجم</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="addSizeRow()">+ مقاس مخصص</button>
             </div>
             <div class="pcard-body">
-              <div style="display:grid;grid-template-columns:2fr 2fr 40px;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-                <div style="font-size:11px;color:var(--text3);font-weight:600">وصف الحجم <span style="opacity:0.6">(مثال: ١×١ م)</span></div>
-                <div style="font-size:11px;color:var(--text3);font-weight:600">السعر / شهر (ج.م.)</div>
-                <div></div>
+              <!-- مقاسات شائعة: إضافة بضغطة واحدة -->
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:14px">
+                <span style="font-size:11px;color:var(--text3)">مقاسات شائعة:</span>
+                <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(1,1)">1×1</button>
+                <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(1,2)">1×2</button>
+                <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(2,2)">2×2</button>
+                <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(2,3)">2×3</button>
+                <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(3,3)">3×3</button>
               </div>
+
               <div id="as-sizes-container"></div>
               <div id="as-sizes-empty-msg" style="text-align:center;color:var(--text3);padding:16px;font-size:12px">
-                📐 لم تُضَف أحجام بعد — اضغط "+ إضافة حجم" أعلاه
+                📐 لم تُضَف أحجام بعد — اختر مقاساً شائعاً أعلاه أو اضغط "+ مقاس مخصص"
               </div>
               <div id="as-price-display" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.20);border-radius:var(--r);font-size:12px;color:var(--orange)"></div>
             </div>
@@ -3610,7 +3704,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             <div class="pcard-head">
               <div>
                 <div class="pcard-title">📦 الوحدات الفرعية <span style="font-size:11px;color:var(--text3)">(اختياري)</span></div>
-                <div class="pcard-sub">لو عندك وحدات صغيرة منفصلة داخل المساحة — أضف كل وحدة مع بياناتها وصورتها (شيت الوحدات الفرعية)</div>
+                <div class="pcard-sub">لو عندك وحدات صغيرة منفصلة داخل المساحة — أضف كل وحدة مع بياناتها وصورتها</div>
               </div>
               <button type="button" class="btn btn-primary btn-sm" onclick="addSubUnitRow()">+ إضافة وحدة</button>
             </div>

@@ -115,38 +115,35 @@
     _count  = 0;
   }
 
-  /* markAll() — يُعلّم جميع الإشعارات كمقروءة + يُحدّث الـ UI فوراً */
-  async function markAll() {
-    if (!_sb || !_uid) return;
-    var ids = _notifs.filter(function (n) { return !n.is_read; }).map(function (n) { return n.id; });
-    if (!ids.length) return;
+  /* _markIdsRead(ids) — يُحدّث DB + الذاكرة المحلية + الـ badge (بدون إعادة رسم البانل) */
+  async function _markIdsRead(ids) {
+    if (!_sb || !_uid || !ids.length) return;
     try {
       await _sb.from('notifications')
         .update({ is_read: true })
         .in('id', ids)
         .eq('user_id', _uid);
     } catch (e) { /* صامت */ }
-    _notifs = _notifs.map(function (n) { return Object.assign({}, n, { is_read: true }); });
-    _count  = 0;
-    _syncBadge();
+    var idSet = {};
+    ids.forEach(function (id) { idSet[id] = true; });
+    _notifs = _notifs.map(function (n) {
+      return idSet[n.id] ? Object.assign({}, n, { is_read: true }) : n;
+    });
+    _count = _notifs.filter(function (n) { return !n.is_read; }).length;
+    _syncBadge();           /* badge يتحدث فوراً بدون reload */
+  }
+
+  /* markAll() — يُعلّم جميع الإشعارات كمقروءة + يُحدّث الـ UI فوراً */
+  async function markAll() {
+    var ids = _notifs.filter(function (n) { return !n.is_read; }).map(function (n) { return n.id; });
+    if (!ids.length) return;
+    await _markIdsRead(ids);
     _renderPanel();
   }
 
   /* click(notifId, actionUrl) — يُعلّم إشعاراً كمقروء + يُحدّث badge فوراً + ينتقل */
   async function click(notifId, actionUrl) {
-    if (!_sb || !_uid) return;
-    try {
-      await _sb.from('notifications')
-        .update({ is_read: true })
-        .eq('id', notifId)
-        .eq('user_id', _uid);
-    } catch (e) { /* صامت */ }
-    var wasUnread = _notifs.some(function (n) { return n.id === notifId && !n.is_read; });
-    _notifs = _notifs.map(function (n) {
-      return n.id === notifId ? Object.assign({}, n, { is_read: true }) : n;
-    });
-    if (wasUnread) _count = Math.max(0, _count - 1);
-    _syncBadge();           /* badge يتحدث فوراً بدون reload */
+    await _markIdsRead([notifId]);
     _closePanel();
     if (actionUrl) window.location.href = actionUrl;
   }
@@ -260,6 +257,12 @@
     document.body.appendChild(panel);
     _renderPanel(panel);
     document.addEventListener('click', _outside, true);
+
+    /* بمجرد ما المستخدم يفتح البانل ويشوف الإشعارات تتحسب مقروءة —
+       العلامة الحمراء على الجرس تختفي فوراً. البانل نفسه اتّرسم فوق
+       (السطر اللي فات) فهيفضل شكل "جديد" ظاهر لحد ما يتقفل. */
+    var unreadIds = _notifs.filter(function (n) { return !n.is_read; }).map(function (n) { return n.id; });
+    if (unreadIds.length) _markIdsRead(unreadIds);
   }
 
   function _closePanel() {
