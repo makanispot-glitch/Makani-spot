@@ -489,6 +489,7 @@ body { background: var(--surface2); }
 </div><!-- end .pa-wrapper -->
 
 <script src="../shared/sb-config.js"></script>
+<script src="/pwa-install.js?v=2" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;
@@ -834,6 +835,7 @@ async function paSubmit() {
     document.getElementById('pa-wizard').style.display = 'none';
     document.getElementById('pa-success').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.mkPwaInstall?.signalSuccess();
 
   } catch (e) {
     /* P0001 = رسالة مقصودة من trigger القيود (الحد الأقصى / فترة الانتظار) — تُعرض كما هي */

@@ -1815,12 +1815,13 @@ function renderBazaars() {
       <td><span class="pr">${fmt(rev)} ج</span><div style="font-size:10px;color:var(--mu)">من ${fmt((bz.price||0)*(bz.totalSlots||0))} متوقع</div></td>
       <td>
         <select class="ie-sel" onchange="changeBzStatus('${bz.id}',this.value)" onclick="event.stopPropagation()">
-          <option value="published"  ${bz.status==='published' ?'selected':''}>✅ منشور</option>
-          <option value="live"       ${bz.status==='live'      ?'selected':''}>⚡ جاري</option>
-          <option value="completed"  ${bz.status==='completed' ?'selected':''}>✔️ انتهى</option>
-          <option value="draft"      ${bz.status==='draft'     ?'selected':''}>📝 مسودة</option>
-          <option value="pending"    ${bz.status==='pending'   ?'selected':''}>⏳ بانتظار</option>
-          <option value="cancelled"  ${bz.status==='cancelled' ?'selected':''}>❌ ملغي</option>
+          <option value="draft"          ${bz.status==='draft'          ?'selected':''}>📝 مسودة</option>
+          <option value="pending_review" ${bz.status==='pending_review' ?'selected':''}>⏳ قيد المراجعة</option>
+          <option value="published"      ${bz.status==='published'     ?'selected':''}>✅ منشور</option>
+          <option value="live"           ${bz.status==='live'          ?'selected':''}>⚡ جاري</option>
+          <option value="postponed"      ${bz.status==='postponed'     ?'selected':''}>🟠 مؤجّل</option>
+          <option value="completed"      ${bz.status==='completed'     ?'selected':''}>✔️ انتهى</option>
+          <option value="cancelled"      ${bz.status==='cancelled'     ?'selected':''}>❌ ملغي</option>
         </select>
         ${(bz.status==='completed'||bz.status==='live') ? ((bz.event_links&&bz.event_links.length>0)?'<div style="font-size:10px;color:#047857;margin-top:2px">🟢 موثّق</div>':'<div style="font-size:10px;color:#92400e;margin-top:2px">🟡 غير موثّق</div>') : ''}
       </td>

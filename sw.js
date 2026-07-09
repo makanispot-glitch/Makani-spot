@@ -13,7 +13,7 @@
 /* ── الإصدار: غيّر هذا الرقم عند كل نشر جديد ────────────────
    الصيغة: YYYYMMDD-HHMM  →  سهل تعرف امتى اتعمل
    ─────────────────────────────────────────────────────────── */
-const CACHE_VER   = 'v202607070338';
+const CACHE_VER   = 'v202607091800';
 const SHELL_CACHE = `makani-shell-${CACHE_VER}`;
 const FONT_CACHE  = `makani-fonts-${CACHE_VER}`;
 const CDN_CACHE   = `makani-cdn-${CACHE_VER}`;
@@ -78,10 +78,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* 1. Supabase API + R2 + uploads → Network-Only */
+  /* 1. Supabase API + R2 + uploads + لوحة الإدارة → Network-Only
+     (مسارات /admin/* كانت بتقع في قاعدة "الأصول الثابتة" الافتراضية أسفل الملف
+     فتُخزَّن أول استجابة API لها بالكاش وتُعاد للأبد حتى لو تغيّرت البيانات) */
   if (url.hostname.endsWith('supabase.co') ||
       url.hostname.endsWith('r2.dev') ||
-      url.pathname.startsWith('/upload')) {
+      url.pathname.startsWith('/upload') ||
+      url.pathname.startsWith('/admin/')) {
     return;
   }
 

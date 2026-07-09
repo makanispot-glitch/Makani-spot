@@ -25,6 +25,13 @@ let _bookingsLoaded      = false;
 let _verificationLoaded  = false;
 let _docsCurrentLinks    = [];
 
+/* "اليوم" بتوقيت القاهرة — نفس المنطقة الزمنية التي يعتمدها الكرون في قاعدة البيانات
+   (update_bazaar_statuses/auto_archive_expired_bazaars)، لتفادي أي تعارض قرب منتصف الليل
+   بين تاريخ اليوم المحسوب هنا وحالة البازار الفعلية في القاعدة. راجع نفس الدالة في app.js */
+function _cairoTodayStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
+}
+
 /* ── status display ── */
 const STATUS_LABEL = {
   published:      '🟢 منشور',
@@ -44,6 +51,8 @@ const CANCEL_ALLOWED     = ['published', 'active', 'upcoming', 'postponed', 'pen
 const POSTPONE_ALLOWED   = ['published', 'active', 'upcoming'];
 const SLOTS_EDIT_ALLOWED = ['published', 'active', 'upcoming', 'postponed', 'live'];
 const DOCS_ALLOWED       = ['live', 'completed'];
+const DOCS_NOT_HAPPENED  = ['cancelled', 'postponed'];
+const MAX_DOCS_LINKS     = 15;
 
 const KNOWN_DOMAINS = ['facebook.com', 'fb.com', 'instagram.com', 'tiktok.com', 'youtube.com', 'youtu.be', 'x.com', 'twitter.com', 'snapchat.com', 'linkedin.com'];
 
@@ -610,17 +619,27 @@ function _populateInfoTab(b) {
 
   _hide('edit-msg');
 
-  /* completed = full read-only (only docs tab allows changes) */
+  /* completed/cancelled = full read-only (نفس القفل الذي تطبّقه بقية التبويبات على هذه الحالات) */
   const isCompleted = b.status === 'completed';
+  const isCancelled = b.status === 'cancelled';
+  const isLocked    = isCompleted || isCancelled;
   const saveBtn = document.getElementById('edit-save-btn');
   if (saveBtn) {
-    saveBtn.style.display = isCompleted ? 'none' : '';
+    saveBtn.style.display = isLocked ? 'none' : '';
   }
 
   const completedNotice = document.getElementById('edit-completed-notice');
-  if (completedNotice) completedNotice.style.display = isCompleted ? 'block' : 'none';
+  if (completedNotice) {
+    completedNotice.style.display = isLocked ? 'block' : 'none';
+    const noticeText = completedNotice.querySelector('.mn-warn-text');
+    if (noticeText) {
+      noticeText.innerHTML = isCancelled
+        ? 'البازار مُلغى — لا يمكن تعديل المعلومات.'
+        : 'البازار انتهى — لا يمكن تعديل المعلومات. يمكنك إضافة روابط التوثيق من تبويب <strong>🔗 التوثيق</strong>.';
+    }
+  }
 
-  if (isCompleted) {
+  if (isLocked) {
     ['e-title','e-start-date','e-end-date','e-location','e-location-url','e-working-hours','e-description'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.setAttribute('readonly', 'true');
@@ -720,6 +739,10 @@ async function saveEditInfo() {
 
   if (activeBazaar.status === 'completed') {
     _showMsg('edit-msg', '⛔ البازار انتهى — لا يمكن تعديل المعلومات. يمكنك فقط إضافة روابط التوثيق', 'error');
+    return;
+  }
+  if (activeBazaar.status === 'cancelled') {
+    _showMsg('edit-msg', '⛔ البازار مُلغى — لا يمكن تعديل المعلومات', 'error');
     return;
   }
 
@@ -966,7 +989,6 @@ function _slotHTML(s, mode) {
 <div class="sm-slot ${cls}" ${onclick} title="${_esc(tooltip)}">
   ${isPremium ? '<span class="sm-star">⭐</span>' : ''}
   <span class="sm-num">${s.slot_number || ''}</span>
-  <div class="sm-slot-tooltip">${_esc(tooltip)}</div>
 </div>`;
 }
 
@@ -1013,13 +1035,18 @@ async function toggleReserveSlot(slotId, action) {
 }
 
 async function togglePremiumSlot(slotId, makePremium) {
-  const { error } = await sb
+  const { data, error } = await sb
     .from('bazaar_slots')
     .update({ is_featured: makePremium })
     .eq('id', slotId)
-    .eq('bazaar_id', activeBazaar.id);
+    .eq('bazaar_id', activeBazaar.id)
+    .select('id');
 
   if (error) { _showSlotMsg('فشل تحديث نوع المقعد: ' + error.message, true); return; }
+  if (!data || data.length === 0) {
+    _showSlotMsg('تعذّر تحديث المقعد — أعد فتح البازار وحاول مرة أخرى', true);
+    return;
+  }
 
   const slot = activeSlots.find(s => s.id === slotId);
   if (slot) slot.is_featured = makePremium;
@@ -1041,7 +1068,7 @@ function _showSlotMsg(text, isErr) {
    TAB 3: STATUS (M6 + M8 — الحالة)
 ════════════════════════════════════════════════════════ */
 function _populateStatusTab(b) {
-  const today          = new Date().toISOString().split('T')[0];
+  const today          = _cairoTodayStr();
   const alreadyStarted = b.start_date && b.start_date <= today;
   const atPostponeLimit = (b.postponed_count || 0) >= MAX_POSTPONES;
   const canPostpone    = POSTPONE_ALLOWED.includes(b.status) && !alreadyStarted && !atPostponeLimit;
@@ -1203,7 +1230,7 @@ async function confirmPostpone() {
   if (newStart >= newEnd)   { _showMsg('postpone-msg', 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية', 'error'); return; }
 
   /* client-side: لا يمكن التأجيل إذا بدأ البازار بالفعل */
-  const today      = new Date().toISOString().split('T')[0];
+  const today      = _cairoTodayStr();
   const bazaarStart = activeBazaar.start_date || '';
   if (bazaarStart && bazaarStart <= today) {
     _showMsg('postpone-msg', '⛔ لا يمكن التأجيل — البازار بدأ بالفعل في ' + _formatDate(bazaarStart), 'error');
@@ -1335,10 +1362,13 @@ function _populateVerificationTab(b) {
   _docsCurrentLinks = Array.isArray(b.event_links) ? [...b.event_links] : [];
   _renderDocsLinks();
 
-  /* تنبيه بارز: البازار انتهى دون إضافة روابط توثيق */
-  const _today_docs    = new Date().toISOString().split('T')[0];
+  /* تنبيه بارز: البازار انتهى دون إضافة روابط توثيق
+     _expiredByDate بتوقيت القاهرة (وليس UTC) لتفادي تعارضه مع status الفعلية في القاعدة قرب
+     منتصف الليل — البازارات الملغاة/المؤجلة مستثناة لأن الحدث لم يقع بصورته الحالية، فتاريخ
+     نهايتها القديم لا يعني أنها "انتهت" فعلياً وتحتاج توثيقاً */
+  const _today_docs    = _cairoTodayStr();
   const _endD_docs     = b.date_end || b.end_date;
-  const _expiredByDate = _endD_docs && _endD_docs < _today_docs;
+  const _expiredByDate = !DOCS_NOT_HAPPENED.includes(b.status) && !!_endD_docs && _endD_docs < _today_docs;
   const _isEnded       = _expiredByDate || b.status === 'completed';
   document.getElementById('docs-ended-alert')?.remove();
   if (_isEnded && !_docsCurrentLinks.length) {
@@ -1393,6 +1423,9 @@ function _populateVerificationTab(b) {
     const wasDeleted = b.links_deleted_at;
     sc.innerHTML = `<div class="mn-docs-status-pill yellow">🟡 ${wasDeleted ? '⚠️ كان هذا الحدث يحتوي سابقاً على روابط قام المنظم بإزالتها لاحقاً' : 'لم تُضف روابط بعد'}</div>
       <div style="font-size:11.5px;color:var(--ink3);margin-top:4px">${wasDeleted ? `تاريخ الإزالة: ${new Date(wasDeleted).toLocaleDateString('ar-EG')} — يمكنك إعادة الإضافة في أي وقت` : 'إضافة الروابط اختيارية — تُعزز مصداقيتك لدى العملاء'}</div>`;
+  } else if (DOCS_NOT_HAPPENED.includes(b.status)) {
+    const label = b.status === 'cancelled' ? 'البازار مُلغى' : 'البازار مؤجَّل';
+    sc.innerHTML = `<div class="mn-docs-status-pill gray">⏸ التوثيق غير متاح — ${label}</div>`;
   } else {
     sc.innerHTML = `<div class="mn-docs-status-pill gray">⏸ التوثيق متاح بعد انطلاق البازار</div>`;
   }
@@ -1446,6 +1479,10 @@ function _renderDocsLinks() {
 }
 
 function docsAddLink() {
+  if (_docsCurrentLinks.length >= MAX_DOCS_LINKS) {
+    showToast(`⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا`);
+    return;
+  }
   _docsCurrentLinks.push('');
   _renderDocsLinks();
   /* focus new input */
@@ -1458,6 +1495,36 @@ function docsRemoveLink(i) {
   _renderDocsLinks();
 }
 
+/* شكل نطاق صالح فقط (label.label.tld) — يرفض النصوص العشوائية التي يقبلها new URL() بصمت
+   عبر ترميزها كـ %20 داخل الـ hostname بدل رفضها (مثال: "not a url at all") */
+const _VALID_HOSTNAME_RE = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+function _normalizeDocsLinks(rawLinks) {
+  const normalized = [];
+  const invalid    = [];
+  for (const u of rawLinks) {
+    let candidate = u;
+    if (!/^https?:\/\//i.test(candidate)) candidate = 'https://' + candidate;
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') { invalid.push(u); continue; }
+      if (!_VALID_HOSTNAME_RE.test(parsed.hostname)) { invalid.push(u); continue; }
+      normalized.push(candidate);
+    } catch { invalid.push(u); }
+  }
+  /* إزالة التكرار — بلا حساسية لحالة الأحرف أو / بالنهاية أو اختلاف http/https */
+  const seen = new Set();
+  const deduped = [];
+  let dupCount = 0;
+  for (const u of normalized) {
+    const key = u.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    if (seen.has(key)) { dupCount++; continue; }
+    seen.add(key);
+    deduped.push(u);
+  }
+  return { links: deduped, invalid, dupCount };
+}
+
 async function docsSaveLinks() {
   if (!activeBazaar) return;
 
@@ -1466,11 +1533,26 @@ async function docsSaveLinks() {
     _docsCurrentLinks[i] = el.value.trim();
   });
 
-  const links = _docsCurrentLinks.filter(u => u.length > 0);
+  const rawLinks = _docsCurrentLinks.filter(u => u.length > 0);
 
-  if (links.length === 0 && activeBazaar.links_added_at) {
+  if (rawLinks.length === 0 && activeBazaar.links_added_at) {
     if (!confirm('هل تريد حذف جميع روابط التوثيق؟\n\nسيُسجَّل أن المنظم قام بحذف الروابط لاحقاً، وسيظهر البازار بدون توثيق.')) return;
   }
+
+  /* تطبيع (إضافة https:// تلقائياً لو ناقصة) + التحقق من صحة الروابط + إزالة التكرار */
+  const { links, invalid, dupCount } = _normalizeDocsLinks(rawLinks);
+  if (invalid.length > 0) {
+    _showMsg('docs-msg', `⚠️ ${invalid.length === 1 ? 'رابط غير صالح' : 'روابط غير صالحة'}: ${invalid.join('، ')}`, 'error');
+    return;
+  }
+  if (links.length > MAX_DOCS_LINKS) {
+    _showMsg('docs-msg', `⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا (لديك ${links.length})`, 'error');
+    return;
+  }
+
+  /* تحديث الحقول المعروضة بالنسخة المُطبَّعة (https:// + بدون تكرار) */
+  _docsCurrentLinks = [...links];
+  _renderDocsLinks();
 
   /* warn about unknown domains */
   const unknown = links.filter(u => {
@@ -1502,6 +1584,9 @@ async function docsSaveLinks() {
       bazaar_not_found:        'البازار غير موجود',
       not_authorized:          'غير مصرح لك',
       cannot_remove_all_links: '⛔ لا يمكن حذف كل الروابط',
+      bazaar_not_active:       '⏳ البازار لم يبدأ بعد أو انتهى منذ وقت قصير ولم تتحدّث حالته في النظام بعد — حاول خلال ساعات قليلة',
+      invalid_link_format:     '⚠️ تأكد أن كل الروابط تبدأ بـ http:// أو https://',
+      too_many_links:          `⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا`,
     };
     _showMsg('docs-msg', msgs[err] || err, 'error');
     return;
@@ -1535,7 +1620,7 @@ async function docsSaveLinks() {
 
   const msg = isSoftDelete
     ? '🗑 تم حذف جميع الروابط — سيُسجَّل أن المنظم حذف الروابط لاحقاً'
-    : `✅ تم حفظ ${links.length} ${links.length === 1 ? 'رابط' : 'روابط'} بنجاح`;
+    : `✅ تم حفظ ${links.length} ${links.length === 1 ? 'رابط' : 'روابط'} بنجاح${dupCount > 0 ? ` (أُزيل ${dupCount} ${dupCount === 1 ? 'رابط مكرر' : 'روابط مكررة'})` : ''}`;
   _showMsg('docs-msg', msg, isSoftDelete ? 'warn' : 'ok');
   showToast(msg);
 }

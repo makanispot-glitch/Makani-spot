@@ -285,6 +285,16 @@ function _toDirectImgUrl(url) {
   return url;
 }
 
+/* رابط آمن للعرض كـ href — يقبل http/https فقط (يمنع حقن javascript:/data: وغيرها عبر روابط
+   التوثيق التي يُدخلها المنظم يدوياً)، ويُهرّب المحتوى لمنع كسر الخاصية بعلامات اقتباس */
+function _safeEventLinkHref(u) {
+  try {
+    const p = new URL(u);
+    if (p.protocol !== 'http:' && p.protocol !== 'https:') return null;
+    return _esc(u);
+  } catch { return null; }
+}
+
 /* تهريب HTML — يمنع XSS عند إدراج محتوى المستخدم في innerHTML */
 function _esc(str) {
   if (str == null) return '';
@@ -1198,10 +1208,14 @@ function _renderBazaarInfo(b) {
               </span>
             </div>
             <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-              ${links.map(u => `<a href="${u}" target="_blank" rel="noopener noreferrer" dir="ltr"
-                style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none;word-break:break-all">
-                <span>${getIcon(u)}</span><span>${u}</span>
-              </a>`).join('')}
+              ${links.map(u => {
+                const safeHref = _safeEventLinkHref(u);
+                if (!safeHref) return '';
+                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" dir="ltr"
+                  style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none;word-break:break-all">
+                  <span>${getIcon(u)}</span><span>${_esc(u)}</span>
+                </a>`;
+              }).join('')}
             </div>
           </div>`;
         }
@@ -1268,14 +1282,18 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
         : '—';
       return `
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-          <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:3px">${pb.name}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:3px">${_esc(pb.name)}</div>
           <div style="font-size:11px;color:var(--ink3);margin-bottom:${links.length ? '8px' : '0'}">📅 ${dateStr}</div>
           ${links.length
             ? `<div style="display:flex;flex-direction:column;gap:6px">
-                ${links.map(u => `<a href="${u}" target="_blank" rel="noopener noreferrer" dir="ltr"
-                  style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none;word-break:break-all">
-                  <span>${getIcon(u)}</span><span>${u}</span>
-                </a>`).join('')}
+                ${links.map(u => {
+                  const safeHref = _safeEventLinkHref(u);
+                  if (!safeHref) return '';
+                  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" dir="ltr"
+                    style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none;word-break:break-all">
+                    <span>${getIcon(u)}</span><span>${_esc(u)}</span>
+                  </a>`;
+                }).join('')}
               </div>`
             : `<div style="font-size:11px;color:var(--ink3);font-style:italic">لم يُضف المنظم روابط لهذا الحدث</div>`}
         </div>`;
@@ -2309,6 +2327,7 @@ async function submitBazaarBooking() {
 
     /* الحجز نجح → لا داعي للـ rollback حتى لو فشل أي شيء بعد هذه النقطة */
     _slotWasLocked = false;
+    window.mkPwaInstall?.signalSuccess();
 
     // تحديث available_slots بشكل atomic (RPC تضمن عدم التعارض بين مستخدمين)
     await sbClient.rpc('decrement_available_slots', { p_bazaar_id: String(currentBazaar.id) });

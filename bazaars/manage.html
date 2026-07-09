@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>إدارة بازاراتي — مكاني Spot</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F36418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مكاني Spot">
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +19,7 @@
 <link rel="stylesheet" href="../style.css?v=30">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
+<script src="/pwa-install.js?v=2" defer></script>
 
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -23,7 +32,7 @@
 
 <style>
 /* ── Standalone Nav ── */
-.bz-standalone-nav{position:sticky;top:0;z-index:300;background:rgba(250,250,247,0.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:var(--shadow)}
+.bz-standalone-nav{position:sticky;top:0;z-index:300;background:rgba(250,250,247,0.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:var(--shadow);flex-shrink:0}
 .bz-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
 .bz-nav-logo .logo-ar{font-size:20px;font-weight:900;font-family:var(--font-display);color:var(--dark)}
 .bz-nav-logo .logo-en{font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--orange)}
@@ -37,7 +46,7 @@
 .mn-page{min-height:100vh;background:var(--surface2);padding-bottom:80px}
 
 /* ── Hero ── */
-.mn-hero{background:var(--navy-700);padding:28px 32px 22px;color:#fff;position:relative;overflow:hidden}
+.mn-hero{background:var(--navy-700);padding:28px 32px 22px;color:#fff;position:relative;overflow:hidden;flex-shrink:0}
 .mn-hero::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(243,100,24,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(243,100,24,0.06) 1px,transparent 1px);background-size:48px 48px}
 .mn-hero::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 80% at 50% -10%,rgba(243,100,24,0.14) 0%,transparent 65%)}
 .mn-hero>*{position:relative;z-index:1}
@@ -319,7 +328,7 @@
   .mn-status-section{padding:16px}
   .mn-lock-banner{padding:11px 14px}
   .mn-activity{padding:13px 15px}
-  .mn-detail-name{font-size:15px}
+  .mn-detail-name{font-size:16px}
   .mn-detail-hdr{padding:12px 0 10px;gap:10px}
   .mn-back-btn{padding:6px 12px;font-size:12px}
   .mn-slots-info-val{font-size:19px}
@@ -352,7 +361,9 @@
   .mn-feed-text{font-size:12px}
   .mn-feed-sub{font-size:10.5px}
   .mn-detail-hdr{padding:10px 0 8px;gap:8px}
-  .mn-detail-name{font-size:14px}
+  /* .bz-nav-title مخفي تحت 640px (أعلى الملف) — هذا العنوان يصبح العنصر الوحيد الذي يعرّف
+     المنظم بالبازار المفتوح حالياً، فيبقى بنفس حجم/وضوح سطح المكتب تقريباً بدل الانكماش أكثر */
+  .mn-detail-name{font-size:16px}
   .mn-back-btn{padding:6px 10px;font-size:11px}
   .mn-detail-sub{gap:5px}
   .mn-detail-view-link{font-size:10.5px}
@@ -506,19 +517,6 @@
       </div>
     </div>
 
-    <!-- Activity Feed -->
-    <div class="mn-activity" id="activity-feed">
-      <div class="mn-activity-hdr">
-        <div class="mn-activity-title">⚡ النشاط الأخير</div>
-        <button class="mn-activity-see-all" onclick="switchTab('log')">السجل الكامل ←</button>
-      </div>
-      <div id="activity-feed-list">
-        <div class="mn-loading" style="padding:16px 0;font-size:12px">
-          <div class="mn-spin" style="font-size:18px;margin-bottom:6px">⏳</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Docs banner — يظهر فوق التبويبات مباشرةً عند اكتمال البازار -->
     <div class="mn-docs-banner" id="docs-banner" style="margin:0 0 4px">
       <div class="mn-docs-banner-ico">🎉</div>
@@ -531,14 +529,15 @@
       </div>
     </div>
 
-    <!-- Tab Bar -->
+    <!-- Tab Bar — الأولوية للتبويبات التي يستخدمها المنظم يومياً أثناء انعقاد البازار
+         (الحجوزات/الأماكن) قبل تبويبات الإدارة الأقل تكراراً (الحالة/التوثيق)، والسجل أخيراً -->
     <div class="mn-tabs">
       <div class="mn-tab active" onclick="switchTab('info')"    id="tab-btn-info">    📝 المعلومات</div>
+      <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings">🧾 الحجوزات <span class="mn-tab-badge" id="bk-badge"></span></div>
       <div class="mn-tab"        onclick="switchTab('slots')"   id="tab-btn-slots">   📦 الأماكن</div>
       <div class="mn-tab"        onclick="switchTab('status')"  id="tab-btn-status">  ⚙️ الحالة</div>
       <div class="mn-tab"        onclick="switchTab('docs')"    id="tab-btn-docs">    🔗 التوثيق <span class="mn-tab-badge" id="docs-badge"></span></div>
       <div class="mn-tab"        onclick="switchTab('log')"     id="tab-btn-log">     📋 السجل</div>
-      <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings">🧾 الحجوزات <span class="mn-tab-badge" id="bk-badge"></span></div>
     </div>
 
     <!-- ────────────────────────────
@@ -972,6 +971,20 @@
       </div>
     </div>
 
+    <!-- Activity Feed — معلومات ثانوية (تذكيرية)، لذا تظهر أسفل تبويبات الإدارة الفعلية
+         وليس أول ما يراه المنظم عند فتح البازار -->
+    <div class="mn-activity" id="activity-feed">
+      <div class="mn-activity-hdr">
+        <div class="mn-activity-title">⚡ النشاط الأخير</div>
+        <button class="mn-activity-see-all" onclick="switchTab('log')">السجل الكامل ←</button>
+      </div>
+      <div id="activity-feed-list">
+        <div class="mn-loading" style="padding:16px 0;font-size:12px">
+          <div class="mn-spin" style="font-size:18px;margin-bottom:6px">⏳</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /view-detail -->
 
 </div><!-- /mn-wrap -->
@@ -982,6 +995,34 @@
 <!-- ── Scripts ── -->
 <script src="/notifications.js?v=20260623" defer></script>
 <script src="../media-handler.js" defer></script>
-<script src="manage.js?v=202607070338" defer></script>
+<script src="manage.js?v=202607091800" defer></script>
+<div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
+  <span style="font-size:20px">🚀</span>
+  <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+</div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
+    setInterval(() => reg.update(), 30 * 60 * 1000);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) {
+          const b = document.getElementById('sw-update-bar');
+          if (b) b.style.display = 'flex';
+        }
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SW_UPDATED') {
+      const b = document.getElementById('sw-update-bar');
+      if (b) b.style.display = 'flex';
+    }
+  });
+}
+</script>
 </body>
 </html>
