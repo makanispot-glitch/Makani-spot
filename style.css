@@ -6612,6 +6612,76 @@ footer {
 }
 
 /* ============================================================
+   🔗 أزرار سريعة أسفل صندوق السعر — نسخ رابط الحجز / مشاركة البازار
+   (صفحة تفاصيل البازار — Secondary Actions)
+   ============================================================ */
+.bzd-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bzd-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink2);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.bzd-quick-action svg {
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.bzd-quick-action:hover {
+  border-color: var(--orange-pale);
+  background: var(--orange-ultra);
+  color: var(--orange);
+  transform: translateY(-1px);
+}
+
+.bzd-quick-action:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--dur-instant);
+}
+
+.bzd-quick-action:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+.bzd-quick-action--done {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: var(--green-light);
+  color: #16a34a;
+}
+
+/* نبضة توضيحية على خريطة الأماكن عند الوصول عبر رابط حجز مباشر (?book=1) */
+@keyframes bzdSlotmapPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(243, 100, 24, 0.35); }
+  70%  { box-shadow: 0 0 0 14px rgba(243, 100, 24, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(243, 100, 24, 0); }
+}
+
+.bzd-slotmap-highlight {
+  border-radius: var(--radius-lg);
+  animation: bzdSlotmapPulse 1.1s var(--ease-out) 2;
+}
+
+/* ============================================================
    معرض الصور (Gallery)
    ============================================================ */
 .sd-gallery-wrap {
@@ -10151,13 +10221,17 @@ footer {
    🔗 أزرار المشاركة (Share Buttons)
    ============================================================ */
 
-/* زرار المشاركة العائم داخل card-thumb (أعلى اليسار) */
+/* زرار المشاركة العائم داخل card-thumb (أعلى اليسار)
+   min-width/min-height صريحين لأن قاعدة "button, .btn { min-height:44px }" العامة
+   بتكسر أي دائرة أيقونة أصغر من 44px وتحوّلها لبيضاوية (نفس فخ .bz-featured-share-btn) */
 .share-btn {
   position: absolute;
   top: 10px;
   left: 10px;
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.42);
   border: none;
@@ -10182,10 +10256,12 @@ footer {
   pointer-events: none;
 }
 
-/* زرار المشاركة المضمّن (داخل footer الكروت والوحدات) */
+/* زرار المشاركة المضمّن (داخل footer الكروت والوحدات) — نفس ملحوظة min-width/min-height أعلاه */
 .share-btn-inline {
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   border-radius: 50%;
   background: var(--surface2);
   border: 1.5px solid var(--border);
@@ -13345,6 +13421,37 @@ footer {
   padding: 4px 12px;
   border-radius: 20px;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* زرار مشاركة البازار على كارت الرئيسية المميّز — يتدفّق مع باقي البادجات (بلا absolute)
+   min-height/min-width صريحين لأن قاعدة "button, .btn { min-height:44px }" العامة
+   تكسر أي دائرة أيقونة أصغر من 44px (نفس المشكلة المتكررة في .share-btn-inline) */
+.bz-featured-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 50%;
+  background: rgba(14, 18, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.bz-featured-share-btn:hover {
+  background: rgba(243, 100, 24, 0.88);
+  transform: scale(1.1);
+}
+
+.bz-featured-share-btn svg {
+  pointer-events: none;
 }
 
 .bz-featured-star-badge {

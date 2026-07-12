@@ -3565,6 +3565,8 @@ function renderFeaturedBazaarCard(featured) {
       </div>`;
   })() : '';
 
+  const _featuredNameSafe = (featured.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
   container.innerHTML = `
     <div class="bz-home-split-grid bz-home-single">
       <div class="bz-featured-wrapper" style="width:100%">
@@ -3582,6 +3584,15 @@ function renderFeaturedBazaarCard(featured) {
                 <span class="${isSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
                   ${isSoldOut ? 'مكتمل' : availSlots + ' مكان متاح'}
                 </span>
+                <button type="button" class="bz-featured-share-btn"
+                        onclick="event.stopPropagation();shareCard('bazaar','${featured.id}','${_featuredNameSafe}')"
+                        title="مشاركة البازار">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                       stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -3757,7 +3768,8 @@ function shareCard(type, id, name) {
     url = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
     shareText = 'شوف الوحدة دي على مكاني Spot: ' + name;
   } else {
-    url = base + '?bazaar=' + id;
+    /* البازارات صفحة مستقلة (/bazaars/) وليست مساراً على الرئيسية — لازم رابط مطلق لها */
+    url = window.location.origin + '/bazaars/?bazaar=' + id;
     shareText = 'شوف البازار ده على مكاني Spot: ' + name;
   }
 

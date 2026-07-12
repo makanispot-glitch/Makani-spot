@@ -75,11 +75,11 @@ document.addEventListener('DOMContentLoaded', async function () {
   // GN: تهيئة نظام الإشعارات الموحّد
   if (currentUser) GN.init(sbClient, currentUser.id);
 
-  // التنقل عبر URL parameter: /bazaars/?detail=ID
+  // التنقل عبر URL parameter: /bazaars/?bazaar=ID (و book=1 للانتقال مباشرة لخريطة الأماكن — رابط الحجز المباشر)
   const urlParams = new URLSearchParams(window.location.search);
   const bazaarId  = urlParams.get('bazaar');
   if (bazaarId) {
-    await openBazaarDetail(bazaarId);
+    await openBazaarDetail(bazaarId, { scrollToBooking: urlParams.get('book') === '1' });
   }
 });
 
@@ -936,7 +936,7 @@ function _showBzLoginGate(b) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-async function openBazaarDetail(bazaarId) {
+async function openBazaarDetail(bazaarId, opts = {}) {
   const b = BAZAARS.find(x => String(x.id) === String(bazaarId));
   if (!b) return;
 
@@ -1000,6 +1000,26 @@ async function openBazaarDetail(bazaarId) {
           <div class="sd-price-box">
             <div class="sd-price-val">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</div>
             <div class="sd-price-lbl">/ مكان واحد</div>
+            <div class="bzd-quick-actions">
+              <button type="button" class="bzd-quick-action" id="bzd-copy-link-btn"
+                      onclick="copyBazaarBookingLink()" title="نسخ رابط الحجز المباشر لهذا البازار">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span id="bzd-copy-link-label">نسخ رابط الحجز</span>
+              </button>
+              <button type="button" class="bzd-quick-action"
+                      onclick="shareCard('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" title="مشاركة البازار">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                <span>مشاركة</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="bz-detail-nav">
@@ -1085,6 +1105,9 @@ async function openBazaarDetail(bazaarId) {
   } catch (err) {
     if (slotmapEl) slotmapEl.innerHTML = _isExpired ? _renderSlotMapEndedFallback(_endDate) : _renderSlotMapFallback();
   }
+
+  /* رابط الحجز المباشر (?book=1): وصل بالفعل لصفحة التفاصيل — تبقّى فقط تمريره لخريطة الأماكن */
+  if (opts.scrollToBooking) _scrollToBazaarBookingSection();
 }
 
 function _renderBazaarInfo(b) {
@@ -2715,7 +2738,7 @@ function _saveLocalBazaarBooking(userId, booking) {
 
 
 /* ================================================================
-   🔗 القسم 15: مشاركة البازار
+   🔗 القسم 15: مشاركة ونسخ رابط الحجز
    ================================================================ */
 
 function shareCard(bazaarId, name) {
@@ -2730,6 +2753,76 @@ function shareCard(bazaarId, name) {
       .then(()  => _showShareToast('✅ تم نسخ الرابط!'))
       .catch(() => _showShareToast('📋 الرابط: ' + url));
   }
+}
+
+/* رابط الحجز المباشر لبازار معيّن — نفس رابط shareCard مع علامة book=1
+   التي تقرأها نقطة الدخول في القسم 3 لتمرّر تلقائياً لخريطة الأماكن */
+function _bazaarBookingUrl(bazaarId) {
+  return window.location.origin + '/bazaars/?bazaar=' + bazaarId + '&book=1';
+}
+
+/* نسخ رابط الحجز المباشر لهذا البازار للحافظة — بدون فتح نافذة أو عرض الرابط كنص،
+   ثم تمرير سلس لخريطة الأماكن كأن المستخدم اختارها بنفسه (بلا اختيار مكان فعلي) */
+function copyBazaarBookingLink() {
+  if (!currentBazaar) return;
+  const url = _bazaarBookingUrl(currentBazaar.id);
+
+  const onCopied = () => {
+    _flashCopiedBtn();
+    _showShareToast('✅ تم نسخ رابط الحجز بنجاح');
+    _scrollToBazaarBookingSection();
+  };
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(onCopied).catch(() => _fallbackCopyText(url, onCopied));
+  } else {
+    _fallbackCopyText(url, onCopied);
+  }
+}
+
+/* نسخ احتياطي للحافظة للمتصفحات القديمة التي لا تدعم navigator.clipboard —
+   يظل ينسخ فعلياً بدل عرض الرابط كنص داخل الصفحة */
+function _fallbackCopyText(text, onSuccess) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    Object.assign(ta.style, { position: 'fixed', opacity: '0', left: '-9999px' });
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) { onSuccess(); return; }
+  } catch (_) { /* تجاهل — سيظهر تنبيه الفشل أدناه */ }
+  _showShareToast('⚠️ تعذّر نسخ الرابط — حاول مرة أخرى');
+}
+
+/* تأكيد بصري سريع على زر النسخ نفسه (بالإضافة إلى الـ Toast) */
+function _flashCopiedBtn() {
+  const btn   = document.getElementById('bzd-copy-link-btn');
+  const label = document.getElementById('bzd-copy-link-label');
+  if (!btn || !label) return;
+  const orig = label.textContent;
+  label.textContent = 'تم النسخ ✓';
+  btn.classList.add('bzd-quick-action--done');
+  clearTimeout(btn._doneTmr);
+  btn._doneTmr = setTimeout(() => {
+    label.textContent = orig;
+    btn.classList.remove('bzd-quick-action--done');
+  }, 1800);
+}
+
+/* تمرير سلس لخريطة الأماكن + نبضة توضيحية — تُستخدم عند فتح رابط حجز مباشر
+   (?book=1) أو عند نسخه من نفس الصفحة، بلا أي تعديل على منطق اختيار المكان */
+function _scrollToBazaarBookingSection() {
+  const slotmapEl = document.getElementById('bzd-slotmap');
+  if (!slotmapEl) return;
+  setTimeout(() => {
+    slotmapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    slotmapEl.classList.add('bzd-slotmap-highlight');
+    setTimeout(() => slotmapEl.classList.remove('bzd-slotmap-highlight'), 2200);
+  }, 80);
 }
 
 function _showShareToast(msg) {
