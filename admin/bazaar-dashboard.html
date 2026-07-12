@@ -3254,7 +3254,7 @@ async function saveArchiveDays() {
     const { error } = await db.from('platform_settings')
       .upsert({ key: 'bazaar_archive_days', value: String(days), label: 'عدد أيام الظهور بعد انتهاء البازار', updated_at: new Date().toISOString() });
     if (error) throw error;
-    db.rpc('admin_log_action', { p_action: 'تعديل إعداد', p_target_id: 'bazaar_archive_days', p_target_name: `${days} يوم`, p_detail: '', p_secret: '' }).catch(()=>{});
+    db.rpc('admin_log_action', { p_action: 'تعديل إعداد', p_target_id: 'bazaar_archive_days', p_target_name: `${days} يوم`, p_detail: '' }).catch(()=>{});
     if (st) { st.style.display = ''; setTimeout(() => { st.style.display = 'none'; }, 2500); }
     toast(`✅ تم الحفظ — الأرشفة التلقائية بعد ${days} يوم`, 's');
   } catch(e) {

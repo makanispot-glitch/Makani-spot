@@ -454,15 +454,9 @@ function _resolveActLabel(val) {
   return a ? a.label : val;
 }
 
-/** يبني HTML لـ badge الثقة بناءً على planTier */
-function _planTrustBadgeHtml(s) {
-  if (s.isBroker) return `<span class="card-trust-badge trust-makani">🏠 مكاني Spot</span>`;
-  const tier = (s.planTier || 'starter').toLowerCase();
-  if (tier === 'broker')  return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
-  if (tier === 'pro')     return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
-  if (tier === 'growth')  return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
-  return '';
-}
+/* _planTrustBadgeHtml انتقلت إلى shared/plan-badge.js (planTrustBadgeCardHtml/planTrustBadgeInlineHtml)
+   — كانت مكرّرة حرفيًا هنا وفي spaces/app.js، ونصّها القديم "✓ موثّق" لباقة Growth
+   كان يتصادم مع شارة توثيق الهوية الحقيقية (راجع shared/account.js: identityVerified/organizerVerified). */
 
 /** يضيف class خاص بالكارت Pro */
 function _planCardClass(s) {
@@ -528,7 +522,7 @@ function buildCardHtml(s, fromPage) {
   // 4. البناء النهائي
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
-  const _trustBadge = _planTrustBadgeHtml(s);
+  const _trustBadge = planTrustBadgeCardHtml(s);
   const _cardClass = _planCardClass(s);
 
   return `
@@ -714,7 +708,7 @@ async function openSpaceDetail(spaceId, fromPage) {
           <div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
               <h1 class="sd-name" style="margin:0">${s.name}</h1>
-              ${_planTrustBadgeHtml(s) ? `<span class="sd-trust-badge trust-${(s.planTier || 'starter') === 'pro' ? 'partner' : 'verified'}">${(s.planTier || 'starter') === 'pro' ? '🏆 شريك معتمد' : '✓ موثّق'}</span>` : ''}
+              ${planTrustBadgeInlineHtml(s)}
             </div>
             <div class="sd-meta">
               <span>📍 ${s.loc}</span>
@@ -1650,6 +1644,21 @@ function _oppEsc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+let _oppShareName = ''; // اسم البروفايل المعروض حاليًا — تقرأه shareOwnerProfile() عند المشاركة
+
+/* مشاركة رابط البروفايل العام — Web Share API أو نسخ للحافظة (نفس نمط shareCard) */
+function shareOwnerProfile() {
+  const url = window.location.href;
+  const shareText = `شوف بروفايل ${_oppShareName || 'الناشر'} على مكاني Spot`;
+  if (navigator.share) {
+    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(() => _showShareToast('✅ تم نسخ رابط البروفايل!'))
+      .catch(() => _showShareToast('📋 الرابط: ' + url));
+  }
+}
+
 /* رجوع من صفحة البروفايل: للصفحة السابقة إن وُجدت، وإلا للرئيسية */
 function oppGoBack() {
   if (window.history.length > 1) window.history.back();
@@ -1695,6 +1704,7 @@ function renderOwnerProfile(data) {
 
   const displayName = p.entity_name || p.full_name || 'ناشر داخل مكاني سبوت';
   const initial = (displayName.trim()[0] || 'م');
+  _oppShareName = displayName;
 
   // الأفاتار: avatar_url من profiles (المصدر الموحد) ثم org_logo كاحتياط
   const avatarUrl = p.avatar_url || p.org_logo || '';
@@ -1714,6 +1724,9 @@ function renderOwnerProfile(data) {
     const m = roleMap[r]; if (!m) return '';
     return `<span class="opp-rbadge">${m.ico} ${m.label}</span>`;
   }).join('');
+
+  // زر المشاركة يظهر فقط لأصحاب المساحات ومنظمي البازارات (نفس معيار roleBadges)
+  const canShare = effectiveRoles.includes('space_owner') || effectiveRoles.includes('bazaar_organizer');
 
   // الإحصائيات
   const statsHtml = `
@@ -1750,6 +1763,7 @@ function renderOwnerProfile(data) {
   root.innerHTML = `
     <div class="opp-cover" ${coverStyle}>
       <button class="opp-back" onclick="oppGoBack()" aria-label="رجوع">→ رجوع</button>
+      ${canShare ? `<button class="opp-share" onclick="shareOwnerProfile()" aria-label="مشاركة البروفايل" title="مشاركة البروفايل">🔗 مشاركة</button>` : ''}
     </div>
     <div class="opp-body">
       <div class="opp-head">
@@ -2066,7 +2080,8 @@ function setNavUser(user, profile) {
     const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
     const email = user.email || '';
     const initial = name.trim()[0] || '؟';
-    const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
+    const caps = getAccountCapabilities(profile);
+    const roleLabel = caps.isOwner ? 'صاحب مساحة' : caps.isTenant ? 'مستأجر' : 'مستخدم';
 
     guestEl.style.display = 'none';
     loggedEl.style.display = 'flex';
@@ -2088,14 +2103,13 @@ function setNavUser(user, profile) {
 
     const badgeEl = document.getElementById('dd-plan-badge');
     if (badgeEl) {
-      if (profile?.role === 'owner') {
-        const plan = profile?.plan_tier || 'starter';
+      if (caps.isOwner) {
         const planBadges = {
           starter: { text: '🆓 Starter', cls: 'pb-starter' },
           growth: { text: '🟧 Growth', cls: 'pb-growth' },
           pro: { text: '👑 Pro', cls: 'pb-pro' },
         };
-        const b = planBadges[plan] || planBadges.starter;
+        const b = planBadges[caps.planTier] || planBadges.starter;
         badgeEl.textContent = b.text;
         badgeEl.className = `plan-badge ${b.cls}`;
         badgeEl.style.display = 'inline-flex';
@@ -2105,7 +2119,7 @@ function setNavUser(user, profile) {
     }
 
     const ownerBtn = document.getElementById('dd-owner-dash-btn');
-    if (ownerBtn) ownerBtn.style.display = profile?.role === 'owner' ? 'flex' : 'none';
+    if (ownerBtn) ownerBtn.style.display = caps.isOwner ? 'flex' : 'none';
 
     updateBnUser(user, profile);
   }
@@ -2241,7 +2255,10 @@ async function doEmailSignup() {
       id: data.user.id,
       full_name: name,
       phone: phone,
-      role: role,
+      /* التسجيل الذاتي كـowner أُغلق من الواجهة (نموذج التسجيل يعرض tenant فقط الآن) —
+         نُثبّت القيمة هنا أيضًا كطبقة حماية ثانية، بصرف النظر عمّا يصل من الفورم.
+         الترقية لـowner تمرّ حصرًا عبر نظام طلبات التحويل (openOwnerRequestModal). */
+      role: 'tenant',
       city: city,
       created_at: new Date().toISOString()
     }, { onConflict: 'id' });
@@ -2323,7 +2340,7 @@ async function loadDashboardData(user) {
   renderUpgradeSection(profile);
 
   // عرض CTA تنظيم البازار
-  const isVerified = orgProfileRes.data?.is_verified === true;
+  const isVerified = getAccountCapabilities(profile, orgProfileRes.data).organizerVerified;
   const reqStatus = reqRes.data?.status || null;
   renderBazaarCTA(isVerified, reqStatus);
 
@@ -2487,7 +2504,7 @@ async function goToOwnerDashboard() {
     return;
   }
 
-  if (profile.role === 'owner') {
+  if (getAccountCapabilities(profile).isOwner) {
     window.location.href = '/dashboard/';
     return;
   }
@@ -2511,7 +2528,7 @@ function renderUpgradeSection(profile) {
   const el = document.getElementById('upgrade-action-section');
   if (!el) return;
 
-  if (profile?.role === 'owner') {
+  if (getAccountCapabilities(profile).isOwner) {
     // صاحب مساحة — زر الانتقال للوحة التحكم الخاصة به
     el.innerHTML = `
       <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);

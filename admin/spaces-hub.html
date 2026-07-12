@@ -592,7 +592,7 @@ textarea.fc{resize:vertical;min-height:72px}
 </div>
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../media-handler.js?v=202606171812"></script>
+<script src="../media-handler.js?v=202607120332"></script>
 <script src="../shared/sb-config.js"></script>
 <script>
 /* ═══════════════════════════════
@@ -701,12 +701,12 @@ async function loadAll() {
   try {
     let ownerReqsErr = null;
     const [spaces, owners, activities, ownerReqs, announcements] = await Promise.all([
-      sbRpc('admin_get_spaces',   {p_secret:adminHash}),
-      sbRpc('admin_get_owners',   {p_secret:adminHash}),
+      sbRpc('admin_get_spaces'),
+      sbRpc('admin_get_owners'),
       fetchActivities().catch(()=>[]),
-      sbRpc('admin_get_upgrade_requests', {p_secret:adminHash})
+      sbRpc('admin_get_upgrade_requests')
         .catch(e => { ownerReqsErr = e; return []; }),
-      sbRpc('admin_get_announcements', {p_secret:adminHash}).catch(()=>[]),
+      sbRpc('admin_get_announcements').catch(()=>[]),
     ]);
     allSpaces        = spaces        || [];
     allOwners        = owners        || [];
@@ -743,7 +743,7 @@ function updatePendingBadge() {
 }
 
 async function loadSpaceDetail(id) {
-  return sbRpc('admin_get_space_detail', {p_space_id:id, p_secret:adminHash});
+  return sbRpc('admin_get_space_detail', {p_space_id:id});
 }
 
 async function fetchActivities() {
@@ -943,7 +943,7 @@ async function loadOverviewCharts() {
   if (!placeholder) return;
   placeholder.innerHTML = `<div style="color:var(--mu);font-size:11px;padding:16px;text-align:center">⏳ جارٍ تحميل الرسوم البيانية…</div>`;
   try {
-    const monthly   = await sbRpc('admin_get_monthly_stats', { p_secret: adminHash, p_months: 12 });
+    const monthly   = await sbRpc('admin_get_monthly_stats', { p_months: 12 });
     const months12  = last12Months();
     const spData    = fillMonthSeries(monthly.spaces,   months12);
     const bkData    = fillMonthSeries(monthly.bookings, months12);
@@ -1557,7 +1557,7 @@ function promptChangePlan(ownerId, currentPlan, ownerName) {
     btn.disabled  = true; btn.textContent = '⏳…';
     try {
       await sbRpc('admin_set_plan_tier', {
-        p_owner_id: ownerId, p_plan_tier: newPlan, p_secret: adminHash,
+        p_owner_id: ownerId, p_plan_tier: newPlan,
         p_ends_at: endsAt, p_notes: notes
       });
       const o = allOwners.find(x=>x.id===ownerId);
@@ -1580,7 +1580,7 @@ async function suspendOwner(id, name) {
     `هل تريد إيقاف حساب "${name}"؟ لن يتمكن من تسجيل الدخول.`,
     async () => {
       try {
-        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: true, p_secret: adminHash});
+        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: true});
         const o = allOwners.find(x=>x.id===id);
         if (o) o.is_suspended = true;
         toast(`🚫 تم إيقاف حساب "${name}"`, 'i');
@@ -1596,7 +1596,7 @@ async function unsuspendOwner(id, name) {
     `هل تريد رفع الإيقاف عن حساب "${name}"؟`,
     async () => {
       try {
-        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: false, p_secret: adminHash});
+        await sbRpc('admin_toggle_owner_suspend', {p_owner_id: id, p_suspend: false});
         const o = allOwners.find(x=>x.id===id);
         if (o) o.is_suspended = false;
         toast(`✅ تم رفع الإيقاف عن "${name}"`, 's');
@@ -1647,7 +1647,7 @@ function promptPromoteOwner() {
     errEl.textContent = '';
     btn.disabled = true; btn.textContent = '⏳…';
     try {
-      await sbRpc('admin_promote_to_owner', {p_email: email, p_plan_tier: plan, p_secret: adminHash});
+      await sbRpc('admin_promote_to_owner', {p_email: email, p_plan_tier: plan});
       modal.remove();
       toast(`✅ تمت ترقية ${email} إلى صاحب مساحة`, 's');
       await loadAll();
@@ -1837,7 +1837,7 @@ function renderOwnerRequests() {
 async function markContactedRequest(id) {
   try {
     await sbRpc('admin_manage_upgrade_request', {
-      p_request_id: id, p_action: 'mark_contacted', p_reason: null, p_secret: adminHash
+      p_request_id: id, p_action: 'mark_contacted', p_reason: null
     });
     toast('📞 تم تسجيل التواصل مع العميل', 'i');
     await loadAll();
@@ -1904,7 +1904,7 @@ function promptApproveOwnerRequest(id, name) {
     try {
       await sbRpc('admin_manage_upgrade_request', {
         p_request_id: id, p_action: 'approve', p_reason: null,
-        p_secret: adminHash, p_plan: plan, p_ends_at: endsAt
+        p_plan: plan, p_ends_at: endsAt
       });
       const planLabel = plan==='growth'?'Growth':plan==='pro'?'Pro':'Starter';
       toast(`✅ تمت الموافقة — تم تفعيل الحساب بباقة ${planLabel} حتى ${endsVal}`, 's');
@@ -1937,7 +1937,7 @@ function promptRejectOwnerRequest(id) {
     closeConfirm();
     try {
       await sbRpc('admin_manage_upgrade_request', {
-        p_request_id: id, p_action: 'reject', p_reason: reason, p_secret: adminHash
+        p_request_id: id, p_action: 'reject', p_reason: reason
       });
       toast('❌ تم رفض الطلب وإبلاغ المستخدم', 'i');
       await loadAll();
@@ -2087,12 +2087,10 @@ async function saveSubEditData() {
     await sbRpc('admin_set_plan_tier', {
       p_owner_id:  o.id,
       p_plan_tier: newPlan,
-      p_secret:    adminHash,
       p_ends_at:   endsAt,
       p_notes:     notes,
     });
     await sbRpc('admin_upsert_subscription', {
-      p_secret:     adminHash,
       p_user_id:    o.id,
       p_plan:       newPlan,
       p_status:     newStatus,
@@ -2231,7 +2229,7 @@ function deleteActivity(id) {
     try {
       await sbTable('DELETE','space_activities',null,`?id=eq.${encodeURIComponent(id)}`);
       if (cleanup && affected.length) {
-        await sbRpc('admin_remove_activity_from_spaces',{p_activity_id:id,p_secret:adminHash});
+        await sbRpc('admin_remove_activity_from_spaces',{p_activity_id:id});
       }
       modal.remove();
       allActivities = await fetchActivities();
@@ -2338,8 +2336,8 @@ async function renderFinance() {
   let fin = null, monthly = null;
   try {
     [fin, monthly] = await Promise.all([
-      sbRpc('admin_get_financial_stats', { p_secret: adminHash }),
-      sbRpc('admin_get_monthly_stats',   { p_secret: adminHash, p_months: 12 }),
+      sbRpc('admin_get_financial_stats'),
+      sbRpc('admin_get_monthly_stats',   { p_months: 12 }),
     ]);
   } catch(e) {
     setPageContent('finance', `<div class="empty-state">خطأ: ${esc(e.message)}</div>`);
@@ -2490,7 +2488,7 @@ async function triggerExpireCheck() {
   const btn = document.getElementById('cron-trigger-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
   try {
-    const res = await sbRpc('admin_trigger_expire_check', { p_secret: adminHash });
+    const res = await sbRpc('admin_trigger_expire_check');
     const n = res?.expired ?? 0;
     toast(n > 0 ? `✅ تم تنزيل ${n} اشتراك منتهي وإرسال الإشعارات` : '✅ لا اشتراكات منتهية حالياً', 's');
     if (n > 0) { await loadAll(); renderFinance(); } else {
@@ -2516,7 +2514,6 @@ async function renderBookings() {
   setPageContent('bookings', loading());
   try {
     const res = await sbRpc('admin_get_bookings', {
-      p_secret:   adminHash,
       p_status:   bookingsStatus || null,
       p_search:   bookingsSearch || null,
       p_limit:    BK_PAGE_SIZE,
@@ -2631,7 +2628,7 @@ async function renderBookings() {
 async function doBookingStatus(bookingId, newStatus, btnEl) {
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳'; }
   try {
-    await sbRpc('admin_update_booking_status', {p_secret:adminHash, p_booking_id:bookingId, p_status:newStatus});
+    await sbRpc('admin_update_booking_status', {p_booking_id:bookingId, p_status:newStatus});
     addAuditEntry('تحديث حجز', bookingId, newStatus);
     await renderBookings();
   } catch(e) {
@@ -2820,7 +2817,6 @@ async function sendBulkNotif() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الإرسال...'; }
   try {
     const res = await sbRpc('admin_send_bulk_notification', {
-      p_secret:    adminHash,
       p_title:     title,
       p_body:      body,
       p_type:      type,
@@ -3002,7 +2998,7 @@ async function renderMaintenance() {
   setPageContent('maintenance', loading());
   let stats = null;
   try {
-    stats = await sbRpc('admin_get_db_stats', {p_secret: adminHash});
+    stats = await sbRpc('admin_get_db_stats');
   } catch(e) {
     setPageContent('maintenance', `<div class="empty-state">خطأ في تحميل إحصاءات قاعدة البيانات: ${esc(e.message)}</div>`);
     return;
@@ -3186,7 +3182,7 @@ async function doCleanupBookings(dryRun) {
 
   try {
     const res = await sbRpc('admin_cleanup_bookings', {
-      p_secret: adminHash, p_older_than_days: days,
+      p_older_than_days: days,
       p_statuses: statuses, p_dry_run: dryRun
     });
     if (dryRun) {
@@ -3211,7 +3207,7 @@ async function doCleanupNotifications(dryRun) {
 
   try {
     const res = await sbRpc('admin_cleanup_notifications', {
-      p_secret: adminHash, p_older_than_days: days, p_dry_run: dryRun
+      p_older_than_days: days, p_dry_run: dryRun
     });
     if (dryRun) {
       const n = res.would_delete || 0;
@@ -3240,7 +3236,7 @@ async function doDeleteBooking(bookingId) {
   ok.onclick = async () => {
     closeConfirm();
     try {
-      await sbRpc('admin_delete_booking', {p_secret: adminHash, p_booking_id: bookingId});
+      await sbRpc('admin_delete_booking', {p_booking_id: bookingId});
       toast('✅ تم حذف الحجز نهائياً', 's');
       await renderBookings();
     } catch(e) { toast('خطأ: ' + e.message, 'e'); }
@@ -3253,7 +3249,7 @@ async function doDeleteBooking(bookingId) {
 ═══════════════════════════════ */
 async function doReview(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null});
     addAuditEntry('مراجعة', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast('👁 تم وضع علامة "مُراجَع"','s');
     invalidateDetailCache(id);
@@ -3264,7 +3260,7 @@ async function doReview(id) {
 async function doHide(id, reason) {
   const r = reason !== undefined ? reason : (document.getElementById('rreason-'+id)?.value.trim()||'');
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'hide',p_reason:r||null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'hide',p_reason:r||null});
     addAuditEntry('إخفاء', id, r||'—');
     toast('🚫 تم إخفاء المساحة — تم إرسال إشعار للصاحب','s');
     await loadAll();
@@ -3302,7 +3298,7 @@ function promptHide(id, name) {
 
 async function doUnhide(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unhide',p_reason:null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unhide',p_reason:null});
     addAuditEntry('إعادة نشر', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast('↩️ تمت إعادة نشر المساحة','s');
     invalidateDetailCache(id);
@@ -3312,7 +3308,7 @@ async function doUnhide(id) {
 
 async function doArchive(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'archive',p_reason:null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'archive',p_reason:null});
     addAuditEntry('أرشفة', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast('🗄 تمت أرشفة المساحة','s');
     invalidateDetailCache(id);
@@ -3322,7 +3318,7 @@ async function doArchive(id) {
 
 async function doUnarchive(id) {
   try {
-    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unarchive',p_reason:null,p_secret:adminHash});
+    await sbRpc('admin_manage_space',{p_space_id:id,p_action:'unarchive',p_reason:null});
     addAuditEntry('إلغاء أرشفة', id, allSpaces.find(s=>s.id===id)?.name||id);
     toast('↩️ تمت إعادة تفعيل المساحة','s');
     invalidateDetailCache(id);
@@ -3359,7 +3355,7 @@ function promptDelete(id, name) {
   btn.onclick = async () => {
     btn.disabled = true; btn.textContent = '⏳…';
     try {
-      await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null,p_secret:adminHash});
+      await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null});
       addAuditEntry('حذف', id, name);
       modal.remove();
       toast('🗑 تم الحذف نهائياً','s');
@@ -3377,7 +3373,7 @@ function promptDelete(id, name) {
 async function doDeleteUnit(unitId, spaceId) {
   if (!confirm('حذف هذه الوحدة؟')) return;
   try {
-    await sbRpc('admin_delete_unit',{p_unit_id:unitId,p_secret:adminHash});
+    await sbRpc('admin_delete_unit',{p_unit_id:unitId});
     toast('🗑 تم حذف الوحدة','s');
     invalidateDetailCache(spaceId);
     const panel = document.getElementById('detail-panel-'+spaceId);
@@ -3407,7 +3403,7 @@ async function changeUnitStatus(unitId, spaceId, newStatus, selectEl) {
   selectEl.dataset.prev = selectEl.value;
   selectEl.disabled = true;
   try {
-    await sbRpc('admin_update_unit_status', {p_unit_id: unitId, p_status: newStatus, p_secret: adminHash});
+    await sbRpc('admin_update_unit_status', {p_unit_id: unitId, p_status: newStatus});
     selectEl.dataset.prev = newStatus;
     toast('✅ تم تحديث حالة الوحدة', 's');
     invalidateDetailCache(spaceId);
@@ -3428,7 +3424,7 @@ async function bulkReview() {
     let ok = 0, fail = 0;
     for (const id of ids) {
       try {
-        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null,p_secret:adminHash});
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'review',p_reason:null});
         ok++;
       } catch(e) { fail++; }
     }
@@ -3472,7 +3468,7 @@ function bulkDelete() {
     let ok = 0, fail = 0;
     for (const id of ids) {
       try {
-        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null,p_secret:adminHash});
+        await sbRpc('admin_manage_space',{p_space_id:id,p_action:'delete',p_reason:null});
         ok++;
       } catch(e) { fail++; }
     }
@@ -3497,7 +3493,6 @@ function addAuditEntry(action, targetId, detail) {
     sbRpc('admin_log_action', {
       p_action: action, p_target_id: String(targetId||''),
       p_target_name: detail||'', p_detail: '',
-      p_secret: adminHash
     }).catch(()=>{});
   }
   /* Also keep a local copy for instant display */
@@ -3512,7 +3507,7 @@ async function loadAndRenderAuditSection(containerEl) {
   containerEl.innerHTML = `<span class="spin">⏳</span>`;
   let entries = [];
   try {
-    entries = await sbRpc('admin_get_audit_log', {p_secret: adminHash, p_limit: 50});
+    entries = await sbRpc('admin_get_audit_log', {p_limit: 50});
   } catch(e) {
     /* Fallback to localStorage */
     try { entries = JSON.parse(localStorage.getItem(AUDIT_LS_KEY)||'[]')
@@ -3867,7 +3862,7 @@ function removeUnitRow(idx, dbId) {
   const empty = document.getElementById('f-units-empty');
   if (cont && !cont.children.length && empty) empty.style.display = 'block';
   if (dbId && editingId) {
-    sbRpc('admin_delete_unit',{p_unit_id:dbId,p_secret:adminHash})
+    sbRpc('admin_delete_unit',{p_unit_id:dbId})
       .then(()=>toast('🗑 تم حذف الوحدة','s'))
       .catch(e=>toast('خطأ: '+e.message,'e'));
   }
@@ -4063,7 +4058,7 @@ async function submitSpaceForm() {
 
   setFormSaving(true);
   try {
-    const result  = await sbRpc('admin_upsert_space',{p_data:spaceData,p_secret:adminHash});
+    const result  = await sbRpc('admin_upsert_space',{p_data:spaceData});
     const spaceId = result.id || editingId;
     const unitRows = document.querySelectorAll('[id^="f-unit-"]');
     for (const row of unitRows) {
@@ -4084,7 +4079,7 @@ async function submitSpaceForm() {
         notes:    document.getElementById(`fu-notes-${idx}`)?.value.trim()||null,
         image_url: fUnitImgUrls[idx]||null,
       };
-      await sbRpc('admin_upsert_unit',{p_data:unitData,p_secret:adminHash});
+      await sbRpc('admin_upsert_unit',{p_data:unitData});
     }
     toast(editingId?'✅ تم حفظ التعديلات':'✅ تمت إضافة المساحة','s');
     showFormMsg('success', editingId?'تم حفظ التعديلات بنجاح!':'تمت إضافة المساحة بنجاح!');
@@ -4404,7 +4399,7 @@ async function bulkHideAnn() {
   if (!ids.length) return;
   if (!confirm(`إخفاء ${ids.length} إعلان من المنصة؟ يمكن إعادة نشرها لاحقاً.`)) return;
   try {
-    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: false })));
+    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_id: id, p_active: false })));
     ids.forEach(id => { const a = allAnnouncements.find(x => x.id === id); if (a) a.is_active = false; });
     toast(`⏸ تم إخفاء ${ids.length} إعلان`, 's');
     renderAnnouncements();
@@ -4415,7 +4410,7 @@ async function bulkRestoreAnn() {
   const ids = [...annSelectedIds];
   if (!ids.length) return;
   try {
-    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: true })));
+    await Promise.all(ids.map(id => sbRpc('admin_toggle_announcement', { p_id: id, p_active: true })));
     ids.forEach(id => { const a = allAnnouncements.find(x => x.id === id); if (a) a.is_active = true; });
     toast(`▶ تم إعادة نشر ${ids.length} إعلان`, 's');
     renderAnnouncements();
@@ -4696,7 +4691,7 @@ async function saveAnn() {
 
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin">⏳</span> جاري الحفظ…'; }
   try {
-    await sbRpc('admin_upsert_announcement', { p_secret: adminHash, p_data: payload });
+    await sbRpc('admin_upsert_announcement', { p_data: payload });
     toast(`✅ تم ${annEditingId ? 'تعديل' : 'إضافة'} الإعلان بنجاح`, 's');
     await loadAll();
     gp('announcements', document.getElementById('sbi-announcements'));
@@ -4718,7 +4713,7 @@ function showAnnMsg(type, text) {
 
 async function toggleAnn(id, newActive) {
   try {
-    await sbRpc('admin_toggle_announcement', { p_secret: adminHash, p_id: id, p_active: newActive });
+    await sbRpc('admin_toggle_announcement', { p_id: id, p_active: newActive });
     toast(newActive ? '▶ تم إظهار الإعلان' : '⏸ تم إخفاء الإعلان', 's');
     allAnnouncements = allAnnouncements.map(a => a.id === id ? Object.assign({}, a, {is_active: newActive}) : a);
     renderAnnouncements();
@@ -4758,7 +4753,7 @@ async function deleteAnn(id, title) {
 ═══════════════════════════════ */
 setInterval(()=>{
   if (!adminHash) return;
-  sbRpc('admin_get_spaces',{p_secret:adminHash})
+  sbRpc('admin_get_spaces')
     .then(spaces=>{
       allSpaces = spaces||[];
       updatePendingBadge();

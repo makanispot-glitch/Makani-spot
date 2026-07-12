@@ -22,9 +22,10 @@
    🗄️ القسم 2: المتغيرات العامة
    ================================================================ */
 
-let sbClient       = null;     // كائن Supabase
-let currentUser    = null;     // بيانات المستخدم المسجّل
-let currentProfile = null;     // بيانات الـ profile
+let sbClient        = null;     // كائن Supabase
+let currentUser     = null;     // بيانات المستخدم المسجّل
+let currentProfile  = null;     // بيانات الـ profile
+let currentCapabilities = null; // getAccountCapabilities(profile, organizerProfile) — مصدر واحد لقرارات الصلاحيات
 
 let BAZAARS        = [];       // قائمة البازارات المحمّلة
 let bzFiltered     = [];       // البازارات بعد تطبيق الفلاتر
@@ -37,6 +38,8 @@ let bzTimeNav        = 'all';  // التنقل الزمني: 'all' | 'today' | '
 let bzOrgSearchOpen  = false;  // حالة لوحة البحث عن المنظم
 let _slotMapChannel  = null;   // قناة Realtime لخريطة الأماكن
 let _bzRenderPending = false;  // throttle للرندر بـ requestAnimationFrame
+let _bazaarStatsChannel = null; // قناة Realtime لإحصائيات الأنشطة (bazaar_bookings)
+let _bzStatsDebounce    = null; // مؤقّت تهدئة إعادة جلب إحصائيات الأنشطة
 
 /* "اليوم" بتوقيت القاهرة — نفس المنطقة الزمنية التي يعتمدها الكرون في قاعدة البيانات
    (update_bazaar_statuses/auto_archive_expired_bazaars) لتفادي أي تعارض قرب منتصف الليل
@@ -85,6 +88,15 @@ document.addEventListener('DOMContentLoaded', async function () {
    🔐 القسم 4: المصادقة
    ================================================================ */
 
+/* تحديث فوري للصلاحيات (المرحلة ٦) — عند موافقة أدمن (owner/منظّم) بينما التبويب
+   مفتوح: أعد جلب البروفايل وأعد رسم الناف بلا reload. مسجَّل مرة واحدة فقط؛
+   يتحقق من currentUser وقت وصول الحدث نفسه لا وقت التسجيل. */
+window.addEventListener('gn:permission-changed', async () => {
+  if (!currentUser) return;
+  await _loadBzProfile();
+  bzRenderNavUser();
+});
+
 async function bzInitAuth() {
   if (!sbClient) return;
   try {
@@ -97,6 +109,7 @@ async function bzInitAuth() {
     sbClient.auth.onAuthStateChange(async (_e, sess) => {
       currentUser = sess?.user || null;
       currentProfile = null;
+      currentCapabilities = null;
       if (currentUser) {
         await _loadBzProfile();
         GN.init(sbClient, currentUser.id);
@@ -133,10 +146,11 @@ async function _loadBzProfile() {
     ]);
     currentProfile = {
       ...(profRes.data || {}),
-      avatar_url:  profRes.data?.avatar_url || orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
-      is_verified: (profRes.data?.is_verified === true) || (orgRes.data?.is_verified === true),
-      roles:       profRes.data?.roles || [],
+      avatar_url: profRes.data?.avatar_url || orgRes.data?.avatar_url || orgRes.data?.logo || orgRes.data?.image || '',
     };
+    // ملاحظة: is_verified/roles لم تعُد تُحسَب هنا — كل قرارات الصلاحيات تقرأ
+    // من currentCapabilities (المصدر الوحيد)، لا من currentProfile مباشرة.
+    currentCapabilities = getAccountCapabilities(profRes.data, orgRes.data);
   } catch (_) {}
 }
 
@@ -158,8 +172,12 @@ function bzRenderNavUser() {
 
 
         ${_bzIsOrganizer() ? `
-        <a class="bz-org-pill" href="/bazaars/organize.html">نظّم بازارك</a>
-        <a class="bz-org-pill" href="/bazaars/opportunities.html">فرص الاستضافة</a>` : ''}
+        <a class="bz-org-pill" href="/bazaars/organize.html" title="نظّم بازارك">
+          <span class="bz-org-pill-full">نظّم بازارك</span><span class="bz-org-pill-short">نظّم</span>
+        </a>
+        <a class="bz-org-pill" href="/bazaars/opportunities.html" title="فرص الاستضافة">
+          <span class="bz-org-pill-full">فرص الاستضافة</span><span class="bz-org-pill-short">فرص</span>
+        </a>` : ''}
 
         <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
           <div class="nav-avatar-circle">${avatarHtml}</div>
@@ -173,7 +191,7 @@ function bzRenderNavUser() {
             <div class="nav-dropdown-header">
               <div class="nav-dropdown-name">${name || 'حسابي'}</div>
               <div class="nav-dropdown-email">${email}</div>
-              <div class="nav-dropdown-role">${currentProfile?.is_verified ? 'منظم بازارات موثّق ✓' : _bzIsOrganizer() ? 'منظم بازارات' : 'مستخدم البازارات'}</div>
+              <div class="nav-dropdown-role">${currentCapabilities?.organizerVerified ? 'منظم بازارات موثّق ✓' : _bzIsOrganizer() ? 'منظم بازارات' : 'مستخدم البازارات'}</div>
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
@@ -223,6 +241,41 @@ function bzRenderNavUser() {
     document.querySelector('#bz-nav-user .bz-nav-user-wrap') ||
     document.getElementById('bz-nav-user')
   );
+  // أيقونة إدارة البازارات — بجوار الجرس
+  if (currentUser) bzMountManageIcon();
+}
+
+/* أيقونة "إدارة البازارات" في الناف — نفس تصميم/حجم جرس الإشعارات (gn-bell)
+   تفتح دائماً /bazaars/manage.html، والصفحة نفسها تقرر: تسجيل دخول ناقص /
+   ليس منظم بازارات بعد / لوحة الإدارة الكاملة — راجع الحارس في manage.js */
+function bzMountManageIcon() {
+  const wrap = document.querySelector('#bz-nav-user .bz-nav-user-wrap');
+  if (!wrap) return;
+
+  wrap.querySelector('#bz-manage-icon')?.remove();
+
+  const btn = document.createElement('div');
+  btn.id        = 'bz-manage-icon';
+  btn.className = 'gn-bell';
+  btn.setAttribute('role', 'button');
+  btn.setAttribute('aria-label', 'إدارة البازارات');
+  btn.title = 'إدارة البازارات';
+  btn.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+    '     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+    '     width="20" height="20" aria-hidden="true">' +
+    '  <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/>' +
+    '  <line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/>' +
+    '  <line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="18" r="2" fill="currentColor" stroke="none"/>' +
+    '</svg>';
+  btn.addEventListener('click', () => { window.location.href = '/bazaars/manage.html'; });
+
+  /* الترتيب المعتمد في كل صفحات المنصة: الجرس ملاصق للأفاتار مباشرة (GN.mount
+     بيحطه قبل avatarBtn مباشرة). فأيقونة الإدارة الجديدة لازم تتحط قبل الجرس
+     (بعيد عن الأفاتار)، مش بعده — عشان محدش يتقحّم بين الجرس والأفاتار. */
+  const bell = wrap.querySelector('#gn-bell');
+  if (bell) bell.insertAdjacentElement('beforebegin', btn);
+  else wrap.insertBefore(btn, wrap.querySelector('.nav-avatar-btn') || wrap.firstChild);
 }
 
 function bzToggleAccountMenu(e) {
@@ -358,6 +411,13 @@ async function loadBazaars() {
       event_image_url:      _toDirectImgUrl(b.event_image_url || b.image || ''),
       status:               b.status || 'published',
       event_links:          Array.isArray(b.event_links) ? b.event_links : [],
+      included_amenities:        Array.isArray(b.included_amenities) ? b.included_amenities : [],
+      chair_count:                Number(b.chair_count) || null,
+      other_amenities_note:       b.other_amenities_note || '',
+      ad_budget_tier:              b.ad_budget_tier || '',
+      will_have_photography:      !!b.will_have_photography,
+      will_have_social_coverage:  !!b.will_have_social_coverage,
+      will_have_paid_ads:         !!b.will_have_paid_ads,
     }));
 
     console.log(`✅ تم تحميل ${BAZAARS.length} بازار من Supabase`);
@@ -408,7 +468,7 @@ function buildBazaarCard(b) {
   /* ── حالة الوقت ── */
   const todayStr   = _cairoTodayStr();
   const endDate    = b.date_end || b.date_start;
-  const isExpired  = endDate ? endDate < todayStr : false;
+  const isExpired  = b.status === 'completed' || (endDate ? endDate < todayStr : false);
   const isActiveNow = !isExpired && b.date_start && b.date_start <= todayStr
                     && (!b.date_end || b.date_end >= todayStr);
 
@@ -959,7 +1019,7 @@ async function openBazaarDetail(bazaarId) {
   /* ── تحقق من حالة البازار: منتهي / جارٍ الآن (توقّف استقبال الحجوزات) / متاح للحجز ── */
   const _todayStr  = _cairoTodayStr();
   const _endDate   = b.date_end || b.date_start;
-  const _isExpired = _endDate && _endDate < _todayStr;
+  const _isExpired = b.status === 'completed' || (_endDate && _endDate < _todayStr);
   const _isLiveNow = !_isExpired && b.status === 'live';
 
   const slotmapEl        = document.getElementById('bzd-slotmap');
@@ -967,6 +1027,8 @@ async function openBazaarDetail(bazaarId) {
   const reviewsSectionEl = document.getElementById('bzd-reviews-section');
 
   _unsubscribeSlotMap();
+  _unsubscribeBazaarStats();
+  _loadBazaarActivityStats(bazaarId, b, _isExpired);
 
   if (reviewsSectionEl) reviewsSectionEl.style.display = 'none';
   if (_isExpired) _loadBazaarReviews(bazaarId, b);
@@ -1311,10 +1373,190 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
 
 function closeBazaarDetail() {
   _unsubscribeSlotMap();
+  _unsubscribeBazaarStats();
   currentBazaar  = null;
   selectedSlotId = null;
   showBzPage('bazaars');
 }
+
+/* ================================================================
+   📊 إحصائيات الأنشطة داخل البازار — من الحجوزات المؤكدة فقط
+   (status='confirmed'؛ لا تُحتسب pending/cancelled) عبر RPC
+   get_bazaar_activity_stats (تجميع فقط، بلا PII — بديل عن قراءة
+   bazaar_bookings مباشرة التي يمنعها RLS لغير المنظم/صاحب الحجز)
+   ================================================================ */
+
+/* نفس فئات النشاط الموجودة في استمارة الحجز (bzb-activity) — أيقونات عرض فقط */
+const BZ_ACTIVITY_ICONS = {
+  'أكل ومشروبات':   '🍔', 'حلويات':          '🍰',
+  'ملابس':          '👕', 'إكسسوارات':       '💍', 'موضة': '👗',
+  'مجوهرات':        '💎', 'ساعات':           '⌚',
+  'هدايا':          '🎁', 'ديكور':           '🖼️', 'مستلزمات منزلية': '🏠',
+  'حرف يدوية':      '✋', 'عطور':            '🧴', 'عناية شخصية': '💆',
+  'كتب':            '📚', 'إلكترونيات':      '🔌', 'تقنية': '💻',
+  'ألعاب أطفال':    '🧸',
+  'بيع بالجملة':    '📦', 'خدمات':           '🛠️', 'متنوع': '🗂️',
+};
+
+/* ألوان تصنيفية بترتيب ثابت (مُتحقَّق CVD ΔE≥12 على خلفية بيضاء) — لا تُدار أو تُولَّد ألوان إضافية */
+const BZ_STATS_HUES        = ['#2a78d6', '#1baf7a', '#eda100', '#008300', '#4a3aa7', '#e34948'];
+const BZ_STATS_OTHER_COLOR = '#c3c2b7';
+const BZ_STATS_MAX_SLICES  = 6; // فوق كده يُطوى الباقي في "أخرى" — حد donut/pie الموصى به
+
+async function _loadBazaarActivityStats(bazaarId, b, isExpired) {
+  const sectionEl = document.getElementById('bzd-activity-stats-section');
+  const el        = document.getElementById('bzd-activity-stats');
+  if (!sectionEl || !el || !sbClient) return;
+
+  sectionEl.style.display = 'block';
+  el.innerHTML = `
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">📊 إحصائيات الأنشطة داخل البازار</h2></div>
+    <div style="text-align:center;padding:30px 20px;color:var(--ink3)">
+      <div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
+      <div style="font-size:13px">جاري تحميل الإحصائيات…</div>
+    </div>`;
+
+  try {
+    const { data, error } = await sbClient.rpc('get_bazaar_activity_stats', { p_bazaar_id: bazaarId });
+    if (error) throw new Error(error.message);
+    _renderBazaarActivityStats(data || {}, b);
+    if (!isExpired) _subscribeBazaarStats(bazaarId, b);
+  } catch (err) {
+    console.warn('[bazaar-stats] load error:', err.message || err);
+    sectionEl.style.display = 'none';
+  }
+}
+
+function _renderBazaarActivityStats(data, b) {
+  const el = document.getElementById('bzd-activity-stats');
+  if (!el) return;
+
+  const total      = Number(data.total_confirmed) || 0;
+  const activities = Array.isArray(data.activities) ? data.activities : [];
+  const headerHtml = `<div class="sd-subspaces-header"><h2 class="sd-section-title">📊 إحصائيات الأنشطة داخل البازار</h2></div>`;
+
+  if (!total || !activities.length) {
+    el.innerHTML = `
+      ${headerHtml}
+      <div class="bz-stats-empty">
+        <div class="bz-stats-empty-ico">📊</div>
+        <div>لا توجد بيانات كافية لعرض توزيع الأنشطة حتى الآن.</div>
+      </div>`;
+    return;
+  }
+
+  /* أعلى 6 أنشطة بألوان مستقلة + طيّ الباقي في "أخرى" رمادية (لا نولّد لونًا سابعًا) */
+  const top       = activities.slice(0, BZ_STATS_MAX_SLICES);
+  const rest      = activities.slice(BZ_STATS_MAX_SLICES);
+  const restCount = rest.reduce((s, a) => s + (Number(a.count) || 0), 0);
+
+  const segments = top.map((a, i) => ({
+    label: a.activity,
+    count: Number(a.count) || 0,
+    color: BZ_STATS_HUES[i],
+    icon:  BZ_ACTIVITY_ICONS[a.activity] || '🏷️',
+  }));
+  if (restCount > 0) segments.push({ label: 'أخرى', count: restCount, color: BZ_STATS_OTHER_COLOR, icon: '🏷️' });
+
+  const totalSlots   = Number(b?.total_slots) || 0;
+  const occupancyPct = totalSlots > 0 ? Math.round((total / totalSlots) * 100) : null;
+
+  const summaryHtml = `
+    <div class="bz-stats-summary">
+      <div class="bz-stats-chip"><b>${total}</b><span>مكان محجوز (مؤكّد)</span></div>
+      <div class="bz-stats-chip"><b>${activities.length}</b><span>نشاط مختلف</span></div>
+      ${occupancyPct !== null ? `<div class="bz-stats-chip"><b>${occupancyPct}%</b><span>نسبة إشغال البازار</span></div>` : ''}
+    </div>`;
+
+  const listHtml = segments.map(s => {
+    const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+    return `
+      <div class="bz-stats-row" style="--bz-stat-color:${s.color}">
+        <div class="bz-stats-row-fill" style="width:${pct}%"></div>
+        <span class="bz-stats-swatch"></span>
+        <span class="bz-stats-row-label">${s.icon} ${_escBz(s.label)}</span>
+        <span class="bz-stats-row-count">${s.count} مشارك</span>
+        <span class="bz-stats-row-pct">${pct}%</span>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    ${headerHtml}
+    ${summaryHtml}
+    <div class="bz-stats-body">
+      <div class="bz-stats-donut-wrap">${_buildActivityDonutSvg(segments, total)}</div>
+      <div class="bz-stats-list">${listHtml}</div>
+    </div>`;
+}
+
+/* دونات SVG عبر stroke-dasharray/stroke-dashoffset — بلا مكتبات خارجية، Responsive عبر viewBox */
+function _buildActivityDonutSvg(segments, total) {
+  const SIZE = 120, R = 44, CX = 60, CY = 60, STROKE = 16, GAP = 3;
+  const circumference = 2 * Math.PI * R;
+
+  let cum = 0;
+  const arcs = segments.map(s => {
+    const raw = (s.count / total) * circumference;
+    const len = Math.max(raw - GAP, 0);
+    const arc = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${s.color}"
+      stroke-width="${STROKE}" stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-cum}">
+      <title>${_escBz(s.label)} — ${s.count} مشارك (${Math.round((s.count / total) * 100)}%)</title>
+    </circle>`;
+    cum += raw;
+    return arc;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="توزيع الأنشطة داخل البازار">
+      <g transform="rotate(-90 ${CX} ${CY})">${arcs}</g>
+      <text x="${CX}" y="${CY - 4}" text-anchor="middle" font-family="var(--font-display)"
+            font-size="22" font-weight="800" fill="var(--ink)">${total}</text>
+      <text x="${CX}" y="${CY + 15}" text-anchor="middle" font-family="var(--font-body)"
+            font-size="10" fill="var(--ink3)">مكان محجوز</text>
+    </svg>`;
+}
+
+function _escBz(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ── Realtime: تحديث الإحصائيات تلقائيًا عند تأكيد/إلغاء أي حجز داخل هذا البازار ── */
+function _subscribeBazaarStats(bazaarId, b) {
+  if (!sbClient || !bazaarId) return;
+  _unsubscribeBazaarStats();
+
+  _bazaarStatsChannel = sbClient
+    .channel(`bz-bookings-stats-${bazaarId}`)
+    .on('postgres_changes', {
+      event:  '*',
+      schema: 'public',
+      table:  'bazaar_bookings',
+      filter: `bazaar_id=eq.${bazaarId}`
+    }, () => {
+      clearTimeout(_bzStatsDebounce);
+      _bzStatsDebounce = setTimeout(async () => {
+        if (!currentBazaar || String(currentBazaar.id) !== String(bazaarId) || !sbClient) return;
+        try {
+          const { data, error } = await sbClient.rpc('get_bazaar_activity_stats', { p_bazaar_id: bazaarId });
+          if (!error) _renderBazaarActivityStats(data || {}, b);
+        } catch (_) {}
+      }, 500);
+    })
+    .subscribe(status => {
+      if (status === 'CHANNEL_ERROR') console.warn('⚠️ Activity stats realtime channel error');
+    });
+}
+
+function _unsubscribeBazaarStats() {
+  clearTimeout(_bzStatsDebounce);
+  if (_bazaarStatsChannel) {
+    try { sbClient?.removeChannel(_bazaarStatsChannel); } catch (_) {}
+    _bazaarStatsChannel = null;
+  }
+}
+window.addEventListener('beforeunload', _unsubscribeBazaarStats);
 
 /* ================================================================
    ⭐ تقييمات البازار — تُتاح فقط بعد انتهاء البازار فعلياً
@@ -2010,14 +2252,16 @@ function _renderSlotMapEndedFallback(endDate) {
     <div class="sd-subspaces-header">
       <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
     </div>
-    <div style="text-align:center;padding:48px 24px;background:var(--surface);border-radius:16px;
-                border:1.5px dashed var(--border);margin-top:16px">
-      <div style="font-size:52px;margin-bottom:14px">🔴</div>
-      <div style="font-size:18px;font-weight:900;color:var(--ink2);margin-bottom:8px;font-family:'Cairo',sans-serif">
-        انتهى هذا البازار
+    <div style="text-align:center;padding:40px 24px;background:rgba(15,15,22,0.92);border-radius:16px;margin-top:16px">
+      <div style="font-size:30px;margin-bottom:10px">🔒</div>
+      <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:8px;max-width:420px;margin-inline:auto;line-height:1.6">
+        انتهى هذا البازار، لذلك لم يعد الحجز متاحاً
       </div>
-      ${expDateFmt ? `<div style="font-size:13px;color:var(--ink3);margin-bottom:20px">انتهى في ${expDateFmt}</div>` : ''}
-      <button class="btn btn-primary" style="padding:12px 28px" onclick="closeBazaarDetail()">
+      <div style="font-size:12.5px;color:rgba(255,255,255,.78);max-width:420px;margin-inline:auto;line-height:1.7">
+        يمكنك الاطلاع على الروابط والمحتوى الذي أضافه منظم البازار لمعرفة تفاصيل الفعالية أو متابعة حساباته.
+      </div>
+      ${expDateFmt ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:8px">انتهى في ${expDateFmt}</div>` : ''}
+      <button class="btn btn-primary" style="padding:12px 28px;margin-top:20px" onclick="closeBazaarDetail()">
         ← عرض البازارات المتاحة
       </button>
     </div>
@@ -2083,9 +2327,15 @@ function renderSlotMap(slots, opts = {}) {
 
   const bannerHtml = mode === 'live'
     ? `<div class="bz-slotmap-banner bz-slotmap-banner-live">🔴 انتهى استقبال الحجوزات، والبازار جارٍ حالياً.</div>`
-    : mode === 'ended'
-    ? `<div class="bz-slotmap-banner bz-slotmap-banner-ended">⚪ انتهى هذا البازار${endDateFmt ? ' في ' + endDateFmt : ''} — الخريطة معروضة للاطلاع فقط</div>`
     : '';
+
+  const endedOverlayHtml = mode === 'ended' ? `
+    <div class="bz-slotmap-overlay">
+      <div class="bz-slotmap-overlay-ico">🔒</div>
+      <div class="bz-slotmap-overlay-title">انتهى هذا البازار، لذلك لم يعد الحجز متاحاً</div>
+      <div class="bz-slotmap-overlay-desc">يمكنك الاطلاع على الروابط والمحتوى الذي أضافه منظم البازار لمعرفة تفاصيل الفعالية أو متابعة حساباته.</div>
+      ${endDateFmt ? `<div class="bz-slotmap-overlay-date">انتهى في ${endDateFmt}</div>` : ''}
+    </div>` : '';
 
   el.innerHTML = `
     ${bannerHtml}
@@ -2110,7 +2360,10 @@ function renderSlotMap(slots, opts = {}) {
       ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> مكان مميز ⭐</span>` : ''}
     </div>
 
-    <div class="bz-slotmap-scroll${readOnly ? ' bz-readonly' : ''}">${gridHtml}</div>
+    <div class="bz-slotmap-wrap${mode === 'ended' ? ' bz-slotmap-ended' : ''}">
+      <div class="bz-slotmap-scroll${readOnly ? ' bz-readonly' : ''}">${gridHtml}</div>
+      ${endedOverlayHtml}
+    </div>
 
     ${!readOnly ? `<div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:10px;padding-bottom:4px">
       اضغط على أي مكان متاح لاختياره وإتمام الحجز
@@ -2835,9 +3088,9 @@ const _BZ_VENUE_MAP = {
 };
 const _BZ_FOOT_MAP = { low:'🚶 منخفض', medium:'🚶🚶 متوسط', high:'🚶🚶🚶 عالٍ' };
 
-/* هل المستخدم منظم بازار؟ */
+/* هل المستخدم منظم بازار؟ (وسم القدرة roles[] — يفتح الناف وopportunities.html) */
 function _bzIsOrganizer() {
-  return Array.isArray(currentProfile?.roles) && currentProfile.roles.includes('bazaar_organizer');
+  return !!currentCapabilities?.isOrganizer;
 }
 
 

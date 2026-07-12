@@ -188,6 +188,16 @@
           _count = _notifs.filter(function (n) { return !n.is_read; }).length;
           _syncBadge();
           if (_panelOpen()) _renderPanel();
+
+          /* تحديث فوري للصلاحيات: إشعار موافقة owner/منظّم يعني الناف عندها
+             بيانات قديمة (roles[]/is_verified تغيّرت في القاعدة الآن) — نُطلق
+             حدثًا عامًا، والصفحة المستهلكة (لو عندها ما تحدّثه) تستمع وتعيد
+             جلب البروفايل ورسم الناف بنفسها. الوحدة هنا لا تعرف شيئًا عن
+             currentProfile/setNavUser الخاصة بكل صفحة عمدًا — تبقى معزولة. */
+          if (payload.new.type === 'owner_approved' || payload.new.type === 'bazaar_approved') {
+            try { global.dispatchEvent(new CustomEvent('gn:permission-changed', { detail: payload.new })); }
+            catch (e) { /* CustomEvent غير مدعوم — تجاهل، ليست حرجة */ }
+          }
         })
         .on('postgres_changes', {
           event:  'UPDATE',

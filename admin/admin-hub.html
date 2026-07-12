@@ -1768,13 +1768,14 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 let aqMetrics = {};
 let aqItems   = {};
 
-/* action -> [اسم الـ RPC, اسم باراميتر المُعرّف] */
+/* action -> إعدادات RPC. approveVerb/rejectVerb لازمة لأن admin_manage_space
+   معندهوش أفعال approve/reject حرفيًا — عندها review/hide (النشر فوري، المراجعة لاحقة). */
 const AQ_ACTION_RPC = {
-  upgrade_request: ['admin_manage_upgrade_request',  'p_request_id'],
-  space:           ['admin_manage_space',             'p_space_id'],
-  bazaar:          ['admin_manage_bazaar_request',    'p_bazaar_id'],
-  organizer:       ['admin_manage_organizer_request',  'p_request_id'],
-  listing:         ['admin_manage_listing',           'p_listing_id'],
+  upgrade_request: { rpc:'admin_manage_upgrade_request',  idParam:'p_request_id', approveVerb:'approve', rejectVerb:'reject' },
+  space:           { rpc:'admin_manage_space',             idParam:'p_space_id',   approveVerb:'review',  rejectVerb:'hide'   },
+  bazaar:          { rpc:'admin_manage_bazaar_request',    idParam:'p_bazaar_id',  approveVerb:'approve', rejectVerb:'reject' },
+  organizer:       { rpc:'admin_manage_organizer_request', idParam:'p_request_id', approveVerb:'approve', rejectVerb:'reject' },
+  listing:         { rpc:'admin_manage_listing',           idParam:'p_listing_id', approveVerb:'approve', rejectVerb:'reject' },
 };
 
 const AQ_ROWS = [
@@ -1795,7 +1796,7 @@ const AQ_ROWS = [
 async function loadAdminMetrics() {
   if (!adminHash) return;
   try {
-    const snap = await sbRpc('admin_get_metrics_snapshot', { p_secret: adminHash });
+    const snap = await sbRpc('admin_get_metrics_snapshot');
     aqMetrics = snap?.metrics || {};
     aqItems   = snap?.items   || {};
     renderActionQueue();
@@ -1808,13 +1809,27 @@ async function loadAdminMetrics() {
   }
 }
 
-async function refreshAdminMetricsNow() {
+/* اللقطة يُفترض تحديثها كل 15 دقيقة عبر pg_cron — لو أقدم من ٢× المدة يبقى على الأغلب فيه دورة (أو أكتر) فشلت */
+const AQ_STALE_MS = 20 * 60 * 1000;
+function metricsComputedAt() {
+  const any = Object.values(aqMetrics)[0];
+  return any?.computed_at ? new Date(any.computed_at) : null;
+}
+function isMetricsStale() {
+  const at = metricsComputedAt();
+  return !!at && (Date.now() - at.getTime()) > AQ_STALE_MS;
+}
+
+async function refreshAdminMetricsNow(silent) {
   if (!adminHash) return;
   try {
-    await sbRpc('admin_refresh_metrics_now', { p_secret: adminHash });
+    await sbRpc('admin_refresh_metrics_now');
     await loadAdminMetrics();
-    toast('🔄 تم تحديث الإحصائيات', 's');
-  } catch(err) { toast('خطأ: ' + err.message, 'e'); }
+    if (!silent) toast('🔄 تم تحديث الإحصائيات', 's');
+  } catch(err) {
+    if (!silent) toast('خطأ: ' + err.message, 'e');
+    else console.error('refreshAdminMetricsNow (silent) failed:', err);
+  }
 }
 
 /* أسماء العرض والتهيئة لكل مفتاح meta ممكن يوصل من admin_metrics_items */
@@ -1889,7 +1904,14 @@ function renderActionQueue() {
   const badge = document.getElementById('aq-total-badge');
   if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'inline' : 'none'; }
 
-  el.innerHTML = rows || `<div class="aq-empty">✅ لا توجد مهام معلّقة حاليًا — كل شيء تحت السيطرة</div>`;
+  const staleWarning = isMetricsStale()
+    ? `<div class="aq-empty" style="color:var(--yw);border-color:rgba(245,158,11,.3);text-align:right">
+         ⚠️ آخر تحديث للبيانات كان منذ فترة أطول من المعتاد (الدورة التلقائية كل 15 دقيقة) — قد تكون هذه القائمة غير مكتملة.
+         اضغط <b>"🔄 تحديث الآن"</b> في قسم الإحصائيات أدناه للتأكد.
+       </div>`
+    : '';
+
+  el.innerHTML = staleWarning + (rows || `<div class="aq-empty">✅ لا توجد مهام معلّقة حاليًا — كل شيء تحت السيطرة</div>`);
 }
 
 function renderPlatformAnalytics() {
@@ -1904,25 +1926,53 @@ function renderPlatformAnalytics() {
         <a class="pa-ga-btn" href="https://analytics.google.com/" target="_blank">📊 فتح تقارير الزيارات (GA4) ←</a>
       </div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_total_users')}</div><div class="pa-card-label">إجمالي المستخدمين</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_active_users_30d')}</div><div class="pa-card-label">مستخدمون نشطون (٣٠ يوم)</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_new_signups_today')}</div><div class="pa-card-label">حسابات جديدة (اليوم)</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_new_signups_7d')}</div><div class="pa-card-label">حسابات جديدة (٧ أيام)</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_space_owners')}</div><div class="pa-card-label">أصحاب مساحات</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_bazaar_organizers')}</div><div class="pa-card-label">منظّمو بازارات</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_project_owners')}</div><div class="pa-card-label">أصحاب مشاريع للبيع</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_published_spaces')}</div><div class="pa-card-label">مساحات منشورة</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_active_bazaars')}</div><div class="pa-card-label">بازارات نشطة</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_total_bazaars')}</div><div class="pa-card-label">إجمالي البازارات</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_completed_bazaars')}</div><div class="pa-card-label">بازارات منتهية</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('bazaars_pending_publish')}</div><div class="pa-card-label">بازارات بانتظار الموافقة</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_listed_projects')}</div><div class="pa-card-label">مشاريع معروضة للبيع</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('listings_pending_review')}</div><div class="pa-card-label">مشاريع بانتظار الموافقة</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_bookings_today')}</div><div class="pa-card-label">حجوزات اليوم</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_total_bookings')}</div><div class="pa-card-label">إجمالي الحجوزات</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_pending_bookings')}</div><div class="pa-card-label">حجوزات معلّقة</div></div>
+      <div class="pa-card"><div class="pa-card-value">${g('platform_confirmed_bookings')}</div><div class="pa-card-label">حجوزات مؤكدة</div></div>
       <div class="pa-card"><div class="pa-card-value">${g('platform_pending_requests_total')}</div><div class="pa-card-label">طلبات معلّقة تحتاج مراجعة</div></div>
       <div class="pa-card pa-good"><div class="pa-card-value">${g('platform_accepted_today')}</div><div class="pa-card-label">طلبات مقبولة اليوم</div></div>
       <div class="pa-card pa-bad"><div class="pa-card-value">${g('platform_rejected_today')}</div><div class="pa-card-label">طلبات مرفوضة اليوم</div></div>
     </div>
     <div class="pa-updated" id="pa-updated"></div>`;
 
-  const anyMetric = Object.values(aqMetrics)[0];
+  const at = metricsComputedAt();
   const updatedEl = document.getElementById('pa-updated');
-  if (updatedEl && anyMetric?.computed_at) {
-    updatedEl.textContent = 'آخر تحديث للإحصائيات: ' + new Date(anyMetric.computed_at).toLocaleString('ar-EG', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
+  if (updatedEl && at) {
+    const stale = isMetricsStale();
+    updatedEl.style.color = stale ? 'var(--yw)' : '';
+    updatedEl.textContent = 'آخر تحديث للإحصائيات: ' + at.toLocaleString('ar-EG', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})
+      + (stale ? ' ⚠️ قديم — قد يحتاج تحديثًا يدويًا' : '');
   }
+}
+
+/* إزالة فورية من الواجهة فور نجاح الإجراء — بلا انتظار دورة الـ RPC التالية.
+   نبحث في كل مفاتيح aqItems المرتبطة بنفس actionType (upgrade_request مثلاً مرتبط بمفتاحين مختلفين). */
+function aqRemoveItemLocally(actionType, itemId) {
+  const keys = AQ_ROWS.filter(r => r.action === actionType).map(r => r.key);
+  keys.forEach(k => {
+    const list = aqItems[k] || [];
+    const hadIt = list.some(it => String(it.id) === String(itemId));
+    if (hadIt) {
+      aqItems[k] = list.filter(it => String(it.id) !== String(itemId));
+      if (aqMetrics[k]) aqMetrics[k] = { ...aqMetrics[k], count: Math.max(0, (aqMetrics[k].count || 0) - 1) };
+    }
+  });
+  renderActionQueue();
+  renderPlatformAnalytics();
 }
 
 async function aqApprove(actionType, itemId, btnEl) {
@@ -1930,9 +1980,11 @@ async function aqApprove(actionType, itemId, btnEl) {
   if (!cfg) return;
   if (btnEl) btnEl.disabled = true;
   try {
-    await sbRpc(cfg[0], { [cfg[1]]: itemId, p_action: 'approve', p_reason: null, p_secret: adminHash });
+    await sbRpc(cfg.rpc, { [cfg.idParam]: itemId, p_action: cfg.approveVerb, p_reason: null });
     toast('✅ تم القبول', 's');
-    await loadAdminMetrics();
+    aqRemoveItemLocally(actionType, itemId);
+    /* إعادة حساب فعلية من القاعدة (وليس مجرد إعادة قراءة اللقطة القديمة) لتصحيح أي فرق وتحديث كل الإحصائيات المرتبطة */
+    await refreshAdminMetricsNow(true);
   } catch(err) {
     toast('خطأ: ' + err.message, 'e');
     if (btnEl) btnEl.disabled = false;
@@ -1947,9 +1999,10 @@ async function aqReject(actionType, itemId, btnEl) {
   if (actionType === 'listing' && !reason.trim()) { toast('سبب الرفض مطلوب لهذا النوع من الطلبات', 'e'); return; }
   if (btnEl) btnEl.disabled = true;
   try {
-    await sbRpc(cfg[0], { [cfg[1]]: itemId, p_action: 'reject', p_reason: reason.trim() || null, p_secret: adminHash });
+    await sbRpc(cfg.rpc, { [cfg.idParam]: itemId, p_action: cfg.rejectVerb, p_reason: reason.trim() || null });
     toast('❌ تم الرفض', 'i');
-    await loadAdminMetrics();
+    aqRemoveItemLocally(actionType, itemId);
+    await refreshAdminMetricsNow(true);
   } catch(err) {
     toast('خطأ: ' + err.message, 'e');
     if (btnEl) btnEl.disabled = false;
@@ -2109,8 +2162,8 @@ async function loadSpacesData() {
   showSpLoading();
   try {
     const [spaces, owners] = await Promise.all([
-      sbRpc('admin_get_spaces', { p_secret: adminHash }),
-      sbRpc('admin_get_owners', { p_secret: adminHash }),
+      sbRpc('admin_get_spaces'),
+      sbRpc('admin_get_owners'),
     ]);
     spAllSpaces = spaces || [];
     spAllOwners = owners || [];
@@ -2258,7 +2311,7 @@ function renderOwners(owners) {
 async function manageSpace(spaceId, action, reason) {
   if (!adminHash) return;
   try {
-    await sbRpc('admin_manage_space', { p_space_id: spaceId, p_action: action, p_reason: reason || null, p_secret: adminHash });
+    await sbRpc('admin_manage_space', { p_space_id: spaceId, p_action: action, p_reason: reason || null });
     toast(action === 'approve' ? '✅ تم قبول المساحة' : action === 'reject' ? '❌ تم رفض المساحة' : '🔄 تم التحديث', 's');
     await loadSpacesData();
   } catch(err) {
@@ -2271,7 +2324,7 @@ async function setOwnerPlan(ownerId, planTier) {
   const sel = document.getElementById('plan-sel-' + ownerId);
   const badge = document.getElementById('plan-badge-' + ownerId);
   try {
-    await sbRpc('admin_set_plan_tier', { p_owner_id: ownerId, p_plan_tier: planTier, p_secret: adminHash });
+    await sbRpc('admin_set_plan_tier', { p_owner_id: ownerId, p_plan_tier: planTier });
     if (badge) { badge.className = 'sp-badge ' + planClass(planTier); badge.textContent = planLabel(planTier); }
     toast('🏆 تم تحديث الباقة إلى ' + planLabel(planTier), 's');
   } catch(err) {

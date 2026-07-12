@@ -491,6 +491,9 @@ body {
   box-shadow: var(--ring-focus);
 }
 
+/* نص كامل افتراضياً؛ النسخة المختصرة تظهر فقط عند ≤340px (راجع القاعدة أدناه) — يبقى نصاً بلا أيقونات */
+.bz-org-pill-short { display: none; }
+
 /* (قواعد قديمة أبقيناها لعناصر الكروت) */
 .bz-org-sub {
   font-size: 10px;
@@ -573,12 +576,16 @@ body {
   }
 }
 
-/* أضيق الشاشات (320px): إخفاء لاحقة الشعار فقط في الناف الذي يحمل أزرار المنظم */
+/* أضيق الشاشات (320px): إخفاء لاحقة الشعار + تقصير نص أزرار المنظم (يبقى نصاً، بدون أيقونات)
+   في الناف الذي يحمل أزرار المنظم، لمنع تجاوز عرض الشاشة (bz-manage-icon + gn-bell + الأفاتار) */
 @media (max-width: 340px) {
   .nav:has(.bz-nav-user-wrap) .logo-en,
   .bz-standalone-nav:has(.bz-nav-user-wrap) .logo-en {
     display: none;
   }
+
+  .bz-nav-user-wrap .bz-org-pill-full { display: none; }
+  .bz-nav-user-wrap .bz-org-pill-short { display: inline; }
 }
 
 /* ── ديسكتوب/لابتوب: عندما يحمل الناف أزرار المنظم يضيق المحتوى تدريجياً
@@ -6787,6 +6794,163 @@ footer {
 }
 
 /* ============================================================
+   📊 إحصائيات الأنشطة داخل البازار (مبنية على الحجوزات المؤكدة)
+   ============================================================ */
+.bz-stats-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.bz-stats-chip {
+  flex: 1 1 140px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-xs);
+}
+
+.bz-stats-chip b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  font-family: var(--font-display);
+  line-height: 1.2;
+}
+
+.bz-stats-chip span {
+  font-size: 12.5px;
+  color: var(--ink3);
+}
+
+.bz-stats-body {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+
+.bz-stats-donut-wrap {
+  flex: 0 0 auto;
+  width: 190px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.bz-stats-donut-wrap svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bz-stats-list {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bz-stats-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: background var(--dur-fast);
+}
+
+.bz-stats-row:hover {
+  background: var(--surface2);
+}
+
+.bz-stats-row-fill {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--bz-stat-color, var(--orange));
+  opacity: .10;
+  z-index: 0;
+  border-radius: var(--radius);
+}
+
+.bz-stats-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bz-stat-color, var(--orange));
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.bz-stats-row-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bz-stats-row-count {
+  font-size: 12.5px;
+  color: var(--ink3);
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.bz-stats-row-pct {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink2);
+  z-index: 1;
+  white-space: nowrap;
+  min-width: 38px;
+  text-align: end;
+}
+
+.bz-stats-empty {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--ink3);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 13.5px;
+}
+
+.bz-stats-empty-ico {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 560px) {
+  .bz-stats-body {
+    flex-direction: column;
+    padding: 18px;
+  }
+  .bz-stats-donut-wrap {
+    width: 160px;
+  }
+  .bz-stats-list {
+    width: 100%;
+  }
+}
+
+/* ============================================================
    الوحدات الفرعية (Sub-Spaces)
    ============================================================ */
 
@@ -9040,6 +9204,64 @@ footer {
   border-color: rgba(34, 197, 94, 0.55);
   transform: none;
   box-shadow: none;
+}
+
+/* ── بازار منتهي: طبقة Overlay داكنة فوق الخريطة بالكامل ── */
+.bz-slotmap-wrap {
+  position: relative;
+}
+.bz-slotmap-ended {
+  min-height: 200px;
+}
+.bz-slotmap-ended .bz-slotmap-scroll {
+  filter: grayscale(0.5) blur(1.5px);
+  pointer-events: none;
+  user-select: none;
+}
+.bz-slotmap-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 24px;
+  background: rgba(15, 15, 22, 0.74);
+  border-radius: var(--radius-lg);
+  cursor: not-allowed;
+}
+.bz-slotmap-overlay-ico {
+  font-size: 30px;
+  margin-bottom: 2px;
+}
+.bz-slotmap-overlay-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  max-width: 420px;
+  line-height: 1.6;
+}
+.bz-slotmap-overlay-desc {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 420px;
+  line-height: 1.7;
+}
+.bz-slotmap-overlay-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 4px;
+}
+@media (max-width: 640px) {
+  .bz-slotmap-overlay {
+    padding: 18px 16px;
+  }
+  .bz-slotmap-overlay-ico { font-size: 26px; }
+  .bz-slotmap-overlay-title { font-size: 13.5px; }
+  .bz-slotmap-overlay-desc { font-size: 11.5px; }
 }
 
 /* ── أنيميشن ظهور الخريطة ── */

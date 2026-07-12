@@ -62,14 +62,16 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="../style.css?v=30">
+  <link rel="stylesheet" href="../style.css?v=33">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="../shared/sb-config.js?v=1" defer></script>
-  <script src="/pwa-install.js?v=2" defer></script>
-  <script src="../shared/space-model.js?v=1" defer></script>
-  <script src="../shared/booking.js?v=1" defer></script>
+  <script src="../shared/sb-config.js?v=202607120332" defer></script>
+  <script src="/pwa-install.js?v=202607120332" defer></script>
+  <script src="../shared/space-model.js?v=202607120332" defer></script>
+  <script src="../shared/booking.js?v=202607120332" defer></script>
+  <script src="../shared/account.js?v=202607120332" defer></script>
+  <script src="../shared/plan-badge.js?v=202607120332" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -1300,8 +1302,10 @@
               <select id="su-role">
                 <option value="">اختر نوعك</option>
                 <option value="tenant">مستأجر — صاحب مشروع</option>
-                <option value="owner">صاحب مساحة</option>
               </select>
+              <div style="font-size:11px;color:var(--ink3);margin-top:4px">
+                عندك مساحة تأجّرها؟ سجّل كمستأجر، وبعدها اطلب تحويل حسابك لصاحب مساحة من لوحة التحكم.
+              </div>
             </div>
             <div class="afg" style="margin:0">
               <label>المدينة</label>
@@ -1425,8 +1429,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260623" defer></script>
-  <script src="app.js?v=20260702" defer></script>
+  <script src="/notifications.js?v=202607120332" defer></script>
+  <script src="app.js?v=202607120332" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

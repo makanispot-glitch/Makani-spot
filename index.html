@@ -81,7 +81,7 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=33">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -1435,7 +1435,7 @@
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Badge "موثّق" على صفحة المول</li>
+                </svg>Badge "⭐ شريك Growth" على صفحة المول</li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -1588,13 +1588,13 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro">أسبوعياً</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">Badge الموثوقية</td>
+                <td class="pkg-td pkg-td--label">Badge الشراكة</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val">موثّق</td>
+                <td class="pkg-td pkg-td--val">⭐ شريك Growth</td>
                 <td class="pkg-td pkg-td--val pkg-td--pro">شريك معتمد</td>
               </tr>
               <!-- التسويق -->
@@ -1967,6 +1967,16 @@
       transition:background var(--dur-fast);
     }
     .opp-back:hover{ background:#fff; }
+    .opp-share{
+      position:absolute; top:14px; inset-inline-end:14px; z-index:3;
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(255,255,255,.92); color:var(--ink); border:none;
+      padding:8px 14px; border-radius:var(--radius-pill); font-size:13px; font-weight:700;
+      font-family:var(--font-body); cursor:pointer; box-shadow:var(--shadow-sm);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+      transition:background var(--dur-fast);
+    }
+    .opp-share:hover{ background:#fff; }
     .opp-body{ padding:0 24px; }
     .opp-head{
       display:flex; align-items:flex-end; gap:18px;
@@ -2437,8 +2447,10 @@
               <select id="su-role">
                 <option value="">اختر نوعك</option>
                 <option value="tenant">مستأجر — صاحب مشروع</option>
-                <option value="owner">صاحب مساحة</option>
               </select>
+              <div style="font-size:11px;color:var(--ink3);margin-top:4px">
+                عندك مساحة تأجّرها؟ سجّل كمستأجر، وبعدها اطلب تحويل حسابك لصاحب مساحة من لوحة التحكم.
+              </div>
             </div>
             <div class="afg" style="margin:0">
               <label>المدينة</label>
@@ -3046,11 +3058,13 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=1" defer></script>
-  <script src="/pwa-install.js?v=2" defer></script>
-  <script src="shared/space-model.js?v=1" defer></script>
-  <script src="shared/booking.js?v=1" defer></script>
-  <script src="app.js?v=202607041" defer></script>
+  <script src="shared/sb-config.js?v=202607120332" defer></script>
+  <script src="/pwa-install.js?v=202607120332" defer></script>
+  <script src="shared/space-model.js?v=202607120332" defer></script>
+  <script src="shared/booking.js?v=202607120332" defer></script>
+  <script src="shared/account.js?v=202607120332" defer></script>
+  <script src="shared/plan-badge.js?v=202607120332" defer></script>
+  <script src="app.js?v=202607120332" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">

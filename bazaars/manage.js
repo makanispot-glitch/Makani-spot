@@ -276,9 +276,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     .single();
 
   if (!prof?.is_verified) {
-    showGuard('⭐', 'مخصوص للمنظمين الموثّقين',
-      'يجب أن يكون حسابك موثّقاً كمنظم بازارات لاستخدام هذه الصفحة.',
-      `<a href="/bazaars/verification.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">طلب التوثيق</a>`
+    showGuard('🎪', 'أنت لست منظم بازارات حتى الآن',
+      'لا يمكنك الوصول إلى لوحة إدارة البازارات لأن حسابك غير مسجل كمنظم بازارات. يمكنك التقديم الآن، وبعد الموافقة على طلبك ستتمكن من إنشاء وإدارة البازارات الخاصة بك.',
+      `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+         <a href="/bazaars/verification.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">التقديم لتصبح منظم بازارات</a>
+         <a href="/bazaars/" class="mn-btn" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">العودة إلى صفحة البازارات</a>
+       </div>`
     );
     return;
   }

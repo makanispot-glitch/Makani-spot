@@ -399,16 +399,9 @@ function _resolveActLabel(val) {
   return a ? a.label : val;
 }
 
-function _planTrustBadgeHtml(s) {
-  // مساحة نشرتها مكاني Spot مباشرةً (is_broker = true في لوحة الأدمن)
-  if (s.isBroker) return `<span class="card-trust-badge trust-makani">🏠 مكاني Spot</span>`;
-  const tier = (s.planTier || 'starter').toLowerCase();
-  // صاحب مساحة نوعه بروكر (plan_tier = broker في بروفايله)
-  if (tier === 'broker')  return `<span class="card-trust-badge trust-broker">🏛️ بروكر</span>`;
-  if (tier === 'pro')     return `<span class="card-trust-badge trust-partner">🏆 شريك معتمد</span>`;
-  if (tier === 'growth')  return `<span class="card-trust-badge trust-verified">✓ موثّق</span>`;
-  return '';
-}
+/* _planTrustBadgeHtml انتقلت إلى shared/plan-badge.js (planTrustBadgeCardHtml/planTrustBadgeInlineHtml)
+   — كانت مكرّرة حرفيًا هنا وفي app.js، ونصّها القديم "✓ موثّق" لباقة Growth كان
+   يتصادم مع شارة توثيق الهوية الحقيقية (راجع shared/account.js: identityVerified/organizerVerified). */
 
 function _planCardClass(s) {
   return (s.planTier || 'starter') === 'pro' ? ' space-card--pro' : '';
@@ -475,7 +468,7 @@ function buildCardHtml(s, fromPage) {
 
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
-  const _trustBadge    = _planTrustBadgeHtml(s);
+  const _trustBadge    = planTrustBadgeCardHtml(s);
   const _cardClass     = _planCardClass(s);
 
   return `
@@ -830,7 +823,7 @@ function _renderDetailInfo(s) {
           : hasOwner
             ? (tier === 'broker'  ? 'بروكر معتمد'
              : tier === 'pro'     ? 'شريك معتمد'
-             : tier === 'growth'  ? 'صاحب مساحة موثّق'
+             : tier === 'growth'  ? 'شريك Growth'
              : 'صاحب المساحة')
           : 'ناشر المنصة — مكاني Spot';
 
@@ -1934,6 +1927,16 @@ function goToOwnerDashboard() {
    🔐 القسم الثالث عشر: نظام تسجيل الدخول (Supabase Auth)
    ================================================================ */
 
+/* تحديث فوري للصلاحيات (المرحلة ٦) — عند موافقة أدمن بينما التبويب مفتوح:
+   أعد جلب البروفايل وأعد رسم الناف بلا reload. مسجَّل مرة واحدة فقط. */
+window.addEventListener('gn:permission-changed', async () => {
+  if (!currentUser || !sbClient) return;
+  const { data: profile } = await sbClient.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = profile;
+  currentAvatarUrl = profile?.avatar_url || null;
+  setNavUser(currentUser, profile);
+});
+
 async function initAuth() {
   if (!sbClient) return;
 
@@ -1997,7 +2000,8 @@ function setNavUser(user, profile) {
     const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
     const email     = user.email || '';
     const initial   = name.trim()[0] || '؟';
-    const roleLabel = { tenant: 'مستأجر', owner: 'صاحب مساحة' }[profile?.role] || 'مستخدم';
+    const caps      = getAccountCapabilities(profile);
+    const roleLabel = caps.isOwner ? 'صاحب مساحة' : caps.isTenant ? 'مستأجر' : 'مستخدم';
 
     guestEl.style.display  = 'none';
     loggedEl.style.display = 'flex';
@@ -2018,7 +2022,7 @@ function setNavUser(user, profile) {
     set('dd-role',       roleLabel);
 
     const ownerBtn = document.getElementById('dd-owner-dash-btn');
-    if (ownerBtn) ownerBtn.style.display = profile?.role === 'owner' ? 'flex' : 'none';
+    if (ownerBtn) ownerBtn.style.display = caps.isOwner ? 'flex' : 'none';
 
     updateBnUser(user, profile);
 
@@ -2139,7 +2143,10 @@ async function doEmailSignup() {
       id:         data.user.id,
       full_name:  name,
       phone:      phone,
-      role:       role,
+      /* التسجيل الذاتي كـowner أُغلق من الواجهة (نموذج التسجيل يعرض tenant فقط الآن) —
+         نُثبّت القيمة هنا أيضًا كطبقة حماية ثانية، بصرف النظر عمّا يصل من الفورم.
+         الترقية لـowner تمرّ حصرًا عبر نظام طلبات التحويل. */
+      role:       'tenant',
       city:       city,
       created_at: new Date().toISOString()
     }, { onConflict: 'id' });

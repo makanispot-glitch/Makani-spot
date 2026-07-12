@@ -545,6 +545,7 @@ async function submitContract(e) {
 }
 
 async function deleteContract(id) {
+  if (_guardWrite('حذف عقد')) return;
   if (!confirm('هل تريد حذف هذا العقد؟\nسيُزال المستأجر من القوائم وتُحذف معه مدفوعاته ومخالفاته وتقييماته. لا يمكن التراجع.')) return;
   const sb = getSB();
   if (sb && currentOwner?.id) {
@@ -666,6 +667,7 @@ function closeDepositSettlement(contractId) {
 }
 
 async function submitDepositSettlement(contractId) {
+  if (_guardWrite('تسوية التأمين')) return;
   const c = contractsList.find(x => x.id === contractId);
   if (!c) return;
 
@@ -926,6 +928,34 @@ function setLoginLoading(isLoading) {
  *    لو role = 'owner' → تفتح الداشبورد
  *    لو مش owner       → تعمل signOut وتعرض خطأ
  */
+
+/* يبني كائن currentOwner من صفّ profiles — تستدعيه checkRoleAndProceed
+   وcheckSessionOnLoad معًا بدل تكرار نفس البناء حرفيًا في الدالتين (المرحلة ٣) */
+function _buildCurrentOwner(profile, id, email) {
+  const caps = getAccountCapabilities(profile);
+  const displayName = profile.full_name || email || 'صاحب المساحة';
+  return {
+    id,
+    username: email,
+    email,
+    name:     displayName,
+    place:    profile.place || '',
+    initial:  displayName.charAt(0).toUpperCase(),
+    phone:    profile.phone || '',
+    role:     'owner',
+    planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
+    subscriptionStatus: caps.subscriptionStatus,
+    /* 🪪 حقول البروفايل العام الموحد */
+    avatarUrl:  profile.avatar_url  || '',
+    coverUrl:   profile.cover_url   || '',
+    bio:        profile.bio         || '',
+    entityName: profile.entity_name || '',
+    entityType: profile.entity_type || '',
+    isVerified: caps.identityVerified,
+    roles:      Array.isArray(profile.roles) ? profile.roles : [],
+  };
+}
+
 async function checkRoleAndProceed(user) {
   const sb = getSB();
   if (!sb) {
@@ -959,7 +989,9 @@ async function checkRoleAndProceed(user) {
     return;
   }
 
-  if (profile.role !== 'owner') {
+  const caps = getAccountCapabilities(profile);
+
+  if (!caps.isOwner) {
     showOwnerAccessGate(
       'danger',
       'لوحة أصحاب المساحات غير مفعّلة لهذا الحساب',
@@ -974,7 +1006,7 @@ async function checkRoleAndProceed(user) {
   }
 
   /* ❌ حساب موقوف من الأدمن */
-  if (profile.is_suspended) {
+  if (caps.isSuspended) {
     showOwnerAccessGate(
       'danger',
       'تم إيقاف هذا الحساب مؤقتاً',
@@ -986,27 +1018,7 @@ async function checkRoleAndProceed(user) {
   }
 
   /* ✅ role = owner → نبني currentOwner ونفتح الداشبورد */
-  const displayName = profile.full_name || user.email || 'صاحب المساحة';
-  currentOwner = {
-    id:       user.id,
-    username: user.email,
-    email:    user.email,
-    name:     displayName,
-    place:    profile.place || '',
-    initial:  displayName.charAt(0).toUpperCase(),
-    phone:    profile.phone || '',
-    role:     'owner',
-    planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
-    subscriptionStatus: profile.subscription_status || null,
-    /* 🪪 حقول البروفايل العام الموحد */
-    avatarUrl:  profile.avatar_url  || '',
-    coverUrl:   profile.cover_url   || '',
-    bio:        profile.bio         || '',
-    entityName: profile.entity_name || '',
-    entityType: profile.entity_type || '',
-    isVerified: !!profile.is_verified,
-    roles:      Array.isArray(profile.roles) ? profile.roles : [],
-  };
+  currentOwner = _buildCurrentOwner(profile, user.id, user.email);
 
   /* 🔒 تحقق من حالة الاشتراك */
   const _subStatus = currentOwner.subscriptionStatus;
@@ -1807,6 +1819,7 @@ function renderBazaarOpportunities() {
 
 /* إغلاق فرصة */
 async function closeBazaarOpportunity(id, placeName) {
+  if (_guardWrite('إغلاق فرصة بازار')) return;
   if (!confirm(`إغلاق فرصة "${placeName}"؟\nلن يتمكن المنظمون من تقديم عروض جديدة بعدها.`)) return;
   const { error } = await sb.rpc('close_bazaar_opportunity', { p_request_id: id });
   if (error) { alert('تعذّر الإغلاق: ' + error.message); return; }
@@ -1816,6 +1829,7 @@ async function closeBazaarOpportunity(id, placeName) {
 
 /* إعادة فتح فرصة مُغلقة */
 async function reopenBazaarOpportunity(id, placeName) {
+  if (_guardWrite('إعادة فتح فرصة بازار')) return;
   if (!confirm(`إعادة فتح فرصة "${placeName}"؟\nستعود لاستقبال عروض جديدة وسيُعاد تفعيل العروض المرفوضة.`)) return;
   const { error } = await sb.rpc('reopen_bazaar_opportunity', { p_request_id: id });
   if (error) { alert('تعذّر إعادة الفتح: ' + error.message); return; }
@@ -1987,6 +2001,7 @@ function _renderBzProposalCards(proposals, activeSortBy) {
 
 /* اختيار منظم — Atomic Transaction */
 async function selectBazaarOrganizer(proposalId, orgName) {
+  if (_guardWrite('اختيار منظم بازار')) return;
   if (!confirm(`اختيار "${orgName}" لتنظيم البازار؟\nسيتم رفض باقي العروض تلقائياً وإشعار المنظم المختار.`)) return;
 
   const { error } = await sb.rpc('select_bazaar_organizer', {
@@ -2697,6 +2712,7 @@ function submitPayment(e) {
 }
 
 async function deletePayment(id) {
+  if (_guardWrite('حذف دفعة')) return;
   if (!confirm('هل تريد حذف هذه الدفعة؟')) return;
   const sb = getSB();
   if (sb && currentOwner?.id) {
@@ -2879,6 +2895,7 @@ function submitViolation(e) {
 }
 
 async function deleteViolation(id) {
+  if (_guardWrite('حذف مخالفة')) return;
   if (!confirm('هل تريد حذف هذه المخالفة من السجل؟')) return;
   const sb = getSB();
   if (sb && currentOwner?.id) {
@@ -4101,6 +4118,7 @@ async function submitSpaceEdit() {
       (لا تعديل مباشر على status: العمود محمي عمودياً، والمالك لا يملك صلاحية
       فك إخفاء أدمن بنفسه) ── */
 async function togglePauseSpace(spaceId) {
+  if (_guardWrite('إيقاف/تفعيل مساحة')) return;
   const s = ownerSpacesFull.find(x => x.id === spaceId);
   if (!s) return;
 
@@ -4408,6 +4426,7 @@ function showTenantDetail(id) {
 
 /* حفظ ملاحظات المستأجر في العقد (Supabase) */
 async function saveTenantNotes() {
+  if (_guardWrite('حفظ ملاحظات المستأجر')) return;
   if (!_currentTenantDetailId) { alert('اختر مستأجراً أولاً.'); return; }
   const notes = document.getElementById('td-notes')?.value.trim() || '';
   const sb = getSB();
@@ -5203,6 +5222,7 @@ function setBkFilter(val) {
 
 /* نقل طلب إلى/من قائمة الانتظار (RPC owner_set_booking_waitlist) */
 async function setBookingWaitlist(bookingId, on) {
+  if (_guardWrite('تحديث قائمة الانتظار')) return;
   const sb = getSB();
   if (!sb || !currentOwner?.id) return;
   const btn = event?.currentTarget;
@@ -5282,6 +5302,7 @@ async function submitRejectBooking(bookingId) {
 
 /* التنفيذ الفعلي للرفض/الإلغاء — مشترك بين pending (بسبب) وconfirmed (بدون سبب) */
 async function _doRejectBooking(bookingId, reason) {
+  if (_guardWrite('رفض حجز')) return;
   _confirmingReject.delete(bookingId);
   const bk = bookingsList.find(b => b.id === bookingId);
   const sb  = getSB();
@@ -5398,6 +5419,7 @@ async function approveWaitlist(bookingId) {
 
 /* ── قائمة الانتظار: إزالة / إلغاء ── */
 async function rejectWaitlist(bookingId) {
+  if (_guardWrite('رفض/إزالة من قائمة الانتظار')) return;
   const sb = getSB();
   if (!sb || !currentOwner?.id) return;
   try {
@@ -5417,6 +5439,7 @@ async function rejectWaitlist(bookingId) {
 
 /* ── قائمة الانتظار: تحويل مباشر لعقد ── */
 async function promoteWaitlist(bookingId) {
+  if (_guardWrite('ترقية من قائمة الانتظار')) return;
   const sb = getSB();
   const bk = bookingsList.find(b => b.id === bookingId);
   if (!bk) return;
@@ -5543,6 +5566,7 @@ function closeUnitEdit() {
 }
 
 async function submitUnitEdit() {
+  if (_guardWrite('تعديل وحدة')) return;
   const get = id => document.getElementById(id)?.value?.trim();
   const id   = get('ue-id');
   const code = get('ue-code');
@@ -6087,6 +6111,7 @@ function populateContractSpaceSelect() {
 
 async function submitAddSpace(e) {
   e.preventDefault();
+  if (_guardWrite('نشر مساحة جديدة')) return;
   const btn = document.getElementById('add-space-btn');
   const msg = document.getElementById('add-space-msg');
   if (!btn || !msg) return;
@@ -6514,6 +6539,7 @@ function onRateTenantChange() {
 }
 
 async function submitRating() {
+  if (_guardWrite('حفظ تقييم مستأجر')) return;
   const sel        = document.getElementById('rate-tenant');
   const contractId = sel?.value;
   const msgEl      = document.getElementById('rate-msg');
@@ -6580,6 +6606,7 @@ async function submitRating() {
 
 /* حذف تقييم */
 async function deleteRating(id) {
+  if (_guardWrite('حذف تقييم')) return;
   if (!confirm('هل تريد حذف هذا التقييم؟')) return;
   const sb = getSB();
   if (sb && currentOwner?.id) {
@@ -6595,6 +6622,7 @@ async function deleteRating(id) {
    ⚙️  SETTINGS
    ══════════════════════════════════════════ */
 async function saveSettings() {
+  if (_guardWrite('حفظ الإعدادات')) return;
   const name  = document.getElementById('st-name')?.value.trim();
   const phone = document.getElementById('st-phone')?.value.trim();
   const msgEl = document.getElementById('settings-msg');
@@ -6721,6 +6749,7 @@ function _ppMsg(type, text) {
 
 /* رفع صورة البروفايل (avatar) — يُحفظ في profiles.avatar_url */
 async function uploadProfileAvatar(input) {
+  if (_guardWrite('تحديث صورة البروفايل')) return;
   const file = input.files?.[0];
   if (!file || !currentOwner) return;
   if (file.size > 20 * 1024 * 1024) { _ppMsg('danger', 'الصورة أكبر من 20 ميجا.'); input.value = ''; return; }
@@ -6754,6 +6783,7 @@ async function uploadProfileAvatar(input) {
 
 /* رفع صورة الغلاف — يُحفظ في profiles.cover_url */
 async function uploadProfileCover(input) {
+  if (_guardWrite('تحديث صورة الغلاف')) return;
   const file = input.files?.[0];
   if (!file || !currentOwner) return;
   if (file.size > 20 * 1024 * 1024) { _ppMsg('danger', 'الصورة أكبر من 20 ميجا.'); input.value = ''; return; }
@@ -6787,6 +6817,7 @@ async function uploadProfileCover(input) {
 
 /* حفظ بيانات الجهة (الاسم، النوع، الوصف) في profiles */
 async function saveProfileForm() {
+  if (_guardWrite('حفظ البروفايل العام')) return;
   if (!currentOwner) return;
   const entityName = document.getElementById('pp-entity-name')?.value.trim() || null;
   const entityType = document.getElementById('pp-entity-type')?.value || null;
@@ -6845,6 +6876,7 @@ function applyNotifPrefsToUI() {
 }
 
 async function saveNotifPrefs() {
+  if (_guardWrite('حفظ تفضيلات التنبيهات')) return;
   const sb = getSB();
   if (!sb || !currentOwner?.id) return;
   const get = id => document.getElementById(id)?.checked || false;
@@ -6866,6 +6898,7 @@ async function saveNotifPrefs() {
    🗑️  آلية التفريغ — حذف بيانات المالك التشغيلية
    ══════════════════════════════════════════ */
 async function clearMyData() {
+  if (_guardWrite('تفريغ البيانات')) return;
   if (!confirm('⚠️ سيتم حذف جميع العقود والمدفوعات والمخالفات والتقييمات نهائياً.\nالمساحات وبياناتك الشخصية لن تتأثر.\n\nهل أنت متأكد؟')) return;
   const sb = getSB();
   if (!sb || !currentOwner?.id) { alert('تعذّر الاتصال — أعد تحميل الصفحة.'); return; }
@@ -7076,7 +7109,9 @@ async function checkSessionOnLoad() {
     .eq('id', session.user.id)
     .single();
 
-  if (error || !profile || profile.role !== 'owner') {
+  const caps = profile ? getAccountCapabilities(profile) : null;
+
+  if (error || !profile || !caps.isOwner) {
     _ss.rm('ms_owner');
     showOwnerAccessGate(
       'danger',
@@ -7091,7 +7126,7 @@ async function checkSessionOnLoad() {
   }
 
   /* ❌ حساب موقوف من الأدمن */
-  if (profile.is_suspended) {
+  if (caps.isSuspended) {
     _ss.rm('ms_owner');
     showOwnerAccessGate(
       'danger',
@@ -7103,27 +7138,7 @@ async function checkSessionOnLoad() {
   }
 
   /* ✅ owner — افتح الداشبورد */
-  const displayName = profile.full_name || session.user.email || 'صاحب المساحة';
-  currentOwner = {
-    id:       session.user.id,
-    username: session.user.email,
-    email:    session.user.email,
-    name:     displayName,
-    place:    profile.place || '',
-    initial:  displayName.charAt(0).toUpperCase(),
-    phone:    profile.phone || '',
-    role:     'owner',
-    planTier: (profile.plan_tier || profile.planTier || 'starter').toLowerCase().trim() || 'starter',
-    subscriptionStatus: profile.subscription_status || null,
-    /* 🪪 حقول البروفايل العام الموحد */
-    avatarUrl:  profile.avatar_url  || '',
-    coverUrl:   profile.cover_url   || '',
-    bio:        profile.bio         || '',
-    entityName: profile.entity_name || '',
-    entityType: profile.entity_type || '',
-    isVerified: !!profile.is_verified,
-    roles:      Array.isArray(profile.roles) ? profile.roles : [],
-  };
+  currentOwner = _buildCurrentOwner(profile, session.user.id, session.user.email);
   const _subSt = currentOwner.subscriptionStatus;
   const _expSub = _subSt === 'expired' || _subSt === 'cancelled' || _subSt === 'suspended';
   if (currentOwner.planTier === 'starter' && !_expSub) return; /* starter حقيقي — لا تفتح الداشبورد */

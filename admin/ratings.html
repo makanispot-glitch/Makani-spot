@@ -357,7 +357,7 @@ async function admLoad() {
   document.getElementById('adm-table-container').innerHTML =
     '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
   try {
-    const { data, error } = await sbDirect.rpc('admin_list_user_ratings', { p_secret: '' });
+    const { data, error } = await sbDirect.rpc('admin_list_user_ratings');
     if (error) throw error;
     admAll = data || [];
     admUpdateStats();
@@ -495,7 +495,7 @@ async function admSetStatus(id, status, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
   try {
     const { error } = await sbDirect.rpc('admin_set_rating_status', {
-      p_rating_id: id, p_status: status, p_secret: '',
+      p_rating_id: id, p_status: status,
     });
     if (error) throw error;
     const row = admAll.find(r => r.id === id);

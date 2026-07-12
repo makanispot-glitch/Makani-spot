@@ -496,7 +496,7 @@ async function sbRpc(fn, params) {
 async function loadAll() {
   showTableLoading();
   try {
-    const data  = await sbRpc('admin_get_owners', { p_secret: adminHash });
+    const data  = await sbRpc('admin_get_owners');
     allOwners   = data || [];
     renderKPIs();
     applyFilters();
@@ -719,14 +719,12 @@ async function saveSub() {
     await sbRpc('admin_set_plan_tier', {
       p_owner_id:  editingOwner.id,
       p_plan_tier: newPlan,
-      p_secret:    adminHash,
       p_ends_at:   endVal ? endVal + 'T23:59:59+00:00' : null,
       p_notes:     notes || null,
     });
 
     // 2. Upsert في subscriptions لتحديث الحالة والتجديد التلقائي
     await sbRpc('admin_upsert_subscription', {
-      p_secret:     adminHash,
       p_user_id:    editingOwner.id,
       p_plan:       newPlan,
       p_status:     newStatus,

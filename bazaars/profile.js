@@ -153,10 +153,13 @@ async function _loadMyProfile() {
     bzOrganizerRatings     = bzRatingsRes.data || [];
     if (rateableRes.error) console.warn('[profile] rateable participants:', rateableRes.error.message);
 
-    /* ── تحقق من صاحب المساحة عبر upgrade_requests أو role ── */
+    /* ── تحقق من صاحب المساحة عبر upgrade_requests أو role ──
+       upgrade_requests.status==='approved' إشارة إضافية خاصة بهذه الصفحة وحدها
+       (تُظهر قسم المساحات فور الموافقة قبل أي reload يُحدّث profiles.role) —
+       تبقى محلية هنا عمدًا، لا تُدمَج داخل getAccountCapabilities المشتركة. */
     const upgradeStatus = upgradeRes.data?.status || null;
     isSpaceOwner = upgradeStatus === 'approved'
-                || userProfile?.role === 'owner';
+                || getAccountCapabilities(userProfile, profile).isOwner;
 
   } catch (_) {}
 
@@ -253,7 +256,7 @@ function _buildCompletionCard(profile, userProfile, bazaars) {
 function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating) {
   const content = document.getElementById('op-content');
 
-  const isVerified  = profile?.is_verified === true;
+  const isVerified  = getAccountCapabilities(userProfile, profile).organizerVerified;
   const displayName = profile?.full_name || userProfile?.full_name
                    || currentUser.email?.split('@')[0] || '?';
   const initial     = displayName[0]?.toUpperCase() || '؟';
@@ -361,6 +364,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
         ${socialHtml}
         <div class="op-hero-actions" style="margin-top:10px">
           <button class="op-qn-btn primary" onclick="openEditModal()">✍️ تعديل البيانات</button>
+          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="shareMyOrganizerProfile()">🔗 مشاركة البروفايل</button>` : ''}
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -1185,6 +1189,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
         ${pubBioHtml}
         ${pubSocialHtml}
         <div class="op-hero-actions" style="margin-top:${pubBioHtml || pubSocialHtml ? '10px' : '0'}">
+          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="sharePublicOrganizerProfile()">🔗 مشاركة البروفايل</button>` : ''}
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -1550,6 +1555,31 @@ function showSuccessToast(msg, isErr = false) {
   toast.style.cssText = `display:block;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;font-weight:800;font-size:14px;font-family:var(--font-display);padding:13px 30px;border-radius:50px;z-index:9999;box-shadow:0 6px 28px ${shd};animation:toastIn .3s ease`;
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+/* ── مشاركة رابط البروفايل — Web Share API أو نسخ للحافظة ── */
+function _shareOrganizerLink(url, shareText) {
+  if (navigator.share) {
+    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(() => showSuccessToast('✅ تم نسخ رابط البروفايل!'))
+      .catch(() => showSuccessToast('📋 الرابط: ' + url));
+  }
+}
+
+/* مشاركة بروفايلي (ملفي الشخصي كمنظم) — الرابط العام دائمًا ?organizer=معرّفي */
+function shareMyOrganizerProfile() {
+  if (!currentUser) return;
+  const url = `${window.location.origin}/bazaars/profile.html?organizer=${currentUser.id}`;
+  _shareOrganizerLink(url, 'شوف بروفايلي كمنظم بازارات على مكاني Spot');
+}
+
+/* مشاركة بروفايل منظم عام (من صفحة الزيارة) — الرابط الحالي أصلاً ?organizer=/?user= */
+function sharePublicOrganizerProfile() {
+  const url = window.location.href;
+  const name = document.querySelector('.op-name')?.childNodes[0]?.textContent?.trim() || 'هذا المنظم';
+  _shareOrganizerLink(url, `شوف بروفايل ${name} على مكاني Spot`);
 }
 
 
