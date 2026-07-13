@@ -103,12 +103,15 @@ async function _loadMyProfile() {
   let listings     = [];
   let isSpaceOwner = false;
   let bazaarRating = { total: 0, avg_rating: 0 }; // متوسط تقييمي كمنظم — من bazaar_reviews
+  let reputation   = null; // get_user_reputation — سمعتي الشخصية (كمستأجر/مشارك)، خاصة بهذه الصفحة الذاتية فقط
+  let recvRatings  = [];   // user_ratings المستلمة من أصحاب المساحات/المنظمين
 
   try {
     const [
       orgProfileRes, userProfileRes, reviewsRes,
       reqRes, bazaarsRes, listingsRes, upgradeRes,
-      rateableRes, bzRatingsRes, bazaarRatingRes
+      rateableRes, bzRatingsRes, bazaarRatingRes,
+      reputationRes, recvRatingsRes
     ] = await Promise.all([
       sbClient.from('organizer_profiles').select('*')
               .eq('user_id', currentUser.id).single(),
@@ -138,6 +141,11 @@ async function _loadMyProfile() {
               .order('created_at', { ascending: false }),
       /* ⭐ متوسط تقييمي كمنظم — مبني على تقييمات كل بازاراتي (bazaar_reviews) */
       sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: currentUser.id }),
+      /* 🛡️ سمعتي الشخصية — نفس مصدر البيانات المستخدم أصلاً بالعرض العام، لكن هنا للاستخدام الذاتي الخاص فقط */
+      sbClient.rpc('get_user_reputation', { p_user_id: currentUser.id }),
+      sbClient.from('user_ratings').select('*')
+              .eq('ratee_id', currentUser.id).eq('status', 'visible')
+              .order('created_at', { ascending: false }),
     ]);
 
     profile     = orgProfileRes.data  || null;
@@ -147,6 +155,8 @@ async function _loadMyProfile() {
     bazaars     = bazaarsRes.data     || [];
     listings    = listingsRes.data    || [];
     bazaarRating = bazaarRatingRes.data || bazaarRating;
+    reputation  = reputationRes.data  || null;
+    recvRatings = recvRatingsRes.data || [];
 
     /* تقييم المشاركين (حالة وحدات الوحدة على مستوى الموديول) */
     bzRateableParticipants = rateableRes.data || [];
@@ -197,14 +207,14 @@ async function _loadMyProfile() {
     myUserProfile = { ...(myUserProfile || {}), ...syncPayload };
   }
 
-  _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating);
+  _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating, reputation, recvRatings);
 }
 
 
 /* ================================================================
    🎯 كارت اكتمال الملف الشخصي
    ================================================================ */
-function _buildCompletionCard(profile, userProfile, bazaars) {
+function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSection) {
   const hasSocial = !!(profile?.facebook_url || profile?.instagram_url || profile?.tiktok_url);
   const checks = [
     { done: !!(profile?.avatar_url),                       pts: 20, label: 'أضف صورة شخصية',   tip: 'تزيد ثقة العارضين بك' },
@@ -224,7 +234,7 @@ function _buildCompletionCard(profile, userProfile, bazaars) {
   return `
   <div class="op-completion-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div style="font-size:13.5px;font-weight:900;color:var(--ink)">🎯 اكتمال ملفك كمنظّم بازار</div>
+      <div style="font-size:13.5px;font-weight:900;color:var(--ink)">${showOrganizerSection ? '🎯 اكتمال ملفك كمنظّم بازار' : '🎯 اكتمال ملفك الشخصي'}</div>
       <div style="font-size:20px;font-weight:900;color:${color};font-family:var(--font-display)">${pct}%</div>
     </div>
     <div style="font-size:11.5px;color:var(--ink3);margin-bottom:8px">
@@ -253,10 +263,11 @@ function _buildCompletionCard(profile, userProfile, bazaars) {
 /* ================================================================
    🎨 عرض ملفي الشخصي
    ================================================================ */
-function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating) {
+function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating, reputation, recvRatings) {
   const content = document.getElementById('op-content');
 
-  const isVerified  = getAccountCapabilities(userProfile, profile).organizerVerified;
+  const caps        = getAccountCapabilities(userProfile, profile);
+  const isVerified   = caps.organizerVerified;
   const displayName = profile?.full_name || userProfile?.full_name
                    || currentUser.email?.split('@')[0] || '?';
   const initial     = displayName[0]?.toUpperCase() || '؟';
@@ -314,6 +325,10 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   const avgRating = bazaarRating?.total
     ? Number(bazaarRating.avg_rating).toFixed(1)
     : null;
+
+  /* ── هل هذا الحساب "منظم" فعليًا (نشاط حقيقي/توثيق/طلب قيد المراجعة)، وليس مجرد تينانت؟
+     يحكم أي قسم إداري خاص بالمنظّم يظهر في هذه الصفحة الذاتية — لا يُبنى قالب منظم افتراضيًا. ── */
+  const showOrganizerSection = caps.isOrganizer || isVerified || totalBaz > 0 || reqStatus === 'pending';
 
   /* ── أوسمة ── */
   const { primary: primaryBadges, secondary: secBadges } = _computeBadges({
@@ -420,11 +435,13 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <a class="op-qn-btn" href="/market/">🛍️ السوق</a>
       <a class="op-qn-btn" href="/?p=dashboard">📊 لوحة التحكم</a>
       ${isVerified ? `<a class="op-qn-btn primary" href="/bazaars/organize.html">✦ نظّم بازار جديد</a>` : ''}
+      ${showOrganizerSection ? `<a class="op-qn-btn" href="/bazaars/profile.html?user=${currentUser.id}" target="_blank">👁️ بروفايلي العام</a>` : ''}
     </div>
   </div>
 
   <!-- ═══════ الإحصائيات ═══════ -->
   <div class="op-stats-grid">
+    ${showOrganizerSection ? `
     <div class="op-stat-card">
       <div class="op-stat-num">${totalBaz}</div>
       <div class="op-stat-lbl">بازار نظّمته</div>
@@ -437,15 +454,18 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
       <div class="op-stat-lbl">متوسط التقييم</div>
       ${bazaarRating?.total > 0 ? `<div class="op-stat-note">بناءً على ${bazaarRating.total} تقييم</div>` : ''}
-    </div>
+    </div>` : ''}
     <div class="op-stat-card">
       <div class="op-stat-num">${activeListings}</div>
       <div class="op-stat-lbl">إعلان نشط في السوق</div>
     </div>
   </div>
 
+  <!-- ═══════ سمعتي — خاصة بهذه الصفحة الذاتية فقط، لا تُعرض على أي بروفايل عام ═══════ -->
+  ${_pubRepPanelHtml(reputation, recvRatings)}
+
   <!-- ═══════ كارت اكتمال الملف الشخصي ═══════ -->
-  ${_buildCompletionCard(profile, userProfile, bazaars)}
+  ${_buildCompletionCard(profile, userProfile, bazaars, showOrganizerSection)}
 
   <!-- ═══════ عمودان: البيانات الشخصية + الإعلانات ═══════ -->
   <div class="op-two-col">
@@ -489,7 +509,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
       ${(profile?.whatsapp || profile?.region || isVerified || reqStatus || isSpaceOwner) ? `
       <div style="margin-top:14px;padding-top:12px;border-top:1.5px solid var(--border)">
-        <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">🎪 بيانات المنظّم</div>
+        <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">${showOrganizerSection ? '🎪 بيانات المنظّم' : '🏪 بيانات إضافية'}</div>
+        ${showOrganizerSection ? `
         <div class="op-data-row">
           <div class="op-data-lbl">التوثيق كمنظم</div>
           <div class="op-data-val">${
@@ -499,7 +520,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
                 ? `<span class="op-pending-badge" style="font-size:10px;padding:3px 8px">⏳ قيد المراجعة</span>`
                 : `<span class="op-unverified-badge" style="font-size:10px;padding:3px 8px">◌ غير موثّق</span>`
           }</div>
-        </div>
+        </div>` : ''}
         ${profile?.whatsapp ? `
         <div class="op-data-row">
           <div class="op-data-lbl">واتساب</div>
@@ -529,7 +550,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
   </div>
 
-  <!-- ═══════ بازاراتي ═══════ -->
+  <!-- ═══════ بازاراتي — تظهر فقط لمن طابق تعريف المنظّم فعلاً، لا لكل تينانت ═══════ -->
+  ${showOrganizerSection ? `
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
       <span>🎪 بازاراتي كمنظم (${totalBaz})</span>
@@ -567,7 +589,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       لم تنظّم أي بازار بعد
       ${isVerified ? `<br><a href="/bazaars/organize.html" style="color:var(--orange);font-weight:700">ابدأ تنظيم أول بازار →</a>` : ''}
     </div>`}
-  </div>
+  </div>` : ''}
 
   <!-- ═══════ تقييم المشاركين في بازاراتك (المنظم → المستأجر) ═══════ -->
   ${totalBaz > 0 ? `
@@ -959,23 +981,21 @@ async function _loadPublicProfile(userId) {
   let organizer  = null;   // organizer_profiles
   let reviews    = [];
   let bazaars    = [];
-  let reputation = null;   // get_user_reputation (السمعة كمستأجر)
-  let recvRatings = [];    // user_ratings المستلمة من أصحاب المساحات/المنظمين
   let totalExhibitors = 0; // إجمالي الحجوزات المؤكدة في كل بازارات هذا المنظم
   let bazaarRating = { total: 0, avg_rating: 0 }; // متوسط تقييمه كمنظم — من bazaar_reviews
 
+  /* ⚠️ لا تُجلب هنا "السمعة كمستأجر" (get_user_reputation/user_ratings) عمدًا —
+     هذه بيانات شخصية عن التينانت الكامن خلف الحساب ولا يجوز عرضها على أي صفحة
+     عامة قابلة للمشاركة، حتى لو كان صاحبها أيضًا منظم بازارات موثّق. تبقى حصرًا
+     في _loadMyProfile للعرض الذاتي الخاص. */
   try {
-    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, repRes, recvRes, exhibitorsRes, bazaarRatingRes] = await Promise.all([
+    const [profileRes, orgProfileRes, reviewsRes, bazaarsRes, exhibitorsRes, bazaarRatingRes] = await Promise.all([
       sbClient.from('public_profiles').select('full_name,created_at,roles,city').eq('id', userId).single(),
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
       sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots,available_slots,status,is_archived,event_links')
               .eq('organizer_id', userId).eq('is_deleted', false).order('date_start', { ascending: false }),
-      sbClient.rpc('get_user_reputation', { p_user_id: userId }),
-      sbClient.from('user_ratings').select('*')
-              .eq('ratee_id', userId).eq('status', 'visible')
-              .order('created_at', { ascending: false }),
       sbClient.rpc('get_organizer_total_exhibitors', { p_organizer_id: userId }),
       sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: userId }),
     ]);
@@ -984,18 +1004,16 @@ async function _loadPublicProfile(userId) {
     organizer   = orgProfileRes.data || null;
     reviews     = reviewsRes.data   || [];
     bazaars     = bazaarsRes.data   || [];
-    reputation  = repRes.data       || null;
-    recvRatings = recvRes.data      || [];
     totalExhibitors = exhibitorsRes.data || 0;
     bazaarRating = bazaarRatingRes.data || bazaarRating;
   } catch (e) {
     console.warn('[profile] public load error:', e.message);
   }
 
-  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings, totalExhibitors, bazaarRating);
+  _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, totalExhibitors, bazaarRating);
 }
 
-function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, reputation, recvRatings, totalExhibitors, bazaarRating) {
+function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, totalExhibitors, bazaarRating) {
   const content = document.getElementById('op-content');
 
   /* اسم المستخدم — من profiles أو organizer_profiles */
@@ -1092,6 +1110,21 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     listings: [], avgRating: avgRating ? parseFloat(avgRating) : 0,
     reviewsCount: bazaarRating?.total || 0,
   });
+
+  /* ⚠️ حارس المبدأ: بروفايل التينانت ليس عامًا ولا يدعم المشاركة — إن لم يطابق هذا
+     الحساب أي دور عام (لا توثيق منظم، لا بازارات فعلية، لا وسم صاحب مساحة) فلا يوجد
+     "بروفايل عام" له أصلاً، بصرف النظر عمّن يملك المعرّف أو كيف وصل لهذا الرابط
+     (مثال حقيقي: لوحة الأدمن كانت تفتح هذا الرابط لأي تينانت مُقيَّم). نفس معيار
+     ظهور زر "مشاركة البروفايل" أدناه — لا حارس جديد منفصل، إعادة استخدام كاملة. */
+  if (!primaryBadges.length) {
+    content.innerHTML = `
+      <div style="text-align:center;padding:80px 24px">
+        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <div style="font-size:15px;color:var(--ink3)">لا يوجد بروفايل عام لهذا الحساب</div>
+        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">← الرئيسية</a>
+      </div>`;
+    return;
+  }
 
   /* شارة أداء المنظم (🥉/🥈/🥇) */
   if (completedBazaars.length >= 6 && successRate !== null && successRate >= 90 && avgRating && parseFloat(avgRating) >= 4.0) {
@@ -1233,8 +1266,8 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, r
     </div>
   </div>
 
-  <!-- ═══════ السمعة كمستأجر (تقييمات أصحاب المساحات والمنظمين) ═══════ -->
-  ${_pubRepPanelHtml(reputation, recvRatings)}
+  <!-- ملاحظة: لا قسم "سمعة كمستأجر" هنا عمدًا — بيانات شخصية عن التينانت، تبقى حصرًا
+       في الصفحة الذاتية الخاصة (_renderMyProfile)، لا تُعرض على أي بروفايل عام. -->
 
   <!-- ═══════ سجل الأداء ═══════ -->
   ${hasPerf ? `

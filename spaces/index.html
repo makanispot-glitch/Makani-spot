@@ -66,12 +66,12 @@
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="../shared/sb-config.js?v=202607121509" defer></script>
-  <script src="/pwa-install.js?v=202607121509" defer></script>
-  <script src="../shared/space-model.js?v=202607121509" defer></script>
-  <script src="../shared/booking.js?v=202607121509" defer></script>
-  <script src="../shared/account.js?v=202607121509" defer></script>
-  <script src="../shared/plan-badge.js?v=202607121509" defer></script>
+  <script src="../shared/sb-config.js?v=202607132146" defer></script>
+  <script src="/pwa-install.js?v=202607132146" defer></script>
+  <script src="../shared/space-model.js?v=202607132146" defer></script>
+  <script src="../shared/booking.js?v=202607132146" defer></script>
+  <script src="../shared/account.js?v=202607132146" defer></script>
+  <script src="../shared/plan-badge.js?v=202607132146" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -1367,6 +1367,8 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
           <span>إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
         </div>
+        <div id="confirm-alert"></div>
+        <button id="btn-resend-confirm" class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()">إعادة إرسال رسالة التأكيد</button>
         <button class="btn-auth-submit" onclick="showPage('login')">ارجع لتسجيل الدخول</button>
       </div>
     </div>
@@ -1429,8 +1431,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=202607121509" defer></script>
-  <script src="app.js?v=202607121509" defer></script>
+  <script src="/notifications.js?v=202607132146" defer></script>
+  <script src="app.js?v=202607132146" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

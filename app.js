@@ -1679,6 +1679,18 @@ async function loadOwnerProfile(userId) {
     const { data, error } = await sbClient.rpc('get_public_profile', { p_user_id: userId });
     if (error) throw error;
     if (!data || !data.found) { root.innerHTML = _oppNotFound(); return; }
+
+    // إثراء اختياري لبطاقة "الجودة" (متوسط تقييم كمنظم) — بدون أي تعديل على RPC get_public_profile
+    // نفسها أو على قاعدة البيانات: مجرد استدعاء RPC موجود أصلاً وممنوح لـ anon (نفس المستخدم في
+    // bazaars/profile.js). لا يُستدعى إلا لحساب يحمل وسم bazaar_organizer فعلاً.
+    const oppRoles = Array.isArray(data.profile?.roles) ? data.profile.roles : [];
+    if (oppRoles.includes('bazaar_organizer')) {
+      try {
+        const { data: ratingData } = await sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: userId });
+        if (ratingData?.total) data.organizerRating = ratingData;
+      } catch (_) {}
+    }
+
     renderOwnerProfile(data);
   } catch (e) {
     console.warn('[owner-profile] load error:', e.message || e);
@@ -1729,9 +1741,12 @@ function renderOwnerProfile(data) {
   const canShare = effectiveRoles.includes('space_owner') || effectiveRoles.includes('bazaar_organizer');
 
   // الإحصائيات
+  const orgRating = data.organizerRating;
+  const orgAvg = orgRating?.total ? Number(orgRating.avg_rating).toFixed(1) : null;
   const statsHtml = `
     ${spaces.length  ? `<div class="opp-stat"><b>${spaces.length}</b><span>مساحة منشورة</span></div>` : ''}
     ${bazaars.length ? `<div class="opp-stat"><b>${bazaars.length}</b><span>بازار / فعالية</span></div>` : ''}
+    ${orgAvg ? `<div class="opp-stat"><b>${orgAvg} ⭐</b><span>متوسط التقييم كمنظم</span></div>` : ''}
     ${p.region ? `<div class="opp-stat"><b>📍</b><span>${_oppEsc(p.region)}</span></div>` : ''}`;
 
   // روابط التواصل (إن وُجدت من organizer_profiles)
@@ -2246,7 +2261,10 @@ async function doEmailSignup() {
       'User already registered': 'البريد ده مسجّل بالفعل — سجّل دخولك',
       'Password should be at least 6 characters': 'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
     };
-    showAuthAlert('signup-alert', 'error', msgs[error.message] || error.message);
+    const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
+      ? 'في طلبات كتير اتبعتت على البريد ده خلال وقت قصير — استنى شوية وحاول تاني.'
+      : null;
+    showAuthAlert('signup-alert', 'error', msgs[error.message] || friendly || error.message);
     return;
   }
 
@@ -2266,8 +2284,33 @@ async function doEmailSignup() {
 
   trackEvent('signup_completed', { method: 'email' });
   const addrEl = document.getElementById('confirm-em-addr');
-  if (addrEl) addrEl.textContent = email;
+  if (addrEl) { addrEl.textContent = email; addrEl.dataset.email = email; }
   showPage('confirm');
+}
+
+let resendConfirmCooldownUntil = 0;
+
+async function resendConfirmEmail() {
+  if (!sbClient) return;
+  const email = document.getElementById('confirm-em-addr')?.dataset.email;
+  if (!email) return;
+  if (Date.now() < resendConfirmCooldownUntil) return;
+
+  clearAuthAlert('confirm-alert');
+  setBtnLoading('btn-resend-confirm', true);
+  const { error } = await sbClient.auth.resend({ type: 'signup', email });
+  setBtnLoading('btn-resend-confirm', false, 'إعادة إرسال رسالة التأكيد');
+
+  if (error) {
+    const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
+      ? 'لسه من لحظات بعتنا الرسالة — استنى شوية وحاول تاني.'
+      : error.message;
+    showAuthAlert('confirm-alert', 'error', friendly);
+    return;
+  }
+
+  resendConfirmCooldownUntil = Date.now() + 60000;
+  showAuthAlert('confirm-alert', 'success', 'تم إرسال الرسالة تاني. لو لسه ملقتهاش خلال كذا دقيقة، تواصل معانا.');
 }
 
 

@@ -46,11 +46,14 @@
 /* ── Page ── */
 .org-page { min-height: 100vh; background: var(--surface2); padding-bottom: 80px; }
 
-/* Hero */
+/* Hero — ارتفاع مرن (auto) دائماً؛ overflow:hidden أُزيل عمداً: كان يجعل حساب الارتفاع
+   التلقائي أقصر من محتواه الفعلي بمجرد أن يلتف النص لسطرين على الشاشات الضيقة، فيُقصّ
+   أسفل الفقرة (مؤكَّد بالقياس المباشر: 115px محسوبة مقابل 174px مطلوبة فعلياً على 375px).
+   لا داعي له أصلاً: طبقتا الخلفية الزخرفيتان أدناه بحجم inset:0 فلا تتجاوزان حدود العنصر. */
 .org-hero {
   background: var(--navy-700);
-  padding: 44px 32px 36px; text-align: center; color: #fff;
-  position: relative; overflow: hidden;
+  padding: 44px 32px 44px; text-align: center; color: #fff;
+  position: relative;
 }
 .org-hero::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -66,7 +69,7 @@
 .org-hero > * { position: relative; z-index: 1; }
 .org-hero h1 { font-size: 26px; font-weight: 900; font-family: var(--font-display); margin-bottom: 8px; }
 .org-hero h1 span { color: var(--orange); }
-.org-hero p { font-size: 14px; color: rgba(255,255,255,0.65); font-family: var(--font-body); max-width: 520px; margin: 0 auto; }
+.org-hero p { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.65); font-family: var(--font-body); max-width: 520px; margin: 0 auto; }
 
 /* Step indicator */
 .org-steps {
@@ -945,8 +948,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-<script src="/notifications.js?v=202607121509" defer></script>
+<script src="/notifications.js?v=202607132146" defer></script>
 <script src="../media-handler.js" defer></script>
-<script src="organize.js?v=202607121509" defer></script>
+<script src="organize.js?v=202607132146" defer></script>
 </body>
 </html>

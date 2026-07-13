@@ -172,11 +172,9 @@ function bzRenderNavUser() {
 
 
         ${_bzIsOrganizer() ? `
-        <a class="bz-org-pill" href="/bazaars/organize.html" title="نظّم بازارك">
-          <span class="bz-org-pill-full">نظّم بازارك</span><span class="bz-org-pill-short">نظّم</span>
-        </a>
-        <a class="bz-org-pill" href="/bazaars/opportunities.html" title="فرص الاستضافة">
-          <span class="bz-org-pill-full">فرص الاستضافة</span><span class="bz-org-pill-short">فرص</span>
+        <a class="bz-cta-organize" href="/bazaars/organize.html" title="إنشاء بازار جديد">
+          <svg class="bz-cta-organize-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="bz-cta-organize-full">إنشاء بازار جديد</span><span class="bz-cta-organize-short">بازار جديد</span>
         </a>` : ''}
 
         <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
@@ -193,6 +191,20 @@ function bzRenderNavUser() {
               <div class="nav-dropdown-email">${email}</div>
               <div class="nav-dropdown-role">${currentCapabilities?.organizerVerified ? 'منظم بازارات موثّق ✓' : _bzIsOrganizer() ? 'منظم بازارات' : 'مستخدم البازارات'}</div>
             </div>
+            ${_bzIsOrganizer() ? `
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/organize.html'">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              إنشاء بازار جديد
+            </button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/manage.html'">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="1.6" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg>
+              إدارة البازارات
+            </button>
+            <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/opportunities.html'">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21h16"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 21v-5h4v5"/><path d="M10 10h.01M14 10h.01M10 14h.01M14 14h.01"/></svg>
+              فرص الاستضافة
+            </button>
+            <div class="nav-dropdown-sep"></div>` : ''}
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
               الملف الشخصي

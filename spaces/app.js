@@ -2134,7 +2134,10 @@ async function doEmailSignup() {
       'User already registered':                  'البريد ده مسجّل بالفعل — سجّل دخولك',
       'Password should be at least 6 characters': 'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
     };
-    showAuthAlert('signup-alert', 'error', msgs[error.message] || error.message);
+    const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
+      ? 'في طلبات كتير اتبعتت على البريد ده خلال وقت قصير — استنى شوية وحاول تاني.'
+      : null;
+    showAuthAlert('signup-alert', 'error', msgs[error.message] || friendly || error.message);
     return;
   }
 
@@ -2154,8 +2157,33 @@ async function doEmailSignup() {
 
   trackEvent('signup_completed', { method: 'email' });
   const addrEl = document.getElementById('confirm-em-addr');
-  if (addrEl) addrEl.textContent = email;
+  if (addrEl) { addrEl.textContent = email; addrEl.dataset.email = email; }
   showPage('confirm');
+}
+
+let resendConfirmCooldownUntil = 0;
+
+async function resendConfirmEmail() {
+  if (!sbClient) return;
+  const email = document.getElementById('confirm-em-addr')?.dataset.email;
+  if (!email) return;
+  if (Date.now() < resendConfirmCooldownUntil) return;
+
+  clearAuthAlert('confirm-alert');
+  setBtnLoading('btn-resend-confirm', true);
+  const { error } = await sbClient.auth.resend({ type: 'signup', email });
+  setBtnLoading('btn-resend-confirm', false, 'إعادة إرسال رسالة التأكيد');
+
+  if (error) {
+    const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
+      ? 'لسه من لحظات بعتنا الرسالة — استنى شوية وحاول تاني.'
+      : error.message;
+    showAuthAlert('confirm-alert', 'error', friendly);
+    return;
+  }
+
+  resendConfirmCooldownUntil = Date.now() + 60000;
+  showAuthAlert('confirm-alert', 'success', 'تم إرسال الرسالة تاني. لو لسه ملقتهاش خلال كذا دقيقة، تواصل معانا.');
 }
 
 
