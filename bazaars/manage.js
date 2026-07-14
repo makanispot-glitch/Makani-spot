@@ -255,6 +255,9 @@ async function loadActivityFeed(bazaarId) {
 document.addEventListener('DOMContentLoaded', async () => {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  /* رجوع ذكي حسب المصدر — قبل الحراسة حتى يعمل على شاشة الحراسة أيضاً */
+  resolveBackNav();
+
   const { data: { session } } = await sb.auth.getSession();
   me = session?.user || null;
 
@@ -296,6 +299,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (_found) openBazaarDetail(_deepId);
   }
 });
+
+/* ══════════════════════════════════════════
+   رجوع ذكي حسب المصدر (Navigation State)
+   يُحسَب هدف زر الرجوع من document.referrer (نفس الأصل) عبر قائمة بيضاء،
+   مع fallback ثابت إلى قائمة البازارات — بلا اعتماد على history.back()
+   الذي يعيد إنتاج مشكلة المرور بصفحات وسيطة.
+   ══════════════════════════════════════════ */
+function resolveBackNav() {
+  const el = document.getElementById('bz-nav-back');
+  if (!el) return;
+
+  const MAP = {
+    '/bazaars/':             { href: '/bazaars/',              label: '← البازارات' },
+    '/bazaars/index.html':   { href: '/bazaars/',              label: '← البازارات' },
+    '/bazaars/profile.html': { href: '/bazaars/profile.html', label: '← ملفي' },
+  };
+  const FALLBACK = { href: '/bazaars/', label: '← البازارات' };
+
+  let target = FALLBACK;
+  try {
+    const ref = document.referrer;
+    if (ref) {
+      const u = new URL(ref);
+      /* نفس الأصل فقط، ونتجاهل الرجوع لصفحة manage نفسها (reload / deep-link ?id=) */
+      if (u.origin === location.origin && !u.pathname.startsWith('/bazaars/manage')) {
+        target = MAP[u.pathname] || FALLBACK;
+      }
+    }
+  } catch (_) {}
+
+  el.setAttribute('href', target.href);
+  el.textContent = target.label;
+}
 
 /* ════════════════════════════════════════════════════════
    GUARD
@@ -384,6 +420,7 @@ async function loadMyBazaars() {
 
   document.getElementById('view-list').style.display = 'block';
   renderCards();
+  renderOverview();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -455,6 +492,165 @@ function _cardHTML(b) {
     🎉 البازار انتهى — <strong>أضف روابط التوثيق الآن</strong> ←
   </div>` : ''}
 </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   OVERVIEW / COMMAND CENTER (لوحة القيادة — تحسين تدريجي)
+   يُدرَج أعلى قائمة البازارات: مركز إجراءات (تنبيهات قابلة للتنفيذ)
+   + بطاقة البازار النشط بمؤشرات + أعداد على شارات الفلاتر.
+   يعتمد كلياً على myBazaars المحمّلة، عدا استعلام خفيف واحد
+   لعدّ الحجوزات الجديدة لبازار التركيز فقط.
+════════════════════════════════════════════════════════ */
+let _newBk = { today: 0, week: 0, loaded: false };
+
+function renderOverview() {
+  const host = document.getElementById('mn-overview');
+  if (!host) return;
+
+  if (!myBazaars.length) { host.innerHTML = ''; return; }
+
+  const focus = _pickFocusBazaar(myBazaars);
+  host.innerHTML = _renderActionCenter() + (focus ? _renderSpotlight(focus) : '');
+  _renderFilterCounts();
+
+  if (focus) {
+    _newBk = { today: 0, week: 0, loaded: false };
+    _loadFocusNewBookings(focus.id);
+  }
+}
+
+/* اختيار «بازار التركيز»: النشط الآن ← الأقرب بدءاً (قادم) ← مؤجّل ← الأحدث */
+function _pickFocusBazaar(list) {
+  const byStart = (a, b) => (a.start_date || '').localeCompare(b.start_date || '');
+  return list.find(b => b.status === 'live')
+    || list.filter(b => ['upcoming', 'published', 'active'].includes(b.status)).sort(byStart)[0]
+    || list.filter(b => b.status === 'postponed').sort(byStart)[0]
+    || list[0]
+    || null;
+}
+
+/* مركز الإجراءات — v1: روابط التوثيق الناقصة (live/completed فقط) */
+function _renderActionCenter() {
+  const need = myBazaars.filter(b =>
+    ['live', 'completed'].includes(b.status) &&
+    !(b.event_links && b.event_links.length));
+  if (!need.length) return '';
+
+  const shown = need.slice(0, 3);
+  const cards = shown.map(b => `
+    <div class="mn-alert">
+      <div class="mn-alert-ico">🔗</div>
+      <div class="mn-alert-body">
+        <div class="mn-alert-title">بازار «${_esc(b.title)}» يحتاج روابط التوثيق</div>
+        <div class="mn-alert-desc">أضِف روابط الحدث لتظهر في ملفك وتُعزّز مصداقيتك لدى العملاء.</div>
+      </div>
+      <button class="mn-alert-cta" onclick="openBazaarDetail('${b.id}');setTimeout(()=>switchTab('docs'),350)">أضف الروابط الآن ←</button>
+    </div>`).join('');
+  const more = need.length > 3
+    ? `<div class="mn-alert-more">و${need.length - 3} بازارات أخرى تحتاج روابط…</div>`
+    : '';
+  return `<div class="mn-action-center">${cards}${more}</div>`;
+}
+
+/* بطاقة البازار النشط — «ماذا يحدث الآن؟» */
+function _renderSpotlight(b) {
+  const total   = b.total_slots || 0;
+  const avail   = b.available_slots || 0;
+  const booked  = Math.max(0, total - avail);
+  const occ     = total > 0 ? Math.round(booked / total * 100) : 0;
+  const dateStr = _formatDateRange(b.start_date, b.end_date);
+  const eyebrow = b.status === 'live'
+    ? '🟢 البازار النشط الآن'
+    : (['upcoming', 'published', 'active'].includes(b.status) ? '🔵 البازار القادم' : '📌 آخر بازار');
+
+  return `
+  <div class="mn-spotlight">
+    <div class="mn-spot-eyebrow">${eyebrow}</div>
+    <div class="mn-spot-name">${_esc(b.title)}</div>
+    <div class="mn-spot-meta">
+      ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+      ${b.location ? `<span>📍 ${_esc(b.location)}</span>` : ''}
+    </div>
+    <div class="mn-kpis">
+      <div class="mn-kpi">
+        <div class="mn-kpi-lbl">🎫 محجوز</div>
+        <div class="mn-kpi-val">${booked}<small>/${total}</small></div>
+      </div>
+      <div class="mn-kpi">
+        <div class="mn-kpi-lbl">🪑 متبقٍّ</div>
+        <div class="mn-kpi-val">${avail}<small> مكان</small></div>
+      </div>
+      <div class="mn-kpi">
+        <div class="mn-kpi-lbl">📊 الإشغال</div>
+        <div class="mn-kpi-val">${occ}<small>%</small></div>
+        <div class="mn-occ-bar"><div class="mn-occ-fill" style="width:${occ}%"></div></div>
+      </div>
+      <div class="mn-kpi">
+        <div class="mn-kpi-lbl">
+          <span>🆕 جديدة</span>
+          <span class="mn-newbk-toggle">
+            <button id="nbk-today" class="active" onclick="toggleNewBookings('today')">اليوم</button>
+            <button id="nbk-week" onclick="toggleNewBookings('week')">٧ أيام</button>
+          </span>
+        </div>
+        <div class="mn-kpi-val" id="nbk-val">…</div>
+      </div>
+    </div>
+    <button class="mn-spot-cta" onclick="openBazaarDetail('${b.id}')">⚙️ إدارة البازار</button>
+  </div>`;
+}
+
+/* استعلام خفيف واحد: حجوزات آخر ٧ أيام لبازار التركيز (RLS يسمح للمنظم) */
+async function _loadFocusNewBookings(focusId) {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
+    const { data } = await sb
+      .from('bazaar_bookings')
+      .select('created_at,status')
+      .eq('bazaar_id', focusId)
+      .gte('created_at', weekAgo)
+      .in('status', ['pending', 'confirmed', 'pending_after_postponement']);
+    const today = _cairoTodayStr();
+    const rows  = data || [];
+    _newBk = {
+      today:  rows.filter(r => _cairoDateOf(r.created_at) === today).length,
+      week:   rows.length,
+      loaded: true,
+    };
+  } catch (_) {
+    _newBk = { today: 0, week: 0, loaded: true };
+  }
+  const mode = document.getElementById('nbk-week')?.classList.contains('active') ? 'week' : 'today';
+  _applyNewBk(mode);
+}
+
+function _cairoDateOf(ts) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date(ts));
+}
+
+function _applyNewBk(mode) {
+  const el = document.getElementById('nbk-val');
+  if (!el) return;
+  el.textContent = _newBk.loaded ? String(mode === 'week' ? _newBk.week : _newBk.today) : '…';
+}
+
+function toggleNewBookings(mode) {
+  document.getElementById('nbk-today')?.classList.toggle('active', mode === 'today');
+  document.getElementById('nbk-week')?.classList.toggle('active', mode === 'week');
+  _applyNewBk(mode);
+}
+
+/* أعداد حيّة على شارات الفلاتر — نظرة محفظة بلا مكوّن جديد */
+function _renderFilterCounts() {
+  const counts = { all: myBazaars.length };
+  myBazaars.forEach(b => { counts[b.status] = (counts[b.status] || 0) + 1; });
+  document.querySelectorAll('.mn-filter-btn[data-status]').forEach(btn => {
+    const st   = btn.getAttribute('data-status');
+    const span = btn.querySelector('.mn-filter-count');
+    if (!span) return;
+    const n = counts[st] || 0;
+    span.textContent = (st === 'all' || n > 0) ? String(n) : '';
+  });
 }
 
 /* ════════════════════════════════════════════════════════

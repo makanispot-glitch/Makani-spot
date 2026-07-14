@@ -2382,32 +2382,57 @@ async function loadDashboardData(user) {
   // عرض قسم الترقية / الانتقال لأصحاب المساحات
   renderUpgradeSection(profile);
 
-  // عرض CTA تنظيم البازار
+  // عرض قسم البازارات (اختصار لمنظّم موثّق / CTA تقديم لغير المنظّم)
   const isVerified = getAccountCapabilities(profile, orgProfileRes.data).organizerVerified;
   const reqStatus = reqRes.data?.status || null;
-  renderBazaarCTA(isVerified, reqStatus);
+  let bazaarCount = null;
+  if (isVerified) {
+    const { count } = await sbClient
+      .from('bazaars')
+      .select('id', { count: 'exact', head: true })
+      .eq('organizer_id', user.id)
+      .eq('is_archived', false)
+      .eq('is_deleted', false);
+    bazaarCount = count || 0;
+  }
+  renderBazaarCTA(isVerified, reqStatus, bazaarCount);
 
   await loadUserBookings(user.id);
   await loadUserRatings(user.id);
-  await loadMyBazaars(user.id);
 
   // ✅ Realtime — يراقب أي تغيير في حالة الحجوزات ويحدّث الداشبورد تلقائياً
   _subscribeBookings(user.id);
 }
 
-/* ── renderBazaarCTA — CTA تنظيم البازار في أسفل الداشبورد ── */
-function renderBazaarCTA(isVerified, reqStatus) {
+/* ── renderBazaarCTA — قسم البازارات في أسفل الداشبورد (ضمن الإجراءات الإدارية)
+   حالة منظّم موثّق: اختصار للوحة الإدارة + عدّاد بسيط فقط — بلا أي أدوات إدارية مكرّرة.
+   حالة غير منظّم: زر تقديم واحد فقط. ── */
+function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
   const wrap = document.getElementById('dash-bazaar-cta-wrap');
   if (!wrap) return;
 
   if (isVerified) {
-    // موثّق — لا نظهر CTA، بس رسالة ترحيبية صغيرة
+    const countLabel = !bazaarCount
+      ? 'لم تنظّم أي بازار بعد'
+      : `لديك ${bazaarCount} ${bazaarCount === 1 ? 'بازار' : 'بازارات'} على مكاني Spot`;
     wrap.innerHTML = `
-      <div style="text-align:center;padding:14px 20px;color:var(--ink3);font-size:12px">
-        ✓ أنت منظّم موثّق —
-        <a href="/bazaars/profile.html" style="color:var(--orange);font-weight:700;text-decoration:none">
-          شوف ملفك كمنظّم ←
-        </a>
+      <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);
+                  border:1.5px solid var(--orange);border-radius:16px;padding:18px 20px;
+                  display:flex;align-items:center;justify-content:space-between;
+                  flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:28px">🎪</span>
+          <div>
+            <div style="font-weight:800;color:var(--dark);font-size:14px">أنت منظّم بازارات موثّق ✓</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:3px">${countLabel}</div>
+          </div>
+        </div>
+        <button onclick="window.location.href='/bazaars/manage.html'"
+          style="background:var(--orange);color:#fff;border:none;padding:10px 20px;
+                 border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
+                 font-size:13px;cursor:pointer;white-space:nowrap">
+          ⚙️ الانتقال إلى لوحة إدارة البازارات ←
+        </button>
       </div>`;
     return;
   }
@@ -2441,69 +2466,9 @@ function renderBazaarCTA(isVerified, reqStatus) {
       <a href="/bazaars/verification.html" class="btn btn-primary"
          style="padding:12px 32px;display:inline-block;font-size:14px;
                 text-decoration:none;border-radius:50px">
-        🎪 اطلب التوثيق الآن ←
+        🎪 التقدّم بطلب لتصبح منظم بازارات ←
       </a>
     </div>`;
-}
-
-/* ── loadMyBazaars — يحمّل بازارات المستخدم في الداشبورد ── */
-async function loadMyBazaars(userId) {
-  const wrap = document.getElementById('dash-my-bazaars');
-  if (!wrap || !sbClient) return;
-
-  try {
-    const { data: bazaars } = await sbClient
-      .from('bazaars')
-      .select('id,name,date_start,date_end,location,image,status')
-      .eq('organizer_id', userId)
-      .order('date_start', { ascending: false });
-
-    if (!bazaars || bazaars.length === 0) {
-      wrap.innerHTML = `
-        <div style="text-align:center;padding:28px 16px;color:var(--ink3)">
-          <div style="font-size:32px;margin-bottom:8px">🎪</div>
-          <div style="font-size:13px;font-weight:600">لم تنظّم أي بازار بعد</div>
-          <div style="font-size:12px;margin-top:4px">ابدأ من قسم تنظيم البازار أعلاه</div>
-        </div>`;
-      return;
-    }
-
-    wrap.innerHTML = bazaars.map(b => {
-      const ds = b.date_start
-        ? new Date(b.date_start).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
-        : '—';
-      const imgHtml = b.image
-        ? `<img src="${b.image}" alt="${b.name}"
-                style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
-                onerror="this.style.display='none'">`
-        : `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface2);
-                       display:flex;align-items:center;justify-content:center;font-size:18px">🎪</div>`;
-      const _today = new Date().toISOString().split('T')[0];
-      const _end   = b.date_end || b.date_start;
-      const _expired = _end && _end < _today;
-      const statusBadge = _expired
-        ? `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:700">انتهى</span>`
-        : b.status === 'published'
-        ? `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#16a34a;font-weight:700">منشور</span>`
-        : `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--ink3);font-weight:700">${b.status || 'مسودة'}</span>`;
-      return `
-        <div onclick="window.location.href='/bazaars/?bazaar=${b.id}'"
-             style="display:flex;align-items:center;gap:12px;padding:12px 0;
-                    border-bottom:1px solid var(--border);cursor:pointer;
-                    transition:background .15s;border-radius:8px"
-             onmouseover="this.style.background='var(--surface2)';this.style.padding='12px 8px'"
-             onmouseout="this.style.background='';this.style.padding='12px 0'">
-          ${imgHtml}
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
-            <div style="font-size:11px;color:var(--ink3);margin-top:2px">📅 ${ds} · 📍 ${b.location || '—'}</div>
-          </div>
-          ${statusBadge}
-        </div>`;
-    }).join('');
-  } catch (err) {
-    wrap.innerHTML = `<div class="no-bookings" style="color:var(--red)">تعذّر تحميل البازارات</div>`;
-  }
 }
 
 function showDashAlert(type, msg) {
