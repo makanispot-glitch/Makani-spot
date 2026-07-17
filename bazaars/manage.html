@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>إدارة بازاراتي — مكاني Spot</title>
 
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#F36418">
@@ -20,6 +32,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 <script src="/pwa-install.js?v=202607141600" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -496,6 +514,12 @@
   </a>
   <div class="bz-nav-title" id="nav-title">⚙️ إدارة البازارات</div>
   <div class="bz-nav-right">
+    <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+      </svg>
+      <span id="langSwitchLabel">EN</span>
+    </button>
     <a class="bz-nav-back" id="bz-nav-back" href="/bazaars/">← البازارات</a>
   </div>
 </nav>
@@ -521,7 +545,7 @@
   <div id="mn-loading">
     <div class="mn-loading">
       <div class="mn-spin">⏳</div>
-      <div style="font-size:14px">جارٍ تحميل بازاراتك…</div>
+      <div style="font-size:14px" data-i18n="manage.loading">جارٍ تحميل بازاراتك…</div>
     </div>
   </div>
 
@@ -534,22 +558,22 @@
     <div id="mn-overview" class="mn-overview"></div>
 
     <div class="mn-filters" id="mn-filters">
-      <button class="mn-filter-btn active" data-status="all" onclick="applyFilter('all',this)">الكل <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="published" onclick="applyFilter('published',this)">منشور <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="live" onclick="applyFilter('live',this)">⚡ جاري الآن <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="completed" onclick="applyFilter('completed',this)">✅ انتهى <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="active" onclick="applyFilter('active',this)">نشط <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="upcoming" onclick="applyFilter('upcoming',this)">قادم <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="postponed" onclick="applyFilter('postponed',this)">مؤجّل <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="pending_review" onclick="applyFilter('pending_review',this)">قيد المراجعة <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="cancelled" onclick="applyFilter('cancelled',this)">ملغي <span class="mn-filter-count"></span></button>
-      <button class="mn-filter-btn" data-status="closed" onclick="applyFilter('closed',this)">منتهي <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn active" data-status="all" onclick="applyFilter('all',this)"><span data-i18n="manage.filters.all">الكل</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="published" onclick="applyFilter('published',this)"><span data-i18n="manage.filters.published">منشور</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="live" onclick="applyFilter('live',this)"><span data-i18n="manage.filters.live">⚡ جاري الآن</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="completed" onclick="applyFilter('completed',this)"><span data-i18n="manage.filters.completed">✅ انتهى</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="active" onclick="applyFilter('active',this)"><span data-i18n="manage.filters.active">نشط</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="upcoming" onclick="applyFilter('upcoming',this)"><span data-i18n="manage.filters.upcoming">قادم</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="postponed" onclick="applyFilter('postponed',this)"><span data-i18n="manage.filters.postponed">مؤجّل</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="pending_review" onclick="applyFilter('pending_review',this)"><span data-i18n="manage.filters.pending_review">قيد المراجعة</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="cancelled" onclick="applyFilter('cancelled',this)"><span data-i18n="manage.filters.cancelled">ملغي</span> <span class="mn-filter-count"></span></button>
+      <button class="mn-filter-btn" data-status="closed" onclick="applyFilter('closed',this)"><span data-i18n="manage.filters.closed">منتهي</span> <span class="mn-filter-count"></span></button>
     </div>
     <div class="mn-cards" id="mn-cards"></div>
     <div id="mn-empty" style="display:none" class="mn-empty">
       <div class="mn-empty-ico">🎪</div>
-      <div class="mn-empty-title">لا توجد بازارات</div>
-      <div class="mn-empty-desc">لم نجد بازارات تطابق الفلتر المحدد</div>
+      <div class="mn-empty-title" data-i18n="manage.empty.title">لا توجد بازارات</div>
+      <div class="mn-empty-desc" data-i18n="manage.empty.desc">لم نجد بازارات تطابق الفلتر المحدد</div>
     </div>
   </div>
 
@@ -560,12 +584,12 @@
 
     <!-- Detail Header -->
     <div class="mn-detail-hdr">
-      <button class="mn-back-btn" onclick="backToList()">← رجوع</button>
+      <button class="mn-back-btn" onclick="backToList()" data-i18n="manage.detail.backBtn">← رجوع</button>
       <div class="mn-detail-info">
         <div class="mn-detail-name" id="detail-name">—</div>
         <div class="mn-detail-sub">
           <span class="mn-status" id="detail-status-badge"></span>
-          <a class="mn-detail-view-link" id="detail-view-link" href="#" target="_blank">عرض الصفحة ↗</a>
+          <a class="mn-detail-view-link" id="detail-view-link" href="#" target="_blank" data-i18n="manage.detail.viewPageLink">عرض الصفحة ↗</a>
         </div>
       </div>
     </div>
@@ -574,9 +598,9 @@
     <div class="mn-docs-banner" id="docs-banner" style="margin:0 0 4px">
       <div class="mn-docs-banner-ico">🎉</div>
       <div class="mn-docs-banner-body">
-        <div class="mn-docs-banner-title">مبروك على انتهاء البازار!</div>
+        <div class="mn-docs-banner-title" data-i18n="manage.docsBanner.title">مبروك على انتهاء البازار!</div>
         <div class="mn-docs-banner-desc">
-          يمكنك إضافة روابط مرتبطة بالحدث لتظهر في ملفك الشخصي وتُعزز مصداقيتك لدى العملاء.
+          <span data-i18n="manage.docsBanner.desc">يمكنك إضافة روابط مرتبطة بالحدث لتظهر في ملفك الشخصي وتُعزز مصداقيتك لدى العملاء.</span>
           <br><span class="mn-docs-banner-deadline" id="docs-banner-deadline"></span>
         </div>
       </div>
@@ -585,12 +609,12 @@
     <!-- Tab Bar — الأولوية للتبويبات التي يستخدمها المنظم يومياً أثناء انعقاد البازار
          (الحجوزات/الأماكن) قبل تبويبات الإدارة الأقل تكراراً (الحالة/التوثيق)، والسجل أخيراً -->
     <div class="mn-tabs">
-      <div class="mn-tab active" onclick="switchTab('info')"    id="tab-btn-info">    📝 المعلومات</div>
-      <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings">🧾 الحجوزات <span class="mn-tab-badge" id="bk-badge"></span></div>
-      <div class="mn-tab"        onclick="switchTab('slots')"   id="tab-btn-slots">   📦 الأماكن</div>
-      <div class="mn-tab"        onclick="switchTab('status')"  id="tab-btn-status">  ⚙️ الحالة</div>
-      <div class="mn-tab"        onclick="switchTab('docs')"    id="tab-btn-docs">    🔗 التوثيق <span class="mn-tab-badge" id="docs-badge"></span></div>
-      <div class="mn-tab"        onclick="switchTab('log')"     id="tab-btn-log">     📋 السجل</div>
+      <div class="mn-tab active" onclick="switchTab('info')"    id="tab-btn-info">    <span data-i18n="manage.tabs.info">📝 المعلومات</span></div>
+      <div class="mn-tab"        onclick="switchTab('bookings')" id="tab-btn-bookings"><span data-i18n="manage.tabs.bookings">🧾 الحجوزات</span> <span class="mn-tab-badge" id="bk-badge"></span></div>
+      <div class="mn-tab"        onclick="switchTab('slots')"   id="tab-btn-slots">   <span data-i18n="manage.tabs.slots">📦 الأماكن</span></div>
+      <div class="mn-tab"        onclick="switchTab('status')"  id="tab-btn-status">  <span data-i18n="manage.tabs.status">⚙️ الحالة</span></div>
+      <div class="mn-tab"        onclick="switchTab('docs')"    id="tab-btn-docs">    <span data-i18n="manage.tabs.docs">🔗 التوثيق</span> <span class="mn-tab-badge" id="docs-badge"></span></div>
+      <div class="mn-tab"        onclick="switchTab('log')"     id="tab-btn-log">     <span data-i18n="manage.tabs.log">📋 السجل</span></div>
     </div>
 
     <!-- ────────────────────────────
@@ -603,10 +627,10 @@
         <div class="mn-lock-banner-ico">🔒</div>
         <div class="mn-lock-banner-body">
           <div class="mn-lock-banner-title">
-            <span class="mn-lock-badge">🔒 Editing Locked</span>
-            &nbsp;— التعديل مقيّد قبل 24 ساعة من البدء
+            <span class="mn-lock-badge" data-i18n="manage.lockBanner.badge">🔒 Editing Locked</span>
+            <span data-i18n="manage.lockBanner.infoDesc">&nbsp;— التعديل مقيّد قبل 24 ساعة من البدء</span>
           </div>
-          <div class="mn-lock-banner-desc">
+          <div class="mn-lock-banner-desc" data-i18n-html="manage.lockBanner.infoBody">
             لا يمكن تعديل الاسم، التواريخ، الموقع، أو ساعات العمل الآن.<br>
             يُسمح فقط بتعديل <strong>الوصف والصور</strong>.
           </div>
@@ -614,133 +638,133 @@
       </div>
 
       <div class="mn-form-card">
-        <div class="mn-form-card-title">✏️ معلومات البازار الأساسية</div>
+        <div class="mn-form-card-title" data-i18n="manage.info.formTitle">✏️ معلومات البازار الأساسية</div>
 
         <div class="mn-fg" style="margin-bottom:12px">
-          <label>اسم البازار <span class="req">*</span></label>
-          <input type="text" id="e-title" maxlength="100" placeholder="اسم البازار">
+          <label><span data-i18n="manage.info.nameLabel">اسم البازار</span> <span class="req">*</span></label>
+          <input type="text" id="e-title" maxlength="100" placeholder="اسم البازار" data-i18n-attr="placeholder:manage.info.namePlaceholder">
         </div>
 
         <div class="mn-row" style="margin-bottom:12px">
           <div class="mn-fg">
-            <label>تاريخ البداية</label>
+            <label data-i18n="manage.info.startDateLabel">تاريخ البداية</label>
             <input type="date" id="e-start-date">
           </div>
           <div class="mn-fg">
-            <label>تاريخ النهاية</label>
+            <label data-i18n="manage.info.endDateLabel">تاريخ النهاية</label>
             <input type="date" id="e-end-date">
           </div>
         </div>
 
         <div class="mn-fg" style="margin-bottom:12px">
-          <label>اسم المكان / القاعة</label>
-          <input type="text" id="e-location" maxlength="150" placeholder="مثال: قاعة الأهرام">
+          <label data-i18n="manage.info.venueLabel">اسم المكان / القاعة</label>
+          <input type="text" id="e-location" maxlength="150" placeholder="مثال: قاعة الأهرام" data-i18n-attr="placeholder:manage.info.venuePlaceholder">
         </div>
 
         <div class="mn-fg" style="margin-bottom:12px">
-          <label>رابط الموقع على خرائط Google</label>
+          <label data-i18n="manage.info.mapsLinkLabel">رابط الموقع على خرائط Google</label>
           <input type="url" id="e-location-url" dir="ltr" placeholder="https://maps.google.com/...">
         </div>
 
         <div class="mn-fg" style="margin-bottom:12px">
-          <label>ساعات العمل</label>
-          <input type="text" id="e-working-hours" placeholder="مثال: 10 ص — 9 م" maxlength="80">
+          <label data-i18n="manage.info.hoursLabel">ساعات العمل</label>
+          <input type="text" id="e-working-hours" placeholder="مثال: 10 ص — 9 م" maxlength="80" data-i18n-attr="placeholder:manage.info.hoursPlaceholder">
         </div>
 
         <div class="mn-fg">
-          <label>وصف البازار</label>
-          <textarea id="e-description" rows="3" maxlength="800" placeholder="وصف موجز عن البازار…"></textarea>
+          <label data-i18n="manage.info.descLabel">وصف البازار</label>
+          <textarea id="e-description" rows="3" maxlength="800" placeholder="وصف موجز عن البازار…" data-i18n-attr="placeholder:manage.info.descPlaceholder"></textarea>
         </div>
 
         <div id="edit-msg" class="mn-msg"></div>
 
         <div class="mn-warn-box orange" id="edit-completed-notice" style="display:none">
-          <div class="mn-warn-title orange">🔒 وضع القراءة فقط</div>
+          <div class="mn-warn-title orange" data-i18n="manage.info.completedNoticeTitle">🔒 وضع القراءة فقط</div>
           <div class="mn-warn-text orange">البازار انتهى — لا يمكن تعديل المعلومات. يمكنك إضافة روابط التوثيق من تبويب <strong>🔗 التوثيق</strong>.</div>
         </div>
 
         <div class="mn-form-actions">
-          <button class="mn-btn primary" id="edit-save-btn" onclick="saveEditInfo()">💾 حفظ التعديلات</button>
+          <button class="mn-btn primary" id="edit-save-btn" onclick="saveEditInfo()" data-i18n="manage.info.saveBtn">💾 حفظ التعديلات</button>
         </div>
       </div>
 
       <!-- ما الذي يشمله الحجز (التجهيزات) -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">🧰 ما الذي يشمله الحجز؟</div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه (اختياري)</div>
+        <div class="mn-form-card-title" data-i18n="manage.info.amenitiesTitle">🧰 ما الذي يشمله الحجز؟</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px" data-i18n="manage.info.amenitiesHint">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه (اختياري)</div>
 
         <div class="bz-chip-group">
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-table">🪑 ترابيزة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-chair" onchange="mnToggleChairCount()">💺 كرسي</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-pergola">⛱️ برجولة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-canopy">⛺ مظلة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-electricity">⚡ كهرباء</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-lighting">💡 إنارة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-wifi">📶 واي فاي</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-water">🚰 مصدر مياه</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-other_services">🛠️ خدمات أخرى</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-table">🪑 <span data-i18n="amenities.ترابيزة">ترابيزة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-chair" onchange="mnToggleChairCount()">💺 <span data-i18n="amenities.كرسي">كرسي</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-pergola">⛱️ <span data-i18n="amenities.برجولة">برجولة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-canopy">⛺ <span data-i18n="amenities.مظلة">مظلة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-electricity">⚡ <span data-i18n="amenities.كهرباء">كهرباء</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-lighting">💡 <span data-i18n="amenities.إنارة">إنارة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-wifi">📶 <span data-i18n="amenities.واي فاي">واي فاي</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-water">🚰 <span data-i18n="amenities.مصدر مياه">مصدر مياه</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="e-amen-other_services">🛠️ <span data-i18n="amenities.خدمات أخرى">خدمات أخرى</span></label>
         </div>
 
         <div class="mn-fg" id="e-chair-count-row" style="display:none;max-width:220px;margin-top:14px">
-          <label>عدد الكراسي لكل مكان</label>
-          <input type="number" id="e-chair-count" min="1" max="10" placeholder="مثال: 2">
+          <label data-i18n="manage.info.chairCountLabel">عدد الكراسي لكل مكان</label>
+          <input type="number" id="e-chair-count" min="1" max="10" placeholder="مثال: 2" data-i18n-attr="placeholder:manage.info.chairCountPlaceholder">
         </div>
 
         <div class="mn-fg" style="margin-top:14px">
-          <label>➕ تجهيزات أخرى (اختياري)</label>
-          <input type="text" id="e-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" maxlength="150">
+          <label data-i18n="manage.info.otherAmenitiesLabel">➕ تجهيزات أخرى (اختياري)</label>
+          <input type="text" id="e-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" maxlength="150" data-i18n-attr="placeholder:manage.info.otherAmenitiesPlaceholder">
         </div>
       </div>
 
       <!-- الدعاية والتغطية الإعلامية -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">📢 الدعاية والتغطية الإعلامية</div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
+        <div class="mn-form-card-title" data-i18n="manage.info.adTitle">📢 الدعاية والتغطية الإعلامية</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px" data-i18n="manage.info.adHint">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
 
         <div class="mn-fg" style="margin-bottom:12px">
-          <label>ميزانية الدعاية المتوقعة</label>
+          <label data-i18n="manage.info.adBudgetLabel">ميزانية الدعاية المتوقعة</label>
           <select id="e-ad-budget">
-            <option value="">— غير محددة —</option>
-            <option value="limited">محدودة (أقل من 5,000 ج)</option>
-            <option value="medium">متوسطة (5,000 – 15,000 ج)</option>
-            <option value="good">جيدة (15,000 – 30,000 ج)</option>
-            <option value="large">كبيرة (أكثر من 30,000 ج)</option>
+            <option value="" data-i18n="manage.info.adBudgetNone">— غير محددة —</option>
+            <option value="limited" data-i18n="info.adBudgetLimited">محدودة (أقل من 5,000 ج)</option>
+            <option value="medium" data-i18n="info.adBudgetMedium">متوسطة (5,000 – 15,000 ج)</option>
+            <option value="good" data-i18n="info.adBudgetGood">جيدة (15,000 – 30,000 ج)</option>
+            <option value="large" data-i18n="info.adBudgetLarge">كبيرة (أكثر من 30,000 ج)</option>
           </select>
         </div>
 
         <label class="org-consent" style="margin-top:4px">
           <input type="checkbox" id="e-ad-photography">
-          <div class="org-consent-text"><strong>تصوير الحدث</strong> — سيتم تصوير فوتوغرافي/فيديو للبازار</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.photographyTitle">تصوير الحدث</strong> <span data-i18n="manage.info.photographyDesc">— سيتم تصوير فوتوغرافي/فيديو للبازار</span></div>
         </label>
         <label class="org-consent" style="margin-top:10px">
           <input type="checkbox" id="e-ad-social">
-          <div class="org-consent-text"><strong>تغطية وسائل التواصل الاجتماعي</strong> — سيتم نشر صور وفيديوهات أثناء الحدث</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.socialTitle">تغطية وسائل التواصل الاجتماعي</strong> <span data-i18n="manage.info.socialDesc">— سيتم نشر صور وفيديوهات أثناء الحدث</span></div>
         </label>
         <label class="org-consent" style="margin-top:10px">
           <input type="checkbox" id="e-ad-paidads">
-          <div class="org-consent-text"><strong>إعلانات ممولة</strong> — سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.paidAdsTitle">إعلانات ممولة</strong> <span data-i18n="manage.info.paidAdsDesc">— سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</span></div>
         </label>
       </div>
 
       <!-- Images card -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">🖼️ صور البازار</div>
+        <div class="mn-form-card-title" data-i18n="manage.info.coverTitle">🖼️ صور البازار</div>
 
         <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">صورة الغلاف</div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px" data-i18n="manage.info.coverSubtitle">صورة الغلاف</div>
           <div class="mn-cover-box" id="e-cover-box" onclick="document.getElementById('e-cover-file').click()">
             <div id="e-cover-placeholder" style="display:flex;flex-direction:column;align-items:center;gap:4px">
               <span style="font-size:28px">📷</span>
-              <span style="font-size:11px;font-weight:700;color:var(--ink3)">اضغط لتغيير الغلاف</span>
+              <span style="font-size:11px;font-weight:700;color:var(--ink3)" data-i18n="manage.info.coverChangeHint">اضغط لتغيير الغلاف</span>
             </div>
-            <img id="e-cover-preview" alt="الغلاف">
+            <img id="e-cover-preview" alt="الغلاف" data-i18n-attr="alt:manage.info.coverAlt">
             <div id="e-cover-status" style="font-size:10px;color:var(--ink3);position:absolute;bottom:6px;right:0;left:0;text-align:center"></div>
           </div>
           <input type="file" id="e-cover-file" accept="image/*" style="display:none" onchange="handleEditCover(this)">
         </div>
 
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">صور إضافية (حتى 4)</div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px" data-i18n="manage.info.extraImagesTitle">صور إضافية (حتى 4)</div>
           <div class="mn-imgs-grid" id="e-extras-grid"></div>
         </div>
       </div>
@@ -756,10 +780,10 @@
         <div class="mn-lock-banner-ico">🔒</div>
         <div class="mn-lock-banner-body">
           <div class="mn-lock-banner-title">
-            <span class="mn-lock-badge">🔒 Editing Locked</span>
-            &nbsp;— لا يمكن تعديل الأماكن قبل 24 ساعة من البدء
+            <span class="mn-lock-badge" data-i18n="manage.lockBanner.badge">🔒 Editing Locked</span>
+            <span data-i18n="manage.lockBanner.slotsDesc">&nbsp;— لا يمكن تعديل الأماكن قبل 24 ساعة من البدء</span>
           </div>
-          <div class="mn-lock-banner-desc">
+          <div class="mn-lock-banner-desc" data-i18n-html="manage.lockBanner.slotsBody">
             لا يمكن تغيير عدد الأماكن أو نوعها (عادي / مميّز) خلال هذه الفترة.<br>
             يمكنك فقط إدارة <strong>الحجوزات الداخلية</strong> من تبويب الحجز الداخلي.
           </div>
@@ -768,47 +792,47 @@
 
       <!-- Slot count -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">🔢 عدد الأماكن الإجمالي</div>
+        <div class="mn-form-card-title" data-i18n="manage.slots.countTitle">🔢 عدد الأماكن الإجمالي</div>
 
         <div class="mn-slots-info" id="sc-info">
           <div class="mn-slots-info-item">
             <div class="mn-slots-info-val" id="sc-total">—</div>
-            <div class="mn-slots-info-lbl">الإجمالي</div>
+            <div class="mn-slots-info-lbl" data-i18n="manage.slots.totalLabel">الإجمالي</div>
           </div>
           <div class="mn-slots-info-item">
             <div class="mn-slots-info-val" id="sc-booked" style="color:#0369a1">—</div>
-            <div class="mn-slots-info-lbl">محجوز</div>
+            <div class="mn-slots-info-lbl" data-i18n="manage.slots.bookedLabel">محجوز</div>
           </div>
           <div class="mn-slots-info-item">
             <div class="mn-slots-info-val" id="sc-available" style="color:#047857">—</div>
-            <div class="mn-slots-info-lbl">متاح</div>
+            <div class="mn-slots-info-lbl" data-i18n="manage.slots.availableLabel">متاح</div>
           </div>
         </div>
 
         <div class="mn-fg">
-          <label>العدد الإجمالي الجديد</label>
-          <input type="number" id="sc-new-total" min="1" max="1000" placeholder="أدخل العدد الجديد">
+          <label data-i18n="manage.slots.newTotalLabel">العدد الإجمالي الجديد</label>
+          <input type="number" id="sc-new-total" min="1" max="1000" placeholder="أدخل العدد الجديد" data-i18n-attr="placeholder:manage.slots.newTotalPlaceholder">
           <div class="mn-hint" id="sc-hint">لا يمكن تقليل العدد عن الحجوزات الفعلية</div>
         </div>
         <div id="sc-msg" class="mn-msg"></div>
         <div class="mn-form-actions">
-          <button class="mn-btn primary" id="sc-save-btn" onclick="saveSlotsCount()">✅ حفظ العدد</button>
+          <button class="mn-btn primary" id="sc-save-btn" onclick="saveSlotsCount()" data-i18n="manage.slots.saveBtn">✅ حفظ العدد</button>
         </div>
       </div>
 
       <!-- Slot map -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">🗺️ خريطة الأماكن</div>
+        <div class="mn-form-card-title" data-i18n="manage.slots.mapTitle">🗺️ خريطة الأماكن</div>
 
         <!-- Sub-tabs -->
         <div class="sm-sub-tabs">
-          <div class="sm-sub-tab active" id="smt-reserve"  onclick="switchSlotTab('reserve')">🔒 حجز داخلي</div>
-          <div class="sm-sub-tab"        id="smt-premium"  onclick="switchSlotTab('premium')">⭐ مميّز / عادي</div>
+          <div class="sm-sub-tab active" id="smt-reserve"  onclick="switchSlotTab('reserve')" data-i18n="manage.slots.reserveSubTab">🔒 حجز داخلي</div>
+          <div class="sm-sub-tab"        id="smt-premium"  onclick="switchSlotTab('premium')" data-i18n="manage.slots.premiumSubTab">⭐ مميّز / عادي</div>
         </div>
 
         <!-- Reserve panel -->
         <div id="smt-reserve-panel">
-          <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6" data-i18n-html="manage.slots.reserveHint">
             اضغط على مكان <span style="background:#ecfdf5;color:#047857;padding:1px 6px;border-radius:5px;font-weight:700">متاح</span>
             لتحجزه داخلياً، أو على مكان
             <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:700">محجوز بالمنظم</span>
@@ -816,19 +840,19 @@
           </div>
           <div class="mn-row" style="margin-bottom:12px">
             <div class="mn-fg">
-              <label>محجوز لـ (اختياري)</label>
-              <input type="text" id="sm-reserved-for" placeholder="مثال: أحمد محمد، شريك VIP…" maxlength="100">
+              <label data-i18n="manage.slots.reservedForLabel">محجوز لـ (اختياري)</label>
+              <input type="text" id="sm-reserved-for" placeholder="مثال: أحمد محمد، شريك VIP…" maxlength="100" data-i18n-attr="placeholder:manage.slots.reservedForPlaceholder">
             </div>
             <div class="mn-fg">
-              <label>ملاحظة داخلية (اختياري)</label>
-              <input type="text" id="sm-note" placeholder="مثال: لا يُباع، ادخل يدوياً…" maxlength="100">
+              <label data-i18n="manage.slots.noteLabel">ملاحظة داخلية (اختياري)</label>
+              <input type="text" id="sm-note" placeholder="مثال: لا يُباع، ادخل يدوياً…" maxlength="100" data-i18n-attr="placeholder:manage.slots.notePlaceholder">
             </div>
           </div>
           <div class="sm-legend">
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> متاح</div>
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> محجوز</div>
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fcd34d"></div> محجوز بالمنظم</div>
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#d97706;border-radius:50%"></div> مميّز ⭐</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> <span data-i18n="manage.slots.legendAvailable">متاح</span></div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> <span data-i18n="manage.slots.legendBooked">محجوز</span></div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fcd34d"></div> <span data-i18n="manage.slots.legendReservedByOrganizer">محجوز بالمنظم</span></div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#d97706;border-radius:50%"></div> <span data-i18n="manage.slots.legendPremiumStar">مميّز ⭐</span></div>
           </div>
           <div class="sm-grid" id="sm-grid-reserve"></div>
         </div>
@@ -836,14 +860,13 @@
         <!-- Premium panel -->
         <div id="smt-premium-panel" style="display:none">
           <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">
-            اضغط على أي مكان لتبديله بين <span style="color:#d97706;font-weight:700">مميّز ⭐</span>
-            و <span style="color:var(--ink2);font-weight:700">عادي</span>.
-            سعر المميّز: <span id="sm-premium-price-display" style="color:var(--orange);font-weight:900">—</span>
+            <span data-i18n-html="manage.slots.premiumHint">اضغط على أي مكان لتبديله بين <span style="color:#d97706;font-weight:700">مميّز ⭐</span> و <span style="color:var(--ink2);font-weight:700">عادي</span>.</span>
+            <span data-i18n="manage.slots.premiumHintPricePrefix">سعر المميّز: </span><span id="sm-premium-price-display" style="color:var(--orange);font-weight:900">—</span>
           </div>
           <div class="sm-legend">
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> عادي — متاح</div>
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fde68a;border:2px solid #f59e0b;border-radius:3px"></div> مميّز ⭐</div>
-            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> محجوز (لا يتغير)</div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#86efac"></div> <span data-i18n="manage.slots.legendPremiumOrdinaryAvailable">عادي — متاح</span></div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#fde68a;border:2px solid #f59e0b;border-radius:3px"></div> <span data-i18n="manage.slots.legendPremiumStar">مميّز ⭐</span></div>
+            <div class="sm-legend-item"><div class="sm-legend-dot" style="background:#7dd3fc"></div> <span data-i18n="manage.slots.legendPremiumNoChange">محجوز (لا يتغير)</span></div>
           </div>
           <div class="sm-grid" id="sm-grid-premium"></div>
         </div>
@@ -859,20 +882,20 @@
 
       <!-- Booking Pause section -->
       <div class="mn-status-section" id="pause-section">
-        <div class="mn-status-title">⏸️ إيقاف الحجوزات مؤقتاً</div>
+        <div class="mn-status-title" data-i18n="manage.statusTab.pauseTitle">⏸️ إيقاف الحجوزات مؤقتاً</div>
 
         <div class="mn-warn-box orange" id="pause-active-note" style="display:none">
-          <div class="mn-warn-title orange">⏸️ الحجوزات موقوفة حالياً</div>
+          <div class="mn-warn-title orange" data-i18n="manage.statusTab.pauseActiveTitle">⏸️ الحجوزات موقوفة حالياً</div>
           <div class="mn-warn-text orange" id="pause-reason-display"></div>
         </div>
 
         <div id="pause-form-wrap">
-          <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;margin-bottom:12px">
+          <div style="font-size:12.5px;color:var(--ink3);line-height:1.6;margin-bottom:12px" data-i18n="manage.statusTab.pauseDesc">
             إيقاف مؤقت للحجوزات دون إلغاء البازار. مفيد عند مراجعة العقود أو تأكيد الموقع.
           </div>
           <div class="mn-fg" id="pause-reason-wrap" style="margin-bottom:0">
-            <label>سبب الإيقاف (اختياري)</label>
-            <input type="text" id="pause-reason-input" placeholder="مثال: جارٍ مراجعة العقود…" maxlength="200">
+            <label data-i18n="manage.statusTab.pauseReasonLabel">سبب الإيقاف (اختياري)</label>
+            <input type="text" id="pause-reason-input" placeholder="مثال: جارٍ مراجعة العقود…" maxlength="200" data-i18n-attr="placeholder:manage.statusTab.pauseReasonPlaceholder">
           </div>
         </div>
 
@@ -884,83 +907,83 @@
 
       <!-- Postpone section -->
       <div class="mn-status-section" id="postpone-section">
-        <div class="mn-status-title">📅 تأجيل موعد البازار</div>
+        <div class="mn-status-title" data-i18n="manage.statusTab.postponeTitle">📅 تأجيل موعد البازار</div>
 
         <div class="mn-disabled-note" id="postpone-disabled-note" style="display:none"></div>
 
         <div class="mn-warn-box orange" style="margin-bottom:14px">
-          <div class="mn-warn-title orange">⏰ تنبيه</div>
-          <div class="mn-warn-text orange">سيُشعَر جميع أصحاب الحجوزات الفعلية بالتأجيل وستُعطى لهم مهلة <strong>48 ساعة</strong> للرد (قبول أو إلغاء).</div>
+          <div class="mn-warn-title orange" data-i18n="manage.statusTab.postponeWarnTitle">⏰ تنبيه</div>
+          <div class="mn-warn-text orange" data-i18n-html="manage.statusTab.postponeWarnDesc">سيُشعَر جميع أصحاب الحجوزات الفعلية بالتأجيل وستُعطى لهم مهلة <strong>48 ساعة</strong> للرد (قبول أو إلغاء).</div>
         </div>
 
         <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px">الموعد الحالي</div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px" data-i18n="manage.statusTab.currentDateLabel">الموعد الحالي</div>
           <div style="font-size:14px;font-weight:700;color:var(--ink2);background:var(--surface2);padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border)" id="postpone-current-dates">—</div>
         </div>
 
         <div class="mn-row" style="margin-bottom:12px">
           <div class="mn-fg">
-            <label>تاريخ البداية الجديد <span class="req">*</span></label>
+            <label><span data-i18n="manage.statusTab.newStartLabel">تاريخ البداية الجديد</span> <span class="req">*</span></label>
             <input type="date" id="p-new-start">
           </div>
           <div class="mn-fg">
-            <label>تاريخ النهاية الجديد <span class="req">*</span></label>
+            <label><span data-i18n="manage.statusTab.newEndLabel">تاريخ النهاية الجديد</span> <span class="req">*</span></label>
             <input type="date" id="p-new-end">
           </div>
         </div>
 
         <div style="margin-bottom:10px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">سبب التأجيل <span style="color:var(--orange)">*</span></div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px"><span data-i18n="manage.statusTab.reasonLabel">سبب التأجيل</span> <span style="color:var(--orange)">*</span></div>
           <div class="mn-reason-chips" id="postpone-reason-chips">
-            <div class="mn-reason-chip" onclick="selectPostponeReason('ظروف طارئة')">ظروف طارئة</div>
-            <div class="mn-reason-chip" onclick="selectPostponeReason('تعديل على المكان')">تعديل على المكان</div>
-            <div class="mn-reason-chip" onclick="selectPostponeReason('طلب من المنشأة')">طلب من المنشأة</div>
-            <div class="mn-reason-chip" onclick="selectPostponeReason('أسباب تشغيلية')">أسباب تشغيلية</div>
-            <div class="mn-reason-chip" onclick="selectPostponeReason('other')">سبب آخر…</div>
+            <div class="mn-reason-chip" data-reason="ظروف طارئة" onclick="selectPostponeReason('ظروف طارئة')"><span data-i18n="manage.postponeReasons.ظروف طارئة">ظروف طارئة</span></div>
+            <div class="mn-reason-chip" data-reason="تعديل على المكان" onclick="selectPostponeReason('تعديل على المكان')"><span data-i18n="manage.postponeReasons.تعديل على المكان">تعديل على المكان</span></div>
+            <div class="mn-reason-chip" data-reason="طلب من المنشأة" onclick="selectPostponeReason('طلب من المنشأة')"><span data-i18n="manage.postponeReasons.طلب من المنشأة">طلب من المنشأة</span></div>
+            <div class="mn-reason-chip" data-reason="أسباب تشغيلية" onclick="selectPostponeReason('أسباب تشغيلية')"><span data-i18n="manage.postponeReasons.أسباب تشغيلية">أسباب تشغيلية</span></div>
+            <div class="mn-reason-chip" data-reason="other" onclick="selectPostponeReason('other')"><span data-i18n="manage.postponeReasons.other">سبب آخر…</span></div>
           </div>
         </div>
 
         <div class="mn-fg" id="postpone-custom-wrap" style="display:none;margin-bottom:10px">
-          <label>اكتب السبب</label>
-          <textarea id="postpone-custom-reason" rows="2" placeholder="اشرح سبب التأجيل…" maxlength="300"></textarea>
+          <label data-i18n="manage.statusTab.customReasonLabel">اكتب السبب</label>
+          <textarea id="postpone-custom-reason" rows="2" placeholder="اشرح سبب التأجيل…" maxlength="300" data-i18n-attr="placeholder:manage.statusTab.customReasonPlaceholderPostpone"></textarea>
         </div>
 
         <div id="postpone-msg" class="mn-msg"></div>
         <div class="mn-form-actions">
-          <button class="mn-btn warn" id="postpone-confirm-btn" onclick="confirmPostpone()">📅 تأكيد التأجيل</button>
+          <button class="mn-btn warn" id="postpone-confirm-btn" onclick="confirmPostpone()" data-i18n="manage.statusTab.confirmPostponeBtn">📅 تأكيد التأجيل</button>
         </div>
       </div>
 
       <!-- Cancel section -->
       <div class="mn-status-section" id="cancel-section" style="border-color:#fca5a5">
-        <div class="mn-status-title">🚫 إلغاء البازار</div>
+        <div class="mn-status-title" data-i18n="manage.statusTab.cancelTitle">🚫 إلغاء البازار</div>
 
         <div class="mn-disabled-note" id="cancel-disabled-note" style="display:none"></div>
 
         <div class="mn-warn-box" style="margin-bottom:14px">
-          <div class="mn-warn-title">⚠️ تنبيه مهم</div>
+          <div class="mn-warn-title" data-i18n="manage.statusTab.cancelWarnTitle">⚠️ تنبيه مهم</div>
           <div class="mn-warn-text" id="cancel-warning-text">سيتم إلغاء البازار ويُشعَر جميع أصحاب الحجوزات الفعلية.</div>
         </div>
 
         <div style="margin-bottom:10px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">سبب الإلغاء</div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px" data-i18n="manage.statusTab.reasonLabelCancel">سبب الإلغاء</div>
           <div class="mn-reason-chips" id="cancel-reason-chips">
-            <div class="mn-reason-chip danger" onclick="selectCancelReason('ظروف طارئة')">ظروف طارئة</div>
-            <div class="mn-reason-chip danger" onclick="selectCancelReason('مشكلة في المكان')">مشكلة في المكان</div>
-            <div class="mn-reason-chip danger" onclick="selectCancelReason('ضعف الإقبال')">ضعف الإقبال</div>
-            <div class="mn-reason-chip danger" onclick="selectCancelReason('قرار شخصي')">قرار شخصي</div>
-            <div class="mn-reason-chip danger" onclick="selectCancelReason('other')">سبب آخر…</div>
+            <div class="mn-reason-chip danger" data-reason="ظروف طارئة" onclick="selectCancelReason('ظروف طارئة')"><span data-i18n="manage.cancelReasons.ظروف طارئة">ظروف طارئة</span></div>
+            <div class="mn-reason-chip danger" data-reason="مشكلة في المكان" onclick="selectCancelReason('مشكلة في المكان')"><span data-i18n="manage.cancelReasons.مشكلة في المكان">مشكلة في المكان</span></div>
+            <div class="mn-reason-chip danger" data-reason="ضعف الإقبال" onclick="selectCancelReason('ضعف الإقبال')"><span data-i18n="manage.cancelReasons.ضعف الإقبال">ضعف الإقبال</span></div>
+            <div class="mn-reason-chip danger" data-reason="قرار شخصي" onclick="selectCancelReason('قرار شخصي')"><span data-i18n="manage.cancelReasons.قرار شخصي">قرار شخصي</span></div>
+            <div class="mn-reason-chip danger" data-reason="other" onclick="selectCancelReason('other')"><span data-i18n="manage.cancelReasons.other">سبب آخر…</span></div>
           </div>
         </div>
 
         <div class="mn-fg" id="cancel-custom-wrap" style="display:none;margin-bottom:10px">
-          <label>اكتب السبب</label>
-          <textarea id="cancel-custom-reason" rows="2" placeholder="اشرح سبب الإلغاء…" maxlength="300"></textarea>
+          <label data-i18n="manage.statusTab.customReasonLabel">اكتب السبب</label>
+          <textarea id="cancel-custom-reason" rows="2" placeholder="اشرح سبب الإلغاء…" maxlength="300" data-i18n-attr="placeholder:manage.statusTab.customReasonPlaceholderCancel"></textarea>
         </div>
 
         <div id="cancel-msg" class="mn-msg"></div>
         <div class="mn-form-actions">
-          <button class="mn-btn danger" id="cancel-confirm-btn" onclick="confirmCancel()">🚫 تأكيد الإلغاء</button>
+          <button class="mn-btn danger" id="cancel-confirm-btn" onclick="confirmCancel()" data-i18n="manage.statusTab.confirmCancelBtn">🚫 تأكيد الإلغاء</button>
         </div>
       </div>
     </div>
@@ -972,26 +995,26 @@
 
       <!-- Links form -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">🔗 روابط الحدث</div>
-        <div style="font-size:12.5px;color:var(--ink3);line-height:1.7;margin-bottom:16px">
+        <div class="mn-form-card-title" data-i18n="manage.docs.linksTitle">🔗 روابط الحدث</div>
+        <div style="font-size:12.5px;color:var(--ink3);line-height:1.7;margin-bottom:16px" data-i18n="manage.docs.linksHint">
           أضف روابط تُثبت وجود الحدث — منشورات Facebook أو Instagram أو TikTok أو YouTube أو X.
           ستظهر في ملفك الشخصي ليتمكن العملاء من تقييم تجاربك السابقة.
         </div>
         <div id="docs-links-container" style="margin-bottom:12px"></div>
-        <button class="mn-btn" id="docs-add-btn" onclick="docsAddLink()">+ إضافة رابط</button>
+        <button class="mn-btn" id="docs-add-btn" onclick="docsAddLink()" data-i18n="manage.docs.addBtn">+ إضافة رابط</button>
         <div class="mn-warn-box orange" id="docs-domain-warn" style="display:none;margin-top:12px">
-          <div class="mn-warn-title orange">⚠️ رابط غير معروف</div>
+          <div class="mn-warn-title orange" data-i18n="manage.docs.unknownDomainTitle">⚠️ رابط غير معروف</div>
           <div class="mn-warn-text orange" id="docs-domain-warn-text"></div>
         </div>
         <div id="docs-msg" class="mn-msg" style="margin-top:10px"></div>
         <div class="mn-form-actions">
-          <button class="mn-btn primary" id="docs-save-btn" onclick="docsSaveLinks()">💾 حفظ الروابط</button>
+          <button class="mn-btn primary" id="docs-save-btn" onclick="docsSaveLinks()" data-i18n="manage.docs.saveBtn">💾 حفظ الروابط</button>
         </div>
       </div>
 
       <!-- Status card -->
       <div class="mn-form-card">
-        <div class="mn-form-card-title">📊 حالة التوثيق</div>
+        <div class="mn-form-card-title" data-i18n="manage.docs.statusTitle">📊 حالة التوثيق</div>
         <div id="docs-status-content"></div>
       </div>
 
@@ -1002,13 +1025,13 @@
     ──────────────────────────────── -->
     <div class="mn-tab-panel" id="tab-log">
       <div class="mn-form-card">
-        <div class="mn-form-card-title">📋 سجل التغييرات</div>
+        <div class="mn-form-card-title" data-i18n="manage.log.changesTitle">📋 سجل التغييرات</div>
         <div id="log-list-container">
           <div class="mn-loading" style="padding:30px 0"><div class="mn-spin" style="font-size:22px">⏳</div></div>
         </div>
       </div>
       <div class="mn-form-card">
-        <div class="mn-form-card-title">📅 سجل التأجيلات</div>
+        <div class="mn-form-card-title" data-i18n="manage.log.postponementsTitle">📅 سجل التأجيلات</div>
         <div id="postpone-history-container">
           <div class="mn-loading" style="padding:20px 0"><div class="mn-spin" style="font-size:20px">⏳</div></div>
         </div>
@@ -1028,8 +1051,8 @@
          وليس أول ما يراه المنظم عند فتح البازار -->
     <div class="mn-activity" id="activity-feed">
       <div class="mn-activity-hdr">
-        <div class="mn-activity-title">⚡ النشاط الأخير</div>
-        <button class="mn-activity-see-all" onclick="switchTab('log')">السجل الكامل ←</button>
+        <div class="mn-activity-title" data-i18n="manage.activityFeed.title">⚡ النشاط الأخير</div>
+        <button class="mn-activity-see-all" onclick="switchTab('log')" data-i18n="manage.activityFeed.seeAllBtn">السجل الكامل ←</button>
       </div>
       <div id="activity-feed-list">
         <div class="mn-loading" style="padding:16px 0;font-size:12px">
@@ -1051,8 +1074,8 @@
 <script src="manage.js?v=202607141600" defer></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
-  <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <span style="color:#e8e8f0;font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="swUpdate.button">🔄 تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>
@@ -1076,6 +1099,20 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+</script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sb && me ? { sbClient: sb, userId: me.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+  });
 </script>
 </body>
 </html>

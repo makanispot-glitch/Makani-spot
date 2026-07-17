@@ -6,6 +6,18 @@
 <meta name="description" content="مشاريع كاملة للبيع — مكاني Spot. تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار.">
 <title>مشاريع كاملة للبيع — مكاني Spot</title>
 
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#F36418">
@@ -27,6 +39,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 <script src="/pwa-install.js?v=202607141600" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -1337,9 +1355,9 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
   <!-- روابط التنقل + أزرار الأقسام الثلاثة -->
   <div class="nav-links">
-    <a href="/">الرئيسية</a>
-    <a href="/?p=how">كيف تعمل المنصة؟</a>
-    <a href="/?p=owner">عندك مساحة؟</a>
+    <a href="/" data-i18n="nav.home">الرئيسية</a>
+    <a href="/?p=how" data-i18n="nav.how">كيف تعمل المنصة؟</a>
+    <a href="/?p=owner" data-i18n="nav.owner">عندك مساحة؟</a>
 
     <div class="nav-divider"></div>
 
@@ -1353,8 +1371,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>كل المساحات</strong>
-        <small>ابحث عن مساحة لمشروعك</small>
+        <strong data-i18n="nav.allSpaces">كل المساحات</strong>
+        <small data-i18n="nav.allSpacesDesc">ابحث عن مساحة لمشروعك</small>
       </span>
     </a>
     <a class="nav-section-btn" id="nsb-bazaars" href="/bazaars/">
@@ -1366,8 +1384,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>البازارات</strong>
-        <small>اشترك في بازار مؤقت</small>
+        <strong data-i18n="nav.bazaars">البازارات</strong>
+        <small data-i18n="nav.bazaarsDesc">اشترك في بازار مؤقت</small>
       </span>
     </a>
     <a class="nav-section-btn active" id="nsb-market" href="/market/">
@@ -1379,11 +1397,18 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>مشاريع للبيع</strong>
-        <small>ابحث عن مشروع جاهز</small>
+        <strong data-i18n="nav.projects">مشاريع للبيع</strong>
+        <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
       </span>
     </a>
   </div>
+
+  <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+    </svg>
+    <span id="langSwitchLabel">EN</span>
+  </button>
 
   <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
   <div id="eq-nav-user" class="nav-user-area"></div>
@@ -1393,10 +1418,10 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Hero ── -->
 <section class="eq-hero">
   <div class="eq-hero-inner">
-    <h1>ابدأ بمشروع <span>جاهز للبيع</span></h1>
-    <p>تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</p>
+    <h1><span data-i18n="hero.titlePre">ابدأ بمشروع</span> <span data-i18n="hero.titleSpan">جاهز للبيع</span></h1>
+    <p data-i18n="hero.subtitle">تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</p>
     <div class="eq-search-wrap">
-      <input type="text" id="eq-search" placeholder="ابحث عن مشروع أو منطقة…">
+      <input type="text" id="eq-search" data-i18n-attr="placeholder:hero.searchPlaceholder" placeholder="ابحث عن مشروع أو منطقة…">
       <span class="eq-search-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -1413,20 +1438,20 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
     </span>
     <span class="eq-ql-text">
-      <strong>تصفح المساحات التجارية</strong>
-      <small>ابحث عن موقع مناسب لمشروعك</small>
+      <strong data-i18n="quickLinks.spacesTitle">تصفح المساحات التجارية</strong>
+      <small data-i18n="quickLinks.spacesDesc">ابحث عن موقع مناسب لمشروعك</small>
     </span>
-    <span class="eq-ql-arrow">←</span>
+    <span class="eq-ql-arrow" data-i18n="arrowForward">←</span>
   </a>
   <a class="eq-quick-link" href="/bazaars/">
     <span class="eq-ql-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
     </span>
     <span class="eq-ql-text">
-      <strong>البازارات والمعارض المؤقتة</strong>
-      <small>اشترك في بازار قريب منك</small>
+      <strong data-i18n="quickLinks.bazaarsTitle">البازارات والمعارض المؤقتة</strong>
+      <small data-i18n="quickLinks.bazaarsDesc">اشترك في بازار قريب منك</small>
     </span>
-    <span class="eq-ql-arrow">←</span>
+    <span class="eq-ql-arrow" data-i18n="arrowForward">←</span>
   </a>
 </div>
 
@@ -1435,8 +1460,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <div class="eq-free-bar-icon">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-12V4l-8-2-8 2v6c0 8 8 12 8 12Z"/><path d="m9 12 2 2 4-4"/></svg>
   </div>
-  <span class="eq-free-bar-text">اعرض مشروعك للبيع <strong>مجاناً 100%</strong> — بدون عمولة أو رسوم خفية</span>
-  <a class="eq-free-bar-btn" href="/post-ad/">انشر الآن ←</a>
+  <span class="eq-free-bar-text"><span data-i18n="freeBar.text">اعرض مشروعك للبيع</span> <strong data-i18n="freeBar.textStrong">مجاناً 100%</strong> <span data-i18n="freeBar.textSuffix">— بدون عمولة أو رسوم خفية</span></span>
+  <a class="eq-free-bar-btn" href="/post-ad/" data-i18n="freeBar.postNow">انشر الآن ←</a>
 </div>
 
 <!-- ── Filters ── -->
@@ -1444,20 +1469,20 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <div class="eq-filters-bar" id="eq-filters-bar">
   <div class="eq-filters-inner">
     <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px">
-      <span class="eq-filters-row-label">التصنيف</span>
+      <span class="eq-filters-row-label" data-i18n="filters.categoryLabel">التصنيف</span>
       <div class="eq-tabs-wrap" id="eq-tabs" style="padding:0;flex:1"></div>
     </div>
     <div class="eq-sub-filters" style="padding:4px 0 12px">
       <select id="eq-gov"></select>
       <div class="eq-price-wrap">
-        <span>السعر حتى:</span>
+        <span data-i18n="filters.priceUpTo">السعر حتى:</span>
         <input type="range" id="eq-price-max" min="0" max="100000" step="500" value="0">
         <span id="eq-price-label" style="min-width:70px;font-weight:700;">بلا حد</span>
       </div>
       <select id="eq-sort">
-        <option value="newest">الأحدث</option>
-        <option value="cheapest">الأرخص</option>
-        <option value="views">الأكثر مشاهدة</option>
+        <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
+        <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
+        <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
       </select>
     </div>
   </div>
@@ -1477,45 +1502,45 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
           <line x1="8" y1="12" x2="16" y2="12"/>
           <line x1="11" y1="18" x2="13" y2="18"/>
         </svg>
-        فلتر البحث
+        <span data-i18n="filters.searchTitle">فلتر البحث</span>
       </h3>
       <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" onclick="eqCloseSidebar()">✕</button>
     </div>
 
     <div class="eq-drawer-body">
       <div class="eq-drawer-section">
-        <div class="eq-drawer-label">التصنيف</div>
+        <div class="eq-drawer-label" data-i18n="filters.categoryLabel">التصنيف</div>
         <div class="eq-drawer-tabs" id="eq-drawer-tabs"></div>
       </div>
       <div class="eq-drawer-section">
-        <div class="eq-drawer-label">المحافظة</div>
+        <div class="eq-drawer-label" data-i18n="filters.governorate">المحافظة</div>
         <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)">
-          <option value="">كل المحافظات</option>
+          <option value="" data-i18n="filters.allGovs">كل المحافظات</option>
         </select>
       </div>
       <div class="eq-drawer-section">
-        <div class="eq-drawer-label">الترتيب</div>
+        <div class="eq-drawer-label" data-i18n="filters.sort">الترتيب</div>
         <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)">
-          <option value="newest">الأحدث</option>
-          <option value="cheapest">الأرخص</option>
-          <option value="views">الأكثر مشاهدة</option>
+          <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
+          <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
+          <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
         </select>
       </div>
       <div class="eq-drawer-section">
-        <div class="eq-drawer-price-label">السعر الأقصى: <strong id="eq-drawer-price-val">بلا حد</strong></div>
+        <div class="eq-drawer-price-label"><span data-i18n="filters.maxPrice">السعر الأقصى:</span> <strong id="eq-drawer-price-val">بلا حد</strong></div>
         <input type="range" id="eq-drawer-price" min="0" max="100000" step="500" value="0" oninput="eqDrawerPriceChange(this)">
       </div>
     </div>
 
     <div class="eq-drawer-actions">
-      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer()" style="flex:1">إعادة تعيين</button>
-      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters()" style="flex:2">عرض النتائج</button>
+      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer()" style="flex:1" data-i18n="filters.reset">إعادة تعيين</button>
+      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters()" style="flex:2" data-i18n="filters.showResults">عرض النتائج</button>
     </div>
   </div>
 </div>
 
 <!-- ── Filter Toggle Tab (standalone fixed, events attached via JS) ── -->
-<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar()" aria-label="فتح فلاتر البحث">
+<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar()" aria-label="فتح فلاتر البحث" data-i18n-attr="aria-label:filters.searchTitle">
   <span>
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="4" y1="6" x2="20" y2="6"/>
@@ -1524,23 +1549,23 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
     </svg>
   </span>
   <span class="eq-sidebar-tab-badge" id="eq-drawer-badge">0</span>
-  <span class="eq-sidebar-tab-text">فلتر</span>
+  <span class="eq-sidebar-tab-text" data-i18n="filters.filterBtn">فلتر</span>
   <span class="eq-sidebar-tab-arrow">›</span>
 </button>
 
 <!-- ── Main ── -->
 <main class="eq-main">
   <button class="eq-mobile-filter-btn" id="eq-mobile-filter-btn" type="button" onclick="eqOpenSidebar()">
-    فلتر البحث
+    <span data-i18n="filters.searchTitle">فلتر البحث</span>
     <span class="eq-sidebar-tab-badge" id="eq-mobile-filter-badge">0</span>
   </button>
   <div class="eq-count-row">
     <span id="eq-count">جاري التحميل…</span>
-    <a class="eq-btn eq-btn-primary" href="/post-ad/">+ انشر إعلانك</a>
+    <a class="eq-btn eq-btn-primary" href="/post-ad/" data-i18n="filters.postAd">+ انشر إعلانك</a>
   </div>
   <div class="eq-grid" id="eq-grid"></div>
   <div class="eq-load-more-wrap">
-    <button class="eq-btn eq-btn-outline" id="eq-load-more" onclick="eqLoadMore()" style="display:none">تحميل المزيد</button>
+    <button class="eq-btn eq-btn-outline" id="eq-load-more" onclick="eqLoadMore()" style="display:none" data-i18n="grid.loadMore">تحميل المزيد</button>
   </div>
 </main>
 
@@ -1555,32 +1580,32 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <!-- ── Report Modal ── -->
 <div class="eq-report-overlay" id="eq-report-modal">
   <div class="eq-report-box">
-    <h3>إبلاغ عن إعلان</h3>
+    <h3 data-i18n="report.title">إبلاغ عن إعلان</h3>
     <input type="hidden" id="eq-report-id">
     <div id="eq-report-reasons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="spam"> نشر متكرر / سبام
+        <input type="radio" name="eq-report-cat" value="spam"> <span data-i18n="report.categories.spam">نشر متكرر / سبام</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="fake"> إعلان وهمي / غير حقيقي
+        <input type="radio" name="eq-report-cat" value="fake"> <span data-i18n="report.categories.fake">إعلان وهمي / غير حقيقي</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="wrong_info"> معلومات أو سعر مضلل
+        <input type="radio" name="eq-report-cat" value="wrong_info"> <span data-i18n="report.categories.wrong_info">معلومات أو سعر مضلل</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="sold_elsewhere"> تم البيع / لم يعد متاحاً
+        <input type="radio" name="eq-report-cat" value="sold_elsewhere"> <span data-i18n="report.categories.sold_elsewhere">تم البيع / لم يعد متاحاً</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="inappropriate"> محتوى غير لائق
+        <input type="radio" name="eq-report-cat" value="inappropriate"> <span data-i18n="report.categories.inappropriate">محتوى غير لائق</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;border:1.5px solid #E5E7EB;border-radius:10px;padding:9px 12px;cursor:pointer">
-        <input type="radio" name="eq-report-cat" value="other"> سبب آخر
+        <input type="radio" name="eq-report-cat" value="other"> <span data-i18n="report.categories.other">سبب آخر</span>
       </label>
     </div>
-    <textarea id="eq-report-reason" placeholder="ملاحظة إضافية (اختياري)…" rows="2"></textarea>
+    <textarea id="eq-report-reason" data-i18n-attr="placeholder:report.notePlaceholder" placeholder="ملاحظة إضافية (اختياري)…" rows="2"></textarea>
     <div class="eq-report-actions">
-      <button class="eq-btn eq-btn-ghost" onclick="eqCloseReport()">إلغاء</button>
-      <button class="eq-btn eq-btn-danger" onclick="eqSubmitReport()">إرسال البلاغ</button>
+      <button class="eq-btn eq-btn-ghost" onclick="eqCloseReport()" data-i18n="report.cancel">إلغاء</button>
+      <button class="eq-btn eq-btn-danger" onclick="eqSubmitReport()" data-i18n="report.submit">إرسال البلاغ</button>
     </div>
   </div>
 </div>
@@ -1589,11 +1614,11 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <div class="eq-my-overlay" id="eq-my-modal">
   <div class="eq-my-box">
     <div class="eq-my-header">
-      <h2>إعلاناتي</h2>
+      <h2 data-i18n="myListings.title">إعلاناتي</h2>
       <button class="eq-my-close" onclick="eqCloseMyListings()">✕</button>
     </div>
     <div class="eq-my-list" id="eq-my-listings">
-      <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
+      <div class="eq-loading"><div class="eq-spinner"></div><p data-i18n="favorites.loading">جاري التحميل…</p></div>
     </div>
   </div>
 </div>
@@ -1602,11 +1627,11 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <div class="eq-my-overlay" id="eq-fav-modal">
   <div class="eq-my-box">
     <div class="eq-my-header">
-      <h2>المفضلة</h2>
+      <h2 data-i18n="favorites.title">المفضلة</h2>
       <button class="eq-my-close" onclick="eqCloseFavorites()">✕</button>
     </div>
     <div class="eq-my-list" id="eq-fav-body">
-      <div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>
+      <div class="eq-loading"><div class="eq-spinner"></div><p data-i18n="favorites.loading">جاري التحميل…</p></div>
     </div>
   </div>
 </div>
@@ -1615,7 +1640,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 <div class="eq-my-overlay" id="eq-edit-modal">
   <div class="eq-my-box eq-edit-box">
     <div class="eq-my-header">
-      <h2>تعديل الإعلان</h2>
+      <h2 data-i18n="edit.title">تعديل الإعلان</h2>
       <button class="eq-my-close" onclick="eqCloseEdit()">✕</button>
     </div>
     <div class="eq-edit-scroll">
@@ -1624,57 +1649,57 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       <div id="eq-edit-note" class="eq-edit-note eq-edit-note-info"></div>
 
       <div class="eq-edit-field">
-        <label>التصنيف</label>
+        <label data-i18n="edit.categoryLabel">التصنيف</label>
         <select id="eq-edit-category"></select>
       </div>
       <div class="eq-edit-field">
-        <label>عنوان الإعلان</label>
-        <input type="text" id="eq-edit-title" maxlength="100" placeholder="مثال: كيوسك بارتشن كامل للبيع">
+        <label data-i18n="edit.titleLabel">عنوان الإعلان</label>
+        <input type="text" id="eq-edit-title" maxlength="100" data-i18n-attr="placeholder:edit.titlePlaceholder" placeholder="مثال: كيوسك بارتشن كامل للبيع">
       </div>
       <div class="eq-edit-field">
-        <label>الوصف التفصيلي</label>
-        <textarea id="eq-edit-desc" rows="4" maxlength="1000" placeholder="اكتب تفاصيل المشروع أو القطعة…"></textarea>
+        <label data-i18n="edit.descLabel">الوصف التفصيلي</label>
+        <textarea id="eq-edit-desc" rows="4" maxlength="1000" data-i18n-attr="placeholder:edit.descPlaceholder" placeholder="اكتب تفاصيل المشروع أو القطعة…"></textarea>
       </div>
       <div class="eq-edit-row">
         <div class="eq-edit-field">
-          <label>الحالة</label>
+          <label data-i18n="edit.conditionLabel">الحالة</label>
           <select id="eq-edit-condition"></select>
         </div>
         <div class="eq-edit-field">
-          <label>السعر (جنيه)</label>
+          <label data-i18n="edit.priceLabel">السعر (جنيه)</label>
           <input type="number" id="eq-edit-price" min="1" placeholder="0">
         </div>
       </div>
       <div class="eq-edit-field eq-edit-check">
         <input type="checkbox" id="eq-edit-negotiable">
-        <label for="eq-edit-negotiable">قابل للتفاوض</label>
+        <label for="eq-edit-negotiable" data-i18n="edit.negotiableLabel">قابل للتفاوض</label>
       </div>
       <div class="eq-edit-row">
         <div class="eq-edit-field">
-          <label>المحافظة</label>
+          <label data-i18n="edit.regionLabel">المحافظة</label>
           <select id="eq-edit-region"></select>
         </div>
         <div class="eq-edit-field">
-          <label>المنطقة / الحي (اختياري)</label>
-          <input type="text" id="eq-edit-area" maxlength="80" placeholder="مثال: مدينة نصر">
+          <label data-i18n="edit.areaLabel">المنطقة / الحي (اختياري)</label>
+          <input type="text" id="eq-edit-area" maxlength="80" data-i18n-attr="placeholder:edit.areaPlaceholder" placeholder="مثال: مدينة نصر">
         </div>
       </div>
       <div class="eq-edit-field">
-        <label>رقم التليفون</label>
+        <label data-i18n="edit.phoneLabel">رقم التليفون</label>
         <input type="tel" id="eq-edit-phone" maxlength="20" dir="ltr" placeholder="01xxxxxxxxx">
       </div>
       <div class="eq-edit-field">
-        <label>طريقة التواصل المفضلة</label>
+        <label data-i18n="edit.contactPrefLabel">طريقة التواصل المفضلة</label>
         <select id="eq-edit-contact">
-          <option value="both">واتساب + اتصال</option>
-          <option value="whatsapp">واتساب فقط</option>
-          <option value="call">اتصال فقط</option>
+          <option value="both" data-i18n="edit.contactBoth">واتساب + اتصال</option>
+          <option value="whatsapp" data-i18n="edit.contactWhatsapp">واتساب فقط</option>
+          <option value="call" data-i18n="edit.contactCall">اتصال فقط</option>
         </select>
       </div>
 
       <div class="eq-edit-actions">
-        <button class="eq-btn eq-btn-ghost" onclick="eqCloseEdit()">إلغاء</button>
-        <button class="eq-btn eq-btn-primary" id="eq-edit-save-btn" onclick="eqSubmitEdit()">حفظ التعديلات</button>
+        <button class="eq-btn eq-btn-ghost" onclick="eqCloseEdit()" data-i18n="edit.cancel">إلغاء</button>
+        <button class="eq-btn eq-btn-primary" id="eq-edit-save-btn" onclick="eqSubmitEdit()" data-i18n="edit.save">حفظ التعديلات</button>
       </div>
     </div>
   </div>
@@ -1682,22 +1707,22 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 <!-- ── FAB ── -->
 <a class="eq-fab" href="/post-ad/" title="انشر إعلان">+</a>
-<div class="eq-fab-tooltip">انشر إعلانك مجاناً</div>
+<div class="eq-fab-tooltip" data-i18n="fab.tooltip">انشر إعلانك مجاناً</div>
 
 <!-- ── Image Lightbox ── -->
 <div class="eq-lightbox" id="eq-lightbox" onclick="eqLightboxClose()">
-  <button class="eq-lb-close" onclick="eqLightboxClose();event.stopPropagation()" aria-label="إغلاق">✕</button>
+  <button class="eq-lb-close" onclick="eqLightboxClose();event.stopPropagation()" aria-label="إغلاق" data-i18n-attr="aria-label:lightbox.close">✕</button>
   <div class="eq-lb-tools" onclick="event.stopPropagation()">
-    <button class="eq-lb-tool" onclick="eqLightboxZoom(-0.25)" aria-label="تصغير">−</button>
+    <button class="eq-lb-tool" onclick="eqLightboxZoom(-0.25)" aria-label="تصغير" data-i18n-attr="aria-label:lightbox.zoomOut">−</button>
     <span class="eq-lb-zoom-label" id="eq-lb-zoom-label">100%</span>
-    <button class="eq-lb-tool" onclick="eqLightboxZoom(0.25)" aria-label="تكبير">+</button>
-    <button class="eq-lb-tool" onclick="eqLightboxResetZoom()" aria-label="إعادة الحجم">1:1</button>
+    <button class="eq-lb-tool" onclick="eqLightboxZoom(0.25)" aria-label="تكبير" data-i18n-attr="aria-label:lightbox.zoomIn">+</button>
+    <button class="eq-lb-tool" onclick="eqLightboxResetZoom()" aria-label="إعادة الحجم" data-i18n-attr="aria-label:lightbox.resetZoom">1:1</button>
   </div>
-  <button class="eq-lb-nav eq-lb-prev" id="eq-lb-prev" onclick="eqLightboxNav(-1);event.stopPropagation()" aria-label="السابقة">‹</button>
+  <button class="eq-lb-nav eq-lb-prev" id="eq-lb-prev" onclick="eqLightboxNav(-1);event.stopPropagation()" aria-label="السابقة" data-i18n-attr="aria-label:lightbox.prev">‹</button>
   <div class="eq-lb-stage" onclick="event.stopPropagation()">
     <img class="eq-lb-img" id="eq-lb-img" src="" alt="" onclick="event.stopPropagation()" ondblclick="eqLightboxZoom(0.5);event.stopPropagation()" draggable="false">
   </div>
-  <button class="eq-lb-nav eq-lb-next" id="eq-lb-next" onclick="eqLightboxNav(1);event.stopPropagation()" aria-label="التالية">›</button>
+  <button class="eq-lb-nav eq-lb-next" id="eq-lb-next" onclick="eqLightboxNav(1);event.stopPropagation()" aria-label="التالية" data-i18n-attr="aria-label:lightbox.next">›</button>
   <div class="eq-lb-counter" id="eq-lb-counter"></div>
 </div>
 
@@ -1712,8 +1737,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
     </span>
-    <span class="bn-label">الرئيسية</span>
-    <span class="bn-desc">الصفحة الرئيسية</span>
+    <span class="bn-label" data-i18n="bottomNav.home">الرئيسية</span>
+    <span class="bn-desc" data-i18n="bottomNav.homeDesc">الصفحة الرئيسية</span>
   </button>
 
   <!-- المساحات التجارية -->
@@ -1724,8 +1749,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <circle cx="12" cy="10" r="3"/>
       </svg>
     </span>
-    <span class="bn-label">مساحات</span>
-    <span class="bn-desc">ثابتة وتجارية</span>
+    <span class="bn-label" data-i18n="bottomNav.spaces">مساحات</span>
+    <span class="bn-desc" data-i18n="bottomNav.spacesDesc">ثابتة وتجارية</span>
   </button>
 
   <!-- البازارات -->
@@ -1736,8 +1761,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <path d="M12 3v18"/>
       </svg>
     </span>
-    <span class="bn-label">بازارات</span>
-    <span class="bn-desc">أحداث وبازارات</span>
+    <span class="bn-label" data-i18n="bottomNav.bazaars">بازارات</span>
+    <span class="bn-desc" data-i18n="bottomNav.bazaarsDesc">أحداث وبازارات</span>
   </button>
 
   <!-- مشاريع للبيع — نشط -->
@@ -1748,8 +1773,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
       </svg>
     </span>
-    <span class="bn-label">مشاريع</span>
-    <span class="bn-desc">كاملة للبيع</span>
+    <span class="bn-label" data-i18n="bottomNav.projects">مشاريع</span>
+    <span class="bn-desc" data-i18n="bottomNav.projectsDesc">كاملة للبيع</span>
   </a>
 
   <!-- دخول / حساب -->
@@ -1777,24 +1802,24 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
         <span class="sf-logo-sep" aria-hidden="true"></span>
         <span class="sf-logo-en">Spot</span>
       </div>
-      <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
+      <p class="sf-about" data-i18n="footer.about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
       <div class="sf-paths">
-        <span class="sf-path">مساحات تجارية</span>
-        <span class="sf-path">بازارات ومعارض</span>
-        <span class="sf-path">مشاريع للبيع</span>
+        <span class="sf-path" data-i18n="footer.pathSpaces">مساحات تجارية</span>
+        <span class="sf-path" data-i18n="footer.pathBazaars">بازارات ومعارض</span>
+        <span class="sf-path" data-i18n="footer.pathProjects">مشاريع للبيع</span>
       </div>
     </div>
     <div class="sf-col sf-col--links">
-      <h4 class="sf-col-title">تصفح المنصة</h4>
-      <a class="sf-link" href="/">الرئيسية</a>
-      <a class="sf-link" href="/?p=market">المساحات التجارية</a>
-      <a class="sf-link" href="/bazaars/">البازارات والمعارض</a>
-      <a class="sf-link" href="/market/">مشاريع كاملة للبيع</a>
-      <a class="sf-link" href="/catalog/">كتالوج الأنشطة</a>
-      <a class="sf-link" href="/post-ad/">نشر إعلانك</a>
+      <h4 class="sf-col-title" data-i18n="footer.browseTitle">تصفح المنصة</h4>
+      <a class="sf-link" href="/" data-i18n="footer.linkHome">الرئيسية</a>
+      <a class="sf-link" href="/?p=market" data-i18n="footer.linkSpaces">المساحات التجارية</a>
+      <a class="sf-link" href="/bazaars/" data-i18n="footer.linkBazaars">البازارات والمعارض</a>
+      <a class="sf-link" href="/market/" data-i18n="footer.linkProjects">مشاريع كاملة للبيع</a>
+      <a class="sf-link" href="/catalog/" data-i18n="footer.linkCatalog">كتالوج الأنشطة</a>
+      <a class="sf-link" href="/post-ad/" data-i18n="footer.linkPostAd">نشر إعلانك</a>
     </div>
     <div class="sf-col sf-col--contact">
-      <h4 class="sf-col-title">تواصل معنا</h4>
+      <h4 class="sf-col-title" data-i18n="footer.contactTitle">تواصل معنا</h4>
       <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         <span dir="ltr">011 0346 7711</span>
@@ -1806,22 +1831,22 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       <div class="sf-col-divider"></div>
       <a class="sf-policies-link" href="/policies/">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        السياسات والشروط القانونية
+        <span data-i18n="footer.policiesLink">السياسات والشروط القانونية</span>
       </a>
     </div>
   </div>
   <div class="sf-bottom">
     <div class="sf-bottom-inner">
-      <span class="sf-legal">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
-      <span class="sf-copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
+      <span class="sf-legal" data-i18n="footer.legalLine">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
+      <span class="sf-copy" data-i18n="footer.copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
     </div>
   </div>
 </footer>
 
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--navy-700,#212833);border:1.5px solid rgba(243,100,24,.6);border-radius:var(--radius-xl,14px);padding:12px 18px;box-shadow:var(--shadow-xl);align-items:center;gap:12px;white-space:nowrap;font-family:var(--font-display,'Cairo',sans-serif);">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:rgba(255,255,255,0.7)"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-  <span style="color:rgba(255,255,255,0.88);font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:var(--font-display,'Cairo',sans-serif);font-size:12px;font-weight:700;cursor:pointer;">تحديث الآن</button>
+  <span style="color:rgba(255,255,255,0.88);font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:linear-gradient(180deg,#F47432 0%,#F36418 100%);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:var(--font-display,'Cairo',sans-serif);font-size:12px;font-weight:700;cursor:pointer;" data-i18n="swUpdate.buttonPlain">تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,0.45);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>
@@ -1845,6 +1870,20 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+</script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['market', 'common']).then(updateLangSwitcherLabel);
+  });
 </script>
 </body>
 </html>

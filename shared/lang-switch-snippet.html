@@ -1,0 +1,33 @@
+<!--
+  Language Switch Button — مرجع للنسخ فقط، مش بيتحمّل كـ <script src="..."> من أي صفحة.
+
+  الموضع: أول عنصر داخل .nav-user-area (قبل نظام دخول/أفاتار)، عشان يفضل
+  في نفس المكان بالظبط بغض النظر عن حالة تسجيل الدخول. لصفحات بدون
+  .nav-user-area (زي policies/) ضيفه جوه .nav مباشرة قبل أي زر تاني.
+
+  التصميم الكامل (CSS) في style.css تحت تعليق "زر تبديل اللغة (i18n)".
+  السلوك (toggleMakaniLocale/updateLangSwitcherLabel) لازم يتكرر في
+  <script> الصفحة، وinitI18n(...) لازم يستدعي updateLangSwitcherLabel()
+  بعد ما يخلص — راجع policies/index.html كمثال كامل شغّال.
+
+  لو الصفحة عندها مستخدم مسجّل دخول (sbClient + userId متاحين وقت
+  toggleMakaniLocale)، مرّرهم لـ setLocale(next, {sbClient, userId})
+  عشان يتحفظ الاختيار في profiles.preferred_locale — التفصيلة دي بتتضاف
+  يدويًا لكل صفحة حسب متغيراتها الخاصة (مافيش عميل Supabase عالمي موحّد).
+-->
+<button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+  </svg>
+  <span id="langSwitchLabel">EN</span>
+</button>
+
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
+  }
+</script>

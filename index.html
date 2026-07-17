@@ -73,6 +73,18 @@
     })();
   </script>
 
+  <!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('makani_locale') === 'en') {
+          document.documentElement.lang = 'en';
+          document.documentElement.dir = 'ltr';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- روابط الخطوط من Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,6 +97,12 @@
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+  <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+  <script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+  <script src="/shared/i18n.js?v=202607141600" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -143,9 +161,9 @@
     <div class="nav-links">
 
       <!-- روابط ثانوية -->
-      <a class="active" onclick="showPage('home')">الرئيسية</a>
-      <a onclick="showPage('how')">كيف تعمل المنصة؟</a>
-      <a onclick="showPage('owner')">عندك مساحة؟</a>
+      <a class="active" onclick="showPage('home')" data-i18n="nav.home">الرئيسية</a>
+      <a onclick="showPage('how')" data-i18n="nav.how">كيف تعمل المنصة؟</a>
+      <a onclick="showPage('owner')" data-i18n="nav.owner">عندك مساحة؟</a>
 
       <div class="nav-divider"></div>
 
@@ -160,8 +178,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>كل المساحات</strong>
-          <small>ابحث عن مساحة لمشروعك</small>
+          <strong data-i18n="nav.allSpaces">كل المساحات</strong>
+          <small data-i18n="nav.allSpacesDesc">ابحث عن مساحة لمشروعك</small>
         </span>
       </a>
 
@@ -174,8 +192,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>البازارات</strong>
-          <small>اشترك في بازار مؤقت</small>
+          <strong data-i18n="nav.bazaars">البازارات</strong>
+          <small data-i18n="nav.bazaarsDesc">اشترك في بازار مؤقت</small>
         </span>
       </a>
 
@@ -188,8 +206,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>مشاريع للبيع</strong>
-          <small>ابحث عن مشروع جاهز</small>
+          <strong data-i18n="nav.projects">مشاريع للبيع</strong>
+          <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
         </span>
       </a>
 
@@ -197,6 +215,14 @@
 
     <!-- منطقة المستخدم — تتغير حسب حالة تسجيل الدخول -->
     <div class="nav-user-area" id="nav-user-area">
+
+      <!-- زر تبديل اللغة — ظاهر دائماً بغض النظر عن حالة تسجيل الدخول -->
+      <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+        </svg>
+        <span id="langSwitchLabel">EN</span>
+      </button>
 
       <!-- الحالة الأولى: زائر غير مسجّل -->
       <div id="nav-guest" style="display:flex;align-items:center;gap:8px">
@@ -206,9 +232,9 @@
             <circle cx="12" cy="8" r="4" />
             <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7" />
           </svg>
-          <span>دخول</span>
+          <span data-i18n="nav.loginBtn">دخول</span>
           <span class="btn-login-sep">|</span>
-          <span>سجّل</span>
+          <span data-i18n="nav.signupBtn">سجّل</span>
         </button>
       </div>
 
@@ -240,7 +266,7 @@
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 22a8 8 0 0 1 16 0" />
               </svg>
-              ملفي الشخصي
+              <span data-i18n="userMenu.profile">ملفي الشخصي</span>
             </button>
             <button class="nav-dropdown-item" onclick="goToDashboard()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -250,7 +276,7 @@
                 <rect x="3" y="14" width="7" height="7" />
                 <rect x="14" y="14" width="7" height="7" />
               </svg>
-              لوحة التحكم
+              <span data-i18n="userMenu.dashboard">لوحة التحكم</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -258,7 +284,7 @@
                 <path d="M4 4h16v18l-4-2-4 2-4-2-4 2z" />
                 <path d="M8 8h8M8 12h8M8 16h4" />
               </svg>
-              إعلاناتي
+              <span data-i18n="userMenu.myListings">إعلاناتي</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -266,7 +292,7 @@
                 <path d="M3.5 21h17L12 3 3.5 21Z" />
                 <path d="M12 3v18" />
               </svg>
-              اشترك في بازار
+              <span data-i18n="userMenu.joinBazaar">اشترك في بازار</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/spaces/';closeUserDropdown()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -274,7 +300,7 @@
                 <circle cx="11" cy="11" r="7" />
                 <path d="m20 20-3.5-3.5" />
               </svg>
-              ابحث عن مساحة
+              <span data-i18n="userMenu.findSpace">ابحث عن مساحة</span>
             </button>
             <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()"
               style="display:none;color:#16a34a;font-weight:700">
@@ -284,7 +310,7 @@
                 <path d="M4 11v9h16v-9" />
                 <path d="M9 20v-6h6v6" />
               </svg>
-              لوحة أصحاب المساحات
+              <span data-i18n="userMenu.ownerDashboard">لوحة أصحاب المساحات</span>
             </button>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item danger" onclick="doLogout()">
@@ -292,7 +318,7 @@
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
               </svg>
-              تسجيل الخروج
+              <span data-i18n="userMenu.logout">تسجيل الخروج</span>
             </button>
           </div>
 
@@ -320,43 +346,43 @@
 
           <p class="hv2-eyebrow">
             <span class="hv2-eyebrow-bar" aria-hidden="true"></span>
-            المنصة الأولى لتأجير المساحات الصغيرة في مصر
+            <span data-i18n="hero.eyebrow">المنصة الأولى لتأجير المساحات الصغيرة في مصر</span>
           </p>
 
-          <h1 class="hv2-h1">
+          <h1 class="hv2-h1" data-i18n-html="hero.h1">
             ابدأ مشروعك<br>من <em>المكان الصح</em>
           </h1>
 
-          <p class="hv2-desc">
+          <p class="hv2-desc" data-i18n="hero.desc">
             احجز مساحتك في أقوى المولات والأندية بأقل تكلفة ومخاطرة — وركّز في بيع منتجك وبس.
           </p>
 
           <div class="hv2-actions">
             <button class="hv2-btn-primary" onclick="scrollToSearch()">
-              احجز مساحتك الآن
+              <span data-i18n="hero.ctaPrimary">احجز مساحتك الآن</span>
               <svg class="hv2-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
               </svg>
             </button>
-            <button class="hv2-btn-ghost" onclick="showPage('how')">كيف تعمل المنصة؟</button>
+            <button class="hv2-btn-ghost" onclick="showPage('how')" data-i18n="nav.how">كيف تعمل المنصة؟</button>
           </div>
 
           <div class="hv2-stats">
             <div class="hv2-stat">
-              <span class="hv2-stat-n">+١٢٠</span>
-              <span class="hv2-stat-l">مساحة متاحة</span>
+              <span class="hv2-stat-n" data-i18n="stats.spacesCount">+١٢٠</span>
+              <span class="hv2-stat-l" data-i18n="auth.login.statSpaces">مساحة متاحة</span>
             </div>
             <span class="hv2-stat-sep" aria-hidden="true"></span>
             <div class="hv2-stat">
-              <span class="hv2-stat-n">٣٢</span>
-              <span class="hv2-stat-l">موقع شريك</span>
+              <span class="hv2-stat-n" data-i18n="stats.locationsCount">٣٢</span>
+              <span class="hv2-stat-l" data-i18n="auth.login.statLocations">موقع شريك</span>
             </div>
             <span class="hv2-stat-sep" aria-hidden="true"></span>
             <div class="hv2-stat">
-              <span class="hv2-stat-n">+٨٥٠</span>
-              <span class="hv2-stat-l">مستأجر ناجح</span>
+              <span class="hv2-stat-n" data-i18n="stats.tenantsCount">+٨٥٠</span>
+              <span class="hv2-stat-l" data-i18n="auth.login.statTenants">مستأجر ناجح</span>
             </div>
           </div>
 
@@ -600,20 +626,20 @@
             </svg>
           </div>
           <div class="bz-home-intro-text">
-            <strong>البازارات — فعاليات حية في أرقى المواقع التجارية</strong>
-            <p>احجز مكانك في فعالية قادمة، جرّب منتجك أمام جمهور حقيقي، وابدأ البيع بدون التزامات طويلة أو تعقيدات
+            <strong data-i18n="bazaarTeaser.title">البازارات — فعاليات حية في أرقى المواقع التجارية</strong>
+            <p data-i18n="bazaarTeaser.desc">احجز مكانك في فعالية قادمة، جرّب منتجك أمام جمهور حقيقي، وابدأ البيع بدون التزامات طويلة أو تعقيدات
               إدارية.</p>
           </div>
         </div>
 
         <!-- ── قسم البازارات القادمة ── -->
         <div class="qp-bz-head">
-          <div class="bz-home-pill">البازارات القادمة</div>
-          <button class="bz-home-see-all" onclick="window.location.href='/bazaars/'">عرض جميع البزارات ←</button>
+          <div class="bz-home-pill" data-i18n="bazaarTeaser.upcomingPill">البازارات القادمة</div>
+          <button class="bz-home-see-all" onclick="window.location.href='/bazaars/'" data-i18n="bazaarTeaser.seeAllBtn">عرض جميع البزارات ←</button>
         </div>
 
         <div class="bz-home-scroll" id="bz-home-scroll">
-          <div class="bz-home-empty">جاري تحميل البزارات...</div>
+          <div class="bz-home-empty" data-i18n="bazaarTeaser.loading">جاري تحميل البزارات...</div>
         </div>
 
       </div>
@@ -623,53 +649,53 @@
     <!-- صندوق البحث والفلترة -->
     <div class="search-wrap reveal-on-scroll" id="search-anchor">
       <div class="search-box">
-        <div class="search-title">ابحث عن مساحتك · بالمنطقة والنشاط والميزانية</div>
+        <div class="search-title" data-i18n="search.title">ابحث عن مساحتك · بالمنطقة والنشاط والميزانية</div>
 
         <!-- صف الفلاتر الرئيسية -->
         <div class="filter-row">
           <div class="fg">
-            <label>المنطقة</label>
+            <label data-i18n="search.regionLabel">المنطقة</label>
             <select id="f-region">
-              <option value="">كل المناطق</option>
-              <option>مدينة نصر</option>
-              <option>التجمع الخامس</option>
-              <option>المهندسين</option>
-              <option>الزمالك</option>
-              <option>الشيخ زايد</option>
-              <option>6 أكتوبر</option>
-              <option>مصر الجديدة</option>
+              <option value="" data-i18n="search.regionAll">كل المناطق</option>
+              <option data-i18n="regions.nasrCity">مدينة نصر</option>
+              <option data-i18n="regions.fifthSettlement">التجمع الخامس</option>
+              <option data-i18n="regions.mohandessin">المهندسين</option>
+              <option data-i18n="regions.zamalek">الزمالك</option>
+              <option data-i18n="regions.sheikhZayed">الشيخ زايد</option>
+              <option data-i18n="regions.october6">6 أكتوبر</option>
+              <option data-i18n="regions.heliopolis">مصر الجديدة</option>
             </select>
           </div>
           <div class="fg">
-            <label>مدة الإيجار</label>
+            <label data-i18n="search.durationLabel">مدة الإيجار</label>
             <select id="f-dur">
-              <option value="">أي مدة</option>
-              <option>يومي</option>
-              <option>أسبوعي</option>
-              <option>شهري</option>
-              <option>موسمي (3 شهور)</option>
-              <option>سنوي</option>
+              <option value="" data-i18n="search.durationAny">أي مدة</option>
+              <option data-i18n="search.durationDaily">يومي</option>
+              <option data-i18n="search.durationWeekly">أسبوعي</option>
+              <option data-i18n="search.durationMonthly">شهري</option>
+              <option data-i18n="search.durationSeasonal">موسمي (3 شهور)</option>
+              <option data-i18n="search.durationYearly">سنوي</option>
             </select>
           </div>
           <div class="fg">
-            <label>نوع المكان</label>
+            <label data-i18n="search.typeLabel">نوع المكان</label>
             <select id="f-type">
-              <option value="">الكل</option>
-              <option value="mall">مول تجاري</option>
-              <option value="club">نادي رياضي</option>
-              <option value="school">مدرسة</option>
+              <option value="" data-i18n="search.typeAll">الكل</option>
+              <option value="mall" data-i18n="search.typeMall">مول تجاري</option>
+              <option value="club" data-i18n="search.typeClub">نادي رياضي</option>
+              <option value="school" data-i18n="search.typeSchool">مدرسة</option>
             </select>
           </div>
           <div class="fg">
             <label>&nbsp;</label>
-            <button class="btn btn-primary" onclick="doSearch()" style="height:45px;padding:0 26px">بحث</button>
+            <button class="btn btn-primary" onclick="doSearch()" style="height:45px;padding:0 26px" data-i18n="search.searchBtn">بحث</button>
           </div>
         </div>
 
         <!-- مؤشر السعر — نقطة واحدة (الحد الأقصى) -->
         <div class="price-slider-wrap">
           <div class="price-slider-label-row">
-            <span class="price-slider-title">الحد الأقصى للسعر / شهر</span>
+            <span class="price-slider-title" data-i18n="search.priceLabel">الحد الأقصى للسعر / شهر</span>
             <span class="price-single-val" id="price-max-label">بلا حد</span>
           </div>
           <div class="slider-container slider-single">
@@ -678,20 +704,20 @@
               oninput="updateMainSlider()">
           </div>
           <div class="slider-hints">
-            <span>٠ ج</span>
-            <span>٢٥,٠٠٠ ج</span>
-            <span>بلا حد</span>
+            <span data-i18n="search.priceZero">٠ ج</span>
+            <span data-i18n="search.price25k">٢٥,٠٠٠ ج</span>
+            <span data-i18n="search.priceNoLimit">بلا حد</span>
           </div>
         </div>
 
         <!-- فلتر النشاط التجاري (يُملأ تلقائياً من الشيت) -->
         <div class="act-filter-section">
-          <div class="act-filter-lbl">فلتر بالنشاط التجاري</div>
+          <div class="act-filter-lbl" data-i18n="search.activityLabel">فلتر بالنشاط التجاري</div>
           <div class="fg" style="max-width:320px">
             <select id="f-act" onchange="onActDropdown(this.value)" style="padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);
                          background:var(--surface2);font-size:14px;color:var(--ink);
                          font-family:'Cairo',sans-serif;outline:none;transition:all 0.15s;cursor:pointer;">
-              <option value="">— اختر النشاط —</option>
+              <option value="" data-i18n="search.activityPick">— اختر النشاط —</option>
             </select>
           </div>
         </div>
@@ -709,29 +735,29 @@
       <!-- البانر الترويجي -->
       <div class="cta-banner reveal-on-scroll">
         <div class="cta-text">
-          <div class="cta-title">ابدأ مشروعك من أفضل المواقع في مصر</div>
-          <div class="cta-sub">اختر المساحة المناسبة — ابعث طلب حجز — سنتواصل معك وننهي الإجراءات خلال ٢٤ ساعة</div>
+          <div class="cta-title" data-i18n="ctaBanner.title">ابدأ مشروعك من أفضل المواقع في مصر</div>
+          <div class="cta-sub" data-i18n="ctaBanner.sub">اختر المساحة المناسبة — ابعث طلب حجز — سنتواصل معك وننهي الإجراءات خلال ٢٤ ساعة</div>
         </div>
         <div class="cta-btns">
-          <button class="btn btn-primary" onclick="scrollToSearch()">احجز مساحتك</button>
+          <button class="btn btn-primary" onclick="scrollToSearch()" data-i18n="ctaBanner.bookBtn">احجز مساحتك</button>
           <button class="btn btn-ghost" onclick="showPage('owner')"
-            style="color:#fff;border-color:rgba(255,255,255,0.22)">عندك مساحة فاضية؟</button>
+            style="color:#fff;border-color:rgba(255,255,255,0.22)" data-i18n="ctaBanner.ownerBtn">عندك مساحة فاضية؟</button>
         </div>
       </div>
 
       <!-- رأس قسم الكروت -->
       <div class="section-head reveal-on-scroll">
         <div>
-          <div class="section-title">المساحات المتاحة حالياً</div>
-          <div class="section-sub">اختار مساحتك المفضلة، عاين على الطبيعة وابدأ مشروعك فوراً</div>
+          <div class="section-title" data-i18n="sectionHead.title">المساحات المتاحة حالياً</div>
+          <div class="section-sub" data-i18n="sectionHead.sub">اختار مساحتك المفضلة، عاين على الطبيعة وابدأ مشروعك فوراً</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <span class="result-badge" id="res-count">جاري تحميل البيانات…</span>
+          <span class="result-badge" id="res-count" data-i18n="sectionHead.loading">جاري تحميل البيانات…</span>
           <div class="tabs-row">
-            <button class="tab-btn active" onclick="setTab(this,'')">الكل</button>
-            <button class="tab-btn" onclick="setTab(this,'mall')">مولات</button>
-            <button class="tab-btn" onclick="setTab(this,'club')">نوادي</button>
-            <button class="tab-btn" onclick="setTab(this,'school')">مدارس</button>
+            <button class="tab-btn active" onclick="setTab(this,'')" data-i18n="sectionHead.tabAll">الكل</button>
+            <button class="tab-btn" onclick="setTab(this,'mall')" data-i18n="sectionHead.tabMalls">مولات</button>
+            <button class="tab-btn" onclick="setTab(this,'club')" data-i18n="sectionHead.tabClubs">نوادي</button>
+            <button class="tab-btn" onclick="setTab(this,'school')" data-i18n="sectionHead.tabSchools">مدارس</button>
           </div>
         </div>
       </div>
@@ -748,21 +774,21 @@
       <div class="market-showcase-inner">
         <div class="section-head" style="text-align: center; margin-bottom: 24px; display: block;">
           <div style="text-align: center; width: 100%;">
-            <span class="bz-home-pill" style="margin-bottom: 12px;">فرص استثمارية مميزة</span>
-            <h2 class="section-title" style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">مشروعات كاملة للبيع
+            <span class="bz-home-pill" style="margin-bottom: 12px;" data-i18n="marketShowcase.pill">فرص استثمارية مميزة</span>
+            <h2 class="section-title" style="font-size: 28px; font-weight: 900; margin-bottom: 8px;" data-i18n="marketShowcase.title">مشروعات كاملة للبيع
             </h2>
-            <p class="section-sub" style="font-size: 14px; color: var(--ink2);">أصول ومعدات جاهزة للتشغيل الفوري — تواصل
+            <p class="section-sub" style="font-size: 14px; color: var(--ink2);" data-i18n="marketShowcase.sub">أصول ومعدات جاهزة للتشغيل الفوري — تواصل
               مباشر مع البائع بدون أي وسيط أو عمولات.</p>
           </div>
         </div>
 
         <div class="market-showcase-grid" id="market-home-showcase">
           <!-- سيتم تعبئتها ديناميكياً من جدول listings بالـ Supabase -->
-          <div class="bz-home-empty">جاري تحميل المشروعات المعروضة للبيع...</div>
+          <div class="bz-home-empty" data-i18n="marketShowcase.loading">جاري تحميل المشروعات المعروضة للبيع...</div>
         </div>
 
         <div class="market-showcase-action">
-          <button class="market-showcase-cta" onclick="window.location.href='/market/'">
+          <button class="market-showcase-cta" onclick="window.location.href='/market/'" data-i18n="marketShowcase.ctaBtn">
             تصفح جميع المشروعات للبيع ←
           </button>
         </div>
@@ -774,37 +800,37 @@
       <div class="how-inner">
 
         <div class="how-head">
-          <div class="how-title">مهما كانت طموحاتك — <span>طريق نجاحك يبدأ هنا</span></div>
-          <div class="how-sub">٣ مسارات صُممت لتناسب طموحك وإمكانياتك — اختر طريقك وابدأ فوراً</div>
+          <div class="how-title" data-i18n-html="paths.title">مهما كانت طموحاتك — <span>طريق نجاحك يبدأ هنا</span></div>
+          <div class="how-sub" data-i18n="paths.sub">٣ مسارات صُممت لتناسب طموحك وإمكانياتك — اختر طريقك وابدأ فوراً</div>
         </div>
 
         <div class="path-grid">
 
           <!-- مسار ١: المساحات -->
           <div class="path-card path-anim" style="--pd:0ms">
-            <div class="path-pill">مشروع دائم</div>
+            <div class="path-pill" data-i18n="paths.path1Pill">مشروع دائم</div>
             <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" />
                 <circle cx="12" cy="10" r="3" />
               </svg></div>
-            <h3 class="path-title">مساحة تجارية لمشروعك</h3>
+            <h3 class="path-title" data-i18n="paths.path1Title">مساحة تجارية لمشروعك</h3>
             <ul class="path-steps">
-              <li>أختار مساحة ثابته في أقوى الأماكن</li>
-              <li>تفاصيل وعقود مرنة تناسب ميزانيتك</li>
-              <li>حجز ومعاينة فورية خلال 24 ساعة</li>
+              <li data-i18n="paths.path1Step1">أختار مساحة ثابته في أقوى الأماكن</li>
+              <li data-i18n="paths.path1Step2">تفاصيل وعقود مرنة تناسب ميزانيتك</li>
+              <li data-i18n="paths.path1Step3">حجز ومعاينة فورية خلال 24 ساعة</li>
             </ul>
-            <button class="path-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)">ابدأ الآن ←</button>
+            <button class="path-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)" data-i18n="paths.path1Btn">ابدأ الآن ←</button>
           </div>
 
           <!-- فاصل -->
           <div class="path-sep path-anim" style="--pd:180ms">
-            <div class="path-sep-or">أو</div>
+            <div class="path-sep-or" data-i18n="paths.or">أو</div>
           </div>
 
           <!-- مسار ٢: البازارات -->
           <div class="path-card path-anim" style="--pd:260ms">
-            <div class="path-pill">بيع تفاعلي وسريع</div>
+            <div class="path-pill" data-i18n="paths.path2Pill">بيع تفاعلي وسريع</div>
             <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M2 7h20" />
@@ -815,36 +841,36 @@
                 <path d="M5 21h14" />
                 <rect x="9" y="14" width="6" height="7" />
               </svg></div>
-            <h3 class="path-title">مساحة مؤقتة في بازار حاشد</h3>
+            <h3 class="path-title" data-i18n="paths.path2Title">مساحة مؤقتة في بازار حاشد</h3>
             <ul class="path-steps">
-              <li>جرّب منتجك بدون إيجار شهري كبير </li>
-              <li>اختبر وقس مدى إقبال الجمهور فوراً</li>
-              <li>احجز مكانك المفضل من الخريطة مباشرة</li>
+              <li data-i18n="paths.path2Step1">جرّب منتجك بدون إيجار شهري كبير </li>
+              <li data-i18n="paths.path2Step2">اختبر وقس مدى إقبال الجمهور فوراً</li>
+              <li data-i18n="paths.path2Step3">احجز مكانك المفضل من الخريطة مباشرة</li>
             </ul>
-            <button class="path-btn" onclick="window.location.href='/bazaars/'">تصفح البازارات ←</button>
+            <button class="path-btn" onclick="window.location.href='/bazaars/'" data-i18n="paths.path2Btn">تصفح البازارات ←</button>
           </div>
 
           <!-- فاصل -->
           <div class="path-sep path-anim" style="--pd:380ms">
-            <div class="path-sep-or">أو</div>
+            <div class="path-sep-or" data-i18n="paths.or">أو</div>
           </div>
 
           <!-- مسار ٣: مشاريع للبيع -->
           <div class="path-card path-anim" style="--pd:460ms">
-            <div class="path-pill path-pill-org">أصول ومشاريع جاهزة</div>
+            <div class="path-pill path-pill-org" data-i18n="paths.path3Pill">أصول ومشاريع جاهزة</div>
             <div class="path-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path
                   d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
                 <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
               </svg></div>
-            <h3 class="path-title">شراء مشروع قائم ومجهز</h3>
+            <h3 class="path-title" data-i18n="paths.path3Title">شراء مشروع قائم ومجهز</h3>
             <ul class="path-steps">
-              <li>مشاريع جاهزة بمعداتها للتشغيل فوراً</li>
-              <li>تواصل مباشر مع البائع بدون أي وسيط</li>
-              <li>مجاني تماماً وبدون أي عمولات خفية</li>
+              <li data-i18n="paths.path3Step1">مشاريع جاهزة بمعداتها للتشغيل فوراً</li>
+              <li data-i18n="paths.path3Step2">تواصل مباشر مع البائع بدون أي وسيط</li>
+              <li data-i18n="paths.path3Step3">مجاني تماماً وبدون أي عمولات خفية</li>
             </ul>
-            <a class="path-btn" href="/market/">استكشف الفرص ←</a>
+            <a class="path-btn" href="/market/" data-i18n="paths.path3Btn">استكشف الفرص ←</a>
           </div>
 
         </div><!-- end path-grid -->
@@ -864,9 +890,9 @@
       <div class="how-page-hero">
         <div class="how-page-glow" aria-hidden="true"></div>
         <div class="how-page-hero-inner">
-          <div class="how-page-pill">دليل سريع للمنصة</div>
-          <h1 class="how-page-h1">كيف تعمل <span>مكاني Spot</span>؟</h1>
-          <p class="how-page-sub">٣ مسارات مختلفة — اختر ما يناسب هدفك</p>
+          <div class="how-page-pill" data-i18n="how.heroPill">دليل سريع للمنصة</div>
+          <h1 class="how-page-h1" data-i18n-html="how.heroTitle">كيف تعمل <span>مكاني Spot</span>؟</h1>
+          <p class="how-page-sub" data-i18n="how.heroSub">٣ مسارات مختلفة — اختر ما يناسب هدفك</p>
         </div>
       </div>
 
@@ -876,7 +902,7 @@
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="20 6 9 17 4 12" />
         </svg>
-        <span><strong>الاستخدام مجاني تماماً</strong> للزوار والمستأجرين — بدون رسوم أو عمولة</span>
+        <span data-i18n-html="how.freeBarText"><strong>الاستخدام مجاني تماماً</strong> للزوار والمستأجرين — بدون رسوم أو عمولة</span>
       </div>
 
       <div class="how-page-content">
@@ -884,10 +910,10 @@
         <!-- ══ PATH 1: استئجار مساحة ══ -->
         <div class="how-path-block">
           <div class="how-path-label">
-            <span class="how-path-num">١</span>
+            <span class="how-path-num" data-i18n="how.path1Num">١</span>
             <div>
-              <div class="how-path-title">استئجر مساحة لمشروعك</div>
-              <div class="how-path-sub">مساحة ثابتة أو موقع مؤقت في بازار — حسب طبيعة نشاطك</div>
+              <div class="how-path-title" data-i18n="how.path1Title">استئجر مساحة لمشروعك</div>
+              <div class="how-path-sub" data-i18n="how.path1Sub">مساحة ثابتة أو موقع مؤقت في بازار — حسب طبيعة نشاطك</div>
             </div>
           </div>
 
@@ -895,40 +921,40 @@
 
             <!-- مساحة ثابتة -->
             <div class="how-sub-card">
-              <div class="how-sub-pill">مشروع ثابت</div>
+              <div class="how-sub-pill" data-i18n="how.fixedPill">مشروع ثابت</div>
               <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 7h20l-2 4H4Z" />
                   <path d="M4 11v9h16v-9" />
                   <path d="M9 20v-6h6v6" />
                 </svg></div>
-              <div class="how-sub-title">مساحة إيجار ثابتة</div>
+              <div class="how-sub-title" data-i18n="how.fixedTitle">مساحة إيجار ثابتة</div>
               <ul class="how-sub-steps">
-                <li>ابحث بالمنطقة والنشاط والسعر</li>
-                <li>اطلع على صور وتفاصيل كل مساحة</li>
-                <li>أرسل طلب حجز — سنتواصل معك خلال ٢٤ ساعة</li>
+                <li data-i18n="how.fixedStep1">ابحث بالمنطقة والنشاط والسعر</li>
+                <li data-i18n="how.fixedStep2">اطلع على صور وتفاصيل كل مساحة</li>
+                <li data-i18n="how.fixedStep3">أرسل طلب حجز — سنتواصل معك خلال ٢٤ ساعة</li>
               </ul>
-              <button class="how-sub-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)">ابحث عن مساحة
+              <button class="how-sub-btn" onclick="showPage('home');setTimeout(scrollToSearch,300)" data-i18n="how.fixedBtn">ابحث عن مساحة
                 ←</button>
             </div>
 
-            <div class="how-sub-sep" aria-hidden="true">أو</div>
+            <div class="how-sub-sep" aria-hidden="true" data-i18n="how.or">أو</div>
 
             <!-- بازار مؤقت -->
             <div class="how-sub-card">
-              <div class="how-sub-pill how-sub-pill--alt">تجربة سريعة</div>
+              <div class="how-sub-pill how-sub-pill--alt" data-i18n="how.quickPill">تجربة سريعة</div>
               <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M3.5 21h17L12 3 3.5 21Z" />
                   <path d="M12 3v18" />
                 </svg></div>
-              <div class="how-sub-title">مكان في بازار مؤقت</div>
+              <div class="how-sub-title" data-i18n="how.quickTitle">مكان في بازار مؤقت</div>
               <ul class="how-sub-steps">
-                <li>بدون التزام — أيام محددة فقط</li>
-                <li>اختبر منتجك أمام جمهور حقيقي</li>
-                <li>احجز مكانك من الخريطة مباشرة</li>
+                <li data-i18n="how.quickStep1">بدون التزام — أيام محددة فقط</li>
+                <li data-i18n="how.quickStep2">اختبر منتجك أمام جمهور حقيقي</li>
+                <li data-i18n="how.quickStep3">احجز مكانك من الخريطة مباشرة</li>
               </ul>
-              <button class="how-sub-btn how-sub-btn--alt" onclick="window.location.href='/bazaars/'">تصفح البازارات
+              <button class="how-sub-btn how-sub-btn--alt" onclick="window.location.href='/bazaars/'" data-i18n="how.quickBtn">تصفح البازارات
                 ←</button>
             </div>
 
@@ -938,17 +964,17 @@
         <!-- ══ DIVIDER ══ -->
         <div class="how-main-sep" aria-hidden="true">
           <div class="how-main-sep-line"></div>
-          <span>أو</span>
+          <span data-i18n="how.or">أو</span>
           <div class="how-main-sep-line"></div>
         </div>
 
         <!-- ══ PATH 2: سوق المشاريع ══ -->
         <div class="how-path-block">
           <div class="how-path-label">
-            <span class="how-path-num">٢</span>
+            <span class="how-path-num" data-i18n="how.path2Num">٢</span>
             <div>
-              <div class="how-path-title">سوق المشاريع الجاهزة</div>
-              <div class="how-path-sub">هل تبحث عن مشروع جاهز أو تريد بيع مشروعك؟</div>
+              <div class="how-path-title" data-i18n="how.path2Title">سوق المشاريع الجاهزة</div>
+              <div class="how-path-sub" data-i18n="how.path2Sub">هل تبحث عن مشروع جاهز أو تريد بيع مشروعك؟</div>
             </div>
           </div>
 
@@ -956,39 +982,39 @@
 
             <!-- شراء -->
             <div class="how-sub-card">
-              <div class="how-sub-pill">فرصة استثمار</div>
+              <div class="how-sub-pill" data-i18n="how.buyPill">فرصة استثمار</div>
               <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
                 </svg></div>
-              <div class="how-sub-title">اشتري مشروع جاهز</div>
+              <div class="how-sub-title" data-i18n="how.buyTitle">اشتري مشروع جاهز</div>
               <ul class="how-sub-steps">
-                <li>مشاريع كاملة بكل معداتها</li>
-                <li>تواصل مباشر مع البائع</li>
-                <li>بدون أي عمولة عليك</li>
+                <li data-i18n="how.buyStep1">مشاريع كاملة بكل معداتها</li>
+                <li data-i18n="how.buyStep2">تواصل مباشر مع البائع</li>
+                <li data-i18n="how.buyStep3">بدون أي عمولة عليك</li>
               </ul>
-              <a class="how-sub-btn" href="/market/">استكشف المشاريع ←</a>
+              <a class="how-sub-btn" href="/market/" data-i18n="how.buyBtn">استكشف المشاريع ←</a>
             </div>
 
-            <div class="how-sub-sep" aria-hidden="true">أو</div>
+            <div class="how-sub-sep" aria-hidden="true" data-i18n="how.or">أو</div>
 
             <!-- بيع -->
             <div class="how-sub-card">
-              <div class="how-sub-pill how-sub-pill--alt">بيع وانتقل</div>
+              <div class="how-sub-pill how-sub-pill--alt" data-i18n="how.sellPill">بيع وانتقل</div>
               <div class="how-sub-icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <path
                     d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42Z" />
                   <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
                 </svg></div>
-              <div class="how-sub-title">انشر مشروعك للبيع</div>
+              <div class="how-sub-title" data-i18n="how.sellTitle">انشر مشروعك للبيع</div>
               <ul class="how-sub-steps">
-                <li>صور + وصف + سعر في خطوات بسيطة</li>
-                <li>وصول لآلاف المهتمين بالمنصة</li>
-                <li>مجاني — بدون تعقيد</li>
+                <li data-i18n="how.sellStep1">صور + وصف + سعر في خطوات بسيطة</li>
+                <li data-i18n="how.sellStep2">وصول لآلاف المهتمين بالمنصة</li>
+                <li data-i18n="how.sellStep3">مجاني — بدون تعقيد</li>
               </ul>
-              <a class="how-sub-btn how-sub-btn--alt" href="/post-ad/">انشر إعلانك ←</a>
+              <a class="how-sub-btn how-sub-btn--alt" href="/post-ad/" data-i18n="how.sellBtn">انشر إعلانك ←</a>
             </div>
 
           </div>
@@ -1004,12 +1030,12 @@
               <path d="M10 22h4" />
             </svg></div>
           <div class="how-rev-body">
-            <div class="how-rev-title">كيف تربح المنصة؟</div>
-            <div class="how-rev-text">
+            <div class="how-rev-title" data-i18n="how.revenueTitle">كيف تربح المنصة؟</div>
+            <div class="how-rev-text" data-i18n-html="how.revenueText">
               أصحاب المساحات — المولات والشركات والمدارس — يشتركون في باقة شهرية لنشر مساحاتهم والوصول إلى مستأجرين. هذا
               هو مصدر ربحنا الوحيد. أنت كمستأجر تستخدم المنصة <strong>مجاناً تماماً</strong>.
             </div>
-            <button class="how-rev-cta" onclick="showPage('pricing')">اطلع على باقات أصحاب المساحات ←</button>
+            <button class="how-rev-cta" onclick="showPage('pricing')" data-i18n="how.revenueBtn">اطلع على باقات أصحاب المساحات ←</button>
           </div>
         </div>
 
@@ -1030,10 +1056,10 @@
         <div class="owner-hero-section">
           <div class="owner-hero-pill">
             <span class="owner-live-dot" aria-hidden="true"></span>
-            لأصحاب المولات · النوادي · المدارس · الشركات
+            <span data-i18n="owner.heroPill">لأصحاب المولات · النوادي · المدارس · الشركات</span>
           </div>
-          <h1 class="owner-hero-h1">عندك <span>مساحة فاضية</span>؟<br>حوّلها لمصدر دخل ثابت</h1>
-          <p class="owner-hero-sub">سجّل — اختر باقتك — انشر مساحتك. نظام اشتراك شهري بسيط، بدون عمولات خفية.</p>
+          <h1 class="owner-hero-h1" data-i18n-html="owner.heroH1">عندك <span>مساحة فاضية</span>؟<br>حوّلها لمصدر دخل ثابت</h1>
+          <p class="owner-hero-sub" data-i18n="owner.heroSub">سجّل — اختر باقتك — انشر مساحتك. نظام اشتراك شهري بسيط، بدون عمولات خفية.</p>
         </div>
 
         <!-- ══ MODEL BANNER ══ -->
@@ -1046,8 +1072,8 @@
                 <line x1="1" y1="10" x2="23" y2="10" />
               </svg></span>
             <div>
-              <div class="owner-model-label">نموذج الربح</div>
-              <div class="owner-model-val">اشتراك شهري ثابت لصاحب المساحة</div>
+              <div class="owner-model-label" data-i18n="owner.modelLabel">نموذج الربح</div>
+              <div class="owner-model-val" data-i18n="owner.modelVal">اشتراك شهري ثابت لصاحب المساحة</div>
             </div>
           </div>
           <div class="owner-model-sep" aria-hidden="true"></div>
@@ -1059,8 +1085,8 @@
                 <path d="m9 12 2 2 4-4" />
               </svg></span>
             <div>
-              <div class="owner-model-label">للمستأجر</div>
-              <div class="owner-model-val">تصفح وحجز مجاني بالكامل</div>
+              <div class="owner-model-label" data-i18n="owner.tenantLabel">للمستأجر</div>
+              <div class="owner-model-val" data-i18n="owner.tenantVal">تصفح وحجز مجاني بالكامل</div>
             </div>
           </div>
           <div class="owner-model-sep" aria-hidden="true"></div>
@@ -1072,8 +1098,8 @@
                 <path d="M12 3v18" />
               </svg></span>
             <div>
-              <div class="owner-model-label">البازارات</div>
-              <div class="owner-model-val">10% من كل حجز عبر المنصة</div>
+              <div class="owner-model-label" data-i18n="owner.bazaarsLabel">البازارات</div>
+              <div class="owner-model-val" data-i18n="owner.bazaarsVal">10% من كل حجز عبر المنصة</div>
             </div>
           </div>
         </div>
@@ -1084,30 +1110,30 @@
           <!-- ── المسار ١: نشر مساحة ثابتة ── -->
           <div class="owner-path-card owner-path--spaces">
             <div class="owner-path-head">
-              <div class="owner-path-num">١</div>
+              <div class="owner-path-num" data-i18n="owner.path1Num">١</div>
               <div>
-                <div class="owner-path-title">انشر مساحاتك الثابتة</div>
-                <div class="owner-path-sub">اشترك في باقة ← انشر مساحاتك ← استقبل مستأجرين</div>
+                <div class="owner-path-title" data-i18n="owner.path1Title">انشر مساحاتك الثابتة</div>
+                <div class="owner-path-sub" data-i18n="owner.path1Sub">اشترك في باقة ← انشر مساحاتك ← استقبل مستأجرين</div>
               </div>
             </div>
 
             <div class="owner-steps-list">
               <div class="owner-step">
-                <div class="owner-step-num">١</div>
-                <div class="owner-step-txt"><strong>سجّل حساب</strong> — مجاني وسريع، بدون أي التزام</div>
+                <div class="owner-step-num" data-i18n="owner.path1Step1Num">١</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path1Step1"><strong>سجّل حساب</strong> — مجاني وسريع، بدون أي التزام</div>
               </div>
               <div class="owner-step">
-                <div class="owner-step-num">٢</div>
-                <div class="owner-step-txt"><strong>اطلب تحويل الحساب</strong> لصاحب مساحة — سيراجع فريقنا الطلب خلال ٢٤
+                <div class="owner-step-num" data-i18n="owner.path1Step2Num">٢</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path1Step2"><strong>اطلب تحويل الحساب</strong> لصاحب مساحة — سيراجع فريقنا الطلب خلال ٢٤
                   ساعة</div>
               </div>
               <div class="owner-step">
-                <div class="owner-step-num">٣</div>
-                <div class="owner-step-txt"><strong>اختر باقة</strong> تناسب حجم مكانك — Starter مجاني حتى مساحتين</div>
+                <div class="owner-step-num" data-i18n="owner.path1Step3Num">٣</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path1Step3"><strong>اختر باقة</strong> تناسب حجم مكانك — Starter مجاني حتى مساحتين</div>
               </div>
               <div class="owner-step">
-                <div class="owner-step-num">٤</div>
-                <div class="owner-step-txt"><strong>انشر مساحاتك</strong> وابدأ باستقبال طلبات الحجز من المستأجرين</div>
+                <div class="owner-step-num" data-i18n="owner.path1Step4Num">٤</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path1Step4"><strong>انشر مساحاتك</strong> وابدأ باستقبال طلبات الحجز من المستأجرين</div>
               </div>
             </div>
 
@@ -1116,19 +1142,19 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Starter مجاني — حتى مساحتين · 16م² كحد أقصى للمساحة الواحدة
+                <span data-i18n="owner.limitStarter">Starter مجاني — حتى مساحتين · 16م² كحد أقصى للمساحة الواحدة</span>
               </div>
               <div class="owner-limit-item">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Growth 3,000ج/شهر — حتى 8 مساحات + ERP + تسويق
+                <span data-i18n="owner.limitGrowth">Growth 3,000ج/شهر — حتى 8 مساحات + ERP + تسويق</span>
               </div>
               <div class="owner-limit-item">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Pro 4,500ج/شهر — غير محدود + مدير حساب + تصوير AI
+                <span data-i18n="owner.limitPro">Pro 4,500ج/شهر — غير محدود + مدير حساب + تصوير AI</span>
               </div>
             </div>
 
@@ -1139,9 +1165,9 @@
                   <rect x="1" y="4" width="22" height="16" rx="2" />
                   <line x1="1" y1="10" x2="23" y2="10" />
                 </svg>
-                اطلع على الباقات
+                <span data-i18n="owner.viewPlansBtn">اطلع على الباقات</span>
               </button>
-              <button class="owner-btn-secondary" onclick="handleOwnerUpgradeBtn()">
+              <button class="owner-btn-secondary" onclick="handleOwnerUpgradeBtn()" data-i18n="owner.requestUpgradeBtn">
                 طلب تحويل الحساب
               </button>
             </div>
@@ -1150,47 +1176,47 @@
           <!-- ── المسار ٢: تنظيم بازار ── -->
           <div class="owner-path-card owner-path--bazaar">
             <div class="owner-path-head">
-              <div class="owner-path-num owner-path-num--purple">٢</div>
+              <div class="owner-path-num owner-path-num--purple" data-i18n="owner.path2Num">٢</div>
               <div>
-                <div class="owner-path-title">نظّم بازار في مكانك</div>
-                <div class="owner-path-sub">حوّل مساحتك إلى فعالية موسمية — ونتولى نحن الإدارة والتسويق</div>
+                <div class="owner-path-title" data-i18n="owner.path2Title">نظّم بازار في مكانك</div>
+                <div class="owner-path-sub" data-i18n="owner.path2Sub">حوّل مساحتك إلى فعالية موسمية — ونتولى نحن الإدارة والتسويق</div>
               </div>
             </div>
 
             <div class="owner-steps-list">
               <div class="owner-step owner-step--purple">
-                <div class="owner-step-num owner-step-num--purple">١</div>
-                <div class="owner-step-txt"><strong>يجب أن يكون لديك حساب صاحب مساحة</strong> أولاً (راجع المسار ١
+                <div class="owner-step-num owner-step-num--purple" data-i18n="owner.path1Step1Num">١</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path2Step1"><strong>يجب أن يكون لديك حساب صاحب مساحة</strong> أولاً (راجع المسار ١
                   أعلاه)</div>
               </div>
               <div class="owner-step owner-step--purple">
-                <div class="owner-step-num owner-step-num--purple">٢</div>
-                <div class="owner-step-txt"><strong>اطلب تحويل الحساب لمنظم بازارات</strong> — من لوحة التحكم أو عبر
+                <div class="owner-step-num owner-step-num--purple" data-i18n="owner.path1Step2Num">٢</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path2Step2"><strong>اطلب تحويل الحساب لمنظم بازارات</strong> — من لوحة التحكم أو عبر
                   واتساب</div>
               </div>
               <div class="owner-step owner-step--purple">
-                <div class="owner-step-num owner-step-num--purple">٣</div>
-                <div class="owner-step-txt"><strong>سنراجع طلبك</strong> ونتأكد من المكان والطاقة الاستيعابية خلال ٤٨
+                <div class="owner-step-num owner-step-num--purple" data-i18n="owner.path1Step3Num">٣</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path2Step3"><strong>سنراجع طلبك</strong> ونتأكد من المكان والطاقة الاستيعابية خلال ٤٨
                   ساعة</div>
               </div>
               <div class="owner-step owner-step--purple">
-                <div class="owner-step-num owner-step-num--purple">٤</div>
-                <div class="owner-step-txt"><strong>تقدر تنشر بازاراتك</strong> من لوحة التحكم — بتحدد التواريخ والأماكن
+                <div class="owner-step-num owner-step-num--purple" data-i18n="owner.path1Step4Num">٤</div>
+                <div class="owner-step-txt" data-i18n-html="owner.path2Step4"><strong>تقدر تنشر بازاراتك</strong> من لوحة التحكم — بتحدد التواريخ والأماكن
                   والأسعار</div>
               </div>
             </div>
 
             <div class="owner-baz-fees">
-              <div class="owner-baz-fee-title">رسوم البازار</div>
+              <div class="owner-baz-fee-title" data-i18n="owner.feesTitle">رسوم البازار</div>
               <div class="owner-baz-fee-row">
-                <span>الحجوزات عبر مكاني Spot</span>
-                <span class="owner-baz-fee-val">10% من كل حجز</span>
+                <span data-i18n="owner.feesRow1Label">الحجوزات عبر مكاني Spot</span>
+                <span class="owner-baz-fee-val" data-i18n="owner.feesRow1Val">10% من كل حجز</span>
               </div>
               <div class="owner-baz-fee-row">
-                <span>تنظيم كامل مع فريق مكاني</span>
-                <span class="owner-baz-fee-val">25–30% من إيرادات البازار</span>
+                <span data-i18n="owner.feesRow2Label">تنظيم كامل مع فريق مكاني</span>
+                <span class="owner-baz-fee-val" data-i18n="owner.feesRow2Val">25–30% من إيرادات البازار</span>
               </div>
-              <div class="owner-baz-fee-note">الاشتراك الشهري للباقة يغطي إدراج المساحة — البازار له نظام رسوم منفصل
+              <div class="owner-baz-fee-note" data-i18n="owner.feesNote">الاشتراك الشهري للباقة يغطي إدراج المساحة — البازار له نظام رسوم منفصل
               </div>
             </div>
 
@@ -1204,9 +1230,9 @@
                   <path
                     d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
                 </svg>
-                استفسر على واتساب
+                <span data-i18n="owner.whatsappAsk">استفسر على واتساب</span>
               </a>
-              <a class="owner-btn-outline-purple" href="/bazaars/organize.html">
+              <a class="owner-btn-outline-purple" href="/bazaars/organize.html" data-i18n="owner.createBazaarBtn">
                 إنشاء بازار من لوحة التحكم
               </a>
             </div>
@@ -1215,10 +1241,10 @@
           <!-- ── المسار ٣: الانضمام لبازار كتاجر ── -->
           <div class="owner-path-card owner-path--vendor">
             <div class="owner-path-head">
-              <div class="owner-path-num owner-path-num--green">٣</div>
+              <div class="owner-path-num owner-path-num--green" data-i18n="owner.path3Num">٣</div>
               <div>
-                <div class="owner-path-title">شارك في بازار كتاجر</div>
-                <div class="owner-path-sub">حجز مكانك في بازار قائم — سريع وبدون التزام طويل</div>
+                <div class="owner-path-title" data-i18n="owner.path3Title">شارك في بازار كتاجر</div>
+                <div class="owner-path-sub" data-i18n="owner.path3Sub">حجز مكانك في بازار قائم — سريع وبدون التزام طويل</div>
               </div>
             </div>
 
@@ -1230,7 +1256,7 @@
                     <circle cx="11" cy="11" r="7" />
                     <path d="m20 20-3.5-3.5" />
                   </svg></span>
-                <span>اختر بازاراً يناسب نشاطك من صفحة البازارات</span>
+                <span data-i18n="owner.vendorStep1">اختر بازاراً يناسب نشاطك من صفحة البازارات</span>
               </div>
               <div class="owner-vendor-step">
                 <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1240,7 +1266,7 @@
                     <line x1="9" y1="3" x2="9" y2="18" />
                     <line x1="15" y1="6" x2="15" y2="21" />
                   </svg></span>
-                <span>احجز مكانك من الخريطة التفاعلية مباشرة</span>
+                <span data-i18n="owner.vendorStep2">احجز مكانك من الخريطة التفاعلية مباشرة</span>
               </div>
               <div class="owner-vendor-step">
                 <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1249,7 +1275,7 @@
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                     <line x1="1" y1="10" x2="23" y2="10" />
                   </svg></span>
-                <span>ادفع رسوم المكان — تختلف حسب كل بازار ومنظّمه</span>
+                <span data-i18n="owner.vendorStep3">ادفع رسوم المكان — تختلف حسب كل بازار ومنظّمه</span>
               </div>
               <div class="owner-vendor-step">
                 <span class="owner-vendor-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1258,16 +1284,16 @@
                     <circle cx="12" cy="12" r="10" />
                     <path d="m9 12 2 2 4-4" />
                   </svg></span>
-                <span>ستصلك رسالة تأكيد وتفاصيل الفعالية</span>
+                <span data-i18n="owner.vendorStep4">ستصلك رسالة تأكيد وتفاصيل الفعالية</span>
               </div>
             </div>
 
-            <div class="owner-vendor-note">
+            <div class="owner-vendor-note" data-i18n-html="owner.vendorNote">
               <strong>الرسوم:</strong> بتحددها إدارة البازار — مكاني Spot بتاخد 10% من الحجوزات المكتملة عبر المنصة فقط.
             </div>
 
             <div class="owner-path-actions">
-              <button class="owner-btn-green" onclick="window.location.href='/bazaars/'">
+              <button class="owner-btn-green" onclick="window.location.href='/bazaars/'" data-i18n="owner.browseBazaarsBtn">
                 تصفح البازارات القادمة ←
               </button>
             </div>
@@ -1277,8 +1303,8 @@
 
         <!-- ══ FINAL CTA ══ -->
         <div class="owner-final-cta">
-          <div class="owner-cta-title">عندك سؤال؟ تواصل معنا الآن</div>
-          <div class="owner-cta-sub">بنرد خلال ساعة · السبت للخميس · من 9ص لـ 11م</div>
+          <div class="owner-cta-title" data-i18n="owner.finalCtaTitle">عندك سؤال؟ تواصل معنا الآن</div>
+          <div class="owner-cta-sub" data-i18n="owner.finalCtaSub">بنرد خلال ساعة · السبت للخميس · من 9ص لـ 11م</div>
           <div class="owner-cta-btns">
             <a class="owner-btn-whatsapp"
               href="https://wa.me/201103467711?text=مرحبا، عندي مساحة فاضية وعايز أعرف أكتر عن مكاني Spot"
@@ -1289,16 +1315,16 @@
                 <path
                   d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
               </svg>
-              واتساب — 011 0346 7711
+              <span data-i18n="owner.whatsappBtn">واتساب — 011 0346 7711</span>
             </a>
-            <button class="owner-btn-upgrade" onclick="handleOwnerUpgradeBtn()">
+            <button class="owner-btn-upgrade" onclick="handleOwnerUpgradeBtn()" data-i18n="owner.requestUpgradeBtn">
               طلب تحويل الحساب
             </button>
-            <button class="owner-btn-packages" onclick="showPage('pricing')">
+            <button class="owner-btn-packages" onclick="showPage('pricing')" data-i18n="owner.viewPlansBtn">
               اطلع على الباقات
             </button>
           </div>
-          <div class="owner-cta-note">بدون دفع مسبق · Starter مجاني تماماً · يمكنك الإلغاء في أي وقت</div>
+          <div class="owner-cta-note" data-i18n="owner.finalCtaNote">بدون دفع مسبق · Starter مجاني تماماً · يمكنك الإلغاء في أي وقت</div>
         </div>
 
       </div><!-- end owner-page-inner -->
@@ -1317,11 +1343,11 @@
         <div class="pkg-hero-glow" aria-hidden="true"></div>
         <div class="pkg-hero-inner">
           <div class="pkg-hero-pill pkg-anim-down" style="--delay:0ms">
-            <span aria-hidden="true">✦</span> خطط تناسب كل حجم مكان
+            <span aria-hidden="true">✦</span> <span data-i18n="pricing.hero.pill">خطط تناسب كل حجم مكان</span>
           </div>
-          <h1 class="pkg-hero-h1 pkg-anim-down" style="--delay:100ms">اختر الخطة المناسبة</h1>
-          <p class="pkg-hero-sub pkg-anim-down" style="--delay:200ms">وابدأ بتحويل مساحاتك الفارغة إلى دخل ثابت</p>
-          <p class="pkg-hero-note pkg-anim-down" style="--delay:280ms">لا عمولة حتى يتأكد الحجز — تدفع فقط عند إتمام
+          <h1 class="pkg-hero-h1 pkg-anim-down" style="--delay:100ms" data-i18n="pricing.hero.h1">اختر الخطة المناسبة</h1>
+          <p class="pkg-hero-sub pkg-anim-down" style="--delay:200ms" data-i18n="pricing.hero.sub">وابدأ بتحويل مساحاتك الفارغة إلى دخل ثابت</p>
+          <p class="pkg-hero-note pkg-anim-down" style="--delay:280ms" data-i18n="pricing.hero.note">لا عمولة حتى يتأكد الحجز — تدفع فقط عند إتمام
             الصفقة</p>
         </div>
       </section>
@@ -1334,195 +1360,195 @@
           <div class="pkg-card pkg-card--starter pkg-anim-up" style="--delay:0ms">
             <div class="pkg-card-name">Starter</div>
             <div class="pkg-card-price-wrap">
-              <span class="pkg-card-price">مجاناً</span>
+              <span class="pkg-card-price" data-i18n="pricing.starter.price">مجاناً</span>
             </div>
-            <div class="pkg-card-sub">"جرّب بدون أي مخاطرة"</div>
+            <div class="pkg-card-sub" data-i18n="pricing.starter.sub">"جرّب بدون أي مخاطرة"</div>
             <div class="pkg-card-limit">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              حتى 2 مساحة · حد أقصى 16م²
+              <span data-i18n="pricing.starter.limit">حتى 2 مساحة · حد أقصى 16م²</span>
             </div>
             <ul class="pkg-features-list">
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>إدراج المساحات عبر الداشبورد</li>
+                </svg><span data-i18n="pricing.starter.f1">إدراج المساحات عبر الداشبورد</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>ظهور في نتائج البحث</li>
+                </svg><span data-i18n="pricing.starter.f2">ظهور في نتائج البحث</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>استقبال طلبات الحجز</li>
+                </svg><span data-i18n="pricing.starter.f3">استقبال طلبات الحجز</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Tenant Score — عرض التقييم</li>
+                </svg><span data-i18n="pricing.starter.f4">Tenant Score — عرض التقييم</span></li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>ERP وإدارة عقود</li>
+                </svg><span data-i18n="pricing.starter.f5">ERP وإدارة عقود</span></li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>إيجاد مستأجرين</li>
+                </svg><span data-i18n="pricing.starter.f6">إيجاد مستأجرين</span></li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>تسويق على المنصة</li>
+                </svg><span data-i18n="pricing.starter.f7">تسويق على المنصة</span></li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>تقارير شهرية</li>
+                </svg><span data-i18n="pricing.starter.f8">تقارير شهرية</span></li>
             </ul>
-            <div class="pkg-card-support">دعم: بريد إلكتروني</div>
-            <button class="btn btn-ghost pkg-card-cta" onclick="showPage('owner')">ابدأ مجاناً</button>
+            <div class="pkg-card-support" data-i18n="pricing.starter.support">دعم: بريد إلكتروني</div>
+            <button class="btn btn-ghost pkg-card-cta" onclick="showPage('owner')" data-i18n="pricing.starter.cta">ابدأ مجاناً</button>
           </div>
 
           <!-- ─ Growth ─ -->
           <div class="pkg-card pkg-card--growth pkg-anim-up" style="--delay:120ms">
-            <div class="pkg-card-name pkg-card-name--accent">Growth — نمو</div>
+            <div class="pkg-card-name pkg-card-name--accent" data-i18n="pricing.growth.name">Growth — نمو</div>
             <div class="pkg-card-price-wrap">
               <span class="pkg-card-price">3,000</span>
-              <span class="pkg-card-currency">ج<span class="pkg-card-period">/شهر</span></span>
+              <span class="pkg-card-currency" data-i18n="pricing.growth.currency">ج<span class="pkg-card-period" data-i18n="pricing.growth.period">/شهر</span></span>
             </div>
-            <div class="pkg-card-sub">"إدارة + تسويق أساسي"</div>
+            <div class="pkg-card-sub" data-i18n="pricing.growth.sub">"إدارة + تسويق أساسي"</div>
             <div class="pkg-card-limit">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              حتى 8 مساحات · حد أقصى 16م²
+              <span data-i18n="pricing.growth.limit">حتى 8 مساحات · حد أقصى 16م²</span>
             </div>
             <ul class="pkg-features-list">
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>إدراج حتى 8 مساحات</li>
+                </svg><span data-i18n="pricing.growth.f1">إدراج حتى 8 مساحات</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>أولوية الظهور فوق Starter</li>
+                </svg><span data-i18n="pricing.growth.f2">أولوية الظهور فوق Starter</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>ERP أساسي — عقود + مدفوعات</li>
+                </svg><span data-i18n="pricing.growth.f3">ERP أساسي — عقود + مدفوعات</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Tenant Score كامل + مخالفات</li>
+                </svg><span data-i18n="pricing.growth.f4">Tenant Score كامل + مخالفات</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>إيجاد مستأجرين — 3/شهر</li>
+                </svg><span data-i18n="pricing.growth.f5">إيجاد مستأجرين — 3/شهر</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>2 منشور شهري على مكاني Spot</li>
+                </svg><span data-i18n="pricing.growth.f6">2 منشور شهري على مكاني Spot</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>تقرير شهري أساسي</li>
+                </svg><span data-i18n="pricing.growth.f7">تقرير شهري أساسي</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Badge "⭐ شريك Growth" على صفحة المول</li>
+                </svg><span data-i18n="pricing.growth.f8">Badge "⭐ شريك Growth" على صفحة المول</span></li>
               <li class="pkg-feat pkg-feat--off"><svg class="pkg-feat-ico pkg-feat-ico--off" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>تصوير AI للمساحات</li>
+                </svg><span data-i18n="pricing.growth.f9">تصوير AI للمساحات</span></li>
             </ul>
-            <div class="pkg-card-support">دعم: واتساب خلال ساعات العمل</div>
+            <div class="pkg-card-support" data-i18n="pricing.growth.support">دعم: واتساب خلال ساعات العمل</div>
             <a class="btn btn-ghost pkg-card-cta"
               href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth" target="_blank"
-              rel="noopener">تواصل معنا</a>
+              rel="noopener" data-i18n="pricing.growth.cta">تواصل معنا</a>
           </div>
 
           <!-- ─ Pro (Featured) ─ -->
           <div class="pkg-card pkg-card--pro pkg-anim-up" style="--delay:240ms">
-            <div class="pkg-badge-popular">الأكثر طلباً</div>
-            <div class="pkg-card-name pkg-card-name--accent">Pro — احترافي</div>
+            <div class="pkg-badge-popular" data-i18n="pricing.pro.popularBadge">الأكثر طلباً</div>
+            <div class="pkg-card-name pkg-card-name--accent" data-i18n="pricing.pro.name">Pro — احترافي</div>
             <div class="pkg-card-price-wrap">
               <span class="pkg-card-price">4,500</span>
-              <span class="pkg-card-currency">ج<span class="pkg-card-period">/شهر</span></span>
+              <span class="pkg-card-currency" data-i18n="pricing.growth.currency">ج<span class="pkg-card-period" data-i18n="pricing.growth.period">/شهر</span></span>
             </div>
-            <div class="pkg-card-sub">"نظام تشغيل متكامل"</div>
+            <div class="pkg-card-sub" data-i18n="pricing.pro.sub">"نظام تشغيل متكامل"</div>
             <div class="pkg-card-limit pkg-card-limit--unlimited">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path
                   d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z" />
               </svg>
-              غير محدود
+              <span data-i18n="pricing.pro.limit">غير محدود</span>
             </div>
             <ul class="pkg-features-list">
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>إدراج غير محدود للمساحات</li>
+                </svg><span data-i18n="pricing.pro.f1">إدراج غير محدود للمساحات</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>أول 3 نتائج دائماً + Featured أسبوعي</li>
+                </svg><span data-i18n="pricing.pro.f2">أول 3 نتائج دائماً + Featured أسبوعي</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>تصوير AI — 3 صور لكل مساحة جديدة</li>
+                </svg><span data-i18n="pricing.pro.f3">تصوير AI — 3 صور لكل مساحة جديدة</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>تنظيم طلبات المعاينة + متابعة</li>
+                </svg><span data-i18n="pricing.pro.f4">تنظيم طلبات المعاينة + متابعة</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>ERP كامل + تجديد تلقائي + واتساب</li>
+                </svg><span data-i18n="pricing.pro.f5">ERP كامل + تجديد تلقائي + واتساب</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Tenant Score + توصية ذكية</li>
+                </svg><span data-i18n="pricing.pro.f6">Tenant Score + توصية ذكية</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>إيجاد مستأجرين بنشاط محدد</li>
+                </svg><span data-i18n="pricing.pro.f7">إيجاد مستأجرين بنشاط محدد</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>4 منشورات + Email/WhatsApp Campaign</li>
+                </svg><span data-i18n="pricing.pro.f8">4 منشورات + Email/WhatsApp Campaign</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>تقرير AI شهري + توقعات</li>
+                </svg><span data-i18n="pricing.pro.f9">تقرير AI شهري + توقعات</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>دعم تنظيم البازار + موردين</li>
+                </svg><span data-i18n="pricing.pro.f10">دعم تنظيم البازار + موردين</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>دعم 9ص–11م + رد خلال ساعة</li>
+                </svg><span data-i18n="pricing.pro.f11">دعم 9ص–11م + رد خلال ساعة</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>مدير حساب مخصص + call شهري</li>
+                </svg><span data-i18n="pricing.pro.f12">مدير حساب مخصص + call شهري</span></li>
               <li class="pkg-feat pkg-feat--on"><svg class="pkg-feat-ico" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12" />
-                </svg>Badge "شريك معتمد" بعد 3 أشهر</li>
+                </svg><span data-i18n="pricing.pro.f13">Badge "شريك معتمد" بعد 3 أشهر</span></li>
             </ul>
-            <div class="pkg-card-support">دعم واتساب مخصص 9ص – 11م</div>
+            <div class="pkg-card-support" data-i18n="pricing.pro.support">دعم واتساب مخصص 9ص – 11م</div>
             <a class="btn btn-primary pkg-card-cta pkg-card-cta--pro"
               href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank"
-              rel="noopener">تواصل معنا</a>
+              rel="noopener" data-i18n="pricing.pro.cta">تواصل معنا</a>
           </div>
 
         </div>
@@ -1530,7 +1556,7 @@
 
       <!-- ══ 4. COMPARISON TABLE ══ -->
       <section class="pkg-table-section">
-        <h2 class="pkg-section-title">مقارنة تفصيلية بين الباقات</h2>
+        <h2 class="pkg-section-title" data-i18n="pricing.table.title">مقارنة تفصيلية بين الباقات</h2>
         <div class="pkg-table-wrap">
           <table class="pkg-table" role="table">
             <thead>
@@ -1538,43 +1564,43 @@
                 <th class="pkg-th pkg-th--feature"></th>
                 <th class="pkg-th">
                   <div class="pkg-th-name">Starter</div>
-                  <div class="pkg-th-price">مجاناً</div>
-                  <button class="pkg-th-cta" onclick="showPage('owner')">ابدأ مجاناً</button>
+                  <div class="pkg-th-price" data-i18n="pricing.starter.price">مجاناً</div>
+                  <button class="pkg-th-cta" onclick="showPage('owner')" data-i18n="pricing.starter.cta">ابدأ مجاناً</button>
                 </th>
                 <th class="pkg-th">
                   <div class="pkg-th-name">Growth</div>
-                  <div class="pkg-th-price">3,000 ج<span class="pkg-th-period">/شهر</span></div>
+                  <div class="pkg-th-price">3,000 <span data-i18n="pricing.growth.currency">ج</span><span class="pkg-th-period" data-i18n="pricing.growth.period">/شهر</span></div>
                   <a class="pkg-th-cta" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Growth"
-                    target="_blank" rel="noopener">تواصل معنا</a>
+                    target="_blank" rel="noopener" data-i18n="pricing.growth.cta">تواصل معنا</a>
                 </th>
                 <th class="pkg-th pkg-th--pro">
                   <div class="pkg-th-name">Pro</div>
-                  <div class="pkg-th-price">4,500 ج<span class="pkg-th-period">/شهر</span></div>
+                  <div class="pkg-th-price">4,500 <span data-i18n="pricing.growth.currency">ج</span><span class="pkg-th-period" data-i18n="pricing.growth.period">/شهر</span></div>
                   <a class="pkg-th-cta pkg-th-cta--pro"
                     href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقة Pro" target="_blank"
-                    rel="noopener">تواصل معنا</a>
+                    rel="noopener" data-i18n="pricing.pro.cta">تواصل معنا</a>
                 </th>
               </tr>
             </thead>
             <tbody>
               <!-- الإدراج والظهور -->
               <tr class="pkg-tr-group">
-                <td colspan="4">الإدراج والظهور</td>
+                <td colspan="4" data-i18n="pricing.table.groups.listing">الإدراج والظهور</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">إدراج المساحات</td>
-                <td class="pkg-td pkg-td--val">2 مساحة / 16م²</td>
-                <td class="pkg-td pkg-td--val">8 مساحات / 16م²</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">غير محدود</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.listing.label">إدراج المساحات</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.listing.starter">2 مساحة / 16م²</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.listing.growth">8 مساحات / 16م²</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.pro.limit">غير محدود</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">أولوية الظهور</td>
-                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted">عادي</span></td>
-                <td class="pkg-td pkg-td--val">مرتفعة</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">قصوى (أول 3 دائماً)</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.priority.label">أولوية الظهور</td>
+                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted" data-i18n="pricing.table.rows.priority.starter">عادي</span></td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.priority.growth">مرتفعة</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.priority.pro">قصوى (أول 3 دائماً)</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">Featured في الهوم</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.featured.label">Featured في الهوم</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1585,44 +1611,44 @@
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">أسبوعياً</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.featured.pro">أسبوعياً</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">Badge الشراكة</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.badge.label">Badge الشراكة</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val">⭐ شريك Growth</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">شريك معتمد</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.badge.growth">⭐ شريك Growth</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.badge.pro">شريك معتمد</td>
               </tr>
               <!-- التسويق -->
               <tr class="pkg-tr-group">
-                <td colspan="4">التسويق والإيجاد</td>
+                <td colspan="4" data-i18n="pricing.table.groups.marketing">التسويق والإيجاد</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">إيجاد مستأجرين</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.tenantSourcing.label">إيجاد مستأجرين</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val">3 شهرياً</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">محدد بالنشاط المطلوب</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.tenantSourcing.growth">3 شهرياً</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.tenantSourcing.pro">محدد بالنشاط المطلوب</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">منشورات تسويقية</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.marketingPosts.label">منشورات تسويقية</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val">2 منشور/شهر</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">4 + Email/WhatsApp Campaign</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.marketingPosts.growth">2 منشور/شهر</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.marketingPosts.pro">4 + Email/WhatsApp Campaign</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">تصوير AI</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.aiPhoto.label">تصوير AI</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1633,15 +1659,15 @@
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">3 صور لكل مساحة جديدة</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.aiPhoto.pro">3 صور لكل مساحة جديدة</td>
               </tr>
               <!-- ERP -->
               <tr class="pkg-tr-group">
-                <td colspan="4">الإدارة والـ ERP</td>
+                <td colspan="4" data-i18n="pricing.table.groups.erp">الإدارة والـ ERP</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">استقبال طلبات الحجز</td>
-                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted">بدون إدارة</span></td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.bookingReq.label">استقبال طلبات الحجز</td>
+                <td class="pkg-td pkg-td--val"><span class="pkg-cell-muted" data-i18n="pricing.table.rows.bookingReq.starter">بدون إدارة</span></td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
@@ -1649,10 +1675,10 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
-                  </svg> + متابعة المعاينة</td>
+                  </svg> <span data-i18n="pricing.table.rows.bookingReq.proExtra">+ متابعة المعاينة</span></td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">إدارة العقود</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.contracts.label">إدارة العقود</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1665,10 +1691,10 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
-                  </svg> + تجديد تلقائي</td>
+                  </svg> <span data-i18n="pricing.table.rows.contracts.proExtra">+ تجديد تلقائي</span></td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">تسجيل المدفوعات</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.payments.label">تسجيل المدفوعات</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1684,7 +1710,7 @@
                   </svg></td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">تنبيهات انتهاء العقد</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.expiryAlerts.label">تنبيهات انتهاء العقد</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1697,10 +1723,10 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
-                  </svg> واتساب تلقائي</td>
+                  </svg> <span data-i18n="pricing.table.rows.expiryAlerts.proExtra">واتساب تلقائي</span></td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">تسجيل المخالفات</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.violations.label">تسجيل المخالفات</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1718,40 +1744,40 @@
               </tr>
               <!-- Tenant Score -->
               <tr class="pkg-tr-group">
-                <td colspan="4">Tenant Score</td>
+                <td colspan="4" data-i18n="pricing.table.groups.tenantScore">Tenant Score</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">تقييم المستأجر</td>
-                <td class="pkg-td pkg-td--val">عرض فقط</td>
-                <td class="pkg-td pkg-td--val">تاريخ كامل + مخالفات</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">درجة + توصية ذكية</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.tenantRating.label">تقييم المستأجر</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.tenantRating.starter">عرض فقط</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.tenantRating.growth">تاريخ كامل + مخالفات</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.tenantRating.pro">درجة + توصية ذكية</td>
               </tr>
               <!-- التقارير -->
               <tr class="pkg-tr-group">
-                <td colspan="4">التقارير</td>
+                <td colspan="4" data-i18n="pricing.table.groups.reports">التقارير</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">تقرير شهري</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.monthlyReport.label">تقرير شهري</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val">أساسي</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">AI كامل + توقعات الشهر</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.monthlyReport.growth">أساسي</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.monthlyReport.pro">AI كامل + توقعات الشهر</td>
               </tr>
               <!-- الدعم -->
               <tr class="pkg-tr-group">
-                <td colspan="4">الدعم</td>
+                <td colspan="4" data-i18n="pricing.table.groups.support">الدعم</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">قناة الدعم</td>
-                <td class="pkg-td pkg-td--val">إيميل</td>
-                <td class="pkg-td pkg-td--val">واتساب ساعات العمل</td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">واتساب مخصص 9ص–11م</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.supportChannel.label">قناة الدعم</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.supportChannel.starter">إيميل</td>
+                <td class="pkg-td pkg-td--val" data-i18n="pricing.table.rows.supportChannel.growth">واتساب ساعات العمل</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.supportChannel.pro">واتساب مخصص 9ص–11م</td>
               </tr>
               <tr class="pkg-tr pkg-tr--alt">
-                <td class="pkg-td pkg-td--label">مدير حساب مخصص</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.accountManager.label">مدير حساب مخصص</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1765,14 +1791,14 @@
                 <td class="pkg-td pkg-td--val pkg-td--pro"><svg class="pkg-cell-check" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
-                  </svg> مدير حساب + Call شهري 30 دقيقة</td>
+                  </svg> <span data-i18n="pricing.table.rows.accountManager.proExtra">مدير حساب + Call شهري 30 دقيقة</span></td>
               </tr>
               <!-- البازارات -->
               <tr class="pkg-tr-group">
-                <td colspan="4">البازارات</td>
+                <td colspan="4" data-i18n="pricing.table.groups.bazaars">البازارات</td>
               </tr>
               <tr class="pkg-tr">
-                <td class="pkg-td pkg-td--label">دعم تنظيم البازار</td>
+                <td class="pkg-td pkg-td--label" data-i18n="pricing.table.rows.bazaarSupport.label">دعم تنظيم البازار</td>
                 <td class="pkg-td pkg-td--val"><svg class="pkg-cell-x" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -1783,7 +1809,7 @@
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg></td>
-                <td class="pkg-td pkg-td--val pkg-td--pro">قوائم موردين + إدارة حجوزات</td>
+                <td class="pkg-td pkg-td--val pkg-td--pro" data-i18n="pricing.table.rows.bazaarSupport.pro">قوائم موردين + إدارة حجوزات</td>
               </tr>
             </tbody>
           </table>
@@ -1792,7 +1818,7 @@
 
       <!-- ══ 5. ADD-ONS ══ -->
       <section class="pkg-addons-section">
-        <h2 class="pkg-section-title">خدمات إضافية — لأي باقة</h2>
+        <h2 class="pkg-section-title" data-i18n="pricing.addons.title">خدمات إضافية — لأي باقة</h2>
         <div class="pkg-addons-grid">
           <div class="pkg-addon pkg-anim-slide" style="--delay:0ms">
             <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1800,8 +1826,8 @@
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
                 <circle cx="12" cy="13" r="3" />
               </svg></div>
-            <div class="pkg-addon-name">تصوير AI لمساحات موجودة</div>
-            <div class="pkg-addon-price">300 ج<span class="pkg-addon-unit">/مساحة</span></div>
+            <div class="pkg-addon-name" data-i18n="pricing.addons.a1Name">تصوير AI لمساحات موجودة</div>
+            <div class="pkg-addon-price"><span data-i18n="pricing.addons.a1Price">300 ج</span><span class="pkg-addon-unit" data-i18n="pricing.addons.a1Unit">/مساحة</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:80ms">
             <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1809,8 +1835,8 @@
                 <path d="M3.5 21h17L12 3 3.5 21Z" />
                 <path d="M12 3v18" />
               </svg></div>
-            <div class="pkg-addon-name">تنظيم بازار — قوائم فقط</div>
-            <div class="pkg-addon-price">1,500 ج<span class="pkg-addon-unit">/بازار</span></div>
+            <div class="pkg-addon-name" data-i18n="pricing.addons.a2Name">تنظيم بازار — قوائم فقط</div>
+            <div class="pkg-addon-price"><span data-i18n="pricing.addons.a2Price">1,500 ج</span><span class="pkg-addon-unit" data-i18n="pricing.addons.a2Unit">/بازار</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:160ms">
             <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1822,8 +1848,8 @@
                 <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
                 <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
               </svg></div>
-            <div class="pkg-addon-name">تنظيم بازار كامل مع مكاني</div>
-            <div class="pkg-addon-price">25%<span class="pkg-addon-unit"> من الإيرادات</span></div>
+            <div class="pkg-addon-name" data-i18n="pricing.addons.a3Name">تنظيم بازار كامل مع مكاني</div>
+            <div class="pkg-addon-price"><span data-i18n="pricing.addons.a3Price">25%</span><span class="pkg-addon-unit" data-i18n="pricing.addons.a3Unit"> من الإيرادات</span></div>
           </div>
           <div class="pkg-addon pkg-anim-slide" style="--delay:240ms">
             <div class="pkg-addon-ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1831,8 +1857,8 @@
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
               </svg></div>
-            <div class="pkg-addon-name">حجوزات بازار عبر المنصة</div>
-            <div class="pkg-addon-price">10%<span class="pkg-addon-unit"> من كل حجز</span></div>
+            <div class="pkg-addon-name" data-i18n="pricing.addons.a4Name">حجوزات بازار عبر المنصة</div>
+            <div class="pkg-addon-price"><span data-i18n="pricing.addons.a4Price">10%</span><span class="pkg-addon-unit" data-i18n="pricing.addons.a4Unit"> من كل حجز</span></div>
           </div>
         </div>
       </section>
@@ -1846,73 +1872,73 @@
               <path d="M4 11v9h16v-9" />
               <path d="M9 20v-6h6v6" />
             </svg></div>
-          <p class="pkg-pitch-main">كيوسك فاضي شهر واحد = <span class="pkg-pitch-loss">6,000 – 15,000 ج خسارة</span></p>
-          <p class="pkg-pitch-compare">باقة Pro = <span class="pkg-pitch-pro-price">4,500 ج</span></p>
-          <p class="pkg-pitch-note">أقل من تكلفة مساحة فاضية واحدة شهر واحد</p>
+          <p class="pkg-pitch-main" data-i18n-html="pricing.pitch.main">كيوسك فاضي شهر واحد = <span class="pkg-pitch-loss">6,000 – 15,000 ج خسارة</span></p>
+          <p class="pkg-pitch-compare" data-i18n-html="pricing.pitch.compare">باقة Pro = <span class="pkg-pitch-pro-price">4,500 ج</span></p>
+          <p class="pkg-pitch-note" data-i18n="pricing.pitch.note">أقل من تكلفة مساحة فاضية واحدة شهر واحد</p>
         </div>
       </section>
 
       <!-- ══ 7. FAQ ══ -->
       <section class="pkg-faq-section">
-        <h2 class="pkg-section-title">الأسئلة الشائعة</h2>
+        <h2 class="pkg-section-title" data-i18n="pricing.faq.title">الأسئلة الشائعة</h2>
         <div class="pkg-faq-list">
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
-              إيه الفرق بين Growth وPro؟
+              <span data-i18n="pricing.faq.q1">إيه الفرق بين Growth وPro؟</span>
               <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div class="pkg-faq-a">Growth بيديك الأدوات تشتغل بنفسك. Pro بيديك مدير حساب بيعمل التشغيل نيابةً عنك —
+            <div class="pkg-faq-a" data-i18n="pricing.faq.a1">Growth بيديك الأدوات تشتغل بنفسك. Pro بيديك مدير حساب بيعمل التشغيل نيابةً عنك —
               ويتابعك شهرياً بتقرير AI ومراجعة مباشرة.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
-              هل ممكن أغير الباقة بعدين؟
+              <span data-i18n="pricing.faq.q2">هل ممكن أغير الباقة بعدين؟</span>
               <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div class="pkg-faq-a">أيوه، تقدر تترقى لأي وقت. مفيش عقود طويلة — كل شيء شهري وتقدر تغير في أي لحظة.</div>
+            <div class="pkg-faq-a" data-i18n="pricing.faq.a2">أيوه، تقدر تترقى لأي وقت. مفيش عقود طويلة — كل شيء شهري وتقدر تغير في أي لحظة.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
-              إيه المقصود بـ "حد 16م²" في Starter وGrowth؟
+              <span data-i18n="pricing.faq.q3">إيه المقصود بـ "حد 16م²" في Starter وGrowth؟</span>
               <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div class="pkg-faq-a">كل مساحة بتدرجها لازم تكون 16م² أو أقل. المساحات الأكبر متاحة في Pro مع مدير الحساب
+            <div class="pkg-faq-a" data-i18n="pricing.faq.a3">كل مساحة بتدرجها لازم تكون 16م² أو أقل. المساحات الأكبر متاحة في Pro مع مدير الحساب
               اللي بيساعدك في الإدراج.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
-              هل العمولة 8% بتتحسب على السعر بعد الخصم؟
+              <span data-i18n="pricing.faq.q4">هل العمولة 8% بتتحسب على السعر بعد الخصم؟</span>
               <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div class="pkg-faq-a">العمولة بتتحسب على القيمة الفعلية للعقد المكتمل فقط — مش على أي مفاوضات أو عروض غير
+            <div class="pkg-faq-a" data-i18n="pricing.faq.a4">العمولة بتتحسب على القيمة الفعلية للعقد المكتمل فقط — مش على أي مفاوضات أو عروض غير
               مكتملة.</div>
           </details>
 
           <details class="pkg-faq-item">
             <summary class="pkg-faq-q">
-              هل في تجربة مجانية للـ Growth؟
+              <span data-i18n="pricing.faq.q5">هل في تجربة مجانية للـ Growth؟</span>
               <svg class="pkg-faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div class="pkg-faq-a">Starter مجاني تماماً كتجربة. Growth وPro بيبدأوا بمحادثة معنا عشان نتأكد إن الخطة
+            <div class="pkg-faq-a" data-i18n="pricing.faq.a5">Starter مجاني تماماً كتجربة. Growth وPro بيبدأوا بمحادثة معنا عشان نتأكد إن الخطة
               تناسب حجم مكانك واحتياجاتك.</div>
           </details>
 
@@ -1921,10 +1947,10 @@
 
       <!-- ══ 8. CTA FOOTER BANNER ══ -->
       <section class="pkg-cta-banner">
-        <h2 class="pkg-cta-title">جاهز تحوّل مساحاتك؟</h2>
-        <p class="pkg-cta-sub">ابدأ بـ Starter مجاناً — أو تكلمنا عشان نختار الباقة الصح ليك</p>
+        <h2 class="pkg-cta-title" data-i18n="pricing.ctaBanner.title">جاهز تحوّل مساحاتك؟</h2>
+        <p class="pkg-cta-sub" data-i18n="pricing.ctaBanner.sub">ابدأ بـ Starter مجاناً — أو تكلمنا عشان نختار الباقة الصح ليك</p>
         <div class="pkg-cta-btns">
-          <button class="btn btn-ghost pkg-cta-btn" onclick="showPage('owner')">ابدأ مجاناً</button>
+          <button class="btn btn-ghost pkg-cta-btn" onclick="showPage('owner')" data-i18n="pricing.starter.cta">ابدأ مجاناً</button>
           <a class="btn btn-primary pkg-cta-btn"
             href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن باقات مكاني Spot" target="_blank"
             rel="noopener">
@@ -1934,7 +1960,7 @@
               <path
                 d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
             </svg>
-            تكلمنا على واتساب
+            <span data-i18n="pricing.ctaBanner.whatsappBtn">تكلمنا على واتساب</span>
           </a>
         </div>
       </section>
@@ -2075,7 +2101,7 @@
   </style>
   <div id="pg-owner-profile" class="page">
     <div class="opp-wrap" id="opp-root">
-      <div class="opp-state">⏳ جاري تحميل البروفايل…</div>
+      <div class="opp-state" data-i18n="ownerProfile.loading">⏳ جاري تحميل البروفايل…</div>
     </div>
   </div><!-- end pg-owner-profile -->
 
@@ -2090,17 +2116,17 @@
       <div class="mp-header">
         <div class="mp-header-inner">
           <div>
-            <div class="mp-header-title">جميع المساحات المتاحة</div>
-            <div class="mp-header-sub">اختر مساحتك بالفلاتر المتقدمة — واحجز في ثوانٍ</div>
+            <div class="mp-header-title" data-i18n="spacesList.headerTitle">جميع المساحات المتاحة</div>
+            <div class="mp-header-sub" data-i18n="spacesList.headerSub">اختر مساحتك بالفلاتر المتقدمة — واحجز في ثوانٍ</div>
           </div>
           <div class="mp-header-actions">
             <span class="result-badge" id="mp-count">—</span>
             <select id="mp-sort" onchange="applyMpFilters()" class="mp-sort-select">
-              <option value="default">الترتيب الافتراضي</option>
-              <option value="price-asc">السعر: من الأرخص</option>
-              <option value="price-desc">السعر: من الأغلى</option>
+              <option value="default" data-i18n="spacesList.sortDefault">الترتيب الافتراضي</option>
+              <option value="price-asc" data-i18n="spacesList.sortPriceAsc">السعر: من الأرخص</option>
+              <option value="price-desc" data-i18n="spacesList.sortPriceDesc">السعر: من الأغلى</option>
             </select>
-            <button class="mp-filter-toggle" onclick="toggleMpSidebar()">الفلاتر</button>
+            <button class="mp-filter-toggle" onclick="toggleMpSidebar()" data-i18n="spacesList.filtersBtn">الفلاتر</button>
           </div>
         </div>
         <div class="mp-active-chips" id="mp-active-chips"></div>
@@ -2118,32 +2144,32 @@
 
             <!-- نوع المكان -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">نوع المكان</div>
+              <div class="mp-filter-title" data-i18n="search.typeLabel">نوع المكان</div>
               <div class="mp-type-btns">
-                <button class="mp-type-btn" data-type="mall" onclick="toggleMpType('mall',this)">مول تجاري</button>
-                <button class="mp-type-btn" data-type="club" onclick="toggleMpType('club',this)">نادي رياضي</button>
-                <button class="mp-type-btn" data-type="school" onclick="toggleMpType('school',this)">مدرسة</button>
+                <button class="mp-type-btn" data-type="mall" onclick="toggleMpType('mall',this)" data-i18n="search.typeMall">مول تجاري</button>
+                <button class="mp-type-btn" data-type="club" onclick="toggleMpType('club',this)" data-i18n="search.typeClub">نادي رياضي</button>
+                <button class="mp-type-btn" data-type="school" onclick="toggleMpType('school',this)" data-i18n="search.typeSchool">مدرسة</button>
               </div>
             </div>
 
             <!-- المنطقة -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">المنطقة</div>
+              <div class="mp-filter-title" data-i18n="search.regionLabel">المنطقة</div>
               <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل المناطق</option>
-                <option>مدينة نصر</option>
-                <option>التجمع الخامس</option>
-                <option>المهندسين</option>
-                <option>الزمالك</option>
-                <option>الشيخ زايد</option>
-                <option>6 أكتوبر</option>
-                <option>مصر الجديدة</option>
+                <option value="" data-i18n="search.regionAll">كل المناطق</option>
+                <option data-i18n="regions.nasrCity">مدينة نصر</option>
+                <option data-i18n="regions.fifthSettlement">التجمع الخامس</option>
+                <option data-i18n="regions.mohandessin">المهندسين</option>
+                <option data-i18n="regions.zamalek">الزمالك</option>
+                <option data-i18n="regions.sheikhZayed">الشيخ زايد</option>
+                <option data-i18n="regions.october6">6 أكتوبر</option>
+                <option data-i18n="regions.heliopolis">مصر الجديدة</option>
               </select>
             </div>
 
             <!-- مؤشر السعر — نقطة واحدة -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">الحد الأقصى للسعر / شهر</div>
+              <div class="mp-filter-title" data-i18n="search.priceLabel">الحد الأقصى للسعر / شهر</div>
               <div class="mp-price-single-val" id="mp-price-max-label">بلا حد</div>
               <div class="slider-container slider-single" style="margin-top:14px">
                 <div class="slider-track" id="mp-slider-track"></div>
@@ -2151,19 +2177,19 @@
                   oninput="updateMpSlider();clearTimeout(window._mpSliderDeb);window._mpSliderDeb=setTimeout(applyMpFilters,400)">
               </div>
               <div class="slider-hints" style="margin-top:6px">
-                <span>٠</span>
-                <span>بلا حد</span>
+                <span data-i18n="spacesList.sliderZero">٠</span>
+                <span data-i18n="search.priceNoLimit">بلا حد</span>
               </div>
             </div>
 
             <!-- الأنشطة -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">النشاط التجاري</div>
+              <div class="mp-filter-title" data-i18n="spacesList.activityGroupTitle">النشاط التجاري</div>
               <div class="mp-act-filters" id="mp-act-filters"></div>
             </div>
 
             <!-- مسح الفلاتر -->
-            <button class="mp-clear-btn" onclick="clearMpFilters()">مسح الفلاتر</button>
+            <button class="mp-clear-btn" onclick="clearMpFilters()" data-i18n="spacesList.clearFiltersBtn">مسح الفلاتر</button>
 
           </div>
         </aside>
@@ -2196,8 +2222,8 @@
               <div class="auth-brand-en">Spot</div>
             </div>
           </div>
-          <div class="auth-headline">أسرع طريق<br>تلاقي <em>مكان تبدأ منه</em></div>
-          <p class="auth-subline">منصة بتربط أصحاب المشاريع الصغيرة بمساحات متاحة في المولات والنوادي — بشكل شفاف وسريع.
+          <div class="auth-headline" data-i18n-html="auth.login.headline">أسرع طريق<br>تلاقي <em>مكان تبدأ منه</em></div>
+          <p class="auth-subline" data-i18n="auth.login.subline">منصة بتربط أصحاب المشاريع الصغيرة بمساحات متاحة في المولات والنوادي — بشكل شفاف وسريع.
           </p>
           <div class="auth-feats">
             <div class="auth-feat-row">
@@ -2208,8 +2234,8 @@
                   <path d="m20 20-3.5-3.5" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">ابحث وفلتر بسهولة</div>
-                <div class="auth-feat-s">بالنشاط أو المنطقة أو السعر</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat1t">ابحث وفلتر بسهولة</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat1s">بالنشاط أو المنطقة أو السعر</div>
               </div>
             </div>
             <div class="auth-feat-row">
@@ -2220,8 +2246,8 @@
                   <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">احجز في ثوانٍ</div>
-                <div class="auth-feat-s">بدون دفع مسبق — نموذج بسيط فقط</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat2t">احجز في ثوانٍ</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat2s">بدون دفع مسبق — نموذج بسيط فقط</div>
               </div>
             </div>
             <div class="auth-feat-row">
@@ -2233,34 +2259,34 @@
                   <path d="M12 18V6" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">عمولة 8% فقط</div>
-                <div class="auth-feat-s">إن لم يتأكد الحجز — لا شيء يُدفع</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat3t">عمولة 8% فقط</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat3s">إن لم يتأكد الحجز — لا شيء يُدفع</div>
               </div>
             </div>
           </div>
         </div>
         <div class="auth-panel-stats">
           <div>
-            <div class="auth-stat-n">+١٢٠</div>
-            <div class="auth-stat-l">مساحة متاحة</div>
+            <div class="auth-stat-n" data-i18n="stats.spacesCount">+١٢٠</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statSpaces">مساحة متاحة</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
-            <div class="auth-stat-n">٣٢</div>
-            <div class="auth-stat-l">موقع شريك</div>
+            <div class="auth-stat-n" data-i18n="stats.locationsCount">٣٢</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statLocations">موقع شريك</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
-            <div class="auth-stat-n">+٨٥٠</div>
-            <div class="auth-stat-l">مستأجر ناجح</div>
+            <div class="auth-stat-n" data-i18n="stats.tenantsCount">+٨٥٠</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statTenants">مستأجر ناجح</div>
           </div>
         </div>
       </div>
 
       <div class="auth-panel-right">
         <div class="auth-form-box">
-          <div class="auth-form-title">أهلاً بك مجدداً</div>
-          <div class="auth-form-sub">سجّل دخولك لتكمل اختيار مساحتك</div>
+          <div class="auth-form-title" data-i18n="auth.login.title">أهلاً بك مجدداً</div>
+          <div class="auth-form-sub" data-i18n="auth.login.subtitle">سجّل دخولك لتكمل اختيار مساحتك</div>
           <div id="login-alert"></div>
           <button class="btn-google-auth" id="btn-google-login" onclick="authWithGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24">
@@ -2273,18 +2299,18 @@
               <path fill="#EA4335"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            تسجيل الدخول باستخدام Google
+            <span data-i18n="auth.login.google">تسجيل الدخول باستخدام Google</span>
           </button>
-          <div class="auth-or">أو بالبريد الإلكتروني</div>
+          <div class="auth-or" data-i18n="auth.login.or">أو بالبريد الإلكتروني</div>
           <form id="login-form" onsubmit="doEmailLogin(); return false;" autocomplete="on" novalidate>
           <div class="afg">
-            <label>البريد الإلكتروني</label>
+            <label data-i18n="auth.login.emailLabel">البريد الإلكتروني</label>
             <input type="email" id="li-email" placeholder="example@email.com" dir="ltr" autocomplete="email">
           </div>
           <div class="afg">
-            <label>كلمة المرور</label>
+            <label data-i18n="auth.login.passwordLabel">كلمة المرور</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور"><svg width="16"
+              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور" data-i18n-attr="aria-label:auth.login.showPassword"><svg width="16"
                   height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
@@ -2293,17 +2319,17 @@
               <input type="password" id="li-pass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
             </div>
           </div>
-          <button type="submit" class="btn-auth-submit" id="btn-login-submit">تسجيل الدخول ←</button>
+          <button type="submit" class="btn-auth-submit" id="btn-login-submit" data-i18n="auth.login.submit">تسجيل الدخول ←</button>
           </form>
           <div class="auth-switch-link" style="margin-top:18px">
-            ليس لديك حساب؟ <a onclick="showPage('signup')">أنشئ حساب مجاني</a>
+            <span data-i18n="auth.login.noAccount">ليس لديك حساب؟</span> <a onclick="showPage('signup')" data-i18n="auth.login.createFree">أنشئ حساب مجاني</a>
           </div>
           <div class="auth-switch-link" style="margin-top:8px">
-            <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
+            <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500" data-i18n="auth.login.backToSpaces">← العودة للمنصة</a>
           </div>
 
           <!-- ── بوابة أصحاب المساحات ── -->
-          <div class="owner-divider">بوابة أصحاب المساحات</div>
+          <div class="owner-divider" data-i18n="auth.login.ownerDivider">بوابة أصحاب المساحات</div>
           <button onclick="goToOwnerDashboard()" class="owner-portal-btn">
             <div class="owner-portal-ico">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -2314,8 +2340,8 @@
               <div class="owner-portal-dot"></div>
             </div>
             <div class="owner-portal-info">
-              <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
-              <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
+              <div class="owner-portal-title" data-i18n="auth.login.ownerTitle">صاحب مساحة؟ ادخل من هنا</div>
+              <div class="owner-portal-sub" data-i18n="auth.login.ownerSub">لوحة التحكم الخاصة بأصحاب المساحات</div>
             </div>
             <div class="owner-portal-arrow">←</div>
           </button>
@@ -2342,8 +2368,8 @@
               <div class="auth-brand-en">Spot</div>
             </div>
           </div>
-          <div class="auth-headline">ابدأ مشروعك من<br><em>موقع صغير</em></div>
-          <p class="auth-subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
+          <div class="auth-headline" data-i18n-html="auth.signup.headline">ابدأ مشروعك من<br><em>موقع صغير</em></div>
+          <p class="auth-subline" data-i18n="auth.signup.subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
           <div class="auth-feats">
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -2353,8 +2379,8 @@
                   <path d="m9 12 2 2 4-4" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">مجاني تماماً</div>
-                <div class="auth-feat-s">إنشاء الحساب وتصفح المساحات والحجز</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat1t">مجاني تماماً</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat1s">إنشاء الحساب وتصفح المساحات والحجز</div>
               </div>
             </div>
             <div class="auth-feat-row">
@@ -2364,8 +2390,8 @@
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">دقيقتان فقط</div>
-                <div class="auth-feat-s">أدخل بياناتك وابدأ فوراً</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat2t">دقيقتان فقط</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat2s">أدخل بياناتك وابدأ فوراً</div>
               </div>
             </div>
             <div class="auth-feat-row">
@@ -2376,34 +2402,34 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg></div>
               <div>
-                <div class="auth-feat-t">بياناتك آمنة</div>
-                <div class="auth-feat-s">لا نشاركها مع أي طرف ثالث</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat3t">بياناتك آمنة</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat3s">لا نشاركها مع أي طرف ثالث</div>
               </div>
             </div>
           </div>
         </div>
         <div class="auth-panel-stats">
           <div>
-            <div class="auth-stat-n">+١٢٠</div>
-            <div class="auth-stat-l">مساحة متاحة</div>
+            <div class="auth-stat-n" data-i18n="stats.spacesCount">+١٢٠</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statSpaces">مساحة متاحة</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
-            <div class="auth-stat-n">٣٢</div>
-            <div class="auth-stat-l">موقع شريك</div>
+            <div class="auth-stat-n" data-i18n="stats.locationsCount">٣٢</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statLocations">موقع شريك</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
-            <div class="auth-stat-n">+٨٥٠</div>
-            <div class="auth-stat-l">مستأجر ناجح</div>
+            <div class="auth-stat-n" data-i18n="stats.tenantsCount">+٨٥٠</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statTenants">مستأجر ناجح</div>
           </div>
         </div>
       </div>
 
       <div class="auth-panel-right">
         <div class="auth-form-box">
-          <div class="auth-form-title">إنشاء حساب جديد</div>
-          <div class="auth-form-sub">ابدأ رحلتك مع مكاني Spot الآن</div>
+          <div class="auth-form-title" data-i18n="auth.signup.title">إنشاء حساب جديد</div>
+          <div class="auth-form-sub" data-i18n="auth.signup.subtitle">ابدأ رحلتك مع مكاني Spot الآن</div>
           <div id="signup-alert"></div>
           <button class="btn-google-auth" id="btn-google-signup" onclick="authWithGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24">
@@ -2416,62 +2442,62 @@
               <path fill="#EA4335"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            إنشاء حساب باستخدام Google
+            <span data-i18n="auth.signup.google">إنشاء حساب باستخدام Google</span>
           </button>
-          <div class="auth-or">أو بالبريد الإلكتروني</div>
+          <div class="auth-or" data-i18n="auth.signup.or">أو بالبريد الإلكتروني</div>
           <div class="afg-row">
-            <div class="afg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="su-name"
-                placeholder="اسمك الكريم"></div>
-            <div class="afg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="su-phone"
+            <div class="afg" style="margin:0"><label data-i18n="auth.signup.nameLabel">الاسم الكامل *</label><input type="text" id="su-name"
+                placeholder="اسمك الكريم" data-i18n-attr="placeholder:auth.signup.namePlaceholder"></div>
+            <div class="afg" style="margin:0"><label data-i18n="auth.signup.phoneLabel">رقم الموبايل *</label><input type="tel" id="su-phone"
                 placeholder="01xxxxxxxxx" dir="ltr"></div>
           </div>
           <div class="afg" style="margin-top:13px">
-            <label>البريد الإلكتروني *</label>
+            <label data-i18n="auth.signup.emailLabel">البريد الإلكتروني *</label>
             <input type="email" id="su-email" placeholder="example@email.com" dir="ltr">
           </div>
           <div class="afg">
-            <label>كلمة المرور *</label>
+            <label data-i18n="auth.signup.passwordLabel">كلمة المرور *</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور"><svg width="16"
+              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور" data-i18n-attr="aria-label:auth.login.showPassword"><svg width="16"
                   height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg></span>
-              <input type="password" id="su-pass" placeholder="٨ أحرف على الأقل" dir="ltr">
+              <input type="password" id="su-pass" placeholder="٨ أحرف على الأقل" data-i18n-attr="placeholder:auth.signup.passwordPlaceholder" dir="ltr">
             </div>
           </div>
           <div class="afg-row">
             <div class="afg" style="margin:0">
-              <label>نوع الحساب *</label>
+              <label data-i18n="auth.signup.roleLabel">نوع الحساب *</label>
               <select id="su-role">
-                <option value="">اختر نوعك</option>
-                <option value="tenant">مستأجر — صاحب مشروع</option>
+                <option value="" data-i18n="auth.signup.rolePick">اختر نوعك</option>
+                <option value="tenant" data-i18n="auth.signup.roleTenant">مستأجر — صاحب مشروع</option>
               </select>
-              <div style="font-size:11px;color:var(--ink3);margin-top:4px">
+              <div style="font-size:11px;color:var(--ink3);margin-top:4px" data-i18n="auth.signup.roleHint">
                 عندك مساحة تأجّرها؟ سجّل كمستأجر، وبعدها اطلب تحويل حسابك لصاحب مساحة من لوحة التحكم.
               </div>
             </div>
             <div class="afg" style="margin:0">
-              <label>المدينة</label>
+              <label data-i18n="auth.signup.cityLabel">المدينة</label>
               <select id="su-city">
-                <option value="">اختر مدينتك</option>
-                <option>القاهرة</option>
-                <option>الجيزة</option>
-                <option>الإسكندرية</option>
-                <option>المنصورة</option>
-                <option>أسيوط</option>
-                <option>أخرى</option>
+                <option value="" data-i18n="auth.signup.cityPick">اختر مدينتك</option>
+                <option value="القاهرة" data-i18n="regions.cairo">القاهرة</option>
+                <option value="الجيزة" data-i18n="regions.giza">الجيزة</option>
+                <option value="الإسكندرية" data-i18n="regions.alexandria">الإسكندرية</option>
+                <option value="المنصورة" data-i18n="regions.mansoura">المنصورة</option>
+                <option value="أسيوط" data-i18n="regions.assiut">أسيوط</option>
+                <option value="أخرى" data-i18n="auth.signup.cityOther">أخرى</option>
               </select>
             </div>
           </div>
-          <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px">إنشاء
+          <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px" data-i18n="auth.signup.submit">إنشاء
             حساب ←</button>
           <div class="auth-switch-link" style="margin-top:18px">
-            لديك حساب بالفعل؟ <a onclick="showPage('login')">سجّل دخولك</a>
+            <span data-i18n="auth.signup.haveAccount">لديك حساب بالفعل؟</span> <a onclick="showPage('login')" data-i18n="auth.signup.loginNow">سجّل دخولك</a>
           </div>
           <div class="auth-switch-link" style="margin-top:8px">
-            <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500">← العودة للمنصة</a>
+            <a onclick="showPage('home')" style="color:var(--ink2);font-weight:500" data-i18n="auth.signup.backToSpaces">← العودة للمنصة</a>
           </div>
 
         </div>
@@ -2492,11 +2518,11 @@
             <rect x="2" y="4" width="20" height="16" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg></div>
-        <div class="confirm-title-c">اتحقق من <span>بريدك</span></div>
+        <div class="confirm-title-c" data-i18n-html="auth.confirm.title">اتحقق من <span>بريدك</span></div>
         <p style="font-size:14px;color:var(--ink2);line-height:1.85;margin-bottom:20px">
-          بعتنالك رسالة تأكيد على<br>
+          <span data-i18n="auth.confirm.bodyPre">بعتنالك رسالة تأكيد على</span><br>
           <strong id="confirm-em-addr" style="color:var(--ink)">بريدك الإلكتروني</strong>.<br>
-          افتح الرسالة واضغط على رابط التأكيد عشان تفعّل حسابك.
+          <span data-i18n="auth.confirm.bodyPost">افتح الرسالة واضغط على رابط التأكيد عشان تفعّل حسابك.</span>
         </p>
         <div class="auth-alert auth-alert-info" style="text-align:right;margin-bottom:18px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -2506,11 +2532,11 @@
             <path d="M9 18h6" />
             <path d="M10 22h4" />
           </svg>
-          <span>إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
+          <span data-i18n="auth.confirm.spamNote">إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
         </div>
         <div id="confirm-alert"></div>
-        <button id="btn-resend-confirm" class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()">إعادة إرسال رسالة التأكيد</button>
-        <button class="btn-auth-submit" onclick="showPage('login')">ارجع لتسجيل الدخول</button>
+        <button id="btn-resend-confirm" class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()" data-i18n="auth.confirm.resend">إعادة إرسال رسالة التأكيد</button>
+        <button class="btn-auth-submit" onclick="showPage('login')" data-i18n="auth.confirm.backToLogin">ارجع لتسجيل الدخول</button>
       </div>
     </div>
   </div><!-- end pg-confirm -->
@@ -2532,10 +2558,10 @@
             <div class="dash-pill">
               <span style="width:7px;height:7px;border-radius:50%;background:var(--orange);
                            animation:blink 2s ease infinite;display:inline-block"></span>
-              مرحباً بك في مكاني Spot
+              <span data-i18n="tenantDash.welcomePill">مرحباً بك في مكاني Spot</span>
             </div>
-            <div class="dash-hello">أهلاً، <span id="dash-firstname">—</span></div>
-            <div class="dash-hello-sub">من لوحة التحكم تقدر تشوف حجوزاتك وبزاراتك وتتنقل بين أقسام المنصة.</div>
+            <div class="dash-hello"><span data-i18n="tenantDash.helloPrefix">أهلاً،</span> <span id="dash-firstname">—</span></div>
+            <div class="dash-hello-sub" data-i18n="tenantDash.helloSub">من لوحة التحكم تقدر تشوف حجوزاتك وبزاراتك وتتنقل بين أقسام المنصة.</div>
           </div>
         </div>
 
@@ -2547,9 +2573,9 @@
                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                 <circle cx="12" cy="10" r="3" />
               </svg></div>
-            <div class="dash-stat-lbl">طلبات الحجز</div>
+            <div class="dash-stat-lbl" data-i18n="tenantDash.statBookingsLbl">طلبات الحجز</div>
             <div class="dash-stat-val" id="dash-booking-count">٠</div>
-            <div class="dash-stat-sub">إجمالي الطلبات</div>
+            <div class="dash-stat-sub" data-i18n="tenantDash.statBookingsSub">إجمالي الطلبات</div>
           </div>
           <div class="dash-stat-card">
             <div class="dash-stat-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2557,7 +2583,7 @@
                 <polygon
                   points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg></div>
-            <div class="dash-stat-lbl">سمعتك</div>
+            <div class="dash-stat-lbl" data-i18n="tenantDash.statRepLbl">سمعتك</div>
             <div class="dash-stat-val" id="dash-rep-stat">—</div>
             <div class="dash-stat-sub" id="dash-rep-sub">لا تقييمات بعد</div>
           </div>
@@ -2566,33 +2592,33 @@
         <!-- ══════════════════ الحجوزات ══════════════════ -->
         <div class="dash-section-card">
           <div class="dash-section-head">
-            <div class="dash-section-title">حجوزاتك</div>
+            <div class="dash-section-title" data-i18n="tenantDash.bookingsSectionTitle">حجوزاتك</div>
             <button class="btn btn-primary" style="font-size:13px;padding:8px 18px"
-              onclick="window.location.href='/spaces/'">+ حجز جديد</button>
+              onclick="window.location.href='/spaces/'" data-i18n="tenantDash.newBookingBtn">+ حجز جديد</button>
           </div>
           <div id="dash-bookings">
-            <div class="no-bookings">جاري التحميل…</div>
+            <div class="no-bookings" data-i18n="state.loading">جاري التحميل…</div>
           </div>
         </div>
 
         <!-- ══════════════════ السمعة والتقييمات ══════════════════ -->
         <div class="dash-section-card">
           <div class="dash-section-head">
-            <div class="dash-section-title">سمعتك وتقييماتك</div>
+            <div class="dash-section-title" data-i18n="tenantDash.ratingsSectionTitle">سمعتك وتقييماتك</div>
           </div>
           <p style="font-size:13px;color:var(--ink3);line-height:1.75;margin:0 0 16px;
-                    padding-bottom:14px;border-bottom:1px solid var(--border)">
+                    padding-bottom:14px;border-bottom:1px solid var(--border)" data-i18n="tenantDash.ratingsIntro">
             دي التقييمات اللي وصلتك من أصحاب المساحات ومنظّمي البازارات اللي اتعاملت معاهم.
             كل ما تلتزم وتتعامل كويس، سمعتك بتزيد وفرصتك في الحجز بتكبر.
           </p>
           <div id="dash-ratings">
-            <div class="no-bookings">جاري التحميل…</div>
+            <div class="no-bookings" data-i18n="state.loading">جاري التحميل…</div>
           </div>
         </div>
 
         <!-- ══════════════════ 🧭 استكشف المنصة ══════════════════ -->
         <div class="dash-section-card">
-          <div class="dash-section-title" style="margin-bottom:16px">استكشف المنصة</div>
+          <div class="dash-section-title" style="margin-bottom:16px" data-i18n="tenantDash.exploreSectionTitle">استكشف المنصة</div>
           <div class="dash-nav-grid">
 
             <!-- المساحات -->
@@ -2603,8 +2629,8 @@
                   <path d="M4 11v9h16v-9" />
                   <path d="M9 20v-6h6v6" />
                 </svg></span>
-              <span class="dnc-ttl">جميع المساحات</span>
-              <span class="dnc-sub">استأجر مساحة لمشروعك</span>
+              <span class="dnc-ttl" data-i18n="tenantDash.navSpacesTitle">جميع المساحات</span>
+              <span class="dnc-sub" data-i18n="tenantDash.navSpacesSub">استأجر مساحة لمشروعك</span>
             </a>
 
             <!-- البازارات القادمة -->
@@ -2616,8 +2642,8 @@
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg></span>
-              <span class="dnc-ttl">البازارات القادمة</span>
-              <span class="dnc-sub">تعرّف على البازارات القادمة</span>
+              <span class="dnc-ttl" data-i18n="tenantDash.navBazaarsTitle">البازارات القادمة</span>
+              <span class="dnc-sub" data-i18n="tenantDash.navBazaarsSub">تعرّف على البازارات القادمة</span>
             </a>
 
             <!-- اشترك في بزار -->
@@ -2627,8 +2653,8 @@
                   <path d="M3.5 21h17L12 3 3.5 21Z" />
                   <path d="M12 3v18" />
                 </svg></span>
-              <span class="dnc-ttl">اشترك في بزار</span>
-              <span class="dnc-sub">احجز مكانك كعارض</span>
+              <span class="dnc-ttl" data-i18n="tenantDash.navJoinBazaarTitle">اشترك في بزار</span>
+              <span class="dnc-sub" data-i18n="tenantDash.navJoinBazaarSub">احجز مكانك كعارض</span>
             </a>
 
             <!-- نظّم بزار -->
@@ -2638,8 +2664,8 @@
                   <path d="M3.5 21h17L12 3 3.5 21Z" />
                   <path d="M12 3v18" />
                 </svg></span>
-              <span class="dnc-ttl">نظّم بزار</span>
-              <span class="dnc-sub">وثّق حسابك كمنظّم</span>
+              <span class="dnc-ttl" data-i18n="tenantDash.navOrganizeBazaarTitle">نظّم بزار</span>
+              <span class="dnc-sub" data-i18n="tenantDash.navOrganizeBazaarSub">وثّق حسابك كمنظّم</span>
             </a>
 
             <!-- المشاريع للبيع — عرض كامل العرض -->
@@ -2651,15 +2677,15 @@
                   <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
                 </svg></span>
               <div>
-                <div class="dnc-ttl">ابحث عن مشروع جاهز</div>
-                <div class="dnc-sub">إكسسوارات ومشاريع جاهزة للبيع</div>
+                <div class="dnc-ttl" data-i18n="tenantDash.navMarketTitle">ابحث عن مشروع جاهز</div>
+                <div class="dnc-sub" data-i18n="tenantDash.navMarketSub">إكسسوارات ومشاريع جاهزة للبيع</div>
               </div>
             </a>
 
           </div>
 
           <!-- تسجيل الخروج -->
-          <button class="dash-nav-logout" onclick="doLogout()">تسجيل الخروج</button>
+          <button class="dash-nav-logout" onclick="doLogout()" data-i18n="userMenu.logout">تسجيل الخروج</button>
         </div>
 
         <!-- ══ ترقية إلى صاحب مساحة ══ -->
@@ -2688,11 +2714,11 @@
                 <circle cx="12" cy="10" r="3" />
               </svg></div>
             <div>
-              <div class="modal-title">احجز مساحتك</div>
-              <div class="modal-sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
+              <div class="modal-title" data-i18n="bookingModal.title">احجز مساحتك</div>
+              <div class="modal-sub" data-i18n="bookingModal.sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
             </div>
           </div>
-          <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز">×</button>
+          <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز" data-i18n-attr="aria-label:bookingModal.closeAria">×</button>
         </div>
         <div class="modal-body">
           <div class="space-info-box">
@@ -2700,64 +2726,64 @@
             <div class="space-info-meta" id="msi-meta">—</div>
           </div>
           <div class="mfg-2" style="gap:10px;margin-bottom:15px">
-            <div class="mfg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="bk-name"
-                placeholder="اسمك الكريم"></div>
-            <div class="mfg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="bk-phone"
+            <div class="mfg" style="margin:0"><label data-i18n="auth.signup.nameLabel">الاسم الكامل *</label><input type="text" id="bk-name"
+                placeholder="اسمك الكريم" data-i18n-attr="placeholder:auth.signup.namePlaceholder"></div>
+            <div class="mfg" style="margin:0"><label data-i18n="auth.signup.phoneLabel">رقم الموبايل *</label><input type="tel" id="bk-phone"
                 placeholder="01xxxxxxxxx"></div>
           </div>
           <div class="mfg">
-            <label>البريد الإلكتروني (اختياري)</label>
+            <label data-i18n="bookingModal.emailLabelOptional">البريد الإلكتروني (اختياري)</label>
             <input type="email" id="bk-email" placeholder="email@example.com">
           </div>
           <div class="mfg" style="margin-top:4px">
-            <label>نوع نشاطك التجاري *</label>
+            <label data-i18n="bookingModal.activityLabel">نوع نشاطك التجاري *</label>
             <div class="act-picker" id="modal-act-picker"></div>
           </div>
           <div class="mfg" id="other-act-wrap" style="display:none">
-            <label>اذكر نشاطك</label>
-            <input type="text" id="bk-other-act" placeholder="مثال: عربية سكر قطن، منتجات يدوية...">
+            <label data-i18n="bookingModal.otherActivityLabel">اذكر نشاطك</label>
+            <input type="text" id="bk-other-act" placeholder="مثال: عربية سكر قطن، منتجات يدوية..." data-i18n-attr="placeholder:bookingModal.otherActivityPlaceholder">
           </div>
           <div class="mfg-2" style="gap:10px;margin-top:4px">
-            <div class="mfg" style="margin:0"><label>الحجم المطلوب</label><select id="bk-size">
-                <option value="">اختر الحجم</option>
+            <div class="mfg" style="margin:0"><label data-i18n="bookingModal.sizeLabel">الحجم المطلوب</label><select id="bk-size">
+                <option value="" data-i18n="bookingModal.sizeChoosePlaceholder">اختر الحجم</option>
               </select></div>
-            <div class="mfg" style="margin:0"><label>مدة الإيجار</label><select id="bk-dur">
-                <option value="">اختر المدة</option>
-                <option>يومي</option>
-                <option>أسبوعي</option>
-                <option>شهري</option>
-                <option>٣ شهور</option>
-                <option>٦ شهور</option>
-                <option>سنة</option>
+            <div class="mfg" style="margin:0"><label data-i18n="search.durationLabel">مدة الإيجار</label><select id="bk-dur">
+                <option value="" data-i18n="bookingModal.durationChoosePlaceholder">اختر المدة</option>
+                <option data-i18n="search.durationDaily">يومي</option>
+                <option data-i18n="search.durationWeekly">أسبوعي</option>
+                <option data-i18n="search.durationMonthly">شهري</option>
+                <option data-i18n="bookingModal.duration3Months">٣ شهور</option>
+                <option data-i18n="bookingModal.duration6Months">٦ شهور</option>
+                <option data-i18n="bookingModal.durationYear">سنة</option>
               </select></div>
           </div>
           <div class="mfg" style="margin-top:15px">
-            <label>تاريخ البدء المقترح</label>
+            <label data-i18n="bookingModal.dateLabel">تاريخ البدء المقترح</label>
             <input type="date" id="bk-date">
           </div>
           <div class="mfg" style="margin-top:4px">
-            <label>ملاحظات أو أسئلة</label>
-            <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
+            <label data-i18n="bookingModal.notesLabel">ملاحظات أو أسئلة</label>
+            <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..." data-i18n-attr="placeholder:bookingModal.notesPlaceholder"></textarea>
           </div>
           <div class="form-error" id="bk-error"></div>
           <button class="btn btn-primary" onclick="submitBooking()"
-            style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)">
+            style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)" data-i18n="bookingModal.submitBtn">
             ابعت طلب الحجز ←
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px" data-i18n="bookingModal.noUpfrontNote">
             مفيش أي دفع مسبق — هنتواصل معاك لتأكيد الحجز
           </div>
         </div>
       </div>
       <div class="modal-success" id="modal-success">
         <div class="success-circle">✓</div>
-        <div class="success-title">اتبعت طلبك <span>بنجاح!</span></div>
-        <div class="success-body">
+        <div class="success-title" data-i18n-html="bookingModal.successTitle">اتبعت طلبك <span>بنجاح!</span></div>
+        <div class="success-body" data-i18n-html="bookingModal.successBody">
           شكراً ليك — اتستلم طلب الحجز.<br>
           فريق <strong>مكاني Spot</strong> هيتواصل معاك في
           <strong style="color:var(--orange)">٢٤ ساعة</strong>.
         </div>
-        <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px">تمام، شكراً
+        <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px" data-i18n="buttons.okThanksForward">تمام، شكراً
           ←</button>
       </div>
     </div>
@@ -2772,20 +2798,20 @@
       <!-- ── شريط الخطوات ── -->
       <div class="insp-steps-bar">
         <div class="insp-step-node active" id="insp-dot-1">
-          <div class="insp-step-circle">١</div>
-          <div class="insp-step-lbl">البيانات</div>
+          <div class="insp-step-circle" data-i18n="inspectionModal.stepNum1">١</div>
+          <div class="insp-step-lbl" data-i18n="inspectionModal.step1Lbl">البيانات</div>
         </div>
         <div class="insp-step-line" id="insp-line-1"></div>
         <div class="insp-step-node" id="insp-dot-2">
-          <div class="insp-step-circle">٢</div>
-          <div class="insp-step-lbl">الدفع</div>
+          <div class="insp-step-circle" data-i18n="inspectionModal.stepNum2">٢</div>
+          <div class="insp-step-lbl" data-i18n="inspectionModal.step2Lbl">الدفع</div>
         </div>
         <div class="insp-step-line" id="insp-line-2"></div>
         <div class="insp-step-node" id="insp-dot-3">
-          <div class="insp-step-circle">٣</div>
-          <div class="insp-step-lbl">التأكيد</div>
+          <div class="insp-step-circle" data-i18n="inspectionModal.stepNum3">٣</div>
+          <div class="insp-step-lbl" data-i18n="inspectionModal.step3Lbl">التأكيد</div>
         </div>
-        <button class="modal-close insp-close-btn" onclick="closeInspectionModal()" aria-label="إغلاق">×</button>
+        <button class="modal-close insp-close-btn" onclick="closeInspectionModal()" aria-label="إغلاق" data-i18n-attr="aria-label:inspectionModal.closeAria">×</button>
       </div>
 
       <!-- ══ Step 1: الفورم ══ -->
@@ -2797,68 +2823,68 @@
               <path d="m20 20-3.5-3.5" />
             </svg></div>
           <div>
-            <div class="insp-header-title">احجز معاينة</div>
+            <div class="insp-header-title" data-i18n="inspectionModal.headerTitle">احجز معاينة</div>
             <div class="insp-header-space" id="insp-space-name">—</div>
           </div>
         </div>
-        <div class="insp-fee-note">
+        <div class="insp-fee-note" data-i18n-html="inspectionModal.feeNote">
           رسوم المعاينة <strong>150 ج</strong> · بترجعلك لو اكملت الحجز بعدين
         </div>
         <div class="mfg-2" style="gap:10px;margin-bottom:12px">
           <div class="mfg" style="margin:0">
-            <label>الاسم الكامل *</label>
-            <input type="text" id="insp-name" placeholder="اسمك كامل">
+            <label data-i18n="auth.signup.nameLabel">الاسم الكامل *</label>
+            <input type="text" id="insp-name" placeholder="اسمك كامل" data-i18n-attr="placeholder:inspectionModal.namePlaceholder">
           </div>
           <div class="mfg" style="margin:0">
-            <label>رقم الهاتف *</label>
+            <label data-i18n="inspectionModal.phoneLabel">رقم الهاتف *</label>
             <input type="tel" id="insp-phone" placeholder="01xxxxxxxxx" dir="ltr">
           </div>
         </div>
         <div class="mfg" style="margin-bottom:14px">
-          <label>النشاط التجاري *</label>
+          <label data-i18n="inspectionModal.activityLabel">النشاط التجاري *</label>
           <select id="insp-activity">
-            <option value="">اختر نشاطك</option>
+            <option value="" data-i18n="inspectionModal.activityChoosePlaceholder">اختر نشاطك</option>
           </select>
         </div>
         <div class="mfg" style="margin-bottom:6px">
-          <label>اختر موعد المعاينة *</label>
+          <label data-i18n="inspectionModal.dateLabel">اختر موعد المعاينة *</label>
           <div class="insp-dates-grid" id="insp-dates-grid"></div>
         </div>
         <div class="form-error" id="insp-error" style="margin-bottom:4px"></div>
         <button class="btn btn-primary" onclick="_inspSubmitForm()"
-          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg)">
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg)" data-i18n="inspectionModal.nextBtn">
           التالي — متابعة للدفع ←
         </button>
       </div>
 
       <!-- ══ Step 2: تعليمات الدفع ══ -->
       <div id="insp-step-2" class="insp-step-body" style="display:none">
-        <div class="insp-s2-title">ادفع رسوم المعاينة</div>
-        <div class="insp-s2-sub">حوّل 150 ج على انستاباي ثم ابعت صورة التحويل على واتساب</div>
+        <div class="insp-s2-title" data-i18n="inspectionModal.step2Title">ادفع رسوم المعاينة</div>
+        <div class="insp-s2-sub" data-i18n="inspectionModal.step2Sub">حوّل 150 ج على انستاباي ثم ابعت صورة التحويل على واتساب</div>
 
         <div class="insp-pay-box">
           <div class="insp-pay-logo-row">
             <span class="insp-pay-logo-txt">InstaPay</span>
-            <span class="insp-pay-amount-badge">150 ج</span>
+            <span class="insp-pay-amount-badge" data-i18n="inspectionModal.payAmountBadge">150 ج</span>
           </div>
           <div class="insp-pay-num-row">
             <span class="insp-pay-num">01148662218</span>
-            <button class="insp-copy-btn" id="insp-copy-num-btn" onclick="_inspCopyNumber()">نسخ</button>
+            <button class="insp-copy-btn" id="insp-copy-num-btn" onclick="_inspCopyNumber()" data-i18n="inspectionModal.copyBtn">نسخ</button>
           </div>
         </div>
 
         <div class="insp-steps-list">
           <div class="insp-list-item">
-            <span class="insp-list-num">١</span>
-            <span>اتحول 150 ج على الرقم اللي فوق</span>
+            <span class="insp-list-num" data-i18n="inspectionModal.stepNum1">١</span>
+            <span data-i18n="inspectionModal.list1">اتحول 150 ج على الرقم اللي فوق</span>
           </div>
           <div class="insp-list-item">
-            <span class="insp-list-num">٢</span>
-            <span>خد سكرين شوت للتحويل</span>
+            <span class="insp-list-num" data-i18n="inspectionModal.stepNum2">٢</span>
+            <span data-i18n="inspectionModal.list2">خد سكرين شوت للتحويل</span>
           </div>
           <div class="insp-list-item">
-            <span class="insp-list-num">٣</span>
-            <span>ابعت الصورة على واتساب من الزرار ده:</span>
+            <span class="insp-list-num" data-i18n="inspectionModal.stepNum3">٣</span>
+            <span data-i18n="inspectionModal.list3">ابعت الصورة على واتساب من الزرار ده:</span>
           </div>
         </div>
 
@@ -2869,15 +2895,15 @@
             <path
               d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
           </svg>
-          افتح واتساب وابعت الصورة
+          <span data-i18n="inspectionModal.waBtnText">افتح واتساب وابعت الصورة</span>
         </a>
 
         <button class="btn btn-primary" onclick="_inspConfirm()"
-          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:10px">
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:10px" data-i18n="inspectionModal.confirmBtn">
           بعدت الصورة؟ تأكيد ←
         </button>
         <button onclick="_inspGoStep(1)"
-          style="width:100%;padding:10px;font-size:13px;margin-top:8px;background:transparent;border:none;color:var(--ink3);cursor:pointer;font-family:var(--font-display,'Cairo',sans-serif)">
+          style="width:100%;padding:10px;font-size:13px;margin-top:8px;background:transparent;border:none;color:var(--ink3);cursor:pointer;font-family:var(--font-display,'Cairo',sans-serif)" data-i18n="inspectionModal.backToStep1Btn">
           ← عودة لتعديل البيانات
         </button>
       </div>
@@ -2889,25 +2915,25 @@
             <circle cx="12" cy="12" r="10" />
             <path d="m9 12 2 2 4-4" />
           </svg></div>
-        <div class="insp-confirm-title">تم استلام طلب المعاينة!</div>
-        <div class="insp-confirm-sub">سيتم التواصل معك خلال 24 ساعة</div>
+        <div class="insp-confirm-title" data-i18n="inspectionModal.step3Title">تم استلام طلب المعاينة!</div>
+        <div class="insp-confirm-sub" data-i18n="inspectionModal.step3Sub">سيتم التواصل معك خلال 24 ساعة</div>
 
         <div class="insp-id-box">
-          <div class="insp-id-label">رقم الطلب</div>
+          <div class="insp-id-label" data-i18n="inspectionModal.requestIdLabel">رقم الطلب</div>
           <div class="insp-id-row">
             <span class="insp-id-val" id="insp-id-val">INS-000000</span>
-            <button class="insp-copy-btn" id="insp-copy-id-btn" onclick="_inspCopyId()">نسخ</button>
+            <button class="insp-copy-btn" id="insp-copy-id-btn" onclick="_inspCopyId()" data-i18n="inspectionModal.copyBtn">نسخ</button>
           </div>
         </div>
 
         <div class="insp-confirm-details" id="insp-confirm-details"></div>
 
-        <div class="insp-confirm-note">
+        <div class="insp-confirm-note" data-i18n="inspectionModal.confirmNote">
           ستصلك رسالة واتساب بتأكيد الموعد خلال 24 ساعة
         </div>
 
         <button class="btn btn-primary" onclick="closeInspectionModal()"
-          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:20px">
+          style="width:100%;padding:13px;font-size:14px;justify-content:center;border-radius:var(--radius-lg);margin-top:20px" data-i18n="buttons.okThanksForward">
           تمام، شكراً ←
         </button>
       </div>
@@ -2950,10 +2976,10 @@
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
       <div class="sd-sticky-footer">
-        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
+        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)" data-i18n="spaceDetail.bookBtn">
           احجز هذا المكان ←
         </button>
-        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()">
+        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()" data-i18n="spaceDetail.backBtn">
           → العودة
         </button>
       </div>
@@ -2974,30 +3000,30 @@
           <span class="sf-logo-sep" aria-hidden="true"></span>
           <span class="sf-logo-en">Spot</span>
         </div>
-        <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة
+        <p class="sf-about" data-i18n="footer.about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة
           في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
         <div class="sf-paths">
-          <span class="sf-path">مساحات تجارية</span>
-          <span class="sf-path">بازارات ومعارض</span>
-          <span class="sf-path">مشاريع للبيع</span>
+          <span class="sf-path" data-i18n="footer.pathSpaces">مساحات تجارية</span>
+          <span class="sf-path" data-i18n="footer.pathBazaars">بازارات ومعارض</span>
+          <span class="sf-path" data-i18n="footer.pathProjects">مشاريع للبيع</span>
         </div>
       </div>
 
       <!-- العمود الثاني: روابط الصفحات -->
       <div class="sf-col sf-col--links">
-        <h4 class="sf-col-title">تصفح المنصة</h4>
-        <a class="sf-link" href="/">الرئيسية</a>
-        <a class="sf-link" href="/?p=market">المساحات التجارية</a>
-        <a class="sf-link" href="/bazaars/">البازارات والمعارض</a>
-        <a class="sf-link" href="/market/">مشاريع كاملة للبيع</a>
-        <a class="sf-link" href="/catalog/">كتالوج الأنشطة</a>
-        <a class="sf-link" href="/post-ad/">نشر إعلانك</a>
-        <a class="sf-link" onclick="showPage('pricing')" style="cursor:pointer">باقات أصحاب المساحات</a>
+        <h4 class="sf-col-title" data-i18n="footer.browseTitle">تصفح المنصة</h4>
+        <a class="sf-link" href="/" data-i18n="footer.linkHome">الرئيسية</a>
+        <a class="sf-link" href="/?p=market" data-i18n="footer.linkSpaces">المساحات التجارية</a>
+        <a class="sf-link" href="/bazaars/" data-i18n="footer.linkBazaars">البازارات والمعارض</a>
+        <a class="sf-link" href="/market/" data-i18n="footer.linkProjects">مشاريع كاملة للبيع</a>
+        <a class="sf-link" href="/catalog/" data-i18n="footer.linkCatalog">كتالوج الأنشطة</a>
+        <a class="sf-link" href="/post-ad/" data-i18n="footer.linkPostAd">نشر إعلانك</a>
+        <a class="sf-link" onclick="showPage('pricing')" style="cursor:pointer" data-i18n="footer.linkPricing">باقات أصحاب المساحات</a>
       </div>
 
       <!-- العمود الثالث: التواصل والقانون -->
       <div class="sf-col sf-col--contact">
-        <h4 class="sf-col-title">تواصل معنا</h4>
+        <h4 class="sf-col-title" data-i18n="footer.contactTitle">تواصل معنا</h4>
         <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot"
           target="_blank" rel="noopener">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -3022,7 +3048,7 @@
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          السياسات والشروط القانونية
+          <span data-i18n="footer.policiesLink">السياسات والشروط القانونية</span>
         </a>
       </div>
 
@@ -3031,8 +3057,8 @@
     <!-- الشريط السفلي -->
     <div class="sf-bottom">
       <div class="sf-bottom-inner">
-        <span class="sf-legal">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
-        <span class="sf-copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
+        <span class="sf-legal" data-i18n="footer.legalLine">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
+        <span class="sf-copy" data-i18n="footer.copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
       </div>
     </div>
   </footer>
@@ -3061,8 +3087,8 @@
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       </span>
-      <span class="bn-label">الرئيسية</span>
-      <span class="bn-desc">الصفحة الرئيسية</span>
+      <span class="bn-label" data-i18n="bottomNav.home">الرئيسية</span>
+      <span class="bn-desc" data-i18n="bottomNav.homeDesc">الصفحة الرئيسية</span>
     </button>
 
     <!-- المساحات التجارية -->
@@ -3074,8 +3100,8 @@
           <circle cx="12" cy="10" r="3" />
         </svg>
       </span>
-      <span class="bn-label">مساحات</span>
-      <span class="bn-desc">ثابتة وتجارية</span>
+      <span class="bn-label" data-i18n="bottomNav.spaces">مساحات</span>
+      <span class="bn-desc" data-i18n="bottomNav.spacesDesc">ثابتة وتجارية</span>
     </a>
 
     <!-- البازارات -->
@@ -3087,8 +3113,8 @@
           <path d="M12 3v18" />
         </svg>
       </span>
-      <span class="bn-label">بازارات</span>
-      <span class="bn-desc">أحداث وبازارات</span>
+      <span class="bn-label" data-i18n="bottomNav.bazaars">بازارات</span>
+      <span class="bn-desc" data-i18n="bottomNav.bazaarsDesc">أحداث وبازارات</span>
     </button>
 
     <!-- مشاريع للبيع -->
@@ -3101,8 +3127,8 @@
           <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none" />
         </svg>
       </span>
-      <span class="bn-label">مشاريع</span>
-      <span class="bn-desc">كاملة للبيع</span>
+      <span class="bn-label" data-i18n="bottomNav.projects">مشاريع</span>
+      <span class="bn-desc" data-i18n="bottomNav.projectsDesc">كاملة للبيع</span>
     </a>
 
     <!-- دخول / حساب -->
@@ -3135,12 +3161,12 @@
       <path d="M3 22v-6h6" />
       <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
     </svg>
-    <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
+    <span style="color:#e8e8f0;font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
     <button onclick="window.location.reload()" style="
       background:var(--orange,#FF6B00); color:#fff; border:none;
       border-radius:8px; padding:7px 16px; font-family:'Cairo',sans-serif;
       font-size:12px; font-weight:700; cursor:pointer;
-    ">تحديث الآن</button>
+    " data-i18n="swUpdate.button">🔄 تحديث الآن</button>
     <button onclick="document.getElementById('sw-update-bar').style.display='none'" style="
       background:transparent; border:none; color:#6b6b8a;
       font-size:18px; cursor:pointer; padding:0 4px; line-height:1;
@@ -3202,22 +3228,22 @@
         <div class="modal-header-inner">
           <div class="modal-icon" style="font-size:22px">🏢</div>
           <div>
-            <div class="modal-title">لإدارة مساحتك — سجّل دخولك أولاً</div>
-            <div class="modal-sub">أصحاب المساحات ينتقلون للوحتهم تلقائياً بعد الدخول</div>
+            <div class="modal-title" data-i18n="ownerGateModal.title">لإدارة مساحتك — سجّل دخولك أولاً</div>
+            <div class="modal-sub" data-i18n="ownerGateModal.sub">أصحاب المساحات ينتقلون للوحتهم تلقائياً بعد الدخول</div>
           </div>
         </div>
-        <button class="modal-close" onclick="closeOwnerGateModal()" aria-label="إغلاق">×</button>
+        <button class="modal-close" onclick="closeOwnerGateModal()" aria-label="إغلاق" data-i18n-attr="aria-label:ownerGateModal.closeAria">×</button>
       </div>
       <div class="modal-body" style="padding-top:8px">
         <button onclick="closeOwnerGateModal(); showPage('login')"
-          class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;margin-bottom:10px">
+          class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;margin-bottom:10px" data-i18n="auth.login.submit">
           تسجيل الدخول ←
         </button>
         <button onclick="closeOwnerGateModal(); showPage('signup')"
-          class="btn btn-ghost" style="width:100%;padding:12px;font-size:14px">
+          class="btn btn-ghost" style="width:100%;padding:12px;font-size:14px" data-i18n="ownerGateModal.signupBtn">
           إنشاء حساب جديد
         </button>
-        <div style="font-size:12px;color:var(--ink2);text-align:center;margin-top:14px;line-height:1.7">
+        <div style="font-size:12px;color:var(--ink2);text-align:center;margin-top:14px;line-height:1.7" data-i18n-html="ownerGateModal.note">
           إذا كان لديك حساب Owner بالفعل — ادخل وستنتقل للوحتك مباشرة.<br>
           إذا لم يكن لديك حساب Owner — سجّل الدخول ثم اطلب تفعيل الحساب.
         </div>
@@ -3235,55 +3261,55 @@
           <div class="modal-header-inner">
             <div class="modal-icon" style="font-size:22px">🏢</div>
             <div>
-              <div class="modal-title">طلب تحويل الحساب لصاحب مساحة</div>
-              <div class="modal-sub">أرسل طلبك وسيتواصل معك فريقنا خلال ٢٤ ساعة</div>
+              <div class="modal-title" data-i18n="ownerRequestModal.title">طلب تحويل الحساب لصاحب مساحة</div>
+              <div class="modal-sub" data-i18n="ownerRequestModal.sub">أرسل طلبك وسيتواصل معك فريقنا خلال ٢٤ ساعة</div>
             </div>
           </div>
-          <button class="modal-close" onclick="closeOwnerRequestModal()" aria-label="إغلاق">×</button>
+          <button class="modal-close" onclick="closeOwnerRequestModal()" aria-label="إغلاق" data-i18n-attr="aria-label:ownerRequestModal.closeAria">×</button>
         </div>
         <div class="modal-body">
 
           <!-- رقم الواتساب — إلزامي -->
           <div class="mfg">
-            <label>رقم الواتساب <span style="color:var(--red,#ef4444)">*</span></label>
+            <label><span data-i18n="ownerRequestModal.phoneLabel">رقم الواتساب</span> <span style="color:var(--red,#ef4444)">*</span></label>
             <input class="mfg-inp" id="oreq-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr"
               style="text-align:right;font-size:15px;letter-spacing:1px" autocomplete="tel">
           </div>
 
           <!-- اسم المكان — اختياري -->
           <div class="mfg">
-            <label>اسم المكان / المول <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
-            <input class="mfg-inp" id="oreq-place-name" placeholder="مثال: مول العرب، نادي الجيزة…" autocomplete="off">
+            <label><span data-i18n="ownerRequestModal.placeNameLabel">اسم المكان / المول</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
+            <input class="mfg-inp" id="oreq-place-name" placeholder="مثال: مول العرب، نادي الجيزة…" autocomplete="off" data-i18n-attr="placeholder:ownerRequestModal.placeNamePlaceholder">
           </div>
 
           <!-- نوع المكان — اختياري -->
           <div class="mfg">
-            <label>نوع المكان <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
+            <label><span data-i18n="search.typeLabel">نوع المكان</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <select class="mfg-inp" id="oreq-place-type">
-              <option value="">— اختر النوع —</option>
-              <option value="mall">🏬 مول تجاري</option>
-              <option value="club">🏊 نادي رياضي</option>
-              <option value="school">🏫 مدرسة</option>
-              <option value="other">🏢 غيره</option>
+              <option value="" data-i18n="ownerRequestModal.placeTypeChoosePlaceholder">— اختر النوع —</option>
+              <option value="mall" data-i18n="ownerRequestModal.placeTypeMall">🏬 مول تجاري</option>
+              <option value="club" data-i18n="ownerRequestModal.placeTypeClub">🏊 نادي رياضي</option>
+              <option value="school" data-i18n="ownerRequestModal.placeTypeSchool">🏫 مدرسة</option>
+              <option value="other" data-i18n="ownerRequestModal.placeTypeOther">🏢 غيره</option>
             </select>
           </div>
 
           <!-- الباقة المطلوبة — اختياري -->
           <div class="mfg">
-            <label>الباقة التي تريدها <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
+            <label><span data-i18n="ownerRequestModal.planLabel">الباقة التي تريدها</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <select class="mfg-inp" id="oreq-selected-plan">
-              <option value="">— لم أقرر بعد —</option>
-              <option value="starter">🆓 Starter — مجاناً</option>
-              <option value="growth">📈 Growth — 3,000 ج/شهر</option>
-              <option value="pro">⭐ Pro — 4,500 ج/شهر</option>
+              <option value="" data-i18n="ownerRequestModal.planChoosePlaceholder">— لم أقرر بعد —</option>
+              <option value="starter" data-i18n="ownerRequestModal.planStarter">🆓 Starter — مجاناً</option>
+              <option value="growth" data-i18n="ownerRequestModal.planGrowth">📈 Growth — 3,000 ج/شهر</option>
+              <option value="pro" data-i18n="ownerRequestModal.planPro">⭐ Pro — 4,500 ج/شهر</option>
             </select>
           </div>
 
           <!-- ملاحظات — اختياري -->
           <div class="mfg">
-            <label>ملاحظات إضافية <span style="font-size:11px;color:var(--ink2)">(اختياري)</span></label>
+            <label><span data-i18n="ownerRequestModal.notesLabel">ملاحظات إضافية</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <textarea class="mfg-inp" id="oreq-notes" rows="2" placeholder="أي تفاصيل تريد إضافتها حول مكانك أو نشاطك…"
-              style="resize:vertical"></textarea>
+              style="resize:vertical" data-i18n-attr="placeholder:ownerRequestModal.notesPlaceholder"></textarea>
           </div>
 
           <div id="oreq-msg"
@@ -3291,10 +3317,10 @@
           </div>
 
           <button class="btn btn-primary" id="oreq-btn" onclick="submitOwnerRequest()"
-            style="width:100%;padding:13px;font-size:15px">
+            style="width:100%;padding:13px;font-size:15px" data-i18n="ownerRequestModal.submitBtn">
             إرسال الطلب ←
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px;line-height:1.6">
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px;line-height:1.6" data-i18n="ownerRequestModal.submitNote">
             بعد إرسال الطلب سيتواصل معك فريقنا عبر الواتساب لتأكيد التفاصيل واختيار الباقة.
           </div>
         </div>
@@ -3303,18 +3329,32 @@
       <!-- شاشة النجاح -->
       <div id="oreq-success" style="display:none;padding:44px 24px 36px;text-align:center">
         <div class="success-circle">✓</div>
-        <div class="success-title">تم إرسال طلبك <span>بنجاح!</span></div>
-        <div class="success-body">
+        <div class="success-title" data-i18n-html="ownerRequestModal.successTitle">تم إرسال طلبك <span>بنجاح!</span></div>
+        <div class="success-body" data-i18n-html="ownerRequestModal.successBody">
           شكراً — فريق مكاني Spot سيراجع طلبك ويتواصل معك على الواتساب خلال<br>
           <strong style="color:var(--orange)">٢٤ ساعة</strong> لإتمام الإجراءات.
         </div>
         <button class="btn btn-primary" onclick="closeOwnerRequestModal()"
-          style="padding:14px 42px;font-size:15px;margin-top:20px">
+          style="padding:14px 42px;font-size:15px;margin-top:20px" data-i18n="buttons.okThanksForward">
           تمام، شكراً ←
         </button>
       </div>
     </div>
   </div>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['home', 'common', 'spaces', 'bazaars', 'market']).then(updateLangSwitcherLabel);
+  });
+</script>
 
 </body>
 

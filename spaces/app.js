@@ -139,6 +139,20 @@ document.addEventListener('DOMContentLoaded', function () {
   initAuth();
   subscribeSpacesRealtime();
 
+  // إعادة رسم المحتوى الديناميكي عند تبديل اللغة — data-i18n بيغطي النص
+  // الثابت بس، الكروت/صفحة التفاصيل مبنيين بـ t() وقت البناء فمحتاجين
+  // إعادة رسم فعلية (من البيانات المحفوظة locally، بدون طلب Supabase تاني)
+  // عشان التبديل يفضل سلس وسريع زي ما هو مطلوب — لا reload.
+  document.addEventListener('makani:locale-changed', () => {
+    renderMarketplace();
+    _updateResultsCounter();
+    if (currentSpaceDetail) {
+      openSpaceDetail(currentSpaceDetail.id, detailPrevPage);
+    } else if (currentAnnDetail) {
+      _renderAnnDetail(currentAnnDetail);
+    }
+  });
+
   // ESC لإغلاق الـ lightbox
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -254,17 +268,17 @@ function showLoadingState(gridId, isError, msg) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
         <div style="font-size:52px;margin-bottom:18px">⚠️</div>
-        <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">في مشكلة في تحميل البيانات</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">${t('loading.error')}</div>
         <div style="font-size:13px;color:var(--ink2);margin-bottom:22px;max-width:400px;margin-inline:auto">${msg || ''}</div>
-        <button class="btn btn-primary" onclick="loadData()">🔄 حاول تاني</button>
+        <button class="btn btn-primary" onclick="loadData()">${t('loading.retry')}</button>
       </div>`;
     return;
   }
   grid.innerHTML = `
     <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
       <div style="font-size:52px;margin-bottom:18px;display:inline-block;animation:spin 1.2s linear infinite">⏳</div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">جاري تحميل البيانات…</div>
-      <div style="font-size:13px;color:var(--ink3)">لحظة صغيرة…</div>
+      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">${t('loading.spinner')}</div>
+      <div style="font-size:13px;color:var(--ink3)">${t('loading.wait')}</div>
     </div>`;
 }
 
@@ -341,21 +355,25 @@ async function _applyCurrentFilters() {
       mpCurrentSpaces = items;
       mpTotalCount = totalCount;
     } catch (err) {
-      showLoadingState('mp-grid', true, err.message || 'خطأ في تحميل المساحات');
+      showLoadingState('mp-grid', true, err.message || t('loading.errorSpaces'));
       return;
     }
   }
 
   renderMarketplace();
+  _updateResultsCounter();
+}
 
+/* منفصلة عن _applyCurrentFilters عشان تبديل اللغة يقدر يحدّث النص بس
+   من غير إعادة جلب من Supabase — راجع مستمع makani:locale-changed تحت */
+function _updateResultsCounter() {
   const counter = document.getElementById('mp-count');
-  if (counter) {
-    const annCnt = annCurrentFiltered.length;
-    const spCnt  = mpTotalCount;
-    if (annCnt && spCnt) counter.textContent = (spCnt + annCnt) + ' نتيجة';
-    else if (annCnt)     counter.textContent = annCnt + ' إعلان';
-    else                 counter.textContent = spCnt + ' مساحة';
-  }
+  if (!counter) return;
+  const annCnt = annCurrentFiltered.length;
+  const spCnt  = mpTotalCount;
+  if (annCnt && spCnt) counter.textContent = t('results.resultsCount', { count: spCnt + annCnt });
+  else if (annCnt)     counter.textContent = t('results.announcementsCount', { count: annCnt });
+  else                 counter.textContent = t('results.spacesCount', { count: spCnt });
 }
 
 
@@ -366,9 +384,9 @@ async function _applyCurrentFilters() {
 function buildModalActivityPicker() {
   const sel = document.getElementById('bk-activity');
   if (!sel) return;
-  sel.innerHTML = '<option value="">— اختر نوع نشاطك —</option>' +
+  sel.innerHTML = `<option value="">${t('bookingModal.activityPick')}</option>` +
     ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('') +
-    '<option value="other">✏️ أخرى (اذكرها)</option>';
+    `<option value="other">${t('card.otherActivity')}</option>`;
 }
 
 function onActivityChange(sel) {
@@ -379,7 +397,7 @@ function onActivityChange(sel) {
 function buildMpActivityFilters() {
   const sel = document.getElementById('mp-act-sel');
   if (!sel) return;
-  sel.innerHTML = '<option value="">كل الأنشطة</option>' +
+  sel.innerHTML = `<option value="">${t('market.activityAll')}</option>` +
     ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('');
 }
 
@@ -434,7 +452,7 @@ function buildCardHtml(s, fromPage) {
     thumbHtml = `<img src="${s.image || ''}" alt="${s.name}" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder\\'>🏪</div>'">`;
   }
 
-  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
+  const actsHtml = s.allActs ? `<span class="act-tag act-tag-all">${t('card.allActivities')}</span>` : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -446,8 +464,10 @@ function buildCardHtml(s, fromPage) {
   });
   const defaultPrice = sizePrices[sizesClean[0]] || s.price;
 
+  const _perMonthLabel = t('card.perMonth');
+  const _currency      = t('card.currency');
   const sizesHtml = sizesClean.map((sz, i) =>
-    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString('ar-EG')+' ج <span>/شهر</span>';">${sz}</span>`
+    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')+' ${_currency} <span>${_perMonthLabel}</span>';">${sz}</span>`
   ).join('');
 
   const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
@@ -457,17 +477,17 @@ function buildCardHtml(s, fromPage) {
   const detailsBtnHtml = hasDetails
     ? `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
               onclick="event.stopPropagation();_trackSpaceEvent('${s.id}','${s.ownerId||''}','detail_click');openSpaceDetail('${s.id}','${fromPage}')">
-         تفاصيل ←
+         ${t('card.details')}
        </button>`
     : '';
 
   const availableUnits = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
   const unitsBadgeHtml = s.subSpaces && s.subSpaces.length > 0
-    ? `<span class="units-badge">${availableUnits} وحدة متاحة</span>`
+    ? `<span class="units-badge">${t('card.unitsAvailable', { count: availableUnits })}</span>`
     : '';
 
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="${t('card.share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
   const _trustBadge    = planTrustBadgeCardHtml(s);
   const _cardClass     = _planCardClass(s);
 
@@ -475,7 +495,7 @@ function buildCardHtml(s, fromPage) {
   <div class="space-card${_cardClass}" data-sid="${s.id}" data-oid="${s.ownerId||''}">
     <div class="card-thumb">
       ${thumbHtml}
-      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
+      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || t('card.badgeDefault')}</span>
       ${_trustBadge}
       ${unitsBadgeHtml}
       ${_shareSpaceBtn}
@@ -486,17 +506,17 @@ function buildCardHtml(s, fromPage) {
       <div class="card-acts">${actsHtml}</div>
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
-        <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
+        <div class="price-main">${Number(defaultPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_currency} <span>${_perMonthLabel}</span></div>
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${detailsBtnHtml}
           <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="openBooking('${s.id}')">احجز دلوقتي ←</button>
+                  onclick="openBooking('${s.id}')">${t('card.bookNow')}</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `
       <div class="card-tip">
         <div class="tip-dot"></div>
-        <div>${s.season ? `<strong>موسم البيع:</strong> ${s.season}` : ''}${s.insight ? `<br>${s.insight}` : ''}</div>
+        <div>${s.season ? `<strong>${t('card.season')}</strong> ${s.season}` : ''}${s.insight ? `<br>${s.insight}` : ''}</div>
       </div>` : ''}
     </div>
   </div>`;
@@ -511,8 +531,8 @@ function renderCards(data, gridId, showViewAll, fromPage) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--ink2)">
         <div style="font-size:48px;margin-bottom:16px">🔍</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">مش لاقيين مساحات بالمعايير دي</div>
-        <div style="font-size:14px">جرب تغيير النشاط أو المنطقة أو السعر</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('empty.title')}</div>
+        <div style="font-size:14px">${t('empty.hint')}</div>
       </div>`;
     return;
   }
@@ -535,11 +555,11 @@ function _showSpaceLoginGate(s, fromPage) {
     headerEl.innerHTML = `
       <div class="sd-header-inner">
         <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeSpaceDetail()">→ العودة</button>
+          <button class="sd-back-btn" onclick="closeSpaceDetail()">${t('detail.back')}</button>
           <div class="sd-breadcrumb">
-            <span onclick="window.location.href='/'" style="cursor:pointer">الرئيسية</span>
+            <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="showPage('market')" style="cursor:pointer">المساحات</span>
+            <span onclick="showPage('market')" style="cursor:pointer">${t('detail.spacesCrumb')}</span>
             <span class="sd-bc-sep">·</span>
             <span style="color:var(--orange)">${s.name}</span>
           </div>
@@ -566,19 +586,19 @@ function _showSpaceLoginGate(s, fromPage) {
       <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
         <div style="font-size:64px;margin-bottom:20px">🔒</div>
         <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
-          سجّل دخولك لعرض التفاصيل
+          ${t('detail.loginRequiredTitle')}
         </h2>
         <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
-          سجّل دخولك لمعرفة المزيد من تفاصيل المساحة والحجز
+          ${t('detail.loginRequiredBody')}
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
                   onclick="showPage('login')">
-            تسجيل الدخول ←
+            ${t('detail.loginBtn')}
           </button>
           <button class="btn" style="padding:13px 22px;font-size:14px"
                   onclick="closeSpaceDetail()">
-            العودة للمساحات
+            ${t('detail.backToSpacesBtn')}
           </button>
         </div>
       </div>`;
@@ -611,12 +631,12 @@ async function openSpaceDetail(spaceId, fromPage) {
       <div class="sd-header-inner">
         <div class="sd-back-row">
           <button class="sd-back-btn" onclick="closeSpaceDetail()">
-            → العودة
+            ${t('detail.back')}
           </button>
           <div class="sd-breadcrumb">
-            <span onclick="window.location.href='/'" style="cursor:pointer">الرئيسية</span>
+            <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="showPage('market')" style="cursor:pointer">المساحات</span>
+            <span onclick="showPage('market')" style="cursor:pointer">${t('detail.spacesCrumb')}</span>
             <span class="sd-bc-sep">·</span>
             <span style="color:var(--orange)">${s.name}</span>
           </div>
@@ -630,15 +650,15 @@ async function openSpaceDetail(spaceId, fromPage) {
               <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
               ${s.subSpaces && s.subSpaces.length > 0
                 ? `<span class="sd-meta-sep">·</span>
-                   <span style="color:var(--orange);font-weight:700">${s.subSpaces.length} وحدة</span>`
+                   <span style="color:var(--orange);font-weight:700">${t('detail.unitsCount', { count: s.subSpaces.length })}</span>`
                 : ''}
             </div>
           </div>
           <div class="sd-price-box">
-            <div class="sd-price-val">${Number(s.price).toLocaleString('ar-EG')} ج</div>
-            <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
+            <div class="sd-price-val">${Number(s.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')}</div>
+            <div class="sd-price-lbl">${t('detail.startingFrom')}</div>
             <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center"
-                    onclick="openBooking('${s.id}')">احجز دلوقتي ←</button>
+                    onclick="openBooking('${s.id}')">${t('card.bookNow')}</button>
           </div>
         </div>
       </div>`;
@@ -681,14 +701,14 @@ function _renderDetailGallery(s) {
   if (s.image) allImages.push({ url: s.image, caption: s.name });
   extraList.forEach((url, i) => {
     if (url && url !== s.image)
-      allImages.push({ url, caption: `${s.name} — صورة ${i + 2}` });
+      allImages.push({ url, caption: t('detail.imageCaption', { name: s.name, n: i + 2 }) });
   });
 
   if (!allImages.length) {
     galleryEl.innerHTML = `
       <div class="sd-gallery-placeholder">
         <div style="font-size:64px;opacity:0.25">${s.icon || '🏪'}</div>
-        <div style="font-size:13px;color:var(--ink3);margin-top:10px">لا توجد صور متاحة</div>
+        <div style="font-size:13px;color:var(--ink3);margin-top:10px">${t('detail.noImages')}</div>
       </div>`;
     return;
   }
@@ -735,10 +755,10 @@ function _renderDetailGallery(s) {
         <div class="sd-slides-track">${slidesHtml}</div>
         <button class="sd-arrow sd-arrow-next"
                 onclick="event.stopPropagation();sdNext('${detailSliderId}')"
-                title="الصورة التالية">&#8250;</button>
+                title="${t('detail.nextImage')}">&#8250;</button>
         <button class="sd-arrow sd-arrow-prev"
                 onclick="event.stopPropagation();sdPrev('${detailSliderId}')"
-                title="الصورة السابقة">&#8249;</button>
+                title="${t('detail.prevImage')}">&#8249;</button>
         <div class="sd-counter" id="${detailSliderId}-counter">1 / ${allImages.length}</div>
         <div class="sd-dots" id="${detailSliderId}-dots">${dotsHtml}</div>
       </div>
@@ -755,7 +775,7 @@ function _renderDetailInfo(s) {
   if (!infoEl) return;
 
   const actsHtml = s.allActs
-    ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
+    ? `<span class="act-tag act-tag-all">${t('detail.activitiesAll')}</span>`
     : (s.acts || []).map(id => {
         const label = _resolveActLabel(id);
         return label ? `<span class="act-tag">${label}</span>` : '';
@@ -768,7 +788,7 @@ function _renderDetailInfo(s) {
     return `
       <div class="sd-size-row">
         <span class="sd-size-label">${label}</span>
-        <span class="sd-size-price">${Number(price).toLocaleString('ar-EG')} ج / شهر</span>
+        <span class="sd-size-price">${Number(price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')} ${t('card.perMonth')}</span>
       </div>`;
   }).join('');
 
@@ -780,32 +800,32 @@ function _renderDetailInfo(s) {
     <div class="sd-info-grid">
       ${s.description ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">📝 عن هذا المكان</div>
+        <div class="sd-info-title">${t('detail.aboutTitle')}</div>
         <p class="sd-description">${s.description}</p>
       </div>` : ''}
 
       <div class="sd-info-card">
-        <div class="sd-info-title">🏷️ الأنشطة المناسبة</div>
+        <div class="sd-info-title">${t('detail.activitiesTitle')}</div>
         <div class="card-acts" style="margin-top:8px">${actsHtml || '—'}</div>
       </div>
 
       ${sizesHtml ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">📐 الأحجام والأسعار</div>
+        <div class="sd-info-title">${t('detail.sizesTitle')}</div>
         <div class="sd-sizes-list" style="margin-top:10px">${sizesHtml}</div>
       </div>` : ''}
 
       ${amenitiesHtml ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">⚡ المرافق المتاحة</div>
+        <div class="sd-info-title">${t('detail.amenitiesTitle')}</div>
         <div class="sd-amenities-wrap" style="margin-top:10px">${amenitiesHtml}</div>
       </div>` : ''}
 
       ${s.season ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">📅 معلومات إضافية</div>
+        <div class="sd-info-title">${t('detail.additionalInfoTitle')}</div>
         <div style="margin-top:8px">
-          <div class="sd-extra-row"><span>موسم البيع:</span><span>${s.season}</span></div>
+          <div class="sd-extra-row"><span>${t('card.season')}</span><span>${s.season}</span></div>
           ${s.insight ? `<div style="font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.7">${s.insight}</div>` : ''}
         </div>
       </div>` : ''}
@@ -815,17 +835,17 @@ function _renderDetailInfo(s) {
         const hasOwner  = !isBroker && !!s.ownerName;
 
         // الناشر: إما مكاني Spot (is_broker أو بدون مالك) أو صاحب مساحة معيّن
-        const name      = hasOwner ? s.ownerName : 'مكاني Spot';
+        const name      = hasOwner ? s.ownerName : t('brand');
         const tier      = s.planTier || 'starter';
 
         const roleLabel = isBroker
-          ? 'ناشر المنصة — مكاني Spot'
+          ? t('detail.platformPublisher')
           : hasOwner
-            ? (tier === 'broker'  ? 'بروكر معتمد'
-             : tier === 'pro'     ? 'شريك معتمد'
-             : tier === 'growth'  ? 'شريك Growth'
-             : 'صاحب المساحة')
-          : 'ناشر المنصة — مكاني Spot';
+            ? (tier === 'broker'  ? t('detail.certifiedBroker')
+             : tier === 'pro'     ? t('detail.certifiedPartner')
+             : tier === 'growth'  ? t('detail.growthPartner')
+             : t('detail.spaceOwner'))
+          : t('detail.platformPublisher');
 
         const badgeCls  = isBroker || !hasOwner
           ? 'trust-makani'
@@ -855,7 +875,7 @@ function _renderDetailInfo(s) {
         // البطاقة قابلة للضغط فقط لو الناشر صاحب مساحة حقيقي (ليس مكاني سبوت)
         const clickable = hasOwner && s.ownerId && !isBroker;
         const cardAttrs = clickable
-          ? `style="margin-top:10px;cursor:pointer" onclick="goToOwnerProfile('${s.ownerId}')" title="اضغط لعرض صفحة الناشر"`
+          ? `style="margin-top:10px;cursor:pointer" onclick="goToOwnerProfile('${s.ownerId}')" title="${t('detail.viewProfileTitle')}"`
           : `style="margin-top:10px"`;
         const arrowHtml = clickable
           ? `<span style="margin-inline-start:auto;color:var(--ink2);font-size:18px">‹</span>`
@@ -863,7 +883,7 @@ function _renderDetailInfo(s) {
 
         return `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">🏠 ناشر المساحة</div>
+        <div class="sd-info-title">${t('detail.publisherTitle')}</div>
         <div class="sd-owner-card" ${cardAttrs}>
           ${avatarHtml}
           <div class="sd-owner-info">
@@ -892,9 +912,9 @@ function _renderSubSpaces(s) {
   const rentedCount = units.filter(u => u.status === 'rented').length;
 
   const statusMap = {
-    available: { label: 'متاحة',    cls: 'sub-status-available' },
-    rented:    { label: 'مؤجّرة',   cls: 'sub-status-rented'    },
-    reserved:  { label: 'محجوزة',   cls: 'sub-status-reserved'  },
+    available: { label: t('subspaces.statusAvailable'), cls: 'sub-status-available' },
+    rented:    { label: t('subspaces.statusRented'),     cls: 'sub-status-rented'    },
+    reserved:  { label: t('subspaces.statusReserved'),   cls: 'sub-status-reserved'  },
   };
 
   const unitsHtml = units.map(unit => {
@@ -923,17 +943,17 @@ function _renderSubSpaces(s) {
         <div class="sub-footer">
           <div class="sub-specs">
             ${unit.size ? `<span class="sub-spec">📐 ${unit.size}</span>` : ''}
-            ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString('ar-EG')} ج/شهر</span>` : ''}
+            ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')}${t('card.perMonth')}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${!isBlocked
               ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
                          onclick="openBookingForUnit('${s.id}','${unit.unitId}')">
-                   احجز ←
+                   ${t('subspaces.book')}
                  </button>`
-              : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
+              : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">${t('subspaces.unavailable')}</span>`
             }
-            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId||'').replace(/'/g,"\\'")}','${(unit.name||unit.unitId||'').replace(/'/g,"\\'")}');" title="مشاركة الوحدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId||'').replace(/'/g,"\\'")}','${(unit.name||unit.unitId||'').replace(/'/g,"\\'")}');" title="${t('card.shareUnit')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           </div>
         </div>
       </div>
@@ -942,18 +962,18 @@ function _renderSubSpaces(s) {
 
   subEl.innerHTML = `
     <div class="sd-subspaces-header">
-      <h2 class="sd-section-title">🏪 الوحدات المتاحة (${units.length})</h2>
+      <h2 class="sd-section-title">${t('subspaces.header', { count: units.length })}</h2>
       <div class="sd-units-summary">
-        <span class="sd-units-avail">${availCount} متاحة</span>
-        ${rentedCount > 0 ? `<span class="sd-units-rented">${rentedCount} مؤجّرة</span>` : ''}
+        <span class="sd-units-avail">${t('subspaces.availableCount', { count: availCount })}</span>
+        ${rentedCount > 0 ? `<span class="sd-units-rented">${t('subspaces.rentedCount', { count: rentedCount })}</span>` : ''}
       </div>
     </div>
     <div class="sub-grid">${unitsHtml}</div>`;
 }
 
 function _typeLabel(type) {
-  const pt = PLACE_TYPES.find(p => p.id === type);
-  return pt ? pt.label : (type || '');
+  if (!type) return '';
+  return t('placeTypes.' + type, { defaultValue: type });
 }
 
 
@@ -968,12 +988,12 @@ async function openBookingForUnit(spaceId, unitId) {
   setTimeout(() => {
     const notesEl = document.getElementById('bk-notes');
     if (notesEl && unitId) {
-      notesEl.value = `الوحدة المطلوبة: ${unitId}`;
+      notesEl.value = t('bookingModal.requestedUnit', { unitId });
     }
     const metaEl = document.getElementById('msi-meta');
     if (metaEl) {
       metaEl.insertAdjacentHTML('beforeend',
-        ` · <strong style="color:var(--orange)">وحدة ${unitId}</strong>`);
+        ` · <strong style="color:var(--orange)">${t('bookingModal.unitLabel', { unitId })}</strong>`);
     }
   }, 50);
 }
@@ -1058,8 +1078,8 @@ function updateMpChips() {
   if (!cont) return;
   const chips = [];
   const contentMap = {
-    spaces:        '🏢 المساحات فقط',
-    announcements: '📋 المناقصات والإعلانات فقط',
+    spaces:        t('chips.spacesOnly'),
+    announcements: t('chips.announcementsOnly'),
   };
   if (contentMap[mpContentFilter]) {
     chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${contentMap[mpContentFilter]} ×</span>`);
@@ -1067,8 +1087,7 @@ function updateMpChips() {
 
   const placeVal = document.getElementById('mp-place-sel')?.value || '';
   if (placeVal) {
-    const pt = PLACE_TYPES.find(p => p.id === placeVal);
-    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${pt?.label || placeVal} ×</span>`);
+    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${_typeLabel(placeVal) || placeVal} ×</span>`);
   }
 
   const actVal = document.getElementById('mp-act-sel')?.value || '';
@@ -1094,9 +1113,9 @@ function renderMarketplace() {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
         <div style="font-size:52px;margin-bottom:14px">🔍</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">مش لاقيين مساحات</div>
-        <div style="font-size:13px;color:var(--ink2);margin-bottom:18px">جرب تغيير الفلاتر</div>
-        <button class="btn btn-primary" onclick="clearMpFilters()">مسح الفلاتر</button>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('empty.titleShort')}</div>
+        <div style="font-size:13px;color:var(--ink2);margin-bottom:18px">${t('empty.hintShort')}</div>
+        <button class="btn btn-primary" onclick="clearMpFilters()">${t('market.clearFilters')}</button>
       </div>`;
     renderMpPagination();
     return;
@@ -1122,13 +1141,13 @@ function buildAnnouncementCardHtml(a) {
 
   let dlHtml;
   if (daysLeft < 0) {
-    dlHtml = `<span class="ann-deadline ann-dl-expired">❌ انتهى التقديم</span>`;
+    dlHtml = `<span class="ann-deadline ann-dl-expired">${t('announcements.submissionClosed')}</span>`;
   } else if (daysLeft === 0) {
-    dlHtml = `<span class="ann-deadline ann-dl-urgent">🔥 آخر يوم للتقديم</span>`;
+    dlHtml = `<span class="ann-deadline ann-dl-urgent">${t('announcements.lastDay')}</span>`;
   } else if (daysLeft <= 3) {
-    dlHtml = `<span class="ann-deadline ann-dl-urgent">⏰ ${daysLeft} أيام متبقية</span>`;
+    dlHtml = `<span class="ann-deadline ann-dl-urgent">${t('announcements.daysLeft', { count: daysLeft })}</span>`;
   } else {
-    dlHtml = `<span class="ann-deadline ann-dl-ok">⏳ حتى ${_fmtAnnDate(a.submissionDeadline)}</span>`;
+    dlHtml = `<span class="ann-deadline ann-dl-ok">${t('announcements.openUntil', { date: _fmtAnnDate(a.submissionDeadline) })}</span>`;
   }
 
   const typeClass = { 'مناقصة رسمية':'ann-badge-tender','مزاد علني':'ann-badge-auction','إعلان رسمي':'ann-badge-official' }[a.announcementType] || 'ann-badge-other';
@@ -1137,13 +1156,13 @@ function buildAnnouncementCardHtml(a) {
     : `<div class="ann-thumb-ph">📄</div>`;
 
   const finRows = [];
-  if (a.documentPrice) finRows.push(`<span>📄 المستندات: ${Number(a.documentPrice).toLocaleString('ar-EG')} ج.م</span>`);
-  if (a.insuranceValue && a.insuranceValue !== 'غير محدد') finRows.push(`<span>🔒 تأمين: ${a.insuranceValue}</span>`);
+  if (a.documentPrice) finRows.push(`<span>📄 ${t('announcements.documentsValue')}: ${Number(a.documentPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')}</span>`);
+  if (a.insuranceValue && a.insuranceValue !== 'غير محدد') finRows.push(`<span>🔒 ${t('announcements.insuranceValue')}: ${a.insuranceValue}</span>`);
 
   return `<div class="ann-card" onclick="openAnnouncementDetail('${a.id}')">
   <div class="ann-thumb">
     ${thumb}
-    <span class="ann-type-badge ${typeClass}">${a.announcementType}</span>
+    <span class="ann-type-badge ${typeClass}">${_annTypeLabel(a.announcementType)}</span>
   </div>
   <div class="ann-body">
     <div class="ann-title">${a.title}</div>
@@ -1151,10 +1170,20 @@ function buildAnnouncementCardHtml(a) {
     <div class="ann-meta-row">📍 ${a.governorate}${a.classification ? ` · ${a.classification}` : ''}</div>
     ${dlHtml}
     ${finRows.length ? `<div class="ann-financial">${finRows.join('')}</div>` : ''}
-    <div class="ann-publisher">نشر بواسطة مكاني سبوت</div>
-    <button class="ann-details-btn">عرض التفاصيل ←</button>
+    <div class="ann-publisher">${t('announcements.publishedBy')}</div>
+    <button class="ann-details-btn">${t('announcements.viewDetails')}</button>
   </div>
 </div>`;
+}
+
+/* الإعلانات الرسمية مخزّنة في DB بنص عربي حرفي (announcement_type) — لا يوجد
+   عمود كود منفصل بعد (راجع migrations/i18n_locale_and_code_columns_20260716.sql).
+   لحد ما الـ migration دي تتطبّق، بنترجم القيم الثلاث المعروفة يدويًا هنا فقط
+   للعرض، والقيمة الخام تفضل زي ما هي في أي مكان تاني (فلترة، تخزين، إلخ). */
+function _annTypeLabel(raw) {
+  const map = { 'مناقصة رسمية': 'typeTender', 'مزاد علني': 'typeAuction', 'إعلان رسمي': 'typeOfficial' };
+  const key = map[raw];
+  return key ? t('announcements.' + key) : (raw || '');
 }
 
 function openAnnouncementDetail(id) {
@@ -1176,13 +1205,13 @@ function _showAnnLoginGate(a) {
   if (headerEl) {
     headerEl.innerHTML = `<div class="sd-header-inner">
       <div class="sd-back-row">
-        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">→ العودة</button>
+        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">${t('detail.back')}</button>
       </div>
       <div class="sd-title-row">
         <div>
           <h1 class="sd-name">${a.title}</h1>
           <div class="sd-meta">
-            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${a.announcementType}</span>
+            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${_annTypeLabel(a.announcementType)}</span>
             <span class="sd-meta-sep">·</span>
             <span>📍 ${a.governorate}</span>
           </div>
@@ -1197,21 +1226,21 @@ function _showAnnLoginGate(a) {
       <div style="text-align:center;padding:60px 24px;max-width:420px;margin:0 auto">
         <div style="font-size:56px;margin-bottom:18px">🔐</div>
         <div style="font-size:19px;font-weight:900;color:var(--fg-1,#1a1a1a);margin-bottom:10px;font-family:var(--font-display,'Cairo',sans-serif)">
-          يلزم تسجيل الدخول لعرض التفاصيل
+          ${t('announcements.loginRequiredTitle')}
         </div>
         <div style="font-size:14px;color:var(--fg-2,#555);line-height:1.7;margin-bottom:28px">
-          سجّل دخولك أو أنشئ حساباً مجانياً لعرض كامل تفاصيل الإعلان والمناقصة
+          ${t('announcements.loginRequiredBody')}
         </div>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-primary" style="padding:13px 32px;font-size:15px" onclick="showPage('login')">
-            تسجيل الدخول ←
+            ${t('detail.loginBtn')}
           </button>
           <button class="btn" style="padding:13px 22px;font-size:14px" onclick="showPage('signup')">
-            إنشاء حساب جديد
+            ${t('announcements.createAccount')}
           </button>
         </div>
         <button class="btn" style="margin-top:18px;padding:10px 20px;font-size:13px;color:var(--fg-3,#888)" onclick="closeAnnouncementDetail()">
-          العودة للمساحات
+          ${t('detail.backToSpacesBtn')}
         </button>
       </div>`;
   }
@@ -1225,22 +1254,22 @@ function _renderAnnDetail(a) {
   const deadline = new Date(a.submissionDeadline);
   const daysLeft = Math.ceil((deadline - today) / 86400000);
   let statusHtml;
-  if (daysLeft < 0)       statusHtml = `<div class="ann-status-bar ann-st-expired">❌ انتهى موعد التقديم</div>`;
-  else if (daysLeft === 0) statusHtml = `<div class="ann-status-bar ann-st-urgent">🔥 آخر يوم للتقديم اليوم</div>`;
-  else if (daysLeft <= 3)  statusHtml = `<div class="ann-status-bar ann-st-urgent">⏰ ${daysLeft} أيام متبقية على آخر موعد</div>`;
-  else                     statusHtml = `<div class="ann-status-bar ann-st-ok">⏳ مفتوح للتقديم حتى ${_fmtAnnDate(a.submissionDeadline)}</div>`;
+  if (daysLeft < 0)       statusHtml = `<div class="ann-status-bar ann-st-expired">${t('announcements.statusExpired')}</div>`;
+  else if (daysLeft === 0) statusHtml = `<div class="ann-status-bar ann-st-urgent">${t('announcements.statusUrgentToday')}</div>`;
+  else if (daysLeft <= 3)  statusHtml = `<div class="ann-status-bar ann-st-urgent">${t('announcements.statusUrgentDays', { count: daysLeft })}</div>`;
+  else                     statusHtml = `<div class="ann-status-bar ann-st-ok">${t('announcements.statusOpen', { date: _fmtAnnDate(a.submissionDeadline) })}</div>`;
 
   const headerEl = document.getElementById('ann-det-header');
   if (headerEl) {
     headerEl.innerHTML = `<div class="sd-header-inner">
       <div class="sd-back-row">
-        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">→ العودة</button>
+        <button class="sd-back-btn" onclick="closeAnnouncementDetail()">${t('detail.back')}</button>
       </div>
       <div class="sd-title-row">
         <div>
           <h1 class="sd-name">${a.title}</h1>
           <div class="sd-meta">
-            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${a.announcementType}</span>
+            <span style="background:rgba(37,99,235,.12);color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800">${_annTypeLabel(a.announcementType)}</span>
             <span class="sd-meta-sep">·</span>
             <span>📍 ${a.governorate}</span>
             <span class="sd-meta-sep">·</span>
@@ -1272,31 +1301,32 @@ function _renderAnnDetail(a) {
              ${imgs.map(u => _imgCell(u, a.title)).join('')}
            </div>`;
 
+    const _notSpecified = t('announcements.notSpecified');
     bodyEl.innerHTML = `
       ${galleryHtml}
       ${statusHtml}
       <div class="ann-det-grid">
         <div class="ann-det-card">
-          <div class="ann-det-card-title">📋 بيانات الإعلان</div>
-          ${_annRow('الجهة الناشرة', a.issuingBody)}
-          ${_annRow('نوع الإعلان', a.announcementType)}
-          ${_annRow('التصنيف', a.classification)}
-          ${_annRow('المحافظة', a.governorate)}
-          ${a.source ? _annRow('المصدر', a.source) : ''}
+          <div class="ann-det-card-title">${t('announcements.detailsLabel')}</div>
+          ${_annRow(t('announcements.issuer'), a.issuingBody)}
+          ${_annRow(t('announcements.type'), _annTypeLabel(a.announcementType))}
+          ${_annRow(t('announcements.classification'), a.classification)}
+          ${_annRow(t('announcements.governorate'), a.governorate)}
+          ${a.source ? _annRow(t('announcements.source'), a.source) : ''}
         </div>
         <div class="ann-det-card">
-          <div class="ann-det-card-title">📅 المواعيد</div>
-          ${_annRow('تاريخ النشر', _fmtAnnDate(a.publishedAt))}
-          ${_annRow('آخر موعد التقديم', _fmtAnnDate(a.submissionDeadline))}
-          ${a.sessionDate ? _annRow('موعد جلسة الفتح', _fmtAnnDate(a.sessionDate) + (a.sessionTime ? ' — ' + a.sessionTime : '')) : ''}
+          <div class="ann-det-card-title">${t('announcements.datesLabel')}</div>
+          ${_annRow(t('announcements.publishDate'), _fmtAnnDate(a.publishedAt))}
+          ${_annRow(t('announcements.deadline'), _fmtAnnDate(a.submissionDeadline))}
+          ${a.sessionDate ? _annRow(t('announcements.sessionDate'), _fmtAnnDate(a.sessionDate) + (a.sessionTime ? ' — ' + a.sessionTime : '')) : ''}
         </div>
         <div class="ann-det-card">
-          <div class="ann-det-card-title">💰 البيانات المالية</div>
-          ${a.documentPrice ? _annRow('قيمة المستندات', Number(a.documentPrice).toLocaleString('ar-EG') + ' ج.م') : _annRow('قيمة المستندات', 'غير محدد')}
-          ${_annRow('قيمة التأمين', a.insuranceValue || 'غير محدد')}
+          <div class="ann-det-card-title">${t('announcements.financialLabel')}</div>
+          ${a.documentPrice ? _annRow(t('announcements.documentsValue'), Number(a.documentPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG') + ' ' + t('card.currency')) : _annRow(t('announcements.documentsValue'), _notSpecified)}
+          ${_annRow(t('announcements.insuranceValue'), (a.insuranceValue && a.insuranceValue !== 'غير محدد') ? a.insuranceValue : _notSpecified)}
         </div>
       </div>
-      ${a.description ? `<div class="sd-sec-title" style="margin-bottom:10px">📝 التفاصيل</div>
+      ${a.description ? `<div class="sd-sec-title" style="margin-bottom:10px">${t('announcements.detailsTitle')}</div>
         <div class="ann-desc">${a.description.replace(/\n/g, '<br>')}</div>` : ''}
       <div style="height:80px"></div>`;
   }
@@ -1342,7 +1372,7 @@ function closeAnnouncementDetail() {
 
 function _fmtAnnDate(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString(getLocale() === 'en' ? 'en-US' : 'ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function _annRow(k, v) {
@@ -1357,7 +1387,7 @@ function renderMpPagination() {
   let html = '';
 
   if (totalPages > 1) {
-    if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">السابق</button>`;
+    if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">${t('market.prevPage')}</button>`;
     for (let i = 1; i <= totalPages; i++) {
       if (i === 1 || i === totalPages || Math.abs(i - mpPage) <= 2) {
         html += `<button class="pg-btn${i === mpPage ? ' on' : ''}" onclick="mpGoPage(${i})">${i}</button>`;
@@ -1365,7 +1395,7 @@ function renderMpPagination() {
         html += `<span class="pg-dots">…</span>`;
       }
     }
-    if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">التالي</button>`;
+    if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">${t('market.nextPage')}</button>`;
   }
 
   cont.innerHTML = html;
@@ -1400,7 +1430,7 @@ function updateMpSlider() {
   }
 
   const lMax = document.getElementById('mp-price-max-label');
-  if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? 'بلا حد' : Number(maxVal).toLocaleString('ar-EG') + ' ج';
+  if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? t('market.priceNoLimit') : Number(maxVal).toLocaleString(getLocale()==='en'?'en-US':'ar-EG') + ' ' + t('card.currency');
 }
 
 function toggleMpSidebar() {
@@ -1600,19 +1630,20 @@ async function openBooking(spaceId) {
   const selSize  = sizesClean[0] || '';
   const selPrice = sizePrices[selSize] || s.price;
 
+  const _curr = t('card.currency');
   document.getElementById('msi-name').textContent = s.name;
   document.getElementById('msi-meta').innerHTML =
-    `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(selPrice).toLocaleString('ar-EG')} ج/شهر</strong>`;
+    `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(selPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_curr}${t('card.perMonth')}</strong>`;
 
   const sizeSelect = document.getElementById('bk-size');
-  sizeSelect.innerHTML = '<option value="">اختر الحجم</option>' +
+  sizeSelect.innerHTML = `<option value="">${t('bookingModal.sizePick')}</option>` +
     sizesClean.map(sz => `<option value="${sz}" ${sz === selSize ? 'selected' : ''}>${sz}</option>`).join('') +
-    '<option value="مخصص">مخصص — هحدده لاحقاً</option>';
+    `<option value="مخصص">${t('bookingModal.customSize')}</option>`;
 
   sizeSelect.onchange = function () {
     const p = sizePrices[this.value] || s.price;
     document.getElementById('msi-meta').innerHTML =
-      `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(p).toLocaleString('ar-EG')} ج/شهر</strong>`;
+      `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(p).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_curr}${t('card.perMonth')}</strong>`;
   };
 
   if (currentUser) {
@@ -1671,13 +1702,11 @@ function _applyWaitlistMode(isWaitlist) {
   show('bk-waitlist-banner', isWaitlist);
   // الحقلان الاختياريان يظهران دائماً (ليس فقط في وضع الانتظار)
 
-  set('bk-modal-title', isWaitlist ? 'انضم لقائمة الانتظار ⏳' : 'احجز مساحتك');
-  set('bk-modal-sub',   isWaitlist
-        ? 'كل الوحدات محجوزة — سيتواصل معك المالك فور توفّر وحدة'
-        : 'سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات');
+  set('bk-modal-title', isWaitlist ? t('bookingModal.waitlistModalTitle') : t('bookingModal.title'));
+  set('bk-modal-sub',   isWaitlist ? t('bookingModal.waitlistModalSub') : t('bookingModal.subtitle'));
 
   const btn = document.getElementById('bk-submit-btn');
-  if (btn) btn.innerHTML = isWaitlist ? 'سجّلني في قائمة الانتظار ←' : 'ابعت طلب الحجز ←';
+  if (btn) btn.innerHTML = isWaitlist ? t('bookingModal.waitlistSubmit') : t('bookingModal.submit');
 }
 
 /* ================================================================
@@ -1744,15 +1773,15 @@ async function submitViewing() {
   const errEl = document.getElementById('vm-error');
   const show  = msg => { errEl.textContent = '⚠ ' + msg; errEl.style.display = 'block'; };
 
-  if (!name)  { show('من فضلك ادخل اسمك الكريم'); return; }
+  if (!name)  { show(t('validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g,'').length < 10) {
-    show('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    show(t('validation.phoneInvalid')); return;
   }
-  if (!currentUser) { show('يجب تسجيل الدخول لإرسال طلب المعاينة'); return; }
+  if (!currentUser) { show(t('validation.loginRequiredViewing')); return; }
   errEl.style.display = 'none';
 
   const btn = document.getElementById('vm-submit-btn');
-  btn.innerHTML = '⏳ جاري الإرسال…';
+  btn.innerHTML = t('auth2.sending');
   btn.disabled  = true;
 
   const s = await findOrFetchSpace(_viewingSpaceId);
@@ -1780,9 +1809,9 @@ async function submitViewing() {
     document.getElementById('vm-success').style.display   = 'block';
 
   } catch (err) {
-    btn.innerHTML = 'تأكيد طلب المعاينة ←';
+    btn.innerHTML = t('visitModal.submit');
     btn.disabled  = false;
-    show('في مشكلة في الإرسال — تأكد من الاتصال بالإنترنت وحاول تاني');
+    show(t('validation.sendError'));
   }
 }
 
@@ -1803,21 +1832,21 @@ async function submitBooking() {
 
   // نوع النشاط من الـ dropdown
   const actLabel = actId === 'other'
-    ? (otherAct || 'أخرى')
+    ? (otherAct || t('validation.otherActivityFallback'))
     : (ACTIVITIES.find(a => String(a.id) === String(actId))?.label || actId);
 
-  if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
+  if (!name) { showFormError(t('validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
-    showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    showFormError(t('validation.phoneInvalid')); return;
   }
-  if (!actId) { showFormError('من فضلك اختار نوع نشاطك التجاري'); return; }
-  if (!currentUser) { showFormError('يجب تسجيل الدخول لإرسال طلب الحجز'); return; }
+  if (!actId) { showFormError(t('validation.activityRequired')); return; }
+  if (!currentUser) { showFormError(t('validation.loginRequiredBooking')); return; }
 
   document.getElementById('bk-error').style.display = 'none';
 
   const submitBtn     = document.querySelector('#modal-form-wrap .btn-primary');
   const origText      = submitBtn.innerHTML;
-  submitBtn.innerHTML = '⏳ جاري الإرسال…';
+  submitBtn.innerHTML = t('auth2.sending');
   submitBtn.disabled  = true;
   submitBtn.style.opacity = '0.7';
 
@@ -1863,11 +1892,11 @@ async function submitBooking() {
   const sTitle = document.getElementById('bk-success-title');
   const sBody  = document.getElementById('bk-success-body');
   if (isWaitlist) {
-    if (sTitle) sTitle.innerHTML = 'تم تسجيلك في <span>قائمة الانتظار!</span>';
-    if (sBody)  sBody.innerHTML  = 'سيتواصل معك صاحب المكان فور توفّر وحدة مناسبة.<br>طلبك محفوظ ضمن قائمة انتظار <strong>' + (spaceName || 'المساحة') + '</strong>.';
+    if (sTitle) sTitle.innerHTML = t('validation.waitlistSuccessTitle');
+    if (sBody)  sBody.innerHTML  = t('validation.waitlistSuccessBody', { spaceName: spaceName || t('validation.defaultSpaceName') });
   } else {
-    if (sTitle) sTitle.innerHTML = 'اتبعت طلبك <span>بنجاح!</span>';
-    if (sBody)  sBody.innerHTML  = 'شكراً ليك — اتستلم طلب الحجز.<br>فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong style="color:var(--orange)">٢٤ ساعة</strong>.';
+    if (sTitle) sTitle.innerHTML = t('bookingModal.successTitlePlain') + '<span>' + t('bookingModal.successTitleStrong') + '</span>';
+    if (sBody)  sBody.innerHTML  = t('bookingModal.successBody');
   }
 
   trackEvent('booking_submitted', { space_id: bookingSpace?.id, space_name: bookingSpace?.name });
@@ -1997,11 +2026,11 @@ function setNavUser(user, profile) {
     guestEl.style.display  = 'flex';
     loggedEl.style.display = 'none';
   } else {
-    const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+    const name      = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || t('userNav.defaultName');
     const email     = user.email || '';
     const initial   = name.trim()[0] || '؟';
     const caps      = getAccountCapabilities(profile);
-    const roleLabel = caps.isOwner ? 'صاحب مساحة' : caps.isTenant ? 'مستأجر' : 'مستخدم';
+    const roleLabel = caps.isOwner ? t('userNav.roleOwner') : caps.isTenant ? t('userNav.roleTenant') : t('userNav.roleUser');
 
     guestEl.style.display  = 'none';
     loggedEl.style.display = 'flex';
@@ -2067,18 +2096,18 @@ async function doEmailLogin() {
   const email = document.getElementById('li-email')?.value.trim();
   const pass  = document.getElementById('li-pass')?.value;
 
-  if (!email) { showAuthAlert('login-alert', 'error', 'من فضلك ادخل البريد الإلكتروني'); return; }
-  if (!pass)  { showAuthAlert('login-alert', 'error', 'من فضلك ادخل كلمة المرور'); return; }
+  if (!email) { showAuthAlert('login-alert', 'error', t('auth2.emailRequired')); return; }
+  if (!pass)  { showAuthAlert('login-alert', 'error', t('auth2.passwordRequired')); return; }
 
   setBtnLoading('btn-login-submit', true);
   const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
-  setBtnLoading('btn-login-submit', false, 'تسجيل الدخول ←');
+  setBtnLoading('btn-login-submit', false, t('auth.login.submit'));
 
   if (error) {
     const msgs = {
-      'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غلط',
-      'Email not confirmed':       'لازم تأكد بريدك الإلكتروني الأول — فتش في الـ Inbox',
-      'Too many requests':         'كتر طلبات تسجيل الدخول — انتظر قليلاً وحاول تاني',
+      'Invalid login credentials': t('auth2.loginErrors.invalidCredentials'),
+      'Email not confirmed':       t('auth2.loginErrors.emailNotConfirmed'),
+      'Too many requests':         t('auth2.loginErrors.tooManyRequests'),
     };
     showAuthAlert('login-alert', 'error', msgs[error.message] || error.message);
     return;
@@ -2106,15 +2135,15 @@ async function doEmailSignup() {
   const role  = document.getElementById('su-role')?.value;
   const city  = document.getElementById('su-city')?.value;
 
-  if (!name)  { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل اسمك الكريم'); return; }
+  if (!name)  { showAuthAlert('signup-alert', 'error', t('validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
-    showAuthAlert('signup-alert', 'error', 'ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    showAuthAlert('signup-alert', 'error', t('auth2.phoneRequired')); return;
   }
-  if (!email) { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل البريد الإلكتروني'); return; }
+  if (!email) { showAuthAlert('signup-alert', 'error', t('auth2.emailRequired')); return; }
   if (!pass || pass.length < 8) {
-    showAuthAlert('signup-alert', 'error', 'كلمة المرور لازم تكون ٨ أحرف على الأقل'); return;
+    showAuthAlert('signup-alert', 'error', t('auth2.passwordTooShort')); return;
   }
-  if (!role)  { showAuthAlert('signup-alert', 'error', 'من فضلك اختار نوع حسابك'); return; }
+  if (!role)  { showAuthAlert('signup-alert', 'error', t('auth2.roleRequired')); return; }
 
   setBtnLoading('btn-signup-submit', true);
 
@@ -2127,15 +2156,15 @@ async function doEmailSignup() {
     }
   });
 
-  setBtnLoading('btn-signup-submit', false, 'إنشاء حساب ←');
+  setBtnLoading('btn-signup-submit', false, t('auth.signup.submit'));
 
   if (error) {
     const msgs = {
-      'User already registered':                  'البريد ده مسجّل بالفعل — سجّل دخولك',
-      'Password should be at least 6 characters': 'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
+      'User already registered':                  t('auth2.signupErrors.alreadyRegistered'),
+      'Password should be at least 6 characters': t('auth2.signupErrors.passwordTooShort6'),
     };
     const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
-      ? 'في طلبات كتير اتبعتت على البريد ده خلال وقت قصير — استنى شوية وحاول تاني.'
+      ? t('auth2.signupErrors.rateLimited')
       : null;
     showAuthAlert('signup-alert', 'error', msgs[error.message] || friendly || error.message);
     return;
@@ -2172,18 +2201,18 @@ async function resendConfirmEmail() {
   clearAuthAlert('confirm-alert');
   setBtnLoading('btn-resend-confirm', true);
   const { error } = await sbClient.auth.resend({ type: 'signup', email });
-  setBtnLoading('btn-resend-confirm', false, 'إعادة إرسال رسالة التأكيد');
+  setBtnLoading('btn-resend-confirm', false, t('auth.confirm.resend'));
 
   if (error) {
     const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
-      ? 'لسه من لحظات بعتنا الرسالة — استنى شوية وحاول تاني.'
+      ? t('auth2.resendRateLimited')
       : error.message;
     showAuthAlert('confirm-alert', 'error', friendly);
     return;
   }
 
   resendConfirmCooldownUntil = Date.now() + 60000;
-  showAuthAlert('confirm-alert', 'success', 'تم إرسال الرسالة تاني. لو لسه ملقتهاش خلال كذا دقيقة، تواصل معانا.');
+  showAuthAlert('confirm-alert', 'success', t('auth2.resendSuccess'));
 }
 
 
@@ -2203,7 +2232,7 @@ async function authWithGoogle() {
   });
 
   if (error) {
-    showAuthAlert('login-alert', 'error', 'في مشكلة مع Google: ' + error.message);
+    showAuthAlert('login-alert', 'error', t('auth2.googleError', { error: error.message }));
   }
 }
 
@@ -2246,7 +2275,7 @@ function setBtnLoading(id, on, orig) {
   const b = document.getElementById(id);
   if (!b) return;
   b.disabled = on;
-  if (on)        b.innerHTML = `<span class="spin-sm"></span> جاري التحميل…`;
+  if (on)        b.innerHTML = `<span class="spin-sm"></span> ${t('auth2.loading')}`;
   else if (orig) b.innerHTML = orig;
 }
 
@@ -2303,12 +2332,12 @@ function updateBnUser(user, profile) {
   if (user) {
     const initial = (profile?.full_name || user.email || '؟')[0].toUpperCase();
     icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
-    label.textContent = 'حسابي';
-    if (desc) desc.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
+    label.textContent = t('bottomNav.myAccount');
+    if (desc) desc.textContent = profile?.full_name?.split(' ')[0] || t('bottomNav.welcome');
   } else {
     icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
-    label.textContent = 'دخول';
-    if (desc) desc.textContent = 'سجّل أو ادخل';
+    label.textContent = t('bottomNav.login');
+    if (desc) desc.textContent = t('bottomNav.loginDesc');
   }
 }
 
@@ -2323,22 +2352,22 @@ function shareCard(type, id, name) {
 
   if (type === 'space') {
     url       = base + '?space=' + id;
-    shareText = 'شوف المساحة دي على مكاني Spot: ' + name;
+    shareText = t('share.checkOutSpace', { name });
   } else if (type === 'unit') {
     const parts = String(id).split(':');
     url       = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
-    shareText = 'شوف الوحدة دي على مكاني Spot: ' + name;
+    shareText = t('share.checkOutUnit', { name });
   } else {
     url       = base + '?space=' + id;
-    shareText = 'شوف المساحة دي على مكاني Spot: ' + name;
+    shareText = t('share.checkOutSpace', { name });
   }
 
   if (navigator.share) {
-    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+    navigator.share({ title: t('brand'), text: shareText, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
-      .then(()  => _showShareToast('✅ تم نسخ الرابط!'))
-      .catch(() => _showShareToast('📋 الرابط: ' + url));
+      .then(()  => _showShareToast(t('share.linkCopied')))
+      .catch(() => _showShareToast(t('share.linkFallback', { url })));
   }
 }
 

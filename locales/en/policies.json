@@ -1,0 +1,232 @@
+{
+  "nav": { "back": "Back to Home" },
+  "hero": {
+    "badge": "Official Legal Documents — Version 1.0",
+    "title": "Official Policies of<em> Makani Spot</em>",
+    "subtitle": "Privacy Policy · Terms & Conditions · Intellectual Property Rights<br>Last updated: May 20, 2026",
+    "legal": "Kiosq SpotHub ©"
+  },
+  "tabs": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions",
+    "ip": "Intellectual Property"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "How we collect, protect, and use your data on the Makani Spot platform",
+    "meta": {
+      "company": "<strong>Company:</strong> Kiosq SpotHub",
+      "version": "<strong>Version:</strong> 1.0",
+      "updated": "<strong>Updated:</strong> May 20, 2026",
+      "law": "<strong>Legislation:</strong> Law No. 151 of 2020"
+    },
+    "intro": "<strong>Makani Spot</strong> is the digital platform operated by <strong>Kiosq SpotHub</strong>, specializing in managing and leasing small commercial spaces, connecting space owners with small-business owners and bazaar organizers across Egypt. By using the platform, you agree to this Privacy Policy.",
+    "s1": {
+      "title": "1 — Scope of the Policy and Operating Entity",
+      "p": "This policy applies to all services, platforms, and applications operated by Kiosq SpotHub, including:",
+      "li1": "The small commercial space listing and rental platform (Makani Spot)",
+      "li2": "Bazaar and temporary-event services",
+      "li3": "The company's current and future applications",
+      "li4": "Services connecting space owners with tenants and business owners",
+      "li5": "Interactions of all user categories: space owners, tenants, bazaar organizers, and service providers"
+    },
+    "s2": {
+      "title": "2 — Data We Collect",
+      "personalLabel": "Personal Information",
+      "personalValue": "Name · Phone · Email · National ID (when required)",
+      "businessLabel": "Business Information",
+      "businessValue": "Business name · Commercial registration · Tax card · Licenses",
+      "technicalLabel": "Technical Data",
+      "technicalValue": "Device type · IP address · Browser · Cookies",
+      "locationLabel": "Location Data",
+      "locationValue": "Approximate or precise location to show nearby spaces",
+      "p": "We also collect <strong>content you upload</strong>: photos, logos, kiosk or space designs, business descriptions, and messages and interactions within the platform."
+    },
+    "s3": {
+      "title": "3 — How We Collect Your Data",
+      "li1": "<strong>Directly:</strong> when you create an account, upload content, book a space, or contact us.",
+      "li2": "<strong>Automatically:</strong> through cookies, analytics tools, and performance/security logs.",
+      "li3": "<strong>From third parties:</strong> electronic payment providers, identity verification providers, and approved service partners."
+    },
+    "s4": {
+      "title": "4 — Purposes for Using Your Data",
+      "li1": "Creating accounts and verifying user identity",
+      "li2": "Facilitating bookings, rentals, and communication between parties",
+      "li3": "Showing spaces and activities relevant to your needs",
+      "li4": "Operating the platform and improving service quality",
+      "li5": "Detecting fraud and maintaining platform security",
+      "li6": "Complying with Egyptian legal and regulatory requirements",
+      "li7": "Resolving disputes and enforcing the Terms and Conditions"
+    },
+    "s5": {
+      "title": "5 — Legal Basis for Processing",
+      "p": "Your data is processed based on: <strong>your explicit consent</strong>, <strong>performance of contractual obligations</strong> between us, <strong>compliance with Egyptian law</strong>, or the company's <strong>legitimate interests</strong> in a manner that does not conflict with your rights — in accordance with Egyptian Personal Data Protection Law No. 151 of 2020."
+    },
+    "s6": {
+      "title": "6 — Sharing Your Data with Third Parties",
+      "p": "We do not sell your data. We may share it only in the following cases:",
+      "li1": "With <strong>space owners or tenants</strong> to facilitate agreed bookings",
+      "li2": "With <strong>government or judicial authorities</strong> when legally required",
+      "li3": "With <strong>service providers</strong> (cloud hosting, payment gateways) under strict confidentiality agreements"
+    },
+    "s7": {
+      "title": "7 — Data Protection and Security",
+      "p": "Kiosq SpotHub is committed to implementing security measures including encryption in transit and at rest, access-control systems, and continuous system monitoring. However, absolute protection against all breaches beyond the company's reasonable control cannot be guaranteed."
+    },
+    "s8": {
+      "title": "8 — User Rights",
+      "right1": "Access the data we collect about you",
+      "right2": "Request correction or updating of your data",
+      "right3": "Request deletion of your data in certain cases",
+      "right4": "Object to certain types of processing",
+      "right5": "Withdraw your consent at any time",
+      "right6": "Transfer your data to another party"
+    },
+    "s9": {
+      "title": "9 — Cookies",
+      "p": "The platform uses cookies to improve performance, remember your preferences, personalize content, and measure performance. You may disable them from your browser settings, noting that this may affect some platform functions."
+    },
+    "s10": {
+      "title": "10 — Changes to This Policy",
+      "p": "This policy may be updated periodically. We will notify you of material changes via email or a clear notice within the platform. Continuing to use the platform after an update is published constitutes acceptance of the updated policy."
+    },
+    "contactLabel": "<strong>For inquiries about your personal data:</strong>",
+    "contactTeam": "Legal Affairs Team — Kiosq SpotHub"
+  },
+  "terms": {
+    "title": "Terms & Conditions",
+    "subtitle": "The rules governing use of the Makani Spot platform and the rights and duties of all parties",
+    "meta": {
+      "platform": "<strong>Platform:</strong> Makani Spot (Kiosq SpotHub)",
+      "version": "<strong>Version:</strong> 1.0",
+      "updated": "<strong>Updated:</strong> May 20, 2026",
+      "scope": "<strong>Jurisdiction:</strong> Arab Republic of Egypt"
+    },
+    "intro": "<strong>Makani Spot</strong> is a digital platform operated by <strong>Kiosq SpotHub</strong> and governed by Egyptian law. The platform specializes in managing, organizing, and leasing small commercial spaces, kiosks, bazaars, and temporary events. By using the platform, you expressly agree to all Terms and Conditions set out here.",
+    "s1": {
+      "title": "1 — Definitions of Parties and Key Terms",
+      "li1": "<strong>\"The Company\" or \"The Platform\":</strong> Kiosq SpotHub, operator of the Makani Spot platform.",
+      "li2": "<strong>\"User\":</strong> any natural or legal person who uses the platform in any capacity.",
+      "li3": "<strong>\"Space Owner\":</strong> the person or entity owning or managing a commercial space listed on the platform.",
+      "li4": "<strong>\"Tenant\" or \"Business Owner\":</strong> anyone seeking a space for their business or project.",
+      "li5": "<strong>\"The Service\":</strong> all functions and features available within the platform."
+    },
+    "s2": {
+      "title": "2 — General Provisions",
+      "li1": "These Terms are governed by applicable Egyptian laws and regulations.",
+      "li2": "The platform reserves the right to modify or develop its services or policies at any time, notifying users of material changes.",
+      "li3": "The platform acts as an intermediary and organizer connecting parties, and is not a direct party to any contract concluded between users unless otherwise stated.",
+      "li4": "Users must be at least 18 years of age or hold a recognized legal capacity."
+    },
+    "s3": {
+      "title": "3 — User Obligations",
+      "li1": "Provide accurate, correct information and keep it continuously updated.",
+      "li2": "Keep login credentials confidential and not share them with others.",
+      "li3": "Bear full legal responsibility for all activities on the platform.",
+      "li4": "Comply with all Egyptian laws and regulations relevant to their business activity.",
+      "li5": "Pay any fees or commissions due by their specified deadlines."
+    },
+    "s4": {
+      "title": "4 — Prohibited Conduct (Strictly Forbidden)",
+      "boxTitle": "Actions prohibited on the platform:",
+      "li1": "Posting misleading information or falsified data about activities or spaces",
+      "li2": "Uploading content that violates Egyptian law or public decency",
+      "li3": "Engaging in any fraud, deception, or scams",
+      "li4": "Attempting to breach platform systems or tamper with data",
+      "li5": "Using circumvention tools (VPN, proxy) to bypass platform policies",
+      "li6": "Violating other users' privacy or misusing their data",
+      "li7": "Creating fake or multiple accounts for manipulative purposes"
+    },
+    "s5": {
+      "title": "5 — Fees, Payments, and Refunds",
+      "li1": "The platform reserves the right to charge service fees, brokerage commissions, or listing and promotion fees.",
+      "li2": "All fees are subject to taxes and charges as prescribed by Egyptian law.",
+      "li3": "Fees paid are refundable only in accordance with the company's clearly published refund policy.",
+      "li4": "The platform is committed to transparently displaying all prices and fees before completing any transaction."
+    },
+    "s6": {
+      "title": "6 — Limitation of Liability",
+      "p": "The platform does not fully guarantee the accuracy of content posted by users and bears no responsibility for any losses or damages resulting from:",
+      "li1": "Incorrect information provided by other users",
+      "li2": "Temporary technical failures or service interruptions beyond the company's control",
+      "li3": "Business decisions users make based on information from the platform",
+      "li4": "Disputes arising directly between space owners and tenants"
+    },
+    "s7": {
+      "title": "7 — Account Suspension and Service Termination",
+      "p": "The company reserves the right to suspend or terminate any user's account in the following cases:",
+      "li1": "A proven violation of these Terms and Conditions",
+      "li2": "Documented suspicious or fraudulent activity",
+      "li3": "Repeated, documented complaints from other users",
+      "li4": "A request from the competent judicial or regulatory authorities"
+    },
+    "s8": {
+      "title": "8 — Dispute Resolution",
+      "p": "In the event of any dispute, the company is committed to first attempting an amicable resolution. If that is not possible, the dispute will be settled before the competent Egyptian courts under Egyptian law, without prejudice to either party's right to arbitration under the rules of the Cairo Regional Centre for International Commercial Arbitration."
+    },
+    "contactLabel": "<strong>For inquiries about the Terms and Conditions:</strong>",
+    "contactTeam": "Legal Affairs Team — Kiosq SpotHub"
+  },
+  "ip": {
+    "title": "Intellectual Property Policy",
+    "subtitle": "Protecting the rights of the company and users under Egyptian Law No. 82 of 2002",
+    "meta": {
+      "law": "<strong>Legislation:</strong> Law No. 82 of 2002 (Intellectual Property Protection)",
+      "version": "<strong>Version:</strong> 1.0",
+      "updated": "<strong>Updated:</strong> May 20, 2026"
+    },
+    "s1": {
+      "title": "1 — Platform Intellectual Property",
+      "p": "All of the following materials and elements are the exclusive property of Kiosq SpotHub, protected under Egyptian law and international intellectual property agreements:",
+      "digitalLabel": "Digital Content",
+      "digitalValue": "Source code · Databases · Algorithms",
+      "identityLabel": "Visual Identity",
+      "identityValue": "Logos · Colors · Designs · User interfaces",
+      "trademarkLabel": "Trademarks",
+      "trademarkValue": "\"Makani Spot\" · \"Kiosq SpotHub\" · Domain names",
+      "editorialLabel": "Editorial Content",
+      "editorialValue": "Text · Business guide · Studies and reports",
+      "p2": "Copying, distributing, reverse-engineering, or reusing any part of the platform without prior specific written consent from the company is strictly prohibited."
+    },
+    "s2": {
+      "title": "2 — User-Generated Content",
+      "p": "When uploading any content to the platform (photos, logos, designs, text), the user represents and warrants that:",
+      "li1": "They own full rights and licenses to the uploaded content.",
+      "li2": "The content does not infringe any third-party intellectual property rights.",
+      "li3": "They bear full legal responsibility for any claims arising from their content."
+    },
+    "s3": {
+      "title": "3 — License Granted to the Platform",
+      "p": "By publishing your content on the platform, you grant Kiosq SpotHub a <strong>non-exclusive, non-transferable, royalty-free license</strong> to:",
+      "li1": "Display and operate the content within the platform to provide the service.",
+      "li2": "Include it in the platform's marketing and promotional materials.",
+      "li3": "Archive it securely for backup and legal-compliance purposes.",
+      "p2": "Ownership of the content does not transfer to the company under this license, and the user remains the exclusive owner of their content."
+    },
+    "s4": {
+      "title": "4 — Reporting Intellectual Property Infringement",
+      "p": "If you believe your intellectual property rights have been infringed on the platform, please submit a formal report including:",
+      "li1": "A detailed description of the infringing content and its location on the platform.",
+      "li2": "Proof of your ownership of the original content (document, license, registration receipt).",
+      "li3": "Complete contact information (name, phone, email).",
+      "li4": "A statement affirming the accuracy of the information in the report.",
+      "boxTitle": "Report handling process:",
+      "step1": "Report received with confirmation reply within 72 business hours.",
+      "step2": "Report and referenced content reviewed within 7 business days.",
+      "step3": "Appropriate action taken: removal, disabling, or further review.",
+      "step4": "All parties notified of the review outcome."
+    },
+    "s5": {
+      "title": "5 — Penalties and Legal Action",
+      "p": "The company reserves the right to take full legal action under Egyptian Intellectual Property Protection Law No. 82 of 2002 against any documented infringement, including claims for material and moral damages."
+    },
+    "contactLabel": "<strong>To report intellectual property infringement:</strong>",
+    "contactTeam": "Legal Affairs Team — Kiosq SpotHub"
+  },
+  "footer": {
+    "tagline": "Egypt's first platform for renting small spaces",
+    "legalName": "Kiosq SpotHub",
+    "waText": "011 0346 7711",
+    "copy": "© 2026 Makani Spot · Kiosq SpotHub · All rights reserved"
+  }
+}

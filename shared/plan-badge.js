@@ -17,11 +17,12 @@
  * @returns {{cls:string, icon:string, text:string}|null} بيانات الشارة، أو null إن لم تستحق المساحة أي شارة (starter)
  */
 function getPlanBadgeInfo(s) {
-  if (s?.isBroker) return { cls: 'trust-makani', icon: '🏠', text: 'مكاني Spot' };
+  const _t = typeof t === 'function' ? t : (k) => k;
+  if (s?.isBroker) return { cls: 'trust-makani', icon: '🏠', text: _t('brand') };
   const tier = (s?.planTier || 'starter').toLowerCase();
-  if (tier === 'broker') return { cls: 'trust-broker', icon: '🏛️', text: 'بروكر' };
-  if (tier === 'pro')    return { cls: 'trust-partner', icon: '🏆', text: 'شريك معتمد' };
-  if (tier === 'growth') return { cls: 'trust-verified', icon: '⭐', text: 'شريك Growth' };
+  if (tier === 'broker') return { cls: 'trust-broker', icon: '🏛️', text: _t('planBadge.broker') };
+  if (tier === 'pro')    return { cls: 'trust-partner', icon: '🏆', text: _t('planBadge.partner') };
+  if (tier === 'growth') return { cls: 'trust-verified', icon: '⭐', text: _t('planBadge.growth') };
   return null;
 }
 

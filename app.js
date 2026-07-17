@@ -117,6 +117,12 @@ let BAZAARS = [];          // قائمة البازارات المحمّلة م�
 const _sliders = {};  // يحفظ حالة كل سلايدر { index, images, autoTimer }
 //   المفتاح = معرّف فريد لكل سلايدر (مثل: "card-5" أو "detail-5")
 
+// ── locale-aware formatting helpers (أرقام/عملة/تاريخ حسب اللغة الحالية) ──
+function _appLocale() { return (typeof getLocale === 'function' && getLocale() === 'en') ? 'en-US' : 'ar-EG'; }
+function _appCurrency() { return (typeof getLocale === 'function' && getLocale() === 'en') ? 'EGP' : 'ج'; }
+function _appFmtPrice(n) { return Number(n).toLocaleString(_appLocale()) + ' ' + _appCurrency(); }
+function _appSizeChipPriceHtml(n) { return _appFmtPrice(n) + ' <span>' + t('spaces:card.perMonth') + '</span>'; }
+
 
 /* ================================================================
    📊 القسم 2.5: Google Analytics 4 — تتبع الأحداث
@@ -260,7 +266,7 @@ function updateMainSlider() {
 
   const maxLabel = document.getElementById('price-max-label');
   if (maxLabel) {
-    maxLabel.textContent = max >= 50000 ? 'بلا حد' : Number(max).toLocaleString('ar-EG') + ' ج';
+    maxLabel.textContent = max >= 50000 ? t('search.priceNoLimit') : _appFmtPrice(max);
   }
 }
 
@@ -323,7 +329,7 @@ async function loadData() {
     setTimeout(() => csInitAll(), 120);
 
   } catch (err) {
-    showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
+    showErrorState(err.message || t('spaces:loading.error'), 'spaces-grid');
   }
 }
 
@@ -361,8 +367,8 @@ function showLoadingState(gridId) {
   grid.innerHTML = `
     <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
       <div style="font-size:52px;margin-bottom:18px;display:inline-block;animation:spin 1.2s linear infinite">⏳</div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">جاري تحميل البيانات…</div>
-      <div style="font-size:13px;color:var(--ink3)">لحظة صغيرة…</div>
+      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">${t('spaces:loading.spinner')}</div>
+      <div style="font-size:13px;color:var(--ink3)">${t('spaces:loading.wait')}</div>
     </div>`;
 }
 
@@ -375,12 +381,12 @@ function showErrorState(msg, gridId) {
   grid.innerHTML = `
     <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
       <div style="font-size:52px;margin-bottom:18px">⚠️</div>
-      <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">في مشكلة في تحميل البيانات</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">${t('spaces:loading.error')}</div>
       <div style="font-size:13px;color:var(--ink2);margin-bottom:22px;max-width:400px;margin-inline:auto">${msg}</div>
-      <button class="btn btn-primary" onclick="loadData()">🔄 حاول تاني</button>
+      <button class="btn btn-primary" onclick="loadData()">${t('spaces:loading.retry')}</button>
     </div>`;
   const counter = document.getElementById('res-count');
-  if (counter) counter.textContent = 'خطأ في التحميل';
+  if (counter) counter.textContent = t('spacesList.loadError');
 }
 
 
@@ -391,7 +397,7 @@ function showErrorState(msg, gridId) {
 function buildActivityFilters() {
   const sel = document.getElementById('f-act');
   if (!sel) return;
-  sel.innerHTML = '<option value="">— كل الأنشطة —</option>' +
+  sel.innerHTML = `<option value="">${t('spacesList.activityAllOption')}</option>` +
     ACTIVITIES.map(a => `<option value="${a.id}">${a.label}</option>`).join('');
 }
 
@@ -487,7 +493,7 @@ function buildCardHtml(s, fromPage) {
   }
 
   // 2. منطق الأنشطة والأسعار (الذي أرسلته أنت)
-  const actsHtml = s.allActs ? '<span class="act-tag act-tag-all">✓ كل الأنشطة</span>' : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
+  const actsHtml = s.allActs ? `<span class="act-tag act-tag-all">${t('spaces:card.allActivities')}</span>` : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -500,7 +506,7 @@ function buildCardHtml(s, fromPage) {
   const defaultPrice = sizePrices[sizesClean[0]] || s.price;
 
   const sizesHtml = sizesClean.map((sz, i) =>
-    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString('ar-EG')+' ج <span>/شهر</span>';">${sz}</span>`
+    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=_appSizeChipPriceHtml(this.dataset.price);">${sz}</span>`
   ).join('');
 
   // 3. زرار التفاصيل + بادج الوحدات المتاحة
@@ -511,17 +517,17 @@ function buildCardHtml(s, fromPage) {
   // التفاصيل والحجز يتمّان في صفحة المساحات الرسمية (/spaces/) لتوحيد التجربة
   const detailsBtnHtml = `<button class="btn btn-details" style="font-size:12px;padding:7px 14px"
               onclick="event.stopPropagation();_trackSpaceEvent('${s.id}','${s.ownerId||''}','detail_click');window.location.href='/spaces/?space=${s.id}'">
-         تفاصيل ←
+         ${t('spaces:card.details')}
        </button>`;
 
   const availableUnits = (s.subSpaces || []).filter(u => u.status === 'available' || !u.status).length;
   const unitsBadgeHtml = s.subSpaces && s.subSpaces.length > 0
-    ? `<span class="units-badge">${availableUnits} وحدة متاحة</span>`
+    ? `<span class="units-badge">${t('spaces:card.unitsAvailable', { count: availableUnits })}</span>`
     : '';
 
   // 4. البناء النهائي
   const _spaceNameSafe = (s.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="مشاركة المساحة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
+  const _shareSpaceBtn = `<button class="share-btn" onclick="event.stopPropagation();shareCard('space','${s.id}','${_spaceNameSafe}')" title="${t('spaces:card.share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`;
   const _trustBadge = planTrustBadgeCardHtml(s);
   const _cardClass = _planCardClass(s);
 
@@ -529,7 +535,7 @@ function buildCardHtml(s, fromPage) {
   <div class="space-card${_cardClass}" data-sid="${s.id}" data-oid="${s.ownerId||''}">
     <div class="card-thumb">
       ${thumbHtml}
-      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || 'متاح'}</span>
+      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || t('spaces:card.badgeDefault')}</span>
       ${_trustBadge}
       ${unitsBadgeHtml}
       ${_shareSpaceBtn}
@@ -540,17 +546,17 @@ function buildCardHtml(s, fromPage) {
       <div class="card-acts">${actsHtml}</div>
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
-        <div class="price-main">${Number(defaultPrice).toLocaleString('ar-EG')} ج <span>/ شهر</span></div>
+        <div class="price-main">${_appFmtPrice(defaultPrice)} <span>${t('spaces:card.perMonth')}</span></div>
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
           ${detailsBtnHtml}
           <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="event.stopPropagation();window.location.href='/spaces/?space=${s.id}&book=1'">احجز دلوقتي ←</button>
+                  onclick="event.stopPropagation();window.location.href='/spaces/?space=${s.id}&book=1'">${t('spaces:card.bookNow')}</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `
       <div class="card-tip">
         <div class="tip-dot"></div>
-        <div>${s.season ? `<strong>موسم البيع:</strong> ${s.season}` : ''}${s.insight ? `<br>${s.insight}` : ''}</div>
+        <div>${s.season ? `<strong>${t('spaces:card.season')}</strong> ${s.season}` : ''}${s.insight ? `<br>${s.insight}` : ''}</div>
       </div>` : ''}
     </div>
   </div>`;
@@ -572,8 +578,8 @@ function renderCards(data, gridId, totalCount, fromPage) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--ink2)">
         <div style="font-size:48px;margin-bottom:16px">🔍</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">مش لاقيين مساحات بالمعايير دي</div>
-        <div style="font-size:14px">جرب تغيير النشاط أو المنطقة أو السعر</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('spaces:empty.title')}</div>
+        <div style="font-size:14px">${t('spaces:empty.hint')}</div>
       </div>`;
     return;
   }
@@ -581,8 +587,8 @@ function renderCards(data, gridId, totalCount, fromPage) {
   const viewAllHtml = totalCount > data.length ? `
     <div style="grid-column:1/-1;text-align:center;padding:14px 0 4px">
       <a class="btn-view-all" href="/spaces/">
-        <span>عرض جميع المساحات المتاحة (${totalCount})</span>
-        <span class="view-all-arrow">←</span>
+        <span>${t('sectionHead.viewAllBtn', { count: totalCount })}</span>
+        <span class="view-all-arrow">${t('arrowForward')}</span>
       </a>
     </div>` : '';
 
@@ -611,11 +617,11 @@ function _showSpaceLoginGate(s, fromPage) {
     headerEl.innerHTML = `
       <div class="sd-header-inner">
         <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeSpaceDetail()">→ العودة</button>
+          <button class="sd-back-btn" onclick="closeSpaceDetail()">${t('spaces:detail.back')}</button>
           <div class="sd-breadcrumb">
-            <span onclick="showPage('home')" style="cursor:pointer">الرئيسية</span>
+            <span onclick="showPage('home')" style="cursor:pointer">${t('spaces:detail.home')}</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="window.location.href='/spaces/'" style="cursor:pointer">المساحات</span>
+            <span onclick="window.location.href='/spaces/'" style="cursor:pointer">${t('spaces:detail.spacesCrumb')}</span>
             <span class="sd-bc-sep">·</span>
             <span style="color:var(--orange)">${s.name}</span>
           </div>
@@ -642,19 +648,19 @@ function _showSpaceLoginGate(s, fromPage) {
       <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
         <div style="font-size:64px;margin-bottom:20px">🔒</div>
         <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
-          سجّل دخولك لعرض التفاصيل
+          ${t('spaces:detail.loginRequiredTitle')}
         </h2>
         <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
-          سجّل دخولك لمعرفة المزيد من تفاصيل المساحة والحجز
+          ${t('spaces:detail.loginRequiredBody')}
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
                   onclick="showPage('login')">
-            تسجيل الدخول ←
+            ${t('spaces:detail.loginBtn')}
           </button>
           <button class="btn" style="padding:13px 22px;font-size:14px"
                   onclick="closeSpaceDetail()">
-            العودة للمساحات
+            ${t('spaces:detail.backToSpacesBtn')}
           </button>
         </div>
       </div>`;
@@ -694,12 +700,12 @@ async function openSpaceDetail(spaceId, fromPage) {
       <div class="sd-header-inner">
         <div class="sd-back-row">
           <button class="sd-back-btn" onclick="closeSpaceDetail()">
-            → العودة
+            ${t('spaces:detail.back')}
           </button>
           <div class="sd-breadcrumb">
-            <span onclick="showPage('home')" style="cursor:pointer">الرئيسية</span>
+            <span onclick="showPage('home')" style="cursor:pointer">${t('spaces:detail.home')}</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="window.location.href='/spaces/'" style="cursor:pointer">المساحات</span>
+            <span onclick="window.location.href='/spaces/'" style="cursor:pointer">${t('spaces:detail.spacesCrumb')}</span>
             <span class="sd-bc-sep">·</span>
             <span style="color:var(--orange)">${s.name}</span>
           </div>
@@ -716,16 +722,16 @@ async function openSpaceDetail(spaceId, fromPage) {
               <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
               ${s.subSpaces && s.subSpaces.length > 0
         ? `<span class="sd-meta-sep">·</span>
-                   <span style="color:var(--orange);font-weight:700">${s.subSpaces.length} وحدة</span>`
+                   <span style="color:var(--orange);font-weight:700">${t('spaces:detail.unitsCount', { count: s.subSpaces.length })}</span>`
         : ''}
             </div>
           </div>
           <div class="sd-price-box">
-            <div class="sd-price-val">${Number(s.price).toLocaleString('ar-EG')} ج</div>
-            <div class="sd-price-lbl">/ شهر (ابتداءً من)</div>
+            <div class="sd-price-val">${_appFmtPrice(s.price)}</div>
+            <div class="sd-price-lbl">${t('spaces:detail.startingFrom')}</div>
             <div style="display:flex;gap:8px;margin-top:10px">
               <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:9px 10px"
-                      onclick="openBooking('${s.id}')">احجز دلوقتي ←</button>
+                      onclick="openBooking('${s.id}')">${t('spaces:card.bookNow')}</button>
             </div>
           </div>
         </div>
@@ -779,7 +785,7 @@ function _renderDetailGallery(s) {
   if (s.image) allImages.push({ url: s.image, caption: s.name });
   extraList.forEach((url, i) => {
     if (url && url !== s.image)
-      allImages.push({ url, caption: `${s.name} — صورة ${i + 2}` });
+      allImages.push({ url, caption: t('spaces:detail.imageCaption', { name: s.name, n: i + 2 }) });
   });
 
   // ── لا توجد صور ──
@@ -787,7 +793,7 @@ function _renderDetailGallery(s) {
     galleryEl.innerHTML = `
       <div class="sd-gallery-placeholder">
         <div style="font-size:64px;opacity:0.25">${s.icon || '🏪'}</div>
-        <div style="font-size:13px;color:var(--ink3);margin-top:10px">لا توجد صور متاحة</div>
+        <div style="font-size:13px;color:var(--ink3);margin-top:10px">${t('spaces:detail.noImages')}</div>
       </div>`;
     return;
   }
@@ -843,10 +849,10 @@ function _renderDetailGallery(s) {
         <!-- أسهم التنقل -->
         <button class="sd-arrow sd-arrow-next"
                 onclick="event.stopPropagation();sdNext('${detailSliderId}')"
-                title="الصورة التالية">&#8250;</button>
+                title="${t('spaces:detail.nextImage')}">&#8250;</button>
         <button class="sd-arrow sd-arrow-prev"
                 onclick="event.stopPropagation();sdPrev('${detailSliderId}')"
-                title="الصورة السابقة">&#8249;</button>
+                title="${t('spaces:detail.prevImage')}">&#8249;</button>
 
         <!-- عداد الصور -->
         <div class="sd-counter" id="${detailSliderId}-counter">1 / ${allImages.length}</div>
@@ -1107,7 +1113,7 @@ function _renderDetailInfo(s) {
 
   // ── الأنشطة المناسبة ──
   const actsHtml = s.allActs
-    ? '<span class="act-tag act-tag-all">✓ يصلح لجميع الأنشطة</span>'
+    ? `<span class="act-tag act-tag-all">${t('spaces:detail.activitiesAll')}</span>`
     : (s.acts || []).map(id => {
       const a = ACTIVITIES.find(x => x.id === id);
       return a ? `<span class="act-tag">${a.label}</span>` : '';
@@ -1121,7 +1127,7 @@ function _renderDetailInfo(s) {
     return `
       <div class="sd-size-row">
         <span class="sd-size-label">${label}</span>
-        <span class="sd-size-price">${Number(price).toLocaleString('ar-EG')} ج / شهر</span>
+        <span class="sd-size-price">${_appFmtPrice(price)} ${t('spaces:card.perMonth')}</span>
       </div>`;
   }).join('');
 
@@ -1135,32 +1141,32 @@ function _renderDetailInfo(s) {
 
       ${s.description ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">📝 عن هذا المكان</div>
+        <div class="sd-info-title">${t('spaces:detail.aboutTitle')}</div>
         <p class="sd-description">${s.description}</p>
       </div>` : ''}
 
       <div class="sd-info-card">
-        <div class="sd-info-title">🏷️ الأنشطة المناسبة</div>
+        <div class="sd-info-title">${t('spaces:detail.activitiesTitle')}</div>
         <div class="card-acts" style="margin-top:8px">${actsHtml || '—'}</div>
       </div>
 
       ${sizesHtml ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">📐 الأحجام والأسعار</div>
+        <div class="sd-info-title">${t('spaces:detail.sizesTitle')}</div>
         <div class="sd-sizes-list" style="margin-top:10px">${sizesHtml}</div>
       </div>` : ''}
 
       ${amenitiesHtml ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">⚡ المرافق المتاحة</div>
+        <div class="sd-info-title">${t('spaces:detail.amenitiesTitle')}</div>
         <div class="sd-amenities-wrap" style="margin-top:10px">${amenitiesHtml}</div>
       </div>` : ''}
 
       ${s.season ? `
       <div class="sd-info-card">
-        <div class="sd-info-title">📅 معلومات إضافية</div>
+        <div class="sd-info-title">${t('spaces:detail.additionalInfoTitle')}</div>
         <div style="margin-top:8px">
-          <div class="sd-extra-row"><span>موسم البيع:</span><span>${s.season}</span></div>
+          <div class="sd-extra-row"><span>${t('spaces:card.season')}</span><span>${s.season}</span></div>
           ${s.insight ? `<div style="font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.7">${s.insight}</div>` : ''}
         </div>
       </div>` : ''}
@@ -1183,10 +1189,10 @@ function _renderSubSpaces(s) {
     subEl.innerHTML = `
       <div style="text-align:center;padding:40px 20px;color:var(--ink3)">
         <div style="font-size:36px;margin-bottom:10px">🏪</div>
-        <div style="font-size:14px">لا توجد وحدات مفصّلة لهذا المكان بعد</div>
-        <div style="font-size:12px;margin-top:6px">يمكنك الحجز مباشرة وسيتواصل معك فريقنا</div>
+        <div style="font-size:14px">${t('spaceDetail.noUnitsYet')}</div>
+        <div style="font-size:12px;margin-top:6px">${t('spaceDetail.noUnitsHint')}</div>
         <button class="btn btn-primary" style="margin-top:16px" onclick="openBooking('${s.id}')">
-          احجز دلوقتي ←
+          ${t('spaces:card.bookNow')}
         </button>
       </div>`;
     return;
@@ -1197,9 +1203,9 @@ function _renderSubSpaces(s) {
   const rentedCount = units.filter(u => u.status === 'rented').length;
 
   const statusMap = {
-    available: { label: 'متاحة', cls: 'sub-status-available' },
-    rented: { label: 'مؤجّرة', cls: 'sub-status-rented' },
-    reserved: { label: 'محجوزة', cls: 'sub-status-reserved' },
+    available: { label: t('spaces:subspaces.statusAvailable'), cls: 'sub-status-available' },
+    rented: { label: t('spaces:subspaces.statusRented'), cls: 'sub-status-rented' },
+    reserved: { label: t('spaces:subspaces.statusReserved'), cls: 'sub-status-reserved' },
   };
 
   const unitsHtml = units.map(unit => {
@@ -1229,17 +1235,17 @@ function _renderSubSpaces(s) {
         <div class="sub-footer">
           <div class="sub-specs">
             ${unit.size ? `<span class="sub-spec">📐 ${unit.size}</span>` : ''}
-            ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString('ar-EG')} ج/شهر</span>` : ''}
+            ${unit.price ? `<span class="sub-spec sub-price">${_appFmtPrice(unit.price)}${t('spaces:card.perMonth')}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${!isBlocked
         ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
                          onclick="openBookingForUnit('${s.id}','${unit.unitId}')">
-                   احجز ←
+                   ${t('spaces:subspaces.book')}
                  </button>`
-        : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">غير متاح حالياً</span>`
+        : `<span style="font-size:12px;color:var(--ink3);padding:7px 0">${t('spaces:subspaces.unavailable')}</span>`
       }
-            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId || '').replace(/'/g, "\\'")}','${(unit.name || unit.unitId || '').replace(/'/g, "\\'")}');" title="مشاركة الوحدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+            <button class="share-btn-inline" onclick="event.stopPropagation();shareCard('unit','${s.id}:${(unit.unitId || '').replace(/'/g, "\\'")}','${(unit.name || unit.unitId || '').replace(/'/g, "\\'")}');" title="${t('spaces:card.shareUnit')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           </div>
         </div>
       </div>
@@ -1248,10 +1254,10 @@ function _renderSubSpaces(s) {
 
   subEl.innerHTML = `
     <div class="sd-subspaces-header">
-      <h2 class="sd-section-title">🏪 الوحدات المتاحة (${units.length})</h2>
+      <h2 class="sd-section-title">${t('spaces:subspaces.header', { count: units.length })}</h2>
       <div class="sd-units-summary">
-        <span class="sd-units-avail">${availCount} متاحة</span>
-        ${rentedCount > 0 ? `<span class="sd-units-rented">${rentedCount} مؤجّرة</span>` : ''}
+        <span class="sd-units-avail">${t('spaces:subspaces.availableCount', { count: availCount })}</span>
+        ${rentedCount > 0 ? `<span class="sd-units-rented">${t('spaces:subspaces.rentedCount', { count: rentedCount })}</span>` : ''}
       </div>
     </div>
     <div class="sub-grid">${unitsHtml}</div>`;
@@ -1263,7 +1269,7 @@ function _renderSubSpaces(s) {
  * @returns {string}
  */
 function _typeLabel(type) {
-  return { mall: '🏬 مول تجاري', club: '⚽ نادي رياضي', school: '🏫 مدرسة' }[type] || type;
+  return { mall: t('spaces:placeTypes.mall'), club: t('spaces:placeTypes.club'), school: t('spaces:placeTypes.school') }[type] || type;
 }
 
 
@@ -1285,13 +1291,13 @@ async function openBookingForUnit(spaceId, unitId) {
   setTimeout(() => {
     const notesEl = document.getElementById('bk-notes');
     if (notesEl && unitId) {
-      notesEl.value = `الوحدة المطلوبة: ${unitId}`;
+      notesEl.value = t('spaces:bookingModal.requestedUnit', { unitId });
     }
     // تحديث عنوان المودال ليشير للوحدة
     const metaEl = document.getElementById('msi-meta');
     if (metaEl) {
       metaEl.insertAdjacentHTML('beforeend',
-        ` · <strong style="color:var(--orange)">وحدة ${unitId}</strong>`);
+        ` · <strong style="color:var(--orange)">${t('spaces:bookingModal.unitLabel', { unitId })}</strong>`);
     }
   }, 50);
 }
@@ -1356,7 +1362,7 @@ async function loadMarketplacePage() {
     mpTotalCount = totalCount;
     renderMarketplace();
   } catch (err) {
-    showErrorState(err.message || 'خطأ في تحميل المساحات', 'mp-grid');
+    showErrorState(err.message || t('spaces:loading.errorSpaces'), 'mp-grid');
   }
 }
 
@@ -1384,7 +1390,7 @@ function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
   const chips = [];
-  const typeMap = { mall: 'مولات', club: 'نوادي', school: 'مدارس' };
+  const typeMap = { mall: t('sectionHead.tabMalls'), club: t('sectionHead.tabClubs'), school: t('sectionHead.tabSchools') };
 
   mpActiveTypes.forEach(t => {
     chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${typeMap[t] || t} ×</span>`);
@@ -1402,15 +1408,15 @@ function renderMarketplace() {
   const countEl = document.getElementById('mp-count');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = mpTotalCount + ' مساحة';
+  if (countEl) countEl.textContent = t('spaces:results.spacesCount', { count: mpTotalCount });
 
   if (!mpCurrentItems.length) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
         <div style="font-size:52px;margin-bottom:14px">🔍</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">مش لاقيين مساحات</div>
-        <div style="font-size:13px;color:var(--ink2);margin-bottom:18px">جرب تغيير الفلاتر</div>
-        <button class="btn btn-primary" onclick="clearMpFilters()">مسح الفلاتر</button>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('spaces:empty.titleShort')}</div>
+        <div style="font-size:13px;color:var(--ink2);margin-bottom:18px">${t('spaces:empty.hintShort')}</div>
+        <button class="btn btn-primary" onclick="clearMpFilters()">${t('spacesList.clearFiltersBtn')}</button>
       </div>`;
     renderMpPagination();
     return;
@@ -1430,7 +1436,7 @@ function renderMpPagination() {
   if (totalPages <= 1) { cont.innerHTML = ''; return; }
 
   let html = '';
-  if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">السابق</button>`;
+  if (mpPage > 1) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage - 1})">${t('spaces:market.prevPage')}</button>`;
 
   for (let i = 1; i <= totalPages; i++) {
     if (i === 1 || i === totalPages || Math.abs(i - mpPage) <= 2) {
@@ -1440,7 +1446,7 @@ function renderMpPagination() {
     }
   }
 
-  if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">التالي</button>`;
+  if (mpPage < totalPages) html += `<button class="pg-btn" onclick="mpGoPage(${mpPage + 1})">${t('spaces:market.nextPage')}</button>`;
   cont.innerHTML = html;
 }
 
@@ -1477,7 +1483,7 @@ function updateMpSlider() {
   }
 
   const lMax = document.getElementById('mp-price-max-label');
-  if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? 'بلا حد' : Number(maxVal).toLocaleString('ar-EG') + ' ج';
+  if (lMax) lMax.textContent = maxVal >= RANGE_MAX ? t('search.priceNoLimit') : _appFmtPrice(maxVal);
 }
 
 function toggleMpSidebar() {
@@ -1522,11 +1528,11 @@ async function filterAndRender() {
     heroItems = items;
 
     const counter = document.getElementById('res-count');
-    if (counter) counter.textContent = totalCount + ' مساحة';
+    if (counter) counter.textContent = t('spaces:results.spacesCount', { count: totalCount });
 
     renderCards(items, 'spaces-grid', totalCount, 'home');
   } catch (err) {
-    showErrorState(err.message || 'خطأ في تحميل البيانات', 'spaces-grid');
+    showErrorState(err.message || t('spaces:loading.error'), 'spaces-grid');
   }
 }
 
@@ -1537,7 +1543,7 @@ function showSearchChips() {
 
   if (r) chips.push(r);
   if (maxPrice < 50000) {
-    chips.push(`حتى ${Number(maxPrice).toLocaleString('ar-EG')} ج`);
+    chips.push(t('search.upToPricePrefix', { price: _appFmtPrice(maxPrice) }));
   }
   if (selectedAct) {
     const a = ACTIVITIES.find(x => x.id === selectedAct);
@@ -1649,13 +1655,13 @@ let _oppShareName = ''; // اسم البروفايل المعروض حاليًا
 /* مشاركة رابط البروفايل العام — Web Share API أو نسخ للحافظة (نفس نمط shareCard) */
 function shareOwnerProfile() {
   const url = window.location.href;
-  const shareText = `شوف بروفايل ${_oppShareName || 'الناشر'} على مكاني Spot`;
+  const shareText = t('ownerProfile.shareText', { name: _oppShareName || t('ownerProfile.defaultShareName') });
   if (navigator.share) {
-    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+    navigator.share({ title: t('brand'), text: shareText, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
-      .then(() => _showShareToast('✅ تم نسخ رابط البروفايل!'))
-      .catch(() => _showShareToast('📋 الرابط: ' + url));
+      .then(() => _showShareToast(t('ownerProfile.linkCopied')))
+      .catch(() => _showShareToast(t('share.linkFallback', { url })));
   }
 }
 
@@ -1701,9 +1707,9 @@ async function loadOwnerProfile(userId) {
 function _oppNotFound() {
   return `<div style="text-align:center;padding:80px 20px;color:#9a9aa3">
     <div style="font-size:42px;margin-bottom:10px">🪪</div>
-    <div style="font-size:18px;font-weight:700;color:#55555f">لم يتم العثور على هذا البروفايل</div>
-    <div style="margin-top:8px">قد يكون الحساب غير متاح أو تم حذفه.</div>
-    <a href="/" class="btn-primary" style="display:inline-block;margin-top:20px;padding:10px 22px;border-radius:12px;background:var(--orange,#F36418);color:#fff;text-decoration:none">العودة للرئيسية</a>
+    <div style="font-size:18px;font-weight:700;color:#55555f">${t('ownerProfile.notFoundTitle')}</div>
+    <div style="margin-top:8px">${t('ownerProfile.notFoundBody')}</div>
+    <a href="/" class="btn-primary" style="display:inline-block;margin-top:20px;padding:10px 22px;border-radius:12px;background:var(--orange,#F36418);color:#fff;text-decoration:none">${t('ownerProfile.backHomeBtn')}</a>
   </div>`;
 }
 
@@ -1714,8 +1720,8 @@ function renderOwnerProfile(data) {
   const bazaars = data.bazaars || [];
   const roles = Array.isArray(p.roles) ? p.roles : [];
 
-  const displayName = p.entity_name || p.full_name || 'ناشر داخل مكاني سبوت';
-  const initial = (displayName.trim()[0] || 'م');
+  const displayName = p.entity_name || p.full_name || t('ownerProfile.defaultDisplayName');
+  const initial = (displayName.trim()[0] || t('ownerProfile.defaultDisplayName').trim()[0]);
   _oppShareName = displayName;
 
   // الأفاتار: avatar_url من profiles (المصدر الموحد) ثم org_logo كاحتياط
@@ -1728,8 +1734,8 @@ function renderOwnerProfile(data) {
 
   // badges الأدوار
   const roleMap = {
-    space_owner:      { ico: '🏢', label: 'صاحب مساحات' },
-    bazaar_organizer: { ico: '🎪', label: 'منظم فعاليات' },
+    space_owner:      { ico: '🏢', label: t('ownerProfile.roleSpaceOwner') },
+    bazaar_organizer: { ico: '🎪', label: t('ownerProfile.roleBazaarOrganizer') },
   };
   const effectiveRoles = roles.length ? roles : (spaces.length ? ['space_owner'] : (bazaars.length ? ['bazaar_organizer'] : []));
   const roleBadges = effectiveRoles.map(r => {
@@ -1744,48 +1750,48 @@ function renderOwnerProfile(data) {
   const orgRating = data.organizerRating;
   const orgAvg = orgRating?.total ? Number(orgRating.avg_rating).toFixed(1) : null;
   const statsHtml = `
-    ${spaces.length  ? `<div class="opp-stat"><b>${spaces.length}</b><span>مساحة منشورة</span></div>` : ''}
-    ${bazaars.length ? `<div class="opp-stat"><b>${bazaars.length}</b><span>بازار / فعالية</span></div>` : ''}
-    ${orgAvg ? `<div class="opp-stat"><b>${orgAvg} ⭐</b><span>متوسط التقييم كمنظم</span></div>` : ''}
+    ${spaces.length  ? `<div class="opp-stat"><b>${spaces.length}</b><span>${t('ownerProfile.statSpacesLabel', { count: spaces.length })}</span></div>` : ''}
+    ${bazaars.length ? `<div class="opp-stat"><b>${bazaars.length}</b><span>${t('ownerProfile.statBazaarsLabel', { count: bazaars.length })}</span></div>` : ''}
+    ${orgAvg ? `<div class="opp-stat"><b>${orgAvg} ⭐</b><span>${t('ownerProfile.statAvgRating')}</span></div>` : ''}
     ${p.region ? `<div class="opp-stat"><b>📍</b><span>${_oppEsc(p.region)}</span></div>` : ''}`;
 
   // روابط التواصل (إن وُجدت من organizer_profiles)
   const social = [
-    p.whatsapp      ? `<a href="https://wa.me/${_oppEsc(String(p.whatsapp).replace(/[^0-9]/g,''))}" target="_blank" rel="noopener" title="واتساب">🟢</a>` : '',
-    p.instagram_url ? `<a href="${_oppEsc(p.instagram_url)}" target="_blank" rel="noopener" title="إنستغرام">📸</a>` : '',
-    p.facebook_url  ? `<a href="${_oppEsc(p.facebook_url)}" target="_blank" rel="noopener" title="فيسبوك">📘</a>` : '',
-    p.tiktok_url    ? `<a href="${_oppEsc(p.tiktok_url)}" target="_blank" rel="noopener" title="تيك توك">🎵</a>` : '',
+    p.whatsapp      ? `<a href="https://wa.me/${_oppEsc(String(p.whatsapp).replace(/[^0-9]/g,''))}" target="_blank" rel="noopener" title="${t('ownerProfile.socialWhatsapp')}">🟢</a>` : '',
+    p.instagram_url ? `<a href="${_oppEsc(p.instagram_url)}" target="_blank" rel="noopener" title="${t('ownerProfile.socialInstagram')}">📸</a>` : '',
+    p.facebook_url  ? `<a href="${_oppEsc(p.facebook_url)}" target="_blank" rel="noopener" title="${t('ownerProfile.socialFacebook')}">📘</a>` : '',
+    p.tiktok_url    ? `<a href="${_oppEsc(p.tiktok_url)}" target="_blank" rel="noopener" title="${t('ownerProfile.socialTiktok')}">🎵</a>` : '',
   ].filter(Boolean).join('');
 
   // قسم المساحات
   const spacesSection = roles.includes('space_owner') || spaces.length ? `
     <div class="opp-section">
-      <div class="opp-section-title">🏢 المساحات المنشورة</div>
+      <div class="opp-section-title">${t('ownerProfile.spacesSectionTitle')}</div>
       ${spaces.length
         ? `<div class="opp-grid">${spaces.map(_oppSpaceCard).join('')}</div>`
-        : `<div class="opp-empty">لا توجد مساحات منشورة حالياً.</div>`}
+        : `<div class="opp-empty">${t('ownerProfile.noSpacesYet')}</div>`}
     </div>` : '';
 
   // قسم البازارات
   const bazaarsSection = roles.includes('bazaar_organizer') || bazaars.length ? `
     <div class="opp-section">
-      <div class="opp-section-title">🎪 البازارات والفعاليات</div>
+      <div class="opp-section-title">${t('ownerProfile.bazaarsSectionTitle')}</div>
       ${bazaars.length
         ? `<div class="opp-grid">${bazaars.map(_oppBazaarCard).join('')}</div>`
-        : `<div class="opp-empty">لا توجد فعاليات منشورة حالياً.</div>`}
+        : `<div class="opp-empty">${t('ownerProfile.noBazaarsYet')}</div>`}
     </div>` : '';
 
   root.innerHTML = `
     <div class="opp-cover" ${coverStyle}>
-      <button class="opp-back" onclick="oppGoBack()" aria-label="رجوع">→ رجوع</button>
-      ${canShare ? `<button class="opp-share" onclick="shareOwnerProfile()" aria-label="مشاركة البروفايل" title="مشاركة البروفايل">🔗 مشاركة</button>` : ''}
+      <button class="opp-back" onclick="oppGoBack()" aria-label="${t('ownerProfile.backAria')}">${t('ownerProfile.backBtn')}</button>
+      ${canShare ? `<button class="opp-share" onclick="shareOwnerProfile()" aria-label="${t('ownerProfile.shareProfileAria')}" title="${t('ownerProfile.shareProfileAria')}">${t('ownerProfile.shareProfileBtn')}</button>` : ''}
     </div>
     <div class="opp-body">
       <div class="opp-head">
         ${avatarHtml}
         <div class="opp-headinfo">
-          <div class="opp-name">${_oppEsc(displayName)}${p.is_verified ? '<span class="opp-verified" title="حساب موثّق">✔️</span>' : ''}</div>
-          <div class="opp-type">${_oppEsc(p.entity_type || 'ناشر داخل المنصة')}</div>
+          <div class="opp-name">${_oppEsc(displayName)}${p.is_verified ? `<span class="opp-verified" title="${t('ownerProfile.verifiedTitle')}">✔️</span>` : ''}</div>
+          <div class="opp-type">${_oppEsc(p.entity_type || t('ownerProfile.defaultEntityType'))}</div>
         </div>
       </div>
       ${roleBadges ? `<div class="opp-rolebadges">${roleBadges}</div>` : ''}
@@ -1796,18 +1802,18 @@ function renderOwnerProfile(data) {
       ${bazaarsSection}
     </div>`;
 
-  document.title = `${displayName} — مكاني سبوت`;
+  document.title = `${displayName} — ${t('brand')}`;
 }
 
 function _oppSpaceCard(s) {
   const img = s.image_url || (Array.isArray(s.extra_images) && s.extra_images[0]) || '';
   const imgStyle = img ? `style="background-image:url('${_oppEsc(img)}')"` : '';
   const emoji = !img ? (s.icon_emoji || '🏢') : '';
-  const price = s.min_price ? `<span class="opp-card-price">من ${Number(s.min_price).toLocaleString('ar-EG')} ج</span>` : '';
+  const price = s.min_price ? `<span class="opp-card-price">${t('ownerProfile.priceFrom', { price: _appFmtPrice(s.min_price) })}</span>` : '';
   return `<a class="opp-card" href="/spaces/?space=${_oppEsc(s.id)}">
     <div class="opp-card-img" ${imgStyle}>${emoji}</div>
     <div class="opp-card-body">
-      <div class="opp-card-name">${_oppEsc(s.name || 'مساحة')}</div>
+      <div class="opp-card-name">${_oppEsc(s.name || t('ownerProfile.defaultSpaceName'))}</div>
       <div class="opp-card-meta"><span>${_oppEsc(s.region || s.type || '')}</span>${price}</div>
     </div>
   </a>`;
@@ -1817,15 +1823,15 @@ function _oppBazaarCard(b) {
   const img = b.event_image_url || b.image || '';
   const imgStyle = img ? `style="background-image:url('${_oppEsc(img)}')"` : '';
   const emoji = !img ? '🎪' : '';
-  const price = b.price_per_slot ? `<span class="opp-card-price">${Number(b.price_per_slot).toLocaleString('ar-EG')} ج/يوم</span>` : '';
+  const price = b.price_per_slot ? `<span class="opp-card-price">${_appFmtPrice(b.price_per_slot)}${t('ownerProfile.perDay')}</span>` : '';
   let dateLabel = '';
   if (b.date_start) {
-    try { dateLabel = new Date(b.date_start).toLocaleDateString('ar-EG', { month: 'short', year: 'numeric' }); } catch (e) {}
+    try { dateLabel = new Date(b.date_start).toLocaleDateString(_appLocale(), { month: 'short', year: 'numeric' }); } catch (e) {}
   }
   return `<a class="opp-card" href="/bazaars/?bazaar=${_oppEsc(b.id)}">
     <div class="opp-card-img" ${imgStyle}>${emoji}</div>
     <div class="opp-card-body">
-      <div class="opp-card-name">${_oppEsc(b.name || 'بازار')}</div>
+      <div class="opp-card-name">${_oppEsc(b.name || t('ownerProfile.defaultBazaarName'))}</div>
       <div class="opp-card-meta"><span>${_oppEsc(b.venue_name || b.region || dateLabel)}</span>${price}</div>
     </div>
   </a>`;
@@ -1857,17 +1863,17 @@ async function openBooking(spaceId) {
 
   document.getElementById('msi-name').textContent = s.name;
   document.getElementById('msi-meta').innerHTML =
-    `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(selPrice).toLocaleString('ar-EG')} ج/شهر</strong>`;
+    `📍 ${s.loc} · <strong style="color:var(--orange)">${_appFmtPrice(selPrice)}${t('spaces:card.perMonth')}</strong>`;
 
   const sizeSelect = document.getElementById('bk-size');
-  sizeSelect.innerHTML = '<option value="">اختر الحجم</option>' +
+  sizeSelect.innerHTML = `<option value="">${t('bookingModal.sizeChoosePlaceholder')}</option>` +
     sizesClean.map(sz => `<option value="${sz}" ${sz === selSize ? 'selected' : ''}>${sz}</option>`).join('') +
-    '<option value="مخصص">مخصص — هحدده لاحقاً</option>';
+    `<option value="مخصص">${t('spaces:bookingModal.customSize')}</option>`;
 
   sizeSelect.onchange = function () {
     const p = sizePrices[this.value] || s.price;
     document.getElementById('msi-meta').innerHTML =
-      `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(p).toLocaleString('ar-EG')} ج/شهر</strong>`;
+      `📍 ${s.loc} · <strong style="color:var(--orange)">${_appFmtPrice(p)}${t('spaces:card.perMonth')}</strong>`;
   };
 
   if (currentUser) {
@@ -1935,18 +1941,18 @@ async function submitBooking() {
   const notes = document.getElementById('bk-notes').value.trim();
 
   // ── Validation ──────────────────────────────────────────────
-  if (!name) { showFormError('من فضلك ادخل اسمك الكريم'); return; }
+  if (!name) { showFormError(t('spaces:validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
-    showFormError('من فضلك ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    showFormError(t('spaces:validation.phoneInvalid')); return;
   }
-  if (!actBtn) { showFormError('من فضلك اختار نوع نشاطك التجاري'); return; }
-  if (!currentUser) { showFormError('يجب تسجيل الدخول لإرسال طلب الحجز'); return; }
+  if (!actBtn) { showFormError(t('spaces:validation.activityRequired')); return; }
+  if (!currentUser) { showFormError(t('spaces:validation.loginRequiredBooking')); return; }
 
   document.getElementById('bk-error').style.display = 'none';
 
   const submitBtn = document.querySelector('#modal-form-wrap .btn-primary');
   const origText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '⏳ جاري الإرسال…';
+  submitBtn.innerHTML = t('spaces:auth2.sending');
   submitBtn.disabled = true;
   submitBtn.style.opacity = '0.7';
 
@@ -2092,11 +2098,11 @@ function setNavUser(user, profile) {
     guestEl.style.display = 'flex';
     loggedEl.style.display = 'none';
   } else {
-    const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+    const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || t('spaces:userNav.defaultName');
     const email = user.email || '';
     const initial = name.trim()[0] || '؟';
     const caps = getAccountCapabilities(profile);
-    const roleLabel = caps.isOwner ? 'صاحب مساحة' : caps.isTenant ? 'مستأجر' : 'مستخدم';
+    const roleLabel = caps.isOwner ? t('spaces:userNav.roleOwner') : caps.isTenant ? t('spaces:userNav.roleTenant') : t('spaces:userNav.roleUser');
 
     guestEl.style.display = 'none';
     loggedEl.style.display = 'flex';
@@ -2144,19 +2150,31 @@ function setNavUser(user, profile) {
 
   if (bnUserIcon && bnUserLabel) {
     if (user) {
-      const initial = (profile?.full_name || user.email || 'م')[0].toUpperCase();
+      const initial = (profile?.full_name || user.email || t('spaces:userNav.defaultName'))[0].toUpperCase();
       bnUserIcon.innerHTML = currentAvatarUrl
         ? `<img src="${currentAvatarUrl}" style="width:22px;height:22px;border-radius:50%;object-fit:cover" onerror="this.outerHTML='<span style=\\'width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;\\'>${initial}</span>'">`
         : `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
-      bnUserLabel.textContent = 'حسابي';
+      bnUserLabel.textContent = t('bottomNav.myAccount');
       const descEl = document.getElementById('bn-user-desc');
-      if (descEl) descEl.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
+      if (descEl) descEl.textContent = profile?.full_name?.split(' ')[0] || t('bottomNav.welcome');
     } else {
       bnUserIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
-      bnUserLabel.textContent = 'دخول';
+      bnUserLabel.textContent = t('bottomNav.login');
+      const descEl = document.getElementById('bn-user-desc');
+      if (descEl) descEl.textContent = t('bottomNav.loginDesc');
     }
   }
 }
+
+/* 🌐 i18n race-condition guard: setNavUser()/updateMainSlider() قد تُستدعى أثناء
+   DOMContentLoaded قبل ما initI18n() يخلص تحميل الترجمة (Supabase session check
+   محلي وسريع غالبًا، بيسبق fetch ملفات locales/*.json) — فيظهر مفتاح خام بدل
+   النص المترجم. نعيد رسمهم عند makani:locale-changed (بما فيها التطلقة الأولى
+   initial:true من initI18n نفسها) لضمان تصحيح أي رسم مبكر انكسر بسبب السباق. */
+document.addEventListener('makani:locale-changed', () => {
+  setNavUser(currentUser, currentProfile);
+  updateMainSlider();
+});
 
 
 /* ================================================================
@@ -2194,18 +2212,18 @@ async function doEmailLogin() {
   const email = document.getElementById('li-email')?.value.trim();
   const pass = document.getElementById('li-pass')?.value;
 
-  if (!email) { showAuthAlert('login-alert', 'error', 'من فضلك ادخل البريد الإلكتروني'); return; }
-  if (!pass) { showAuthAlert('login-alert', 'error', 'من فضلك ادخل كلمة المرور'); return; }
+  if (!email) { showAuthAlert('login-alert', 'error', t('spaces:auth2.emailRequired')); return; }
+  if (!pass) { showAuthAlert('login-alert', 'error', t('spaces:auth2.passwordRequired')); return; }
 
   setBtnLoading('btn-login-submit', true);
   const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
-  setBtnLoading('btn-login-submit', false, 'تسجيل الدخول ←');
+  setBtnLoading('btn-login-submit', false, t('auth.login.submit'));
 
   if (error) {
     const msgs = {
-      'Invalid login credentials': 'البريد الإلكتروني أو كلمة المرور غلط',
-      'Email not confirmed': 'لازم تأكد بريدك الإلكتروني الأول — فتش في الـ Inbox',
-      'Too many requests': 'كتر طلبات تسجيل الدخول — انتظر قليلاً وحاول تاني',
+      'Invalid login credentials': t('spaces:auth2.loginErrors.invalidCredentials'),
+      'Email not confirmed': t('spaces:auth2.loginErrors.emailNotConfirmed'),
+      'Too many requests': t('spaces:auth2.loginErrors.tooManyRequests'),
     };
     showAuthAlert('login-alert', 'error', msgs[error.message] || error.message);
     return;
@@ -2233,15 +2251,15 @@ async function doEmailSignup() {
   const role = document.getElementById('su-role')?.value;
   const city = document.getElementById('su-city')?.value;
 
-  if (!name) { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل اسمك الكريم'); return; }
+  if (!name) { showAuthAlert('signup-alert', 'error', t('spaces:validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
-    showAuthAlert('signup-alert', 'error', 'ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    showAuthAlert('signup-alert', 'error', t('spaces:auth2.phoneRequired')); return;
   }
-  if (!email) { showAuthAlert('signup-alert', 'error', 'من فضلك ادخل البريد الإلكتروني'); return; }
+  if (!email) { showAuthAlert('signup-alert', 'error', t('spaces:auth2.emailRequired')); return; }
   if (!pass || pass.length < 8) {
-    showAuthAlert('signup-alert', 'error', 'كلمة المرور لازم تكون ٨ أحرف على الأقل'); return;
+    showAuthAlert('signup-alert', 'error', t('spaces:auth2.passwordTooShort')); return;
   }
-  if (!role) { showAuthAlert('signup-alert', 'error', 'من فضلك اختار نوع حسابك'); return; }
+  if (!role) { showAuthAlert('signup-alert', 'error', t('spaces:auth2.roleRequired')); return; }
 
   setBtnLoading('btn-signup-submit', true);
 
@@ -2254,15 +2272,15 @@ async function doEmailSignup() {
     }
   });
 
-  setBtnLoading('btn-signup-submit', false, 'إنشاء حساب ←');
+  setBtnLoading('btn-signup-submit', false, t('auth.signup.submit'));
 
   if (error) {
     const msgs = {
-      'User already registered': 'البريد ده مسجّل بالفعل — سجّل دخولك',
-      'Password should be at least 6 characters': 'كلمة المرور قصيرة — لازم ٦ أحرف على الأقل',
+      'User already registered': t('spaces:auth2.signupErrors.alreadyRegistered'),
+      'Password should be at least 6 characters': t('spaces:auth2.signupErrors.passwordTooShort6'),
     };
     const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
-      ? 'في طلبات كتير اتبعتت على البريد ده خلال وقت قصير — استنى شوية وحاول تاني.'
+      ? t('spaces:auth2.signupErrors.rateLimited')
       : null;
     showAuthAlert('signup-alert', 'error', msgs[error.message] || friendly || error.message);
     return;
@@ -2299,18 +2317,18 @@ async function resendConfirmEmail() {
   clearAuthAlert('confirm-alert');
   setBtnLoading('btn-resend-confirm', true);
   const { error } = await sbClient.auth.resend({ type: 'signup', email });
-  setBtnLoading('btn-resend-confirm', false, 'إعادة إرسال رسالة التأكيد');
+  setBtnLoading('btn-resend-confirm', false, t('auth.confirm.resend'));
 
   if (error) {
     const friendly = /rate limit|security purposes|after \d+ seconds/i.test(error.message || '')
-      ? 'لسه من لحظات بعتنا الرسالة — استنى شوية وحاول تاني.'
+      ? t('spaces:auth2.resendRateLimited')
       : error.message;
     showAuthAlert('confirm-alert', 'error', friendly);
     return;
   }
 
   resendConfirmCooldownUntil = Date.now() + 60000;
-  showAuthAlert('confirm-alert', 'success', 'تم إرسال الرسالة تاني. لو لسه ملقتهاش خلال كذا دقيقة، تواصل معانا.');
+  showAuthAlert('confirm-alert', 'success', t('spaces:auth2.resendSuccess'));
 }
 
 
@@ -2330,7 +2348,7 @@ async function authWithGoogle() {
   });
 
   if (error) {
-    showAuthAlert('login-alert', 'error', 'في مشكلة مع Google: ' + error.message);
+    showAuthAlert('login-alert', 'error', t('spaces:auth2.googleError', { error: error.message }));
   }
 }
 
@@ -2371,7 +2389,7 @@ async function loadDashboardData(user) {
   currentAvatarUrl = profileRes.data?.avatar_url || orgProfileRes.data?.avatar_url || null;   // 🪪 المصدر الموحّد: profiles أولاً
 
   const profile = profileRes.data;
-  const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'مستخدم';
+  const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || t('spaces:userNav.defaultName');
   const firstName = name.split(' ')[0];
 
   const el = document.getElementById('dash-firstname');
@@ -2413,8 +2431,8 @@ function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
 
   if (isVerified) {
     const countLabel = !bazaarCount
-      ? 'لم تنظّم أي بازار بعد'
-      : `لديك ${bazaarCount} ${bazaarCount === 1 ? 'بازار' : 'بازارات'} على مكاني Spot`;
+      ? t('tenantDash.bazaarCta.noneYet')
+      : t('tenantDash.bazaarCta.countLabel', { count: bazaarCount });
     wrap.innerHTML = `
       <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);
                   border:1.5px solid var(--orange);border-radius:16px;padding:18px 20px;
@@ -2423,7 +2441,7 @@ function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:28px">🎪</span>
           <div>
-            <div style="font-weight:800;color:var(--dark);font-size:14px">أنت منظّم بازارات موثّق ✓</div>
+            <div style="font-weight:800;color:var(--dark);font-size:14px">${t('tenantDash.bazaarCta.verifiedTitle')}</div>
             <div style="font-size:12px;color:var(--ink3);margin-top:3px">${countLabel}</div>
           </div>
         </div>
@@ -2431,7 +2449,7 @@ function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
           style="background:var(--orange);color:#fff;border:none;padding:10px 20px;
                  border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
-          ⚙️ الانتقال إلى لوحة إدارة البازارات ←
+          ${t('tenantDash.bazaarCta.manageBtnText')}
         </button>
       </div>`;
     return;
@@ -2443,8 +2461,8 @@ function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
                   padding:16px 20px;display:flex;align-items:center;gap:14px">
         <span style="font-size:26px">⏳</span>
         <div>
-          <div style="font-weight:800;color:#d97706;font-size:13px">طلب التوثيق كمنظّم بزار قيد المراجعة</div>
-          <div style="font-size:12px;color:#d97706;opacity:.8;margin-top:3px">سنُبلّغك فور الموافقة</div>
+          <div style="font-weight:800;color:#d97706;font-size:13px">${t('tenantDash.bazaarCta.pendingTitle')}</div>
+          <div style="font-size:12px;color:#d97706;opacity:.8;margin-top:3px">${t('tenantDash.bazaarCta.pendingSub')}</div>
         </div>
       </div>`;
     return;
@@ -2457,16 +2475,15 @@ function renderBazaarCTA(isVerified, reqStatus, bazaarCount) {
                 padding:28px 24px;text-align:center">
       <div style="font-size:42px;margin-bottom:12px">🎪</div>
       <h3 style="font-size:17px;font-weight:900;color:var(--dark);margin:0 0 10px">
-        هل تريد تنظيم بازار؟
+        ${t('tenantDash.bazaarCta.promptTitle')}
       </h3>
       <p style="font-size:13px;color:var(--ink2);margin:0 0 20px;line-height:1.8;max-width:420px;margin-inline:auto">
-        وثّق حسابك كمنظّم وابدأ في نشر بازاراتك على مكاني Spot —
-        شارة ✓ بتظهر عندك وبتكسب ثقة العارضين.
+        ${t('tenantDash.bazaarCta.promptBody')}
       </p>
       <a href="/bazaars/verification.html" class="btn btn-primary"
          style="padding:12px 32px;display:inline-block;font-size:14px;
                 text-decoration:none;border-radius:50px">
-        🎪 التقدّم بطلب لتصبح منظم بازارات ←
+        ${t('tenantDash.bazaarCta.applyBtn')}
       </a>
     </div>`;
 }
@@ -2494,8 +2511,7 @@ async function goToOwnerDashboard() {
   if (!session) {
     const onLoginPage = document.getElementById('pg-login')?.classList.contains('active');
     if (onLoginPage) {
-      showAuthAlert('login-alert', 'info',
-        'سجّل دخولك أولاً من الأعلى — أصحاب المساحات ينتقلون للوحتهم مباشرة بعد الدخول');
+      showAuthAlert('login-alert', 'info', t('ownerGateModal.loginPageHint'));
       document.getElementById('li-email')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => document.getElementById('li-email')?.focus(), 400);
     } else {
@@ -2508,7 +2524,7 @@ async function goToOwnerDashboard() {
     .from('profiles').select('role').eq('id', session.user.id).single();
 
   if (!profile) {
-    showAuthAlert('login-alert', 'info', 'يتم تجهيز حسابك — أعد المحاولة بعد لحظة.');
+    showAuthAlert('login-alert', 'info', t('ownerGateModal.profilePreparing'));
     return;
   }
 
@@ -2546,9 +2562,9 @@ function renderUpgradeSection(profile) {
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:28px">🏬</span>
           <div>
-            <div style="font-weight:800;color:#2e7d32;font-size:14px">أنت صاحب مساحة!</div>
+            <div style="font-weight:800;color:#2e7d32;font-size:14px">${t('tenantDash.upgrade.ownerTitle')}</div>
             <div style="font-size:12px;color:#2e7d32;opacity:.75;margin-top:3px">
-              انتقل إلى لوحة تحكم أصحاب المساحات الخاصة بك
+              ${t('tenantDash.upgrade.ownerSub')}
             </div>
           </div>
         </div>
@@ -2556,7 +2572,7 @@ function renderUpgradeSection(profile) {
           style="background:#16a34a;color:#fff;border:none;padding:10px 20px;
                  border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
-          🏬 لوحة أصحاب المساحات ←
+          ${t('tenantDash.upgrade.ownerBtnText')}
         </button>
       </div>`;
   } else {
@@ -2569,9 +2585,9 @@ function renderUpgradeSection(profile) {
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:26px">🚀</span>
           <div>
-            <div style="font-weight:800;color:var(--orange);font-size:13px">عندك مساحة للتأجير؟</div>
+            <div style="font-weight:800;color:var(--orange);font-size:13px">${t('tenantDash.upgrade.tenantTitle')}</div>
             <div style="font-size:12px;color:var(--ink3);margin-top:3px">
-              اطلب ترقية حسابك وابدأ في عرض مساحاتك على المنصة
+              ${t('tenantDash.upgrade.tenantSub')}
             </div>
           </div>
         </div>
@@ -2579,7 +2595,7 @@ function renderUpgradeSection(profile) {
           style="background:var(--orange);color:#fff;border:none;padding:10px 20px;
                  border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;
                  font-size:13px;cursor:pointer;white-space:nowrap">
-          🏢 طلب تحويل الحساب
+          ${t('tenantDash.upgrade.tenantBtnText')}
         </button>
       </div>`;
   }
@@ -2592,7 +2608,7 @@ async function requestOwnerUpgrade() {
   if (!sbClient || !currentUser) return;
 
   const btn = document.getElementById('btn-upgrade-request');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('spaces:auth2.sending'); }
 
   const { error } = await sbClient
     .from('upgrade_requests')
@@ -2604,11 +2620,11 @@ async function requestOwnerUpgrade() {
     });
 
   if (error) {
-    if (btn) { btn.disabled = false; btn.textContent = '🚀 طلب ترقية الحساب'; }
-    showDashAlert('error', 'تعذّر إرسال الطلب — ' + (error.message || 'حاول مجدداً'));
+    if (btn) { btn.disabled = false; btn.textContent = t('tenantDash.upgrade.requestFailedRetryBtn'); }
+    showDashAlert('error', t('tenantDash.upgrade.requestFailed', { msg: error.message || t('tenantDash.upgrade.requestFailedDefault') }));
   } else {
-    if (btn) { btn.disabled = true; btn.textContent = '✅ تم إرسال الطلب'; }
-    showDashAlert('success', '✅ تم إرسال طلبك! سنراجعه ونتواصل معك خلال 24 ساعة.');
+    if (btn) { btn.disabled = true; btn.textContent = t('tenantDash.upgrade.sentBtnText'); }
+    showDashAlert('success', t('tenantDash.upgrade.successMsg'));
   }
 }
 
@@ -2679,16 +2695,16 @@ async function loadUserBookings(userId) {
     const normalizedBazaars = [...bazaarById.values()].map(b => {
       const bazaar = BAZAARS.find(x => String(x.id) === String(b.bazaar_id));
       const price = bazaar?.price_per_slot
-        ? Number(bazaar.price_per_slot).toLocaleString('ar-EG') + ' ج / مكان'
-        : 'بازار';
+        ? Number(bazaar.price_per_slot).toLocaleString(_appLocale()) + ' ' + t('tenantDash.bookings.perSlot')
+        : t('tenantDash.bookings.kindBazaar');
       return {
         kind: 'bazaar',
-        title: bazaar?.name || b.bazaar_name || 'حجز بازار',
+        title: bazaar?.name || b.bazaar_name || t('tenantDash.bookings.bazaarBookingDefault'),
         loc: bazaar?.location || bazaar?.region || '—',
         price,
         status: b.status || 'confirmed',
         activity: b.business_name || b.activity || '—',
-        size: b.slot_id ? 'مكان رقم ' + b.slot_id : 'مكان بازار',
+        size: b.slot_id ? t('tenantDash.bookings.spotNumPrefix') + ' ' + b.slot_id : t('tenantDash.bookings.bazaarSpot'),
         duration: bazaar?.date_start || '—',
         created_at: b.created_at,
       };
@@ -2704,21 +2720,21 @@ async function loadUserBookings(userId) {
     if (!bookings.length) {
       contEl.innerHTML = `
         <div class="no-bookings">
-          لا يوجد حجوزات بعد —
+          ${t('tenantDash.bookings.emptyText')}
           <a onclick="showPage('home');setTimeout(scrollToSearch,150)" style="color:var(--orange);cursor:pointer">
-            ابدأ دوّر على مساحة ←
+            ${t('tenantDash.bookings.emptyCta')}
           </a>
         </div>`;
       return;
     }
 
     const statusMap = {
-      pending:         { label: 'قيد المراجعة ⏳',      cls: 'status-pending'   },
-      viewing_pending: { label: 'طلب معاينة ⏳',         cls: 'status-pending'   },
-      waitlist:        { label: 'قائمة الانتظار ⏳',     cls: 'status-waitlist'  },
-      confirmed:       { label: 'مؤكد ✅',              cls: 'status-confirmed' },
-      cancelled:       { label: 'ملغي ❌',               cls: 'status-cancelled' },
-      completed:       { label: 'مكتمل 🏁',             cls: 'status-confirmed' },
+      pending:         { label: t('tenantDash.bookings.statusPending'),        cls: 'status-pending'   },
+      viewing_pending: { label: t('tenantDash.bookings.statusViewingPending'), cls: 'status-pending'   },
+      waitlist:        { label: t('tenantDash.bookings.statusWaitlist'),       cls: 'status-waitlist'  },
+      confirmed:       { label: t('tenantDash.bookings.statusConfirmed'),      cls: 'status-confirmed' },
+      cancelled:       { label: t('tenantDash.bookings.statusCancelled'),      cls: 'status-cancelled' },
+      completed:       { label: t('tenantDash.bookings.statusCompleted'),      cls: 'status-confirmed' },
     };
 
     // بناء HTML لكل حجز
@@ -2727,9 +2743,9 @@ async function loadUserBookings(userId) {
         ? statusMap.waitlist
         : (statusMap[b.status] || statusMap.pending);
       const dateStr = b.created_at
-        ? new Date(b.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
+        ? new Date(b.created_at).toLocaleDateString(_appLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
-      const kindLabel = b.kind === 'bazaar' ? 'بازار' : 'مساحة';
+      const kindLabel = b.kind === 'bazaar' ? t('tenantDash.bookings.kindBazaar') : t('tenantDash.bookings.kindSpace');
       const canWithdraw = b.kind === 'space' && b.id &&
         (b.isWaitlist || b.status === 'pending' || b.status === 'viewing_pending');
       return `
@@ -2748,7 +2764,7 @@ async function loadUserBookings(userId) {
           <span>📅 ${dateStr}</span>
         </div>
         ${canWithdraw ? `<div class="booking-card-actions">
-          <button class="btn-withdraw" onclick="withdrawBooking('${b.id}')">↩ سحب الطلب</button>
+          <button class="btn-withdraw" onclick="withdrawBooking('${b.id}')">${t('tenantDash.bookings.withdrawBtn')}</button>
         </div>` : ''}
       </div>`;
     });
@@ -2760,32 +2776,32 @@ async function loadUserBookings(userId) {
     contEl.innerHTML = visible +
       (hasMore ? `<div class="bookings-extra" id="bookings-extra" style="display:none">${hidden}</div>
         <button class="booking-collapse-btn" id="bookings-toggle" onclick="toggleBookings(${bookings.length})">
-          ↓ عرض جميع الحجوزات (${bookings.length})
+          ${t('tenantDash.bookings.showAllBtn', { count: bookings.length })}
         </button>` : '');
 
   } catch (e) {
-    if (contEl) contEl.innerHTML = '<div class="no-bookings">تعذّر تحميل الحجوزات</div>';
+    if (contEl) contEl.innerHTML = `<div class="no-bookings">${t('tenantDash.bookings.loadFailed')}</div>`;
   }
 }
 
 async function withdrawBooking(bookingId) {
   if (!sbClient || !bookingId) return;
-  if (!confirm('هل تريد سحب طلب الحجز هذا؟\nبعد السحب لن يظهر الطلب في قائمة المراجعة لصاحب المساحة.')) return;
+  if (!confirm(t('tenantDash.bookings.withdrawConfirm'))) return;
 
   const btn = document.querySelector(`[onclick="withdrawBooking('${bookingId}')"]`);
-  if (btn) { btn.disabled = true; btn.textContent = 'جاري السحب…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('tenantDash.bookings.withdrawing'); }
 
   try {
     const { data: { user }, error: authErr } = await sbClient.auth.getUser();
-    if (authErr || !user) throw new Error('يجب تسجيل الدخول أولاً');
+    if (authErr || !user) throw new Error(t('tenantDash.bookings.loginRequiredFirst'));
 
     const { error } = await sbClient.rpc('user_cancel_booking', { p_booking_id: bookingId });
     if (error) throw error;
 
     await loadUserBookings(user.id);
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = '↩ سحب الطلب'; }
-    alert('تعذّر سحب الطلب: ' + (e.message || 'خطأ غير معروف'));
+    if (btn) { btn.disabled = false; btn.textContent = t('tenantDash.bookings.withdrawBtn'); }
+    alert(t('tenantDash.bookings.withdrawFailed', { msg: e.message || t('tenantDash.bookings.unknownError') }));
   }
 }
 
@@ -2846,8 +2862,8 @@ function toggleBookings(total) {
   const isHidden = extra.style.display === 'none';
   extra.style.display = isHidden ? '' : 'none';
   btn.innerHTML = isHidden
-    ? '↑ إخفاء الحجوزات القديمة'
-    : `↓ عرض جميع الحجوزات (${total || ''})`;
+    ? t('tenantDash.bookings.hideOldBtn')
+    : t('tenantDash.bookings.showAllBtn', { count: total || '' });
 }
 
 /* ================================================================
@@ -2863,13 +2879,15 @@ function _escHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-const REP_BADGES = {
-  excellent: { label: 'سمعة ممتازة', emoji: '🏆', cls: 'rep-excellent' },
-  trusted: { label: 'مستأجر موثوق', emoji: '✅', cls: 'rep-trusted' },
-  good: { label: 'سمعة جيدة', emoji: '👍', cls: 'rep-good' },
-  weak: { label: 'تحتاج لتحسين', emoji: '⚠️', cls: 'rep-weak' },
-  new: { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
-};
+function _repBadges() {
+  return {
+    excellent: { label: t('bazaars:profile.reputation.excellent'), emoji: '🏆', cls: 'rep-excellent' },
+    trusted: { label: t('bazaars:profile.reputation.trusted'), emoji: '✅', cls: 'rep-trusted' },
+    good: { label: t('bazaars:profile.reputation.good'), emoji: '👍', cls: 'rep-good' },
+    weak: { label: t('bazaars:profile.reputation.weak'), emoji: '⚠️', cls: 'rep-weak' },
+    new: { label: t('bazaars:profile.reputation.new'), emoji: '✨', cls: 'rep-new' },
+  };
+}
 
 /* نجوم 1-5 للعرض */
 function repStarsHtml(val, size) {
@@ -2899,30 +2917,31 @@ async function loadUserRatings(userId) {
 
     const total = rep?.total || 0;
     const avg = Number(rep?.avg_overall || 0);
-    const badge = REP_BADGES[rep?.badge] || REP_BADGES.new;
+    const badges = _repBadges();
+    const badge = badges[rep?.badge] || badges.new;
 
     /* تحديث بطاقة الإحصائية في الأعلى */
     const statVal = document.getElementById('dash-rep-stat');
     const statSub = document.getElementById('dash-rep-sub');
     if (statVal) statVal.textContent = total ? avg.toFixed(1) : '—';
-    if (statSub) statSub.textContent = total ? `${total} تقييم` : 'لا تقييمات بعد';
+    if (statSub) statSub.textContent = total ? t('tenantDash.ratings.statCountSuffix', { count: total }) : t('tenantDash.ratings.statNoneYet');
 
     if (!total) {
       contEl.innerHTML = `
         <div class="rep-empty">
           <div class="rep-empty-ico">✨</div>
-          <div class="rep-empty-title">لا توجد تقييمات على حسابك بعد</div>
-          <div class="rep-empty-sub">عند تعاملك مع أصحاب المساحات أو منظمي البازارات عبر المنصة، تظهر تقييماتهم لك هنا وتبني سمعتك.</div>
+          <div class="rep-empty-title">${t('tenantDash.ratings.emptyTitle')}</div>
+          <div class="rep-empty-sub">${t('tenantDash.ratings.emptySub')}</div>
         </div>`;
       return;
     }
 
     const critRows = [
-      ['⏰ الالتزام بالمواعيد', rep.avg_commitment],
-      ['🧹 نظافة المكان', rep.avg_cleanliness],
-      ['🤝 حسن التعامل', rep.avg_dealing],
-      ['💳 الالتزام المالي', rep.avg_payment],
-      ['📋 احترام الشروط', rep.avg_rules],
+      [t('bazaars:profile.rateSection.criteria.commitment'), rep.avg_commitment],
+      [t('bazaars:profile.reputation.criteria.cleanliness'), rep.avg_cleanliness],
+      [t('bazaars:profile.rateSection.criteria.dealing'), rep.avg_dealing],
+      [t('bazaars:profile.rateSection.criteria.payment'), rep.avg_payment],
+      [t('bazaars:profile.reputation.criteria.rules'), rep.avg_rules],
     ].filter(r => r[1] != null);
 
     const repPanel = `
@@ -2932,7 +2951,7 @@ async function loadUserRatings(userId) {
           <div class="rep-score">${avg.toFixed(1)}</div>
           <div class="rep-stars">${repStarsHtml(avg, 16)}</div>
           <div class="rep-badge-label">${badge.label}</div>
-          <div class="rep-count">${total} تقييم · 👍 ${rep.positive || 0} · 👎 ${rep.negative || 0}</div>
+          <div class="rep-count">${t('bazaars:profile.reputation.countSuffix', { count: total, positive: rep.positive || 0, negative: rep.negative || 0 })}</div>
         </div>
         ${critRows.length ? `<div class="rep-criteria">
           ${critRows.map(([label, val]) => `
@@ -2945,9 +2964,9 @@ async function loadUserRatings(userId) {
       </div>`;
 
     const listHtml = (list || []).map(r => {
-      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '';
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString(_appLocale()) : '';
       const ctxIcon = r.context_type === 'bazaar' ? '🎪' : '🏬';
-      const roleLbl = r.rater_role === 'organizer' ? 'منظّم بازار' : 'صاحب مساحة';
+      const roleLbl = r.rater_role === 'organizer' ? t('bazaars:profile.reputation.roleOrganizer') : t('bazaars:profile.reputation.roleOwner');
       return `
         <div class="recv-rating-card">
           <div class="recv-rating-head">
@@ -2964,7 +2983,7 @@ async function loadUserRatings(userId) {
     contEl.innerHTML = repPanel + `<div class="recv-ratings-list">${listHtml}</div>`;
 
   } catch (e) {
-    contEl.innerHTML = '<div class="no-bookings">تعذّر تحميل التقييمات</div>';
+    contEl.innerHTML = `<div class="no-bookings">${t('tenantDash.ratings.loadFailed')}</div>`;
   }
 }
 
@@ -2992,7 +3011,7 @@ function setBtnLoading(id, on, orig) {
   const b = document.getElementById(id);
   if (!b) return;
   b.disabled = on;
-  if (on) b.innerHTML = `<span class="spin-sm"></span> جاري التحميل…`;
+  if (on) b.innerHTML = `<span class="spin-sm"></span> ${t('spaces:auth2.loading')}`;
   else if (orig) b.innerHTML = orig;
 }
 
@@ -3046,12 +3065,12 @@ function updateBnUser(user, profile) {
   if (user) {
     const initial = (profile?.full_name || user.email || '؟')[0].toUpperCase();
     icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
-    label.textContent = 'حسابي';
-    if (desc) desc.textContent = profile?.full_name?.split(' ')[0] || 'مرحباً';
+    label.textContent = t('bottomNav.myAccount');
+    if (desc) desc.textContent = profile?.full_name?.split(' ')[0] || t('bottomNav.welcome');
   } else {
     icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
-    label.textContent = 'دخول';
-    if (desc) desc.textContent = 'سجّل أو ادخل';
+    label.textContent = t('bottomNav.login');
+    if (desc) desc.textContent = t('bottomNav.loginDesc');
   }
 }
 
@@ -3105,8 +3124,6 @@ function _normalizeBazaarRow(row) {
 let _inspSpaceId = null;
 let _inspSelDate = null;
 
-const _INSP_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-const _INSP_MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 async function openInspectionModal(spaceId) {
   const s = await findOrFetchSpace(spaceId);
@@ -3121,7 +3138,7 @@ async function openInspectionModal(spaceId) {
   // قائمة الأنشطة
   const actSel = document.getElementById('insp-activity');
   if (actSel) {
-    actSel.innerHTML = '<option value="">اختر نشاطك</option>';
+    actSel.innerHTML = `<option value="">${t('inspectionModal.activityChoosePlaceholder')}</option>`;
     const actList = (ACTIVITIES && ACTIVITIES.length) ? ACTIVITIES : (s.acts || []);
     actList.forEach(a => {
       const opt = document.createElement('option');
@@ -3129,7 +3146,7 @@ async function openInspectionModal(spaceId) {
       actSel.appendChild(opt);
     });
     const other = document.createElement('option');
-    other.value = 'أخرى'; other.textContent = 'أخرى';
+    other.value = t('spaces:validation.otherActivityFallback'); other.textContent = t('spaces:validation.otherActivityFallback');
     actSel.appendChild(other);
   }
 
@@ -3206,15 +3223,15 @@ function _inspSubmitForm() {
   const activity = (document.getElementById('insp-activity')?.value || '').trim();
   const errEl = document.getElementById('insp-error');
 
-  if (!name) { errEl.textContent = '⚠ يرجى إدخال الاسم الكامل'; return; }
-  if (!/^01\d{9}$/.test(phone)) { errEl.textContent = '⚠ رقم الهاتف 11 رقم يبدأ بـ 01'; return; }
-  if (!activity) { errEl.textContent = '⚠ يرجى اختيار النشاط التجاري'; return; }
-  if (!_inspSelDate) { errEl.textContent = '⚠ يرجى اختيار موعد للمعاينة'; return; }
+  if (!name) { errEl.textContent = t('inspectionModal.errNameRequired'); return; }
+  if (!/^01\d{9}$/.test(phone)) { errEl.textContent = t('inspectionModal.errPhoneInvalid'); return; }
+  if (!activity) { errEl.textContent = t('inspectionModal.errActivityRequired'); return; }
+  if (!_inspSelDate) { errEl.textContent = t('inspectionModal.errDateRequired'); return; }
   errEl.textContent = '';
 
   const s = heroItems.find(x => x.id === _inspSpaceId) || mpCurrentItems.find(x => x.id === _inspSpaceId);
   const spaceName = s ? s.name : '—';
-  const waMsg = `مرحباً، عايز أحجز معاينة 🏪\nالاسم: ${name}\nالمساحة: ${spaceName}\nالموعد: ${_inspSelDate}\nالنشاط: ${activity}\nتم التحويل 150 ج على انستاباي`;
+  const waMsg = t('inspectionModal.waMsgTemplate', { name, spaceName, date: _inspSelDate, activity });
   const waLink = document.getElementById('insp-wa-link');
   if (waLink) waLink.href = `https://wa.me/+201148662218?text=${encodeURIComponent(waMsg)}`;
 
@@ -3234,7 +3251,7 @@ function _inspFlashCopy(btnId) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   const orig = btn.textContent;
-  btn.textContent = '✓ تم';
+  btn.textContent = t('inspectionModal.copiedConfirm');
   btn.style.cssText += ';background:rgba(37,211,102,0.2);color:#25D366;border-color:rgba(37,211,102,0.3)';
   setTimeout(() => {
     btn.textContent = orig;
@@ -3258,9 +3275,9 @@ function _inspConfirm() {
   const detailsEl = document.getElementById('insp-confirm-details');
   if (detailsEl) {
     detailsEl.innerHTML = [
-      ['المساحة', spaceName],
-      ['الموعد', _inspSelDate || '—'],
-      ['النشاط', activity],
+      [t('inspectionModal.detailSpace'), spaceName],
+      [t('inspectionModal.detailDate'), _inspSelDate || '—'],
+      [t('inspectionModal.detailActivity'), activity],
     ].map(([k, v]) => `
       <div class="insp-detail-row">
         <span class="insp-detail-key">${k}</span>
@@ -3269,7 +3286,9 @@ function _inspConfirm() {
   }
 
   // رسالة واتساب للأونر
-  const ownerMsg = `🔔 طلب معاينة جديد\n${'─'.repeat(16)}\nرقم الطلب: ${inspId}\nالمساحة: ${spaceName}\nالاسم: ${name}\nالهاتف: ${phone}\nالنشاط: ${activity}\nالموعد المطلوب: ${_inspSelDate || '—'}\n${'─'.repeat(16)}\n⏳ في انتظار تأكيد الدفع`;
+  const ownerMsg = t('inspectionModal.ownerMsgTemplate', {
+    sep: '─'.repeat(16), inspId, spaceName, name, phone, activity, date: _inspSelDate || '—',
+  });
   window.open(`https://wa.me/+201148662218?text=${encodeURIComponent(ownerMsg)}`, '_blank');
 
   _inspGoStep(3);
@@ -3277,20 +3296,20 @@ function _inspConfirm() {
 
 function _inspGetWorkingDays() {
   const result = [];
-  const times = ['11:00 ص', '11:00 ص', '2:00 م'];
+  const times = [t('inspectionModal.timeMorning'), t('inspectionModal.timeMorning'), t('inspectionModal.timeAfternoon')];
   const d = new Date();
   d.setDate(d.getDate() + 2);
   while (result.length < 3) {
     const dow = d.getDay();
     if (dow !== 0 && dow !== 6) {
-      const dayLabel = _INSP_DAY_NAMES[dow];
-      const dateLabel = `${d.getDate()} ${_INSP_MONTH_NAMES[d.getMonth()]}`;
+      const dayLabel = d.toLocaleDateString(_appLocale(), { weekday: 'long' });
+      const dateLabel = d.toLocaleDateString(_appLocale(), { day: 'numeric', month: 'long' });
       const time = times[result.length];
       result.push({
         dayLabel,
         dateLabel,
         time,
-        value: `${dayLabel} ${dateLabel} — الساعة ${time}`,
+        value: `${dayLabel} ${dateLabel} ${t('inspectionModal.atTimePrefix')} ${time}`,
       });
     }
     d.setDate(d.getDate() + 1);
@@ -3357,7 +3376,7 @@ function _pkgCountUp(el) {
 
   const timer = setInterval(() => {
     current = Math.min(current + increment, target);
-    el.textContent = prefix + Math.floor(current).toLocaleString('ar-EG') + suffix;
+    el.textContent = prefix + Math.floor(current).toLocaleString(_appLocale()) + suffix;
     if (current >= target) clearInterval(timer);
   }, step);
 }
@@ -3496,11 +3515,11 @@ function _renderHomeBazaarEmpty(message) {
   container.innerHTML = `
     <div class="bz-home-empty-pro">
       <div class="bz-home-empty-pro-icon">🎪</div>
-      <div class="bz-home-empty-pro-title">لا توجد فعاليات في الوقت الحالي</div>
-      <div class="bz-home-empty-pro-sub">${_escBz(message || 'لا يوجد بازار قادم أو جارٍ الآن — تابعنا لتصلك أحدث الفعاليات فور إضافتها.')}</div>
+      <div class="bz-home-empty-pro-title">${t('bazaarTeaser.emptyTitle')}</div>
+      <div class="bz-home-empty-pro-sub">${_escBz(message || t('bazaarTeaser.emptyDefaultMsg'))}</div>
       <div class="bz-home-empty-pro-actions">
-        <button class="btn btn-primary" onclick="window.location.href='/bazaars/'">عرض جميع البازارات</button>
-        <a class="btn" href="https://wa.me/201103467711?text=${encodeURIComponent('مرحبا، عايز أعرف لما يتضاف بازار جديد')}" target="_blank" rel="noopener noreferrer">تابعنا لمعرفة الجديد</a>
+        <button class="btn btn-primary" onclick="window.location.href='/bazaars/'">${t('bazaarTeaser.viewAllBtn')}</button>
+        <a class="btn" href="https://wa.me/201103467711?text=${encodeURIComponent(t('bazaarTeaser.notifyWaMsg'))}" target="_blank" rel="noopener noreferrer">${t('bazaarTeaser.notifyBtn')}</a>
       </div>
     </div>`;
 }
@@ -3512,7 +3531,7 @@ async function loadHomeFeaturedBazaar() {
   if (!container) return;
 
   if (!sbClient) {
-    _renderHomeBazaarEmpty('تعذّر الاتصال بقاعدة البيانات حاليًا.');
+    _renderHomeBazaarEmpty(t('bazaarTeaser.dbConnectFailed'));
     return;
   }
 
@@ -3543,7 +3562,7 @@ async function loadHomeFeaturedBazaar() {
     });
   } catch (err) {
     console.error('❌ خطأ في تحميل بازار الصفحة الرئيسية:', err.message);
-    _renderHomeBazaarEmpty('تعذّر تحميل البازارات حاليًا — حاول تحديث الصفحة.');
+    _renderHomeBazaarEmpty(t('bazaarTeaser.loadFailed'));
   }
 }
 
@@ -3563,12 +3582,12 @@ function renderFeaturedBazaarCard(featured) {
     const tEnd    = featured.time_end ? featured.time_end.substring(0, 5) : '23:59';
     return `
       <div class="bz-countdown" id="bz-countdown-timer" data-start="${featured.date_start}T${tStart}" data-end="${endDay}T${tEnd}">
-        <div class="bz-countdown-label" id="bz-countdown-label">انطلاق</div>
+        <div class="bz-countdown-label" id="bz-countdown-label">${t('bazaarTeaser.countdownStarts')}</div>
         <div class="bz-countdown-units" id="bz-countdown-units">
-          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-days">00</span><span class="bz-countdown-lbl">أيام</span></div>
-          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-hours">00</span><span class="bz-countdown-lbl">ساعات</span></div>
-          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-minutes">00</span><span class="bz-countdown-lbl">دقائق</span></div>
-          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-seconds">00</span><span class="bz-countdown-lbl">ثواني</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-days">00</span><span class="bz-countdown-lbl">${t('bazaarTeaser.countdownDays')}</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-hours">00</span><span class="bz-countdown-lbl">${t('bazaarTeaser.countdownHours')}</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-minutes">00</span><span class="bz-countdown-lbl">${t('bazaarTeaser.countdownMinutes')}</span></div>
+          <div class="bz-countdown-unit"><span class="bz-countdown-val" id="bz-seconds">00</span><span class="bz-countdown-lbl">${t('bazaarTeaser.countdownSeconds')}</span></div>
         </div>
       </div>`;
   })() : '';
@@ -3585,16 +3604,16 @@ function renderFeaturedBazaarCard(featured) {
               : `<div class="bz-mini-placeholder">🎪</div>`}
 
             <div class="bz-featured-badges">
-              <span class="bz-featured-cat">${_escBz(featured.category || 'بازار قريب')}</span>
+              <span class="bz-featured-cat">${_escBz(featured.category || t('bazaarTeaser.defaultCategory'))}</span>
               <div style="display:flex;gap:6px;align-items:center">
-                ${featured.is_featured ? '<span class="bz-featured-star-badge">⭐ فعالية مميزة</span>' : ''}
-                ${isLive ? '<span class="bz-featured-live-badge">🔴 جارٍ الآن</span>' : ''}
+                ${featured.is_featured ? `<span class="bz-featured-star-badge">${t('bazaarTeaser.featuredBadge')}</span>` : ''}
+                ${isLive ? `<span class="bz-featured-live-badge">${t('bazaarTeaser.liveBadge')}</span>` : ''}
                 <span class="${isSoldOut ? 'bz-featured-soldout' : 'bz-featured-available'}">
-                  ${isSoldOut ? 'مكتمل' : availSlots + ' مكان متاح'}
+                  ${isSoldOut ? t('bazaarTeaser.soldOut') : t('bazaarTeaser.slotsAvailable', { count: availSlots })}
                 </span>
                 <button type="button" class="bz-featured-share-btn"
                         onclick="event.stopPropagation();shareCard('bazaar','${featured.id}','${_featuredNameSafe}')"
-                        title="مشاركة البازار">
+                        title="${t('bazaarTeaser.shareTitle')}">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -3609,14 +3628,14 @@ function renderFeaturedBazaarCard(featured) {
 
           <div class="bz-featured-body">
             <h3 class="bz-featured-title">${_escBz(featured.name)}</h3>
-            <div class="bz-featured-location">📍 ${_escBz(featured.location || featured.region || 'سيتم تحديد المكان قريباً')}</div>
-            ${featured.description ? `<p class="bz-featured-desc">${_escBz(featured.description)}</p>` : '<p class="bz-featured-desc">لا يوجد وصف للبازار حالياً. انضم إلينا في هذه الفعالية المميزة واستكشف الأجنحة المتاحة.</p>'}
+            <div class="bz-featured-location">📍 ${_escBz(featured.location || featured.region || t('bazaarTeaser.locationTBD'))}</div>
+            ${featured.description ? `<p class="bz-featured-desc">${_escBz(featured.description)}</p>` : `<p class="bz-featured-desc">${t('bazaarTeaser.noDescFallback')}</p>`}
 
             <div class="bz-featured-footer">
               <div class="bz-featured-price">
-                ${Number(featured.price_per_slot || 0).toLocaleString('ar-EG')} <span>ج / مكان</span>
+                ${Number(featured.price_per_slot || 0).toLocaleString(_appLocale())} <span>${t('tenantDash.bookings.perSlot')}</span>
               </div>
-              <button class="bz-featured-btn">${isLive ? 'احجز الآن — جارٍ حاليًا' : 'احجز مكانك الآن'}</button>
+              <button class="bz-featured-btn">${isLive ? t('bazaarTeaser.bookLiveBtn') : t('bazaarTeaser.bookBtn')}</button>
             </div>
           </div>
         </div>
@@ -3650,14 +3669,14 @@ function initBazaarCountdown() {
     // ━━ الحالة 1: البازار انتهى ━━
     if (endDate && now > endDate) {
       clearInterval(_bzCountdownInterval);
-      timerEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#9ca3af;font-family:var(--font-display)">🏁 انتهى البازار</span>`;
+      timerEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#9ca3af;font-family:var(--font-display)">${t('bazaarTeaser.countdownEnded')}</span>`;
       return;
     }
 
     // ━━ الحالة 2: البازار جارٍ الآن ━━
     if (now >= startDate) {
       clearInterval(_bzCountdownInterval);
-      timerEl.innerHTML = `<span style="font-size:14px;font-weight:900;color:var(--orange);font-family:var(--font-display);animation:pulse 1.2s infinite">🔥 جارٍ الآن!</span>`;
+      timerEl.innerHTML = `<span style="font-size:14px;font-weight:900;color:var(--orange);font-family:var(--font-display);animation:pulse 1.2s infinite">${t('bazaarTeaser.countdownLive')}</span>`;
       return;
     }
 
@@ -3679,7 +3698,7 @@ function initBazaarCountdown() {
 
     // تغيير النص "انطلاق" أو "ينتهي بعد" حسب الحالة
     const lbl = document.getElementById('bz-countdown-label');
-    if (lbl) lbl.textContent = days === 0 ? 'ينطلق خلال' : 'انطلاق';
+    if (lbl) lbl.textContent = days === 0 ? t('bazaarTeaser.countdownStartsIn') : t('bazaarTeaser.countdownStarts');
   }
 
   updateTimer();
@@ -3691,7 +3710,7 @@ async function loadMarketShowcase() {
   if (!container) return;
 
   if (!sbClient) {
-    container.innerHTML = `<div class="bz-home-empty">تعذر الاتصال بقاعدة البيانات لتحميل المشاريع.</div>`;
+    container.innerHTML = `<div class="bz-home-empty">${t('marketShowcase.dbConnectFailed')}</div>`;
     return;
   }
 
@@ -3710,33 +3729,20 @@ async function loadMarketShowcase() {
       container.innerHTML = `
         <div class="bz-home-empty" style="grid-column: 1/-1; text-align: center; padding: 40px 20px;">
           <div style="font-size: 40px; margin-bottom: 12px;">🛍️</div>
-          <div style="font-weight: 700; color: var(--ink2); font-size: 14px;">لا توجد مشاريع معروضة للبيع حالياً</div>
-          <div style="font-size: 12px; color: var(--ink3); margin-top: 4px;">تابعنا للاطلاع على الفرص الجديدة قريباً!</div>
+          <div style="font-weight: 700; color: var(--ink2); font-size: 14px;">${t('marketShowcase.emptyTitle')}</div>
+          <div style="font-size: 12px; color: var(--ink3); margin-top: 4px;">${t('marketShowcase.emptySub')}</div>
         </div>`;
       return;
     }
 
     function getMarketCategoryLabel(catId) {
-      const categories = [
-        { id: 'food-juice-cart', label: 'عربية أكل / عصير' },
-        { id: 'fast-food-partition', label: 'بارتشن وجبات سريعة' },
-        { id: 'beauty-partition', label: 'بارتشن عناية شخصية' },
-        { id: 'clothing-partition', label: 'بارتشن ملابس / بوتيك' },
-        { id: 'handmade', label: 'هاند ميد' },
-        { id: 'phones', label: 'تليفونات وإكسسوار' },
-        { id: 'gifts', label: 'هدايا وديكور' },
-        { id: 'corner-space', label: 'كورنر سبيس' },
-        { id: 'vending', label: 'آلات بيع ذاتي' },
-        { id: 'other', label: 'أخرى' },
-      ];
-      const match = categories.find(c => c.id === catId);
-      return match ? match.label : 'نشاط تجاري';
+      return t(`market:categories.${catId}`, { defaultValue: t('marketShowcase.genericCategoryFallback') });
     }
 
     container.innerHTML = listings.map(l => {
       const categoryLabel = getMarketCategoryLabel(l.category);
       const imgUrl = _toDirectImgUrl(l.cover_image || '');
-      const priceText = l.price ? `${Number(l.price).toLocaleString('ar-EG')} ج` : 'السعر عند التواصل';
+      const priceText = l.price ? _appFmtPrice(l.price) : t('marketShowcase.priceOnRequest');
 
       return `
         <div class="market-showcase-card" onclick="window.location.href='/market/?listing=${l.id}'">
@@ -3747,10 +3753,10 @@ async function loadMarketShowcase() {
             <span class="market-showcase-cat-badge">${categoryLabel}</span>
           </div>
           <div class="market-showcase-body">
-            <h3 class="market-showcase-title">${l.title || 'مشروع للبيع'}</h3>
-            <p class="market-showcase-desc">${l.description || 'لا يوجد وصف متاح للمشروع حالياً.'}</p>
+            <h3 class="market-showcase-title">${l.title || t('marketShowcase.titleFallback')}</h3>
+            <p class="market-showcase-desc">${l.description || t('marketShowcase.descFallback')}</p>
             <div class="market-showcase-meta">
-              <span>📍 ${l.region || 'مصر'}</span>
+              <span>📍 ${l.region || t('marketShowcase.regionFallback')}</span>
               <span class="market-showcase-price">${priceText}</span>
             </div>
           </div>
@@ -3760,7 +3766,7 @@ async function loadMarketShowcase() {
 
   } catch (err) {
     console.error('❌ خطأ في تحميل مشاريع الماركت:', err.message);
-    container.innerHTML = `<div class="bz-home-empty">تعذر تحميل المشروعات للبيع حالياً — يرجى المحاولة لاحقاً.</div>`;
+    container.innerHTML = `<div class="bz-home-empty">${t('marketShowcase.loadFailed')}</div>`;
   }
 }
 
@@ -3770,23 +3776,23 @@ function shareCard(type, id, name) {
 
   if (type === 'space') {
     url = base + '?space=' + id;
-    shareText = 'شوف المساحة دي على مكاني Spot: ' + name;
+    shareText = t('share.checkOutSpace', { name });
   } else if (type === 'unit') {
     const parts = String(id).split(':');
     url = base + '?space=' + parts[0] + '&unit=' + encodeURIComponent(parts[1] || '');
-    shareText = 'شوف الوحدة دي على مكاني Spot: ' + name;
+    shareText = t('share.checkOutUnit', { name });
   } else {
     /* البازارات صفحة مستقلة (/bazaars/) وليست مساراً على الرئيسية — لازم رابط مطلق لها */
     url = window.location.origin + '/bazaars/?bazaar=' + id;
-    shareText = 'شوف البازار ده على مكاني Spot: ' + name;
+    shareText = t('share.checkOutBazaar', { name });
   }
 
   if (navigator.share) {
-    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => { });
+    navigator.share({ title: t('brand'), text: shareText, url }).catch(() => { });
   } else {
     navigator.clipboard.writeText(url)
-      .then(() => _showShareToast('✅ تم نسخ الرابط!'))
-      .catch(() => _showShareToast('📋 الرابط: ' + url));
+      .then(() => _showShareToast(t('share.linkCopied')))
+      .catch(() => _showShareToast(t('share.linkFallback', { url })));
   }
 }
 
@@ -3835,7 +3841,7 @@ function openOwnerRequestModal() {
   const msgEl = document.getElementById('oreq-msg');
   if (msgEl) msgEl.style.display = 'none';
   const btn = document.getElementById('oreq-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'إرسال الطلب ←'; }
+  if (btn) { btn.disabled = false; btn.textContent = t('ownerRequestModal.submitBtn'); }
   const formWrap = document.getElementById('owner-req-form-wrap');
   const success = document.getElementById('oreq-success');
   if (formWrap) formWrap.style.display = 'block';
@@ -3867,13 +3873,13 @@ async function submitOwnerRequest() {
   };
 
   if (!phone) {
-    showMsg('⚠ رقم الواتساب مطلوب', true); return;
+    showMsg(t('ownerRequestModal.errPhoneRequired'), true); return;
   }
   if (!sbClient || !currentUser) {
-    showMsg('⚠ خطأ في الاتصال — أعد تحميل الصفحة', true); return;
+    showMsg(t('ownerRequestModal.errConnection'), true); return;
   }
 
-  btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
+  btn.disabled = true; btn.textContent = t('spaces:auth2.sending');
   if (msgEl) msgEl.style.display = 'none';
 
   try {
@@ -3892,7 +3898,7 @@ async function submitOwnerRequest() {
     document.getElementById('owner-req-form-wrap').style.display = 'none';
     document.getElementById('oreq-success').style.display = 'block';
   } catch (err) {
-    showMsg('❌ حدث خطأ: ' + (err.message || 'حاول مرة أخرى'), true);
-    btn.disabled = false; btn.textContent = 'إرسال الطلب ←';
+    showMsg(t('ownerRequestModal.errGeneric', { msg: err.message || t('ownerRequestModal.errGenericDefault') }), true);
+    btn.disabled = false; btn.textContent = t('ownerRequestModal.submitBtn');
   }
 }

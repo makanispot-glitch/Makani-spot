@@ -102,6 +102,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  /* 3.5 ملفات الترجمة (i18n) → Stale-While-Revalidate
+     نص محدَّث خلال إعادة تحميل واحدة كحد أقصى حتى لمستخدمي الـ PWA المثبَّت،
+     بدل ما تتحبس فى الكاش للأبد زي بقية JSON الثابتة (قاعدة 6 تحت) */
+  if (url.pathname.startsWith('/locales/')) {
+    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
+    return;
+  }
+
   /* 4. صفحات HTML → Network-First (أهم شيء يجيب آخر نسخة) */
   if (request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(networkFirstHtml(request));

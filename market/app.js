@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* بعض المتصفحات (Brave، Firefox+uBlock) تحجب CDN أو Supabase */
   if (typeof supabase === 'undefined') {
-    eqShowError('يبدو أن المتصفح يحجب خدمات الموقع. جرّب تعطيل حاجب الإعلانات على هذه الصفحة ثم أعد التحميل.');
+    eqShowError(t('error.adBlocker'));
     return;
   }
 
@@ -177,6 +177,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await eqInitAuth();
     await eqLoadFavorites();
     eqBuildCategoryTabs();
+    document.getElementById('eq-price-label').textContent        = _eqFmtPrice(eqPriceMax);
+    document.getElementById('eq-drawer-price-val').textContent   = _eqFmtPrice(eqDrawerDraft.priceMax);
     await eqLoadListings();
     eqBindSearch();
     eqRunLifecycle();
@@ -203,8 +205,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 500);
     }
   } catch (e) {
-    eqShowError('حدث خطأ في تحميل الصفحة. حاول إعادة التحميل.');
+    eqShowError(t('error.pageLoadError'));
   }
+});
+
+/* إعادة رسم المحتوى الديناميكي عند تبديل اللغة — نفس نمط spaces/app.js
+   (data-i18n بتغطي النص الثابت بس؛ الكروت/المودالات المبنية بـ t() وقت
+   البناء محتاجة إعادة رسم فعلية من البيانات المحفوظة محليًا، بدون طلب
+   Supabase جديد، عشان التبديل يفضل سريع وسلس) */
+document.addEventListener('makani:locale-changed', () => {
+  eqRenderNavUser();   // منطقة المستخدم في الناف + bn-user (بالكامل JS-rendered، مفيش data-i18n)
+  eqBuildCategoryTabs();
+  eqRenderGrid();
+  const priceLbl = document.getElementById('eq-price-label');
+  if (priceLbl) priceLbl.textContent = _eqFmtPrice(eqPriceMax);
+  const drawerPriceLbl = document.getElementById('eq-drawer-price-val');
+  if (drawerPriceLbl) drawerPriceLbl.textContent = _eqFmtPrice(eqDrawerDraft.priceMax);
+  if (eqCurrentDetailId) eqOpenDetail(eqCurrentDetailId);
+  if (document.getElementById('eq-my-modal')?.classList.contains('open')) eqLoadMyListings();
+  if (document.getElementById('eq-fav-modal')?.classList.contains('open')) eqOpenFavorites();
 });
 
 
@@ -266,51 +285,51 @@ function eqRenderNavUser() {
       : initial;
 
     area.innerHTML = `
-      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="المفضلة">
+      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="${t('card.favoriteTitle')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.4 5.4 0 0 0-7.6 0L12 6.1l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.5a5.4 5.4 0 0 0 0-7.6Z"/></svg>
         <span class="eq-fav-badge" id="eq-fav-badge"></span>
       </button>
-      <button class="eq-fav-nav-btn" id="eq-mylistings-nav-btn" onclick="eqOpenMyListings()" title="إعلاناتي">
+      <button class="eq-fav-nav-btn" id="eq-mylistings-nav-btn" onclick="eqOpenMyListings()" title="${t('navUser.myListings')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
       </button>
       <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
         <div class="nav-avatar-circle">${circleHtml}</div>
         <div class="nav-avatar-info">
-          <div class="nav-avatar-name">${name || 'حسابي'}</div>
+          <div class="nav-avatar-name">${name || t('navUser.defaultName')}</div>
           <div class="nav-avatar-email">${email}</div>
         </div>
         <div class="nav-avatar-caret">▼</div>
 
         <div class="nav-dropdown" id="eq-dropdown">
           <div class="nav-dropdown-header">
-            <div class="nav-dropdown-name">${name || 'حسابي'}</div>
+            <div class="nav-dropdown-name">${name || t('navUser.defaultName')}</div>
             <div class="nav-dropdown-email">${email}</div>
-            <div class="nav-dropdown-role">مشاريع للبيع</div>
+            <div class="nav-dropdown-role">${t('navUser.roleLabel')}</div>
           </div>
           <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-            الملف الشخصي
+            ${t('navUser.profile')}
           </button>
           <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            لوحة التحكم
+            ${t('navUser.dashboard')}
           </button>
           <button class="nav-dropdown-item" onclick="eqOpenMyListings();eqCloseAccountMenu()">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
-            إعلاناتي
+            ${t('navUser.myListings')}
           </button>
           <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
-            اشترك في بزار
+            ${t('navUser.joinBazaar')}
           </button>
           <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            دور على مساحة
+            ${t('navUser.findSpace')}
           </button>
           <div class="nav-dropdown-sep"></div>
           <button class="nav-dropdown-item danger" onclick="eqSignOut()">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-            تسجيل الخروج
+            ${t('navUser.logout')}
           </button>
         </div>
       </div>`;
@@ -323,9 +342,9 @@ function eqRenderNavUser() {
           <circle cx="12" cy="8" r="4"/>
           <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
         </svg>
-        <span>دخول</span>
+        <span>${t('nav.loginBtn')}</span>
         <span class="btn-login-sep">|</span>
-        <span>سجّل</span>
+        <span>${t('nav.signupBtn')}</span>
       </button>`;
   }
   eqUpdateBnUser();
@@ -475,7 +494,7 @@ function eqBindSearch() {
   if (priceInp) priceInp.addEventListener('input', () => {
     eqPriceMax = parseInt(priceInp.value) || 0;
     const lbl = document.getElementById('eq-price-label');
-    if (lbl) lbl.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+    if (lbl) lbl.textContent = _eqFmtPrice(eqPriceMax);
     eqSyncDrawerFromActive();
     eqApplyFilters();
     eqUpdateDrawerBadge();
@@ -494,31 +513,31 @@ function eqSetCategory(cat, el) {
 function eqBuildCategoryTabs() {
   const cont = document.getElementById('eq-tabs');
   if (!cont) return;
-  const all = `<button class="eq-tab on" onclick="eqSetCategory('',this)">الكل</button>`;
+  const all = `<button class="eq-tab on" onclick="eqSetCategory('',this)">${t('filters.all')}</button>`;
   const tabs = EQ_CATEGORIES.map(c =>
-    `<button class="eq-tab" onclick="eqSetCategory('${c.id}',this)">${c.label}</button>`
+    `<button class="eq-tab" onclick="eqSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
   ).join('');
   cont.innerHTML = all + tabs;
 
   const govSel = document.getElementById('eq-gov');
   if (govSel) {
-    govSel.innerHTML = '<option value="">كل المحافظات</option>' +
-      EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+    govSel.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
+      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
   }
 
   /* Build mobile drawer tabs + gov */
   const drawerTabs = document.getElementById('eq-drawer-tabs');
   if (drawerTabs) {
-    const drawerAll  = `<button class="eq-tab on" onclick="eqDrawerSetCategory('',this)">الكل</button>`;
+    const drawerAll  = `<button class="eq-tab on" onclick="eqDrawerSetCategory('',this)">${t('filters.all')}</button>`;
     const drawerCats = EQ_CATEGORIES.map(c =>
-      `<button class="eq-tab" data-cat="${c.id}" onclick="eqDrawerSetCategory('${c.id}',this)">${c.label}</button>`
+      `<button class="eq-tab" data-cat="${c.id}" onclick="eqDrawerSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
     ).join('');
     drawerTabs.innerHTML = drawerAll + drawerCats;
   }
   const drawerGov = document.getElementById('eq-drawer-gov');
   if (drawerGov) {
-    drawerGov.innerHTML = '<option value="">كل المحافظات</option>' +
-      EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+    drawerGov.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
+      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
   }
 
   eqInitFilterFab();
@@ -539,9 +558,9 @@ function eqInitFilterFab() {
   /* بناء تابس الفئات داخل اللوحة */
   const fabTabs = document.getElementById('eq-fab-panel-tabs');
   if (fabTabs) {
-    const allBtn = `<button class="eq-tab on" id="eq-fab-all" onclick="eqFabSetCategory('',this)">الكل</button>`;
+    const allBtn = `<button class="eq-tab on" id="eq-fab-all" onclick="eqFabSetCategory('',this)">${t('filters.all')}</button>`;
     const catBtns = EQ_CATEGORIES.map(c =>
-      `<button class="eq-tab" onclick="eqFabSetCategory('${c.id}',this)">${c.label}</button>`
+      `<button class="eq-tab" onclick="eqFabSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
     ).join('');
     fabTabs.innerHTML = allBtn + catBtns;
   }
@@ -549,8 +568,8 @@ function eqInitFilterFab() {
   /* بناء قائمة المحافظات */
   const fabGov = document.getElementById('eq-fab-gov');
   if (fabGov) {
-    fabGov.innerHTML = '<option value="">كل المحافظات</option>' +
-      EQ_GOVS.map(g => `<option value="${g}">${g}</option>`).join('');
+    fabGov.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
+      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
   }
 
   /* إظهار / إخفاء FAB عند التمرير */
@@ -605,9 +624,10 @@ function eqFabSetCategory(cat, el) {
   /* تحديث تابس اللوحة */
   document.querySelectorAll('#eq-fab-panel-tabs .eq-tab').forEach(t => t.classList.remove('on'));
   if (el) el.classList.add('on');
-  /* مزامنة شريط الفئات الرئيسي */
+  /* مزامنة شريط الفئات الرئيسي — التطابق على onclick (لغة-مستقل)
+     مش على النص المعروض، عشان يفضل شغّال بعد ترجمة تبويب "الكل" */
   document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
-    const isMatch = cat === '' ? t.textContent.trim() === 'الكل'
+    const isMatch = cat === '' ? t.getAttribute('onclick')?.includes(`eqSetCategory('',`)
       : t.getAttribute('onclick')?.includes(`'${cat}'`);
     t.classList.toggle('on', isMatch);
   });
@@ -630,14 +650,18 @@ function eqFabSortChange(sel) {
   eqApplyFilters();
 }
 
+function _eqFmtPrice(val) {
+  return val > 0 ? val.toLocaleString(getLocale() === 'en' ? 'en-US' : 'ar-EG') + ' ' + t('card.currency') : t('filters.noLimit');
+}
+
 function eqFabPriceChange(inp) {
   eqPriceMax = parseInt(inp.value) || 0;
   const val = document.getElementById('eq-fab-price-val');
-  if (val) val.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  if (val) val.textContent = _eqFmtPrice(eqPriceMax);
   const mainInp = document.getElementById('eq-price-max');
   if (mainInp) mainInp.value = inp.value;
   const mainLbl = document.getElementById('eq-price-label');
-  if (mainLbl) mainLbl.textContent = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  if (mainLbl) mainLbl.textContent = _eqFmtPrice(eqPriceMax);
   eqApplyFilters();
   eqUpdateFabBadge();
 }
@@ -804,7 +828,7 @@ function eqDrawerSortChange(sel) {
 
 function eqDrawerPriceChange(inp) {
   eqDrawerDraft.priceMax = parseInt(inp.value) || 0;
-  const label = eqDrawerDraft.priceMax > 0 ? eqDrawerDraft.priceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  const label = _eqFmtPrice(eqDrawerDraft.priceMax);
   const drawerVal = document.getElementById('eq-drawer-price-val');
   if (drawerVal) drawerVal.textContent = label;
   eqUpdateDrawerBadge();
@@ -857,7 +881,7 @@ function eqRenderDrawerDraft() {
   const drawerSort  = document.getElementById('eq-drawer-sort');
   const drawerPrice = document.getElementById('eq-drawer-price');
   const drawerVal   = document.getElementById('eq-drawer-price-val');
-  const label = eqDrawerDraft.priceMax > 0 ? eqDrawerDraft.priceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  const label = _eqFmtPrice(eqDrawerDraft.priceMax);
 
   if (drawerGov)   drawerGov.value   = eqDrawerDraft.gov;
   if (drawerSort)  drawerSort.value  = eqDrawerDraft.sortBy;
@@ -875,7 +899,7 @@ function eqSyncMainFiltersFromActive() {
   const mainSort  = document.getElementById('eq-sort');
   const mainPrice = document.getElementById('eq-price-max');
   const mainLbl   = document.getElementById('eq-price-label');
-  const label = eqPriceMax > 0 ? eqPriceMax.toLocaleString('ar-EG') + ' ج' : 'بلا حد';
+  const label = _eqFmtPrice(eqPriceMax);
 
   if (mainGov)   mainGov.value   = eqGov;
   if (mainSort)  mainSort.value  = eqSortBy;
@@ -1013,11 +1037,11 @@ setTimeout(eqInstallMobileFilterControls, 300);
 
 function eqBuildCard(listing) {
   const allImgs = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
-  const cond    = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
-  const cat     = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
-  const price   = Number(listing.price).toLocaleString('ar-EG');
-  const nego    = listing.negotiable ? '<span class="eq-badge eq-badge-nego">قابل للتفاوض</span>' : '';
-  const feat    = listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : '';
+  const cond    = eqCondLabel(listing.condition);
+  const cat     = eqCatLabel(listing.category);
+  const price   = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
+  const nego    = listing.negotiable ? `<span class="eq-badge eq-badge-nego">${t('card.negotiable')}</span>` : '';
+  const feat    = listing.is_featured ? `<span class="eq-badge eq-badge-feat">${t('card.featured')}</span>` : '';
   const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
   const lid     = listing.id;
 
@@ -1030,8 +1054,8 @@ function eqBuildCard(listing) {
         onerror="this.parentNode.style.display='none'"></div>`
     ).join('');
     const navHtml = allImgs.length > 1 ? `
-      <button class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.stopPropagation()" aria-label="السابقة">‹</button>
-      <button class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.stopPropagation()" aria-label="التالية">›</button>
+      <button class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.stopPropagation()" aria-label="${t('card.prev')}">‹</button>
+      <button class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.stopPropagation()" aria-label="${t('card.next')}">›</button>
       <div class="eq-cn-dots">${allImgs.map((_,i) => `<span class="eq-cn-dot${i===0?' active':''}"></span>`).join('')}</div>` : '';
     imgAreaHtml = `
       <div class="eq-card-carousel${allImgs.length > 1 ? ' has-many' : ''}" id="eqc-${lid}" data-idx="0">
@@ -1045,7 +1069,7 @@ function eqBuildCard(listing) {
 <div class="eq-card" data-category="${listing.category || ''}" data-region="${listing.region || ''}" data-price="${Number(listing.price) || 0}" onclick="eqOpenDetail('${lid}')">
   <div class="eq-card-img" style="position:relative">
     ${imgAreaHtml}
-    <button class="eq-fav-btn" data-fav="${lid}" onclick="eqToggleFavorite(event,'${lid}')" title="المفضلة">${favIcon}</button>
+    <button class="eq-fav-btn" data-fav="${lid}" onclick="eqToggleFavorite(event,'${lid}')" title="${t('card.favoriteTitle')}">${favIcon}</button>
   </div>
   <div class="eq-card-body">
     <div class="eq-card-meta">
@@ -1054,8 +1078,8 @@ function eqBuildCard(listing) {
       ${nego}
     </div>
     <div class="eq-card-title">${listing.title}</div>
-    <div class="eq-card-price">${price} ج</div>
-    <div class="eq-card-loc">📍 ${listing.region || ''}${listing.area ? ' — ' + listing.area : ''}</div>
+    <div class="eq-card-price">${price} ${t('card.currency')}</div>
+    <div class="eq-card-loc">📍 ${listing.region ? eqGovLabel(listing.region) : ''}${listing.area ? ' — ' + listing.area : ''}</div>
   </div>
 </div>`;
 }
@@ -1073,26 +1097,26 @@ function eqRenderGrid() {
   if (!grid) return;
 
   if (eqFiltered.length === 0) {
-    grid.innerHTML = `<div class="eq-empty">لا توجد إعلانات تطابق بحثك 🔍</div>`;
-    if (count) count.textContent = '0 إعلان';
+    grid.innerHTML = `<div class="eq-empty">${t('grid.empty')}</div>`;
+    if (count) count.textContent = t('grid.countZero');
     if (more)  more.style.display = 'none';
     return;
   }
 
   _eqImgCounter = 0; /* أعد العدّاد لتحصل أول 6 صور على fetchpriority=high */
   grid.innerHTML = eqFiltered.map(eqBuildCard).join('');
-  if (count) count.textContent = eqFiltered.length + (eqHasMore ? '+' : '') + ' إعلان';
+  if (count) count.textContent = t(eqHasMore ? 'grid.countPlus' : 'grid.count', { count: eqFiltered.length });
   if (more)  more.style.display = eqHasMore ? 'flex' : 'none';
 }
 
 async function eqLoadMore() {
   if (!eqHasMore) return;
   const btn = document.getElementById('eq-load-more');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ تحميل…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('grid.loadingMore'); }
   try {
     await eqLoadListings(true);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'عرض المزيد'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('grid.loadMore'); }
   }
 }
 
@@ -1101,7 +1125,7 @@ function eqShowLoading() {
   if (grid) grid.innerHTML = `
     <div class="eq-loading">
       <div class="eq-spinner"></div>
-      <p>جاري تحميل الإعلانات…</p>
+      <p>${t('grid.loading')}</p>
     </div>`;
 }
 
@@ -1110,7 +1134,7 @@ function eqShowError(msg) {
   if (grid) grid.innerHTML = `
     <div class="eq-empty">
       <p>⚠️ ${msg}</p>
-      <button class="eq-btn eq-btn-primary" onclick="eqLoadListings()">حاول تاني</button>
+      <button class="eq-btn eq-btn-primary" onclick="eqLoadListings()">${t('error.retry')}</button>
     </div>`;
 }
 
@@ -1119,19 +1143,22 @@ function eqShowError(msg) {
    🔎 القسم 8: تفاصيل الإعلان (Modal)
    ================================================================ */
 
+let eqCurrentDetailId = null; // آخر إعلان مفتوح في المودال — لإعادة الرسم عند تبديل اللغة
+
 async function eqOpenDetail(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
+  eqCurrentDetailId = id;
 
   trackEvent('listing_viewed', { listing_id: id, category: listing.category });
   eqIncrementView(id);
 
   const imgs   = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
-  const cond   = EQ_CONDITIONS.find(c => c.id === listing.condition)?.label || listing.condition;
-  const cat    = EQ_CATEGORIES.find(c => c.id === listing.category)?.label || listing.category;
-  const price  = Number(listing.price).toLocaleString('ar-EG');
-  const nego   = listing.negotiable ? ' (قابل للتفاوض)' : '';
-  const date   = new Date(listing.created_at).toLocaleDateString('ar-EG');
+  const cond   = eqCondLabel(listing.condition);
+  const cat    = eqCatLabel(listing.category);
+  const price  = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
+  const nego   = listing.negotiable ? ` (${t('card.negotiable')})` : '';
+  const date   = new Date(listing.created_at).toLocaleDateString(getLocale()==='en'?'en-US':'ar-EG');
 
   const swiperId  = `eq-sw-${id}`;
   const galleryHtml = imgs.length > 0
@@ -1142,10 +1169,10 @@ async function eqOpenDetail(id) {
           </div>
           ${imgs.length > 1
             ? `<div class="eq-swiper-dots" id="${swiperId}-dots">${imgs.map((_, i) => `<span class="eq-swiper-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>
-               <button class="eq-swiper-prev" onclick="eqSwiperNav('${swiperId}',-1);event.stopPropagation()" aria-label="السابقة">&#8249;</button>
-               <button class="eq-swiper-next" onclick="eqSwiperNav('${swiperId}',1);event.stopPropagation()" aria-label="التالية">&#8250;</button>`
+               <button class="eq-swiper-prev" onclick="eqSwiperNav('${swiperId}',-1);event.stopPropagation()" aria-label="${t('card.prev')}">&#8249;</button>
+               <button class="eq-swiper-next" onclick="eqSwiperNav('${swiperId}',1);event.stopPropagation()" aria-label="${t('card.next')}">&#8250;</button>`
             : ''}
-          <button class="eq-share-btn" onclick="eqShare('${id}')" title="مشاركة الإعلان">
+          <button class="eq-share-btn" onclick="eqShare('${id}')" title="${t('detail.shareTitle')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
@@ -1156,16 +1183,16 @@ async function eqOpenDetail(id) {
     : `<div class="eq-detail-no-img">📦</div>`;
 
   const isFav   = eqFavorites.has(id);
-  const favBtn  = `<button class="eq-btn eq-btn-ghost" data-fav="${id}" onclick="eqToggleFavorite(event,'${id}')">${isFav ? '❤️ في المفضلة' : '🤍 أضف للمفضلة'}</button>`;
+  const favBtn  = `<button class="eq-btn eq-btn-ghost" data-fav="${id}" onclick="eqToggleFavorite(event,'${id}')">${isFav ? t('detail.inFavorite') : t('detail.addFavorite')}</button>`;
 
   const contactHtml = eqUser
     ? `${listing.contact_pref !== 'call'
-        ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent('مرحبا، شايف إعلانك عن '+listing.title+' في مكاني Spot')}" target="_blank" onclick="eqIncrementContact('${id}')">💬 تواصل عبر واتساب</a>`
+        ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent(t('detail.whatsappMsg', { title: listing.title }))}" target="_blank" onclick="eqIncrementContact('${id}')">${t('detail.whatsappContact')}</a>`
         : ''}
        ${listing.contact_pref !== 'whatsapp'
-        ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">📞 اتصل بالبائع</a>`
+        ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">${t('detail.callSeller')}</a>`
         : ''}`
-    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="/">🔒 سجّل الدخول لعرض معلومات التواصل</a>`;
+    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="/">${t('detail.loginToContact')}</a>`;
 
   document.getElementById('eq-modal-body').innerHTML = `
     ${galleryHtml}
@@ -1173,18 +1200,18 @@ async function eqOpenDetail(id) {
       <div class="eq-detail-badges">
         <span class="eq-badge eq-badge-cat">${cat}</span>
         <span class="eq-badge eq-badge-cond">${cond}</span>
-        ${listing.is_featured ? '<span class="eq-badge eq-badge-feat">⭐ مميز</span>' : ''}
+        ${listing.is_featured ? `<span class="eq-badge eq-badge-feat">${t('detail.featured')}</span>` : ''}
       </div>
       <h2 class="eq-detail-title">${listing.title}</h2>
-      <div class="eq-detail-price">${price} ج${nego}</div>
+      <div class="eq-detail-price">${price} ${t('card.currency')}${nego}</div>
       ${listing.description ? `<div class="eq-detail-desc">${listing.description}</div>` : ''}
-      <div class="eq-detail-loc">📍 ${listing.region || ''}${listing.area ? ' — ' + listing.area : ''}</div>
-      <div class="eq-detail-date">📅 نُشر ${date}</div>
-      <div class="eq-detail-stats">👁 ${listing.view_count || 0} مشاهدة</div>
+      <div class="eq-detail-loc">📍 ${listing.region ? eqGovLabel(listing.region) : ''}${listing.area ? ' — ' + listing.area : ''}</div>
+      <div class="eq-detail-date">${t('detail.published', { date })}</div>
+      <div class="eq-detail-stats">${t('detail.views', { count: listing.view_count || 0 })}</div>
       <div class="eq-detail-actions">
         ${contactHtml}
         ${favBtn}
-        <button class="eq-btn eq-btn-ghost" onclick="eqOpenReport('${id}')">🚩 إبلاغ عن إعلان</button>
+        <button class="eq-btn eq-btn-ghost" onclick="eqOpenReport('${id}')">${t('detail.reportBtn')}</button>
       </div>
     </div>`;
 
@@ -1207,6 +1234,7 @@ async function eqOpenDetail(id) {
 function eqCloseModal() {
   document.getElementById('eq-modal').classList.remove('open');
   document.body.style.overflow = '';
+  eqCurrentDetailId = null;
 }
 
 function eqSwiperNav(swiperId, dir) {
@@ -1219,9 +1247,9 @@ function eqSwiperNav(swiperId, dir) {
 function eqShare(id) {
   const listing = eqListings.find(l => l.id === id);
   if (!listing) return;
-  const price = Number(listing.price).toLocaleString('ar-EG');
+  const price = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
   const pageUrl = `${window.location.origin}${window.location.pathname}?listing=${id}`;
-  const text  = `🔖 *${listing.title}*\n💰 السعر: ${price} ج\n📍 ${listing.region || ''}\n\n🛒 شاهد الإعلان: ${pageUrl}`;
+  const text  = t('detail.shareText', { title: listing.title, price, region: listing.region ? eqGovLabel(listing.region) : '', url: pageUrl });
 
   if (navigator.share) {
     navigator.share({ title: listing.title, text, url: pageUrl }).catch(() => {});
@@ -1279,14 +1307,8 @@ async function eqIncrementContact(id) {
    🚩 القسم 18: الإبلاغ عن إعلان
    ================================================================ */
 
-const EQ_REPORT_CAT_LABELS = {
-  spam: 'نشر متكرر / سبام', fake: 'إعلان وهمي / غير حقيقي',
-  wrong_info: 'معلومات أو سعر مضلل', sold_elsewhere: 'تم البيع / لم يعد متاحاً',
-  inappropriate: 'محتوى غير لائق', other: 'سبب آخر',
-};
-
 function eqOpenReport(id) {
-  if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
+  if (!eqUser) { alert(t('report.loginRequired')); return; }
   document.getElementById('eq-report-id').value = id;
   document.getElementById('eq-report-reason').value = '';
   document.querySelectorAll('input[name="eq-report-cat"]').forEach(r => r.checked = false);
@@ -1301,17 +1323,20 @@ async function eqSubmitReport() {
   const id       = document.getElementById('eq-report-id').value;
   const category = document.querySelector('input[name="eq-report-cat"]:checked')?.value;
   const note     = document.getElementById('eq-report-reason').value.trim();
-  if (!category) { alert('من فضلك اختر سبب الإبلاغ'); return; }
-  if (!eqUser) { alert('يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان'); return; }
+  if (!category) { alert(t('report.reasonRequired')); return; }
+  if (!eqUser) { alert(t('report.loginRequired')); return; }
 
-  const reason = EQ_REPORT_CAT_LABELS[category] + (note ? ' — ' + note : '');
+  /* السبب المخزّن في DB بيتبني بلغة المستخدم وقت الإبلاغ (نص ثابت
+     يُقرأ لاحقًا من فريق المراجعة العربي — راجع project_i18n_english_support.md
+     لسياسة "محتوى مُنشأ وقت الحدث يفضل بلغته الأصلية") */
+  const reason = t('report.categories.' + category) + (note ? ' — ' + note : '');
   const reportData = { listing_id: id, reason, user_id: eqUser.id };
   const { error } = await eqSb.from('listing_reports').insert(reportData);
-  if (error) { alert('حدث خطأ، حاول مرة أخرى'); return; }
+  if (error) { alert(t('report.submitError')); return; }
 
   eqCloseReport();
   eqCloseModal();
-  alert('تم إرسال البلاغ، شكراً لمساعدتنا في الحفاظ على جودة المنصة');
+  alert(t('report.submitSuccess'));
 }
 
 
@@ -1322,7 +1347,7 @@ async function eqSubmitReport() {
 async function eqLoadMyListings() {
   if (!eqUser) {
     document.getElementById('eq-my-listings').innerHTML =
-      `<div class="eq-empty"><p>يجب تسجيل الدخول أولاً</p><a class="eq-btn eq-btn-primary" href="/">تسجيل الدخول</a></div>`;
+      `<div class="eq-empty"><p>${t('myListings.loginRequired')}</p><a class="eq-btn eq-btn-primary" href="/">${t('myListings.loginBtn')}</a></div>`;
     return;
   }
 
@@ -1336,7 +1361,7 @@ async function eqLoadMyListings() {
   if (error) {
     console.error('[eqLoadMyListings]', error);
     document.getElementById('eq-my-listings').innerHTML =
-      `<div class="eq-empty"><p>حدث خطأ في تحميل الإعلانات: ${error.message}</p></div>`;
+      `<div class="eq-empty"><p>${t('myListings.loadError', { error: error.message })}</p></div>`;
     return;
   }
 
@@ -1344,7 +1369,7 @@ async function eqLoadMyListings() {
   if (!cont) return;
 
   if (!data || data.length === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>ما عندكش إعلانات لحد دلوقتي</p><a class="eq-btn eq-btn-primary" href="/post-ad/">انشر إعلانك الأول</a></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>${t('myListings.noListings')}</p><a class="eq-btn eq-btn-primary" href="/post-ad/">${t('myListings.postFirst')}</a></div>`;
     return;
   }
 
@@ -1354,11 +1379,11 @@ async function eqLoadMyListings() {
 
 function eqBuildMyCard(l) {
   const statusMap = {
-    pending:  { label: 'قيد المراجعة', cls: 'eq-status-pending'  },
-    approved: { label: 'نشط',          cls: 'eq-status-active'   },
-    rejected: { label: 'مرفوض',        cls: 'eq-status-rejected' },
-    expired:  { label: 'منتهي',        cls: 'eq-status-expired'  },
-    paused:   { label: 'موقوف مؤقتاً', cls: 'eq-status-paused'   },
+    pending:  { label: t('myCard.statusPending'),  cls: 'eq-status-pending'  },
+    approved: { label: t('myCard.statusActive'),   cls: 'eq-status-active'   },
+    rejected: { label: t('myCard.statusRejected'), cls: 'eq-status-rejected' },
+    expired:  { label: t('myCard.statusExpired'),  cls: 'eq-status-expired'  },
+    paused:   { label: t('myCard.statusPaused'),   cls: 'eq-status-paused'   },
   };
   const st       = statusMap[l.status] || { label: l.status, cls: '' };
   const exp      = l.expires_at ? new Date(l.expires_at) : null;
@@ -1377,19 +1402,19 @@ function eqBuildMyCard(l) {
   <div class="eq-my-card-body">
     <div class="eq-my-card-title">${l.title}</div>
     <span class="eq-status ${st.cls}">${st.label}</span>
-    ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">سبب الرفض: ${l.reject_reason}</div>` : ''}
+    ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">${t('myCard.rejectReason', { reason: l.reject_reason })}</div>` : ''}
     ${l.status === 'approved'
       ? days <= 7
-        ? `<div class="eq-days-warning">⚠️ إعلانك ينتهي بعد <strong>${days}</strong> ${days === 1 ? 'يوم' : 'أيام'} — جدّد الآن</div>`
-        : `<div class="eq-days-left">متبقي <strong>${days}</strong> يوم</div>`
+        ? `<div class="eq-days-warning">${t('myCard.expiresWarning', { count: days, days })}</div>`
+        : `<div class="eq-days-left">${t('myCard.daysLeft', { days })}</div>`
       : ''}
-    <div class="eq-my-stats">👁 ${l.view_count||0} مشاهدة | 📞 ${l.contact_count||0} تواصل</div>
+    <div class="eq-my-stats">${t('myCard.stats', { views: l.view_count||0, contacts: l.contact_count||0 })}</div>
     <div class="eq-my-actions">
-      ${canEdit   ? `<button class="eq-btn eq-btn-outline" onclick="eqOpenEdit('${l.id}')">✏️ تعديل</button>` : ''}
-      ${canRenew  ? `<button class="eq-btn eq-btn-primary" onclick="eqRenew('${l.id}')">🔄 تجديد</button>` : ''}
-      ${canPause  ? `<button class="eq-btn eq-btn-ghost"  onclick="eqTogglePause('${l.id}','approved')">⏸ إيقاف</button>` : ''}
-      ${canResume ? `<button class="eq-btn eq-btn-primary" onclick="eqTogglePause('${l.id}','paused')">▶ تفعيل</button>` : ''}
-      <button class="eq-btn eq-btn-danger" onclick="eqDeleteListing('${l.id}','${l.status}')">🗑 حذف</button>
+      ${canEdit   ? `<button class="eq-btn eq-btn-outline" onclick="eqOpenEdit('${l.id}')">${t('myCard.edit')}</button>` : ''}
+      ${canRenew  ? `<button class="eq-btn eq-btn-primary" onclick="eqRenew('${l.id}')">${t('myCard.renew')}</button>` : ''}
+      ${canPause  ? `<button class="eq-btn eq-btn-ghost"  onclick="eqTogglePause('${l.id}','approved')">${t('myCard.pause')}</button>` : ''}
+      ${canResume ? `<button class="eq-btn eq-btn-primary" onclick="eqTogglePause('${l.id}','paused')">${t('myCard.resume')}</button>` : ''}
+      <button class="eq-btn eq-btn-danger" onclick="eqDeleteListing('${l.id}','${l.status}')">${t('myCard.delete')}</button>
     </div>
   </div>
 </div>`;
@@ -1405,7 +1430,7 @@ async function eqRenew(id) {
   if (!listing) return;
 
   if ((listing.renewal_count || 0) >= MAX_RENEWALS) {
-    alert('وصلت للحد الأقصى من التجديدات (5 مرات). من فضلك أنشئ إعلاناً جديداً.');
+    alert(t('renew.maxReached'));
     return;
   }
 
@@ -1420,10 +1445,10 @@ async function eqRenew(id) {
     status:        'approved',
   }).eq('id', id);
 
-  if (error) { alert('حدث خطأ في التجديد'); return; }
+  if (error) { alert(t('renew.error')); return; }
 
   await eqSb.from('listing_renewals').insert({ listing_id: id, user_id: eqUser.id });
-  alert('تم تجديد إعلانك بنجاح! ✅');
+  alert(t('renew.success'));
   eqLoadMyListings();
 }
 
@@ -1434,14 +1459,14 @@ async function eqRenew(id) {
 
 async function eqDeleteListing(id, status) {
   const msg = status === 'approved'
-    ? 'هل أنت متأكد من حذف الإعلان النشط؟ سيُحذف نهائياً مع صوره ولا يمكن التراجع.'
-    : 'هل أنت متأكد من الحذف النهائي؟ سيُحذف الإعلان وصوره نهائياً.';
+    ? t('delete.confirmActive')
+    : t('delete.confirmOther');
   if (!confirm(msg)) return;
 
   try {
     const { data: { session } } = await eqSb.auth.getSession();
     const token = session?.access_token;
-    if (!token) { alert('يجب تسجيل الدخول أولاً'); return; }
+    if (!token) { alert(t('delete.loginRequired')); return; }
 
     const res = await fetch('/delete-listing', {
       method:  'DELETE',
@@ -1456,19 +1481,19 @@ async function eqDeleteListing(id, status) {
         const { error } = await eqSb.from('listings')
           .update({ status: 'deleted' })
           .eq('id', id).eq('user_id', eqUser.id);
-        if (error) { alert('حدث خطأ في الحذف: ' + error.message); return; }
-        alert('تم حذف الإعلان');
+        if (error) { alert(t('delete.deleteError') + ': ' + error.message); return; }
+        alert(t('delete.deletedSoft'));
         eqLoadMyListings();
         return;
       }
-      alert('تعذّر الحذف: ' + (err.error || 'خطأ غير متوقع'));
+      alert(t('delete.deleteFailed', { error: err.error || t('delete.unexpectedError') }));
       return;
     }
 
-    alert('تم حذف الإعلان نهائياً');
+    alert(t('delete.deletedFull'));
     eqLoadMyListings();
   } catch (e) {
-    alert('حدث خطأ في الحذف — تحقق من الاتصال وأعد المحاولة');
+    alert(t('delete.deleteError'));
   }
 }
 
@@ -1487,8 +1512,8 @@ async function eqOpenEdit(id) {
   const isSuspended = profile?.is_suspended &&
     (!profile.suspended_until || new Date(profile.suspended_until) > new Date());
   if (isSuspended) {
-    const until = profile.suspended_until ? 'حتى ' + new Date(profile.suspended_until).toLocaleDateString('ar-EG') : 'حتى مراجعة إضافية من الإدارة';
-    alert('🚫 تم إيقاف صلاحية تعديل الإعلانات مؤقتاً' + (profile.suspension_reason ? '\nالسبب: ' + profile.suspension_reason : '') + '\n' + until);
+    const until = profile.suspended_until ? t('suspended.untilDate', { date: new Date(profile.suspended_until).toLocaleDateString(getLocale()==='en'?'en-US':'ar-EG') }) : t('suspended.untilReview');
+    alert(t('suspended.title') + (profile.suspension_reason ? t('suspended.reason', { reason: profile.suspension_reason }) : '') + '\n' + until);
     return;
   }
 
@@ -1497,13 +1522,13 @@ async function eqOpenEdit(id) {
 
   /* ملء قوائم الاختيار */
   document.getElementById('eq-edit-category').innerHTML =
-    EQ_CATEGORIES.map(c => `<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('');
+    EQ_CATEGORIES.map(c => `<option value="${c.id}"${l.category===c.id?' selected':''}>${eqCatLabel(c.id)}</option>`).join('');
 
   document.getElementById('eq-edit-condition').innerHTML =
-    EQ_CONDITIONS.map(c => `<option value="${c.id}"${l.condition===c.id?' selected':''}>${c.label}</option>`).join('');
+    EQ_CONDITIONS.map(c => `<option value="${c.id}"${l.condition===c.id?' selected':''}>${eqCondLabel(c.id)}</option>`).join('');
 
   document.getElementById('eq-edit-region').innerHTML =
-    EQ_GOVS.map(g => `<option value="${g}"${l.region===g?' selected':''}>${g}</option>`).join('');
+    EQ_GOVS.map(g => `<option value="${g}"${l.region===g?' selected':''}>${eqGovLabel(g)}</option>`).join('');
 
   /* ملء الحقول */
   document.getElementById('eq-edit-title').value       = l.title        || '';
@@ -1518,13 +1543,13 @@ async function eqOpenEdit(id) {
   const note = document.getElementById('eq-edit-note');
   if (l.status === 'approved' || l.status === 'paused') {
     note.className = 'eq-edit-note eq-edit-note-info';
-    note.textContent = 'التعديل لن يغيّر حالة الإعلان — سيظل كما هو بعد الحفظ.';
+    note.textContent = t('edit.noteApprovedPaused');
   } else if (l.status === 'rejected') {
     note.className = 'eq-edit-note eq-edit-note-warn';
-    note.textContent = 'بعد الحفظ سيُرسل الإعلان للمراجعة مجدداً.';
+    note.textContent = t('edit.noteRejected');
   } else {
     note.className = 'eq-edit-note eq-edit-note-info';
-    note.textContent = 'التعديلات ستُحفظ والإعلان سيبقى قيد المراجعة.';
+    note.textContent = t('edit.noteDefault');
   }
 
   document.getElementById('eq-edit-modal').classList.add('open');
@@ -1544,16 +1569,16 @@ async function eqSubmitEdit() {
   const price      = parseInt(document.getElementById('eq-edit-price').value) || 0;
   const phone      = document.getElementById('eq-edit-phone').value.trim();
 
-  if (!title)         { alert('من فضلك أدخل عنوان الإعلان');  return; }
-  if (!phone)         { alert('من فضلك أدخل رقم التليفون');   return; }
-  if (!price || price <= 0) { alert('من فضلك أدخل سعراً صحيحاً'); return; }
+  if (!title)         { alert(t('edit.titleRequired'));  return; }
+  if (!phone)         { alert(t('edit.phoneRequired'));   return; }
+  if (!price || price <= 0) { alert(t('edit.priceRequired')); return; }
 
   /* الإعلانات المرفوضة تعود للمراجعة بعد التعديل */
   const newStatus = origStatus === 'rejected' ? 'pending' : origStatus;
 
   const btn = document.getElementById('eq-edit-save-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ جاري الحفظ…';
+  btn.textContent = t('edit.saving');
 
   const { error } = await eqSb.from('listings').update({
     category:     document.getElementById('eq-edit-category').value,
@@ -1570,9 +1595,9 @@ async function eqSubmitEdit() {
   }).eq('id', id).eq('user_id', eqUser.id);
 
   btn.disabled = false;
-  btn.textContent = '💾 حفظ التعديلات';
+  btn.textContent = t('edit.save');
 
-  if (error) { alert('خطأ في الحفظ: ' + error.message); return; }
+  if (error) { alert(t('edit.saveError', { error: error.message })); return; }
 
   /* ── مزامنة الهاتف والمنطقة إلى جدول profiles (تلقائياً) ── */
   if (eqUser && phone) {
@@ -1585,9 +1610,7 @@ async function eqSubmitEdit() {
   }
 
   eqCloseEdit();
-  alert(origStatus === 'rejected'
-    ? 'تم حفظ التعديلات ✅\nتم إرسال الإعلان للمراجعة مجدداً.'
-    : 'تم حفظ التعديلات بنجاح ✅');
+  alert(origStatus === 'rejected' ? t('edit.savedRejected') : t('edit.savedSuccess'));
   eqLoadMyListings();
 }
 
@@ -1609,12 +1632,12 @@ function eqUpdateBnUser() {
     const name    = eqUser.user_metadata?.full_name || eqUser.email || '';
     const initial = (name[0] || '؟').toUpperCase();
     icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
-    label.textContent = 'حسابي';
-    if (desc) desc.textContent = name.split(' ')[0] || 'مرحباً';
+    label.textContent = t('bottomNav.myAccount');
+    if (desc) desc.textContent = name.split(' ')[0] || t('bottomNav.welcome');
   } else {
     icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
-    label.textContent = 'دخول';
-    if (desc) desc.textContent = 'سجّل أو ادخل';
+    label.textContent = t('bottomNav.login');
+    if (desc) desc.textContent = t('bottomNav.loginDesc');
   }
 }
 
@@ -1626,17 +1649,15 @@ function eqUpdateBnUser() {
 async function eqTogglePause(id, currentStatus) {
   const pausing  = currentStatus === 'approved';
   const newStatus = pausing ? 'paused' : 'approved';
-  const msg = pausing
-    ? 'هل تريد إيقاف الإعلان مؤقتاً؟ لن يظهر للمستخدمين حتى تعيد تفعيله.'
-    : 'هل تريد إعادة تفعيل الإعلان؟ سيظهر للمستخدمين فوراً.';
+  const msg = pausing ? t('pause.confirmPause') : t('pause.confirmResume');
   if (!confirm(msg)) return;
 
   const { error } = await eqSb.from('listings')
     .update({ status: newStatus })
     .eq('id', id).eq('user_id', eqUser.id);
 
-  if (error) { alert('حدث خطأ: ' + error.message); return; }
-  alert(pausing ? 'تم إيقاف الإعلان مؤقتاً ⏸' : 'تم تفعيل الإعلان بنجاح ✅');
+  if (error) { alert(t('pause.error', { error: error.message })); return; }
+  alert(pausing ? t('pause.pausedSuccess') : t('pause.resumedSuccess'));
   eqLoadMyListings();
 }
 
@@ -1665,11 +1686,17 @@ function eqFmtDate(iso) {
 }
 
 function eqCatLabel(id) {
-  return EQ_CATEGORIES.find(c => c.id === id)?.label || id;
+  return t('categories.' + id, { defaultValue: id });
 }
 
 function eqCondLabel(id) {
-  return EQ_CONDITIONS.find(c => c.id === id)?.label || id;
+  return t('conditions.' + id, { defaultValue: id });
+}
+
+/* المحافظات مخزّنة في DB كنص عربي حرفي (قيمة region تُطابَق حرفيًا) — الترجمة
+   للعرض فقط، القيمة الأصلية تفضل زي ما هي (راجع govLabels في locales/en/market.json) */
+function eqGovLabel(g) {
+  return t('govLabels.' + g, { defaultValue: g });
 }
 
 /* إغلاق المودالات عند الضغط على الخلفية */
@@ -1695,7 +1722,7 @@ function eqUpdateFavBtn() {
     badge.textContent = count > 9 ? '9+' : String(count);
     badge.classList.toggle('show', count > 0);
   }
-  btn.title = count > 0 ? `المفضلة (${count})` : 'المفضلة';
+  btn.title = count > 0 ? t('favorites.titleWithCount', { count }) : t('favorites.title');
 }
 
 async function eqLoadFavorites() {
@@ -1720,13 +1747,13 @@ async function eqToggleFavorite(e, id) {
       .eq('user_id', eqUser.id).eq('listing_id', id);
     eqFavorites.delete(id);
     allBtns.forEach(b => {
-      b.textContent = b.classList.contains('eq-fav-btn') ? '🤍' : '🤍 أضف للمفضلة';
+      b.textContent = b.classList.contains('eq-fav-btn') ? '🤍' : t('detail.addFavorite');
     });
   } else {
     await eqSb.from('favorites').insert({ user_id: eqUser.id, listing_id: id });
     eqFavorites.add(id);
     allBtns.forEach(b => {
-      b.textContent = b.classList.contains('eq-fav-btn') ? '❤️' : '❤️ في المفضلة';
+      b.textContent = b.classList.contains('eq-fav-btn') ? '❤️' : t('detail.inFavorite');
     });
   }
   eqUpdateFavBtn();
@@ -1739,11 +1766,11 @@ async function eqOpenFavorites() {
 
   const cont = document.getElementById('eq-fav-body');
   if (eqFavorites.size === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>لا توجد مشاريع مفضلة</p><a class="eq-btn eq-btn-primary" href="/market/">تصفح المشاريع</a></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>${t('favorites.empty')}</p><a class="eq-btn eq-btn-primary" href="/market/">${t('favorites.browseProjects')}</a></div>`;
     return;
   }
 
-  cont.innerHTML = `<div class="eq-loading"><div class="eq-spinner"></div><p>جاري التحميل…</p></div>`;
+  cont.innerHTML = `<div class="eq-loading"><div class="eq-spinner"></div><p>${t('favorites.loading')}</p></div>`;
 
   const { data } = await eqSb
     .from('listings')
@@ -1751,7 +1778,7 @@ async function eqOpenFavorites() {
     .in('id', [...eqFavorites]);
 
   if (!data || data.length === 0) {
-    cont.innerHTML = `<div class="eq-empty"><p>لا توجد إعلانات مفضلة</p></div>`;
+    cont.innerHTML = `<div class="eq-empty"><p>${t('favorites.emptyListings')}</p></div>`;
     return;
   }
 
@@ -1759,19 +1786,19 @@ async function eqOpenFavorites() {
     const img = l.cover_image
       ? `<img src="${_cardUrl(l.cover_image)}" alt="${l.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`
       : `<div style="width:60px;height:60px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📦</div>`;
-    const price = Number(l.price).toLocaleString('ar-EG');
+    const price = Number(l.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
     return `
     <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #F0F0F0">
       <div style="cursor:pointer;display:flex;gap:12px;align-items:center;flex:1;min-width:0" onclick="eqCloseFavorites();eqOpenDetail('${l.id}')">
         ${img}
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:14px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
-          <div style="color:var(--orange);font-weight:800;font-size:14px">${price} ج</div>
-          <div style="font-size:12px;color:#999">📍 ${l.region || ''}</div>
+          <div style="color:var(--orange);font-weight:800;font-size:14px">${price} ${t('card.currency')}</div>
+          <div style="font-size:12px;color:#999">📍 ${l.region ? eqGovLabel(l.region) : ''}</div>
         </div>
       </div>
       <button data-fav="${l.id}" onclick="eqToggleFavorite(event,'${l.id}');this.closest('div[style]').remove()"
-        style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0" title="إزالة من المفضلة">❤️</button>
+        style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0" title="${t('detail.removeFavorite')}">❤️</button>
     </div>`;
   }).join('');
 }

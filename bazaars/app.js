@@ -48,6 +48,28 @@ function _cairoTodayStr() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
 }
 
+/* تنسيق الأرقام والتواريخ حسب اللغة الحالية — بديل موحّد عن toLocaleString('ar-EG') المكرر */
+function _bzNumLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
+function _bzFmtNum(val) { return Number(val || 0).toLocaleString(_bzNumLocale()); }
+function _bzFmtDateLong(d, opts) { return new Date(d).toLocaleDateString(_bzNumLocale(), opts); }
+
+
+/* ================================================================
+   🌐 دعم اللغتين — إعادة رسم المحتوى الديناميكي عند تبديل اللغة
+   ================================================================ */
+/* مسجَّل عند تحميل الملف (top-level)، قبل أي نداء t() — راجع feedback-i18n-gotchas نقطة 6 */
+document.addEventListener('makani:locale-changed', () => {
+  bzRenderNavUser();
+  if (BAZAARS.length) renderBazaarCards();
+  updateBzSlider();
+  if (currentBazaar) {
+    if (currentUser) openBazaarDetail(currentBazaar.id, { silent: true });
+    else _showBzLoginGate(currentBazaar);
+  }
+  if (currentUser) bzLoadPostponeAlerts();
+  if (document.getElementById('bz-opp-cards')) _bzInitOpportunitiesPage();
+});
+
 
 /* ================================================================
    🚀 القسم 3: نقطة البداية
@@ -127,11 +149,11 @@ function _bzInitOpportunitiesPage() {
   const grid = document.getElementById('bz-opp-cards');
   if (!grid) return;
   if (!currentUser) {
-    grid.innerHTML = '<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>يجب تسجيل الدخول أولاً</p><a href="/?p=login" style="display:inline-block;margin-top:12px;padding:10px 22px;background:var(--orange);color:#fff;border-radius:var(--radius-pill);font-weight:800;text-decoration:none">تسجيل الدخول</a></div>';
+    grid.innerHTML = `<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>${t('opportunities.loginRequiredMsg')}</p><a href="/?p=login" style="display:inline-block;margin-top:12px;padding:10px 22px;background:var(--orange);color:#fff;border-radius:var(--radius-pill);font-weight:800;text-decoration:none">${t('opportunities.loginBtn')}</a></div>`;
     return;
   }
   if (!_bzIsOrganizer()) {
-    grid.innerHTML = '<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>هذه الصفحة مخصصة لمنظمي البازارات فقط</p></div>';
+    grid.innerHTML = `<div class="bzopp-access-msg"><span style="font-size:40px">🔒</span><p>${t('opportunities.notOrganizerMsg')}</p></div>`;
     return;
   }
   bzLoadOpportunities();
@@ -172,63 +194,63 @@ function bzRenderNavUser() {
 
 
         ${_bzIsOrganizer() ? `
-        <a class="bz-cta-organize" href="/bazaars/organize.html" title="إنشاء بازار جديد">
+        <a class="bz-cta-organize" href="/bazaars/organize.html" title="${t('userNav.createBazaarTooltip')}">
           <svg class="bz-cta-organize-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span class="bz-cta-organize-full">إنشاء بازار جديد</span><span class="bz-cta-organize-short">بازار جديد</span>
+          <span class="bz-cta-organize-full">${t('userNav.createBazaar')}</span><span class="bz-cta-organize-short">${t('userNav.createBazaarShort')}</span>
         </a>` : ''}
 
         <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
           <div class="nav-avatar-circle">${avatarHtml}</div>
           <div class="nav-avatar-info">
-            <div class="nav-avatar-name">${name || 'حسابي'}</div>
+            <div class="nav-avatar-name">${name || t('userNav.defaultAccountName')}</div>
             <div class="nav-avatar-email">${email}</div>
           </div>
           <div class="nav-avatar-caret">▼</div>
 
           <div class="nav-dropdown" id="bz-dropdown">
             <div class="nav-dropdown-header">
-              <div class="nav-dropdown-name">${name || 'حسابي'}</div>
+              <div class="nav-dropdown-name">${name || t('userNav.defaultAccountName')}</div>
               <div class="nav-dropdown-email">${email}</div>
-              <div class="nav-dropdown-role">${currentCapabilities?.organizerVerified ? 'منظم بازارات موثّق ✓' : _bzIsOrganizer() ? 'منظم بازارات' : 'مستخدم البازارات'}</div>
+              <div class="nav-dropdown-role">${currentCapabilities?.organizerVerified ? t('userNav.roleOrganizerVerified') : _bzIsOrganizer() ? t('userNav.roleOrganizer') : t('userNav.roleUser')}</div>
             </div>
             ${_bzIsOrganizer() ? `
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/organize.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-              إنشاء بازار جديد
+              ${t('userNav.createBazaar')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/manage.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="1.6" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg>
-              إدارة البازارات
+              ${t('userNav.manageBazaars')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/opportunities.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21h16"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 21v-5h4v5"/><path d="M10 10h.01M14 10h.01M10 14h.01M14 14h.01"/></svg>
-              فرص الاستضافة
+              ${t('userNav.opportunities')}
             </button>
             <div class="nav-dropdown-sep"></div>` : ''}
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-              الملف الشخصي
+              ${t('userNav.profile')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              لوحة التحكم
+              ${t('userNav.dashboard')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
-              إعلاناتي
+              ${t('userNav.myListings')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
-              اشترك في بزار
+              ${t('userNav.joinBazaar')}
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/?p=market'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              دور على مساحة
+              ${t('userNav.findSpace')}
             </button>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item danger" onclick="bzSignOut()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-              تسجيل الخروج
+              ${t('userNav.signOut')}
             </button>
           </div>
         </div>
@@ -242,9 +264,9 @@ function bzRenderNavUser() {
           <circle cx="12" cy="8" r="4"/>
           <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
         </svg>
-        <span>دخول</span>
+        <span>${t('nav.loginBtn')}</span>
         <span class="btn-login-sep">|</span>
-        <span>سجّل</span>
+        <span>${t('nav.signupBtn')}</span>
       </button>`;
   }
   bzUpdateBnUser();
@@ -270,8 +292,8 @@ function bzMountManageIcon() {
   btn.id        = 'bz-manage-icon';
   btn.className = 'gn-bell';
   btn.setAttribute('role', 'button');
-  btn.setAttribute('aria-label', 'إدارة البازارات');
-  btn.title = 'إدارة البازارات';
+  btn.setAttribute('aria-label', t('userNav.manageIconTooltip'));
+  btn.title = t('userNav.manageIconTooltip');
   btn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
     '     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
@@ -379,7 +401,7 @@ function _esc(str) {
 async function loadBazaars() {
   try {
     if (!sbClient) {
-      _renderBazaarsEmpty('تعذّر الاتصال بقاعدة البيانات');
+      _renderBazaarsEmpty(t('grid.connectionError'));
       return;
     }
 
@@ -437,7 +459,7 @@ async function loadBazaars() {
 
   } catch (err) {
     console.error('❌ خطأ في تحميل البازارات:', err.message);
-    _renderBazaarsEmpty('تعذّر تحميل البازارات — حاول مرة أخرى');
+    _renderBazaarsEmpty(t('grid.loadError'));
   }
 }
 
@@ -453,8 +475,8 @@ function _renderBazaarsEmpty(hint) {
   if (grid) grid.innerHTML = `
     <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
       <div style="font-size:52px;margin-bottom:14px">🎪</div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:8px">لا توجد بازارات حالياً</div>
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:10px">تابعنا للاطلاع على البازارات القادمة!</div>
+      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:8px">${t('grid.emptyTitle')}</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:10px">${t('grid.emptyHint')}</div>
       ${hintHtml}
     </div>`;
 }
@@ -470,11 +492,11 @@ function buildBazaarCard(b) {
   if (b.date_start) {
     const d  = new Date(b.date_start);
     dayNum   = d.getDate();
-    monthStr = d.toLocaleDateString('ar-EG', { month: 'short' });
-    dateLabel = d.toLocaleDateString('ar-EG', { weekday:'short', month:'long', day:'numeric' });
+    monthStr = _bzFmtDateLong(d, { month: 'short' });
+    dateLabel = _bzFmtDateLong(d, { weekday:'short', month:'long', day:'numeric' });
   }
   if (b.date_end && b.date_end !== b.date_start) {
-    endLabel = ' ← ' + new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric' });
+    endLabel = (getLocale() === 'en' ? ' → ' : ' ← ') + _bzFmtDateLong(b.date_end, { month:'short', day:'numeric' });
   }
 
   /* ── حالة الوقت ── */
@@ -498,7 +520,7 @@ function buildBazaarCard(b) {
   const orgName     = b.organizer || '';
   const orgInitial  = orgName ? orgName[0].toUpperCase() : '🎪';
   const orgVerified = b.is_organizer_verified;
-  const orgSubText  = orgVerified ? '⭐ منظّم موثّق' : 'منظّم البازار';
+  const orgSubText  = orgVerified ? t('card.verifiedOrganizer') : t('card.organizerFallback');
 
   const orgProfileHref = b.organizer_id
     ? `/bazaars/profile.html?organizer=${b.organizer_id}`
@@ -519,8 +541,8 @@ function buildBazaarCard(b) {
       <div class="bz-org-sub">${orgSubText}</div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-right:auto">
-      ${orgVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
-      ${orgProfileHref ? `<span style="font-size:10px;color:var(--orange);opacity:.8">←</span>` : ''}
+      ${orgVerified ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>` : ''}
+      ${orgProfileHref ? `<span style="font-size:10px;color:var(--orange);opacity:.8">${getLocale() === 'en' ? '→' : '←'}</span>` : ''}
     </div>
   </div>` : '';
 
@@ -542,9 +564,9 @@ function buildBazaarCard(b) {
       <div class="bz-card-cat-pill">
         <span>${b.category}</span>
       </div>` : ''}
-      ${isExpired    ? '<div class="bz-expired-badge">انتهى</div>'
-        : isSoldOut  ? '<div class="bz-soldout-badge">مكتمل</div>'
-        : isActiveNow? '<div class="bz-active-now-badge">جارٍ الآن 🟢</div>'
+      ${isExpired    ? `<div class="bz-expired-badge">${t('card.expired')}</div>`
+        : isSoldOut  ? `<div class="bz-soldout-badge">${t('card.soldOut')}</div>`
+        : isActiveNow? `<div class="bz-active-now-badge">${t('card.activeNow')}</div>`
         : ''}
     </div>
 
@@ -567,7 +589,7 @@ function buildBazaarCard(b) {
       <!-- الوصف -->
       ${b.description
         ? `<div class="bz-card-desc">${b.description}</div>`
-        : '<div class="bz-card-desc" style="color:var(--ink3);font-style:italic">لا يوجد وصف</div>'}
+        : `<div class="bz-card-desc" style="color:var(--ink3);font-style:italic">${t('card.noDescription')}</div>`}
 
       <!-- المنظّم -->
       ${orgHtml}
@@ -575,15 +597,15 @@ function buildBazaarCard(b) {
       <!-- الذيل: السعر + الأماكن + زر -->
       <div class="bz-card-footer">
         <div>
-          <div class="bz-price-tag">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج / مكان</div>
+          <div class="bz-price-tag">${_bzFmtNum(b.price_per_slot)} ${t('card.priceUnit')}</div>
           <div class="bz-slots-tag${isSoldOut ? ' sold-out' : ''}">
-            ${isSoldOut ? '🔴 لا أماكن متاحة' : `🟢 ${availSlots} مكان متاح`}
+            ${isSoldOut ? t('card.noSlotsAvailable') : t('card.slotsAvailable', { count: availSlots })}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <button class="share-btn-inline"
                   onclick="event.stopPropagation();shareCard('${b.id}','${(b.name||'').replace(/'/g,"\\'")}');"
-                  title="مشاركة البازار">
+                  title="${t('card.shareTooltip')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  width="13" height="13" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/>
@@ -594,7 +616,7 @@ function buildBazaarCard(b) {
           </button>
           <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;white-space:nowrap"
                   onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
-            التفاصيل ←
+            ${t('card.detailsBtn')}
           </button>
         </div>
       </div>
@@ -613,7 +635,7 @@ function renderBazaarCards() {
   const countEl = document.getElementById('bz-count');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = bzFiltered.length + ' بازار';
+  if (countEl) countEl.textContent = t('grid.count', { count: bzFiltered.length });
 
   const start    = (bzPage - 1) * BZ_PER_PAGE;
   const pageData = bzFiltered.slice(start, start + BZ_PER_PAGE);
@@ -622,9 +644,9 @@ function renderBazaarCards() {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
         <div style="font-size:52px;margin-bottom:14px">🎪</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--ink2)">لا توجد بازارات بالمعايير دي</div>
-        <div style="font-size:13px;color:var(--ink3);margin-bottom:18px">جرب تغيير الفلاتر</div>
-        <button class="btn btn-primary" onclick="clearBzFilters()">مسح الفلاتر</button>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--ink2)">${t('grid.emptyFilteredTitle')}</div>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:18px">${t('grid.emptyFilteredHint')}</div>
+        <button class="btn btn-primary" onclick="clearBzFilters()">${t('grid.clearFiltersBtn')}</button>
       </div>`;
     renderBzPagination();
     return;
@@ -643,7 +665,7 @@ function renderBzPagination() {
   if (totalPages <= 1) { cont.innerHTML = ''; return; }
 
   let html = '';
-  if (bzPage > 1) html += `<button class="pg-btn" onclick="bzGoPage(${bzPage - 1})">السابق</button>`;
+  if (bzPage > 1) html += `<button class="pg-btn" onclick="bzGoPage(${bzPage - 1})">${t('grid.prevPage')}</button>`;
   for (let i = 1; i <= totalPages; i++) {
     if (i === 1 || i === totalPages || Math.abs(i - bzPage) <= 2) {
       html += `<button class="pg-btn${i === bzPage ? ' on' : ''}" onclick="bzGoPage(${i})">${i}</button>`;
@@ -651,7 +673,7 @@ function renderBzPagination() {
       html += `<span class="pg-dots">…</span>`;
     }
   }
-  if (bzPage < totalPages) html += `<button class="pg-btn" onclick="bzGoPage(${bzPage + 1})">التالي</button>`;
+  if (bzPage < totalPages) html += `<button class="pg-btn" onclick="bzGoPage(${bzPage + 1})">${t('grid.nextPage')}</button>`;
   cont.innerHTML = html;
 }
 
@@ -789,7 +811,7 @@ function updateBzSlider() {
   if (tr) tr.style.background =
     `linear-gradient(to right, #e8e8e8 ${100 - pct}%, #F36418 ${100 - pct}%)`;
   const lb = document.getElementById('bz-price-label');
-  if (lb) lb.textContent = val >= max ? 'بلا حد' : Number(val).toLocaleString('ar-EG') + ' ج';
+  if (lb) lb.textContent = val >= max ? t('filters.noLimit') : _bzFmtNum(val) + ' ' + t('card.currency');
 }
 
 function setBzChip(chip, el) {
@@ -826,7 +848,7 @@ async function searchOrganizers(q) {
     return;
   }
 
-  results.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--ink3)">جارٍ البحث…</div>';
+  results.innerHTML = `<div style="padding:10px;font-size:13px;color:var(--ink3)">${t('orgSearch.searching')}</div>`;
 
   _orgSearchTimer = setTimeout(async () => {
     try {
@@ -839,12 +861,12 @@ async function searchOrganizers(q) {
 
       if (error) throw error;
       if (!data || !data.length) {
-        results.innerHTML = '<div style="padding:12px;font-size:13px;color:var(--ink3);text-align:center">لا يوجد منظم بهذا الاسم</div>';
+        results.innerHTML = `<div style="padding:12px;font-size:13px;color:var(--ink3);text-align:center">${t('orgSearch.noResults')}</div>`;
         return;
       }
 
       results.innerHTML = data.map(org => {
-        const name    = org.full_name || 'منظم';
+        const name    = org.full_name || t('orgSearch.defaultName');
         const initial = (name[0] || '?').toUpperCase();
         const logo    = org.logo ? `<img src="${org.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : initial;
         // عدد بازارات هذا المنظم من البيانات المحملة
@@ -859,16 +881,16 @@ async function searchOrganizers(q) {
             </div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:800;font-size:14px;color:var(--dark)">${name}
-                <span style="display:inline-flex;align-items:center;gap:2px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);color:#2e7d32;border:1px solid #a5d6a7;font-size:10px;font-weight:800;padding:1px 6px;border-radius:50px;margin-right:5px">✓ موثّق</span>
+                <span style="display:inline-flex;align-items:center;gap:2px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);color:#2e7d32;border:1px solid #a5d6a7;font-size:10px;font-weight:800;padding:1px 6px;border-radius:50px;margin-right:5px">${t('orgSearch.verifiedBadge')}</span>
               </div>
-              <div style="font-size:12px;color:var(--ink3);margin-top:2px">${bzCount ? bzCount + ' بازار' : 'لا يوجد بازارات حتى الآن'}</div>
+              <div style="font-size:12px;color:var(--ink3);margin-top:2px">${bzCount ? t('orgSearch.bazaarCount', { count: bzCount }) : t('orgSearch.noBazaarsYet')}</div>
             </div>
-            <div style="font-size:12px;color:var(--orange);font-weight:700;white-space:nowrap">← الملف</div>
+            <div style="font-size:12px;color:var(--orange);font-weight:700;white-space:nowrap">${t('orgSearch.viewProfile')}</div>
           </div>`;
       }).join('');
     } catch(e) {
       console.warn('searchOrganizers error:', e.message);
-      results.innerHTML = '<div style="padding:12px;font-size:13px;color:var(--ink3);text-align:center">تعذّر البحث، حاول مرة أخرى</div>';
+      results.innerHTML = `<div style="padding:12px;font-size:13px;color:var(--ink3);text-align:center">${t('orgSearch.searchError')}</div>`;
     }
   }, 320);
 }
@@ -891,7 +913,7 @@ function _showBzLoginGate(b) {
   selectedSlotId = null;
 
   const dateStr = b.date_start
-    ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'long', day:'numeric' })
+    ? _bzFmtDateLong(b.date_start, { month:'long', day:'numeric' })
     : '';
 
   const headerEl = document.getElementById('bzd-header');
@@ -899,7 +921,7 @@ function _showBzLoginGate(b) {
     headerEl.innerHTML = `
       <div class="sd-header-inner">
         <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeBazaarDetail()">→ العودة للبازارات</button>
+          <button class="sd-back-btn" onclick="closeBazaarDetail()">${t('loginGate.backToBazaars')}</button>
         </div>
         <div class="sd-title-row">
           <div style="flex:1">
@@ -920,19 +942,19 @@ function _showBzLoginGate(b) {
       <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
         <div style="font-size:64px;margin-bottom:20px">🔒</div>
         <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
-          سجّل دخولك لعرض التفاصيل
+          ${t('loginGate.title')}
         </h2>
         <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
-          سجّل دخولك لمعرفة المزيد من تفاصيل البازار والحجز
+          ${t('loginGate.body')}
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
                   onclick="window.location.href='/?p=login'">
-            تسجيل الدخول ←
+            ${t('loginGate.loginBtn')}
           </button>
           <button class="btn" style="padding:13px 22px;font-size:14px"
                   onclick="closeBazaarDetail()">
-            العودة للبازارات
+            ${t('loginGate.backBtn')}
           </button>
         </div>
       </div>`;
@@ -966,10 +988,10 @@ async function openBazaarDetail(bazaarId, opts = {}) {
   const nextB   = idx < allList.length - 1   ? allList[idx + 1] : null;
 
   const dateStr = b.date_start
-    ? new Date(b.date_start).toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    ? _bzFmtDateLong(b.date_start, { weekday:'long', year:'numeric', month:'long', day:'numeric' })
     : '—';
   const endStr = b.date_end && b.date_end !== b.date_start
-    ? ' — ' + new Date(b.date_end).toLocaleDateString('ar-EG', { month:'long', day:'numeric' })
+    ? ' — ' + _bzFmtDateLong(b.date_end, { month:'long', day:'numeric' })
     : '';
   const timeRange = b.time_start
     ? `🕐 ${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}`
@@ -982,17 +1004,17 @@ async function openBazaarDetail(bazaarId, opts = {}) {
     headerEl.innerHTML = `
       <div class="sd-header-inner">
         <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeBazaarDetail()">→ العودة للبازارات</button>
+          <button class="sd-back-btn" onclick="closeBazaarDetail()">${t('detail.backBtn')}</button>
           ${isMyBazaar ? `
           <a href="/bazaars/manage.html?id=${b.id}"
              style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-pill);border:1.5px solid var(--orange);background:var(--orange);color:#fff;font-family:var(--font-display);font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap;transition:opacity .15s;flex-shrink:0"
              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-            ✏️ تعديل البازار
+            ${t('detail.editBtn')}
           </a>` : ''}
           <div class="sd-breadcrumb" style="${isMyBazaar ? 'margin-inline-start:auto' : ''}">
-            <span onclick="window.location.href='/'" style="cursor:pointer">الرئيسية</span>
+            <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
             <span class="sd-bc-sep">·</span>
-            <span onclick="closeBazaarDetail()" style="cursor:pointer">البازارات</span>
+            <span onclick="closeBazaarDetail()" style="cursor:pointer">${t('detail.bazaarsCrumb')}</span>
             <span class="sd-bc-sep">·</span>
             ${b.category ? `<span onclick="closeBazaarDetail()" style="cursor:pointer">${b.category}</span><span class="sd-bc-sep">·</span>` : ''}
             <span style="color:var(--orange)">${b.name}</span>
@@ -1010,37 +1032,37 @@ async function openBazaarDetail(bazaarId, opts = {}) {
             </div>
           </div>
           <div class="sd-price-box">
-            <div class="sd-price-val">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</div>
-            <div class="sd-price-lbl">/ مكان واحد</div>
+            <div class="sd-price-val">${_bzFmtNum(b.price_per_slot)} ${t('card.currency')}</div>
+            <div class="sd-price-lbl">${t('detail.priceUnit')}</div>
             <div class="bzd-quick-actions">
               <button type="button" class="bzd-quick-action" id="bzd-copy-link-btn"
-                      onclick="copyBazaarBookingLink()" title="نسخ رابط الحجز المباشر لهذا البازار">
+                      onclick="copyBazaarBookingLink()" title="${t('detail.copyLinkTooltip')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                      stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
-                <span id="bzd-copy-link-label">نسخ رابط الحجز</span>
+                <span id="bzd-copy-link-label">${t('detail.copyLinkLabel')}</span>
               </button>
               <button type="button" class="bzd-quick-action"
-                      onclick="shareCard('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" title="مشاركة البازار">
+                      onclick="shareCard('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" title="${t('detail.shareTooltip')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                      stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                   <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                   <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
-                <span>مشاركة</span>
+                <span>${t('detail.shareLabel')}</span>
               </button>
             </div>
           </div>
         </div>
         <div class="bz-detail-nav">
           ${prevB
-            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${prevB.id}')">← ${prevB.name}</button>`
+            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${prevB.id}')">${t('nav.prevBazaar', { name: prevB.name })}</button>`
             : '<span></span>'}
-          <span class="bz-detail-nav-count">${idx + 1} / ${allList.length}</span>
+          <span class="bz-detail-nav-count">${t('detail.navCount', { current: idx + 1, total: allList.length })}</span>
           ${nextB
-            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${nextB.id}')">${nextB.name} →</button>`
+            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${nextB.id}')">${t('nav.nextBazaar', { name: nextB.name })}</button>`
             : '<span></span>'}
         </div>
       </div>`;
@@ -1068,18 +1090,20 @@ async function openBazaarDetail(bazaarId, opts = {}) {
   if (slotmapEl) {
     slotmapEl.innerHTML = `
       <div class="sd-subspaces-header">
-        <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
+        <h2 class="sd-section-title">${t('slotMap.title')}</h2>
       </div>
       <div style="text-align:center;padding:50px 20px;color:var(--ink3)">
         <div style="font-size:36px;margin-bottom:12px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-        <div style="font-size:14px">جاري تحميل خريطة الأماكن…</div>
+        <div style="font-size:14px">${t('slotMap.loading')}</div>
       </div>`;
   }
 
   if (panel) panel.style.display = 'none';
 
-  showBzPage('bazaar-detail');
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (!opts.silent) {
+    showBzPage('bazaar-detail');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
 
   if (!sbClient) {
     if (slotmapEl) slotmapEl.innerHTML = _isExpired ? _renderSlotMapEndedFallback(_endDate) : _renderSlotMapFallback();
@@ -1098,7 +1122,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
       if (_isExpired && b.organizer_id) _loadOrgPastBazaars(b.organizer_id, b.id);
     } else if (_isExpired) {
       /* ── انتهى البازار: نعرض الخريطة كاملة في وضع عرض فقط (Read Only) ── */
-      const expDateFmt = new Date(_endDate).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+      const expDateFmt = _bzFmtDateLong(_endDate, { year:'numeric', month:'long', day:'numeric' });
       renderSlotMap(slots, { mode: 'ended', endDateFmt: expDateFmt });
       if (slotmapEl) {
         const pastWrap = document.createElement('div');
@@ -1127,10 +1151,10 @@ function _renderBazaarInfo(b) {
   if (!infoEl) return;
 
   const dateStr = b.date_start
-    ? new Date(b.date_start).toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    ? _bzFmtDateLong(b.date_start, { weekday:'long', year:'numeric', month:'long', day:'numeric' })
     : '—';
   const endStr = b.date_end && b.date_end !== b.date_start
-    ? new Date(b.date_end).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+    ? _bzFmtDateLong(b.date_end, { year:'numeric', month:'long', day:'numeric' })
     : '';
   const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
   const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
@@ -1149,10 +1173,10 @@ function _renderBazaarInfo(b) {
 
   /* ── المميزات التي يحصل عليها العارض (التجهيزات + الدعاية + التغطية الإعلامية) ── */
   const _adBudgetLabels = {
-    limited: 'محدودة (أقل من 5,000 ج)',
-    medium:  'متوسطة (5,000 – 15,000 ج)',
-    good:    'جيدة (15,000 – 30,000 ج)',
-    large:   'كبيرة (أكثر من 30,000 ج)',
+    limited: t('info.adBudgetLimited'),
+    medium:  t('info.adBudgetMedium'),
+    good:    t('info.adBudgetGood'),
+    large:   t('info.adBudgetLarge'),
   };
   const _amenities   = Array.isArray(b.included_amenities) ? b.included_amenities.filter(Boolean) : [];
   const _hasCoverage = !!(b.will_have_photography || b.will_have_social_coverage || b.will_have_paid_ads);
@@ -1160,31 +1184,31 @@ function _renderBazaarInfo(b) {
 
   const perksHtml = _hasPerks ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">🎁 المميزات التي يحصل عليها العارض</div>
+        <div class="sd-info-title">${t('info.perksTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:16px">
 
           ${(_amenities.length || b.other_amenities_note) ? `
           <div>
-            <div class="bz-perk-group-title">🧰 التجهيزات المشمولة</div>
+            <div class="bz-perk-group-title">${t('info.facilitiesTitle')}</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
-              ${_amenities.map(a => `<span class="bz-amenity-pill">✔ ${a === 'كرسي' && b.chair_count > 1 ? `${a} (×${b.chair_count})` : a}</span>`).join('')}
+              ${_amenities.map(a => `<span class="bz-amenity-pill">✔ ${a === 'كرسي' && b.chair_count > 1 ? `${t('amenities.' + a, { defaultValue: a })}${t('info.chairCountSuffix', { count: b.chair_count })}` : t('amenities.' + a, { defaultValue: a })}</span>`).join('')}
               ${b.other_amenities_note ? `<span class="bz-amenity-pill">✔ ${b.other_amenities_note}</span>` : ''}
             </div>
           </div>` : ''}
 
           ${b.ad_budget_tier ? `
           <div>
-            <div class="bz-perk-group-title">📢 الدعاية والتسويق</div>
-            <div class="sd-extra-row"><span>ميزانية الدعاية المتوقعة</span><span style="font-weight:700">${_adBudgetLabels[b.ad_budget_tier] || b.ad_budget_tier}</span></div>
+            <div class="bz-perk-group-title">${t('info.adBudgetTitle')}</div>
+            <div class="sd-extra-row"><span>${t('info.adBudgetLabel')}</span><span style="font-weight:700">${_adBudgetLabels[b.ad_budget_tier] || b.ad_budget_tier}</span></div>
           </div>` : ''}
 
           ${_hasCoverage ? `
           <div>
-            <div class="bz-perk-group-title">📸 التغطية الإعلامية</div>
+            <div class="bz-perk-group-title">${t('info.coverageTitle')}</div>
             <div style="display:flex;flex-direction:column;gap:6px">
-              ${b.will_have_photography     ? `<div style="font-size:13px">✔ تصوير الحدث</div>` : ''}
-              ${b.will_have_social_coverage ? `<div style="font-size:13px">✔ تغطية على وسائل التواصل الاجتماعي</div>` : ''}
-              ${b.will_have_paid_ads        ? `<div style="font-size:13px">✔ حملات إعلانية ممولة</div>` : ''}
+              ${b.will_have_photography     ? `<div style="font-size:13px">${t('info.photography')}</div>` : ''}
+              ${b.will_have_social_coverage ? `<div style="font-size:13px">${t('info.socialCoverage')}</div>` : ''}
+              ${b.will_have_paid_ads        ? `<div style="font-size:13px">${t('info.paidAds')}</div>` : ''}
             </div>
           </div>` : ''}
 
@@ -1197,43 +1221,43 @@ function _renderBazaarInfo(b) {
 
       ${b.description ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">📝 عن هذا البازار</div>
+        <div class="sd-info-title">${t('info.aboutTitle')}</div>
         <p class="sd-description">${b.description}</p>
       </div>` : ''}
 
       <div class="sd-info-card">
-        <div class="sd-info-title">📅 تفاصيل الحدث</div>
+        <div class="sd-info-title">${t('info.eventDetailsTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px">
-          <div class="sd-extra-row"><span>تاريخ البدء</span><span style="font-weight:700">${dateStr}</span></div>
-          ${endStr ? `<div class="sd-extra-row"><span>تاريخ الانتهاء</span><span style="font-weight:700">${endStr}</span></div>` : ''}
-          ${b.time_start ? `<div class="sd-extra-row"><span>⏰ الوقت</span><span>${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</span></div>` : ''}
-          ${b.category   ? `<div class="sd-extra-row"><span>🏷 الفئة</span><span class="bz-detail-cat-badge" style="font-size:11px">${b.category}</span></div>` : ''}
+          <div class="sd-extra-row"><span>${t('info.startDate')}</span><span style="font-weight:700">${dateStr}</span></div>
+          ${endStr ? `<div class="sd-extra-row"><span>${t('info.endDate')}</span><span style="font-weight:700">${endStr}</span></div>` : ''}
+          ${b.time_start ? `<div class="sd-extra-row"><span>${t('info.timeLabel')}</span><span>${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</span></div>` : ''}
+          ${b.category   ? `<div class="sd-extra-row"><span>${t('info.categoryLabel')}</span><span class="bz-detail-cat-badge" style="font-size:11px">${b.category}</span></div>` : ''}
           ${b.organizer  ? `
           <div class="sd-extra-row" ${b.organizer_id ? `style="cursor:pointer" onclick="openOrganizerProfile('${b.organizer_id}')"` : ''}>
-            <span>🧑‍💼 المنظم</span>
+            <span>${t('info.organizerLabel')}</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <span style="font-weight:700">${b.organizer}</span>
               ${b.is_organizer_verified
-                ? `<span class="bz-verified-badge">✓ موثّق</span>`
-                : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">لم يتم التحقق بعد</span>`}
-              ${b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">← عرض الصفحة</span>` : ''}
+                ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>`
+                : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">${t('info.notVerifiedYet')}</span>`}
+              ${b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">${t('info.viewProfileArrow')}</span>` : ''}
             </div>
           </div>` : ''}
         </div>
       </div>
 
       <div class="sd-info-card">
-        <div class="sd-info-title">💰 التسعير والأماكن</div>
+        <div class="sd-info-title">${t('info.pricingTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px">
           <div class="sd-extra-row">
-            <span>سعر المكان الواحد</span>
-            <strong style="color:var(--orange);font-size:16px">${Number(b.price_per_slot || 0).toLocaleString('ar-EG')} ج</strong>
+            <span>${t('info.pricePerSlot')}</span>
+            <strong style="color:var(--orange);font-size:16px">${_bzFmtNum(b.price_per_slot)} ${t('card.currency')}</strong>
           </div>
-          ${b.total_slots ? `<div class="sd-extra-row"><span>إجمالي الأماكن</span><span>${b.total_slots} مكان</span></div>` : ''}
+          ${b.total_slots ? `<div class="sd-extra-row"><span>${t('info.totalSlots')}</span><span>${t('info.totalSlotsUnit', { count: b.total_slots })}</span></div>` : ''}
           <div class="sd-extra-row">
-            <span>الأماكن المتاحة</span>
+            <span>${t('info.availableSlotsLabel')}</span>
             <span style="color:${isSoldOut ? 'var(--red)' : 'var(--green)'};font-weight:800">
-              ${isSoldOut ? '🔴 مكتمل' : `🟢 ${availSlots} مكان`}
+              ${isSoldOut ? t('info.soldOutBadge') : t('info.availableBadge', { count: availSlots })}
             </span>
           </div>
         </div>
@@ -1243,29 +1267,29 @@ function _renderBazaarInfo(b) {
 
       ${(b.venue_address || b.location) ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">📍 الموقع والعنوان</div>
+        <div class="sd-info-title">${t('info.locationTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
           <div class="sd-extra-row">
-            <span>اسم المكان</span>
+            <span>${t('info.venueName')}</span>
             <span style="font-weight:700">${b.location || '—'}</span>
           </div>
-          ${b.venue_address ? `<div class="sd-extra-row"><span>العنوان</span><span>${b.venue_address}</span></div>` : ''}
-          ${b.region ? `<div class="sd-extra-row"><span>المنطقة</span><span>${b.region}</span></div>` : ''}
+          ${b.venue_address ? `<div class="sd-extra-row"><span>${t('info.address')}</span><span>${b.venue_address}</span></div>` : ''}
+          ${b.region ? `<div class="sd-extra-row"><span>${t('info.regionLabel')}</span><span>${b.region}</span></div>` : ''}
           <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
             ${mapsHref ? `
             <a href="${mapsHref}" target="_blank" rel="noopener"
                class="bz-maps-btn">
-              🗺️ فتح في Google Maps
+              ${t('info.openMaps')}
             </a>` : ''}
             ${b.sketch_url ? `
             <button onclick="openBazaarMap('sketch')"
                     class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
-              🗺️ خريطة / اسكتش البازار
+              ${t('info.sketchMap')}
             </button>` : ''}
             ${b.event_image_url ? `
             <button onclick="openBazaarMap('photo')"
                     class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
-              📸 صورة واقعية للمكان
+              ${t('info.realPhoto')}
             </button>` : ''}
           </div>
         </div>
@@ -1273,17 +1297,17 @@ function _renderBazaarInfo(b) {
 
       ${(!b.venue_address && !b.location && (b.sketch_url || b.event_image_url)) ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">🖼️ خريطة وصور البازار</div>
+        <div class="sd-info-title">${t('info.mediaTitle')}</div>
         <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px">
           ${b.sketch_url ? `
           <button onclick="openBazaarMap('sketch')"
                   class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
-            🗺️ خريطة / اسكتش البازار
+            ${t('info.sketchMap')}
           </button>` : ''}
           ${b.event_image_url ? `
           <button onclick="openBazaarMap('photo')"
                   class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
-            📸 صورة واقعية للمكان
+            ${t('info.realPhoto')}
           </button>` : ''}
         </div>
       </div>` : ''}
@@ -1299,9 +1323,9 @@ function _renderBazaarInfo(b) {
           const getIcon = u => { try { const d = new URL(u).hostname.replace('www.',''); return Object.entries(icons).find(([k]) => d.includes(k))?.[1] || '🔗'; } catch { return '🔗'; } };
           return `<div class="sd-info-card sd-info-full" style="border-color:#86efac;background:#f0fdf4">
             <div class="sd-info-title" style="color:#15803d;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-              <span>🟢 أضاف المنظم روابط لهذا الحدث</span>
-              <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="هذه الروابط يضيفها المنظم مباشرة، والمنصة لا تتحقق منها تلقائياً">
-                ℹ️ تُضاف من المنظم مباشرة
+              <span>${t('info.linksAddedTitle')}</span>
+              <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="${t('info.linksAddedNoteTitle')}">
+                ${t('info.linksAddedNote')}
               </span>
             </div>
             <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
@@ -1318,8 +1342,8 @@ function _renderBazaarInfo(b) {
         }
         return (_rl_exp || b.status === 'completed')
           ? `<div class="sd-info-card sd-info-full" style="border-color:#fde047;background:#fefce8">
-              <div class="sd-info-title" style="color:#92400e">🟡 لم يُضف المنظم روابط لهذا الحدث</div>
-              <div style="font-size:12px;color:#a16207;margin-top:6px">لم يُضف المنظّم روابط للحدث حتى الآن.</div>
+              <div class="sd-info-title" style="color:#92400e">${t('info.linksNotAddedTitle')}</div>
+              <div style="font-size:12px;color:#a16207;margin-top:6px">${t('info.linksNotAddedBody')}</div>
             </div>`
           : '';
       })()}
@@ -1331,7 +1355,7 @@ function _renderBazaarInfo(b) {
       <button onclick="openReportAbuseDialog('${b.id}')"
         style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--ink3);font-family:inherit;padding:4px 8px;border-radius:6px;transition:color .18s"
         onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--ink3)'">
-        🚩 الإبلاغ عن خطأ أو محتوى مضلل
+        ${t('info.reportBtn')}
       </button>
     </div>
 
@@ -1375,7 +1399,7 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
     const rows = past.map(pb => {
       const links   = Array.isArray(pb.event_links) ? pb.event_links.filter(u => u) : [];
       const dateStr = pb.date_end
-        ? new Date(pb.date_end).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+        ? _bzFmtDateLong(pb.date_end, { year:'numeric', month:'short', day:'numeric' })
         : '—';
       return `
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
@@ -1392,13 +1416,13 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
                   </a>`;
                 }).join('')}
               </div>`
-            : `<div style="font-size:11px;color:var(--ink3);font-style:italic">لم يُضف المنظم روابط لهذا الحدث</div>`}
+            : `<div style="font-size:11px;color:var(--ink3);font-style:italic">${t('pastBazaars.noLinks')}</div>`}
         </div>`;
     }).join('');
 
     el.innerHTML = `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title" style="color:var(--ink2)">📁 فعاليات سابقة لهذا المنظم</div>
+        <div class="sd-info-title" style="color:var(--ink2)">${t('pastBazaars.title')}</div>
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">${rows}</div>
       </div>`;
   } catch(e) {
@@ -1445,10 +1469,10 @@ async function _loadBazaarActivityStats(bazaarId, b, isExpired) {
 
   sectionEl.style.display = 'block';
   el.innerHTML = `
-    <div class="sd-subspaces-header"><h2 class="sd-section-title">📊 إحصائيات الأنشطة داخل البازار</h2></div>
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">${t('activityStats.title')}</h2></div>
     <div style="text-align:center;padding:30px 20px;color:var(--ink3)">
       <div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-      <div style="font-size:13px">جاري تحميل الإحصائيات…</div>
+      <div style="font-size:13px">${t('activityStats.loading')}</div>
     </div>`;
 
   try {
@@ -1468,14 +1492,14 @@ function _renderBazaarActivityStats(data, b) {
 
   const total      = Number(data.total_confirmed) || 0;
   const activities = Array.isArray(data.activities) ? data.activities : [];
-  const headerHtml = `<div class="sd-subspaces-header"><h2 class="sd-section-title">📊 إحصائيات الأنشطة داخل البازار</h2></div>`;
+  const headerHtml = `<div class="sd-subspaces-header"><h2 class="sd-section-title">${t('activityStats.title')}</h2></div>`;
 
   if (!total || !activities.length) {
     el.innerHTML = `
       ${headerHtml}
       <div class="bz-stats-empty">
         <div class="bz-stats-empty-ico">📊</div>
-        <div>لا توجد بيانات كافية لعرض توزيع الأنشطة حتى الآن.</div>
+        <div>${t('activityStats.emptyBody')}</div>
       </div>`;
     return;
   }
@@ -1486,21 +1510,21 @@ function _renderBazaarActivityStats(data, b) {
   const restCount = rest.reduce((s, a) => s + (Number(a.count) || 0), 0);
 
   const segments = top.map((a, i) => ({
-    label: a.activity,
+    label: t('activities.' + a.activity, { defaultValue: a.activity }),
     count: Number(a.count) || 0,
     color: BZ_STATS_HUES[i],
     icon:  BZ_ACTIVITY_ICONS[a.activity] || '🏷️',
   }));
-  if (restCount > 0) segments.push({ label: 'أخرى', count: restCount, color: BZ_STATS_OTHER_COLOR, icon: '🏷️' });
+  if (restCount > 0) segments.push({ label: t('activityStats.other'), count: restCount, color: BZ_STATS_OTHER_COLOR, icon: '🏷️' });
 
   const totalSlots   = Number(b?.total_slots) || 0;
   const occupancyPct = totalSlots > 0 ? Math.round((total / totalSlots) * 100) : null;
 
   const summaryHtml = `
     <div class="bz-stats-summary">
-      <div class="bz-stats-chip"><b>${total}</b><span>مكان محجوز (مؤكّد)</span></div>
-      <div class="bz-stats-chip"><b>${activities.length}</b><span>نشاط مختلف</span></div>
-      ${occupancyPct !== null ? `<div class="bz-stats-chip"><b>${occupancyPct}%</b><span>نسبة إشغال البازار</span></div>` : ''}
+      <div class="bz-stats-chip"><b>${total}</b><span>${t('activityStats.confirmedSlotLabel', { count: total })}</span></div>
+      <div class="bz-stats-chip"><b>${activities.length}</b><span>${t('activityStats.differentActivitiesLabel', { count: activities.length })}</span></div>
+      ${occupancyPct !== null ? `<div class="bz-stats-chip"><b>${occupancyPct}%</b><span>${t('activityStats.occupancyLabel')}</span></div>` : ''}
     </div>`;
 
   const listHtml = segments.map(s => {
@@ -1510,7 +1534,7 @@ function _renderBazaarActivityStats(data, b) {
         <div class="bz-stats-row-fill" style="width:${pct}%"></div>
         <span class="bz-stats-swatch"></span>
         <span class="bz-stats-row-label">${s.icon} ${_escBz(s.label)}</span>
-        <span class="bz-stats-row-count">${s.count} مشارك</span>
+        <span class="bz-stats-row-count">${t('activityStats.participant', { count: s.count })}</span>
         <span class="bz-stats-row-pct">${pct}%</span>
       </div>`;
   }).join('');
@@ -1535,19 +1559,19 @@ function _buildActivityDonutSvg(segments, total) {
     const len = Math.max(raw - GAP, 0);
     const arc = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${s.color}"
       stroke-width="${STROKE}" stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-cum}">
-      <title>${_escBz(s.label)} — ${s.count} مشارك (${Math.round((s.count / total) * 100)}%)</title>
+      <title>${_escBz(t('activityStats.donutTooltip', { label: s.label, count: s.count, pct: Math.round((s.count / total) * 100) }))}</title>
     </circle>`;
     cum += raw;
     return arc;
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="توزيع الأنشطة داخل البازار">
+    <svg viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="${t('activityStats.donutAriaLabel')}">
       <g transform="rotate(-90 ${CX} ${CY})">${arcs}</g>
       <text x="${CX}" y="${CY - 4}" text-anchor="middle" font-family="var(--font-display)"
             font-size="22" font-weight="800" fill="var(--ink)">${total}</text>
       <text x="${CX}" y="${CY + 15}" text-anchor="middle" font-family="var(--font-body)"
-            font-size="10" fill="var(--ink3)">مكان محجوز</text>
+            font-size="10" fill="var(--ink3)">${t('activityStats.centerLabel')}</text>
     </svg>`;
 }
 
@@ -1603,10 +1627,10 @@ async function _loadBazaarReviews(bazaarId, b) {
 
   sectionEl.style.display = 'block';
   el.innerHTML = `
-    <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">${t('reviews.title')}</h2></div>
     <div style="text-align:center;padding:30px 20px;color:var(--ink3)">
       <div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-      <div style="font-size:13px">جاري تحميل التقييمات…</div>
+      <div style="font-size:13px">${t('reviews.loading')}</div>
     </div>`;
 
   try {
@@ -1615,8 +1639,8 @@ async function _loadBazaarReviews(bazaarId, b) {
     _renderBazaarReviews(bazaarId, b, data || {});
   } catch (err) {
     el.innerHTML = `
-      <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
-      <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">تعذّر تحميل التقييمات — حاول تحديث الصفحة</div>`;
+      <div class="sd-subspaces-header"><h2 class="sd-section-title">${t('reviews.title')}</h2></div>
+      <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">${t('reviews.loadError')}</div>`;
   }
 }
 
@@ -1651,14 +1675,14 @@ function _renderBazaarReviews(bazaarId, b, data) {
       <div style="text-align:center;flex-shrink:0">
         <div style="font-size:34px;font-weight:900;color:var(--dark);line-height:1">${avg.toFixed(1)}</div>
         <div style="margin:5px 0">${starsHtml(avg, 16)}</div>
-        <div style="font-size:11px;color:var(--ink3);white-space:nowrap">بناءً على ${total} تقييم</div>
+        <div style="font-size:11px;color:var(--ink3);white-space:nowrap">${t('reviews.basedOn', { count: total })}</div>
       </div>
       <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:5px">${distBarsHtml}</div>
     </div>` : `
     <div style="text-align:center;padding:24px 16px;background:var(--surface2);border-radius:var(--radius-lg);margin-bottom:18px">
       <div style="font-size:32px;margin-bottom:8px">💬</div>
-      <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:4px">لا توجد تقييمات بعد</div>
-      <div style="font-size:12.5px;color:var(--ink3)">كن أول من يشارك تجربته مع هذا البازار</div>
+      <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:4px">${t('reviews.emptyTitle')}</div>
+      <div style="font-size:12.5px;color:var(--ink3)">${t('reviews.emptySubtitle')}</div>
     </div>`;
 
   const myReview   = currentUser ? reviews.find(r => r.reviewer_id === currentUser.id) : null;
@@ -1666,14 +1690,14 @@ function _renderBazaarReviews(bazaarId, b, data) {
 
   const reviewsListHtml = reviews.map(r => {
     const dateStr = r.created_at
-      ? new Date(r.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
+      ? _bzFmtDateLong(r.created_at, { year: 'numeric', month: 'short', day: 'numeric' })
       : '';
     return `
       <div class="op-review-item" id="bz-review-card-${r.id}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
           <div style="display:flex;align-items:center;gap:6px;min-width:0">
             <span style="font-weight:700;font-size:13px;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.reviewer_name)}</span>
-            ${r.is_verified_exhibitor ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px;white-space:nowrap;flex-shrink:0">✓ شارك فعلياً</span>` : ''}
+            ${r.is_verified_exhibitor ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px;white-space:nowrap;flex-shrink:0">${t('reviews.verifiedExhibitor')}</span>` : ''}
           </div>
           <span style="font-size:11px;color:var(--ink3);flex-shrink:0">${dateStr}</span>
         </div>
@@ -1684,14 +1708,14 @@ function _renderBazaarReviews(bazaarId, b, data) {
           <button onclick="_toggleReportReviewBox('${r.id}')" id="bz-report-btn-${r.id}"
             style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--ink3);font-family:inherit;padding:0;transition:color .15s"
             onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--ink3)'">
-            🚩 الإبلاغ عن التعليق
+            ${t('reviews.reportCommentBtn')}
           </button>
           <div id="bz-report-box-${r.id}" style="display:none;margin-top:8px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md)">
-            <textarea id="bz-report-reason-${r.id}" placeholder="سبب الإبلاغ (اختياري)…" maxlength="200"
+            <textarea id="bz-report-reason-${r.id}" placeholder="${t('reviews.reportReasonPlaceholder')}" maxlength="200"
               style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface2);color:var(--ink);font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:12px;min-height:48px;resize:vertical;outline:none"></textarea>
             <div style="display:flex;gap:8px;margin-top:8px">
-              <button onclick="reportBazaarReview('${r.id}')" style="background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--font-display)">تأكيد الإبلاغ</button>
-              <button onclick="_toggleReportReviewBox('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink3);font-family:var(--font-display)">إلغاء</button>
+              <button onclick="reportBazaarReview('${r.id}')" style="background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--font-display)">${t('reviews.confirmReport')}</button>
+              <button onclick="_toggleReportReviewBox('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:6px 16px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink3);font-family:var(--font-display)">${t('reviews.cancel')}</button>
             </div>
           </div>
         </div>` : ''}
@@ -1700,30 +1724,30 @@ function _renderBazaarReviews(bazaarId, b, data) {
 
   const formHtml = isMyBazaar ? '' : !currentUser ? `
     <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);margin-top:16px">
-      <a href="/?p=login" style="color:var(--orange);font-weight:700;font-size:13px;text-decoration:none">سجّل الدخول لتضيف تقييمك ←</a>
+      <a href="/?p=login" style="color:var(--orange);font-weight:700;font-size:13px;text-decoration:none">${t('reviews.loginPrompt')}</a>
     </div>`
   : b.status !== 'completed' ? `
     <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);margin-top:16px;font-size:12.5px;color:var(--ink3)">
-      سيُفتح باب التقييم خلال ساعات قليلة من انتهاء البازار
+      ${t('reviews.notYetOpenMsg')}
     </div>`
   : `
     <div style="margin-top:16px;padding:16px;background:var(--surface2);border-radius:var(--radius-lg);border:1.5px solid var(--border)">
-      <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:10px">⭐ قيّم تجربتك في هذا البازار</div>
-      ${myReview ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">لقد قيّمت هذا البازار من قبل بـ ${myReview.rating} ⭐ — إرسال تقييم جديد سيستبدله.</div>` : ''}
+      <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:10px">${t('reviews.formTitle')}</div>
+      ${myReview ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">${t('reviews.alreadyReviewedNote', { rating: myReview.rating })}</div>` : ''}
       <div class="bz-star-picker" id="bz-review-star-picker" data-value="0">
         ${[1, 2, 3, 4, 5].map(n => `<span class="bz-star-pick" data-star="${n}" onclick="_setBzReviewStar(${n})" onmouseover="_hoverBzReviewStar(${n})" onmouseout="_hoverBzReviewStar(0)">★</span>`).join('')}
       </div>
-      <textarea id="bz-review-comment" placeholder="اكتب تعليقك (اختياري)…" maxlength="500" oninput="_updateBzReviewCharCount(this)"
+      <textarea id="bz-review-comment" placeholder="${t('reviews.commentPlaceholder')}" maxlength="500" oninput="_updateBzReviewCharCount(this)"
         style="width:100%;box-sizing:border-box;margin-top:10px;padding:10px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:13px;min-height:64px;resize:vertical;outline:none"></textarea>
-      <div id="bz-review-char-count" style="font-size:11px;color:var(--ink3);text-align:left;margin-top:3px">0 / 500</div>
+      <div id="bz-review-char-count" style="font-size:11px;color:var(--ink3);text-align:left;margin-top:3px">${t('reviews.charCount', { count: 0 })}</div>
       <div id="bz-review-msg" style="display:none;font-size:12px;margin-top:8px"></div>
       <button class="btn btn-primary" id="bz-review-submit-btn" onclick="submitBazaarReview('${bazaarId}')" style="margin-top:10px;padding:10px 22px">
-        إرسال التقييم
+        ${t('reviews.submitBtn')}
       </button>
     </div>`;
 
   el.innerHTML = `
-    <div class="sd-subspaces-header"><h2 class="sd-section-title">⭐ تقييمات البازار</h2></div>
+    <div class="sd-subspaces-header"><h2 class="sd-section-title">${t('reviews.title')}</h2></div>
     ${summaryHtml}
     ${reviewsListHtml ? `<div style="display:flex;flex-direction:column;gap:10px">${reviewsListHtml}</div>` : ''}
     ${formHtml}
@@ -1749,7 +1773,7 @@ function _hoverBzReviewStar(n) {
 
 function _updateBzReviewCharCount(el) {
   const countEl = document.getElementById('bz-review-char-count');
-  if (countEl) countEl.textContent = `${el.value.length} / 500`;
+  if (countEl) countEl.textContent = t('reviews.charCount', { count: el.value.length });
 }
 
 /* ── الإبلاغ عن تعليق (متاح لمنظم البازار فقط) ── */
@@ -1772,22 +1796,22 @@ async function reportBazaarReview(reviewId) {
 
     if (!data?.success) {
       const map = {
-        not_authorized:      'لا يمكنك الإبلاغ عن هذا التعليق.',
-        review_not_found:    'تعذّر إيجاد هذا التعليق.',
-        already_under_review:'هذا التعليق قيد المراجعة بالفعل.',
-        unauthorized:        'سجّل الدخول من جديد.',
+        not_authorized:       t('reviews.errors.not_authorized'),
+        review_not_found:     t('reviews.errors.review_not_found'),
+        already_under_review: t('reviews.errors.already_under_review'),
+        unauthorized:         t('reviews.errors.unauthorized'),
       };
-      throw new Error(map[data?.error] || 'تعذّر إرسال البلاغ');
+      throw new Error(map[data?.error] || t('reviews.reportFailed'));
     }
 
     /* إخفاء فوري للتعليق من الواجهة — تحديث متفائل بلا الحاجة لإعادة تحميل الملخص كاملاً */
     const card = document.getElementById(`bz-review-card-${reviewId}`);
     if (card) {
-      card.innerHTML = `<div style="font-size:12.5px;color:var(--ink3);text-align:center;padding:8px">🚩 تم الإبلاغ عن هذا التعليق — قيد المراجعة من الإدارة</div>`;
+      card.innerHTML = `<div style="font-size:12.5px;color:var(--ink3);text-align:center;padding:8px">${t('reviews.reportedMsg')}</div>`;
     }
   } catch (err) {
     if (box) box.style.display = 'none';
-    alert('⚠ ' + (err.message || 'تعذّر إرسال البلاغ'));
+    alert('⚠ ' + (err.message || t('reviews.reportFailed')));
   }
 }
 
@@ -1805,10 +1829,10 @@ async function submitBazaarReview(bazaarId) {
     msgEl.textContent   = (ok ? '✅ ' : '⚠ ') + text;
   };
 
-  if (!rating) { showMsg(false, 'اختر تقييماً بالنجوم أولاً'); return; }
-  if (!currentUser || !sbClient) { showMsg(false, 'يجب تسجيل الدخول أولاً'); return; }
+  if (!rating) { showMsg(false, t('reviews.ratingRequired')); return; }
+  if (!currentUser || !sbClient) { showMsg(false, t('reviews.loginRequired')); return; }
 
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('reviews.submitting'); }
 
   try {
     const { data, error } = await sbClient.rpc('submit_bazaar_review', {
@@ -1820,26 +1844,26 @@ async function submitBazaarReview(bazaarId) {
 
     if (!data?.success) {
       const map = {
-        bazaar_not_completed:       'باب التقييم لسه ما فتحش — البازار لازم يخلص الأول.',
-        cannot_review_own_bazaar:   'لا يمكنك تقييم بازارك الخاص.',
-        bazaar_not_found:           'تعذّر إيجاد هذا البازار.',
-        invalid_rating:             'قيمة التقييم غير صحيحة.',
-        unauthorized:               'انتهت الجلسة — سجّل الدخول من جديد.',
-        comment_too_long:           'التعليق طويل جداً — الحد الأقصى 500 حرف.',
-        comment_contains_promo_link:'لا يمكن أن يحتوي التعليق على روابط أو حسابات تواصل اجتماعي.',
-        comment_looks_like_spam:    'التعليق يبدو غير مناسب (تكرار مفرط للحروف) — أعد صياغته.',
-        comment_contains_banned_word:'التعليق يحتوي على كلمات غير لائقة — أعد صياغته.',
-        comment_duplicate_content:  'نشرت نفس التعليق مؤخراً في بازار آخر — اكتب تجربتك الخاصة بهذا البازار.',
-        review_removed_by_admin:    'تم حذف هذا التقييم بواسطة الإدارة ولا يمكن تعديله.',
+        bazaar_not_completed:         t('reviews.errors.bazaar_not_completed'),
+        cannot_review_own_bazaar:     t('reviews.errors.cannot_review_own_bazaar'),
+        bazaar_not_found:             t('reviews.errors.bazaar_not_found'),
+        invalid_rating:               t('reviews.errors.invalid_rating'),
+        unauthorized:                 t('reviews.errors.unauthorized'),
+        comment_too_long:             t('reviews.errors.comment_too_long'),
+        comment_contains_promo_link:  t('reviews.errors.comment_contains_promo_link'),
+        comment_looks_like_spam:      t('reviews.errors.comment_looks_like_spam'),
+        comment_contains_banned_word: t('reviews.errors.comment_contains_banned_word'),
+        comment_duplicate_content:    t('reviews.errors.comment_duplicate_content'),
+        review_removed_by_admin:      t('reviews.errors.review_removed_by_admin'),
       };
-      throw new Error(map[data?.error] || 'تعذّر حفظ التقييم');
+      throw new Error(map[data?.error] || t('reviews.saveError'));
     }
 
-    showMsg(true, 'تم حفظ تقييمك، شكراً لمشاركتك!');
+    showMsg(true, t('reviews.saveSuccess'));
     await _loadBazaarReviews(bazaarId, currentBazaar);
   } catch (err) {
-    showMsg(false, err.message || 'حدث خطأ غير متوقع');
-    if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقييم'; }
+    showMsg(false, err.message || t('reviews.saveError'));
+    if (btn) { btn.disabled = false; btn.textContent = t('reviews.submitBtn'); }
   }
 }
 
@@ -1888,7 +1912,7 @@ function _onSlotRealtimeUpdate(updated) {
     selectedSlotId = null;
     const panel = document.getElementById('bzd-booking-panel');
     if (panel) panel.style.display = 'none';
-    _showRealtimeToast('⚠️ تم حجز المكان الذي اخترته — اختار مكاناً آخر', '#b45309');
+    _showRealtimeToast(t('slotMap.realtimeSlotTaken'), '#b45309');
   }
 
   // تحديث الـ class
@@ -1900,12 +1924,12 @@ function _onSlotRealtimeUpdate(updated) {
 
   if (newStatus === 'available') {
     slotEl.onclick = () => selectSlot(updated.id, lbl);
-    slotEl.title   = `مكان ${lbl}${isFeatured ? ' ⭐' : ''} — اضغط للحجز`;
+    slotEl.title   = t('slotMap.slotLabel', { label: lbl }) + (isFeatured ? t('slotMap.featuredSuffix') : '') + ' — ' + t('slotMap.clickToBookStatus');
   } else {
     slotEl.onclick = null;
     slotEl.title   = newStatus === 'pending'
-      ? `مكان ${lbl} — حجز مبدئي ⏳`
-      : `مكان ${lbl} — محجوز مؤكد`;
+      ? t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.pendingStatus')
+      : t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.bookedStatus');
   }
 
   // تحديث إحصائية الأماكن في رأس الخريطة
@@ -1923,7 +1947,7 @@ function _refreshSlotMapCounts() {
   const summaryEl = document.querySelector('.sd-units-summary');
   if (!summaryEl) return;
   const spans = summaryEl.querySelectorAll('span');
-  if (spans[0]) spans[0].textContent = avail + ' متاح';
+  if (spans[0]) spans[0].textContent = t('slotMap.availableCount', { count: avail });
 }
 
 function _showRealtimeToast(msg, bg = '#333') {
@@ -1957,7 +1981,7 @@ async function refreshSlotMap() {
       if (panel) panel.style.display = 'none';
       renderSlotMap(slots, { mode: _slotMapMode, endDateFmt: _slotMapEndDateFmt });
       if (_slotMapMode === 'open') _subscribeSlotMap(currentBazaar.id);
-      _showRealtimeToast('✅ تم تحديث الخريطة', '#16a34a');
+      _showRealtimeToast(t('slotMap.refreshDone'), '#16a34a');
     }
   } catch(_) {}
 
@@ -1967,10 +1991,10 @@ async function refreshSlotMap() {
 function openBazaarMap(type) {
   if (!currentBazaar) return;
   const url   = type === 'sketch' ? currentBazaar.sketch_url : currentBazaar.event_image_url;
-  const name  = currentBazaar.name || 'البازار';
+  const name  = currentBazaar.name || t('slotMap.defaultBazaarName');
   const title = type === 'sketch'
-    ? '🗺️ خريطة البازار — ' + name
-    : '📸 صورة المكان — ' + name;
+    ? t('slotMap.lightboxSketchTitle', { name })
+    : t('slotMap.lightboxPhotoTitle', { name });
   if (!url) return;
 
   const existing = document.getElementById('bz-map-lightbox');
@@ -1999,11 +2023,11 @@ function openBazaarMap(type) {
       <img src="${url}" alt="${name}"
            style="max-width:80vw;max-height:74vh;object-fit:contain;border-radius:12px;display:block;
                   box-shadow:0 8px 40px rgba(0,0,0,0.5)"
-           onerror="this.outerHTML='<div style=&quot;color:white;text-align:center;padding:40px;font-family:Cairo,sans-serif&quot;>⚠️ تعذّر تحميل الصورة</div>'">
+           onerror="this.outerHTML='<div style=&quot;color:white;text-align:center;padding:40px;font-family:Cairo,sans-serif&quot;>${t('slotMap.lightboxLoadError')}</div>'">
       <div style="text-align:center">
         <a href="${url}" target="_blank" rel="noopener"
            style="color:rgba(255,255,255,0.65);font-size:12px;font-family:'Cairo',sans-serif;text-decoration:none">
-          فتح في تبويب جديد ↗
+          ${t('slotMap.lightboxOpenNewTab')}
         </a>
       </div>
     </div>`;
@@ -2063,7 +2087,7 @@ async function _loadOrgAvatarsForCards(bazaars) {
     if (!url) return;
     document.querySelectorAll(`.bz-org-avatar[data-org-id="${id}"]`).forEach(el => {
       const ini = el.dataset.initial || '🎪';
-      el.innerHTML = `<img src="${url}" alt="منظّم"
+      el.innerHTML = `<img src="${url}" alt="${t('orgSearch.defaultName')}"
         style="width:100%;height:100%;object-fit:cover;border-radius:50%"
         onerror="this.parentElement.innerHTML=this.parentElement.dataset.initial">`;
     });
@@ -2081,7 +2105,7 @@ async function _loadOrganizerCard(userId, fallbackName) {
     return;
   }
 
-  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">⏳ جاري تحميل بيانات المنظّم…</div>`;
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">${t('organizer.loadingCard')}</div>`;
 
   try {
     const [orgRes, reviewsRes, bazaarsRes] = await Promise.all([
@@ -2120,7 +2144,7 @@ async function _loadOrganizerCard(userId, fallbackName) {
 }
 
 function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings = 0 }, userId, fallbackName) {
-  const name = org?.name || fallbackName || 'منظّم البازار';
+  const name = org?.name || fallbackName || t('organizer.defaultOrganizerName');
   if (!org) { _renderOrganizerCardBasic(fallbackName, false); return; }
 
   const totalBazaars  = bazaars.length;
@@ -2135,13 +2159,13 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings
     ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1)
     : null;
   const joinDate = (org.joined_at || org.created_at)
-    ? new Date(org.joined_at || org.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+    ? _bzFmtDateLong(org.joined_at || org.created_at, { year:'numeric', month:'long' })
     : null;
 
   const avatarUrl  = org.avatar_url || org.logo || org.image || '';
   const avatarHtml = avatarUrl
-    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="${_esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${_esc(name[0]||'م')}';">`
-    : (name[0] || 'م').toUpperCase();
+    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="${_esc(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${_esc(name[0] || t('organizer.defaultOrganizerName')[0])}';">`
+    : (name[0] || t('organizer.defaultOrganizerName')[0]).toUpperCase();
 
   const starsHtml = avgRating
     ? `${'★'.repeat(Math.round(Number(avgRating)))}${'☆'.repeat(5 - Math.round(Number(avgRating)))}`
@@ -2149,12 +2173,12 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings
 
   const reviewsHtml = reviews.length ? `
     <div style="margin-top:14px">
-      <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">آراء العملاء (${reviews.length})</div>
+      <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">${t('organizer.customerReviews', { count: reviews.length })}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         ${reviews.map(r => `
         <div style="background:var(--surface2);border-radius:10px;padding:10px 12px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:700">${_esc(r.reviewer_name) || 'مجهول'}</span>
+            <span style="font-size:12px;font-weight:700">${_esc(r.reviewer_name) || t('organizer.noReviewerName')}</span>
             <span style="color:var(--orange);font-size:12px">${'★'.repeat(Number(r.rating)||0)}</span>
           </div>
           ${r.comment ? `<div style="font-size:12px;color:var(--ink2);line-height:1.6">${_esc(r.comment)}</div>` : ''}
@@ -2180,19 +2204,19 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="font-size:16px;font-weight:900;color:var(--dark)">${_esc(name)}</div>
-          ${org.is_verified ? `<span class="bz-verified-badge">✓ منظّم موثّق</span>` : ''}
+          ${org.is_verified ? `<span class="bz-verified-badge">${t('organizer.verifiedOrganizerFull')}</span>` : ''}
         </div>
         ${avgRating ? `
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
           <span style="color:var(--orange);font-size:14px">${starsHtml}</span>
           <span style="font-size:13px;font-weight:800;color:var(--orange)">${avgRating}</span>
-          <span style="font-size:11px;color:var(--ink3)">(${reviews.length} تقييم)</span>
+          <span style="font-size:11px;color:var(--ink3)">${t('organizer.ratingCount', { count: reviews.length })}</span>
         </div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:2px;
                   background:var(--surface2);border-radius:12px;padding:10px 16px;flex-shrink:0">
         <div style="font-size:22px;font-weight:900;color:var(--orange);font-family:'Cairo',sans-serif">${totalBazaars}</div>
-        <div style="font-size:10px;color:var(--ink3);font-weight:600">بازار منظّم</div>
+        <div style="font-size:10px;color:var(--ink3);font-weight:600">${t('organizer.bazaarsOrganized', { count: totalBazaars })}</div>
       </div>
     </div>
     <div style="padding:14px 20px">
@@ -2201,31 +2225,31 @@ function _renderOrganizerCardData(el, { org, reviews, bazaars, completedBookings
         <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);
                     border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#22C55E">${activeBazaars}</div>
-          <div style="font-size:10px;color:var(--ink3)">بازار نشط</div>
+          <div style="font-size:10px;color:var(--ink3)">${t('organizer.activeBazaar', { count: activeBazaars })}</div>
         </div>` : ''}
         ${avgRating ? `
         <div style="background:rgba(243,100,24,.08);border:1px solid rgba(243,100,24,.2);
                     border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:var(--orange)">${avgRating}⭐</div>
-          <div style="font-size:10px;color:var(--ink3)">متوسط التقييم</div>
+          <div style="font-size:10px;color:var(--ink3)">${t('organizer.avgRating')}</div>
         </div>` : ''}
         ${joinDate ? `
         <div style="background:var(--surface2);border:1px solid var(--border);
                     border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:12px;font-weight:800;color:var(--ink2)">${joinDate}</div>
-          <div style="font-size:10px;color:var(--ink3)">تاريخ الانضمام</div>
+          <div style="font-size:10px;color:var(--ink3)">${t('organizer.joinDate')}</div>
         </div>` : ''}
       </div>
       ${hasReputation ? `
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px">سجل الأداء</div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px">${t('organizer.performanceHistory')}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          ${completedBazaars.length > 0 ? `<span style="font-size:12px;font-weight:700;color:#1d4ed8">📅 ${completedBazaars.length} بازار تمّ</span>` : ''}
-          ${completedBookings > 0 ? `<span style="font-size:12px;font-weight:700;color:#047857">✅ ${completedBookings} حجز مكتمل</span>` : ''}
-          ${docsCount > 0   ? `<span style="font-size:12px;font-weight:700;color:#059669">🔗 ${docsCount} أضاف روابط</span>` : ''}
-          ${nodocsCount > 0 ? `<span style="font-size:12px;color:#92400e">🟡 ${nodocsCount} بدون روابط</span>` : ''}
-          ${postponedCount > 0 ? `<span style="font-size:12px;color:var(--ink3)">⏸ ${postponedCount} مؤجّل</span>` : ''}
-          ${cancelledCount > 0 ? `<span style="font-size:12px;color:#dc2626">❌ ${cancelledCount} ملغي</span>` : ''}
+          ${completedBazaars.length > 0 ? `<span style="font-size:12px;font-weight:700;color:#1d4ed8">${t('organizer.completedBazaars', { count: completedBazaars.length })}</span>` : ''}
+          ${completedBookings > 0 ? `<span style="font-size:12px;font-weight:700;color:#047857">${t('organizer.completedBookings', { count: completedBookings })}</span>` : ''}
+          ${docsCount > 0   ? `<span style="font-size:12px;font-weight:700;color:#059669">${t('organizer.addedLinksCount', { count: docsCount })}</span>` : ''}
+          ${nodocsCount > 0 ? `<span style="font-size:12px;color:#92400e">${t('organizer.noLinksCount', { count: nodocsCount })}</span>` : ''}
+          ${postponedCount > 0 ? `<span style="font-size:12px;color:var(--ink3)">${t('organizer.postponedCount', { count: postponedCount })}</span>` : ''}
+          ${cancelledCount > 0 ? `<span style="font-size:12px;color:#dc2626">${t('organizer.cancelledCount', { count: cancelledCount })}</span>` : ''}
         </div>
       </div>` : ''}
       ${reviewsHtml}
@@ -2247,9 +2271,9 @@ function _renderOrganizerCardBasic(name, isVerified) {
     </div>
     <div style="flex:1">
       <div style="font-size:14px;font-weight:800;color:var(--dark)">${name}</div>
-      <div style="font-size:11px;color:var(--ink3);margin-top:2px">منظّم البازار</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">${t('organizer.defaultOrganizerName')}</div>
     </div>
-    ${isVerified ? `<span class="bz-verified-badge">✓ موثّق</span>` : ''}
+    ${isVerified ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>` : ''}
   </div>`;
 }
 
@@ -2257,47 +2281,47 @@ function _renderOrganizerCardBasic(name, isVerified) {
 function _renderSlotMapFallback() {
   return `
     <div class="sd-subspaces-header">
-      <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
+      <h2 class="sd-section-title">${t('slotMap.title')}</h2>
     </div>
     <div style="text-align:center;padding:40px 24px;
                 background:var(--surface);border-radius:var(--radius-lg);
                 border:1.5px dashed var(--border)">
       <div style="font-size:52px;margin-bottom:14px">🎪</div>
       <div style="font-size:15px;font-weight:700;color:var(--ink2);margin-bottom:6px">
-        خريطة الأماكن مش متاحة حالياً
+        ${t('slotMap.fallbackTitle')}
       </div>
       <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;max-width:360px;margin-inline:auto">
-        تواصل معنا مباشرة على واتساب لمعرفة الأماكن المتبقية وإتمام الحجز
+        ${t('slotMap.fallbackDesc')}
       </div>
       <a href="https://wa.me/201103467711" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:8px;background:#25D366;
                 color:#fff;padding:12px 26px;border-radius:var(--radius-lg);
                 font-weight:800;text-decoration:none;font-family:'Cairo',sans-serif;
                 box-shadow:0 4px 16px rgba(37,211,102,0.35)">
-        واتساب — استفسر عن مكان
+        ${t('slotMap.fallbackWhatsapp')}
       </a>
     </div>`;
 }
 
 function _renderSlotMapEndedFallback(endDate) {
   const expDateFmt = endDate
-    ? new Date(endDate).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' })
+    ? _bzFmtDateLong(endDate, { year:'numeric', month:'long', day:'numeric' })
     : '';
   return `
     <div class="sd-subspaces-header">
-      <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
+      <h2 class="sd-section-title">${t('slotMap.title')}</h2>
     </div>
     <div style="text-align:center;padding:40px 24px;background:rgba(15,15,22,0.92);border-radius:16px;margin-top:16px">
       <div style="font-size:30px;margin-bottom:10px">🔒</div>
       <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:8px;max-width:420px;margin-inline:auto;line-height:1.6">
-        انتهى هذا البازار، لذلك لم يعد الحجز متاحاً
+        ${t('slotMap.endedTitle')}
       </div>
       <div style="font-size:12.5px;color:rgba(255,255,255,.78);max-width:420px;margin-inline:auto;line-height:1.7">
-        يمكنك الاطلاع على الروابط والمحتوى الذي أضافه منظم البازار لمعرفة تفاصيل الفعالية أو متابعة حساباته.
+        ${t('slotMap.endedDesc')}
       </div>
-      ${expDateFmt ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:8px">انتهى في ${expDateFmt}</div>` : ''}
+      ${expDateFmt ? `<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:8px">${t('slotMap.endedOn', { date: expDateFmt })}</div>` : ''}
       <button class="btn btn-primary" style="padding:12px 28px;margin-top:20px" onclick="closeBazaarDetail()">
-        ← عرض البازارات المتاحة
+        ${t('slotMap.backToAvailable')}
       </button>
     </div>
     <div id="bzd-past-org-bazaars" style="margin-top:20px"></div>`;
@@ -2361,38 +2385,38 @@ function renderSlotMap(slots, opts = {}) {
   }
 
   const bannerHtml = mode === 'live'
-    ? `<div class="bz-slotmap-banner bz-slotmap-banner-live">🔴 انتهى استقبال الحجوزات، والبازار جارٍ حالياً.</div>`
+    ? `<div class="bz-slotmap-banner bz-slotmap-banner-live">${t('slotMap.liveBanner')}</div>`
     : '';
 
   const endedOverlayHtml = mode === 'ended' ? `
     <div class="bz-slotmap-overlay">
       <div class="bz-slotmap-overlay-ico">🔒</div>
-      <div class="bz-slotmap-overlay-title">انتهى هذا البازار، لذلك لم يعد الحجز متاحاً</div>
-      <div class="bz-slotmap-overlay-desc">يمكنك الاطلاع على الروابط والمحتوى الذي أضافه منظم البازار لمعرفة تفاصيل الفعالية أو متابعة حساباته.</div>
-      ${endDateFmt ? `<div class="bz-slotmap-overlay-date">انتهى في ${endDateFmt}</div>` : ''}
+      <div class="bz-slotmap-overlay-title">${t('slotMap.endedTitle')}</div>
+      <div class="bz-slotmap-overlay-desc">${t('slotMap.endedDesc')}</div>
+      ${endDateFmt ? `<div class="bz-slotmap-overlay-date">${t('slotMap.endedOn', { date: endDateFmt })}</div>` : ''}
     </div>` : '';
 
   el.innerHTML = `
     ${bannerHtml}
     <div class="sd-subspaces-header">
-      <h2 class="sd-section-title">🗺️ خريطة الأماكن</h2>
+      <h2 class="sd-section-title">${t('slotMap.title')}</h2>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="sd-units-summary">
-          <span class="sd-units-avail">${availCount} متاح</span>
-          ${pendingCount  > 0 ? `<span class="sd-units-avail" style="color:#b45309;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)">⏳ ${pendingCount} حجز مبدئي</span>` : ''}
-          ${bookedCount   > 0 ? `<span class="sd-units-rented">${bookedCount} محجوز مؤكد</span>` : ''}
-          ${featuredCount > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">⭐ ${featuredCount} مميز</span>` : ''}
+          <span class="sd-units-avail">${t('slotMap.availableCount', { count: availCount })}</span>
+          ${pendingCount  > 0 ? `<span class="sd-units-avail" style="color:#b45309;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)">${t('slotMap.pendingCount', { count: pendingCount })}</span>` : ''}
+          ${bookedCount   > 0 ? `<span class="sd-units-rented">${t('slotMap.bookedCount', { count: bookedCount })}</span>` : ''}
+          ${featuredCount > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">${t('slotMap.featuredCount', { count: featuredCount })}</span>` : ''}
         </div>
-        <button class="bz-refresh-btn" onclick="refreshSlotMap()" title="تحديث خريطة الأماكن">↻</button>
+        <button class="bz-refresh-btn" onclick="refreshSlotMap()" title="${t('slotMap.refreshTooltip')}">↻</button>
       </div>
     </div>
 
     <div class="bz-legend">
-      <span class="bz-legend-item"><span class="bz-legend-dot available"></span> متاح${readOnly ? '' : ' — اضغط للحجز'}</span>
-      ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending"></span> حجز مبدئي ⏳</span>` : ''}
-      <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> محجوز مؤكد</span>
-      ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected"></span> مختارك</span>` : ''}
-      ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> مكان مميز ⭐</span>` : ''}
+      <span class="bz-legend-item"><span class="bz-legend-dot available"></span> ${t('slotMap.legendAvailable')}${readOnly ? '' : t('slotMap.legendAvailableBookHint')}</span>
+      ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending"></span> ${t('slotMap.legendPending')}</span>` : ''}
+      <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> ${t('slotMap.legendBooked')}</span>
+      ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected"></span> ${t('slotMap.legendSelected')}</span>` : ''}
+      ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> ${t('slotMap.legendFeatured')}</span>` : ''}
     </div>
 
     <div class="bz-slotmap-wrap${mode === 'ended' ? ' bz-slotmap-ended' : ''}">
@@ -2401,7 +2425,7 @@ function renderSlotMap(slots, opts = {}) {
     </div>
 
     ${!readOnly ? `<div style="font-size:12px;color:var(--ink3);text-align:center;margin-top:10px;padding-bottom:4px">
-      اضغط على أي مكان متاح لاختياره وإتمام الحجز
+      ${t('slotMap.clickHint')}
     </div>` : ''}`;
 }
 
@@ -2422,20 +2446,20 @@ function _buildSlotHtml(slot, index = 0, readOnly = false) {
     ? `onclick="selectSlot('${slot.id}','${displayLabel || slot.id}')"`
     : '';
 
-  const bookedLabel  = isFeatured ? `محجوز مؤكد (مميز ⭐)` : `محجوز مؤكد`;
-  const pendingLabel = isFeatured ? `حجز مبدئي ⏳ (مميز ⭐)` : `حجز مبدئي ⏳`;
-  const availLabel   = readOnly
-    ? (isFeatured ? `متاح (مميز ⭐)` : `متاح`)
-    : (isFeatured ? `اضغط للحجز (مميز ⭐)` : `اضغط للحجز`);
+  const featSuffix   = isFeatured ? t('slotMap.featuredSuffix') : '';
+  const bookedLabel  = t('slotMap.bookedStatus') + featSuffix;
+  const pendingLabel = t('slotMap.pendingStatus') + featSuffix;
+  const availLabel   = (readOnly ? t('slotMap.availableStatus') : t('slotMap.clickToBookStatus')) + featSuffix;
+  const slotLbl      = t('slotMap.slotLabel', { label: displayLabel });
   const titleAttr    = isBooked
-    ? `title="مكان ${displayLabel} — ${bookedLabel}"`
+    ? `title="${slotLbl} — ${bookedLabel}"`
     : isPending
-    ? `title="مكان ${displayLabel} — ${pendingLabel}"`
-    : `title="مكان ${displayLabel} — ${availLabel}"`;
+    ? `title="${slotLbl} — ${pendingLabel}"`
+    : `title="${slotLbl} — ${availLabel}"`;
 
   const delay       = Math.min(index * 0.028, 0.55).toFixed(3);
   const featuredTip = isFeatured
-    ? `<span class="bz-featured-tooltip">⭐ مكان مميز</span>`
+    ? `<span class="bz-featured-tooltip">${t('slotMap.legendFeatured')}</span>`
     : '';
 
   return `<div class="bz-slot ${cls}"
@@ -2473,9 +2497,9 @@ function selectSlot(slotId, slotLabel) {
   if (slotInfoEl && currentBazaar) {
     const slotPrice = Number(slotEl?.dataset?.price || 0);
     const displayPrice = slotPrice > 0 ? slotPrice : Number(currentBazaar.price_per_slot || 0);
-    const priceStr  = displayPrice.toLocaleString('ar-EG');
-    const featuredTag = isFeatured ? ' ⭐ مميز' : '';
-    slotInfoEl.textContent = `مكان رقم ${slotLabel}${featuredTag} · ${priceStr} ج`;
+    const priceStr  = _bzFmtNum(displayPrice);
+    const featuredTag = isFeatured ? t('booking.featuredTag') : '';
+    slotInfoEl.textContent = t('booking.slotInfoSelected', { label: slotLabel, featured: featuredTag, price: priceStr });
   }
 
   if (currentUser) {
@@ -2534,19 +2558,19 @@ async function submitBazaarBooking() {
   };
   if (errorEl) errorEl.style.display = 'none';
 
-  if (!name)     { showBzbError('من فضلك ادخل اسمك الكريم'); return; }
+  if (!name)     { showBzbError(t('booking.validation.nameRequired')); return; }
   if (!phone || phone.replace(/\D/g, '').length < 10) {
-    showBzbError('ادخل رقم موبايل صحيح (١٠ أرقام على الأقل)'); return;
+    showBzbError(t('booking.validation.phoneInvalid')); return;
   }
-  if (!activity) { showBzbError('من فضلك اختر نوع النشاط', document.getElementById('bzb-activity')); return; }
-  if (!business) { showBzbError('من فضلك اكتب اسم نشاطك أو مشروعك'); return; }
+  if (!activity) { showBzbError(t('booking.validation.activityRequired'), document.getElementById('bzb-activity')); return; }
+  if (!business) { showBzbError(t('booking.validation.businessRequired')); return; }
   if (!sbClient) {
-    showBzbError('في مشكلة في الاتصال — حاول تاني'); return;
+    showBzbError(t('booking.validation.connectionError')); return;
   }
 
   const submitBtn = document.querySelector('#bzd-booking-panel .btn-primary');
   if (submitBtn) {
-    submitBtn.innerHTML  = '⏳ جاري الحجز…';
+    submitBtn.innerHTML  = t('booking.submitting');
     submitBtn.disabled   = true;
     submitBtn.style.opacity = '0.7';
   }
@@ -2572,8 +2596,8 @@ async function submitBazaarBooking() {
       .in('status', ['pending', 'confirmed']);
 
     if ((existingBks?.length || 0) >= 2) {
-      showBzbError('لا يمكن حجز أكثر من مكانين في نفس البازار بنفس الحساب');
-      if (submitBtn) { submitBtn.innerHTML = '⏳ أرسل طلب الحجز المبدئي ←'; submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
+      showBzbError(t('booking.validation.bookingLimitExceeded'));
+      if (submitBtn) { submitBtn.innerHTML = t('booking.submitBtnRetry'); submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
       return;
     }
 
@@ -2611,7 +2635,7 @@ async function submitBazaarBooking() {
       .select('id')
       .single();
 
-    if (bookingErr) throw new Error('تعذّر حفظ الحجز: ' + bookingErr.message);
+    if (bookingErr) throw new Error('booking_insert_failed: ' + bookingErr.message);
 
     /* الحجز نجح → لا داعي للـ rollback حتى لو فشل أي شيء بعد هذه النقطة */
     _slotWasLocked = false;
@@ -2649,7 +2673,7 @@ async function submitBazaarBooking() {
       slotEl.classList.remove('selected', 'available');
       slotEl.classList.add('pending');
       slotEl.onclick = null;
-      slotEl.title   = `مكان ${slotEl.textContent.trim()} — حجز مبدئي ⏳ بانتظار تأكيد الأدمن`;
+      slotEl.title   = t('slotMap.slotLabel', { label: slotEl.textContent.trim() }) + ' — ' + t('slotMap.pendingAdminNote');
     }
 
     if (typeof currentBazaar.available_slots === 'number') {
@@ -2663,20 +2687,18 @@ async function submitBazaarBooking() {
       panel.innerHTML = `
         <div class="bz-bp-inner bz-bp-success">
           <div class="success-circle" style="width:60px;height:60px;font-size:26px;margin:0 auto 16px">✓</div>
-          <div class="success-title" style="font-size:22px;margin-bottom:8px">تم إرسال طلب الحجز! ⏳</div>
+          <div class="success-title" style="font-size:22px;margin-bottom:8px">${t('booking.success.title')}</div>
           <div class="success-body" style="font-size:14px;line-height:1.9;margin-bottom:20px">
-            شكراً <strong>${_esc(name)}</strong>!<br>
-            تم استلام طلبك في بازار <strong style="color:var(--orange)">${_esc(currentBazaar.name)}</strong>.<br>
-            طلبك الآن <strong>قيد المراجعة</strong> — سيتواصل معك المنظم على <strong dir="ltr">${_esc(phone)}</strong> لتأكيد الحجز.
+            ${t('booking.success.body', { name: _esc(name), bazaarName: _esc(currentBazaar.name), phone: _esc(phone) })}
           </div>
           <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;
-                      padding:10px 14px;font-size:12.5px;color:#92400e;margin-bottom:16px;text-align:right">
-            ⏳ الحجز المبدئي لا يُعدّ مؤكداً حتى يتواصل معك المنظم ويتأكد من تفاصيل الدفع.
+                      padding:10px 14px;font-size:12.5px;color:#92400e;margin-bottom:16px;text-align:start">
+            ${t('booking.success.pendingNote')}
           </div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="btn btn-primary" style="padding:12px 28px"
-                    onclick="closeBazaarDetail()">← كل البازارات</button>
-            <a class="btn" href="/?p=dashboard" style="padding:12px 28px">حجوزاتي</a>
+                    onclick="closeBazaarDetail()">${t('booking.success.allBazaarsBtn')}</button>
+            <a class="btn" href="/?p=dashboard" style="padding:12px 28px">${t('booking.success.myBookingsBtn')}</a>
           </div>
         </div>`;
     }
@@ -2700,20 +2722,20 @@ async function submitBazaarBooking() {
         const lbl = slotElRb.dataset.slotLabel || '';
         const isFeat = slotElRb.dataset.featured === 'true';
         slotElRb.onclick = () => selectSlot(_capturedSlotId, lbl);
-        slotElRb.title = `مكان ${lbl}${isFeat ? ' ⭐' : ''} — اضغط للحجز`;
+        slotElRb.title = t('slotMap.slotLabel', { label: lbl }) + (isFeat ? t('slotMap.featuredSuffix') : '') + ' — ' + t('slotMap.clickToBookStatus');
       }
     }
 
     if (submitBtn) {
-      submitBtn.innerHTML  = 'تأكيد حجز المكان ←';
+      submitBtn.innerHTML  = t('booking.confirmBtnRetry');
       submitBtn.disabled   = false;
       submitBtn.style.opacity = '1';
     }
     const msg = err.message?.includes('booking_limit_exceeded')
-      ? 'لا يمكن حجز أكثر من مكانين في نفس البازار بنفس الحساب'
+      ? t('booking.validation.bookingLimitExceeded')
       : err.message?.includes('تعذّر حجز')
-        ? 'تم حجز هذا المكان للتو — اختار مكاناً آخر'
-        : 'في مشكلة في الحجز — تأكد من الاتصال وحاول تاني';
+        ? t('booking.validation.slotTaken')
+        : t('booking.validation.genericError');
     showBzbError(msg);
   }
 }
@@ -2756,14 +2778,14 @@ function _saveLocalBazaarBooking(userId, booking) {
 function shareCard(bazaarId, name) {
   const base      = window.location.origin + '/bazaars/';
   const url       = base + '?bazaar=' + bazaarId;
-  const shareText = 'شوف البازار ده على مكاني Spot: ' + name;
+  const shareText = t('share.checkOutBazaar', { name });
 
   if (navigator.share) {
-    navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
+    navigator.share({ title: t('brand'), text: shareText, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
-      .then(()  => _showShareToast('✅ تم نسخ الرابط!'))
-      .catch(() => _showShareToast('📋 الرابط: ' + url));
+      .then(()  => _showShareToast(t('share.linkCopied')))
+      .catch(() => _showShareToast(t('share.linkFallback', { url })));
   }
 }
 
@@ -2781,7 +2803,7 @@ function copyBazaarBookingLink() {
 
   const onCopied = () => {
     _flashCopiedBtn();
-    _showShareToast('✅ تم نسخ رابط الحجز بنجاح');
+    _showShareToast(t('detail.copyLinkToast'));
     _scrollToBazaarBookingSection();
   };
 
@@ -2807,7 +2829,7 @@ function _fallbackCopyText(text, onSuccess) {
     document.body.removeChild(ta);
     if (ok) { onSuccess(); return; }
   } catch (_) { /* تجاهل — سيظهر تنبيه الفشل أدناه */ }
-  _showShareToast('⚠️ تعذّر نسخ الرابط — حاول مرة أخرى');
+  _showShareToast(t('detail.copyLinkFailedToast'));
 }
 
 /* تأكيد بصري سريع على زر النسخ نفسه (بالإضافة إلى الـ Toast) */
@@ -2816,7 +2838,7 @@ function _flashCopiedBtn() {
   const label = document.getElementById('bzd-copy-link-label');
   if (!btn || !label) return;
   const orig = label.textContent;
-  label.textContent = 'تم النسخ ✓';
+  label.textContent = t('detail.copyLinkDone');
   btn.classList.add('bzd-quick-action--done');
   clearTimeout(btn._doneTmr);
   btn._doneTmr = setTimeout(() => {
@@ -2891,12 +2913,12 @@ function bzUpdateBnUser() {
   if (currentUser) {
     const initial = (currentProfile?.full_name || currentUser.email || '؟')[0].toUpperCase();
     icon.innerHTML = `<span style="width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">${initial}</span>`;
-    label.textContent = 'حسابي';
-    if (desc) desc.textContent = currentProfile?.full_name?.split(' ')[0] || 'مرحباً';
+    label.textContent = t('bottomNav.myAccount');
+    if (desc) desc.textContent = currentProfile?.full_name?.split(' ')[0] || t('bottomNav.welcome');
   } else {
     icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#9CA3AF"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`;
-    label.textContent = 'دخول';
-    if (desc) desc.textContent = 'سجّل أو ادخل';
+    label.textContent = t('bottomNav.login');
+    if (desc) desc.textContent = t('bottomNav.loginDesc');
   }
 }
 
@@ -2946,37 +2968,37 @@ async function bzLoadPostponeAlerts() {
   const countEl = document.getElementById('bz-postpone-count');
   if (!alertEl || !itemsEl) return;
 
-  countEl.textContent = bookings.length + ' معلّق';
+  countEl.textContent = t('postponeAlert.pendingCount', { count: bookings.length });
 
   itemsEl.innerHTML = bookings.map(booking => {
     const bz   = bazaarMap[booking.bazaar_id] || {};
     const post = lastPostponement[booking.bazaar_id] || {};
     const deadline = booking.postponement_deadline
-      ? new Date(booking.postponement_deadline).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+      ? _bzFmtDateLong(booking.postponement_deadline, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
       : null;
     const isExpired = booking.postponement_deadline && new Date(booking.postponement_deadline) < new Date();
 
     return `
 <div id="bz-pa-${booking.id}" style="background:#fff;border:1px solid #fdba74;border-radius:12px;padding:14px 16px">
-  <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:6px">🎪 ${_bzEsc(bz.title || 'بازار')}</div>
+  <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:6px">🎪 ${_bzEsc(bz.title || t('postponeAlert.defaultBazaarName'))}</div>
   ${post.old_start_date ? `
   <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span style="text-decoration:line-through;color:#dc2626">${_bzFmtDate(post.old_start_date)} — ${_bzFmtDate(post.old_end_date)}</span>
     <span>→</span>
     <span style="color:#047857;font-weight:800">${_bzFmtDate(post.new_start_date)} — ${_bzFmtDate(post.new_end_date)}</span>
   </div>` : ''}
-  ${post.reason ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">السبب: ${_bzEsc(post.reason)}</div>` : ''}
-  ${deadline ? `<div style="font-size:11px;color:${isExpired ? '#dc2626' : '#c2410c'};margin-bottom:10px">⏰ المهلة: ${deadline}${isExpired ? ' — انتهت المهلة' : ''}</div>` : ''}
+  ${post.reason ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">${t('postponeAlert.reasonLabel', { reason: _bzEsc(post.reason) })}</div>` : ''}
+  ${deadline ? `<div style="font-size:11px;color:${isExpired ? '#dc2626' : '#c2410c'};margin-bottom:10px">${t('postponeAlert.deadlineLabel', { deadline })}${isExpired ? t('postponeAlert.deadlineExpiredSuffix') : ''}</div>` : ''}
   ${isExpired ? `
-  <div style="font-size:12px;color:var(--ink3);background:var(--surface2);padding:8px 12px;border-radius:8px">انتهت مهلة الرد — تواصل مع المنظم مباشرة</div>` : `
+  <div style="font-size:12px;color:var(--ink3);background:var(--surface2);padding:8px 12px;border-radius:8px">${t('postponeAlert.expiredNote')}</div>` : `
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <button onclick="bzRespondPostpone('${booking.id}','accepted')"
       style="padding:8px 18px;border-radius:50px;background:linear-gradient(180deg,#22c55e,#16a34a);color:#fff;border:none;font-size:13px;font-weight:800;font-family:var(--font-display);cursor:pointer;box-shadow:0 2px 8px rgba(34,197,94,.25)">
-      ✅ قبول التأجيل
+      ${t('postponeAlert.acceptBtn')}
     </button>
     <button onclick="bzRespondPostpone('${booking.id}','cancelled')"
       style="padding:8px 18px;border-radius:50px;background:var(--surface);color:#dc2626;border:1.5px solid #fca5a5;font-size:13px;font-weight:800;font-family:var(--font-display);cursor:pointer">
-      ❌ إلغاء حجزي
+      ${t('postponeAlert.cancelBtn')}
     </button>
   </div>`}
 </div>`;
@@ -2989,7 +3011,7 @@ async function bzRespondPostpone(bookingId, response) {
   const btn = event.target;
   const orig = btn.textContent;
   btn.disabled    = true;
-  btn.textContent = '⏳…';
+  btn.textContent = t('postponeAlert.responding');
 
   const { data, error } = await sbClient.rpc('respond_to_postponement', {
     p_booking_id: bookingId,
@@ -2998,12 +3020,12 @@ async function bzRespondPostpone(bookingId, response) {
 
   if (error || !data?.success) {
     const msgs = {
-      booking_not_found:     'الحجز غير موجود',
-      not_authorized:        'غير مصرح',
-      not_pending_response:  'الحجز لا ينتظر رداً',
-      deadline_passed:       'انتهت مهلة الرد',
+      booking_not_found:     t('postponeAlert.errors.booking_not_found'),
+      not_authorized:        t('postponeAlert.errors.not_authorized'),
+      not_pending_response:  t('postponeAlert.errors.not_pending_response'),
+      deadline_passed:       t('postponeAlert.errors.deadline_passed'),
     };
-    const err = data?.error || error?.message || 'خطأ';
+    const err = data?.error || error?.message || t('postponeAlert.errors.generic');
     btn.disabled    = false;
     btn.textContent = orig;
     alert(msgs[err] || err);
@@ -3014,8 +3036,8 @@ async function bzRespondPostpone(bookingId, response) {
   const card = document.getElementById(`bz-pa-${bookingId}`);
   if (card) {
     const msg = response === 'accepted'
-      ? '✅ تم قبول التأجيل — حجزك مؤكّد على الموعد الجديد'
-      : '❌ تم إلغاء حجزك بنجاح';
+      ? t('postponeAlert.acceptedMsg')
+      : t('postponeAlert.cancelledMsg');
     card.innerHTML = `<div style="font-size:13px;font-weight:700;color:${response==='accepted'?'#047857':'#dc2626'};padding:10px">${msg}</div>`;
     setTimeout(() => {
       card.style.transition = 'opacity .4s';
@@ -3029,7 +3051,7 @@ async function bzRespondPostpone(bookingId, response) {
           if (alertEl) alertEl.style.display = 'none';
         } else {
           const countEl = document.getElementById('bz-postpone-count');
-          if (countEl) countEl.textContent = remaining.length + ' معلّق';
+          if (countEl) countEl.textContent = t('postponeAlert.pendingCount', { count: remaining.length });
         }
       }, 450);
     }, 2000);
@@ -3038,9 +3060,7 @@ async function bzRespondPostpone(bookingId, response) {
 
 function _bzFmtDate(d) {
   if (!d) return '—';
-  const [y, m, day] = d.split('-');
-  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  return `${parseInt(day)} ${months[parseInt(m)-1]}`;
+  return _bzFmtDateLong(d, { day: 'numeric', month: 'long' });
 }
 
 function _bzEsc(str) {
@@ -3053,14 +3073,17 @@ function _bzEsc(str) {
    📋 القسم 18: M11 — سجل التحديثات (Update History Timeline)
    ================================================================ */
 
-const _BZ_CHANGE_LABELS = {
-  cancel:          { ico: '🚫', label: 'تم إلغاء البازار' },
-  postpone:        { ico: '📅', label: 'تم تأجيل موعد البازار' },
-  edit_info:       { ico: '✏️', label: 'تم تعديل معلومات البازار' },
-  edit_slots_count:{ ico: '🔢', label: 'تم تعديل عدد الأماكن' },
-  reserve_slot:    { ico: '🔒', label: 'تم حجز مكان داخلياً' },
-  unreserve_slot:  { ico: '🔓', label: 'تم تحرير حجز داخلي' },
+/* دالة بدل const ثابت — لازم تُستدعى وقت الرسم (بعد جاهزية i18next) لا وقت تحميل الملف */
+const _BZ_CHANGE_ICONS = {
+  cancel: '🚫', postpone: '📅', edit_info: '✏️',
+  edit_slots_count: '🔢', reserve_slot: '🔒', unreserve_slot: '🔓',
 };
+function _bzChangeLabel(changeType) {
+  return {
+    ico:   _BZ_CHANGE_ICONS[changeType] || '📝',
+    label: t('timeline.changeTypes.' + changeType, { defaultValue: changeType }),
+  };
+}
 
 async function _loadBazaarTimeline(bazaarId) {
   if (!sbClient || !bazaarId) return;
@@ -3103,33 +3126,33 @@ async function _loadBazaarTimeline(bazaarId) {
     <div style="width:32px;height:32px;border-radius:50%;background:#fff7ed;border:2px solid #fdba74;display:flex;align-items:center;justify-content:center;font-size:15px">📅</div>
   </div>
   <div style="flex:1;min-width:0">
-    <div style="font-size:13px;font-weight:800;color:var(--dark)">تأجيل موعد البازار</div>
+    <div style="font-size:13px;font-weight:800;color:var(--dark)">${t('timeline.postponeLabel')}</div>
     <div style="font-size:12px;color:var(--ink3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
       <span style="text-decoration:line-through;color:#dc2626">${_bzFmtDate(ev.old_start_date)} — ${_bzFmtDate(ev.old_end_date)}</span>
       <span>→</span>
       <span style="color:#047857;font-weight:700">${_bzFmtDate(ev.new_start_date)} — ${_bzFmtDate(ev.new_end_date)}</span>
     </div>
-    ${ev.reason ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-right:2px solid #fdba74">${_bzEsc(ev.reason)}</div>` : ''}
+    ${ev.reason ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-inline-start:2px solid #fdba74">${_bzEsc(ev.reason)}</div>` : ''}
     <div style="font-size:10px;color:var(--ink3);margin-top:4px">${timeAgo}</div>
   </div>
 </div>`;
     }
 
-    const meta  = _BZ_CHANGE_LABELS[ev.change_type] || { ico: '📝', label: ev.change_type };
+    const meta  = _bzChangeLabel(ev.change_type);
     const data  = ev.change_data || {};
     let detail  = '';
 
     if (ev.change_type === 'edit_info') {
       const changed = Object.keys(data.after || {}).filter(k => k !== 'images');
-      if (changed.length) detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">الحقول المُعدَّلة: ${changed.map(_bzFieldLabel).join('، ')}</div>`;
+      if (changed.length) detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">${t('timeline.editedFieldsPrefix')}${changed.map(_bzFieldLabel).join(getLocale() === 'en' ? ', ' : '، ')}</div>`;
     } else if (ev.change_type === 'edit_slots_count') {
-      detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">${data.old_total || '?'} → ${data.new_total || '?'} مكان (محجوز: ${data.booked_count || 0})</div>`;
+      detail = `<div style="font-size:11px;color:var(--ink3);margin-top:3px">${t('timeline.slotsChangeDetail', { old: data.old_total || '?', new: data.new_total || '?', booked: data.booked_count || 0 })}</div>`;
     } else if (ev.change_type === 'cancel' && data.affected_bookings > 0) {
-      detail = `<div style="font-size:11px;color:#dc2626;margin-top:3px">أُشعر ${data.affected_bookings} حاجز</div>`;
+      detail = `<div style="font-size:11px;color:#dc2626;margin-top:3px">${t('timeline.affectedBookings', { count: data.affected_bookings })}</div>`;
     }
 
     const noteHtml = ev.note
-      ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-right:2px solid var(--orange)">${_bzEsc(ev.note)}</div>`
+      ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-inline-start:2px solid var(--orange)">${_bzEsc(ev.note)}</div>`
       : '';
 
     return `
@@ -3149,7 +3172,7 @@ async function _loadBazaarTimeline(bazaarId) {
   timelineEl.innerHTML = `
 <div style="background:var(--surface);border-radius:var(--radius-xl);border:1px solid var(--border);padding:18px 20px;margin-top:16px">
   <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:8px">
-    📋 سجل التحديثات
+    ${t('timeline.title')}
     <span style="font-size:11px;font-weight:700;background:var(--orange-ultra);color:var(--orange);padding:2px 8px;border-radius:50px">${events.length}</span>
   </div>
   <div>${itemsHtml}</div>
@@ -3158,20 +3181,19 @@ async function _loadBazaarTimeline(bazaarId) {
 }
 
 function _bzFieldLabel(key) {
-  const m = { title:'الاسم', description:'الوصف', location:'الموقع', location_url:'رابط الخريطة', working_hours:'ساعات العمل', start_date:'تاريخ البداية', end_date:'تاريخ النهاية', images:'الصور' };
-  return m[key] || key;
+  return t('timeline.fieldLabels.' + key, { defaultValue: key });
 }
 
 function _bzTimeAgo(date) {
   const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)   return 'الآن';
-  if (mins < 60)  return `منذ ${mins} دقيقة`;
+  if (mins < 1)   return t('timeline.timeAgo.now');
+  if (mins < 60)  return t('timeline.timeAgo.minutesAgo', { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)   return `منذ ${hrs} ساعة`;
+  if (hrs < 24)   return t('timeline.timeAgo.hoursAgo', { count: hrs });
   const days = Math.floor(hrs / 24);
-  if (days < 30)  return `منذ ${days} يوم`;
-  return date.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+  if (days < 30)  return t('timeline.timeAgo.daysAgo', { count: days });
+  return _bzFmtDateLong(date, { year:'numeric', month:'short', day:'numeric' });
 }
 
 
@@ -3187,11 +3209,9 @@ function _bzTimeAgo(date) {
    🎪 القسم 20: فرص المساحات — للمنظمين فقط (B2B Marketplace)
    ================================================================ */
 
-const _BZ_VENUE_MAP = {
-  mall:'🏬 مول تجاري', club:'🏊 نادي', compound:'🏘️ كومباوند',
-  company:'🏢 مبنى تجاري', outdoor:'🌳 فضاء خارجي', other:'📍 مكان آخر',
-};
-const _BZ_FOOT_MAP = { low:'🚶 منخفض', medium:'🚶🚶 متوسط', high:'🚶🚶🚶 عالٍ' };
+/* دوال بدل const ثابت — لازم تُستدعى وقت الرسم (بعد جاهزية i18next) لا وقت تحميل الملف */
+function _bzVenueLabel(type) { return t('opportunities.venueTypes.' + type, { defaultValue: type }); }
+function _bzFootLabel(level)  { return t('opportunities.footfall.' + level, { defaultValue: level }); }
 
 /* هل المستخدم منظم بازار؟ (وسم القدرة roles[] — يفتح الناف وopportunities.html) */
 function _bzIsOrganizer() {
@@ -3208,7 +3228,7 @@ async function bzLoadOpportunities() {
     bzRenderOpportunityCards(data || []);
   } catch (e) {
     const el = document.getElementById('bz-opp-cards');
-    if (el) el.innerHTML = `<div style="color:red;padding:14px;font-size:12px">تعذّر تحميل الفرص: ${e.message}</div>`;
+    if (el) el.innerHTML = `<div style="color:red;padding:14px;font-size:12px">${t('opportunities.loadError', { error: e.message })}</div>`;
   }
 }
 
@@ -3219,14 +3239,14 @@ function bzRenderOpportunityCards(opps) {
   if (!grid) return;
 
   if (badge) {
-    if (opps.length) { badge.textContent = opps.length + ' فرصة'; badge.style.display = ''; }
+    if (opps.length) { badge.textContent = t('opportunities.countBadge', { count: opps.length }); badge.style.display = ''; }
     else             { badge.style.display = 'none'; }
   }
 
   if (!opps.length) {
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px 20px;color:var(--ink3)">
       <div style="font-size:28px;margin-bottom:8px">📭</div>
-      <div>لا توجد فرص مفتوحة حالياً — تابع الإشعارات عند نشر فرص جديدة.</div>
+      <div>${t('opportunities.empty')}</div>
     </div>`;
     return;
   }
@@ -3235,12 +3255,12 @@ function bzRenderOpportunityCards(opps) {
     const imgHtml = opp.image_url
       ? `<img src="${_bzEsc(opp.image_url)}" class="bzopp-card-img" alt="" loading="lazy" onerror="this.style.display='none'">`
       : '';
-    const typeLabel = _BZ_VENUE_MAP[opp.venue_type] || opp.venue_type || '';
+    const typeLabel = opp.venue_type ? _bzVenueLabel(opp.venue_type) : '';
     const cityLine  = [opp.city ? _bzEsc(opp.city) : '', typeLabel].filter(Boolean).join(' · ');
     const appliedHtml = opp.already_applied
-      ? `<div class="bzopp-already-applied">✅ قدّمت عرضاً على هذه الفرصة</div>`
+      ? `<div class="bzopp-already-applied">${t('opportunities.alreadyApplied')}</div>`
       : `<button class="bzopp-apply-btn" onclick="openBzProposalModal('${opp.id}','${_bzEsc(opp.place_name)}')">
-           📤 قدّم عرضك
+           ${t('opportunities.applyBtn')}
          </button>`;
 
     return `
@@ -3251,13 +3271,13 @@ function bzRenderOpportunityCards(opps) {
         ${cityLine && !typeLabel ? `<div class="bzopp-pub-card-city">${cityLine}</div>` : ''}
         ${opp.city && typeLabel ? `<div class="bzopp-pub-card-city">${_bzEsc(opp.city)}</div>` : ''}
         <div class="bzopp-pub-card-chips">
-          ${opp.available_area ? `<span class="bzopp-chip orange">📐 ${opp.available_area} م²</span>` : ''}
-          <span class="bzopp-chip">${opp.is_indoor ? '🏠 مغلق' : '🌳 خارجي'}</span>
-          ${opp.has_electricity ? '<span class="bzopp-chip">⚡ كهرباء</span>' : ''}
-          ${opp.has_setup ? '<span class="bzopp-chip">🪑 تجهيزات</span>' : ''}
-          ${opp.expected_footfall ? `<span class="bzopp-chip">${_BZ_FOOT_MAP[opp.expected_footfall] || ''}</span>` : ''}
+          ${opp.available_area ? `<span class="bzopp-chip orange">${t('opportunities.areaUnit', { area: opp.available_area })}</span>` : ''}
+          <span class="bzopp-chip">${opp.is_indoor ? t('opportunities.indoor') : t('opportunities.outdoor')}</span>
+          ${opp.has_electricity ? `<span class="bzopp-chip">${t('opportunities.electricity')}</span>` : ''}
+          ${opp.has_setup ? `<span class="bzopp-chip">${t('opportunities.setup')}</span>` : ''}
+          ${opp.expected_footfall ? `<span class="bzopp-chip">${_bzFootLabel(opp.expected_footfall)}</span>` : ''}
         </div>
-        <div class="bzopp-pub-card-dates">📅 ${opp.available_start} — ${opp.available_end} · ${opp.days_count || '?'} يوم</div>
+        <div class="bzopp-pub-card-dates">${t('opportunities.datesRange', { start: opp.available_start, end: opp.available_end, days: opp.days_count || '?' })}</div>
         ${opp.notes ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">${_bzEsc(opp.notes)}</div>` : ''}
         <div class="bzopp-pub-card-spacer"></div>
         ${appliedHtml}
@@ -3268,12 +3288,12 @@ function bzRenderOpportunityCards(opps) {
 /* فتح مودال تقديم عرض */
 function openBzProposalModal(requestId, placeName) {
   if (!currentUser) {
-    alert('يجب تسجيل الدخول أولاً لتقديم عرض.');
+    alert(t('proposalModal.loginRequired'));
     return;
   }
   document.getElementById('bz-prop-request-id').value = requestId;
-  document.getElementById('bz-prop-modal-title').textContent = 'قدّم عرضك على: ' + placeName;
-  document.getElementById('bz-prop-modal-sub').textContent = 'بياناتك ستُرسل لصاحب المساحة مباشرةً';
+  document.getElementById('bz-prop-modal-title').textContent = t('proposalModal.subtitlePrefix') + placeName;
+  document.getElementById('bz-prop-modal-sub').textContent = t('proposalModal.dataNote');
   document.getElementById('bz-proposal-form')?.reset();
   const msg = document.getElementById('bz-prop-msg');
   if (msg) msg.style.display = 'none';
@@ -3289,14 +3309,14 @@ function closeBzProposalModal() {
 /* إرسال العرض */
 async function submitBzProposal(e) {
   e.preventDefault();
-  if (!currentUser) { alert('يجب تسجيل الدخول أولاً.'); return; }
+  if (!currentUser) { alert(t('proposalModal.loginRequired')); return; }
 
   const btn = document.getElementById('bz-prop-btn');
   const msg = document.getElementById('bz-prop-msg');
   const get = id => document.getElementById(id)?.value?.trim() || '';
 
   btn.disabled = true;
-  btn.textContent = '⏳ جاري الإرسال…';
+  btn.textContent = t('proposalModal.submitting');
   if (msg) msg.style.display = 'none';
 
   try {
@@ -3315,7 +3335,7 @@ async function submitBzProposal(e) {
 
     if (msg) {
       msg.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.3);border-radius:10px;font-size:13px;color:#166534';
-      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">✅</span><div><strong>تم إرسال عرضك بنجاح!</strong><br>سيتواصل معك صاحب المساحة عبر رقمك إذا اختار عرضك.</div>`;
+      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">✅</span><div><strong>${t('proposalModal.successTitle')}</strong><br>${t('proposalModal.successBody')}</div>`;
     }
 
     setTimeout(() => { closeBzProposalModal(); bzLoadOpportunities(); }, 2200);
@@ -3323,12 +3343,12 @@ async function submitBzProposal(e) {
   } catch (err) {
     if (msg) {
       msg.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;font-size:13px;color:#991b1b';
-      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">❌</span><div><strong>تعذّر الإرسال</strong><br>${_bzEsc(err.message || 'حاول مرة أخرى')}</div>`;
+      msg.innerHTML     = `<span style="font-size:18px;flex-shrink:0">❌</span><div><strong>${t('proposalModal.errorTitle')}</strong><br>${_bzEsc(err.message || t('proposalModal.tryAgain'))}</div>`;
     }
   }
 
   btn.disabled    = false;
-  btn.textContent = '📤 إرسال العرض';
+  btn.textContent = t('proposalModal.submitBtn');
 }
 
 /* ══════════════════════════════════════════════
@@ -3339,11 +3359,11 @@ function openReportAbuseDialog(bazaarId) {
   if (existing) existing.remove();
 
   const REASONS = [
-    { val: 'fake_event',       lbl: '🎭 حدث وهمي أو لم يحدث فعلاً' },
-    { val: 'misleading_info',  lbl: '📋 معلومات مضللة أو غير دقيقة' },
-    { val: 'fraud',            lbl: '💸 محاولة احتيال أو نصب' },
-    { val: 'inappropriate',    lbl: '🚫 محتوى غير لائق' },
-    { val: 'other',            lbl: '📝 سبب آخر' },
+    { val: 'fake_event',       lbl: t('abuseReport.reasons.fake_event') },
+    { val: 'misleading_info',  lbl: t('abuseReport.reasons.misleading_info') },
+    { val: 'fraud',            lbl: t('abuseReport.reasons.fraud') },
+    { val: 'inappropriate',    lbl: t('abuseReport.reasons.inappropriate') },
+    { val: 'other',            lbl: t('abuseReport.reasons.other') },
   ];
 
   const modal = document.createElement('div');
@@ -3352,12 +3372,12 @@ function openReportAbuseDialog(bazaarId) {
   modal.innerHTML = `
     <div style="background:var(--surface,#fff);border-radius:20px;border:1px solid var(--border,#e5e7eb);max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden">
       <div style="padding:16px 22px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:16px;font-weight:900;color:var(--dark,#111);font-family:'Cairo',sans-serif">🚩 الإبلاغ عن مشكلة</div>
+        <div style="font-size:16px;font-weight:900;color:var(--dark,#111);font-family:'Cairo',sans-serif">${t('abuseReport.title')}</div>
         <button onclick="document.getElementById('abuse-report-modal').remove()" style="background:none;border:none;cursor:pointer;font-size:24px;color:var(--ink3,#9ca3af);font-family:'Cairo',sans-serif;line-height:1">×</button>
       </div>
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
         <div style="font-size:12.5px;color:var(--ink3,#6b7280);line-height:1.7;background:var(--surface2,#f9f9f7);border-radius:10px;padding:10px 12px">
-          سيُراجَع التقرير من فريقنا. بعد <strong>3 تقارير مختلفة</strong> يُوضع البازار قيد المراجعة تلقائياً.
+          ${t('abuseReport.disclaimer')}
         </div>
         <div id="abuse-reasons" style="display:flex;flex-direction:column;gap:6px">
           ${REASONS.map(r => `
@@ -3366,14 +3386,14 @@ function openReportAbuseDialog(bazaarId) {
               <input type="radio" id="ar-inp-${r.val}" name="abuse-reason" value="${r.val}" style="display:none"> ${r.lbl}
             </label>`).join('')}
         </div>
-        <textarea id="abuse-note" rows="2" placeholder="ملاحظة إضافية (اختياري)…" maxlength="300"
+        <textarea id="abuse-note" rows="2" placeholder="${t('abuseReport.notePlaceholder')}" maxlength="300"
           style="padding:9px 12px;border:1.5px solid var(--border,#e5e7eb);border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;resize:vertical;width:100%;box-sizing:border-box;background:var(--surface2,#f9f9f7)"></textarea>
         <div id="abuse-msg" style="display:none;font-size:12.5px;padding:9px 12px;border-radius:10px;font-family:'Cairo',sans-serif"></div>
         <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
           <button onclick="document.getElementById('abuse-report-modal').remove()"
-            style="padding:9px 20px;border-radius:50px;background:var(--surface2,#f9f9f7);border:1.5px solid var(--border,#e5e7eb);font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;font-weight:700">إلغاء</button>
+            style="padding:9px 20px;border-radius:50px;background:var(--surface2,#f9f9f7);border:1.5px solid var(--border,#e5e7eb);font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;font-weight:700">${t('abuseReport.cancel')}</button>
           <button onclick="submitAbuseReport('${bazaarId}')" id="abuse-submit-btn"
-            style="padding:9px 24px;border-radius:50px;background:linear-gradient(180deg,#F47432,#F36418);color:#fff;border:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer">إرسال التقرير</button>
+            style="padding:9px 24px;border-radius:50px;background:linear-gradient(180deg,#F47432,#F36418);color:#fff;border:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer">${t('abuseReport.submit')}</button>
         </div>
       </div>
     </div>`;
@@ -3395,11 +3415,11 @@ async function submitAbuseReport(bazaarId) {
     msg.textContent = text;
   };
 
-  if (!reason) { showMsg('يرجى اختيار سبب الإبلاغ', true); return; }
-  if (!sbClient) { showMsg('يرجى تسجيل الدخول أولاً', true); return; }
+  if (!reason) { showMsg(t('abuseReport.reasonRequired'), true); return; }
+  if (!sbClient) { showMsg(t('abuseReport.loginRequired'), true); return; }
 
   const note = document.getElementById('abuse-note')?.value.trim() || null;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الإرسال…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('abuseReport.submitting'); }
 
   const { data, error } = await sbClient.rpc('report_bazaar_abuse', {
     p_bazaar_id: bazaarId,
@@ -3407,19 +3427,19 @@ async function submitAbuseReport(bazaarId) {
     p_note:      note,
   });
 
-  if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقرير'; }
+  if (btn) { btn.disabled = false; btn.textContent = t('abuseReport.submit'); }
 
   if (error || !data?.ok) {
     const errMsgs = {
-      already_reported:   'لقد أبلغت عن هذا البازار من قبل',
-      not_authenticated:  'يرجى تسجيل الدخول أولاً',
-      bazaar_not_found:   'البازار غير موجود',
+      already_reported:   t('abuseReport.errors.already_reported'),
+      not_authenticated:  t('abuseReport.errors.not_authenticated'),
+      bazaar_not_found:   t('abuseReport.errors.bazaar_not_found'),
     };
-    showMsg(errMsgs[data?.error || ''] || 'تعذّر إرسال التقرير، حاول مرة أخرى', true);
+    showMsg(errMsgs[data?.error || ''] || t('abuseReport.errors.generic'), true);
     return;
   }
 
-  showMsg('✅ تم إرسال التقرير — شكراً لمساعدتنا في الحفاظ على جودة المنصة', false);
+  showMsg(t('abuseReport.successMsg'), false);
   setTimeout(() => document.getElementById('abuse-report-modal')?.remove(), 2800);
 }
 

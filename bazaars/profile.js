@@ -32,14 +32,16 @@ let myMergedCity   = null;   // مدينة مدمجة من مصادر متعدد
 let bzRateableParticipants = [];   // من organizer_list_rateable_participants()
 let bzOrganizerRatings     = [];   // user_ratings حيث rater_id = المنظم & context_type='bazaar'
 let bzRateVals             = { commitment: 0, cleanliness: 0, dealing: 0, payment: 0, rules: 0 };
-const BZ_RATE_CRITERIA = [
-  { key: 'commitment',  label: '⏰ الالتزام بالمواعيد' },
-  { key: 'cleanliness', label: '🧹 ترتيب ونظافة الركن' },
-  { key: 'dealing',     label: '🤝 حسن التعامل' },
-  { key: 'payment',     label: '💳 الالتزام المالي' },
-  { key: 'rules',       label: '📋 احترام شروط البازار' },
-];
-const BZ_AR_NUMS = ['٠', '١', '٢', '٣', '٤', '٥'];
+/* دالة بدل const ثابت — لازم تُستدعى وقت الرسم بعد جاهزية i18next */
+function _bzRateCriteria() {
+  return [
+    { key: 'commitment',  label: t('profile.rateSection.criteria.commitment') },
+    { key: 'cleanliness', label: t('profile.rateSection.criteria.cleanliness') },
+    { key: 'dealing',     label: t('profile.rateSection.criteria.dealing') },
+    { key: 'payment',     label: t('profile.rateSection.criteria.payment') },
+    { key: 'rules',       label: t('profile.rateSection.criteria.rules') },
+  ];
+}
 
 /* ================================================================
    🚀 بدء التشغيل
@@ -72,6 +74,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+/* 🌐 دعم اللغتين — إعادة رسم المحتوى الديناميكي عند تبديل اللغة */
+document.addEventListener('makani:locale-changed', () => {
+  const params = new URLSearchParams(window.location.search);
+  const userId = params.get('user') || params.get('organizer');
+  if (userId) {
+    _loadPublicProfile(userId);
+  } else if (!currentUser) {
+    _renderLoginWall();
+  } else {
+    _loadMyProfile();
+  }
+});
+
 
 /* ================================================================
    🔐 جدار تسجيل الدخول
@@ -80,16 +95,18 @@ function _renderLoginWall() {
   document.getElementById('op-content').innerHTML = `
     <div style="text-align:center;padding:80px 24px;max-width:460px;margin:0 auto">
       <div style="font-size:52px;margin-bottom:16px">🔐</div>
-      <h2 style="font-size:22px;font-weight:900;margin-bottom:10px">سجّل دخولك أولاً</h2>
+      <h2 style="font-size:22px;font-weight:900;margin-bottom:10px">${t('profile.loginWall.title')}</h2>
       <p style="font-size:14px;color:var(--ink3);margin-bottom:24px;line-height:1.7">
-        لازم يكون عندك حساب على مكاني Spot عشان تشوف ملفك الشخصي.
+        ${t('profile.loginWall.desc')}
       </p>
       <a href="/?p=login" class="btn btn-primary" style="padding:12px 32px;display:inline-block">
-        دخول / تسجيل ←
+        ${t('profile.loginWall.loginBtn')}
       </a>
     </div>`;
 }
 
+
+function _profLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
 
 /* ================================================================
    👤 ملفي الشخصي — تحميل البيانات
@@ -217,11 +234,11 @@ async function _loadMyProfile() {
 function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSection) {
   const hasSocial = !!(profile?.facebook_url || profile?.instagram_url || profile?.tiktok_url);
   const checks = [
-    { done: !!(profile?.avatar_url),                       pts: 20, label: 'أضف صورة شخصية',   tip: 'تزيد ثقة العارضين بك' },
-    { done: !!(profile?.cover_url),                        pts: 15, label: 'أضف صورة الغلاف',   tip: 'تحسّن انطباعك الأول' },
-    { done: !!(profile?.bio?.trim()),                      pts: 25, label: 'اكتب نبذة شخصية',   tip: 'يجذب 3× عارضين أكثر' },
-    { done: hasSocial,                                     pts: 25, label: 'أضف سوشيال ميديا',  tip: 'يعزّز مصداقيتك مع المولات' },
-    { done: !!(profile?.region || userProfile?.city),      pts: 15, label: 'أضف منطقتك',        tip: 'يساعد العارضين في إيجادك' },
+    { done: !!(profile?.avatar_url),                       pts: 20, label: t('profile.completion.checkAvatarLabel'), tip: t('profile.completion.checkAvatarTip') },
+    { done: !!(profile?.cover_url),                        pts: 15, label: t('profile.completion.checkCoverLabel'),  tip: t('profile.completion.checkCoverTip') },
+    { done: !!(profile?.bio?.trim()),                      pts: 25, label: t('profile.completion.checkBioLabel'),    tip: t('profile.completion.checkBioTip') },
+    { done: hasSocial,                                     pts: 25, label: t('profile.completion.checkSocialLabel'), tip: t('profile.completion.checkSocialTip') },
+    { done: !!(profile?.region || userProfile?.city),      pts: 15, label: t('profile.completion.checkRegionLabel'), tip: t('profile.completion.checkRegionTip') },
   ];
 
   const pct     = checks.reduce((s, c) => s + (c.done ? c.pts : 0), 0);
@@ -234,13 +251,13 @@ function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSectio
   return `
   <div class="op-completion-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div style="font-size:13.5px;font-weight:900;color:var(--ink)">${showOrganizerSection ? '🎯 اكتمال ملفك كمنظّم بازار' : '🎯 اكتمال ملفك الشخصي'}</div>
+      <div style="font-size:13.5px;font-weight:900;color:var(--ink)">${showOrganizerSection ? t('profile.completion.titleOrganizer') : t('profile.completion.titlePersonal')}</div>
       <div style="font-size:20px;font-weight:900;color:${color};font-family:var(--font-display)">${pct}%</div>
     </div>
     <div style="font-size:11.5px;color:var(--ink3);margin-bottom:8px">
-      ${pct < 50 ? 'أكمل ملفك لتجذب عارضين أكثر وتتعامل مع المولات الكبرى' :
-        pct < 80 ? 'أنت على الطريق الصحيح — خطوة أخرى وستصبح Brand حقيقي' :
-                   'ملفك قوي! أضف التفاصيل المتبقية لتميّز نفسك بشكل كامل'}
+      ${pct < 50 ? t('profile.completion.lowMsg') :
+        pct < 80 ? t('profile.completion.midMsg') :
+                   t('profile.completion.highMsg')}
     </div>
     <div class="op-completion-bar-bg">
       <div class="op-completion-bar-fill" style="width:${pct}%;background:${color}"></div>
@@ -273,7 +290,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   const initial     = displayName[0]?.toUpperCase() || '؟';
   const joinDate    = (userProfile?.created_at || profile?.joined_at)
     ? new Date(userProfile?.created_at || profile?.joined_at)
-        .toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+        .toLocaleDateString(_profLocale(), { year:'numeric', month:'long' })
     : '—';
 
   const avatarUrl  = profile?.avatar_url || profile?.logo || profile?.image || '';
@@ -286,8 +303,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   const coverHtml = `
     <div class="op-cover-section">
       ${coverUrl ? `<img id="op-cover-img-el" src="${coverUrl}" alt="cover">` : `<img id="op-cover-img-el" style="display:none">`}
-      <button class="op-cover-upload-btn" id="op-cover-upload-btn" onclick="triggerCoverUpload()" title="تغيير صورة الغلاف">
-        📷 ${coverUrl ? 'تغيير الغلاف' : 'أضف صورة غلاف'}
+      <button class="op-cover-upload-btn" id="op-cover-upload-btn" onclick="triggerCoverUpload()" title="${t('profile.editModal.changeCoverTooltip')}">
+        ${coverUrl ? t('profile.upload.coverChangeBtn') : t('profile.hero.addCoverBtn')}
       </button>
     </div>`;
 
@@ -340,8 +357,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
   /* ── شارة التوثيق (صغيرة في الاسم) ── */
   let nameBadge = '';
-  if (isVerified)               nameBadge = `<span class="op-verified-badge">✓ منظم موثّق</span>`;
-  else if (reqStatus==='pending') nameBadge = `<span class="op-pending-badge">⏳ قيد المراجعة</span>`;
+  if (isVerified)               nameBadge = `<span class="op-verified-badge">${t('profile.orgBadge.verified')}</span>`;
+  else if (reqStatus==='pending') nameBadge = `<span class="op-pending-badge">${t('profile.orgBadge.pending')}</span>`;
 
   /* ── هل نعرض CTA للمنظم وصاحب المساحة؟ ── */
   const showOrgCta   = !isVerified && reqStatus !== 'pending' && !primaryBadges.find(b=>b.id==='organizer');
@@ -358,10 +375,10 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
       <!-- أفاتار -->
       <div class="op-avatar-wrap">
-        <div class="op-avatar" onclick="triggerAvatarUpload()" title="اضغط لتغيير الصورة">
+        <div class="op-avatar" onclick="triggerAvatarUpload()" title="${t('profile.hero.changePhotoTooltip')}">
           <div id="avatar-container-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${avatarHtml}</div>
         </div>
-        <div class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="تغيير الصورة">✏️</div>
+        <div class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="${t('profile.hero.changePhotoTooltipShort')}">✏️</div>
       </div>
 
       <!-- معلومات -->
@@ -371,15 +388,15 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
           ${nameBadge}
         </div>
         <div class="op-hero-meta">
-          <span>🗓 عضو منذ ${joinDate}</span>
+          <span>${t('profile.hero.memberSince', { date: joinDate })}</span>
           ${myMergedCity  ? `<span>📍 ${myMergedCity}</span>` : ''}
           ${currentUser.email ? `<span style="direction:ltr;unicode-bidi:embed">✉️ ${currentUser.email}</span>` : ''}
         </div>
         ${bioHtml}
         ${socialHtml}
         <div class="op-hero-actions" style="margin-top:10px">
-          <button class="op-qn-btn primary" onclick="openEditModal()">✍️ تعديل البيانات</button>
-          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="shareMyOrganizerProfile()">🔗 مشاركة البروفايل</button>` : ''}
+          <button class="op-qn-btn primary" onclick="openEditModal()">${t('profile.hero.editBtn')}</button>
+          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="shareMyOrganizerProfile()">${t('profile.hero.shareBtn')}</button>` : ''}
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -409,8 +426,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
           <a href="/?p=dashboard" class="op-cta-card">
             <span class="op-cta-emoji">🎪</span>
             <div class="op-cta-body">
-              <div class="op-cta-title">أصبح منظم بازارات</div>
-              <div class="op-cta-desc">نظّم بازاراتك واستضف عارضين — انضم من لوحة التحكم</div>
+              <div class="op-cta-title">${t('profile.cta.becomeOrganizerTitle')}</div>
+              <div class="op-cta-desc">${t('profile.cta.becomeOrganizerDesc')}</div>
             </div>
             <span class="op-cta-arrow">←</span>
           </a>` : ''}
@@ -419,8 +436,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
           <a href="/?p=owner" class="op-cta-card blue">
             <span class="op-cta-emoji">🏪</span>
             <div class="op-cta-body">
-              <div class="op-cta-title">أصبح صاحب مساحة</div>
-              <div class="op-cta-desc">اعرض مساحتك للإيجار وابدأ في استقبال الحجوزات</div>
+              <div class="op-cta-title">${t('profile.cta.becomeOwnerTitle')}</div>
+              <div class="op-cta-desc">${t('profile.cta.becomeOwnerDesc')}</div>
             </div>
             <span class="op-cta-arrow" style="color:#3b82f6">←</span>
           </a>` : ''}
@@ -431,11 +448,11 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
     <!-- روابط سريعة -->
     <div class="op-quick-nav">
-      <a class="op-qn-btn" href="/bazaars/">🎪 البازارات</a>
-      <a class="op-qn-btn" href="/market/">🛍️ السوق</a>
-      <a class="op-qn-btn" href="/?p=dashboard">📊 لوحة التحكم</a>
-      ${isVerified ? `<a class="op-qn-btn primary" href="/bazaars/organize.html">✦ نظّم بازار جديد</a>` : ''}
-      ${showOrganizerSection ? `<a class="op-qn-btn" href="/bazaars/profile.html?user=${currentUser.id}" target="_blank">👁️ بروفايلي العام</a>` : ''}
+      <a class="op-qn-btn" href="/bazaars/">${t('profile.quickNav.bazaars')}</a>
+      <a class="op-qn-btn" href="/market/">${t('profile.quickNav.market')}</a>
+      <a class="op-qn-btn" href="/?p=dashboard">${t('profile.quickNav.dashboard')}</a>
+      ${isVerified ? `<a class="op-qn-btn primary" href="/bazaars/organize.html">${t('profile.quickNav.newBazaar')}</a>` : ''}
+      ${showOrganizerSection ? `<a class="op-qn-btn" href="/bazaars/profile.html?user=${currentUser.id}" target="_blank">${t('profile.quickNav.publicProfile')}</a>` : ''}
     </div>
   </div>
 
@@ -444,20 +461,20 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     ${showOrganizerSection ? `
     <div class="op-stat-card">
       <div class="op-stat-num">${totalBaz}</div>
-      <div class="op-stat-lbl">بازار نظّمته</div>
+      <div class="op-stat-lbl">${t('profile.stats.bazaarsOrganized')}</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${endedBaz}</div>
-      <div class="op-stat-lbl">بازار منتهي</div>
+      <div class="op-stat-lbl">${t('profile.stats.bazaarsEnded')}</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
-      <div class="op-stat-lbl">متوسط التقييم</div>
-      ${bazaarRating?.total > 0 ? `<div class="op-stat-note">بناءً على ${bazaarRating.total} تقييم</div>` : ''}
+      <div class="op-stat-lbl">${t('profile.stats.avgRating')}</div>
+      ${bazaarRating?.total > 0 ? `<div class="op-stat-note">${t('profile.stats.basedOnReviews', { count: bazaarRating.total })}</div>` : ''}
     </div>` : ''}
     <div class="op-stat-card">
       <div class="op-stat-num">${activeListings}</div>
-      <div class="op-stat-lbl">إعلان نشط في السوق</div>
+      <div class="op-stat-lbl">${t('profile.stats.activeListings')}</div>
     </div>
   </div>
 
@@ -473,68 +490,68 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     <!-- البيانات الشخصية -->
     <div class="op-section-card">
       <div class="op-section-title">
-        <span>👤 بياناتك الشخصية</span>
-        <a href="#" onclick="openEditModal();return false">تعديل</a>
+        <span>${t('profile.dataSection.title')}</span>
+        <a href="#" onclick="openEditModal();return false">${t('profile.dataSection.editLink')}</a>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">الاسم الكامل</div>
+        <div class="op-data-lbl">${t('profile.dataSection.fullName')}</div>
         <div class="op-data-val">${displayName}</div>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">البريد الإلكتروني</div>
+        <div class="op-data-lbl">${t('profile.dataSection.email')}</div>
         <div class="op-data-val" style="direction:ltr;text-align:right;font-size:12px">${currentUser.email || '—'}</div>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">رقم الموبايل</div>
+        <div class="op-data-lbl">${t('profile.dataSection.mobile')}</div>
         <div class="op-data-val" style="direction:ltr;text-align:right">
           ${myMergedPhone || '—'}
-          ${(myMergedPhone && !userProfile?.phone) ? `<div class="op-data-synced">✦ من إعلاناتك</div>` : ''}
+          ${(myMergedPhone && !userProfile?.phone) ? `<div class="op-data-synced">${t('profile.dataSection.syncedFromListings')}</div>` : ''}
         </div>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">المدينة</div>
+        <div class="op-data-lbl">${t('profile.dataSection.city')}</div>
         <div class="op-data-val">
           ${myMergedCity || '—'}
-          ${(myMergedCity && !userProfile?.city) ? `<div class="op-data-synced">✦ من إعلاناتك</div>` : ''}
+          ${(myMergedCity && !userProfile?.city) ? `<div class="op-data-synced">${t('profile.dataSection.syncedFromListings')}</div>` : ''}
         </div>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">تاريخ الانضمام</div>
+        <div class="op-data-lbl">${t('profile.dataSection.joinDate')}</div>
         <div class="op-data-val">${joinDate}</div>
       </div>
       <div class="op-data-row">
-        <div class="op-data-lbl">كلمة المرور</div>
+        <div class="op-data-lbl">${t('profile.dataSection.password')}</div>
         <div class="op-data-val" style="letter-spacing:3px">••••••••</div>
       </div>
 
       ${(profile?.whatsapp || profile?.region || isVerified || reqStatus || isSpaceOwner) ? `
       <div style="margin-top:14px;padding-top:12px;border-top:1.5px solid var(--border)">
-        <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">${showOrganizerSection ? '🎪 بيانات المنظّم' : '🏪 بيانات إضافية'}</div>
+        <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">${showOrganizerSection ? t('profile.dataSection.organizerDataTitle') : t('profile.dataSection.extraDataTitle')}</div>
         ${showOrganizerSection ? `
         <div class="op-data-row">
-          <div class="op-data-lbl">التوثيق كمنظم</div>
+          <div class="op-data-lbl">${t('profile.dataSection.organizerVerification')}</div>
           <div class="op-data-val">${
             isVerified
-              ? `<span class="op-verified-badge" style="font-size:10px;padding:3px 8px">✓ موثّق</span>`
+              ? `<span class="op-verified-badge" style="font-size:10px;padding:3px 8px">${t('profile.dataSection.verifiedShort')}</span>`
               : reqStatus==='pending'
-                ? `<span class="op-pending-badge" style="font-size:10px;padding:3px 8px">⏳ قيد المراجعة</span>`
-                : `<span class="op-unverified-badge" style="font-size:10px;padding:3px 8px">◌ غير موثّق</span>`
+                ? `<span class="op-pending-badge" style="font-size:10px;padding:3px 8px">${t('profile.orgBadge.pending')}</span>`
+                : `<span class="op-unverified-badge" style="font-size:10px;padding:3px 8px">${t('profile.dataSection.unverifiedShort')}</span>`
           }</div>
         </div>` : ''}
         ${profile?.whatsapp ? `
         <div class="op-data-row">
-          <div class="op-data-lbl">واتساب</div>
+          <div class="op-data-lbl">${t('profile.dataSection.whatsapp')}</div>
           <div class="op-data-val" style="direction:ltr;text-align:right">${profile.whatsapp}</div>
         </div>` : ''}
         ${profile?.region ? `
         <div class="op-data-row">
-          <div class="op-data-lbl">المنطقة</div>
+          <div class="op-data-lbl">${t('profile.dataSection.region')}</div>
           <div class="op-data-val">${profile.region}</div>
         </div>` : ''}
         ${isSpaceOwner ? `
         <div class="op-data-row">
-          <div class="op-data-lbl">صاحب مساحة</div>
-          <div class="op-data-val"><span class="op-badge-primary space-owner" style="padding:4px 10px;border-radius:10px;display:inline-flex;gap:6px;align-items:center"><span>🏪</span> موثّق</span></div>
+          <div class="op-data-lbl">${t('profile.dataSection.spaceOwnerLabel')}</div>
+          <div class="op-data-val"><span class="op-badge-primary space-owner" style="padding:4px 10px;border-radius:10px;display:inline-flex;gap:6px;align-items:center"><span>🏪</span> ${t('profile.dataSection.spaceOwnerVerified')}</span></div>
         </div>` : ''}
       </div>` : ''}
     </div>
@@ -542,8 +559,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     <!-- إعلاناتي -->
     <div class="op-section-card">
       <div class="op-section-title">
-        <span>🛍️ إعلاناتي في السوق</span>
-        <a href="/market/?myListings=1" target="_blank">إدارة الكل ←</a>
+        <span>${t('profile.listingsSection.title')}</span>
+        <a href="/market/?myListings=1" target="_blank">${t('profile.listingsSection.manageAll')}</a>
       </div>
       ${_renderListingsGrid(listings)}
     </div>
@@ -554,18 +571,18 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   ${showOrganizerSection ? `
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
-      <span>🎪 بازاراتي كمنظم (${totalBaz})</span>
+      <span>${t('profile.myBazaarsSection.title', { count: totalBaz })}</span>
       <div style="display:flex;gap:8px;align-items:center">
-        ${isVerified ? `<a href="/bazaars/manage.html" style="font-size:11px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 10px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">⚙️ إدارة البازارات</a>` : ''}
-        ${isVerified ? `<a href="/bazaars/organize.html" style="color:var(--orange);font-weight:900;font-size:13px;text-decoration:none">+ بازار جديد</a>` : ''}
+        ${isVerified ? `<a href="/bazaars/manage.html" style="font-size:11px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 10px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">${t('profile.myBazaarsSection.manageBazaarsBtn')}</a>` : ''}
+        ${isVerified ? `<a href="/bazaars/organize.html" style="color:var(--orange);font-weight:900;font-size:13px;text-decoration:none">${t('profile.myBazaarsSection.newBazaarBtn')}</a>` : ''}
       </div>
     </div>
     ${totalBaz ? bazaars.map(b => {
-      const ds = b.date_start ? new Date(b.date_start).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' }) : '—';
+      const ds = b.date_start ? new Date(b.date_start).toLocaleDateString(_profLocale(), { month:'short', day:'numeric', year:'numeric' }) : '—';
       const statusMap = {
-        published:'🟢 منشور', active:'🟢 نشط', upcoming:'🔵 قادم',
-        postponed:'🟠 مؤجّل', closed:'⚫ منتهي', cancelled:'🔴 ملغي',
-        pending_review:'⏳ قيد المراجعة'
+        published: t('profile.myBazaarsSection.statusPublished'), active: t('profile.myBazaarsSection.statusActive'), upcoming: t('profile.myBazaarsSection.statusUpcoming'),
+        postponed: t('profile.myBazaarsSection.statusPostponed'), closed: t('profile.myBazaarsSection.statusClosed'), cancelled: t('profile.myBazaarsSection.statusCancelled'),
+        pending_review: t('profile.myBazaarsSection.statusPendingReview')
       };
       const st = statusMap[b.status] || b.status;
       const canManage = ['published','active','upcoming','postponed','pending_review'].includes(b.status);
@@ -577,17 +594,17 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
         <div style="display:flex;gap:5px;flex-shrink:0">
           <a href="/bazaars/?bazaar=${b.id}"
              style="font-size:10px;font-weight:700;color:var(--orange);text-decoration:none;padding:3px 9px;border:1px solid rgba(243,100,24,.3);border-radius:50px;background:var(--orange-ultra)">
-            عرض
+            ${t('profile.myBazaarsSection.viewBtn')}
           </a>
           ${canManage ? `<a href="/bazaars/manage.html?id=${b.id}"
              style="font-size:10px;font-weight:700;color:var(--ink2);text-decoration:none;padding:3px 9px;border:1px solid var(--border);border-radius:50px;background:var(--surface2)">
-            إدارة
+            ${t('profile.myBazaarsSection.manageBtn')}
           </a>` : ''}
         </div>
       </div>`;
     }).join('') : `<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">
-      لم تنظّم أي بازار بعد
-      ${isVerified ? `<br><a href="/bazaars/organize.html" style="color:var(--orange);font-weight:700">ابدأ تنظيم أول بازار →</a>` : ''}
+      ${t('profile.myBazaarsSection.emptyTitle')}
+      ${isVerified ? `<br><a href="/bazaars/organize.html" style="color:var(--orange);font-weight:700">${t('profile.myBazaarsSection.emptyCta')}</a>` : ''}
     </div>`}
   </div>` : ''}
 
@@ -595,26 +612,22 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   ${totalBaz > 0 ? `
   <div class="op-section-card op-rate-card" style="margin-top:16px">
     <div class="op-section-title">
-      <span>⭐ قيّم المشاركين في بازاراتك</span>
-      <span class="op-rate-count" id="bz-rate-count">${bzRateableParticipants.length} مشارك</span>
+      <span>${t('profile.rateSection.title')}</span>
+      <span class="op-rate-count" id="bz-rate-count">${t('profile.rateSection.countBadge', { count: bzRateableParticipants.length })}</span>
     </div>
 
-    <p class="op-rate-intro">
-      قيّم العارضين الذين حجزوا أو شاركوا فعلياً في بازاراتك. تقييمك يُبني سمعتهم على المنصّة
-      ويساعد بقية المنظّمين وأصحاب المساحات على معرفة المتعاملين الجادّين.
-      <strong>التقييم متاح فقط لمن لديه حجز حقيقي معك</strong> — لا تقييم بدون تعامل.
-    </p>
+    <p class="op-rate-intro">${t('profile.rateSection.intro')}</p>
 
     ${bzRateableParticipants.length ? `
     <div class="op-rate-form">
       <div class="vr-fg">
-        <label>اختر المشارك</label>
+        <label>${t('profile.rateSection.selectParticipantLabel')}</label>
         <select id="bz-rate-participant" onchange="bzOnParticipantChange()">
-          <option value="">— اختر مشاركاً قمت باستضافته —</option>
+          <option value="">${t('profile.rateSection.selectPlaceholder')}</option>
           ${bzRateableParticipants.map(p => {
-            const mark = p.rating_id ? ' ✓ (مُقيَّم)' : '';
-            const who  = _escR(p.business_name || p.tenant_name || 'مشارك');
-            return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || 'بازار')}${mark}</option>`;
+            const mark = p.rating_id ? t('profile.rateSection.ratedMark') : '';
+            const who  = _escR(p.business_name || p.tenant_name || t('profile.rateSection.defaultParticipantName'));
+            return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || t('profile.rateSection.defaultBazaarName'))}${mark}</option>`;
           }).join('')}
         </select>
       </div>
@@ -624,31 +637,31 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <div id="bz-rate-criteria" class="op-rate-criteria"></div>
 
       <div class="op-rate-avg-row">
-        <span>متوسط تقييمك</span>
-        <span><strong id="bz-rate-avg">٠.٠</strong> / ٥ ⭐</span>
+        <span>${t('profile.rateSection.avgLabel')}</span>
+        <span><strong id="bz-rate-avg">${(0).toLocaleString(_profLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong> / ${(5).toLocaleString(_profLocale())} ⭐</span>
       </div>
 
       <div class="vr-fg">
-        <label>ملاحظات (اختياري)</label>
+        <label>${t('profile.rateSection.notesLabel')}</label>
         <textarea id="bz-rate-notes" rows="3" class="op-rate-notes"
-          placeholder="مثال: عارض ملتزم بالمواعيد، ركنه مرتّب، تعامل راقٍ مع الزوار…"></textarea>
+          placeholder="${t('profile.rateSection.notesPlaceholder')}"></textarea>
       </div>
 
       <div id="bz-rate-msg" class="op-rate-msg" style="display:none"></div>
 
-      <button id="bz-btn-submit-rating" class="op-rate-submit" onclick="submitBazaarRating()">⭐ حفظ التقييم</button>
+      <button id="bz-btn-submit-rating" class="op-rate-submit" onclick="submitBazaarRating()">${t('profile.rateSection.submitBtn')}</button>
     </div>` : `
     <div class="op-empty">
       <div style="font-size:26px;margin-bottom:8px">🪑</div>
-      <div>لا يوجد مشاركون قابلون للتقييم بعد</div>
+      <div>${t('profile.rateSection.emptyTitle')}</div>
       <div style="font-size:11px;margin-top:6px;color:var(--ink3)">
-        عندما يحجز عارضون أركاناً في بازاراتك ستظهر أسماؤهم هنا لتقييمهم.
+        ${t('profile.rateSection.emptyDesc')}
       </div>
     </div>`}
 
     <!-- سجل التقييمات التي منحتها -->
     <div id="bz-rate-history" class="op-rate-history" style="${bzOrganizerRatings.length ? '' : 'display:none'}">
-      <div class="op-rate-history-title">📋 سجل تقييماتك (<span id="bz-rate-hist-count">${bzOrganizerRatings.length}</span>)</div>
+      <div class="op-rate-history-title">${t('profile.rateSection.historyTitlePrefix')} (<span id="bz-rate-hist-count">${bzOrganizerRatings.length}</span>)</div>
       <div id="bz-rate-history-rows">${_bzHistoryRowsHtml()}</div>
     </div>
   </div>` : ''}
@@ -657,12 +670,12 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
   ${reviews.length ? `
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
-      <span>⭐ تقييماتي كمنظم (${reviews.length})</span>
+      <span>${t('profile.reviewsSection.titleMy', { count: reviews.length })}</span>
     </div>
     ${reviews.map(r => {
       const stars = '⭐'.repeat(Math.min(5, Math.round(r.rating || 0)));
       const rd = r.created_at
-        ? new Date(r.created_at).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
+        ? new Date(r.created_at).toLocaleDateString(_profLocale(), { month:'short', day:'numeric', year:'numeric' })
         : '';
       return `
         <div class="op-review-item">
@@ -694,7 +707,7 @@ function _escR(str) {
 function bzRenderRateStars() {
   const wrap = document.getElementById('bz-rate-criteria');
   if (!wrap) return;
-  wrap.innerHTML = BZ_RATE_CRITERIA.map(c => {
+  wrap.innerHTML = _bzRateCriteria().map(c => {
     const v = bzRateVals[c.key] || 0;
     const stars = [1, 2, 3, 4, 5].map(i =>
       `<button type="button" class="op-si-star${i <= v ? ' on' : ''}" onclick="bzSetRateStar('${c.key}',${i})">★</button>`
@@ -703,7 +716,7 @@ function bzRenderRateStars() {
       <div class="op-rate-crit">
         <div class="op-rate-crit-head">
           <span class="op-rate-crit-label">${c.label}</span>
-          <span class="op-rate-crit-val">${v ? BZ_AR_NUMS[v] : '—'}</span>
+          <span class="op-rate-crit-val">${v ? v.toLocaleString(_profLocale()) : '—'}</span>
         </div>
         <div class="op-star-input">${stars}</div>
       </div>`;
@@ -717,14 +730,14 @@ function bzSetRateStar(key, val) {
 }
 
 function _bzRateValsArray() {
-  return BZ_RATE_CRITERIA.map(c => bzRateVals[c.key]).filter(v => v > 0);
+  return _bzRateCriteria().map(c => bzRateVals[c.key]).filter(v => v > 0);
 }
 
 function bzUpdateAvg() {
   const set = _bzRateValsArray();
   const avg = set.length ? set.reduce((a, b) => a + b, 0) / set.length : 0;
   const el  = document.getElementById('bz-rate-avg');
-  if (el) el.textContent = avg ? avg.toFixed(1) : '٠.٠';
+  if (el) el.textContent = avg ? avg.toLocaleString(_profLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : (0).toLocaleString(_profLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 /* صفوف سجل التقييمات التي منحها المنظّم */
@@ -733,14 +746,14 @@ function _bzHistoryRowsHtml() {
   /* خريطة الاسم من القائمة القابلة للتقييم (booking_id → اسم المشارك) */
   const nameByBooking = {};
   bzRateableParticipants.forEach(p => {
-    nameByBooking[p.booking_id] = p.business_name || p.tenant_name || 'مشارك';
+    nameByBooking[p.booking_id] = p.business_name || p.tenant_name || t('profile.rateSection.defaultParticipantName');
   });
   return bzOrganizerRatings.map(r => {
-    const who   = _escR(nameByBooking[r.booking_id] || 'مشارك');
-    const bz    = _escR(r.context_name || 'بازار');
+    const who   = _escR(nameByBooking[r.booking_id] || t('profile.rateSection.defaultParticipantName'));
+    const bz    = _escR(r.context_name || t('profile.rateSection.defaultBazaarName'));
     const stars = '⭐'.repeat(Math.max(0, Math.min(5, r.overall || 0)));
     const rd    = r.created_at
-      ? new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', year: 'numeric' })
+      ? new Date(r.created_at).toLocaleDateString(_profLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
     return `
       <div class="op-rate-hrow">
@@ -764,7 +777,7 @@ function bzOnParticipantChange() {
   if (ctxEl) {
     if (p) {
       const act = p.activity ? ' · ' + _escR(p.activity) : '';
-      ctxEl.innerHTML   = `🎪 ${_escR(p.bazaar_name || 'بازار')}${act}`;
+      ctxEl.innerHTML   = `🎪 ${_escR(p.bazaar_name || t('profile.rateSection.defaultBazaarName'))}${act}`;
       ctxEl.style.display = 'block';
     } else {
       ctxEl.style.display = 'none';
@@ -800,17 +813,17 @@ async function submitBazaarRating() {
     if (type === 'success') setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
   };
 
-  if (!bookingId) { showMsg('error', 'اختر المشارك أولاً.'); return; }
+  if (!bookingId) { showMsg('error', t('profile.rateSection.selectFirstErr')); return; }
 
   const set = _bzRateValsArray();
-  if (!set.length) { showMsg('error', 'قيّم معياراً واحداً على الأقل بالنجوم.'); return; }
+  if (!set.length) { showMsg('error', t('profile.rateSection.rateOneErr')); return; }
 
   const overall = Math.max(1, Math.min(5, Math.round(set.reduce((a, b) => a + b, 0) / set.length)));
   const notes   = document.getElementById('bz-rate-notes')?.value.trim() || '';
   const nn      = v => (v && v > 0 ? v : null);
 
-  if (!sbClient) { showMsg('error', 'تعذّر الاتصال بالخادم.'); return; }
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ…'; }
+  if (!sbClient) { showMsg('error', t('profile.rateSection.connectionErr')); return; }
+  if (btn) { btn.disabled = true; btn.textContent = t('profile.rateSection.savingBtn'); }
 
   try {
     const { error } = await sbClient.rpc('rate_tenant', {
@@ -826,21 +839,21 @@ async function submitBazaarRating() {
     });
     if (error) throw error;
 
-    showMsg('success', `تم حفظ التقييم! التقييم العام: ${overall}/5 ⭐`);
+    showMsg('success', t('profile.rateSection.successMsg', { overall }));
     await _reloadBazaarRatings();
   } catch (e) {
     const map = {
-      not_authorized_booking:    'لا يمكنك تقييم هذا الحجز — ليس ضمن بازاراتك.',
-      cannot_rate_self:          'لا يمكنك تقييم نفسك.',
-      invalid_overall:           'قيمة التقييم غير صحيحة.',
-      no_registered_user:        'هذا الحجز غير مرتبط بحساب مستخدم مسجّل.',
-      participant_not_registered:'هذا المشارك لم يُسجّل بحساب على المنصة — لا يمكن تقييمه.',
-      invalid_context:           'سياق تقييم غير صالح.',
-      unauthorized:              'انتهت الجلسة — سجّل الدخول من جديد.',
+      not_authorized_booking:     t('profile.rateSection.errors.not_authorized_booking'),
+      cannot_rate_self:           t('profile.rateSection.errors.cannot_rate_self'),
+      invalid_overall:            t('profile.rateSection.errors.invalid_overall'),
+      no_registered_user:         t('profile.rateSection.errors.no_registered_user'),
+      participant_not_registered: t('profile.rateSection.errors.participant_not_registered'),
+      invalid_context:            t('profile.rateSection.errors.invalid_context'),
+      unauthorized:                t('profile.rateSection.errors.unauthorized'),
     };
-    showMsg('error', map[e?.message] || ('تعذّر حفظ التقييم: ' + (e?.message || 'خطأ غير معروف')));
+    showMsg('error', map[e?.message] || t('profile.rateSection.errors.generic', { msg: e?.message || t('profile.rateSection.errors.genericUnknown') }));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '⭐ حفظ التقييم'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('profile.rateSection.submitBtn'); }
   }
 }
 
@@ -860,11 +873,11 @@ async function _reloadBazaarRatings() {
   /* أعد بناء القائمة المنسدلة (مع علامة ✓ للمُقيَّمين) */
   const sel = document.getElementById('bz-rate-participant');
   if (sel) {
-    sel.innerHTML = '<option value="">— اختر مشاركاً قمت باستضافته —</option>' +
+    sel.innerHTML = `<option value="">${t('profile.rateSection.selectPlaceholder')}</option>` +
       bzRateableParticipants.map(p => {
-        const mark = p.rating_id ? ' ✓ (مُقيَّم)' : '';
-        const who  = _escR(p.business_name || p.tenant_name || 'مشارك');
-        return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || 'بازار')}${mark}</option>`;
+        const mark = p.rating_id ? t('profile.rateSection.ratedMark') : '';
+        const who  = _escR(p.business_name || p.tenant_name || t('profile.rateSection.defaultParticipantName'));
+        return `<option value="${p.booking_id}">${who} — ${_escR(p.bazaar_name || t('profile.rateSection.defaultBazaarName'))}${mark}</option>`;
       }).join('');
     sel.value = '';
   }
@@ -880,7 +893,7 @@ async function _reloadBazaarRatings() {
 
   /* حدّث عدّاد المشاركين + سجل التقييمات */
   const cntEl = document.getElementById('bz-rate-count');
-  if (cntEl) cntEl.textContent = `${bzRateableParticipants.length} مشارك`;
+  if (cntEl) cntEl.textContent = t('profile.rateSection.countBadge', { count: bzRateableParticipants.length });
 
   const histWrap  = document.getElementById('bz-rate-history');
   const histRows  = document.getElementById('bz-rate-history-rows');
@@ -902,28 +915,28 @@ function _computeBadges({ isVerified, isSpaceOwner, hasBazaars, listings, avgRat
   if (isVerified || hasBazaars) {
     primary.push({
       id: 'organizer', emoji: '🎪',
-      label: 'منظم بازارات',
-      desc:  isVerified ? 'منظم موثّق على مكاني Spot' : 'نظّم بازاراً على المنصة',
+      label: t('profile.badges.organizerLabel'),
+      desc:  isVerified ? t('profile.badges.organizerDescVerified') : t('profile.badges.organizerDescUnverified'),
     });
   }
   if (isSpaceOwner) {
     primary.push({
       id: 'space-owner', emoji: '🏪',
-      label: 'صاحب مساحة',
-      desc:  'يعرض مساحاته للإيجار على المنصة',
+      label: t('profile.badges.spaceOwnerLabel'),
+      desc:  t('profile.badges.spaceOwnerDesc'),
     });
   }
 
   /* الأوسمة الثانوية */
   const activeCnt = listings.filter(l => l.status !== 'sold' && l.status !== 'expired').length;
   if (activeCnt >= 2) {
-    secondary.push({ id: 'active-seller', emoji: '🛍️', label: 'بائع نشط', tier: 'silver' });
+    secondary.push({ id: 'active-seller', emoji: '🛍️', label: t('profile.badges.activeSeller'), tier: 'silver' });
   }
   if (avgRating >= 4.5 && reviewsCount >= 3) {
-    secondary.push({ id: 'top-rated', emoji: '⭐', label: 'تقييم مميز', tier: 'gold' });
+    secondary.push({ id: 'top-rated', emoji: '⭐', label: t('profile.badges.topRated'), tier: 'gold' });
   }
   if (listings.length >= 5) {
-    secondary.push({ id: 'prolific', emoji: '📦', label: 'بائع متميز', tier: 'gold' });
+    secondary.push({ id: 'prolific', emoji: '📦', label: t('profile.badges.prolific'), tier: 'gold' });
   }
 
   return { primary, secondary };
@@ -937,8 +950,8 @@ function _renderListingsGrid(listings) {
   if (!listings || !listings.length) {
     return `<div class="op-empty">
       <div style="font-size:26px;margin-bottom:8px">🛍️</div>
-      <div>لا توجد إعلانات بعد</div>
-      <a href="/post-ad/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">أضف إعلاناً الآن ←</a>
+      <div>${t('profile.listingsSection.empty')}</div>
+      <a href="/post-ad/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">${t('profile.listingsSection.addNew')}</a>
     </div>`;
   }
 
@@ -948,22 +961,22 @@ function _renderListingsGrid(listings) {
       const isExpired = l.expires_at && l.expires_at < now;
       const isSold    = l.status === 'sold';
       const isPending = l.status === 'pending';
-      let sc = '', sl = 'نشط';
-      if (isSold)    { sc = 'sold';    sl = 'مُباع'; }
-      if (isExpired) { sc = 'expired'; sl = 'منتهي'; }
-      if (isPending) { sc = 'pending'; sl = 'قيد المراجعة'; }
+      let sc = '', sl = t('profile.listingsSection.statusActive');
+      if (isSold)    { sc = 'sold';    sl = t('profile.listingsSection.statusSold'); }
+      if (isExpired) { sc = 'expired'; sl = t('profile.listingsSection.statusExpired'); }
+      if (isPending) { sc = 'pending'; sl = t('profile.listingsSection.statusPending'); }
 
       const imgHtml = l.cover_image
         ? `<img src="${_toDirectImgUrl(l.cover_image)}" alt="${l.title}" onerror="this.parentElement.innerHTML='🛍️'">`
         : `<span>🛍️</span>`;
 
       return `
-        <div class="op-listing-card" onclick="window.open('/market/?manage=${l.id}','_blank')" title="إدارة إعلان: ${l.title}">
+        <div class="op-listing-card" onclick="window.open('/market/?manage=${l.id}','_blank')" title="${t('profile.listingsSection.manageTitle', { title: l.title })}">
           <div class="op-listing-img">${imgHtml}</div>
           <div class="op-listing-info">
-            <div class="op-listing-title">${l.title || 'إعلان'}</div>
+            <div class="op-listing-title">${l.title || t('profile.listingsSection.untitled')}</div>
             <div class="op-listing-meta">
-              <span class="op-listing-price">${l.price ? Number(l.price).toLocaleString('ar-EG') + ' ج.م' : '—'}</span>
+              <span class="op-listing-price">${l.price ? Number(l.price).toLocaleString(_profLocale()) + ' ' + t('card.currency') : '—'}</span>
               <span class="op-listing-status ${sc}">${sl}</span>
             </div>
           </div>
@@ -1017,14 +1030,14 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   const content = document.getElementById('op-content');
 
   /* اسم المستخدم — من profiles أو organizer_profiles */
-  const displayName = organizer?.full_name || publicUser?.full_name || 'مستخدم مجهول';
+  const displayName = organizer?.full_name || publicUser?.full_name || t('profile.unknownUser');
 
   if (!publicUser && !organizer) {
     content.innerHTML = `
       <div style="text-align:center;padding:80px 24px">
         <div style="font-size:40px;margin-bottom:12px">🔍</div>
-        <div style="font-size:15px;color:var(--ink3)">لم يتم العثور على هذا الملف الشخصي</div>
-        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">← الرئيسية</a>
+        <div style="font-size:15px;color:var(--ink3)">${t('profile.notFound')}</div>
+        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">${t('profile.nav.backHome')}</a>
       </div>`;
     return;
   }
@@ -1067,7 +1080,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   /* تاريخ الانضمام */
   const joinDate = (publicUser?.created_at || organizer?.joined_at)
     ? new Date(publicUser?.created_at || organizer?.joined_at)
-        .toLocaleDateString('ar-EG', { year:'numeric', month:'long' })
+        .toLocaleDateString(_profLocale(), { year:'numeric', month:'long' })
     : '—';
 
   /* إحصائيات */
@@ -1120,33 +1133,33 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
     content.innerHTML = `
       <div style="text-align:center;padding:80px 24px">
         <div style="font-size:40px;margin-bottom:12px">🔒</div>
-        <div style="font-size:15px;color:var(--ink3)">لا يوجد بروفايل عام لهذا الحساب</div>
-        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">← الرئيسية</a>
+        <div style="font-size:15px;color:var(--ink3)">${t('profile.noPublicProfile')}</div>
+        <a href="/" class="btn" style="margin-top:20px;display:inline-block;padding:10px 24px">${t('profile.nav.backHome')}</a>
       </div>`;
     return;
   }
 
   /* شارة أداء المنظم (🥉/🥈/🥇) */
   if (completedBazaars.length >= 6 && successRate !== null && successRate >= 90 && avgRating && parseFloat(avgRating) >= 4.0) {
-    secBadges.unshift({ id: 'top-org', emoji: '🥇', label: 'منظم متميز', tier: 'gold' });
+    secBadges.unshift({ id: 'top-org', emoji: '🥇', label: t('profile.badges.topOrg'), tier: 'gold' });
   } else if (completedBazaars.length >= 3 && successRate !== null && successRate >= 75) {
-    secBadges.unshift({ id: 'reliable-org', emoji: '🥈', label: 'منظم موثوق', tier: 'silver' });
+    secBadges.unshift({ id: 'reliable-org', emoji: '🥈', label: t('profile.badges.reliableOrg'), tier: 'silver' });
   } else if (completedBazaars.length >= 1) {
-    secBadges.unshift({ id: 'active-org', emoji: '🥉', label: 'منظم نشط', tier: '' });
+    secBadges.unshift({ id: 'active-org', emoji: '🥉', label: t('profile.badges.activeOrg'), tier: '' });
   }
 
   /* شارة الاسم */
-  const nameBadge = isVerified ? `<span class="op-verified-badge">✓ منظم موثّق</span>` : '';
+  const nameBadge = isVerified ? `<span class="op-verified-badge">${t('profile.orgBadge.verified')}</span>` : '';
 
   /* ── بناء بطاقة بازار واحدة ── */
   function _buildBazaarRow(b) {
     const ds = b.date_start
-      ? new Date(b.date_start).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+      ? new Date(b.date_start).toLocaleDateString(_profLocale(), { year:'numeric', month:'short', day:'numeric' })
       : '—';
     const de = b.date_end
-      ? new Date(b.date_end).toLocaleDateString('ar-EG', { month:'short', day:'numeric' })
+      ? new Date(b.date_end).toLocaleDateString(_profLocale(), { month:'short', day:'numeric' })
       : null;
-    const dateLabel = de && de !== ds ? `${ds} ← ${de}` : ds;
+    const dateLabel = de && de !== ds ? `${ds} ${getLocale() === 'en' ? '→' : '←'} ${de}` : ds;
     const imgHtml = b.image
       ? `<img src="${_toDirectImgUrl(b.image)}" alt="${b.name}"
              style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"
@@ -1160,9 +1173,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
     const isCompleted = b.status === 'completed';
 
     const statsBadges = [
-      fillRate !== null ? `<span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:50px;padding:1px 7px">🎫 ${fillRate}%</span>` : '',
-      isCompleted && hasLinks  ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px">🟢 وثّق</span>` : '',
-      isCompleted && !hasLinks ? `<span style="font-size:10px;color:#92400e;background:#fefce8;border:1px solid #fde68a;border-radius:50px;padding:1px 7px">🟡 بدون روابط</span>` : '',
+      fillRate !== null ? `<span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:50px;padding:1px 7px">${t('profile.publicSections.fillRateBadge', { pct: fillRate })}</span>` : '',
+      isCompleted && hasLinks  ? `<span style="font-size:10px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:50px;padding:1px 7px">${t('profile.publicSections.docVerified')}</span>` : '',
+      isCompleted && !hasLinks ? `<span style="font-size:10px;color:#92400e;background:#fefce8;border:1px solid #fde68a;border-radius:50px;padding:1px 7px">${t('profile.publicSections.docMissing')}</span>` : '',
     ].filter(Boolean).join('');
 
     return `
@@ -1180,16 +1193,16 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   /* قائمة البازارات مقسّمة */
   const activeBazaarsHtml = activeBazaars.length
     ? activeBazaars.map(_buildBazaarRow).join('')
-    : `<div class="op-empty">لا توجد بازارات نشطة حالياً</div>`;
+    : `<div class="op-empty">${t('profile.publicSections.emptyActiveBazaars')}</div>`;
   const pastBazaarsHtml = pastBazaars.length
     ? pastBazaars.map(_buildBazaarRow).join('')
-    : `<div class="op-empty">لا توجد بازارات منتهية</div>`;
+    : `<div class="op-empty">${t('profile.publicSections.emptyPastBazaars')}</div>`;
 
   const reviewsHtml = reviews.length
     ? reviews.map(r => {
         const stars = '⭐'.repeat(Math.min(5, Math.round(r.rating||0)));
         const rd = r.created_at
-          ? new Date(r.created_at).toLocaleDateString('ar-EG', { month:'short', day:'numeric', year:'numeric' })
+          ? new Date(r.created_at).toLocaleDateString(_profLocale(), { month:'short', day:'numeric', year:'numeric' })
           : '';
         return `
           <div class="op-review-item">
@@ -1200,7 +1213,7 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
             ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${r.comment}</p>` : ''}
           </div>`;
       }).join('')
-    : `<div class="op-empty">لا توجد تقييمات بعد</div>`;
+    : `<div class="op-empty">${t('profile.reviewsSection.empty')}</div>`;
 
   content.innerHTML = `
 
@@ -1216,13 +1229,13 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
       <div class="op-hero-info">
         <div class="op-name">${displayName} ${nameBadge}</div>
         <div class="op-hero-meta">
-          <span>🗓 عضو منذ ${joinDate}</span>
+          <span>${t('profile.hero.memberSince', { date: joinDate })}</span>
           ${organizer?.region ? `<span>📍 ${organizer.region}</span>` : ''}
         </div>
         ${pubBioHtml}
         ${pubSocialHtml}
         <div class="op-hero-actions" style="margin-top:${pubBioHtml || pubSocialHtml ? '10px' : '0'}">
-          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="sharePublicOrganizerProfile()">🔗 مشاركة البروفايل</button>` : ''}
+          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="sharePublicOrganizerProfile()">${t('profile.hero.shareBtn')}</button>` : ''}
         </div>
 
         <!-- الأوسمة الرئيسية -->
@@ -1250,19 +1263,19 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   <div class="op-stats-grid">
     <div class="op-stat-card">
       <div class="op-stat-num">${activeBazaars.length}</div>
-      <div class="op-stat-lbl">بازار نشط</div>
+      <div class="op-stat-lbl">${t('profile.stats.activeBazaars')}</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${pastCount}</div>
-      <div class="op-stat-lbl">بازار سابق</div>
+      <div class="op-stat-lbl">${t('profile.stats.pastBazaars')}</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
-      <div class="op-stat-lbl">متوسط التقييم</div>
+      <div class="op-stat-lbl">${t('profile.stats.avgRating')}</div>
     </div>
     <div class="op-stat-card">
       <div class="op-stat-num">${totalVendors}</div>
-      <div class="op-stat-lbl">إجمالي العارضين المشاركين</div>
+      <div class="op-stat-lbl">${t('profile.stats.totalVendors')}</div>
     </div>
   </div>
 
@@ -1272,32 +1285,32 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   <!-- ═══════ سجل الأداء ═══════ -->
   ${hasPerf ? `
   <div class="op-section-card" style="margin-bottom:16px">
-    <div class="op-section-title"><span>📊 سجل الأداء</span></div>
+    <div class="op-section-title"><span>${t('profile.publicSections.performanceTitle')}</span></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
       ${completedBazaars.length > 0 ? `
       <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:900;color:#1d4ed8">📅 ${completedBazaars.length}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">بازار اكتمل</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.completedCount')}</div>
       </div>` : ''}
       ${totalBooked > 0 ? `
       <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:900;color:#047857">✅ ${totalBooked}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">مكان محجوز</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.bookedCount')}</div>
       </div>` : ''}
       ${docsCount > 0 ? `
       <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:900;color:#059669">🔗 ${docsCount}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">أضاف روابط</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.addedLinksCount')}</div>
       </div>` : ''}
       ${cancelledCount > 0 ? `
       <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
         <div style="font-size:22px;font-weight:900;color:#dc2626">❌ ${cancelledCount}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">إلغاء</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.cancelledCount')}</div>
       </div>` : ''}
       ${successRate !== null ? `
       <div style="text-align:center;background:${successRate >= 80 ? '#f0fdf4' : successRate >= 60 ? '#fefce8' : '#fef2f2'};border-radius:12px;padding:12px 8px;border:1px solid ${successRate >= 80 ? '#86efac' : successRate >= 60 ? '#fde68a' : '#fecaca'}">
         <div style="font-size:22px;font-weight:900;color:${successRate >= 80 ? '#047857' : successRate >= 60 ? '#92400e' : '#dc2626'}">${successRate >= 80 ? '🎯' : successRate >= 60 ? '📊' : '⚠️'} ${successRate}%</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">معدل نجاح التنظيم</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.successRateLabel')}</div>
       </div>` : ''}
     </div>
   </div>` : ''}
@@ -1307,15 +1320,15 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
     <span style="font-size:18px;flex-shrink:0">⚠️</span>
     <div>
-      <div style="font-size:13px;font-weight:700;color:#b91c1c">تنبيه موثوقية</div>
-      <div style="font-size:12px;color:#dc2626;margin-top:3px;line-height:1.6">قام هذا المنظم بإلغاء بازار خلال آخر 60 يوماً — تأكد من التواصل معه قبل الحجز</div>
+      <div style="font-size:13px;font-weight:700;color:#b91c1c">${t('profile.publicSections.reliabilityWarningTitle')}</div>
+      <div style="font-size:12px;color:#dc2626;margin-top:3px;line-height:1.6">${t('profile.publicSections.reliabilityWarningDesc')}</div>
     </div>
   </div>` : ''}
 
   <!-- ═══════ البازارات النشطة/القادمة ═══════ -->
   <div class="op-section-card" style="margin-bottom:16px">
     <div class="op-section-title">
-      <span>🟢 البازارات النشطة والقادمة (${activeBazaars.length})</span>
+      <span>${t('profile.publicSections.activeBazaarsTitle', { count: activeBazaars.length })}</span>
     </div>
     ${activeBazaarsHtml}
   </div>
@@ -1324,26 +1337,29 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
   ${pastBazaars.length ? `
   <div class="op-section-card" style="margin-bottom:16px">
     <div class="op-section-title">
-      <span style="color:var(--ink3)">📁 البازارات السابقة (${pastBazaars.length})</span>
+      <span style="color:var(--ink3)">${t('profile.publicSections.pastBazaarsTitle', { count: pastBazaars.length })}</span>
     </div>
     ${pastBazaarsHtml}
   </div>` : ''}
 
   <!-- ═══════ تقييماته ═══════ -->
   <div class="op-section-card">
-    <div class="op-section-title"><span>⭐ التقييمات (${reviews.length})</span></div>
+    <div class="op-section-title"><span>${t('profile.reviewsSection.titlePublic', { count: reviews.length })}</span></div>
     ${reviewsHtml}
   </div>`;
 }
 
-/* ── السمعة كمستأجر: شارة + معايير + تقييمات مستلمة (للملف العام) ── */
-const PUB_REP_BADGES = {
-  excellent: { label: 'سمعة ممتازة',        emoji: '🏆', cls: 'rep-excellent' },
-  trusted:   { label: 'مستأجر موثوق',       emoji: '✅', cls: 'rep-trusted' },
-  good:      { label: 'سمعة جيدة',           emoji: '👍', cls: 'rep-good' },
-  weak:      { label: 'تحتاج لتحسين',        emoji: '⚠️', cls: 'rep-weak' },
-  new:       { label: 'لا توجد تقييمات بعد', emoji: '✨', cls: 'rep-new' },
-};
+/* ── السمعة كمستأجر: شارة + معايير + تقييمات مستلمة (للملف العام) ──
+   دالة بدل const ثابت — لازم تُستدعى وقت الرسم بعد جاهزية i18next */
+function _pubRepBadges() {
+  return {
+    excellent: { label: t('profile.reputation.excellent'), emoji: '🏆', cls: 'rep-excellent' },
+    trusted:   { label: t('profile.reputation.trusted'),   emoji: '✅', cls: 'rep-trusted' },
+    good:      { label: t('profile.reputation.good'),      emoji: '👍', cls: 'rep-good' },
+    weak:      { label: t('profile.reputation.weak'),      emoji: '⚠️', cls: 'rep-weak' },
+    new:       { label: t('profile.reputation.new'),       emoji: '✨', cls: 'rep-new' },
+  };
+}
 
 function _pubRepStars(val, size) {
   const v = Math.round(Number(val) || 0);
@@ -1359,14 +1375,15 @@ function _pubRepPanelHtml(reputation, recvRatings) {
   if (!total) return '';   // لا نعرض القسم إن لم توجد تقييمات مستلمة
 
   const avg   = Number(reputation?.avg_overall || 0);
-  const badge = PUB_REP_BADGES[reputation?.badge] || PUB_REP_BADGES.new;
+  const repBadges = _pubRepBadges();
+  const badge = repBadges[reputation?.badge] || repBadges.new;
 
   const critRows = [
-    ['⏰ الالتزام بالمواعيد', reputation.avg_commitment],
-    ['🧹 نظافة المكان',        reputation.avg_cleanliness],
-    ['🤝 حسن التعامل',         reputation.avg_dealing],
-    ['💳 الالتزام المالي',     reputation.avg_payment],
-    ['📋 احترام الشروط',       reputation.avg_rules],
+    [t('profile.rateSection.criteria.commitment'), reputation.avg_commitment],
+    [t('profile.reputation.criteria.cleanliness'), reputation.avg_cleanliness],
+    [t('profile.rateSection.criteria.dealing'),    reputation.avg_dealing],
+    [t('profile.rateSection.criteria.payment'),    reputation.avg_payment],
+    [t('profile.reputation.criteria.rules'),       reputation.avg_rules],
   ].filter(r => r[1] != null);
 
   const panel = `
@@ -1376,7 +1393,7 @@ function _pubRepPanelHtml(reputation, recvRatings) {
         <div class="rep-score">${avg.toFixed(1)}</div>
         <div class="rep-stars">${_pubRepStars(avg, 16)}</div>
         <div class="rep-badge-label">${badge.label}</div>
-        <div class="rep-count">${total} تقييم · 👍 ${reputation.positive || 0} · 👎 ${reputation.negative || 0}</div>
+        <div class="rep-count">${t('profile.reputation.countSuffix', { count: total, positive: reputation.positive || 0, negative: reputation.negative || 0 })}</div>
       </div>
       ${critRows.length ? `<div class="rep-criteria">
         ${critRows.map(([label, val]) => `
@@ -1389,9 +1406,9 @@ function _pubRepPanelHtml(reputation, recvRatings) {
     </div>`;
 
   const list = (recvRatings || []).map(r => {
-    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-EG') : '';
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString(_profLocale()) : '';
     const ctxIcon = r.context_type === 'bazaar' ? '🎪' : '🏬';
-    const roleLbl = r.rater_role === 'organizer' ? 'منظّم بازار' : 'صاحب مساحة';
+    const roleLbl = r.rater_role === 'organizer' ? t('profile.reputation.roleOrganizer') : t('profile.reputation.roleOwner');
     return `
       <div class="recv-rating-card">
         <div class="recv-rating-head">
@@ -1407,9 +1424,9 @@ function _pubRepPanelHtml(reputation, recvRatings) {
 
   return `
     <div class="op-section-card" style="margin-bottom:16px">
-      <div class="op-section-title"><span>🛡️ السمعة كمستأجر (${total})</span></div>
+      <div class="op-section-title"><span>${t('profile.reputation.sectionTitle', { count: total })}</span></div>
       <p style="font-size:12.5px;color:var(--ink3);line-height:1.7;margin:0 0 14px">
-        تقييمات هذا الحساب من أصحاب المساحات ومنظّمي البازارات بعد تعاملات حقيقية عبر المنصة.
+        ${t('profile.reputation.sectionDesc')}
       </p>
       ${panel}
       ${list ? `<div class="recv-ratings-list">${list}</div>` : ''}
@@ -1509,10 +1526,10 @@ async function saveProfileDetails() {
     if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
   };
 
-  if (!name) { showErr('الاسم الكامل مطلوب'); return; }
+  if (!name) { showErr(t('profile.errors.nameRequired')); return; }
   if (newPwd) {
-    if (newPwd.length < 8) { showErr('كلمة المرور يجب أن تكون ٨ أحرف على الأقل'); return; }
-    if (newPwd !== cfmPwd) { showErr('كلمة المرور وتأكيدها غير متطابقتين'); return; }
+    if (newPwd.length < 8) { showErr(t('profile.errors.passwordTooShort')); return; }
+    if (newPwd !== cfmPwd) { showErr(t('profile.errors.passwordMismatch')); return; }
   }
 
   if (errorEl) errorEl.style.display = 'none';
@@ -1522,7 +1539,7 @@ async function saveProfileDetails() {
     saveBtn.disabled = true;
     const lbl = document.getElementById('edit-save-label');
     const spn = document.getElementById('edit-save-spinner');
-    if (lbl) lbl.textContent = 'جاري الحفظ…';
+    if (lbl) lbl.textContent = t('profile.editModal.savingBtn');
     if (spn) spn.style.display = 'inline-block';
   }
   document.querySelectorAll('#edit-profile-modal input, #edit-profile-modal textarea, #edit-profile-modal select')
@@ -1536,7 +1553,7 @@ async function saveProfileDetails() {
         { id: currentUser.id, full_name: name, phone: phone||null, city: city||null },
         { onConflict: 'id' }
       );
-    if (profilesErr) throw new Error('خطأ في حفظ البيانات الشخصية: ' + profilesErr.message);
+    if (profilesErr) throw new Error(t('profile.errors.savingProfileErr', { msg: profilesErr.message }));
 
     /* 2. حفظ/تحديث organizer_profiles */
     const orgPayload = {
@@ -1550,19 +1567,19 @@ async function saveProfileDetails() {
     };
 
     const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload, { onConflict: 'user_id' });
-    if (orgErr) throw new Error('خطأ في حفظ بيانات المنظّم: ' + orgErr.message);
+    if (orgErr) throw new Error(t('profile.errors.savingOrgErr', { msg: orgErr.message }));
 
     /* 3. تغيير كلمة المرور إن وُجدت */
     if (newPwd) {
       const { error: pwdErr } = await sbClient.auth.updateUser({ password: newPwd });
-      if (pwdErr) throw new Error('تم حفظ البيانات لكن فشل تغيير كلمة المرور: ' + pwdErr.message);
+      if (pwdErr) throw new Error(t('profile.errors.passwordChangeErr', { msg: pwdErr.message }));
     }
 
     /* 4. مزامنة الاسم الجديد في جميع بازارات المستخدم (طبقة أمان ثانية — الـ Trigger في DB هو الأول) */
     sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
 
     closeEditModal();
-    showSuccessToast('✅ تم حفظ التعديلات بنجاح!');
+    showSuccessToast(t('profile.editModal.successToast'));
     await _loadMyProfile();
   } catch (err) {
     showErr(err.message);
@@ -1571,7 +1588,7 @@ async function saveProfileDetails() {
       saveBtn.disabled = false;
       const lbl = document.getElementById('edit-save-label');
       const spn = document.getElementById('edit-save-spinner');
-      if (lbl) lbl.textContent = 'حفظ التعديلات';
+      if (lbl) lbl.textContent = t('profile.editModal.saveBtn');
       if (spn) spn.style.display = 'none';
     }
     document.querySelectorAll('#edit-profile-modal input, #edit-profile-modal textarea, #edit-profile-modal select')
@@ -1596,8 +1613,8 @@ function _shareOrganizerLink(url, shareText) {
     navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
-      .then(() => showSuccessToast('✅ تم نسخ رابط البروفايل!'))
-      .catch(() => showSuccessToast('📋 الرابط: ' + url));
+      .then(() => showSuccessToast(t('profile.share.linkCopied')))
+      .catch(() => showSuccessToast(t('profile.share.linkFallback', { url })));
   }
 }
 
@@ -1605,14 +1622,14 @@ function _shareOrganizerLink(url, shareText) {
 function shareMyOrganizerProfile() {
   if (!currentUser) return;
   const url = `${window.location.origin}/bazaars/profile.html?organizer=${currentUser.id}`;
-  _shareOrganizerLink(url, 'شوف بروفايلي كمنظم بازارات على مكاني Spot');
+  _shareOrganizerLink(url, t('profile.share.myProfileText'));
 }
 
 /* مشاركة بروفايل منظم عام (من صفحة الزيارة) — الرابط الحالي أصلاً ?organizer=/?user= */
 function sharePublicOrganizerProfile() {
   const url = window.location.href;
-  const name = document.querySelector('.op-name')?.childNodes[0]?.textContent?.trim() || 'هذا المنظم';
-  _shareOrganizerLink(url, `شوف بروفايل ${name} على مكاني Spot`);
+  const name = document.querySelector('.op-name')?.childNodes[0]?.textContent?.trim() || t('profile.share.defaultOrganizerName');
+  _shareOrganizerLink(url, t('profile.share.publicProfileText', { name }));
 }
 
 
@@ -1639,19 +1656,19 @@ async function uploadCoverImage(inputEl) {
 
   const coverEl = document.getElementById('op-cover-img-el');
   const uploadBtn = document.getElementById('op-cover-upload-btn');
-  if (uploadBtn) uploadBtn.textContent = '⏳ جارٍ الرفع…';
+  if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverUploading');
 
   try {
     const { data: { session } } = await sbClient.auth.getSession();
     const authToken = session?.access_token;
-    if (!authToken) throw new Error('يجب تسجيل الدخول أولاً');
+    if (!authToken) throw new Error(t('profile.upload.loginRequired'));
 
     const r2Path    = `covers/${currentUser.id}/cover-${Date.now()}.webp`;
     const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
 
     /* معاينة فورية */
     if (coverEl) { coverEl.src = publicUrl; coverEl.style.display = 'block'; }
-    if (uploadBtn) uploadBtn.textContent = '📷 تغيير الغلاف';
+    if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverChangeBtn');
 
     const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
       user_id:   currentUser.id,
@@ -1663,11 +1680,11 @@ async function uploadCoverImage(inputEl) {
     /* 🪪 توحيد: حدّث المصدر الموحّد profiles.cover_url */
     sbClient.from('profiles').update({ cover_url: publicUrl }).eq('id', currentUser.id).then(null, () => {});
 
-    showSuccessToast('✅ تم تحديث صورة البانر بنجاح');
+    showSuccessToast(t('profile.upload.coverSuccess'));
     await _loadMyProfile();
   } catch (err) {
-    showSuccessToast('❌ تعذّر رفع صورة الغلاف: ' + err.message, true);
-    if (uploadBtn) uploadBtn.textContent = '📷 تغيير الغلاف';
+    showSuccessToast(t('profile.upload.coverFailed', { msg: err.message }), true);
+    if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverChangeBtn');
     await _loadMyProfile();
   }
 }
@@ -1682,7 +1699,7 @@ async function uploadAvatarImage(inputEl) {
   try {
     const { data: { session } } = await sbClient.auth.getSession();
     const authToken = session?.access_token;
-    if (!authToken) throw new Error('يجب تسجيل الدخول أولاً');
+    if (!authToken) throw new Error(t('profile.upload.loginRequired'));
 
     const r2Path    = `avatars/${currentUser.id}/avatar-${Date.now()}.webp`;
     const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
@@ -1707,10 +1724,10 @@ async function uploadAvatarImage(inputEl) {
     /* مزامنة في بازارات المستخدم (الـ Trigger يفعلها تلقائياً، هذا احتياط) */
     sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
 
-    showSuccessToast('✅ تم تحديث صورة البروفايل بنجاح');
+    showSuccessToast(t('profile.upload.avatarSuccess'));
     await _loadMyProfile();
   } catch (err) {
-    showSuccessToast('❌ تعذّر رفع الصورة: ' + err.message, true);
+    showSuccessToast(t('profile.upload.avatarFailed', { msg: err.message }), true);
     await _loadMyProfile();
   }
 }

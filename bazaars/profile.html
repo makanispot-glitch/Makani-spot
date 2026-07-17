@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>الملف الشخصي — مكاني Spot</title>
 
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#F36418">
@@ -20,6 +32,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 <script src="/pwa-install.js?v=202607141600" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <style>
 /* ══════════════════════════════════════════════════
@@ -607,10 +625,16 @@
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
-    <span class="bz-nav-title">👤 الملف الشخصي</span>
+    <span class="bz-nav-title" data-i18n="profile.nav.title">👤 الملف الشخصي</span>
   </a>
   <div class="bz-nav-right">
-    <a class="bz-nav-back" href="/">← الرئيسية</a>
+    <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+      </svg>
+      <span id="langSwitchLabel">EN</span>
+    </button>
+    <a class="bz-nav-back" href="/" data-i18n="profile.nav.backHome">← الرئيسية</a>
   </div>
 </nav>
 
@@ -619,7 +643,7 @@
   <div class="op-content" id="op-content">
     <div class="op-loading">
       <div style="font-size:36px;margin-bottom:12px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
-      <div style="font-size:14px">جاري تحميل الملف الشخصي…</div>
+      <div style="font-size:14px" data-i18n="profile.loading">جاري تحميل الملف الشخصي…</div>
     </div>
   </div>
 </div>
@@ -628,7 +652,7 @@
 <div class="op-modal" id="edit-profile-modal">
   <div class="op-modal-card">
     <div class="op-modal-header">
-      <span class="op-modal-title">✍️ تعديل الملف الشخصي</span>
+      <span class="op-modal-title" data-i18n="profile.editModal.title">✍️ تعديل الملف الشخصي</span>
       <button class="op-modal-close" onclick="closeEditModal()">×</button>
     </div>
     <div class="op-modal-body">
@@ -637,59 +661,59 @@
       <div class="edit-section">
         <div class="edit-section-hd">
           <span class="edit-section-icon">📸</span>
-          الصورة والغلاف
-          <span class="edit-section-tip">تحسّن ظهور ملفك +40%</span>
+          <span data-i18n="profile.editModal.photoSectionTitle">الصورة والغلاف</span>
+          <span class="edit-section-tip" data-i18n="profile.editModal.photoSectionTip">تحسّن ظهور ملفك +40%</span>
         </div>
         <div class="edit-photos-row">
-          <div class="edit-cover-thumb" onclick="triggerCoverUpload()" title="تغيير صورة الغلاف">
+          <div class="edit-cover-thumb" onclick="triggerCoverUpload()" title="تغيير صورة الغلاف" data-i18n-attr="title:profile.editModal.changeCoverTooltip">
             <div id="edit-cover-thumb-inner" style="width:100%;height:100%"></div>
             <div class="edit-photo-overlay">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span>تغيير الغلاف</span>
+              <span data-i18n="profile.editModal.changeCoverLabel">تغيير الغلاف</span>
             </div>
           </div>
-          <div class="edit-avatar-thumb" onclick="triggerAvatarUpload()" title="تغيير الصورة الشخصية">
+          <div class="edit-avatar-thumb" onclick="triggerAvatarUpload()" title="تغيير الصورة الشخصية" data-i18n-attr="title:profile.editModal.changeAvatarTooltip">
             <div id="edit-avatar-thumb-inner" style="width:100%;height:100%"></div>
             <div class="edit-photo-overlay">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
           </div>
         </div>
-        <div style="font-size:10.5px;color:var(--ink3);margin-top:7px">اضغط على أي صورة لتغييرها · تُضغط تلقائياً وتُرفع بأمان</div>
+        <div style="font-size:10.5px;color:var(--ink3);margin-top:7px" data-i18n="profile.editModal.photoHint">اضغط على أي صورة لتغييرها · تُضغط تلقائياً وتُرفع بأمان</div>
       </div>
 
       <!-- ── البيانات الأساسية ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
           <span class="edit-section-icon">👤</span>
-          البيانات الأساسية
+          <span data-i18n="profile.editModal.basicSectionTitle">البيانات الأساسية</span>
         </div>
         <div class="vr-fg">
-          <label>الاسم الكامل *</label>
-          <input type="text" id="edit-name" placeholder="اسمك الكريم">
+          <label><span data-i18n="profile.editModal.nameLabel">الاسم الكامل</span> *</label>
+          <input type="text" id="edit-name" placeholder="اسمك الكريم" data-i18n-attr="placeholder:profile.editModal.namePlaceholder">
         </div>
         <div class="vr-fg" style="margin-top:10px">
-          <label>رقم الموبايل</label>
+          <label data-i18n="profile.editModal.phoneLabel">رقم الموبايل</label>
           <input type="tel" id="edit-phone" placeholder="01xxxxxxxxx" dir="ltr">
         </div>
         <div class="vr-fg" style="margin-top:10px">
-          <label>المدينة</label>
+          <label data-i18n="profile.editModal.cityLabel">المدينة</label>
           <select id="edit-city">
-            <option value="">اختر مدينتك</option>
-            <option>القاهرة</option>
-            <option>الجيزة</option>
-            <option>الإسكندرية</option>
-            <option>المنصورة</option>
-            <option>أسيوط</option>
-            <option>طنطا</option>
-            <option>الشرقية</option>
-            <option>بورسعيد</option>
-            <option>أخرى</option>
+            <option value="" data-i18n="profile.editModal.cityPlaceholder">اختر مدينتك</option>
+            <option value="القاهرة" data-i18n="regions.cairo">القاهرة</option>
+            <option value="الجيزة" data-i18n="regions.giza">الجيزة</option>
+            <option value="الإسكندرية" data-i18n="regions.alexandria">الإسكندرية</option>
+            <option value="المنصورة" data-i18n="regions.mansoura">المنصورة</option>
+            <option value="أسيوط" data-i18n="regions.assiut">أسيوط</option>
+            <option value="طنطا" data-i18n="regions.tanta">طنطا</option>
+            <option value="الشرقية" data-i18n="regions.sharqia">الشرقية</option>
+            <option value="بورسعيد" data-i18n="regions.portSaid">بورسعيد</option>
+            <option value="أخرى" data-i18n="regions.other">أخرى</option>
           </select>
         </div>
         <div class="vr-fg" style="margin-top:10px">
-          <label>المنطقة / المحافظة</label>
-          <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة">
+          <label data-i18n="profile.editModal.regionLabel">المنطقة / المحافظة</label>
+          <input type="text" id="edit-region" placeholder="مثال: التجمع الخامس، القاهرة" data-i18n-attr="placeholder:profile.editModal.regionPlaceholder">
         </div>
       </div>
 
@@ -697,11 +721,12 @@
       <div class="edit-section">
         <div class="edit-section-hd">
           <span class="edit-section-icon">✍️</span>
-          نبذة شخصية
-          <span class="edit-section-tip">يزيد ثقة العارضين بك</span>
+          <span data-i18n="profile.editModal.bioSectionTitle">نبذة شخصية</span>
+          <span class="edit-section-tip" data-i18n="profile.editModal.bioSectionTip">يزيد ثقة العارضين بك</span>
         </div>
         <textarea id="edit-bio" rows="3" maxlength="200"
           placeholder="مثال: منظم بازارات متخصص في الفعاليات التجارية بالقاهرة…"
+          data-i18n-attr="placeholder:profile.editModal.bioPlaceholder"
           oninput="document.getElementById('edit-bio-count').textContent=this.value.length+' / 200'"
           style="padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-family:var(--font-body);font-size:13px;color:var(--ink);background:var(--surface2);outline:none;width:100%;box-sizing:border-box;resize:vertical;transition:border-color var(--dur-fast);line-height:1.7"
           onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
@@ -712,8 +737,8 @@
       <div class="edit-section">
         <div class="edit-section-hd">
           <span class="edit-section-icon">📱</span>
-          روابط التواصل الاجتماعي
-          <span class="edit-section-tip">تعزّز مصداقيتك مع المولات</span>
+          <span data-i18n="profile.editModal.socialSectionTitle">روابط التواصل الاجتماعي</span>
+          <span class="edit-section-tip" data-i18n="profile.editModal.socialSectionTip">تعزّز مصداقيتك مع المولات</span>
         </div>
         <div class="vr-fg">
           <label>
@@ -745,25 +770,25 @@
       <div class="edit-section">
         <div class="edit-section-hd">
           <span class="edit-section-icon">🔒</span>
-          تغيير كلمة المرور
-          <span style="margin-right:auto;font-size:10.5px;color:var(--ink3);font-weight:400">اتركها فارغة إن لم تريد التغيير</span>
+          <span data-i18n="profile.editModal.securitySectionTitle">تغيير كلمة المرور</span>
+          <span style="margin-right:auto;font-size:10.5px;color:var(--ink3);font-weight:400" data-i18n="profile.editModal.securityHint">اتركها فارغة إن لم تريد التغيير</span>
         </div>
         <div class="vr-fg">
-          <label>كلمة المرور الجديدة</label>
-          <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" dir="ltr" autocomplete="new-password">
+          <label data-i18n="profile.editModal.newPasswordLabel">كلمة المرور الجديدة</label>
+          <input type="password" id="edit-password" placeholder="٨ أحرف على الأقل" data-i18n-attr="placeholder:auth.signup.passwordPlaceholder" dir="ltr" autocomplete="new-password">
         </div>
         <div class="vr-fg" style="margin-top:10px">
-          <label>تأكيد كلمة المرور</label>
-          <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" dir="ltr" autocomplete="new-password">
+          <label data-i18n="profile.editModal.confirmPasswordLabel">تأكيد كلمة المرور</label>
+          <input type="password" id="edit-password-confirm" placeholder="أعد كتابة كلمة المرور" data-i18n-attr="placeholder:profile.editModal.confirmPasswordPlaceholder" dir="ltr" autocomplete="new-password">
         </div>
       </div>
 
       <div id="edit-error" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
     </div>
     <div class="op-modal-footer">
-      <button class="btn" style="padding:8px 18px;border-radius:50px;font-size:13px" onclick="closeEditModal()">إلغاء</button>
+      <button class="btn" style="padding:8px 18px;border-radius:50px;font-size:13px" onclick="closeEditModal()" data-i18n="profile.editModal.cancelBtn">إلغاء</button>
       <button class="btn btn-primary" style="padding:8px 22px;border-radius:50px;font-size:13px" id="edit-save-btn" onclick="saveProfileDetails()">
-        <span id="edit-save-label">حفظ التعديلات</span>
+        <span id="edit-save-label" data-i18n="profile.editModal.saveBtn">حفظ التعديلات</span>
         <svg id="edit-save-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
              width="14" height="14" style="display:none">
           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
@@ -774,7 +799,7 @@
 </div>
 
 <!-- Success Toast -->
-<div id="edit-success-toast">✅ تم حفظ التعديلات بنجاح!</div>
+<div id="edit-success-toast" data-i18n="profile.editModal.successToast">✅ تم حفظ التعديلات بنجاح!</div>
 
 <!-- hidden file inputs -->
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
@@ -784,10 +809,24 @@
 <script src="/media-handler.js" defer></script>
 <script src="../shared/account.js?v=202607141600" defer></script>
 <script src="profile.js?v=202607141600" defer></script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+  });
+</script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
-  <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <span style="color:#e8e8f0;font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="swUpdate.button">🔄 تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>

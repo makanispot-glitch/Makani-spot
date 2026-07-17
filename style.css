@@ -456,6 +456,51 @@ body {
   opacity: 0.6;
 }
 
+/* ── زر تبديل اللغة (i18n) ────────────────────────────────────────
+   مقصود إنه صغير ومحايد بصريًا — مش CTA، مجرد أداة تفضيل. يقف أول
+   عنصر في nav-user-area دايمًا (قبل زر الدخول أو الأفاتار) عشان يفضل
+   في نفس المكان بغض النظر عن حالة تسجيل الدخول. نفس الماركب يتكرر
+   يدويًا في كل نسخة nav عبر المنصة — راجع shared/i18n.js. */
+.lang-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--fg-2);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--dur-fast, 0.16s) ease;
+}
+
+.lang-switch-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.lang-switch-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-ultra);
+}
+
+@media (max-width: 400px) {
+  .lang-switch-btn {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 11.5px;
+  }
+  .lang-switch-btn svg { width: 12px; height: 12px; }
+}
+
 /* زر "إنشاء بازار جديد" — الـ Primary Action الوحيد لمنظم البازارات (بعد نقل "فرص
    الاستضافة" إلى القائمة المنسدلة)، لذلك بلون برتقالي ممتلئ دائمًا وليس عند hover
    فقط كالتصميم السابق (bz-org-pill) — أهم إجراء بالمنصة يجب ألا يُخطئه العين. */

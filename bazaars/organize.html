@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>تنظيم بازار — مكاني Spot</title>
+
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +24,12 @@
 <link rel="stylesheet" href="../style.css?v=34">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <style>
 /* ── Standalone Nav ── */
@@ -451,16 +470,22 @@
     <span class="logo-ar">مكاني</span>
     <span class="logo-en">Spot</span>
   </a>
-  <div class="bz-nav-title">🎪 تنظيم بازار</div>
+  <div class="bz-nav-title" data-i18n="organize.nav.title">🎪 تنظيم بازار</div>
   <div class="bz-nav-right">
-    <a class="bz-nav-back" href="/bazaars/">← البازارات</a>
+    <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+      </svg>
+      <span id="langSwitchLabel">EN</span>
+    </button>
+    <a class="bz-nav-back" href="/bazaars/" data-i18n="manage.backToBazaars">← البازارات</a>
   </div>
 </nav>
 
 <!-- ── HERO ── -->
 <div class="org-hero">
-  <h1>نظّم <span>بازارك</span> معنا</h1>
-  <p>أرسل طلب تنظيم البازار وسيراجعه فريق مكاني Spot خلال 48 ساعة — منظمون موثّقون فقط</p>
+  <h1 data-i18n-html="organize.hero.title">نظّم <span>بازارك</span> معنا</h1>
+  <p data-i18n="organize.hero.sub">أرسل طلب تنظيم البازار وسيراجعه فريق مكاني Spot خلال 48 ساعة — منظمون موثّقون فقط</p>
 </div>
 
 <!-- ── FORM AREA ── -->
@@ -478,36 +503,34 @@
   <div class="org-steps" id="org-steps" style="display:none">
     <div class="org-step active" id="step-dot-1">
       <div class="org-step-dot">1</div>
-      <div class="org-step-lbl">المنظم</div>
+      <div class="org-step-lbl" data-i18n="organize.steps.organizer">المنظم</div>
     </div>
     <div class="org-step" id="step-dot-2">
       <div class="org-step-dot">2</div>
-      <div class="org-step-lbl">الفعالية</div>
+      <div class="org-step-lbl" data-i18n="organize.steps.event">الفعالية</div>
     </div>
     <div class="org-step" id="step-dot-3">
       <div class="org-step-dot">3</div>
-      <div class="org-step-lbl">التسعير</div>
+      <div class="org-step-lbl" data-i18n="organize.steps.pricing">التسعير</div>
     </div>
     <div class="org-step" id="step-dot-4">
       <div class="org-step-dot">4</div>
-      <div class="org-step-lbl">التأكيد</div>
+      <div class="org-step-lbl" data-i18n="organize.steps.confirm">التأكيد</div>
     </div>
   </div>
 
   <!-- بانر استعادة المسودة -->
   <div id="org-draft-banner" class="org-draft-banner">
     <span class="org-draft-banner-ico">💾</span>
-    <span class="org-draft-banner-txt">
-      استُعيدت مسودة سابقة <span class="org-draft-age"></span> — يمكنك المتابعة من حيث توقفت
-    </span>
-    <button class="org-draft-discard" onclick="orgDiscardDraft()">مسح المسودة</button>
+    <span class="org-draft-banner-txt" id="org-draft-banner-txt"></span>
+    <button class="org-draft-discard" onclick="orgDiscardDraft()" data-i18n="organize.draft.discardBtn">مسح المسودة</button>
   </div>
 
   <!-- ══════════════════════════════════════════
        Step 1 (جديد): معلومات المنظم
   ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-0" style="margin-top:22px">
-    <div class="org-panel-title">👤 معلومات المنظم</div>
+    <div class="org-panel-title" data-i18n="organize.step1.panelTitle">👤 معلومات المنظم</div>
 
     <!-- بطاقة هوية المنظم (تُعبَّأ تلقائياً من البروفايل) -->
     <div class="oi-profile-card">
@@ -515,17 +538,17 @@
       <div class="oi-profile-details">
         <div class="oi-name" id="oi-name">—</div>
         <div class="oi-sub" id="oi-email">—</div>
-        <span class="oi-verified-badge" id="oi-verified" style="display:none">✓ منظم موثّق</span>
+        <span class="oi-verified-badge" id="oi-verified" style="display:none" data-i18n="organize.step1.verifiedBadge">✓ منظم موثّق</span>
       </div>
     </div>
 
     <!-- روابط التواصل الاجتماعي -->
     <div class="oi-social-section">
       <div class="oi-social-title">
-        📱 روابط التواصل الاجتماعي
+        <span data-i18n="organize.step1.socialTitle">📱 روابط التواصل الاجتماعي</span>
         <span class="req">*</span>
       </div>
-      <div class="org-hint" style="margin-bottom:16px">
+      <div class="org-hint" style="margin-bottom:16px" data-i18n="organize.step1.socialHint">
         يجب إضافة رابط تواصل اجتماعي واحد على الأقل — تُعرض للعارضين المهتمين بالمشاركة وتُحفظ في ملفك الشخصي تلقائياً
       </div>
 
@@ -559,7 +582,7 @@
 
     <div class="org-nav">
       <span></span>
-      <button class="org-nav-next" onclick="orgNext(1)">التالي — الفعالية →</button>
+      <button class="org-nav-next" onclick="orgNext(1)" data-i18n="organize.step1.nextBtn">التالي — الفعالية →</button>
     </div>
   </div><!-- /panel-0 -->
 
@@ -567,43 +590,43 @@
        Step 2: معلومات الفعالية
   ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-1" style="margin-top:22px">
-    <div class="org-panel-title">🗓 معلومات الفعالية</div>
+    <div class="org-panel-title" data-i18n="organize.step2.panelTitle">🗓 معلومات الفعالية</div>
     <div class="org-grid">
 
       <div class="org-fg full">
-        <label>اسم البازار <span class="req">*</span></label>
-        <input type="text" id="o-name" placeholder="مثال: بازار الربيع 2025" maxlength="100">
+        <label><span data-i18n="organize.step2.nameLabel">اسم البازار</span> <span class="req">*</span></label>
+        <input type="text" id="o-name" placeholder="مثال: بازار الربيع 2025" data-i18n-attr="placeholder:organize.step2.namePlaceholder" maxlength="100">
       </div>
 
       <div class="org-fg full">
-        <label>اسم المكان / القاعة <span class="req">*</span></label>
-        <input type="text" id="o-venue" placeholder="مثال: قاعة الأهرام للمؤتمرات" maxlength="120">
+        <label><span data-i18n="organize.step2.venueLabel">اسم المكان / القاعة</span> <span class="req">*</span></label>
+        <input type="text" id="o-venue" placeholder="مثال: قاعة الأهرام للمؤتمرات" data-i18n-attr="placeholder:organize.step2.venuePlaceholder" maxlength="120">
       </div>
 
       <div class="org-fg full">
-        <label>عنوان المكان</label>
-        <input type="text" id="o-addr" placeholder="مثال: 15 شارع النيل، المعادي، القاهرة" maxlength="200">
+        <label data-i18n="organize.step2.addrLabel">عنوان المكان</label>
+        <input type="text" id="o-addr" placeholder="مثال: 15 شارع النيل، المعادي، القاهرة" data-i18n-attr="placeholder:organize.step2.addrPlaceholder" maxlength="200">
       </div>
 
       <div class="org-fg">
-        <label>تاريخ البداية <span class="req">*</span></label>
+        <label><span data-i18n="organize.step2.startDateLabel">تاريخ البداية</span> <span class="req">*</span></label>
         <input type="date" id="o-ds">
       </div>
 
       <div class="org-fg">
-        <label>تاريخ النهاية <span class="req">*</span></label>
+        <label><span data-i18n="organize.step2.endDateLabel">تاريخ النهاية</span> <span class="req">*</span></label>
         <input type="date" id="o-de">
       </div>
 
       <div class="org-fg full">
-        <label>رابط الموقع على خرائط Google</label>
+        <label data-i18n="organize.step2.mapsLabel">رابط الموقع على خرائط Google</label>
         <input type="url" id="o-maps" placeholder="https://maps.google.com/..." dir="ltr">
-        <div class="org-hint">أرسل رابط Pin المكان لمساعدة العارضين في الوصول</div>
+        <div class="org-hint" data-i18n="organize.step2.mapsHint">أرسل رابط Pin المكان لمساعدة العارضين في الوصول</div>
       </div>
 
       <div class="org-fg full">
-        <label>وصف البازار</label>
-        <textarea id="o-desc" placeholder="اكتب وصفاً مختصراً عن الفعالية وما يميّزها…" rows="3"></textarea>
+        <label data-i18n="organize.step2.descLabel">وصف البازار</label>
+        <textarea id="o-desc" placeholder="اكتب وصفاً مختصراً عن الفعالية وما يميّزها…" data-i18n-attr="placeholder:organize.step2.descPlaceholder" rows="3"></textarea>
       </div>
 
     </div>
@@ -615,29 +638,29 @@
       <div class="org-media-header">
         <div class="org-media-header-ico">🖼️</div>
         <div class="org-media-header-text">
-          <div class="org-media-header-title">مواد بصرية للبازار</div>
-          <div class="org-media-header-sub">تساعد العارضين على معرفة شكل الحدث — الصور اختيارية لكنها تزيد من جاذبية البازار</div>
+          <div class="org-media-header-title" data-i18n="organize.step2.mediaTitle">مواد بصرية للبازار</div>
+          <div class="org-media-header-sub" data-i18n="organize.step2.mediaHint">تساعد العارضين على معرفة شكل الحدث — الصور اختيارية لكنها تزيد من جاذبية البازار</div>
         </div>
       </div>
       <div class="org-media-body">
 
         <!-- صورة الغلاف -->
         <div class="org-cover-wrap">
-          <div class="org-cover-label">🏷️ صورة الغلاف الرئيسية</div>
+          <div class="org-cover-label" data-i18n="organize.step2.coverLabel">🏷️ صورة الغلاف الرئيسية</div>
           <div class="org-cover-box" id="o-cover-box" onclick="document.getElementById('o-cover-file').click()">
             <div class="org-cover-ico" id="o-cover-ico">📷</div>
-            <div class="org-cover-lbl" id="o-cover-lbl">اضغط لاختيار صورة الغلاف</div>
-            <img class="org-cover-preview" id="o-cover-preview" alt="صورة الغلاف">
+            <div class="org-cover-lbl" id="o-cover-lbl" data-i18n="organize.step2.coverBoxHint">اضغط لاختيار صورة الغلاف</div>
+            <img class="org-cover-preview" id="o-cover-preview" alt="صورة الغلاف" data-i18n-attr="alt:organize.step2.coverAlt">
           </div>
           <input type="file" id="o-cover-file" accept="image/*" style="display:none" onchange="handleCoverImageUpload(this)">
           <div class="org-cover-status" id="o-cover-status"></div>
-          <div class="org-hint">الصورة الرئيسية التي تظهر في كرت البازار وعلى صفحة التفاصيل — يُفضَّل 16:9 أو مستطيل أفقي</div>
+          <div class="org-hint" data-i18n="organize.step2.coverHint">الصورة الرئيسية التي تظهر في كرت البازار وعلى صفحة التفاصيل — يُفضَّل 16:9 أو مستطيل أفقي</div>
         </div>
 
         <!-- الصور الإضافية -->
         <div>
           <div class="org-extra-label" style="margin-bottom:10px">
-            📸 صور إضافية للمكان <span style="font-weight:400;color:var(--ink3);font-size:11px">(حتى 4 صور)</span>
+            <span data-i18n="organize.step2.extraLabel">📸 صور إضافية للمكان</span> <span style="font-weight:400;color:var(--ink3);font-size:11px" data-i18n="organize.step2.extraLabelCount">(حتى 4 صور)</span>
           </div>
           <div class="org-extra-grid">
 
@@ -648,7 +671,7 @@
                 <img class="org-extra-preview" id="o-extra-0-preview" alt="">
               </div>
               <input type="file" id="o-extra-0-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(0, this)">
-              <button class="org-extra-remove" id="o-extra-0-remove" onclick="removeExtraImage(0)" title="حذف الصورة">×</button>
+              <button class="org-extra-remove" id="o-extra-0-remove" onclick="removeExtraImage(0)" title="حذف الصورة" data-i18n-attr="title:organize.step2.extraRemoveTitle">×</button>
               <div class="org-extra-status" id="o-extra-0-status"></div>
             </div>
 
@@ -659,7 +682,7 @@
                 <img class="org-extra-preview" id="o-extra-1-preview" alt="">
               </div>
               <input type="file" id="o-extra-1-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(1, this)">
-              <button class="org-extra-remove" id="o-extra-1-remove" onclick="removeExtraImage(1)" title="حذف الصورة">×</button>
+              <button class="org-extra-remove" id="o-extra-1-remove" onclick="removeExtraImage(1)" title="حذف الصورة" data-i18n-attr="title:organize.step2.extraRemoveTitle">×</button>
               <div class="org-extra-status" id="o-extra-1-status"></div>
             </div>
 
@@ -670,7 +693,7 @@
                 <img class="org-extra-preview" id="o-extra-2-preview" alt="">
               </div>
               <input type="file" id="o-extra-2-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(2, this)">
-              <button class="org-extra-remove" id="o-extra-2-remove" onclick="removeExtraImage(2)" title="حذف الصورة">×</button>
+              <button class="org-extra-remove" id="o-extra-2-remove" onclick="removeExtraImage(2)" title="حذف الصورة" data-i18n-attr="title:organize.step2.extraRemoveTitle">×</button>
               <div class="org-extra-status" id="o-extra-2-status"></div>
             </div>
 
@@ -681,33 +704,33 @@
                 <img class="org-extra-preview" id="o-extra-3-preview" alt="">
               </div>
               <input type="file" id="o-extra-3-file" accept="image/*" style="display:none" onchange="handleExtraImageUpload(3, this)">
-              <button class="org-extra-remove" id="o-extra-3-remove" onclick="removeExtraImage(3)" title="حذف الصورة">×</button>
+              <button class="org-extra-remove" id="o-extra-3-remove" onclick="removeExtraImage(3)" title="حذف الصورة" data-i18n-attr="title:organize.step2.extraRemoveTitle">×</button>
               <div class="org-extra-status" id="o-extra-3-status"></div>
             </div>
 
           </div>
-          <div class="org-hint" style="margin-top:6px">صور إضافية للمكان أو من بازاراتك السابقة (اختياري)</div>
+          <div class="org-hint" style="margin-top:6px" data-i18n="organize.step2.extraHint">صور إضافية للمكان أو من بازاراتك السابقة (اختياري)</div>
         </div>
 
         <!-- اسكتش البازار -->
         <div class="org-sketch-wrap">
-          <div class="org-sketch-label">🗺️ خريطة / اسكتش البازار</div>
+          <div class="org-sketch-label" data-i18n="organize.step2.sketchLabel">🗺️ خريطة / اسكتش البازار</div>
           <div class="org-sketch-row">
             <div>
               <div class="org-sketch-box" id="o-sketch-box" onclick="document.getElementById('o-sketch-file').click()">
                 <div class="org-sketch-ico" id="o-sketch-ico">🗺️</div>
-                <div class="org-sketch-lbl" id="o-sketch-lbl">ارفع الاسكتش</div>
-                <img class="org-sketch-preview" id="o-sketch-preview" alt="اسكتش">
+                <div class="org-sketch-lbl" id="o-sketch-lbl" data-i18n="organize.step2.sketchBoxLabel">ارفع الاسكتش</div>
+                <img class="org-sketch-preview" id="o-sketch-preview" alt="اسكتش" data-i18n-attr="alt:organize.step2.sketchAlt">
               </div>
               <input type="file" id="o-sketch-file" accept="image/*" style="display:none" onchange="handleSketchImageUpload(this)">
               <div class="org-sketch-status" id="o-sketch-status"></div>
             </div>
             <div class="org-sketch-meta">
-              <div class="org-hint" style="line-height:1.8">
+              <div class="org-hint" style="line-height:1.8" data-i18n="organize.step2.sketchHint">
                 ارسم مخطط توزيع الأماكن وأرقامها (برنامج الرسام، Canva…) ثم ارفعه —
                 يساعد العارضين على معرفة موقعهم بالضبط داخل البازار.
               </div>
-              <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:4px">أو الصق رابطاً مباشراً:</div>
+              <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:4px" data-i18n="organize.step2.sketchUrlLabel">أو الصق رابطاً مباشراً:</div>
               <input type="url" id="o-sketch-url" placeholder="https://..." dir="ltr"
                 style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-md);
                        font-size:13px;color:var(--ink);background:var(--surface2);width:100%;box-sizing:border-box;
@@ -726,32 +749,32 @@
       <div class="org-media-header">
         <div class="org-media-header-ico">🧰</div>
         <div class="org-media-header-text">
-          <div class="org-media-header-title">ما الذي يشمله الحجز؟</div>
-          <div class="org-media-header-sub">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه — تظهر له بوضوح في صفحة البازار قبل الحجز (اختياري)</div>
+          <div class="org-media-header-title" data-i18n="organize.step2.amenitiesTitle">ما الذي يشمله الحجز؟</div>
+          <div class="org-media-header-sub" data-i18n="organize.step2.amenitiesHint">حدّد التجهيزات التي سيحصل عليها العارض مع مكانه — تظهر له بوضوح في صفحة البازار قبل الحجز (اختياري)</div>
         </div>
       </div>
       <div class="org-media-body">
 
         <div class="bz-chip-group">
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-table">🪑 ترابيزة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-chair" onchange="orgToggleChairCount()">💺 كرسي</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-pergola">⛱️ برجولة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-canopy">⛺ مظلة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-electricity">⚡ كهرباء</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-lighting">💡 إنارة</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-wifi">📶 واي فاي</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-water">🚰 مصدر مياه</label>
-          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-other_services">🛠️ خدمات أخرى</label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-table">🪑 <span data-i18n="amenities.ترابيزة">ترابيزة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-chair" onchange="orgToggleChairCount()">💺 <span data-i18n="amenities.كرسي">كرسي</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-pergola">⛱️ <span data-i18n="amenities.برجولة">برجولة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-canopy">⛺ <span data-i18n="amenities.مظلة">مظلة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-electricity">⚡ <span data-i18n="amenities.كهرباء">كهرباء</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-lighting">💡 <span data-i18n="amenities.إنارة">إنارة</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-wifi">📶 <span data-i18n="amenities.واي فاي">واي فاي</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-water">🚰 <span data-i18n="amenities.مصدر مياه">مصدر مياه</span></label>
+          <label class="bz-chip-checkbox"><input type="checkbox" id="o-amen-other_services">🛠️ <span data-i18n="amenities.خدمات أخرى">خدمات أخرى</span></label>
         </div>
 
         <div class="org-fg" id="o-chair-count-row" style="display:none;max-width:220px;margin-top:14px">
-          <label>عدد الكراسي لكل مكان</label>
-          <input type="number" id="o-chair-count" min="1" max="10" placeholder="مثال: 2">
+          <label data-i18n="manage.info.chairCountLabel">عدد الكراسي لكل مكان</label>
+          <input type="number" id="o-chair-count" min="1" max="10" placeholder="مثال: 2" data-i18n-attr="placeholder:manage.info.chairCountPlaceholder">
         </div>
 
         <div class="org-fg full" style="margin-top:14px">
-          <label>➕ تجهيزات أخرى (اختياري)</label>
-          <input type="text" id="o-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" maxlength="150">
+          <label data-i18n="manage.info.otherAmenitiesLabel">➕ تجهيزات أخرى (اختياري)</label>
+          <input type="text" id="o-amen-other-note" placeholder="مثال: مكيف هواء، غرفة تخزين…" data-i18n-attr="placeholder:manage.info.otherAmenitiesPlaceholder" maxlength="150">
         </div>
 
       </div>
@@ -764,43 +787,43 @@
       <div class="org-media-header">
         <div class="org-media-header-ico">📢</div>
         <div class="org-media-header-text">
-          <div class="org-media-header-title">الدعاية والتغطية الإعلامية</div>
-          <div class="org-media-header-sub">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
+          <div class="org-media-header-title" data-i18n="manage.info.adTitle">الدعاية والتغطية الإعلامية</div>
+          <div class="org-media-header-sub" data-i18n="manage.info.adHint">تساعد العارض على تقييم قوة البازار قبل الحجز — كل الحقول اختيارية</div>
         </div>
       </div>
       <div class="org-media-body">
 
         <div class="org-fg full">
-          <label>ميزانية الدعاية المتوقعة</label>
+          <label data-i18n="manage.info.adBudgetLabel">ميزانية الدعاية المتوقعة</label>
           <select id="o-ad-budget">
-            <option value="">— غير محددة —</option>
-            <option value="limited">محدودة (أقل من 5,000 ج)</option>
-            <option value="medium">متوسطة (5,000 – 15,000 ج)</option>
-            <option value="good">جيدة (15,000 – 30,000 ج)</option>
-            <option value="large">كبيرة (أكثر من 30,000 ج)</option>
+            <option value="" data-i18n="manage.info.adBudgetNone">— غير محددة —</option>
+            <option value="limited" data-i18n="info.adBudgetLimited">محدودة (أقل من 5,000 ج)</option>
+            <option value="medium" data-i18n="info.adBudgetMedium">متوسطة (5,000 – 15,000 ج)</option>
+            <option value="good" data-i18n="info.adBudgetGood">جيدة (15,000 – 30,000 ج)</option>
+            <option value="large" data-i18n="info.adBudgetLarge">كبيرة (أكثر من 30,000 ج)</option>
           </select>
-          <div class="org-hint">تُعرض للعارضين كمستوى (محدودة / متوسطة / جيدة / كبيرة) دون كشف رقم دقيق</div>
+          <div class="org-hint" data-i18n="organize.step2.adBudgetHint">تُعرض للعارضين كمستوى (محدودة / متوسطة / جيدة / كبيرة) دون كشف رقم دقيق</div>
         </div>
 
         <label class="org-consent" style="margin-top:14px">
           <input type="checkbox" id="o-ad-photography">
-          <div class="org-consent-text"><strong>تصوير الحدث</strong> — سيتم تصوير فوتوغرافي/فيديو للبازار</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.photographyTitle">تصوير الحدث</strong><span data-i18n="manage.info.photographyDesc"> — سيتم تصوير فوتوغرافي/فيديو للبازار</span></div>
         </label>
         <label class="org-consent" style="margin-top:10px">
           <input type="checkbox" id="o-ad-social">
-          <div class="org-consent-text"><strong>تغطية وسائل التواصل الاجتماعي</strong> — سيتم نشر صور وفيديوهات أثناء الحدث</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.socialTitle">تغطية وسائل التواصل الاجتماعي</strong><span data-i18n="manage.info.socialDesc"> — سيتم نشر صور وفيديوهات أثناء الحدث</span></div>
         </label>
         <label class="org-consent" style="margin-top:10px">
           <input type="checkbox" id="o-ad-paidads">
-          <div class="org-consent-text"><strong>إعلانات ممولة</strong> — سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</div>
+          <div class="org-consent-text"><strong data-i18n="manage.info.paidAdsTitle">إعلانات ممولة</strong><span data-i18n="manage.info.paidAdsDesc"> — سيتم تشغيل حملات إعلانية ممولة للترويج للبازار</span></div>
         </label>
 
       </div>
     </div>
 
     <div class="org-nav">
-      <button class="org-nav-back" onclick="orgBack(2)">← المنظم</button>
-      <button class="org-nav-next" onclick="orgNext(2)">التالي — التسعير →</button>
+      <button class="org-nav-back" onclick="orgBack(2)" data-i18n="organize.step2.backBtn">← المنظم</button>
+      <button class="org-nav-next" onclick="orgNext(2)" data-i18n="organize.step2.nextBtn">التالي — التسعير →</button>
     </div>
   </div><!-- /panel-1 -->
 
@@ -808,35 +831,35 @@
        Step 2: التسعير والوحدات
   ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-2" style="margin-top:22px">
-    <div class="org-panel-title">💰 التسعير والوحدات</div>
+    <div class="org-panel-title" data-i18n="organize.step3.panelTitle">💰 التسعير والوحدات</div>
     <div class="org-grid">
 
       <div class="org-fg">
-        <label>عدد الوحدات المتاحة <span class="req">*</span></label>
-        <input type="number" id="o-slots" placeholder="مثال: 30" min="1" max="500" oninput="orgUpdatePrice()">
+        <label><span data-i18n="organize.step3.slotsLabel">عدد الوحدات المتاحة</span> <span class="req">*</span></label>
+        <input type="number" id="o-slots" placeholder="مثال: 30" data-i18n-attr="placeholder:organize.step3.slotsPlaceholder" min="1" max="500" oninput="orgUpdatePrice()">
       </div>
 
       <div class="org-fg">
-        <label>سعر الوحدة الواحدة (جنيه) <span class="req">*</span></label>
-        <input type="number" id="o-price" placeholder="مثال: 800" min="0" oninput="orgUpdatePrice()">
+        <label><span data-i18n="organize.step3.priceLabel">سعر الوحدة الواحدة (جنيه)</span> <span class="req">*</span></label>
+        <input type="number" id="o-price" placeholder="مثال: 800" data-i18n-attr="placeholder:organize.step3.pricePlaceholder" min="0" oninput="orgUpdatePrice()">
       </div>
 
       <div class="org-fg">
-        <label>العربون الأولي (جنيه)</label>
-        <input type="number" id="o-dep1" placeholder="مثال: 200" min="0">
-        <div class="org-hint">المبلغ المطلوب لتأكيد الحجز</div>
+        <label data-i18n="organize.step3.dep1Label">العربون الأولي (جنيه)</label>
+        <input type="number" id="o-dep1" placeholder="مثال: 200" data-i18n-attr="placeholder:organize.step3.dep1Placeholder" min="0">
+        <div class="org-hint" data-i18n="organize.step3.dep1Hint">المبلغ المطلوب لتأكيد الحجز</div>
       </div>
 
       <div class="org-fg">
-        <label>العربون النهائي (جنيه)</label>
-        <input type="number" id="o-dep2" placeholder="مثال: 600" min="0">
-        <div class="org-hint">باقي المبلغ قبل الفعالية</div>
+        <label data-i18n="organize.step3.dep2Label">العربون النهائي (جنيه)</label>
+        <input type="number" id="o-dep2" placeholder="مثال: 600" data-i18n-attr="placeholder:organize.step3.dep2Placeholder" min="0">
+        <div class="org-hint" data-i18n="organize.step3.dep2Hint">باقي المبلغ قبل الفعالية</div>
       </div>
 
       <div class="org-fg full">
-        <label>إجمالي قيمة العقد (جنيه)</label>
-        <input type="number" id="o-contract" placeholder="القيمة الإجمالية لعقد تأجير المكان" min="0">
-        <div class="org-hint">للاستخدام الداخلي فقط — لن يُعرض للعارضين</div>
+        <label data-i18n="organize.step3.contractLabel">إجمالي قيمة العقد (جنيه)</label>
+        <input type="number" id="o-contract" placeholder="القيمة الإجمالية لعقد تأجير المكان" data-i18n-attr="placeholder:organize.step3.contractPlaceholder" min="0">
+        <div class="org-hint" data-i18n="organize.step3.contractHint">للاستخدام الداخلي فقط — لن يُعرض للعارضين</div>
       </div>
 
     </div>
@@ -845,42 +868,42 @@
     <div style="margin-top:18px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
       <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;background:var(--surface2);user-select:none">
         <input type="checkbox" id="o-has-premium" onchange="orgTogglePremium()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--orange)">
-        <span style="font-size:13.5px;font-weight:700;color:var(--dark)">⭐ هل هناك أماكن مميزة بسعر إضافي؟</span>
-        <span style="font-size:11px;color:var(--ink3);margin-right:auto">اضغط لتفعيل</span>
+        <span style="font-size:13.5px;font-weight:700;color:var(--dark)" data-i18n="organize.step3.premiumToggleLabel">⭐ هل هناك أماكن مميزة بسعر إضافي؟</span>
+        <span style="font-size:11px;color:var(--ink3);margin-right:auto" data-i18n="organize.step3.premiumToggleHint">اضغط لتفعيل</span>
       </label>
 
       <div id="org-premium-fields" style="display:none;padding:16px;background:rgba(245,158,11,.04);border-top:1px solid var(--border)">
-        <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.55">
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.55" data-i18n-html="organize.step3.premiumInfoText">
           الأماكن المميزة تظهر بلون مختلف في خريطة البازار مع علامة ⭐ وسعر أعلى من باقي الوحدات.
           <br>مثال: الأماكن الأمامية أو ذات المساحة الأكبر.
         </div>
         <div class="org-grid">
           <div class="org-fg">
-            <label>عدد الأماكن المميزة <span class="req">*</span></label>
-            <input type="number" id="o-premium-slots" placeholder="مثال: 5" min="1" max="200" oninput="orgUpdatePrice()">
-            <div class="org-hint">يجب أن يكون أقل من إجمالي الوحدات</div>
+            <label><span data-i18n="organize.step3.premiumSlotsLabel">عدد الأماكن المميزة</span> <span class="req">*</span></label>
+            <input type="number" id="o-premium-slots" placeholder="مثال: 5" data-i18n-attr="placeholder:organize.step3.premiumSlotsPlaceholder" min="1" max="200" oninput="orgUpdatePrice()">
+            <div class="org-hint" data-i18n="organize.step3.premiumSlotsHint">يجب أن يكون أقل من إجمالي الوحدات</div>
           </div>
           <div class="org-fg">
-            <label>سعر المكان المميز (جنيه) <span class="req">*</span></label>
-            <input type="number" id="o-premium-price" placeholder="مثال: 1500" min="0" oninput="orgUpdatePrice()">
-            <div class="org-hint">سيظهر هذا السعر للعارضين عند اختيار مكان مميز</div>
+            <label><span data-i18n="organize.step3.premiumPriceLabel">سعر المكان المميز (جنيه)</span> <span class="req">*</span></label>
+            <input type="number" id="o-premium-price" placeholder="مثال: 1500" data-i18n-attr="placeholder:organize.step3.premiumPricePlaceholder" min="0" oninput="orgUpdatePrice()">
+            <div class="org-hint" data-i18n="organize.step3.premiumPriceHint">سيظهر هذا السعر للعارضين عند اختيار مكان مميز</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="org-price-box" id="org-price-preview" style="display:none;margin-top:16px">
-      <div class="org-price-box-title">📊 ملخص الإيراد المتوقع</div>
-      <div class="org-price-row"><span>وحدات عادية</span><span id="pp-slots">—</span></div>
-      <div class="org-price-row"><span>سعر الوحدة العادية</span><span id="pp-price">—</span></div>
-      <div id="pp-premium-row" class="org-price-row" style="display:none"><span>وحدات مميزة ⭐</span><span id="pp-premium-slots">—</span></div>
-      <div id="pp-premium-price-row" class="org-price-row" style="display:none"><span>سعر المكان المميز</span><span id="pp-premium-price">—</span></div>
-      <div class="org-price-row"><span>الإيراد الإجمالي المتوقع</span><span id="pp-total">—</span></div>
+      <div class="org-price-box-title" data-i18n="organize.step3.summaryTitle">📊 ملخص الإيراد المتوقع</div>
+      <div class="org-price-row"><span data-i18n="organize.step3.regularUnitsLabel">وحدات عادية</span><span id="pp-slots">—</span></div>
+      <div class="org-price-row"><span data-i18n="organize.step3.regularPriceLabel">سعر الوحدة العادية</span><span id="pp-price">—</span></div>
+      <div id="pp-premium-row" class="org-price-row" style="display:none"><span data-i18n="organize.step3.premiumUnitsLabel">وحدات مميزة ⭐</span><span id="pp-premium-slots">—</span></div>
+      <div id="pp-premium-price-row" class="org-price-row" style="display:none"><span data-i18n="organize.step3.premiumPriceLabel2">سعر المكان المميز</span><span id="pp-premium-price">—</span></div>
+      <div class="org-price-row"><span data-i18n="organize.step3.totalRevenueLabel">الإيراد الإجمالي المتوقع</span><span id="pp-total">—</span></div>
     </div>
 
     <div class="org-nav">
-      <button class="org-nav-back" onclick="orgBack(3)">← الفعالية</button>
-      <button class="org-nav-next" onclick="orgNext(3)">التالي — التأكيد →</button>
+      <button class="org-nav-back" onclick="orgBack(3)" data-i18n="organize.step3.backBtn">← الفعالية</button>
+      <button class="org-nav-next" onclick="orgNext(3)" data-i18n="organize.step3.nextBtn">التالي — التأكيد →</button>
     </div>
   </div><!-- /panel-2 -->
 
@@ -888,20 +911,20 @@
        Step 3: مراجعة وتأكيد
   ══════════════════════════════════════════ -->
   <div class="org-panel" id="org-panel-3" style="margin-top:22px">
-    <div class="org-panel-title">📋 مراجعة وتأكيد الطلب</div>
+    <div class="org-panel-title" data-i18n="organize.step4.panelTitle">📋 مراجعة وتأكيد الطلب</div>
 
     <div class="org-summary" id="org-summary-box"></div>
 
     <div class="org-grid">
       <div class="org-fg full">
-        <label>رقم تليفون التواصل <span class="req">*</span></label>
+        <label><span data-i18n="organize.step4.phoneLabel">رقم تليفون التواصل</span> <span class="req">*</span></label>
         <input type="tel" id="o-phone" placeholder="01xxxxxxxxx" maxlength="15">
-        <div class="org-hint">يُستخدم للتواصل بينك وبين فريق مكاني — لن يُعرض علناً</div>
+        <div class="org-hint" data-i18n="organize.step4.phoneHint">يُستخدم للتواصل بينك وبين فريق مكاني — لن يُعرض علناً</div>
       </div>
 
       <div class="org-fg full">
-        <label>ملاحظات إضافية للفريق</label>
-        <textarea id="o-notes" placeholder="أي تفاصيل تريد إضافتها للفريق…" rows="3"></textarea>
+        <label data-i18n="organize.step4.notesLabel">ملاحظات إضافية للفريق</label>
+        <textarea id="o-notes" placeholder="أي تفاصيل تريد إضافتها للفريق…" data-i18n-attr="placeholder:organize.step4.notesPlaceholder" rows="3"></textarea>
       </div>
     </div>
 
@@ -909,15 +932,16 @@
     <div id="org-cred-section" style="margin-bottom:16px;background:rgba(243,100,24,0.04);border:1.5px dashed rgba(243,100,24,0.35);border-radius:var(--radius-lg);padding:16px;display:flex;gap:14px;align-items:flex-start">
       <div style="font-size:26px;flex-shrink:0;line-height:1">💡</div>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:5px">
+        <div style="font-size:13px;font-weight:800;color:var(--dark);margin-bottom:5px" data-i18n="organize.step4.credTitle">
           تذكير: روابط التوثيق بعد انتهاء البازار
         </div>
-        <div style="font-size:12px;color:var(--ink3);line-height:1.75">
+        <div style="font-size:12px;color:var(--ink3);line-height:1.75" data-i18n-html="organize.step4.credDesc">
           بعد انتهاء هذا البازار، ستتمكن من إضافة <strong style="color:var(--ink2)">روابط توثيق</strong> (فيديوهات، صور، تغطيات) مباشرة من صفحة إدارة البازار.
           <br>هذه الروابط تُعزّز مصداقيتك لدى العارضين في فعالياتك القادمة ✦
         </div>
         <button type="button" id="org-cred-skip-btn"
-                style="margin-top:10px;padding:6px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:transparent;color:var(--ink3);font-size:11.5px;font-weight:600;font-family:var(--font-display);cursor:pointer">
+                style="margin-top:10px;padding:6px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:transparent;color:var(--ink3);font-size:11.5px;font-weight:600;font-family:var(--font-display);cursor:pointer"
+                data-i18n="organize.step4.credGotItBtn">
           فهمت ✓
         </button>
       </div>
@@ -925,7 +949,7 @@
 
     <label class="org-consent">
       <input type="checkbox" id="o-consent">
-      <div class="org-consent-text">
+      <div class="org-consent-text" data-i18n-html="organize.step4.consentText">
         أوافق على <strong>عرض إحصائيات ملفي الشخصي</strong> (عدد البازارات، التقييمات) للعارضين
         المهتمين بالمشاركة في هذا البازار، وأؤكد أن جميع البيانات المُدخلة صحيحة.
       </div>
@@ -934,8 +958,8 @@
     <div id="org-result"></div>
 
     <div class="org-nav">
-      <button class="org-nav-back" onclick="orgBack(4)">← التسعير</button>
-      <button class="org-nav-next" id="org-submit-btn" onclick="orgSubmit()">إرسال الطلب ✓</button>
+      <button class="org-nav-back" onclick="orgBack(4)" data-i18n="organize.step4.backBtn">← التسعير</button>
+      <button class="org-nav-next" id="org-submit-btn" onclick="orgSubmit()" data-i18n="organize.step4.submitBtn">إرسال الطلب ✓</button>
     </div>
   </div><!-- /panel-3 -->
 
@@ -951,5 +975,19 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/notifications.js?v=202607141600" defer></script>
 <script src="../media-handler.js" defer></script>
 <script src="organize.js?v=202607141600" defer></script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+  });
+</script>
 </body>
 </html>

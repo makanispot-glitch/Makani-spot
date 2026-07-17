@@ -1,0 +1,231 @@
+{
+  "categories": {
+    "food-juice-cart": "عربية أكل / عصير",
+    "fast-food-partition": "بارتشن وجبات سريعة",
+    "beauty-partition": "بارتشن عناية شخصية",
+    "clothing-partition": "بارتشن ملابس / بوتيك",
+    "handmade": "هاند ميد",
+    "phones": "تليفونات وإكسسوار",
+    "gifts": "هدايا وديكور",
+    "corner-space": "كورنر سبيس",
+    "vending": "آلات بيع ذاتي",
+    "other": "أخرى"
+  },
+  "conditions": {
+    "new": "جديد",
+    "like-new": "كالجديد",
+    "good": "جيد",
+    "fair": "مقبول"
+  },
+  "hero": {
+    "titlePre": "ابدأ بمشروع",
+    "titleSpan": "جاهز للبيع",
+    "subtitle": "تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية",
+    "searchPlaceholder": "ابحث عن مشروع أو منطقة…"
+  },
+  "quickLinks": {
+    "spacesTitle": "تصفح المساحات التجارية",
+    "spacesDesc": "ابحث عن موقع مناسب لمشروعك",
+    "bazaarsTitle": "البازارات والمعارض المؤقتة",
+    "bazaarsDesc": "اشترك في بازار قريب منك"
+  },
+  "freeBar": {
+    "text": "اعرض مشروعك للبيع",
+    "textStrong": "مجاناً 100%",
+    "textSuffix": "— بدون عمولة أو رسوم خفية",
+    "postNow": "انشر الآن ←"
+  },
+  "filters": {
+    "categoryLabel": "التصنيف",
+    "all": "الكل",
+    "allGovs": "كل المحافظات",
+    "priceUpTo": "السعر حتى:",
+    "noLimit": "بلا حد",
+    "sortNewest": "الأحدث",
+    "sortCheapest": "الأرخص",
+    "sortViews": "الأكثر مشاهدة",
+    "searchTitle": "فلتر البحث",
+    "governorate": "المحافظة",
+    "sort": "الترتيب",
+    "maxPrice": "السعر الأقصى:",
+    "reset": "إعادة تعيين",
+    "showResults": "عرض النتائج",
+    "filterBtn": "فلتر",
+    "postAd": "+ انشر إعلانك"
+  },
+  "card": {
+    "negotiable": "قابل للتفاوض",
+    "featured": "⭐ مميز",
+    "favoriteTitle": "المفضلة",
+    "currency": "ج",
+    "prev": "السابقة",
+    "next": "التالية"
+  },
+  "grid": {
+    "empty": "لا توجد إعلانات تطابق بحثك 🔍",
+    "countZero": "0 إعلان",
+    "count": "{{count}} إعلان",
+    "countPlus": "{{count}}+ إعلان",
+    "loadMore": "عرض المزيد",
+    "loadingMore": "⏳ تحميل…",
+    "loading": "جاري تحميل الإعلانات…"
+  },
+  "error": {
+    "loadError": "حدث خطأ، حاول مرة أخرى",
+    "retry": "حاول تاني",
+    "adBlocker": "يبدو أن المتصفح يحجب خدمات الموقع. جرّب تعطيل حاجب الإعلانات على هذه الصفحة ثم أعد التحميل.",
+    "pageLoadError": "حدث خطأ في تحميل الصفحة. حاول إعادة التحميل."
+  },
+  "detail": {
+    "featured": "⭐ مميز",
+    "shareTitle": "مشاركة الإعلان",
+    "addFavorite": "🤍 أضف للمفضلة",
+    "inFavorite": "❤️ في المفضلة",
+    "removeFavorite": "إزالة من المفضلة",
+    "loginToContact": "🔒 سجّل الدخول لعرض معلومات التواصل",
+    "whatsappContact": "💬 تواصل عبر واتساب",
+    "callSeller": "📞 اتصل بالبائع",
+    "published": "📅 نُشر {{date}}",
+    "views": "👁 {{count}} مشاهدة",
+    "reportBtn": "🚩 إبلاغ عن إعلان",
+    "shareText": "🔖 *{{title}}*\n💰 السعر: {{price}} ج\n📍 {{region}}\n\n🛒 شاهد الإعلان: {{url}}",
+    "whatsappMsg": "مرحبا، شايف إعلانك عن {{title}} في مكاني Spot"
+  },
+  "myListings": {
+    "title": "إعلاناتي",
+    "loginRequired": "يجب تسجيل الدخول أولاً",
+    "loginBtn": "تسجيل الدخول",
+    "loadError": "حدث خطأ في تحميل الإعلانات: {{error}}",
+    "noListings": "ما عندكش إعلانات لحد دلوقتي",
+    "postFirst": "انشر إعلانك الأول"
+  },
+  "myCard": {
+    "statusPending": "قيد المراجعة",
+    "statusActive": "نشط",
+    "statusRejected": "مرفوض",
+    "statusExpired": "منتهي",
+    "statusPaused": "موقوف مؤقتاً",
+    "rejectReason": "سبب الرفض: {{reason}}",
+    "expiresWarning_one": "⚠️ إعلانك ينتهي بعد <strong>يوم واحد</strong> — جدّد الآن",
+    "expiresWarning_two": "⚠️ إعلانك ينتهي بعد <strong>يومين</strong> — جدّد الآن",
+    "expiresWarning_few": "⚠️ إعلانك ينتهي بعد <strong>{{days}}</strong> أيام — جدّد الآن",
+    "expiresWarning_many": "⚠️ إعلانك ينتهي بعد <strong>{{days}}</strong> يومًا — جدّد الآن",
+    "expiresWarning_other": "⚠️ إعلانك ينتهي بعد <strong>{{days}}</strong> يوم — جدّد الآن",
+    "daysLeft": "متبقي <strong>{{days}}</strong> يوم",
+    "stats": "👁 {{views}} مشاهدة | 📞 {{contacts}} تواصل",
+    "edit": "✏️ تعديل",
+    "renew": "🔄 تجديد",
+    "pause": "⏸ إيقاف",
+    "resume": "▶ تفعيل",
+    "delete": "🗑 حذف"
+  },
+  "renew": {
+    "maxReached": "وصلت للحد الأقصى من التجديدات (5 مرات). من فضلك أنشئ إعلاناً جديداً.",
+    "error": "حدث خطأ في التجديد",
+    "success": "تم تجديد إعلانك بنجاح! ✅"
+  },
+  "delete": {
+    "confirmActive": "هل أنت متأكد من حذف الإعلان النشط؟ سيُحذف نهائياً مع صوره ولا يمكن التراجع.",
+    "confirmOther": "هل أنت متأكد من الحذف النهائي؟ سيُحذف الإعلان وصوره نهائياً.",
+    "loginRequired": "يجب تسجيل الدخول أولاً",
+    "deletedSoft": "تم حذف الإعلان",
+    "deleteFailed": "تعذّر الحذف: {{error}}",
+    "unexpectedError": "خطأ غير متوقع",
+    "deletedFull": "تم حذف الإعلان نهائياً",
+    "deleteError": "حدث خطأ في الحذف — تحقق من الاتصال وأعد المحاولة"
+  },
+  "edit": {
+    "title": "تعديل الإعلان",
+    "categoryLabel": "التصنيف",
+    "titleLabel": "عنوان الإعلان",
+    "titlePlaceholder": "مثال: كيوسك بارتشن كامل للبيع",
+    "descLabel": "الوصف التفصيلي",
+    "descPlaceholder": "اكتب تفاصيل المشروع أو القطعة…",
+    "conditionLabel": "الحالة",
+    "priceLabel": "السعر (جنيه)",
+    "negotiableLabel": "قابل للتفاوض",
+    "regionLabel": "المحافظة",
+    "areaLabel": "المنطقة / الحي (اختياري)",
+    "areaPlaceholder": "مثال: مدينة نصر",
+    "phoneLabel": "رقم التليفون",
+    "contactPrefLabel": "طريقة التواصل المفضلة",
+    "contactBoth": "واتساب + اتصال",
+    "contactWhatsapp": "واتساب فقط",
+    "contactCall": "اتصال فقط",
+    "cancel": "إلغاء",
+    "save": "💾 حفظ التعديلات",
+    "saving": "⏳ جاري الحفظ…",
+    "noteApprovedPaused": "التعديل لن يغيّر حالة الإعلان — سيظل كما هو بعد الحفظ.",
+    "noteRejected": "بعد الحفظ سيُرسل الإعلان للمراجعة مجدداً.",
+    "noteDefault": "التعديلات ستُحفظ والإعلان سيبقى قيد المراجعة.",
+    "titleRequired": "من فضلك أدخل عنوان الإعلان",
+    "phoneRequired": "من فضلك أدخل رقم التليفون",
+    "priceRequired": "من فضلك أدخل سعراً صحيحاً",
+    "saveError": "خطأ في الحفظ: {{error}}",
+    "savedRejected": "تم حفظ التعديلات ✅\nتم إرسال الإعلان للمراجعة مجدداً.",
+    "savedSuccess": "تم حفظ التعديلات بنجاح ✅"
+  },
+  "pause": {
+    "confirmPause": "هل تريد إيقاف الإعلان مؤقتاً؟ لن يظهر للمستخدمين حتى تعيد تفعيله.",
+    "confirmResume": "هل تريد إعادة تفعيل الإعلان؟ سيظهر للمستخدمين فوراً.",
+    "error": "حدث خطأ: {{error}}",
+    "pausedSuccess": "تم إيقاف الإعلان مؤقتاً ⏸",
+    "resumedSuccess": "تم تفعيل الإعلان بنجاح ✅"
+  },
+  "suspended": {
+    "title": "🚫 تم إيقاف صلاحية تعديل الإعلانات مؤقتاً",
+    "reason": "\nالسبب: {{reason}}",
+    "untilDate": "حتى {{date}}",
+    "untilReview": "حتى مراجعة إضافية من الإدارة"
+  },
+  "report": {
+    "title": "إبلاغ عن إعلان",
+    "loginRequired": "يجب تسجيل الدخول أولاً للإبلاغ عن الإعلان",
+    "reasonRequired": "من فضلك اختر سبب الإبلاغ",
+    "notePlaceholder": "ملاحظة إضافية (اختياري)…",
+    "cancel": "إلغاء",
+    "submit": "إرسال البلاغ",
+    "submitError": "حدث خطأ، حاول مرة أخرى",
+    "submitSuccess": "تم إرسال البلاغ، شكراً لمساعدتنا في الحفاظ على جودة المنصة",
+    "categories": {
+      "spam": "نشر متكرر / سبام",
+      "fake": "إعلان وهمي / غير حقيقي",
+      "wrong_info": "معلومات أو سعر مضلل",
+      "sold_elsewhere": "تم البيع / لم يعد متاحاً",
+      "inappropriate": "محتوى غير لائق",
+      "other": "سبب آخر"
+    }
+  },
+  "favorites": {
+    "title": "المفضلة",
+    "titleWithCount": "المفضلة ({{count}})",
+    "empty": "لا توجد مشاريع مفضلة",
+    "browseProjects": "تصفح المشاريع",
+    "emptyListings": "لا توجد إعلانات مفضلة",
+    "loading": "جاري التحميل…"
+  },
+  "navUser": {
+    "profile": "الملف الشخصي",
+    "dashboard": "لوحة التحكم",
+    "myListings": "إعلاناتي",
+    "joinBazaar": "اشترك في بزار",
+    "findSpace": "دور على مساحة",
+    "logout": "تسجيل الخروج",
+    "roleLabel": "مشاريع للبيع",
+    "defaultName": "حسابي"
+  },
+  "fab": {
+    "tooltip": "انشر إعلانك مجاناً"
+  },
+  "swUpdate": {
+    "buttonPlain": "تحديث الآن"
+  },
+  "lightbox": {
+    "close": "إغلاق",
+    "zoomOut": "تصغير",
+    "zoomIn": "تكبير",
+    "resetZoom": "إعادة الحجم",
+    "prev": "السابقة",
+    "next": "التالية"
+  }
+}

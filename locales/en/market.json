@@ -1,0 +1,242 @@
+{
+  "categories": {
+    "food-juice-cart": "Food & Juice Cart",
+    "fast-food-partition": "Fast Food Kiosk",
+    "beauty-partition": "Beauty & Personal Care Kiosk",
+    "clothing-partition": "Clothing & Boutique Kiosk",
+    "handmade": "Handmade Goods",
+    "phones": "Phones & Accessories",
+    "gifts": "Gifts & Decor",
+    "corner-space": "Corner Space",
+    "vending": "Vending Machines",
+    "other": "Other"
+  },
+  "conditions": {
+    "new": "New",
+    "like-new": "Like New",
+    "good": "Good",
+    "fair": "Fair"
+  },
+  "govLabels": {
+    "القاهرة": "Cairo", "الجيزة": "Giza", "الإسكندرية": "Alexandria",
+    "الشرقية": "Sharqia", "الدقهلية": "Dakahlia", "المنوفية": "Monufia",
+    "القليوبية": "Qalyubia", "البحيرة": "Beheira", "كفر الشيخ": "Kafr El Sheikh",
+    "الغربية": "Gharbia", "سوهاج": "Sohag", "المنيا": "Minya",
+    "أسيوط": "Assiut", "قنا": "Qena", "الأقصر": "Luxor", "أسوان": "Aswan",
+    "بورسعيد": "Port Said", "السويس": "Suez", "الإسماعيلية": "Ismailia",
+    "دمياط": "Damietta", "الفيوم": "Fayoum", "بني سويف": "Beni Suef",
+    "مطروح": "Matrouh", "شمال سيناء": "North Sinai", "جنوب سيناء": "South Sinai",
+    "الوادي الجديد": "New Valley", "البحر الأحمر": "Red Sea"
+  },
+  "hero": {
+    "titlePre": "Start With a Business",
+    "titleSpan": "Ready to Run",
+    "subtitle": "Browse ready-to-run businesses and start selling from day one — no commission, no hidden fees",
+    "searchPlaceholder": "Search by business or area…"
+  },
+  "quickLinks": {
+    "spacesTitle": "Browse Commercial Spaces",
+    "spacesDesc": "Find the right location for your business",
+    "bazaarsTitle": "Bazaars & Pop-up Markets",
+    "bazaarsDesc": "Join a bazaar near you"
+  },
+  "freeBar": {
+    "text": "List your business for sale",
+    "textStrong": "100% free",
+    "textSuffix": "— no commission, no hidden fees",
+    "postNow": "Post Now →"
+  },
+  "filters": {
+    "categoryLabel": "Category",
+    "all": "All",
+    "allGovs": "All Governorates",
+    "priceUpTo": "Price up to:",
+    "noLimit": "No limit",
+    "sortNewest": "Newest",
+    "sortCheapest": "Cheapest",
+    "sortViews": "Most Viewed",
+    "searchTitle": "Search Filters",
+    "governorate": "Governorate",
+    "sort": "Sort",
+    "maxPrice": "Max price:",
+    "reset": "Reset",
+    "showResults": "Show Results",
+    "filterBtn": "Filter",
+    "postAd": "+ Post Your Listing"
+  },
+  "card": {
+    "negotiable": "Negotiable",
+    "featured": "⭐ Featured",
+    "favoriteTitle": "Favorites",
+    "currency": "EGP",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "grid": {
+    "empty": "No listings match your search 🔍",
+    "countZero": "0 listings",
+    "count_one": "{{count}} listing",
+    "count_other": "{{count}} listings",
+    "countPlus_one": "{{count}}+ listing",
+    "countPlus_other": "{{count}}+ listings",
+    "loadMore": "Show More",
+    "loadingMore": "⏳ Loading…",
+    "loading": "Loading listings…"
+  },
+  "error": {
+    "loadError": "Something went wrong — please try again",
+    "retry": "Try Again",
+    "adBlocker": "It looks like your browser is blocking parts of the site. Try disabling your ad blocker on this page, then reload.",
+    "pageLoadError": "There was a problem loading the page. Please try reloading."
+  },
+  "detail": {
+    "featured": "⭐ Featured",
+    "shareTitle": "Share this listing",
+    "addFavorite": "🤍 Add to Favorites",
+    "inFavorite": "❤️ In Favorites",
+    "removeFavorite": "Remove from favorites",
+    "loginToContact": "🔒 Log in to view contact info",
+    "whatsappContact": "💬 Contact via WhatsApp",
+    "callSeller": "📞 Call the Seller",
+    "published": "📅 Published {{date}}",
+    "views_one": "👁 {{count}} view",
+    "views_other": "👁 {{count}} views",
+    "reportBtn": "🚩 Report Listing",
+    "shareText": "🔖 *{{title}}*\n💰 Price: {{price}} EGP\n📍 {{region}}\n\n🛒 View listing: {{url}}",
+    "whatsappMsg": "Hi, I saw your listing for {{title}} on Makani Spot"
+  },
+  "myListings": {
+    "title": "My Listings",
+    "loginRequired": "Please log in first",
+    "loginBtn": "Log In",
+    "loadError": "We couldn't load your listings: {{error}}",
+    "noListings": "You don't have any listings yet",
+    "postFirst": "Post Your First Listing"
+  },
+  "myCard": {
+    "statusPending": "Under Review",
+    "statusActive": "Active",
+    "statusRejected": "Rejected",
+    "statusExpired": "Expired",
+    "statusPaused": "Paused",
+    "rejectReason": "Rejection reason: {{reason}}",
+    "expiresWarning_one": "⚠️ Your listing expires in <strong>{{days}}</strong> day — renew now",
+    "expiresWarning_other": "⚠️ Your listing expires in <strong>{{days}}</strong> days — renew now",
+    "daysLeft": "<strong>{{days}}</strong> days left",
+    "stats": "👁 {{views}} views | 📞 {{contacts}} contacts",
+    "edit": "✏️ Edit",
+    "renew": "🔄 Renew",
+    "pause": "⏸ Pause",
+    "resume": "▶ Activate",
+    "delete": "🗑 Delete"
+  },
+  "renew": {
+    "maxReached": "You've reached the maximum number of renewals (5). Please create a new listing.",
+    "error": "There was a problem renewing your listing",
+    "success": "Your listing has been renewed! ✅"
+  },
+  "delete": {
+    "confirmActive": "Delete this active listing? It will be permanently removed along with its photos — this can't be undone.",
+    "confirmOther": "Delete this listing permanently? It and its photos will be removed for good.",
+    "loginRequired": "Please log in first",
+    "deletedSoft": "Listing deleted",
+    "deleteFailed": "Couldn't delete the listing: {{error}}",
+    "unexpectedError": "Unexpected error",
+    "deletedFull": "Listing permanently deleted",
+    "deleteError": "There was a problem deleting the listing — check your connection and try again"
+  },
+  "edit": {
+    "title": "Edit Listing",
+    "categoryLabel": "Category",
+    "titleLabel": "Listing Title",
+    "titlePlaceholder": "e.g. Fully-equipped kiosk partition for sale",
+    "descLabel": "Detailed Description",
+    "descPlaceholder": "Describe the business or item in detail…",
+    "conditionLabel": "Condition",
+    "priceLabel": "Price (EGP)",
+    "negotiableLabel": "Negotiable",
+    "regionLabel": "Governorate",
+    "areaLabel": "Area / District (optional)",
+    "areaPlaceholder": "e.g. Nasr City",
+    "phoneLabel": "Phone Number",
+    "contactPrefLabel": "Preferred Contact Method",
+    "contactBoth": "WhatsApp + Call",
+    "contactWhatsapp": "WhatsApp Only",
+    "contactCall": "Call Only",
+    "cancel": "Cancel",
+    "save": "💾 Save Changes",
+    "saving": "⏳ Saving…",
+    "noteApprovedPaused": "Editing won't change your listing's status — it will stay as-is after saving.",
+    "noteRejected": "After saving, the listing will be resubmitted for review.",
+    "noteDefault": "Your changes will be saved and the listing will remain under review.",
+    "titleRequired": "Please enter a listing title",
+    "phoneRequired": "Please enter a phone number",
+    "priceRequired": "Please enter a valid price",
+    "saveError": "Error saving changes: {{error}}",
+    "savedRejected": "Changes saved ✅\nThe listing has been resubmitted for review.",
+    "savedSuccess": "Changes saved successfully ✅"
+  },
+  "pause": {
+    "confirmPause": "Pause this listing temporarily? It won't be visible to users until you reactivate it.",
+    "confirmResume": "Reactivate this listing? It will be visible to users immediately.",
+    "error": "Something went wrong: {{error}}",
+    "pausedSuccess": "Listing paused ⏸",
+    "resumedSuccess": "Listing activated ✅"
+  },
+  "suspended": {
+    "title": "🚫 Your listing-editing privileges have been temporarily suspended",
+    "reason": "\nReason: {{reason}}",
+    "untilDate": "until {{date}}",
+    "untilReview": "pending further review by our team"
+  },
+  "report": {
+    "title": "Report Listing",
+    "loginRequired": "Please log in first to report this listing",
+    "reasonRequired": "Please choose a reason for your report",
+    "notePlaceholder": "Additional note (optional)…",
+    "cancel": "Cancel",
+    "submit": "Submit Report",
+    "submitError": "Something went wrong — please try again",
+    "submitSuccess": "Report submitted — thanks for helping us keep the platform safe",
+    "categories": {
+      "spam": "Repeated posting / spam",
+      "fake": "Fake or fraudulent listing",
+      "wrong_info": "Misleading info or price",
+      "sold_elsewhere": "Already sold / no longer available",
+      "inappropriate": "Inappropriate content",
+      "other": "Other reason"
+    }
+  },
+  "favorites": {
+    "title": "Favorites",
+    "titleWithCount": "Favorites ({{count}})",
+    "empty": "No favorite listings yet",
+    "browseProjects": "Browse Listings",
+    "emptyListings": "No favorite listings found",
+    "loading": "Loading…"
+  },
+  "navUser": {
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "myListings": "My Listings",
+    "joinBazaar": "Join a Bazaar",
+    "findSpace": "Find a Space",
+    "logout": "Log Out",
+    "roleLabel": "Businesses for Sale",
+    "defaultName": "My Account"
+  },
+  "fab": {
+    "tooltip": "Post your listing for free"
+  },
+  "swUpdate": {
+    "buttonPlain": "Update Now"
+  },
+  "lightbox": {
+    "close": "Close",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "resetZoom": "Reset zoom",
+    "prev": "Previous",
+    "next": "Next"
+  }
+}

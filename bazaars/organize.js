@@ -27,11 +27,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentUser = session?.user || null;
 
   if (!currentUser) {
-    _showGuard('lock',
-      'يجب تسجيل الدخول أولاً',
-      'هذه الصفحة مخصصة للمنظمين الموثّقين فقط. سجّل الدخول للمتابعة.',
-      `<a href="/?p=login&redirect=/bazaars/organize.html" class="org-nav-next" style="display:inline-block;text-decoration:none;padding:11px 28px">تسجيل الدخول</a>`
-    );
+    _activeGuard = { rebuild: () => _showGuard('lock',
+      t('organize.guard.loginTitle'),
+      t('organize.guard.loginDesc'),
+      `<a href="/?p=login&redirect=/bazaars/organize.html" class="org-nav-next" style="display:inline-block;text-decoration:none;padding:11px 28px">${t('organize.guard.loginBtn')}</a>`
+    ) };
+    _activeGuard.rebuild();
     return;
   }
 
@@ -47,14 +48,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   orgProfile = prof;
 
   if (!prof?.is_verified) {
-    _showGuard('star',
-      'مخصوص للمنظمين الموثّقين',
-      'يجب أن يكون حسابك موثّقاً كمنظم بازارات على مكاني Spot لتتمكن من تقديم طلب تنظيم. قدّم طلب التوثيق أولاً.',
+    _activeGuard = { rebuild: () => _showGuard('star',
+      t('organize.guard.verifiedOnlyTitle'),
+      t('organize.guard.verifiedOnlyDesc'),
       `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-         <a href="/bazaars/verification.html" class="org-nav-next" style="display:inline-block;text-decoration:none;padding:11px 28px">طلب التوثيق</a>
-         <a href="/bazaars/profile.html" class="org-nav-back" style="display:inline-block;text-decoration:none;padding:11px 22px">ملفي الشخصي</a>
+         <a href="/bazaars/verification.html" class="org-nav-next" style="display:inline-block;text-decoration:none;padding:11px 28px">${t('organize.guard.verifyBtn')}</a>
+         <a href="/bazaars/profile.html" class="org-nav-back" style="display:inline-block;text-decoration:none;padding:11px 22px">${t('organize.guard.profileBtn')}</a>
        </div>`
-    );
+    ) };
+    _activeGuard.rebuild();
     return;
   }
 
@@ -62,6 +64,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const phoneEl = document.getElementById('o-phone');
   if (phoneEl && prof.whatsapp) phoneEl.value = prof.whatsapp;
+});
+
+/* 🌐 دعم اللغتين — إعادة رسم المحتوى الديناميكي عند تبديل اللغة */
+let _activeGuard = null;
+document.addEventListener('makani:locale-changed', () => {
+  if (_activeGuard) { _activeGuard.rebuild(); return; }
+  if (document.getElementById('org-draft-banner')?.style.display === 'flex') _orgUpdateDraftBannerText();
+  if (document.getElementById('org-panel-3')?.classList.contains('active')) _buildSummary();
+  orgUpdatePrice();
 });
 
 /* ──────────────────────────────────────────────────────
@@ -81,8 +92,10 @@ function _showGuard(ico, title, desc, actionsHtml) {
 }
 
 function _showForm() {
+  _activeGuard = null;
   document.getElementById('org-guard').style.display = 'none';
   document.getElementById('org-steps').style.display = 'flex';
+  document.querySelectorAll('.org-panel').forEach(p => p.style.display = '');
   _setStep(1);
   setTimeout(() => { _fillOrganizerInfo(); _orgRestoreDraft(); _attachDraftListeners(); }, 60);
 }
@@ -132,15 +145,15 @@ function _validateStep0() {
   const tt = document.getElementById('oi-tiktok')?.value.trim()    || '';
 
   if (!fb && !ig && !tt) {
-    alert('يجب إضافة رابط تواصل اجتماعي واحد على الأقل\n(Facebook أو Instagram أو TikTok)');
+    alert(t('organize.step1.socialRequired'));
     document.getElementById('oi-facebook')?.focus();
     return false;
   }
 
   const urlRx = /^https?:\/\/.+/i;
-  if (fb && !urlRx.test(fb)) { _focusErr('oi-facebook',  'رابط Facebook غير صحيح — يجب أن يبدأ بـ https://'); return false; }
-  if (ig && !urlRx.test(ig)) { _focusErr('oi-instagram', 'رابط Instagram غير صحيح — يجب أن يبدأ بـ https://'); return false; }
-  if (tt && !urlRx.test(tt)) { _focusErr('oi-tiktok',    'رابط TikTok غير صحيح — يجب أن يبدأ بـ https://'); return false; }
+  if (fb && !urlRx.test(fb)) { _focusErr('oi-facebook',  t('organize.step1.facebookInvalid')); return false; }
+  if (ig && !urlRx.test(ig)) { _focusErr('oi-instagram', t('organize.step1.instagramInvalid')); return false; }
+  if (tt && !urlRx.test(tt)) { _focusErr('oi-tiktok',    t('organize.step1.tiktokInvalid')); return false; }
 
   return true;
 }
@@ -216,13 +229,13 @@ function _validateStep1() {
   const ds    = document.getElementById('o-ds').value;
   const de    = document.getElementById('o-de').value;
 
-  if (!name)  { _focusErr('o-name',  'يجب إدخال اسم البازار'); return false; }
-  if (!venue) { _focusErr('o-venue', 'يجب إدخال اسم المكان'); return false; }
-  if (!ds)    { _focusErr('o-ds',    'يجب تحديد تاريخ البداية'); return false; }
-  if (!de)    { _focusErr('o-de',    'يجب تحديد تاريخ النهاية'); return false; }
-  if (de < ds) { _focusErr('o-de',  'تاريخ النهاية يجب أن يكون بعد تاريخ البداية'); return false; }
+  if (!name)  { _focusErr('o-name',  t('organize.step2.nameRequired')); return false; }
+  if (!venue) { _focusErr('o-venue', t('organize.step2.venueRequired')); return false; }
+  if (!ds)    { _focusErr('o-ds',    t('organize.step2.startDateRequired')); return false; }
+  if (!de)    { _focusErr('o-de',    t('organize.step2.endDateRequired')); return false; }
+  if (de < ds) { _focusErr('o-de',  t('organize.step2.endBeforeStart')); return false; }
   if (ds < new Date().toISOString().slice(0, 10)) {
-    _focusErr('o-ds', 'تاريخ البداية يجب أن يكون في المستقبل'); return false;
+    _focusErr('o-ds', t('organize.step2.startInPast')); return false;
   }
   return true;
 }
@@ -230,17 +243,17 @@ function _validateStep1() {
 function _validateStep2() {
   const slots = Number(document.getElementById('o-slots').value);
   const price = Number(document.getElementById('o-price').value);
-  if (!slots || slots < 1) { _focusErr('o-slots', 'يجب إدخال عدد الوحدات (1 على الأقل)'); return false; }
-  if (!price || price < 0) { _focusErr('o-price', 'يجب إدخال سعر الوحدة'); return false; }
+  if (!slots || slots < 1) { _focusErr('o-slots', t('organize.step3.slotsRequired')); return false; }
+  if (!price || price < 0) { _focusErr('o-price', t('organize.step3.priceRequired')); return false; }
 
   const hasPremium = document.getElementById('o-has-premium')?.checked;
   if (hasPremium) {
     const premiumSlots = Number(document.getElementById('o-premium-slots').value) || 0;
     const premiumPrice = Number(document.getElementById('o-premium-price').value) || 0;
-    if (premiumSlots < 1) { _focusErr('o-premium-slots', 'يجب إدخال عدد الوحدات المميزة (1 على الأقل)'); return false; }
-    if (premiumSlots >= slots) { _focusErr('o-premium-slots', `عدد الوحدات المميزة (${premiumSlots}) يجب أن يكون أقل من إجمالي الوحدات (${slots})`); return false; }
-    if (premiumPrice <= 0) { _focusErr('o-premium-price', 'يجب إدخال سعر الوحدة المميزة'); return false; }
-    if (premiumPrice <= price) { _focusErr('o-premium-price', `سعر الوحدة المميزة (${premiumPrice}) يجب أن يكون أعلى من سعر الوحدة العادية (${price})`); return false; }
+    if (premiumSlots < 1) { _focusErr('o-premium-slots', t('organize.step3.premiumSlotsRequired')); return false; }
+    if (premiumSlots >= slots) { _focusErr('o-premium-slots', t('organize.step3.premiumSlotsMustBeLess', { premium: premiumSlots, total: slots })); return false; }
+    if (premiumPrice <= 0) { _focusErr('o-premium-price', t('organize.step3.premiumPriceRequired')); return false; }
+    if (premiumPrice <= price) { _focusErr('o-premium-price', t('organize.step3.premiumPriceMustBeHigher', { premium: premiumPrice, regular: price })); return false; }
   }
   return true;
 }
@@ -268,12 +281,12 @@ function _validateImgFile(file, statusElId) {
   };
 
   if (!_IMG_ALLOWED.includes((file.type || '').toLowerCase())) {
-    showErr('نوع الملف غير مدعوم — يُسمح فقط بـ JPG، PNG، WEBP');
+    showErr(t('organize.upload.fileTypeError'));
     return false;
   }
   if (file.size > _IMG_MAX_BYTES) {
     const mb = (file.size / 1024 / 1024).toFixed(1);
-    showErr(`حجم الصورة كبير (${mb} MB) — الحد الأقصى 8 MB`);
+    showErr(t('organize.upload.fileSizeError', { mb }));
     return false;
   }
   return true;
@@ -357,22 +370,22 @@ async function _handleSingleUpload(file, kind, ids, stateObj, r2Kind) {
   const statusEl  = ids.status  ? document.getElementById(ids.status)  : null;
 
   if (!currentUser || !sbClient) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">يجب تسجيل الدخول قبل رفع الصورة</span>';
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">${t('organize.upload.loginRequired')}</span>`;
     return;
   }
 
   if (previewEl) { previewEl.src = URL.createObjectURL(file); previewEl.style.display = 'block'; }
   if (boxEl) { boxEl.classList.add('has-img'); boxEl.classList.add('uploading'); }
   if (icoEl) icoEl.style.display = 'none';
-  if (lblEl) lblEl.textContent = '⏳ جارٍ الضغط والرفع…';
-  if (statusEl) statusEl.innerHTML = '<span style="color:var(--orange)">⏳ ضغط ورفع الصورة…</span>';
+  if (lblEl) lblEl.textContent = t('organize.upload.compressingLabel');
+  if (statusEl) statusEl.innerHTML = `<span style="color:var(--orange)">${t('organize.upload.compressingStatus')}</span>`;
 
   const uploadPromise = _uploadBazaarImage(file, r2Kind)
     .then(url => {
       stateObj.url = url;
       if (boxEl) boxEl.classList.remove('uploading');
-      if (lblEl) lblEl.textContent = '✅ تم — اضغط لتغيير الصورة';
-      if (statusEl) statusEl.innerHTML = '<span style="color:#15803d">✅ تم الرفع إلى R2</span>';
+      if (lblEl) lblEl.textContent = t('organize.upload.doneLabel');
+      if (statusEl) statusEl.innerHTML = `<span style="color:#15803d">${t('organize.upload.doneStatus')}</span>`;
       // إظهار زر الحذف للصور الإضافية
       const match = kind.match(/^extra-(\d+)$/);
       if (match) {
@@ -384,8 +397,8 @@ async function _handleSingleUpload(file, kind, ids, stateObj, r2Kind) {
     .catch(err => {
       stateObj.url = null;
       if (boxEl) boxEl.classList.remove('has-img', 'uploading');
-      if (lblEl) lblEl.textContent = '❌ فشل — اضغط للمحاولة مرة أخرى';
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ ${err.message}</span>`;
+      if (lblEl) lblEl.textContent = t('organize.upload.failedLabel');
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">${t('organize.upload.failedStatus', { msg: err.message })}</span>`;
       throw err;
     })
     .finally(() => { stateObj.promise = null; });
@@ -395,11 +408,11 @@ async function _handleSingleUpload(file, kind, ids, stateObj, r2Kind) {
 
 async function _uploadBazaarImage(file, kind) {
   if (typeof uploadSingleImageToR2 !== 'function') {
-    throw new Error('خدمة رفع الصور غير محملة — حدّث الصفحة وحاول مرة أخرى');
+    throw new Error(t('organize.upload.serviceNotLoaded'));
   }
   const { data: { session } } = await sbClient.auth.getSession();
   const authToken = session?.access_token;
-  if (!authToken) throw new Error('انتهت الجلسة، أعد تسجيل الدخول');
+  if (!authToken) throw new Error(t('organize.upload.sessionExpired'));
   const path = `bazaars/${currentUser.id}/${kind}-${Date.now()}.webp`;
   return uploadSingleImageToR2(file, path, authToken);
 }
@@ -451,6 +464,9 @@ function orgTogglePremium() {
   orgUpdatePrice();
 }
 
+function _orgLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
+function _orgFmtPrice(n) { return n.toLocaleString(_orgLocale()) + ' ' + t('organize.step3.egp'); }
+
 function orgUpdatePrice() {
   const slots        = Number(document.getElementById('o-slots').value) || 0;
   const price        = Number(document.getElementById('o-price').value) || 0;
@@ -463,15 +479,15 @@ function orgUpdatePrice() {
     const regularSlots = Math.max(0, slots - premiumSlots);
     const totalRev     = (regularSlots * price) + (premiumSlots * premiumPrice);
 
-    document.getElementById('pp-slots').textContent = regularSlots + ' وحدة';
-    document.getElementById('pp-price').textContent = price.toLocaleString('ar-EG') + ' جنيه';
-    document.getElementById('pp-total').textContent = totalRev.toLocaleString('ar-EG') + ' جنيه';
+    document.getElementById('pp-slots').textContent = t('organize.step3.unitSuffix', { count: regularSlots });
+    document.getElementById('pp-price').textContent = _orgFmtPrice(price);
+    document.getElementById('pp-total').textContent = _orgFmtPrice(totalRev);
 
     const premRow  = document.getElementById('pp-premium-row');
     const premPRow = document.getElementById('pp-premium-price-row');
     if (hasPremium && premiumSlots > 0 && premiumPrice > 0) {
-      if (premRow)  { premRow.style.display  = '';  document.getElementById('pp-premium-slots').textContent = premiumSlots + ' وحدة مميزة ⭐'; }
-      if (premPRow) { premPRow.style.display = '';  document.getElementById('pp-premium-price').textContent = premiumPrice.toLocaleString('ar-EG') + ' جنيه'; }
+      if (premRow)  { premRow.style.display  = '';  document.getElementById('pp-premium-slots').textContent = t('organize.step3.premiumUnitSuffix', { count: premiumSlots }); }
+      if (premPRow) { premPRow.style.display = '';  document.getElementById('pp-premium-price').textContent = _orgFmtPrice(premiumPrice); }
     } else {
       if (premRow)  premRow.style.display  = 'none';
       if (premPRow) premPRow.style.display = 'none';
@@ -497,8 +513,9 @@ function _buildSummary() {
   const hasSketch  = !!(sketchUpload.url || document.getElementById('o-sketch-url')?.value.trim());
   const extraCount = extraUploads.filter(u => u.url).length;
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '—';
-  const fmtNum  = n => n ? n.toLocaleString('ar-EG') + ' جنيه' : '—';
+  const fmtDate = d => d ? new Date(d).toLocaleDateString(_orgLocale(), { year:'numeric', month:'long', day:'numeric' }) : t('organize.step4.dash');
+  const fmtNum  = n => n ? _orgFmtPrice(n) : t('organize.step4.dash');
+  const listSep = getLocale() === 'en' ? ', ' : '، ';
 
   const hasPremium   = document.getElementById('o-has-premium')?.checked;
   const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
@@ -510,43 +527,43 @@ function _buildSummary() {
   const chairCount  = document.getElementById('o-amen-chair')?.checked ? (Number(document.getElementById('o-chair-count').value) || 0) : 0;
   const otherAmen   = document.getElementById('o-amen-other-note')?.value.trim() || '';
   const amenitiesLbl = amenities.length
-    ? amenities.map(a => a === 'كرسي' && chairCount > 1 ? `${a} (×${chairCount})` : a).join('، ') + (otherAmen ? `، ${otherAmen}` : '')
-    : (otherAmen || '—');
+    ? amenities.map(a => t('amenities.' + a, { defaultValue: a }) + (a === 'كرسي' && chairCount > 1 ? ` (×${chairCount})` : '')).join(listSep) + (otherAmen ? `${listSep}${otherAmen}` : '')
+    : (otherAmen || t('organize.step4.dash'));
 
   const adBudgetSel  = document.getElementById('o-ad-budget');
-  const adBudgetLbl  = adBudgetSel?.value ? adBudgetSel.options[adBudgetSel.selectedIndex].text : '—';
+  const adBudgetLbl  = adBudgetSel?.value ? adBudgetSel.options[adBudgetSel.selectedIndex].text : t('organize.step4.dash');
   const coverageBits = [
-    document.getElementById('o-ad-photography')?.checked ? 'تصوير الحدث' : null,
-    document.getElementById('o-ad-social')?.checked       ? 'تغطية سوشيال ميديا' : null,
-    document.getElementById('o-ad-paidads')?.checked      ? 'إعلانات ممولة' : null,
+    document.getElementById('o-ad-photography')?.checked ? t('manage.info.photographyTitle') : null,
+    document.getElementById('o-ad-social')?.checked       ? t('manage.info.socialTitle') : null,
+    document.getElementById('o-ad-paidads')?.checked      ? t('manage.info.paidAdsTitle') : null,
   ].filter(Boolean);
 
   const rows = [
-    ['اسم البازار',        document.getElementById('o-name').value.trim()],
-    ['المكان',             document.getElementById('o-venue').value.trim()],
-    ['العنوان',            document.getElementById('o-addr').value.trim() || '—'],
-    ['تاريخ البداية',      fmtDate(ds)],
-    ['تاريخ النهاية',      fmtDate(de)],
-    ['وحدات عادية',        regularSlots + ' وحدة'],
-    ['سعر الوحدة',         fmtNum(price)],
+    [t('organize.step4.rowName'),  document.getElementById('o-name').value.trim()],
+    [t('organize.step4.rowVenue'), document.getElementById('o-venue').value.trim()],
+    [t('organize.step4.rowAddr'),  document.getElementById('o-addr').value.trim() || t('organize.step4.dash')],
+    [t('organize.step4.rowStart'), fmtDate(ds)],
+    [t('organize.step4.rowEnd'),   fmtDate(de)],
+    [t('organize.step3.regularUnitsLabel'), t('organize.step3.unitSuffix', { count: regularSlots })],
+    [t('organize.step4.rowUnitPrice'), fmtNum(price)],
     ...(hasPremium && premiumSlots > 0 ? [
-      ['وحدات مميزة ⭐',   premiumSlots + ' وحدة'],
-      ['سعر المميزة',      fmtNum(premiumPrice)],
+      [t('organize.step3.premiumUnitsLabel'), t('organize.step3.unitSuffix', { count: premiumSlots })],
+      [t('organize.step4.rowPremiumPrice'),   fmtNum(premiumPrice)],
     ] : []),
-    ['إجمالي الوحدات',     slots + ' وحدة'],
-    ['الإيراد المتوقع',    fmtNum(totalRev)],
-    ...(dep1 > 0 ? [['العربون الأولي',  fmtNum(dep1)]] : []),
-    ...(dep2 > 0 ? [['العربون النهائي', fmtNum(dep2)]] : []),
-    ['صورة الغلاف',        hasCover  ? '✅ تم الرفع' : '—'],
-    ['خريطة / اسكتش',      hasSketch ? '✅ مضاف'     : '—'],
-    ...(extraCount > 0 ? [[`صور إضافية`, `${extraCount} صورة`]] : []),
-    ['🧰 ما يشمله الحجز',  amenitiesLbl],
-    ...(adBudgetSel?.value ? [['📢 ميزانية الدعاية', adBudgetLbl]] : []),
-    ...(coverageBits.length ? [['📸 التغطية الإعلامية', coverageBits.join('، ')]] : []),
+    [t('organize.step4.rowTotalUnits'),       t('organize.step3.unitSuffix', { count: slots })],
+    [t('organize.step4.rowExpectedRevenue'),  fmtNum(totalRev)],
+    ...(dep1 > 0 ? [[t('organize.step4.rowDeposit1'), fmtNum(dep1)]] : []),
+    ...(dep2 > 0 ? [[t('organize.step4.rowDeposit2'), fmtNum(dep2)]] : []),
+    [t('organize.step4.rowCover'),  hasCover  ? t('organize.step4.uploadedYes') : t('organize.step4.dash')],
+    [t('organize.step4.rowSketch'), hasSketch ? t('organize.step4.addedYes')   : t('organize.step4.dash')],
+    ...(extraCount > 0 ? [[t('organize.step4.rowExtraImages'), t('organize.step4.imagesCountSuffix', { count: extraCount })]] : []),
+    [t('organize.step4.rowAmenities'), amenitiesLbl],
+    ...(adBudgetSel?.value ? [[t('organize.step4.rowAdBudget'), adBudgetLbl]] : []),
+    ...(coverageBits.length ? [[t('organize.step4.rowCoverage'), coverageBits.join(listSep)]] : []),
   ];
 
   document.getElementById('org-summary-box').innerHTML = `
-    <div class="org-summary-title">📋 ملخص طلبك</div>
+    <div class="org-summary-title">${t('organize.step4.summaryBoxTitle')}</div>
     ${rows.map(([lbl, val]) => `
       <div class="org-sum-row">
         <span class="org-sum-lbl">${lbl}</span>
@@ -562,12 +579,12 @@ async function orgSubmit() {
   const phone   = document.getElementById('o-phone').value.trim();
   const consent = document.getElementById('o-consent').checked;
 
-  if (!phone)   { _focusErr('o-phone', 'يجب إدخال رقم التليفون'); return; }
-  if (!consent) { alert('يجب الموافقة على شروط العرض العلني للإحصائيات'); return; }
+  if (!phone)   { _focusErr('o-phone', t('organize.step4.phoneRequired')); return; }
+  if (!consent) { alert(t('organize.step4.consentRequired')); return; }
 
   const btn = document.getElementById('org-submit-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ جارٍ الإرسال…';
+  btn.textContent = t('organize.step4.submitting');
 
   try {
     const name     = document.getElementById('o-name').value.trim();
@@ -660,11 +677,8 @@ async function orgSubmit() {
     document.getElementById('org-result').innerHTML = `
       <div class="org-ok">
         <div class="org-ok-ico">🎉</div>
-        <div class="org-ok-title">تم إرسال الطلب بنجاح!</div>
-        <div class="org-ok-desc">
-          سيراجع فريق مكاني Spot طلبك خلال 48 ساعة وسيتواصل معك على الرقم <strong>${phone}</strong>.
-          يمكنك متابعة حالة طلبك من <a href="/bazaars/profile.html" style="color:var(--orange)">ملفك الشخصي</a>.
-        </div>
+        <div class="org-ok-title">${t('organize.step4.successTitle')}</div>
+        <div class="org-ok-desc">${t('organize.step4.successDesc', { phone })}</div>
       </div>`;
     btn.style.display = 'none';
     document.querySelector('#org-panel-3 .org-nav-back').style.display = 'none';
@@ -672,16 +686,16 @@ async function orgSubmit() {
 
   } catch (err) {
     document.getElementById('org-result').innerHTML = `
-      <div class="org-err">❌ تعذّر إرسال الطلب: ${_fmtErr(err)}</div>`;
+      <div class="org-err">${t('organize.step4.errorPrefix', { msg: _fmtErr(err) })}</div>`;
     btn.disabled = false;
-    btn.textContent = 'إعادة المحاولة';
+    btn.textContent = t('organize.step4.retryBtn');
   }
 }
 
 function _fmtErr(err) {
   const msg = err?.message || String(err || '');
   if (msg.includes('schema cache') || msg.includes('Could not find')) {
-    return 'تعذّر مطابقة حقول النموذج — يرجى تحديث الصفحة والمحاولة مرة أخرى.';
+    return t('organize.step4.errorSchemaCache');
   }
   return msg;
 }
@@ -762,12 +776,21 @@ function _orgRestoreDraft() {
 
   const banner = document.getElementById('org-draft-banner');
   if (banner) {
-    const mins = Math.round((Date.now() - (draft._ts || 0)) / 60000);
-    const ageStr = mins < 1 ? 'للتو' : mins < 60 ? `منذ ${mins} دقيقة` : `من قبل`;
-    const ageEl = banner.querySelector('.org-draft-age');
-    if (ageEl) ageEl.textContent = ageStr;
+    _draftTs = draft._ts || 0;
+    _orgUpdateDraftBannerText();
     banner.style.display = 'flex';
   }
+}
+
+let _draftTs = 0;
+function _orgUpdateDraftBannerText() {
+  const txtEl = document.getElementById('org-draft-banner-txt');
+  if (!txtEl) return;
+  const mins = Math.round((Date.now() - _draftTs) / 60000);
+  const age = mins < 1 ? t('organize.draft.ageJustNow')
+    : mins < 60 ? t('organize.draft.ageMinutesAgo', { count: mins })
+    : t('organize.draft.agePreviously');
+  txtEl.textContent = t('organize.draft.restored', { age });
 }
 
 function _orgClearDraft() {

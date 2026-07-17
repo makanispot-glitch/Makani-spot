@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="السياسات الرسمية لمنصة مكاني Spot — سياسة الخصوصية والشروط والأحكام وحقوق الملكية الفكرية. شركة كيوسك سبوت هب (Kiosq SpotHub).">
 
+  <!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('makani_locale') === 'en') {
+          document.documentElement.lang = 'en';
+          document.documentElement.dir = 'ltr';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Brand Colors -->
   <meta name="theme-color" content="#F36418">
   <meta name="msapplication-TileColor" content="#F36418">
@@ -341,6 +353,19 @@
     }
     .contact-btn:hover { background: var(--orange-600); transform: translateY(-1px); }
 
+    /* ── زر تبديل اللغة — نفس تصميم .lang-switch-btn في style.css، بتوكنز هذه الصفحة المحلية ── */
+    .lang-switch-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      height: 34px; padding: 0 12px;
+      border-radius: var(--radius-pill); border: 1.5px solid var(--border);
+      background: transparent; color: var(--fg-2);
+      font-family: var(--font-display); font-size: 12.5px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .lang-switch-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .lang-switch-btn:hover { border-color: var(--orange-500); color: var(--orange-500); background: var(--orange-50); }
+
     /* ── Rights Grid ── */
     .rights-grid {
       display: grid; grid-template-columns: 1fr 1fr;
@@ -436,6 +461,12 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
   </script>
+
+  <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+  <script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+  <script src="/shared/i18n.js?v=202607141600" defer></script>
 </head>
 <body>
 
@@ -452,39 +483,47 @@
         <span class="logo-en">Spot</span>
       </div>
     </a>
-    <a class="nav-back" href="/">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-      العودة للرئيسية
-    </a>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+        </svg>
+        <span id="langSwitchLabel">EN</span>
+      </button>
+      <a class="nav-back" href="/">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        <span data-i18n="nav.back">العودة للرئيسية</span>
+      </a>
+    </div>
   </nav>
 
   <!-- ── Hero ── -->
   <div class="hero">
     <div class="hero-badge">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      وثائق قانونية رسمية — الإصدار ١.٠
+      <span data-i18n="hero.badge">وثائق قانونية رسمية — الإصدار ١.٠</span>
     </div>
-    <h1>السياسات الرسمية لـ<em> مكاني Spot</em></h1>
-    <p class="hero-sub">
+    <h1 data-i18n-html="hero.title">السياسات الرسمية لـ<em> مكاني Spot</em></h1>
+    <p class="hero-sub" data-i18n-html="hero.subtitle">
       سياسة الخصوصية · الشروط والأحكام · حقوق الملكية الفكرية
       <br>آخر تحديث: ٢٠ مايو ٢٠٢٦
     </p>
-    <div class="hero-legal">Kiosq SpotHub · شركة كيوسك سبوت هب ©</div>
+    <div class="hero-legal" data-i18n="hero.legal">Kiosq SpotHub · شركة كيوسك سبوت هب ©</div>
   </div>
 
   <!-- ── Tab Navigation ── -->
   <div class="tabs-wrap">
     <div class="tabs">
       <button class="tab-btn active" onclick="showPolicy('privacy', this)">
-        <span class="tab-icon">🔒</span> سياسة الخصوصية
+        <span class="tab-icon">🔒</span> <span data-i18n="tabs.privacy">سياسة الخصوصية</span>
       </button>
       <button class="tab-btn" onclick="showPolicy('terms', this)">
-        <span class="tab-icon">📜</span> الشروط والأحكام
+        <span class="tab-icon">📜</span> <span data-i18n="tabs.terms">الشروط والأحكام</span>
       </button>
       <button class="tab-btn" onclick="showPolicy('ip', this)">
-        <span class="tab-icon">⚖️</span> الملكية الفكرية
+        <span class="tab-icon">⚖️</span> <span data-i18n="tabs.ip">الملكية الفكرية</span>
       </button>
     </div>
   </div>
@@ -501,131 +540,131 @@
         <div class="section-header">
           <div class="section-icon">🔒</div>
           <div class="section-header-text">
-            <h2>سياسة الخصوصية</h2>
-            <p>كيف نجمع بياناتك ونحميها ونستخدمها داخل منصة مكاني Spot</p>
+            <h2 data-i18n="privacy.title">سياسة الخصوصية</h2>
+            <p data-i18n="privacy.subtitle">كيف نجمع بياناتك ونحميها ونستخدمها داخل منصة مكاني Spot</p>
           </div>
         </div>
 
         <div class="meta-strip">
-          <span class="meta-pill"><strong>الشركة:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)</span>
-          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
-          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
-          <span class="meta-pill"><strong>التشريع:</strong> قانون ١٥١ لسنة ٢٠٢٠</span>
+          <span class="meta-pill" data-i18n-html="privacy.meta.company"><strong>الشركة:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)</span>
+          <span class="meta-pill" data-i18n-html="privacy.meta.version"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill" data-i18n-html="privacy.meta.updated"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+          <span class="meta-pill" data-i18n-html="privacy.meta.law"><strong>التشريع:</strong> قانون ١٥١ لسنة ٢٠٢٠</span>
         </div>
 
         <div class="info-box">
           <span class="info-box-icon">ℹ️</span>
-          <div>
+          <div data-i18n-html="privacy.intro">
             <strong>منصة مكاني Spot</strong> هي المنصة الرقمية المُشغَّلة من قِبَل <strong>شركة كيوسك سبوت هب (Kiosq SpotHub)</strong>، المتخصصة في إدارة وتأجير المساحات التجارية الصغيرة ربطًا بين أصحاب المساحات وأصحاب المشاريع الصغيرة والبازارات في مصر. باستخدامك للمنصة فإنك توافق على سياسة الخصوصية هذه.
           </div>
         </div>
 
         <div class="article">
-          <h3>١ — نطاق السياسة والجهة المُشغِّلة</h3>
-          <p>تسري هذه السياسة على جميع الخدمات والمنصات والتطبيقات التابعة لشركة كيوسك سبوت هب، وتشمل:</p>
+          <h3 data-i18n="privacy.s1.title">١ — نطاق السياسة والجهة المُشغِّلة</h3>
+          <p data-i18n="privacy.s1.p">تسري هذه السياسة على جميع الخدمات والمنصات والتطبيقات التابعة لشركة كيوسك سبوت هب، وتشمل:</p>
           <ul>
-            <li>منصة عرض وتأجير المساحات التجارية الصغيرة (مكاني Spot)</li>
-            <li>خدمات البازارات والفعاليات المؤقتة</li>
-            <li>التطبيقات الحالية والمستقبلية للشركة</li>
-            <li>خدمات إدارة الربط بين أصحاب المساحات والمستأجرين وأصحاب المشاريع</li>
-            <li>تعاملات جميع فئات المستخدمين: أصحاب المساحات، المستأجرون، منظمو البازارات، مزودو الخدمات</li>
+            <li data-i18n="privacy.s1.li1">منصة عرض وتأجير المساحات التجارية الصغيرة (مكاني Spot)</li>
+            <li data-i18n="privacy.s1.li2">خدمات البازارات والفعاليات المؤقتة</li>
+            <li data-i18n="privacy.s1.li3">التطبيقات الحالية والمستقبلية للشركة</li>
+            <li data-i18n="privacy.s1.li4">خدمات إدارة الربط بين أصحاب المساحات والمستأجرين وأصحاب المشاريع</li>
+            <li data-i18n="privacy.s1.li5">تعاملات جميع فئات المستخدمين: أصحاب المساحات، المستأجرون، منظمو البازارات، مزودو الخدمات</li>
           </ul>
 
-          <h3>٢ — البيانات التي نجمعها</h3>
+          <h3 data-i18n="privacy.s2.title">٢ — البيانات التي نجمعها</h3>
 
           <div class="data-grid">
             <div class="data-item">
-              <div class="data-item-label">المعلومات الشخصية</div>
-              <div class="data-item-value">الاسم · الهاتف · البريد الإلكتروني · الرقم القومي (عند الحاجة)</div>
+              <div class="data-item-label" data-i18n="privacy.s2.personalLabel">المعلومات الشخصية</div>
+              <div class="data-item-value" data-i18n="privacy.s2.personalValue">الاسم · الهاتف · البريد الإلكتروني · الرقم القومي (عند الحاجة)</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">المعلومات التجارية</div>
-              <div class="data-item-value">اسم النشاط · السجل التجاري · البطاقة الضريبية · التراخيص</div>
+              <div class="data-item-label" data-i18n="privacy.s2.businessLabel">المعلومات التجارية</div>
+              <div class="data-item-value" data-i18n="privacy.s2.businessValue">اسم النشاط · السجل التجاري · البطاقة الضريبية · التراخيص</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">البيانات التقنية</div>
-              <div class="data-item-value">نوع الجهاز · IP · المتصفح · ملفات الارتباط (Cookies)</div>
+              <div class="data-item-label" data-i18n="privacy.s2.technicalLabel">البيانات التقنية</div>
+              <div class="data-item-value" data-i18n="privacy.s2.technicalValue">نوع الجهاز · IP · المتصفح · ملفات الارتباط (Cookies)</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">الموقع الجغرافي</div>
-              <div class="data-item-value">موقع تقريبي أو دقيق لعرض المساحات القريبة منك</div>
+              <div class="data-item-label" data-i18n="privacy.s2.locationLabel">الموقع الجغرافي</div>
+              <div class="data-item-value" data-i18n="privacy.s2.locationValue">موقع تقريبي أو دقيق لعرض المساحات القريبة منك</div>
             </div>
           </div>
 
-          <p>كما نجمع <strong>المحتوى الذي ترفعه</strong>: الصور، الشعارات، تصميمات الأكشاك أو المساحات، الأوصاف التجارية، والرسائل والتفاعلات داخل المنصة.</p>
+          <p data-i18n-html="privacy.s2.p">كما نجمع <strong>المحتوى الذي ترفعه</strong>: الصور، الشعارات، تصميمات الأكشاك أو المساحات، الأوصاف التجارية، والرسائل والتفاعلات داخل المنصة.</p>
 
-          <h3>٣ — كيف نجمع بياناتك</h3>
+          <h3 data-i18n="privacy.s3.title">٣ — كيف نجمع بياناتك</h3>
           <ul>
-            <li><strong>بشكل مباشر:</strong> عند إنشاء حساب، رفع محتوى، حجز مساحة، أو التواصل معنا.</li>
-            <li><strong>بشكل تلقائي:</strong> من خلال ملفات الارتباط، أدوات التحليل، وسجلات الأداء والأمان.</li>
-            <li><strong>من أطراف ثالثة:</strong> مزودو خدمات الدفع الإلكتروني، مزودو التحقق من الهوية، وشركاء الخدمات المعتمدون.</li>
+            <li data-i18n-html="privacy.s3.li1"><strong>بشكل مباشر:</strong> عند إنشاء حساب، رفع محتوى، حجز مساحة، أو التواصل معنا.</li>
+            <li data-i18n-html="privacy.s3.li2"><strong>بشكل تلقائي:</strong> من خلال ملفات الارتباط، أدوات التحليل، وسجلات الأداء والأمان.</li>
+            <li data-i18n-html="privacy.s3.li3"><strong>من أطراف ثالثة:</strong> مزودو خدمات الدفع الإلكتروني، مزودو التحقق من الهوية، وشركاء الخدمات المعتمدون.</li>
           </ul>
 
-          <h3>٤ — الأغراض التي نستخدم بياناتك من أجلها</h3>
+          <h3 data-i18n="privacy.s4.title">٤ — الأغراض التي نستخدم بياناتك من أجلها</h3>
           <ul>
-            <li>إنشاء الحسابات والتحقق من هوية المستخدمين</li>
-            <li>تسهيل عمليات الحجز والتأجير والتواصل بين الأطراف</li>
-            <li>عرض المساحات والأنشطة المناسبة لاحتياجاتك</li>
-            <li>تشغيل المنصة وتحسين جودة الخدمات</li>
-            <li>الكشف عن الاحتيال والحفاظ على أمن المنصة</li>
-            <li>الامتثال للمتطلبات القانونية والتنظيمية المصرية</li>
-            <li>تسوية النزاعات وتنفيذ الشروط والأحكام</li>
+            <li data-i18n="privacy.s4.li1">إنشاء الحسابات والتحقق من هوية المستخدمين</li>
+            <li data-i18n="privacy.s4.li2">تسهيل عمليات الحجز والتأجير والتواصل بين الأطراف</li>
+            <li data-i18n="privacy.s4.li3">عرض المساحات والأنشطة المناسبة لاحتياجاتك</li>
+            <li data-i18n="privacy.s4.li4">تشغيل المنصة وتحسين جودة الخدمات</li>
+            <li data-i18n="privacy.s4.li5">الكشف عن الاحتيال والحفاظ على أمن المنصة</li>
+            <li data-i18n="privacy.s4.li6">الامتثال للمتطلبات القانونية والتنظيمية المصرية</li>
+            <li data-i18n="privacy.s4.li7">تسوية النزاعات وتنفيذ الشروط والأحكام</li>
           </ul>
 
-          <h3>٥ — الأساس القانوني للمعالجة</h3>
-          <p>تتم معالجة بياناتك استنادًا إلى: <strong>موافقتك الصريحة</strong>، أو <strong>تنفيذ التزامات تعاقدية</strong> بيننا، أو <strong>الامتثال للقوانين</strong> المصرية، أو <strong>المصالح المشروعة</strong> للشركة بما لا يتعارض مع حقوقك. وذلك وفقًا لقانون حماية البيانات الشخصية المصري رقم ١٥١ لسنة ٢٠٢٠.</p>
+          <h3 data-i18n="privacy.s5.title">٥ — الأساس القانوني للمعالجة</h3>
+          <p data-i18n-html="privacy.s5.p">تتم معالجة بياناتك استنادًا إلى: <strong>موافقتك الصريحة</strong>، أو <strong>تنفيذ التزامات تعاقدية</strong> بيننا، أو <strong>الامتثال للقوانين</strong> المصرية، أو <strong>المصالح المشروعة</strong> للشركة بما لا يتعارض مع حقوقك. وذلك وفقًا لقانون حماية البيانات الشخصية المصري رقم ١٥١ لسنة ٢٠٢٠.</p>
 
-          <h3>٦ — مشاركة بياناتك مع أطراف ثالثة</h3>
-          <p>لا نبيع بياناتك. قد نشاركها فقط في الحالات التالية:</p>
+          <h3 data-i18n="privacy.s6.title">٦ — مشاركة بياناتك مع أطراف ثالثة</h3>
+          <p data-i18n="privacy.s6.p">لا نبيع بياناتك. قد نشاركها فقط في الحالات التالية:</p>
           <ul>
-            <li>مع <strong>أصحاب المساحات أو المستأجرين</strong> لتسهيل الحجوزات المتفق عليها</li>
-            <li>مع <strong>الجهات الحكومية أو القضائية</strong> إذا طُلب ذلك قانونيًا</li>
-            <li>مع <strong>مزودي الخدمات</strong> (استضافة سحابية، بوابات الدفع) وفق اتفاقيات سرية صارمة</li>
+            <li data-i18n-html="privacy.s6.li1">مع <strong>أصحاب المساحات أو المستأجرين</strong> لتسهيل الحجوزات المتفق عليها</li>
+            <li data-i18n-html="privacy.s6.li2">مع <strong>الجهات الحكومية أو القضائية</strong> إذا طُلب ذلك قانونيًا</li>
+            <li data-i18n-html="privacy.s6.li3">مع <strong>مزودي الخدمات</strong> (استضافة سحابية، بوابات الدفع) وفق اتفاقيات سرية صارمة</li>
           </ul>
 
-          <h3>٧ — حماية وأمن البيانات</h3>
-          <p>تلتزم شركة كيوسك سبوت هب بتطبيق تدابير أمنية تشمل التشفير في النقل والتخزين، وأنظمة التحكم في الوصول، ومراقبة الأنظمة بصفة مستمرة. رغم ذلك، لا يمكن ضمان الحماية المطلقة ضد جميع الاختراقات الخارجة عن السيطرة المعقولة للشركة.</p>
+          <h3 data-i18n="privacy.s7.title">٧ — حماية وأمن البيانات</h3>
+          <p data-i18n="privacy.s7.p">تلتزم شركة كيوسك سبوت هب بتطبيق تدابير أمنية تشمل التشفير في النقل والتخزين، وأنظمة التحكم في الوصول، ومراقبة الأنظمة بصفة مستمرة. رغم ذلك، لا يمكن ضمان الحماية المطلقة ضد جميع الاختراقات الخارجة عن السيطرة المعقولة للشركة.</p>
 
-          <h3>٨ — حقوق المستخدمين</h3>
+          <h3 data-i18n="privacy.s8.title">٨ — حقوق المستخدمين</h3>
 
           <div class="rights-grid">
             <div class="right-item">
               <span class="right-item-icon">👁️</span>
-              <span class="right-item-text">الاطلاع على بياناتك التي نجمعها</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right1">الاطلاع على بياناتك التي نجمعها</span>
             </div>
             <div class="right-item">
               <span class="right-item-icon">✏️</span>
-              <span class="right-item-text">طلب تصحيح أو تحديث بياناتك</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right2">طلب تصحيح أو تحديث بياناتك</span>
             </div>
             <div class="right-item">
               <span class="right-item-icon">🗑️</span>
-              <span class="right-item-text">طلب حذف بياناتك في بعض الحالات</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right3">طلب حذف بياناتك في بعض الحالات</span>
             </div>
             <div class="right-item">
               <span class="right-item-icon">🚫</span>
-              <span class="right-item-text">الاعتراض على بعض أنواع المعالجة</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right4">الاعتراض على بعض أنواع المعالجة</span>
             </div>
             <div class="right-item">
               <span class="right-item-icon">↩️</span>
-              <span class="right-item-text">سحب موافقتك في أي وقت</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right5">سحب موافقتك في أي وقت</span>
             </div>
             <div class="right-item">
               <span class="right-item-icon">📋</span>
-              <span class="right-item-text">نقل بياناتك إلى جهة أخرى</span>
+              <span class="right-item-text" data-i18n="privacy.s8.right6">نقل بياناتك إلى جهة أخرى</span>
             </div>
           </div>
 
-          <h3>٩ — ملفات الارتباط (Cookies)</h3>
-          <p>تستخدم المنصة ملفات الارتباط لتحسين الأداء، حفظ تفضيلاتك، تخصيص المحتوى، وقياس الأداء. يمكنك تعطيلها من إعدادات متصفحك، مع ملاحظة أن ذلك قد يؤثر على بعض وظائف المنصة.</p>
+          <h3 data-i18n="privacy.s9.title">٩ — ملفات الارتباط (Cookies)</h3>
+          <p data-i18n="privacy.s9.p">تستخدم المنصة ملفات الارتباط لتحسين الأداء، حفظ تفضيلاتك، تخصيص المحتوى، وقياس الأداء. يمكنك تعطيلها من إعدادات متصفحك، مع ملاحظة أن ذلك قد يؤثر على بعض وظائف المنصة.</p>
 
-          <h3>١٠ — التعديلات على هذه السياسة</h3>
-          <p>قد تُحدَّث هذه السياسة دوريًا. سنُخطرك بالتغييرات الجوهرية عبر البريد الإلكتروني أو إشعار واضح داخل المنصة. استمرارك في الاستخدام بعد نشر التحديث يُعدّ موافقة على السياسة المُحدَّثة.</p>
+          <h3 data-i18n="privacy.s10.title">١٠ — التعديلات على هذه السياسة</h3>
+          <p data-i18n="privacy.s10.p">قد تُحدَّث هذه السياسة دوريًا. سنُخطرك بالتغييرات الجوهرية عبر البريد الإلكتروني أو إشعار واضح داخل المنصة. استمرارك في الاستخدام بعد نشر التحديث يُعدّ موافقة على السياسة المُحدَّثة.</p>
         </div>
 
         <div class="contact-strip">
           <div>
-            <p><strong>للاستفسار عن بياناتك الشخصية:</strong></p>
-            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+            <p data-i18n-html="privacy.contactLabel"><strong>للاستفسار عن بياناتك الشخصية:</strong></p>
+            <p data-i18n="privacy.contactTeam">فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
           </div>
           <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
             ✉️ legal@kiosqspothub.com
@@ -643,101 +682,101 @@
         <div class="section-header">
           <div class="section-icon">📜</div>
           <div class="section-header-text">
-            <h2>الشروط والأحكام</h2>
-            <p>القواعد المنظِّمة لاستخدام منصة مكاني Spot وحقوق وواجبات جميع الأطراف</p>
+            <h2 data-i18n="terms.title">الشروط والأحكام</h2>
+            <p data-i18n="terms.subtitle">القواعد المنظِّمة لاستخدام منصة مكاني Spot وحقوق وواجبات جميع الأطراف</p>
           </div>
         </div>
 
         <div class="meta-strip">
-          <span class="meta-pill"><strong>المنصة:</strong> مكاني Spot (Kiosq SpotHub)</span>
-          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
-          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
-          <span class="meta-pill"><strong>النطاق:</strong> جمهورية مصر العربية</span>
+          <span class="meta-pill" data-i18n-html="terms.meta.platform"><strong>المنصة:</strong> مكاني Spot (Kiosq SpotHub)</span>
+          <span class="meta-pill" data-i18n-html="terms.meta.version"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill" data-i18n-html="terms.meta.updated"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+          <span class="meta-pill" data-i18n-html="terms.meta.scope"><strong>النطاق:</strong> جمهورية مصر العربية</span>
         </div>
 
         <div class="info-box">
           <span class="info-box-icon">📌</span>
-          <div>
+          <div data-i18n-html="terms.intro">
             <strong>مكاني Spot</strong> هي منصة رقمية تُشغِّلها <strong>شركة كيوسك سبوت هب (Kiosq SpotHub)</strong> وتعمل بموجب القوانين المصرية. المنصة متخصصة في إدارة وتنظيم وتأجير المساحات التجارية الصغيرة والأكشاك والبازارات والفعاليات المؤقتة. باستخدامك للمنصة فإنك توافق صراحةً على جميع الشروط والأحكام الواردة هنا.
           </div>
         </div>
 
         <div class="article">
-          <h3>١ — تعريف الأطراف والمفاهيم الأساسية</h3>
+          <h3 data-i18n="terms.s1.title">١ — تعريف الأطراف والمفاهيم الأساسية</h3>
           <ul>
-            <li><strong>«الشركة» أو «المنصة»:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)، المُشغِّلة لمنصة مكاني Spot.</li>
-            <li><strong>«المستخدم»:</strong> أي شخص طبيعي أو اعتباري يستخدم المنصة بأي صفة.</li>
-            <li><strong>«صاحب المساحة»:</strong> الشخص أو الجهة المالكة أو المُديرة لمساحة تجارية معروضة على المنصة.</li>
-            <li><strong>«المستأجر» أو «صاحب المشروع»:</strong> من يبحث عن مساحة لنشاطه التجاري أو مشروعه.</li>
-            <li><strong>«الخدمة»:</strong> جميع الوظائف والمميزات المتاحة داخل المنصة.</li>
+            <li data-i18n-html="terms.s1.li1"><strong>«الشركة» أو «المنصة»:</strong> شركة كيوسك سبوت هب (Kiosq SpotHub)، المُشغِّلة لمنصة مكاني Spot.</li>
+            <li data-i18n-html="terms.s1.li2"><strong>«المستخدم»:</strong> أي شخص طبيعي أو اعتباري يستخدم المنصة بأي صفة.</li>
+            <li data-i18n-html="terms.s1.li3"><strong>«صاحب المساحة»:</strong> الشخص أو الجهة المالكة أو المُديرة لمساحة تجارية معروضة على المنصة.</li>
+            <li data-i18n-html="terms.s1.li4"><strong>«المستأجر» أو «صاحب المشروع»:</strong> من يبحث عن مساحة لنشاطه التجاري أو مشروعه.</li>
+            <li data-i18n-html="terms.s1.li5"><strong>«الخدمة»:</strong> جميع الوظائف والمميزات المتاحة داخل المنصة.</li>
           </ul>
 
-          <h3>٢ — الأحكام العامة</h3>
+          <h3 data-i18n="terms.s2.title">٢ — الأحكام العامة</h3>
           <ul>
-            <li>تخضع هذه الشروط للقوانين والتشريعات المصرية السارية.</li>
-            <li>يحق للمنصة تعديل أو تطوير خدماتها أو سياساتها في أي وقت، مع إخطار المستخدمين بالتغييرات الجوهرية.</li>
-            <li>تعمل المنصة بوصفها وسيطًا ومنظِّمًا يربط الأطراف، ولا تُعدّ طرفًا مباشرًا في أي عقد يُبرم بين المستخدمين ما لم يُنص على خلاف ذلك.</li>
-            <li>يجب أن يكون المستخدم قد بلغ من العمر ١٨ عامًا على الأقل، أو يحمل صفة قانونية معترفًا بها.</li>
+            <li data-i18n="terms.s2.li1">تخضع هذه الشروط للقوانين والتشريعات المصرية السارية.</li>
+            <li data-i18n="terms.s2.li2">يحق للمنصة تعديل أو تطوير خدماتها أو سياساتها في أي وقت، مع إخطار المستخدمين بالتغييرات الجوهرية.</li>
+            <li data-i18n="terms.s2.li3">تعمل المنصة بوصفها وسيطًا ومنظِّمًا يربط الأطراف، ولا تُعدّ طرفًا مباشرًا في أي عقد يُبرم بين المستخدمين ما لم يُنص على خلاف ذلك.</li>
+            <li data-i18n="terms.s2.li4">يجب أن يكون المستخدم قد بلغ من العمر ١٨ عامًا على الأقل، أو يحمل صفة قانونية معترفًا بها.</li>
           </ul>
 
-          <h3>٣ — التزامات المستخدم</h3>
+          <h3 data-i18n="terms.s3.title">٣ — التزامات المستخدم</h3>
           <ul>
-            <li>تقديم معلومات صحيحة ودقيقة وتحديثها باستمرار.</li>
-            <li>الحفاظ على سرية بيانات الدخول وعدم مشاركتها مع أطراف أخرى.</li>
-            <li>تحمّل المسؤولية القانونية الكاملة عن جميع أنشطته داخل المنصة.</li>
-            <li>الامتثال لجميع القوانين والتشريعات المصرية المتعلقة بنشاطه التجاري.</li>
-            <li>سداد الرسوم أو العمولات المستحقة في المواعيد المحددة.</li>
+            <li data-i18n="terms.s3.li1">تقديم معلومات صحيحة ودقيقة وتحديثها باستمرار.</li>
+            <li data-i18n="terms.s3.li2">الحفاظ على سرية بيانات الدخول وعدم مشاركتها مع أطراف أخرى.</li>
+            <li data-i18n="terms.s3.li3">تحمّل المسؤولية القانونية الكاملة عن جميع أنشطته داخل المنصة.</li>
+            <li data-i18n="terms.s3.li4">الامتثال لجميع القوانين والتشريعات المصرية المتعلقة بنشاطه التجاري.</li>
+            <li data-i18n="terms.s3.li5">سداد الرسوم أو العمولات المستحقة في المواعيد المحددة.</li>
           </ul>
 
-          <h3>٤ — المحظورات (ما يُمنع منعًا باتًا)</h3>
+          <h3 data-i18n="terms.s4.title">٤ — المحظورات (ما يُمنع منعًا باتًا)</h3>
 
           <div class="highlight-box">
-            <h4>الأفعال المحظورة على المنصة:</h4>
+            <h4 data-i18n="terms.s4.boxTitle">الأفعال المحظورة على المنصة:</h4>
             <ul>
-              <li>نشر معلومات مضللة أو بيانات مزورة عن الأنشطة أو المساحات</li>
-              <li>رفع محتوى مخالف للقوانين المصرية أو الآداب العامة</li>
-              <li>القيام بأي أعمال احتيال أو نصب أو تدليس</li>
-              <li>محاولة اختراق أنظمة المنصة أو التلاعب في البيانات</li>
-              <li>استخدام أدوات تحايل (VPN، بروكسي) للتحايل على سياسات المنصة</li>
-              <li>انتهاك خصوصية المستخدمين الآخرين أو إساءة استخدام بياناتهم</li>
-              <li>إنشاء حسابات وهمية أو متعددة بقصد التلاعب</li>
+              <li data-i18n="terms.s4.li1">نشر معلومات مضللة أو بيانات مزورة عن الأنشطة أو المساحات</li>
+              <li data-i18n="terms.s4.li2">رفع محتوى مخالف للقوانين المصرية أو الآداب العامة</li>
+              <li data-i18n="terms.s4.li3">القيام بأي أعمال احتيال أو نصب أو تدليس</li>
+              <li data-i18n="terms.s4.li4">محاولة اختراق أنظمة المنصة أو التلاعب في البيانات</li>
+              <li data-i18n="terms.s4.li5">استخدام أدوات تحايل (VPN، بروكسي) للتحايل على سياسات المنصة</li>
+              <li data-i18n="terms.s4.li6">انتهاك خصوصية المستخدمين الآخرين أو إساءة استخدام بياناتهم</li>
+              <li data-i18n="terms.s4.li7">إنشاء حسابات وهمية أو متعددة بقصد التلاعب</li>
             </ul>
           </div>
 
-          <h3>٥ — الرسوم والمدفوعات والاسترداد</h3>
+          <h3 data-i18n="terms.s5.title">٥ — الرسوم والمدفوعات والاسترداد</h3>
           <ul>
-            <li>تحتفظ المنصة بحقها في فرض رسوم خدمات، عمولات وساطة، أو رسوم إدراج وترويج.</li>
-            <li>تخضع جميع الرسوم للضرائب والرسوم المقررة وفق القانون المصري.</li>
-            <li>لا يتم استرداد الرسوم المدفوعة إلا وفق سياسة الاسترداد المعتمدة من الشركة والمعلنة بشكل واضح.</li>
-            <li>تلتزم المنصة بالشفافية في عرض جميع الأسعار والرسوم قبل إتمام أي معاملة.</li>
+            <li data-i18n="terms.s5.li1">تحتفظ المنصة بحقها في فرض رسوم خدمات، عمولات وساطة، أو رسوم إدراج وترويج.</li>
+            <li data-i18n="terms.s5.li2">تخضع جميع الرسوم للضرائب والرسوم المقررة وفق القانون المصري.</li>
+            <li data-i18n="terms.s5.li3">لا يتم استرداد الرسوم المدفوعة إلا وفق سياسة الاسترداد المعتمدة من الشركة والمعلنة بشكل واضح.</li>
+            <li data-i18n="terms.s5.li4">تلتزم المنصة بالشفافية في عرض جميع الأسعار والرسوم قبل إتمام أي معاملة.</li>
           </ul>
 
-          <h3>٦ — تحديد المسؤولية</h3>
-          <p>لا تضمن المنصة دقة المحتوى الذي ينشره المستخدمون بشكل كامل، ولا تتحمل مسؤولية أي خسائر أو أضرار تنجم عن:</p>
+          <h3 data-i18n="terms.s6.title">٦ — تحديد المسؤولية</h3>
+          <p data-i18n="terms.s6.p">لا تضمن المنصة دقة المحتوى الذي ينشره المستخدمون بشكل كامل، ولا تتحمل مسؤولية أي خسائر أو أضرار تنجم عن:</p>
           <ul>
-            <li>معلومات غير صحيحة قدَّمها مستخدمون آخرون</li>
-            <li>أعطال تقنية مؤقتة أو انقطاع في الخدمة خارج إرادة الشركة</li>
-            <li>قرارات تجارية يتخذها المستخدمون بناءً على معلومات المنصة</li>
-            <li>نزاعات تنشأ مباشرة بين أصحاب المساحات والمستأجرين</li>
+            <li data-i18n="terms.s6.li1">معلومات غير صحيحة قدَّمها مستخدمون آخرون</li>
+            <li data-i18n="terms.s6.li2">أعطال تقنية مؤقتة أو انقطاع في الخدمة خارج إرادة الشركة</li>
+            <li data-i18n="terms.s6.li3">قرارات تجارية يتخذها المستخدمون بناءً على معلومات المنصة</li>
+            <li data-i18n="terms.s6.li4">نزاعات تنشأ مباشرة بين أصحاب المساحات والمستأجرين</li>
           </ul>
 
-          <h3>٧ — تعليق الحسابات وإنهاء الخدمة</h3>
-          <p>تحتفظ الشركة بالحق في تعليق أو إنهاء حساب أي مستخدم في الحالات التالية:</p>
+          <h3 data-i18n="terms.s7.title">٧ — تعليق الحسابات وإنهاء الخدمة</h3>
+          <p data-i18n="terms.s7.p">تحتفظ الشركة بالحق في تعليق أو إنهاء حساب أي مستخدم في الحالات التالية:</p>
           <ul>
-            <li>ثبوت انتهاك هذه الشروط والأحكام</li>
-            <li>وجود نشاط مشبوه أو احتيالي موثَّق</li>
-            <li>شكاوى متكررة وموثقة من مستخدمين آخرين</li>
-            <li>طلب من الجهات القضائية أو التنظيمية المختصة</li>
+            <li data-i18n="terms.s7.li1">ثبوت انتهاك هذه الشروط والأحكام</li>
+            <li data-i18n="terms.s7.li2">وجود نشاط مشبوه أو احتيالي موثَّق</li>
+            <li data-i18n="terms.s7.li3">شكاوى متكررة وموثقة من مستخدمين آخرين</li>
+            <li data-i18n="terms.s7.li4">طلب من الجهات القضائية أو التنظيمية المختصة</li>
           </ul>
 
-          <h3>٨ — حل النزاعات</h3>
-          <p>في حال نشوء أي نزاع، تلتزم الشركة بمحاولة الحل الودي أولًا. وعند تعذّر ذلك، يُحسم النزاع أمام المحاكم المصرية المختصة وفق القانون المصري، دون إخلال بحق الطرفين في اللجوء إلى التحكيم وفق قواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي.</p>
+          <h3 data-i18n="terms.s8.title">٨ — حل النزاعات</h3>
+          <p data-i18n="terms.s8.p">في حال نشوء أي نزاع، تلتزم الشركة بمحاولة الحل الودي أولًا. وعند تعذّر ذلك، يُحسم النزاع أمام المحاكم المصرية المختصة وفق القانون المصري، دون إخلال بحق الطرفين في اللجوء إلى التحكيم وفق قواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي.</p>
         </div>
 
         <div class="contact-strip">
           <div>
-            <p><strong>للاستفسار عن الشروط والأحكام:</strong></p>
-            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+            <p data-i18n-html="terms.contactLabel"><strong>للاستفسار عن الشروط والأحكام:</strong></p>
+            <p data-i18n="terms.contactTeam">فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
           </div>
           <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
             ✉️ legal@kiosqspothub.com
@@ -755,86 +794,86 @@
         <div class="section-header">
           <div class="section-icon">⚖️</div>
           <div class="section-header-text">
-            <h2>سياسة حقوق الملكية الفكرية</h2>
-            <p>حماية حقوق الشركة والمستخدمين وفق القانون المصري رقم ٨٢ لسنة ٢٠٠٢</p>
+            <h2 data-i18n="ip.title">سياسة حقوق الملكية الفكرية</h2>
+            <p data-i18n="ip.subtitle">حماية حقوق الشركة والمستخدمين وفق القانون المصري رقم ٨٢ لسنة ٢٠٠٢</p>
           </div>
         </div>
 
         <div class="meta-strip">
-          <span class="meta-pill"><strong>التشريع:</strong> قانون ٨٢ لسنة ٢٠٠٢ (حماية الملكية الفكرية)</span>
-          <span class="meta-pill"><strong>الإصدار:</strong> 1.0</span>
-          <span class="meta-pill"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
+          <span class="meta-pill" data-i18n-html="ip.meta.law"><strong>التشريع:</strong> قانون ٨٢ لسنة ٢٠٠٢ (حماية الملكية الفكرية)</span>
+          <span class="meta-pill" data-i18n-html="ip.meta.version"><strong>الإصدار:</strong> 1.0</span>
+          <span class="meta-pill" data-i18n-html="ip.meta.updated"><strong>تاريخ التحديث:</strong> ٢٠ مايو ٢٠٢٦</span>
         </div>
 
         <div class="article">
-          <h3>١ — ملكية المنصة الفكرية</h3>
-          <p>تُعدّ جميع المواد والعناصر التالية ملكية حصرية لشركة كيوسك سبوت هب (Kiosq SpotHub) محمية بموجب القانون المصري والاتفاقيات الدولية لحقوق الملكية الفكرية:</p>
+          <h3 data-i18n="ip.s1.title">١ — ملكية المنصة الفكرية</h3>
+          <p data-i18n="ip.s1.p">تُعدّ جميع المواد والعناصر التالية ملكية حصرية لشركة كيوسك سبوت هب (Kiosq SpotHub) محمية بموجب القانون المصري والاتفاقيات الدولية لحقوق الملكية الفكرية:</p>
 
           <div class="data-grid">
             <div class="data-item">
-              <div class="data-item-label">المحتوى الرقمي</div>
-              <div class="data-item-value">الشيفرة البرمجية · قواعد البيانات · الخوارزميات</div>
+              <div class="data-item-label" data-i18n="ip.s1.digitalLabel">المحتوى الرقمي</div>
+              <div class="data-item-value" data-i18n="ip.s1.digitalValue">الشيفرة البرمجية · قواعد البيانات · الخوارزميات</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">الهوية البصرية</div>
-              <div class="data-item-value">الشعارات · الألوان · التصاميم · واجهات المستخدم</div>
+              <div class="data-item-label" data-i18n="ip.s1.identityLabel">الهوية البصرية</div>
+              <div class="data-item-value" data-i18n="ip.s1.identityValue">الشعارات · الألوان · التصاميم · واجهات المستخدم</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">العلامات التجارية</div>
-              <div class="data-item-value">«مكاني Spot» · «Kiosq SpotHub» · أسماء النطاقات</div>
+              <div class="data-item-label" data-i18n="ip.s1.trademarkLabel">العلامات التجارية</div>
+              <div class="data-item-value" data-i18n="ip.s1.trademarkValue">«مكاني Spot» · «Kiosq SpotHub» · أسماء النطاقات</div>
             </div>
             <div class="data-item">
-              <div class="data-item-label">المحتوى التحريري</div>
-              <div class="data-item-value">النصوص · الدليل التجاري · الدراسات والتقارير</div>
+              <div class="data-item-label" data-i18n="ip.s1.editorialLabel">المحتوى التحريري</div>
+              <div class="data-item-value" data-i18n="ip.s1.editorialValue">النصوص · الدليل التجاري · الدراسات والتقارير</div>
             </div>
           </div>
 
-          <p>يُمنع منعًا باتًا نسخ أو توزيع أو هندسة عكسية أو إعادة استخدام أي جزء من المنصة دون موافقة كتابية مسبقة ومحددة من الشركة.</p>
+          <p data-i18n="ip.s1.p2">يُمنع منعًا باتًا نسخ أو توزيع أو هندسة عكسية أو إعادة استخدام أي جزء من المنصة دون موافقة كتابية مسبقة ومحددة من الشركة.</p>
 
-          <h3>٢ — المحتوى الذي يُنشئه المستخدم</h3>
-          <p>عند رفع أي محتوى على المنصة (صور، شعارات، تصميمات، نصوص)، يُقرّ المستخدم ويضمن ما يلي:</p>
+          <h3 data-i18n="ip.s2.title">٢ — المحتوى الذي يُنشئه المستخدم</h3>
+          <p data-i18n="ip.s2.p">عند رفع أي محتوى على المنصة (صور، شعارات، تصميمات، نصوص)، يُقرّ المستخدم ويضمن ما يلي:</p>
           <ul>
-            <li>امتلاكه كامل الحقوق والتراخيص على المحتوى المرفوع.</li>
-            <li>عدم انتهاك المحتوى لأي حقوق ملكية فكرية لأطراف ثالثة.</li>
-            <li>تحمّله المسؤولية القانونية الكاملة عن أي ادعاءات تنشأ بسبب محتواه.</li>
+            <li data-i18n="ip.s2.li1">امتلاكه كامل الحقوق والتراخيص على المحتوى المرفوع.</li>
+            <li data-i18n="ip.s2.li2">عدم انتهاك المحتوى لأي حقوق ملكية فكرية لأطراف ثالثة.</li>
+            <li data-i18n="ip.s2.li3">تحمّله المسؤولية القانونية الكاملة عن أي ادعاءات تنشأ بسبب محتواه.</li>
           </ul>
 
-          <h3>٣ — الترخيص الممنوح للمنصة</h3>
-          <p>بنشر محتواك على المنصة، تمنح شركة كيوسك سبوت هب <strong>ترخيصًا غير حصري، وغير قابل للتحويل، ومجانيًا</strong> لغرض:</p>
+          <h3 data-i18n="ip.s3.title">٣ — الترخيص الممنوح للمنصة</h3>
+          <p data-i18n-html="ip.s3.p">بنشر محتواك على المنصة، تمنح شركة كيوسك سبوت هب <strong>ترخيصًا غير حصري، وغير قابل للتحويل، ومجانيًا</strong> لغرض:</p>
           <ul>
-            <li>عرض المحتوى وتشغيله داخل المنصة لتقديم الخدمة.</li>
-            <li>تضمينه في مواد التسويق والترويج للمنصة.</li>
-            <li>أرشفته بصورة آمنة لأغراض النسخ الاحتياطي والامتثال القانوني.</li>
+            <li data-i18n="ip.s3.li1">عرض المحتوى وتشغيله داخل المنصة لتقديم الخدمة.</li>
+            <li data-i18n="ip.s3.li2">تضمينه في مواد التسويق والترويج للمنصة.</li>
+            <li data-i18n="ip.s3.li3">أرشفته بصورة آمنة لأغراض النسخ الاحتياطي والامتثال القانوني.</li>
           </ul>
-          <p>لا تنتقل ملكية المحتوى إلى الشركة بموجب هذا الترخيص، ويظل المستخدم المالك الحصري لمحتواه.</p>
+          <p data-i18n="ip.s3.p2">لا تنتقل ملكية المحتوى إلى الشركة بموجب هذا الترخيص، ويظل المستخدم المالك الحصري لمحتواه.</p>
 
-          <h3>٤ — الإبلاغ عن انتهاكات الملكية الفكرية</h3>
-          <p>إذا كنت تعتقد بوجود انتهاك لحقوقك الفكرية على المنصة، يُرجى إرسال بلاغ رسمي يتضمن:</p>
+          <h3 data-i18n="ip.s4.title">٤ — الإبلاغ عن انتهاكات الملكية الفكرية</h3>
+          <p data-i18n="ip.s4.p">إذا كنت تعتقد بوجود انتهاك لحقوقك الفكرية على المنصة، يُرجى إرسال بلاغ رسمي يتضمن:</p>
           <ul>
-            <li>وصفًا تفصيليًا للمحتوى المنتهَك وموقعه على المنصة.</li>
-            <li>إثبات ملكيتك للمحتوى الأصلي (وثيقة، ترخيص، إيصال تسجيل).</li>
-            <li>بيانات التواصل الكاملة (الاسم، الهاتف، البريد الإلكتروني).</li>
-            <li>تصريحًا بصحة المعلومات الواردة في البلاغ.</li>
+            <li data-i18n="ip.s4.li1">وصفًا تفصيليًا للمحتوى المنتهَك وموقعه على المنصة.</li>
+            <li data-i18n="ip.s4.li2">إثبات ملكيتك للمحتوى الأصلي (وثيقة، ترخيص، إيصال تسجيل).</li>
+            <li data-i18n="ip.s4.li3">بيانات التواصل الكاملة (الاسم، الهاتف، البريد الإلكتروني).</li>
+            <li data-i18n="ip.s4.li4">تصريحًا بصحة المعلومات الواردة في البلاغ.</li>
           </ul>
 
           <div class="highlight-box">
-            <h4>مسار معالجة البلاغات:</h4>
+            <h4 data-i18n="ip.s4.boxTitle">مسار معالجة البلاغات:</h4>
             <ul>
-              <li>استلام البلاغ والرد بالتأكيد خلال ٧٢ ساعة عمل.</li>
-              <li>مراجعة البلاغ والمحتوى المُشار إليه خلال ٧ أيام عمل.</li>
-              <li>اتخاذ الإجراء المناسب: الإزالة، التعطيل، أو إعادة المراجعة.</li>
-              <li>إخطار جميع الأطراف بنتيجة المراجعة.</li>
+              <li data-i18n="ip.s4.step1">استلام البلاغ والرد بالتأكيد خلال ٧٢ ساعة عمل.</li>
+              <li data-i18n="ip.s4.step2">مراجعة البلاغ والمحتوى المُشار إليه خلال ٧ أيام عمل.</li>
+              <li data-i18n="ip.s4.step3">اتخاذ الإجراء المناسب: الإزالة، التعطيل، أو إعادة المراجعة.</li>
+              <li data-i18n="ip.s4.step4">إخطار جميع الأطراف بنتيجة المراجعة.</li>
             </ul>
           </div>
 
-          <h3>٥ — العقوبات والإجراءات القانونية</h3>
-          <p>تحتفظ الشركة بحقها في اتخاذ الإجراءات القانونية الكاملة وفق أحكام قانون حماية الملكية الفكرية المصري رقم ٨٢ لسنة ٢٠٠٢ ضد أي انتهاك موثَّق، بما يشمل المطالبة بالتعويضات عن الأضرار المادية والمعنوية.</p>
+          <h3 data-i18n="ip.s5.title">٥ — العقوبات والإجراءات القانونية</h3>
+          <p data-i18n="ip.s5.p">تحتفظ الشركة بحقها في اتخاذ الإجراءات القانونية الكاملة وفق أحكام قانون حماية الملكية الفكرية المصري رقم ٨٢ لسنة ٢٠٠٢ ضد أي انتهاك موثَّق، بما يشمل المطالبة بالتعويضات عن الأضرار المادية والمعنوية.</p>
         </div>
 
         <div class="contact-strip">
           <div>
-            <p><strong>للإبلاغ عن انتهاكات الملكية الفكرية:</strong></p>
-            <p>فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
+            <p data-i18n-html="ip.contactLabel"><strong>للإبلاغ عن انتهاكات الملكية الفكرية:</strong></p>
+            <p data-i18n="ip.contactTeam">فريق الشؤون القانونية — شركة كيوسك سبوت هب</p>
           </div>
           <a class="contact-btn" href="mailto:legal@kiosqspothub.com">
             ✉️ legal@kiosqspothub.com
@@ -850,14 +889,14 @@
     <div class="footer-brand">
       <div class="footer-brand-name">مكاني <span>Spot</span></div>
     </div>
-    <div class="footer-tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
-    <div class="footer-legal-name">Kiosq SpotHub · شركة كيوسك سبوت هب</div>
+    <div class="footer-tagline" data-i18n="footer.tagline">المنصة الأولى لتأجير المساحات الصغيرة في مصر</div>
+    <div class="footer-legal-name" data-i18n="footer.legalName">Kiosq SpotHub · شركة كيوسك سبوت هب</div>
     <div class="footer-social">
       <a class="footer-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
         </svg>
-        011 0346 7711
+        <span data-i18n="footer.waText">011 0346 7711</span>
       </a>
       <a class="footer-fb" href="https://www.facebook.com/profile.php?id=100069918048151" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -867,7 +906,7 @@
       </a>
     </div>
     <div class="footer-divider"></div>
-    <div class="footer-copy">© ٢٠٢٦ Makani Spot · شركة كيوسك سبوت هب · جميع الحقوق محفوظة</div>
+    <div class="footer-copy" data-i18n="footer.copy">© ٢٠٢٦ Makani Spot · شركة كيوسك سبوت هب · جميع الحقوق محفوظة</div>
   </footer>
 
   <script>
@@ -884,6 +923,18 @@
       const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
       const progress = (scrollTop / docHeight) * 100;
       document.getElementById('progressBar').style.width = progress + '%';
+    });
+
+    // ── تبديل اللغة (English/عربي) ──────────────────────────────
+    function updateLangSwitcherLabel() {
+      const el = document.getElementById('langSwitchLabel');
+      if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+    }
+    function toggleMakaniLocale() {
+      setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      initI18n(['policies', 'common']).then(updateLangSwitcherLabel);
     });
   </script>
 

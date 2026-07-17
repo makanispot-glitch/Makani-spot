@@ -61,6 +61,18 @@
     })();
   </script>
 
+  <!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('makani_locale') === 'en') {
+          document.documentElement.lang = 'en';
+          document.documentElement.dir = 'ltr';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- ملف التصميم المشترك — من المجلد الأب -->
   <link rel="stylesheet" href="../style.css?v=34">
 
@@ -72,6 +84,12 @@
   <script src="../shared/booking.js?v=202607141600" defer></script>
   <script src="../shared/account.js?v=202607141600" defer></script>
   <script src="../shared/plan-badge.js?v=202607141600" defer></script>
+
+  <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+  <script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+  <script src="/shared/i18n.js?v=202607141600" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -503,9 +521,9 @@
     <!-- روابط التنقل -->
     <div class="nav-links">
 
-      <a href="/">الرئيسية</a>
-      <a href="/?p=how">كيف تعمل المنصة؟</a>
-      <a href="/?p=owner">عندك مساحة؟</a>
+      <a href="/" data-i18n="nav.home">الرئيسية</a>
+      <a href="/?p=how" data-i18n="nav.how">كيف تعمل المنصة؟</a>
+      <a href="/?p=owner" data-i18n="nav.owner">عندك مساحة؟</a>
 
       <div class="nav-divider"></div>
 
@@ -521,8 +539,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>كل المساحات</strong>
-          <small>ابحث عن مساحة لمشروعك</small>
+          <strong data-i18n="nav.allSpaces">كل المساحات</strong>
+          <small data-i18n="nav.allSpacesDesc">ابحث عن مساحة لمشروعك</small>
         </span>
       </a>
 
@@ -535,8 +553,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>البازارات</strong>
-          <small>اشترك في بازار مؤقت</small>
+          <strong data-i18n="nav.bazaars">البازارات</strong>
+          <small data-i18n="nav.bazaarsDesc">اشترك في بازار مؤقت</small>
         </span>
       </a>
 
@@ -549,8 +567,8 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong>مشاريع للبيع</strong>
-          <small>ابحث عن مشروع جاهز</small>
+          <strong data-i18n="nav.projects">مشاريع للبيع</strong>
+          <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
         </span>
       </a>
 
@@ -558,6 +576,13 @@
 
     <!-- منطقة المستخدم -->
     <div class="nav-user-area" id="nav-user-area">
+
+      <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+        </svg>
+        <span id="langSwitchLabel">EN</span>
+      </button>
 
       <!-- الحالة الأولى: زائر غير مسجّل -->
       <div id="nav-guest" style="display:flex;align-items:center;gap:8px">
@@ -567,9 +592,9 @@
             <circle cx="12" cy="8" r="4" />
             <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7" />
           </svg>
-          <span>دخول</span>
+          <span data-i18n="nav.loginBtn">دخول</span>
           <span class="btn-login-sep">|</span>
-          <span>سجّل</span>
+          <span data-i18n="nav.signupBtn">سجّل</span>
         </button>
       </div>
 
@@ -588,37 +613,37 @@
             <div class="nav-dropdown-header">
               <div class="nav-dropdown-name" id="dd-name">—</div>
               <div class="nav-dropdown-email" id="dd-email">—</div>
-              <div class="nav-dropdown-role" id="dd-role">مستخدم</div>
+              <div class="nav-dropdown-role" id="dd-role" data-i18n="userMenu.defaultRole">مستخدم</div>
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-              ملفي الشخصي
+              <span data-i18n="userMenu.profile">ملفي الشخصي</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              لوحة التحكم
+              <span data-i18n="userMenu.dashboard">لوحة التحكم</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
-              إعلاناتي
+              <span data-i18n="userMenu.myListings">إعلاناتي</span>
             </button>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
-              اشترك في بازار
+              <span data-i18n="userMenu.joinBazaar">اشترك في بازار</span>
             </button>
             <button class="nav-dropdown-item" onclick="showPage('market');closeUserDropdown()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              ابحث عن مساحة
+              <span data-i18n="userMenu.findSpace">ابحث عن مساحة</span>
             </button>
             <button class="nav-dropdown-item" id="dd-owner-dash-btn" onclick="goToOwnerDashboard();closeUserDropdown()"
               style="display:none;color:#16a34a;font-weight:700">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
-              لوحة أصحاب المساحات
+              <span data-i18n="userMenu.ownerDashboard">لوحة أصحاب المساحات</span>
             </button>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item nav-dropdown-logout" onclick="doLogout()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-              تسجيل الخروج
+              <span data-i18n="userMenu.logout">تسجيل الخروج</span>
             </button>
           </div>
         </div>
@@ -640,17 +665,17 @@
       <div class="mp-header">
         <div class="mp-header-inner">
           <div>
-            <div class="mp-header-title">جميع المساحات المتاحة</div>
-            <div class="mp-header-sub">اختر مساحتك بالفلاتر المتقدمة — واحجز في ثوانٍ</div>
+            <div class="mp-header-title" data-i18n="market.title">جميع المساحات المتاحة</div>
+            <div class="mp-header-sub" data-i18n="market.subtitle">اختر مساحتك بالفلاتر المتقدمة — واحجز في ثوانٍ</div>
           </div>
           <div class="mp-header-actions">
             <span class="result-badge" id="mp-count">—</span>
             <select id="mp-sort" onchange="applyMpFilters()" class="mp-sort-select">
-              <option value="default">الترتيب الافتراضي</option>
-              <option value="price-asc">السعر: من الأرخص</option>
-              <option value="price-desc">السعر: من الأغلى</option>
+              <option value="default" data-i18n="market.sortDefault">الترتيب الافتراضي</option>
+              <option value="price-asc" data-i18n="market.sortPriceAsc">السعر: من الأرخص</option>
+              <option value="price-desc" data-i18n="market.sortPriceDesc">السعر: من الأغلى</option>
             </select>
-            <button class="mp-filter-toggle" onclick="toggleMpSidebar()">الفلاتر</button>
+            <button class="mp-filter-toggle" onclick="toggleMpSidebar()" data-i18n="market.filtersBtn">الفلاتر</button>
           </div>
         </div>
         <div class="mp-active-chips" id="mp-active-chips"></div>
@@ -668,120 +693,120 @@
 
             <!-- 1. نوع المحتوى — أول الفلاتر -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">نوع المحتوى</div>
+              <div class="mp-filter-title" data-i18n="market.contentTypeTitle">نوع المحتوى</div>
               <div class="mp-content-btns">
-                <button class="mp-ctype-btn on-all" id="mp-ctype-all"  onclick="setContentFilter('all',this)">🌐 جميع الفرص</button>
-                <button class="mp-ctype-btn" id="mp-ctype-sp"          onclick="setContentFilter('spaces',this)">🏢 المساحات</button>
-                <button class="mp-ctype-btn" id="mp-ctype-ann"         onclick="setContentFilter('announcements',this)">📋 المناقصات والإعلانات</button>
+                <button class="mp-ctype-btn on-all" id="mp-ctype-all"  onclick="setContentFilter('all',this)" data-i18n="market.contentAll">🌐 جميع الفرص</button>
+                <button class="mp-ctype-btn" id="mp-ctype-sp"          onclick="setContentFilter('spaces',this)" data-i18n="market.contentSpaces">🏢 المساحات</button>
+                <button class="mp-ctype-btn" id="mp-ctype-ann"         onclick="setContentFilter('announcements',this)" data-i18n="market.contentAnnouncements">📋 المناقصات والإعلانات</button>
               </div>
             </div>
 
             <!-- 2. نوع المكان — dropdown موسّع -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">نوع المكان</div>
+              <div class="mp-filter-title" data-i18n="market.placeTypeTitle">نوع المكان</div>
               <select id="mp-place-sel" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل أنواع الأماكن</option>
-                <option value="mall">🏬 مول تجاري</option>
-                <option value="admin_mall">🏢 مول إداري</option>
-                <option value="club">⚽ نادي رياضي</option>
-                <option value="school">🏫 مدرسة</option>
-                <option value="hospital">🏥 مستشفى</option>
-                <option value="gov_entity">🏛 جهة حكومية</option>
-                <option value="company">💼 شركة</option>
-                <option value="university">🎓 جامعة</option>
-                <option value="youth_center">🤸 مركز شباب</option>
-                <option value="edu_institution">📚 مؤسسة تعليمية</option>
-                <option value="admin_building">🏗 مبنى إداري</option>
-                <option value="outlet">🛒 منفذ بيع</option>
-                <option value="facility">🏭 منشأة حكومية</option>
+                <option value="" data-i18n="market.placeTypeAll">كل أنواع الأماكن</option>
+                <option value="mall" data-i18n="placeTypes.mall">🏬 مول تجاري</option>
+                <option value="admin_mall" data-i18n="placeTypes.admin_mall">🏢 مول إداري</option>
+                <option value="club" data-i18n="placeTypes.club">⚽ نادي رياضي</option>
+                <option value="school" data-i18n="placeTypes.school">🏫 مدرسة</option>
+                <option value="hospital" data-i18n="placeTypes.hospital">🏥 مستشفى</option>
+                <option value="gov_entity" data-i18n="placeTypes.gov_entity">🏛 جهة حكومية</option>
+                <option value="company" data-i18n="placeTypes.company">💼 شركة</option>
+                <option value="university" data-i18n="placeTypes.university">🎓 جامعة</option>
+                <option value="youth_center" data-i18n="placeTypes.youth_center">🤸 مركز شباب</option>
+                <option value="edu_institution" data-i18n="placeTypes.edu_institution">📚 مؤسسة تعليمية</option>
+                <option value="admin_building" data-i18n="placeTypes.admin_building">🏗 مبنى إداري</option>
+                <option value="outlet" data-i18n="placeTypes.outlet">🛒 منفذ بيع</option>
+                <option value="facility" data-i18n="placeTypes.facility">🏭 منشأة حكومية</option>
               </select>
             </div>
 
             <!-- 3. المنطقة -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">المنطقة</div>
+              <div class="mp-filter-title" data-i18n="market.regionTitle">المنطقة</div>
               <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل المناطق والمحافظات</option>
-                <optgroup label="أحياء القاهرة الكبرى">
-                  <option>مدينة نصر</option>
-                  <option>التجمع الخامس</option>
-                  <option>المهندسين</option>
-                  <option>الزمالك</option>
-                  <option>الشيخ زايد</option>
-                  <option>6 أكتوبر</option>
-                  <option>مصر الجديدة</option>
+                <option value="" data-i18n="market.regionAll">كل المناطق والمحافظات</option>
+                <optgroup label="أحياء القاهرة الكبرى" data-i18n-attr="label:market.regionGroupCairo">
+                  <option data-i18n="regions.nasrCity">مدينة نصر</option>
+                  <option data-i18n="regions.fifthSettlement">التجمع الخامس</option>
+                  <option data-i18n="regions.mohandessin">المهندسين</option>
+                  <option data-i18n="regions.zamalek">الزمالك</option>
+                  <option data-i18n="regions.sheikhZayed">الشيخ زايد</option>
+                  <option data-i18n="regions.october6">6 أكتوبر</option>
+                  <option data-i18n="regions.heliopolis">مصر الجديدة</option>
                 </optgroup>
-                <optgroup label="المحافظات المصرية">
-                  <option>القاهرة</option>
-                  <option>الجيزة</option>
-                  <option>الإسكندرية</option>
-                  <option>الغربية</option>
-                  <option>المنوفية</option>
-                  <option>البحيرة</option>
-                  <option>الدقهلية</option>
-                  <option>الشرقية</option>
-                  <option>القليوبية</option>
-                  <option>كفر الشيخ</option>
-                  <option>دمياط</option>
-                  <option>بورسعيد</option>
-                  <option>الإسماعيلية</option>
-                  <option>السويس</option>
-                  <option>شمال سيناء</option>
-                  <option>جنوب سيناء</option>
-                  <option>البحر الأحمر</option>
-                  <option>سوهاج</option>
-                  <option>قنا</option>
-                  <option>الأقصر</option>
-                  <option>أسوان</option>
-                  <option>أسيوط</option>
-                  <option>المنيا</option>
-                  <option>الفيوم</option>
-                  <option>بني سويف</option>
-                  <option>مطروح</option>
-                  <option>الوادي الجديد</option>
+                <optgroup label="المحافظات المصرية" data-i18n-attr="label:market.regionGroupGov">
+                  <option data-i18n="regions.cairo">القاهرة</option>
+                  <option data-i18n="regions.giza">الجيزة</option>
+                  <option data-i18n="regions.alexandria">الإسكندرية</option>
+                  <option data-i18n="regions.gharbia">الغربية</option>
+                  <option data-i18n="regions.monufia">المنوفية</option>
+                  <option data-i18n="regions.beheira">البحيرة</option>
+                  <option data-i18n="regions.dakahlia">الدقهلية</option>
+                  <option data-i18n="regions.sharqia">الشرقية</option>
+                  <option data-i18n="regions.qalyubia">القليوبية</option>
+                  <option data-i18n="regions.kafrElSheikh">كفر الشيخ</option>
+                  <option data-i18n="regions.damietta">دمياط</option>
+                  <option data-i18n="regions.portSaid">بورسعيد</option>
+                  <option data-i18n="regions.ismailia">الإسماعيلية</option>
+                  <option data-i18n="regions.suez">السويس</option>
+                  <option data-i18n="regions.northSinai">شمال سيناء</option>
+                  <option data-i18n="regions.southSinai">جنوب سيناء</option>
+                  <option data-i18n="regions.redSea">البحر الأحمر</option>
+                  <option data-i18n="regions.sohag">سوهاج</option>
+                  <option data-i18n="regions.qena">قنا</option>
+                  <option data-i18n="regions.luxor">الأقصر</option>
+                  <option data-i18n="regions.aswan">أسوان</option>
+                  <option data-i18n="regions.assiut">أسيوط</option>
+                  <option data-i18n="regions.minya">المنيا</option>
+                  <option data-i18n="regions.fayoum">الفيوم</option>
+                  <option data-i18n="regions.beniSuef">بني سويف</option>
+                  <option data-i18n="regions.matrouh">مطروح</option>
+                  <option data-i18n="regions.newValley">الوادي الجديد</option>
                 </optgroup>
               </select>
             </div>
 
             <!-- 4. مؤشر السعر (مساحات فقط) -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">الحد الأقصى للسعر / شهر</div>
-              <div class="mp-price-single-val" id="mp-price-max-label">بلا حد</div>
+              <div class="mp-filter-title" data-i18n="market.priceTitle">الحد الأقصى للسعر / شهر</div>
+              <div class="mp-price-single-val" id="mp-price-max-label" data-i18n="market.priceNoLimit">بلا حد</div>
               <div class="slider-container slider-single" style="margin-top:14px">
                 <div class="slider-track" id="mp-slider-track"></div>
                 <input type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500"
                   oninput="updateMpSlider();clearTimeout(window._mpSliderDeb);window._mpSliderDeb=setTimeout(applyMpFilters,400)">
               </div>
               <div class="slider-hints" style="margin-top:6px">
-                <span>٠</span>
-                <span>بلا حد</span>
+                <span data-i18n="market.priceZero">٠</span>
+                <span data-i18n="market.priceNoLimit">بلا حد</span>
               </div>
             </div>
 
             <!-- 5. النشاط التجاري — dropdown -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title">النشاط التجاري</div>
+              <div class="mp-filter-title" data-i18n="market.activityTitle">النشاط التجاري</div>
               <select id="mp-act-sel" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل الأنشطة</option>
+                <option value="" data-i18n="market.activityAll">كل الأنشطة</option>
               </select>
             </div>
 
             <!-- 6. تصنيف الإعلان (يظهر مع الإعلانات فقط) -->
             <div class="mp-filter-group" id="mp-ann-class-wrap" style="display:none">
-              <div class="mp-filter-title">تصنيف الإعلان</div>
+              <div class="mp-filter-title" data-i18n="market.annClassTitle">تصنيف الإعلان</div>
               <select id="mp-ann-class" class="mp-select" onchange="applyMpFilters()">
-                <option value="">كل التصنيفات</option>
-                <option>إدارة واستغلال كافتيريا</option>
-                <option>إدارة واستغلال بوفيه</option>
-                <option>إدارة واستغلال منفذ بيع</option>
-                <option>إدارة واستغلال محل تجاري</option>
-                <option>إدارة واستغلال صالة رياضية</option>
-                <option>إدارة واستغلال مطعم</option>
+                <option value="" data-i18n="market.annClassAll">كل التصنيفات</option>
+                <option data-i18n="annClasses.cafeteria">إدارة واستغلال كافتيريا</option>
+                <option data-i18n="annClasses.buffet">إدارة واستغلال بوفيه</option>
+                <option data-i18n="annClasses.outlet">إدارة واستغلال منفذ بيع</option>
+                <option data-i18n="annClasses.shop">إدارة واستغلال محل تجاري</option>
+                <option data-i18n="annClasses.gym">إدارة واستغلال صالة رياضية</option>
+                <option data-i18n="annClasses.restaurant">إدارة واستغلال مطعم</option>
               </select>
             </div>
 
             <!-- مسح الفلاتر -->
-            <button class="mp-clear-btn" onclick="clearMpFilters()">مسح الفلاتر</button>
+            <button class="mp-clear-btn" onclick="clearMpFilters()" data-i18n="market.clearFilters">مسح الفلاتر</button>
 
           </div>
         </aside>
@@ -831,13 +856,13 @@
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
       <div class="sd-sticky-footer">
-        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)">
+        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)" data-i18n="detail.bookThis">
           احجز هذا المكان ←
         </button>
-        <button class="btn sd-visit-btn" onclick="currentSpaceDetail && openViewing(currentSpaceDetail.id)">
+        <button class="btn sd-visit-btn" onclick="currentSpaceDetail && openViewing(currentSpaceDetail.id)" data-i18n="detail.scheduleVisit">
           📅 حجز معاينة
         </button>
-        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()">
+        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()" data-i18n="detail.backToSpacesArrow">
           → العودة للمساحات
         </button>
       </div>
@@ -854,7 +879,7 @@
       <div id="ann-det-header"></div>
       <div id="ann-det-body" style="padding:0 0 20px"></div>
       <div class="sd-sticky-footer">
-        <button class="btn sd-back-btn-footer" onclick="closeAnnouncementDetail()">
+        <button class="btn sd-back-btn-footer" onclick="closeAnnouncementDetail()" data-i18n="detail.backToSpacesArrow">
           → العودة للمساحات
         </button>
       </div>
@@ -887,8 +912,8 @@
       <div id="vm-form-wrap">
         <div class="vm-header">
           <div>
-            <div class="vm-title">احجز معاينة</div>
-            <div class="vm-sub">شاهد المساحة بنفسك قبل أن تقرر</div>
+            <div class="vm-title" data-i18n="visitModal.title">احجز معاينة</div>
+            <div class="vm-sub" data-i18n="visitModal.subtitle">شاهد المساحة بنفسك قبل أن تقرر</div>
           </div>
           <button class="vm-close" onclick="closeViewingModal()">×</button>
         </div>
@@ -903,14 +928,14 @@
 
         <!-- صندوق الرسوم وطريقة الدفع -->
         <div class="vm-fee-box">
-          <div class="vm-fee-title">رسوم المعاينة — ١٥٠ ج.م.</div>
+          <div class="vm-fee-title" data-i18n="visitModal.feeTitle">رسوم المعاينة — ١٥٠ ج.م.</div>
           <div class="vm-fee-row">
             <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
-            <span>يُحسب المبلغ كاملاً من <strong>أول شهر إيجار</strong> عند توقيع العقد</span>
+            <span data-i18n-html="visitModal.feeNote1">يُحسب المبلغ كاملاً من <strong>أول شهر إيجار</strong> عند توقيع العقد</span>
           </div>
           <div class="vm-fee-row">
             <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
-            <span>ادفع الرسوم <strong>قبل</strong> موعد المعاينة — لا يتأكد الموعد إلا بعد الاستلام</span>
+            <span data-i18n-html="visitModal.feeNote2">ادفع الرسوم <strong>قبل</strong> موعد المعاينة — لا يتأكد الموعد إلا بعد الاستلام</span>
           </div>
           <div class="vm-pay-methods">
             <div class="vm-pay-row">
@@ -924,7 +949,7 @@
               <span class="vm-pay-num">01103467711</span>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--fg-3,#888);margin-top:8px;line-height:1.5">
+          <div style="font-size:11px;color:var(--fg-3,#888);margin-top:8px;line-height:1.5" data-i18n="visitModal.payNote">
             * بعد التحويل ابعت صورة الإيصال على الواتساب وهيتم تأكيد موعدك.
           </div>
         </div>
@@ -932,22 +957,22 @@
         <!-- الفورم -->
         <div class="vm-body">
           <div class="vm-field">
-            <label>الاسم الكريم *</label>
-            <input type="text" id="vm-name" placeholder="اسمك الكريم">
+            <label data-i18n="visitModal.nameLabel">الاسم الكريم *</label>
+            <input type="text" id="vm-name" data-i18n-attr="placeholder:visitModal.namePlaceholder" placeholder="اسمك الكريم">
           </div>
           <div class="vm-field">
-            <label>رقم الموبايل *</label>
+            <label data-i18n="visitModal.phoneLabel">رقم الموبايل *</label>
             <input type="tel" id="vm-phone" placeholder="01xxxxxxxxx" dir="ltr">
           </div>
           <div class="vm-field">
-            <label>تاريخ المعاينة المقترح (اختياري)</label>
+            <label data-i18n="visitModal.dateLabel">تاريخ المعاينة المقترح (اختياري)</label>
             <input type="date" id="vm-date">
           </div>
           <div class="vm-error" id="vm-error"></div>
-          <button class="vm-submit" id="vm-submit-btn" onclick="submitViewing()">
+          <button class="vm-submit" id="vm-submit-btn" onclick="submitViewing()" data-i18n="visitModal.submit">
             تأكيد طلب المعاينة ←
           </button>
-          <div class="vm-hint">
+          <div class="vm-hint" data-i18n-html="visitModal.hint">
             هيتواصل معاك فريق مكاني Spot خلال <strong>٢٤ ساعة</strong> لتأكيد الموعد
           </div>
         </div>
@@ -956,13 +981,13 @@
       <!-- حالة النجاح -->
       <div class="vm-success" id="vm-success">
         <div class="vm-success-circle">✓</div>
-        <div class="vm-success-title">اتبعت طلبك بنجاح!</div>
-        <div class="vm-success-body">
+        <div class="vm-success-title" data-i18n="visitModal.successTitle">اتبعت طلبك بنجاح!</div>
+        <div class="vm-success-body" data-i18n-html="visitModal.successBody">
           شكراً — فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong>٢٤ ساعة</strong> لتأكيد موعد المعاينة.<br><br>
           تذكر تحول <strong>١٥٠ ج.م.</strong> على InstaPay أو Vodafone Cash<br>
           على رقم <strong>01103467711</strong> وتبعت صورة الإيصال.
         </div>
-        <button class="vm-submit" onclick="closeViewingModal()" style="max-width:200px;margin:0 auto">
+        <button class="vm-submit" onclick="closeViewingModal()" style="max-width:200px;margin:0 auto" data-i18n="visitModal.successOk">
           تمام، شكراً ←
         </button>
       </div>
@@ -980,11 +1005,11 @@
           <div class="modal-header-inner">
             <div class="modal-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
             <div>
-              <div class="modal-title" id="bk-modal-title">احجز مساحتك</div>
-              <div class="modal-sub" id="bk-modal-sub">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
+              <div class="modal-title" id="bk-modal-title" data-i18n="bookingModal.title">احجز مساحتك</div>
+              <div class="modal-sub" id="bk-modal-sub" data-i18n="bookingModal.subtitle">سنتواصل معك خلال ٢٤ ساعة لإتمام الترتيبات</div>
             </div>
           </div>
-          <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز">×</button>
+          <button class="modal-close" onclick="closeModal()" aria-label="إغلاق نافذة الحجز" data-i18n-attr="aria-label:bookingModal.close">×</button>
         </div>
         <div class="modal-body">
           <div class="space-info-box">
@@ -992,52 +1017,52 @@
             <div class="space-info-meta" id="msi-meta">—</div>
           </div>
           <div id="bk-waitlist-banner" style="display:none;background:rgba(255,184,0,.10);border:1px solid rgba(255,184,0,.35);border-radius:var(--radius-lg,12px);padding:12px 14px;margin-bottom:14px">
-            <div style="font-weight:800;color:#b9860b;font-size:13px;margin-bottom:3px">⏳ كل وحدات هذه المساحة محجوزة حالياً</div>
-            <div style="font-size:12px;color:var(--ink2);line-height:1.6">سجّل في قائمة الانتظار، وسيتواصل معك صاحب المكان فور توفّر وحدة. أرفِق رابط بروفايل نشاطك ليطّلع عليه.</div>
+            <div style="font-weight:800;color:#b9860b;font-size:13px;margin-bottom:3px" data-i18n="bookingModal.waitlistTitle">⏳ كل وحدات هذه المساحة محجوزة حالياً</div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.6" data-i18n="bookingModal.waitlistBody">سجّل في قائمة الانتظار، وسيتواصل معك صاحب المكان فور توفّر وحدة. أرفِق رابط بروفايل نشاطك ليطّلع عليه.</div>
           </div>
           <div class="mfg-2" style="gap:10px;margin-bottom:15px">
-            <div class="mfg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="bk-name"
-                placeholder="اسمك الكريم"></div>
-            <div class="mfg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="bk-phone"
+            <div class="mfg" style="margin:0"><label data-i18n="bookingModal.nameLabel">الاسم الكامل *</label><input type="text" id="bk-name"
+                data-i18n-attr="placeholder:bookingModal.namePlaceholder" placeholder="اسمك الكريم"></div>
+            <div class="mfg" style="margin:0"><label data-i18n="bookingModal.phoneLabel">رقم الموبايل *</label><input type="tel" id="bk-phone"
                 placeholder="01xxxxxxxxx"></div>
           </div>
           <div class="mfg">
-            <label>البريد الإلكتروني (اختياري)</label>
+            <label data-i18n="bookingModal.emailLabel">البريد الإلكتروني (اختياري)</label>
             <input type="email" id="bk-email" placeholder="email@example.com">
           </div>
           <div class="mfg" style="margin-top:4px">
-            <label>نوع نشاطك التجاري *</label>
+            <label data-i18n="bookingModal.activityLabel">نوع نشاطك التجاري *</label>
             <select id="bk-activity" onchange="onActivityChange(this)" style="width:100%;padding:11px 13px;border-radius:var(--radius-lg,12px);border:1.5px solid var(--border,#e2e8f0);background:var(--surface,#fff);font-family:inherit;font-size:14px;color:inherit;direction:rtl">
-              <option value="">— اختر نوع نشاطك —</option>
+              <option value="" data-i18n="bookingModal.activityPick">— اختر نوع نشاطك —</option>
             </select>
           </div>
           <div class="mfg" id="other-act-wrap" style="display:none">
-            <label>اذكر نشاطك</label>
-            <input type="text" id="bk-other-act" placeholder="مثال: عربية سكر قطن، منتجات يدوية...">
+            <label data-i18n="bookingModal.otherActivityLabel">اذكر نشاطك</label>
+            <input type="text" id="bk-other-act" data-i18n-attr="placeholder:bookingModal.otherActivityPlaceholder" placeholder="مثال: عربية سكر قطن، منتجات يدوية...">
           </div>
           <div class="mfg-2" style="gap:10px;margin-top:4px">
-            <div class="mfg" style="margin:0"><label>الحجم المطلوب</label><select id="bk-size">
-                <option value="">اختر الحجم</option>
+            <div class="mfg" style="margin:0"><label data-i18n="bookingModal.sizeLabel">الحجم المطلوب</label><select id="bk-size">
+                <option value="" data-i18n="bookingModal.sizePick">اختر الحجم</option>
               </select></div>
-            <div class="mfg" style="margin:0"><label>مدة الإيجار</label><select id="bk-dur">
-                <option value="">اختر المدة</option>
-                <option>يومي</option>
-                <option>أسبوعي</option>
-                <option>شهري</option>
-                <option>٣ شهور</option>
-                <option>٦ شهور</option>
-                <option>سنة</option>
+            <div class="mfg" style="margin:0"><label data-i18n="bookingModal.durationLabel">مدة الإيجار</label><select id="bk-dur">
+                <option value="" data-i18n="bookingModal.durationPick">اختر المدة</option>
+                <option data-i18n="bookingModal.durationDaily">يومي</option>
+                <option data-i18n="bookingModal.durationWeekly">أسبوعي</option>
+                <option data-i18n="bookingModal.durationMonthly">شهري</option>
+                <option data-i18n="bookingModal.duration3m">٣ شهور</option>
+                <option data-i18n="bookingModal.duration6m">٦ شهور</option>
+                <option data-i18n="bookingModal.durationYear">سنة</option>
               </select></div>
           </div>
           <div class="mfg" style="margin-top:15px">
-            <label>تاريخ البدء المقترح</label>
+            <label data-i18n="bookingModal.startDateLabel">تاريخ البدء المقترح</label>
             <input type="date" id="bk-date">
           </div>
           <!-- ── حقل صورة المشروع (اختياري) ── -->
           <div class="mfg" style="margin-top:12px">
-            <label>📸 صورة من شكل مشروعك <span style="font-weight:400;color:var(--ink2)">(اختياري)</span></label>
+            <label><span data-i18n="bookingModal.imageLabel">📸 صورة من شكل مشروعك</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
             <input type="url" id="bk-project-image" dir="ltr" placeholder="https://drive.google.com/file/d/...">
-            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7">
+            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7" data-i18n-html="bookingModal.imageHint">
               ضع رابط Google Drive لصورة توضح شكل مشروعك أو ديكورك — يساعدنا في تجهيز المساحة المناسبة لك.<br>
               <strong style="color:var(--ink3)">خطوات نشر الرابط:</strong> افتح الصورة في Drive ← اضغط مشاركة ← اختر "أي شخص لديه الرابط" ← انسخ الرابط وضعه هنا.
             </div>
@@ -1045,37 +1070,37 @@
 
           <!-- ── حقل بروفايل العلامة التجارية (اختياري) ── -->
           <div class="mfg" style="margin-top:12px">
-            <label>🏷 بروفايل علامتك التجارية <span style="font-weight:400;color:var(--ink2)">(اختياري)</span></label>
+            <label><span data-i18n="bookingModal.profileLabel">🏷 بروفايل علامتك التجارية</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
             <input type="url" id="bk-profile-link" dir="ltr" placeholder="https://drive.google.com/drive/folders/...">
-            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7">
+            <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7" data-i18n-html="bookingModal.profileHint">
               شارك رابط Google Drive يحتوي على صور براندك أو هويتك التجارية — تأكد إن الرابط مفتوح للعرض.<br>
               <strong style="color:var(--ink3)">خطوات نشر الرابط:</strong> افتح المجلد في Drive ← اضغط مشاركة ← اختر "أي شخص لديه الرابط يمكنه العرض" ← انسخ الرابط وضعه هنا.
             </div>
           </div>
 
           <div class="mfg" style="margin-top:12px">
-            <label>ملاحظات أو أسئلة</label>
-            <textarea id="bk-notes" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
+            <label data-i18n="bookingModal.notesLabel">ملاحظات أو أسئلة</label>
+            <textarea id="bk-notes" data-i18n-attr="placeholder:bookingModal.notesPlaceholder" placeholder="مثال: هل في كهرباء؟ هل في تخزين؟ هل في واي فاي؟..."></textarea>
           </div>
           <div class="form-error" id="bk-error"></div>
           <button class="btn btn-primary" id="bk-submit-btn" onclick="submitBooking()"
-            style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)">
+            style="width:100%;padding:15px;font-size:15px;margin-top:18px;justify-content:center;border-radius:var(--radius-lg)" data-i18n="bookingModal.submit">
             ابعت طلب الحجز ←
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px">
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:10px" data-i18n="bookingModal.noUpfrontPay">
             مفيش أي دفع مسبق — هنتواصل معاك لتأكيد الحجز
           </div>
         </div>
       </div>
       <div class="modal-success" id="modal-success">
         <div class="success-circle">✓</div>
-        <div class="success-title" id="bk-success-title">اتبعت طلبك <span>بنجاح!</span></div>
-        <div class="success-body" id="bk-success-body">
+        <div class="success-title" id="bk-success-title"><span data-i18n="bookingModal.successTitlePlain">اتبعت طلبك </span><span data-i18n="bookingModal.successTitleStrong">بنجاح!</span></div>
+        <div class="success-body" id="bk-success-body" data-i18n-html="bookingModal.successBody">
           شكراً ليك — اتستلم طلب الحجز.<br>
           فريق <strong>مكاني Spot</strong> هيتواصل معاك في
           <strong style="color:var(--orange)">٢٤ ساعة</strong>.
         </div>
-        <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px">تمام، شكراً
+        <button class="btn btn-primary" onclick="closeModal()" style="padding:14px 42px;font-size:15px" data-i18n="bookingModal.successOk">تمام، شكراً
           ←</button>
       </div>
     </div>
@@ -1097,29 +1122,29 @@
               <div class="auth-brand-en">Spot</div>
             </div>
           </div>
-          <div class="auth-headline">أسرع طريق<br>تلاقي <em>مكان تبدأ منه</em></div>
-          <p class="auth-subline">منصة بتربط أصحاب المشاريع الصغيرة بمساحات متاحة في المولات والنوادي — بشكل شفاف وسريع.
+          <div class="auth-headline" data-i18n-html="auth.login.headline">أسرع طريق<br>تلاقي <em>مكان تبدأ منه</em></div>
+          <p class="auth-subline" data-i18n="auth.login.subline">منصة بتربط أصحاب المشاريع الصغيرة بمساحات متاحة في المولات والنوادي — بشكل شفاف وسريع.
           </p>
           <div class="auth-feats">
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
               <div>
-                <div class="auth-feat-t">ابحث وفلتر بسهولة</div>
-                <div class="auth-feat-s">بالنشاط أو المنطقة أو السعر</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat1t">ابحث وفلتر بسهولة</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat1s">بالنشاط أو المنطقة أو السعر</div>
               </div>
             </div>
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
               <div>
-                <div class="auth-feat-t">احجز في ثوانٍ</div>
-                <div class="auth-feat-s">بدون دفع مسبق — نموذج بسيط فقط</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat2t">احجز في ثوانٍ</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat2s">بدون دفع مسبق — نموذج بسيط فقط</div>
               </div>
             </div>
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg></div>
               <div>
-                <div class="auth-feat-t">عمولة 8% فقط</div>
-                <div class="auth-feat-s">إن لم يتأكد الحجز — لا شيء يُدفع</div>
+                <div class="auth-feat-t" data-i18n="auth.login.feat3t">عمولة 8% فقط</div>
+                <div class="auth-feat-s" data-i18n="auth.login.feat3s">إن لم يتأكد الحجز — لا شيء يُدفع</div>
               </div>
             </div>
           </div>
@@ -1127,25 +1152,25 @@
         <div class="auth-panel-stats">
           <div>
             <div class="auth-stat-n">+١٢٠</div>
-            <div class="auth-stat-l">مساحة متاحة</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statSpaces">مساحة متاحة</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
             <div class="auth-stat-n">٣٢</div>
-            <div class="auth-stat-l">موقع شريك</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statLocations">موقع شريك</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
             <div class="auth-stat-n">+٨٥٠</div>
-            <div class="auth-stat-l">مستأجر ناجح</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statTenants">مستأجر ناجح</div>
           </div>
         </div>
       </div>
 
       <div class="auth-panel-right">
         <div class="auth-form-box">
-          <div class="auth-form-title">أهلاً بك مجدداً</div>
-          <div class="auth-form-sub">سجّل دخولك لتكمل اختيار مساحتك</div>
+          <div class="auth-form-title" data-i18n="auth.login.title">أهلاً بك مجدداً</div>
+          <div class="auth-form-sub" data-i18n="auth.login.subtitle">سجّل دخولك لتكمل اختيار مساحتك</div>
           <div id="login-alert"></div>
           <button class="btn-google-auth" id="btn-google-login" onclick="authWithGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24">
@@ -1158,40 +1183,40 @@
               <path fill="#EA4335"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            تسجيل الدخول باستخدام Google
+            <span data-i18n="auth.login.google">تسجيل الدخول باستخدام Google</span>
           </button>
-          <div class="auth-or">أو بالبريد الإلكتروني</div>
+          <div class="auth-or" data-i18n="auth.login.or">أو بالبريد الإلكتروني</div>
           <div class="afg">
-            <label>البريد الإلكتروني</label>
+            <label data-i18n="auth.login.emailLabel">البريد الإلكتروني</label>
             <input type="email" id="li-email" placeholder="example@email.com" dir="ltr">
           </div>
           <div class="afg">
-            <label>كلمة المرور</label>
+            <label data-i18n="auth.login.passwordLabel">كلمة المرور</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              <span class="pass-eye" onclick="togglePassVis('li-pass')" aria-label="إظهار كلمة المرور" data-i18n-attr="aria-label:auth.login.showPassword"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
               <input type="password" id="li-pass" placeholder="••••••••" dir="ltr">
             </div>
           </div>
-          <button class="btn-auth-submit" id="btn-login-submit" onclick="doEmailLogin()">تسجيل الدخول ←</button>
+          <button class="btn-auth-submit" id="btn-login-submit" onclick="doEmailLogin()" data-i18n="auth.login.submit">تسجيل الدخول ←</button>
           <div class="auth-switch-link" style="margin-top:18px">
-            مش عندك حساب؟ <a onclick="showPage('signup')">أنشئ حساب مجاني</a>
+            <span data-i18n="auth.login.noAccount">مش عندك حساب؟</span> <a onclick="showPage('signup')" data-i18n="auth.login.createFree">أنشئ حساب مجاني</a>
           </div>
           <div class="auth-switch-link" style="margin-top:8px">
-            <a onclick="showPage('market')" style="color:var(--ink2);font-weight:500">← العودة للمساحات</a>
+            <a onclick="showPage('market')" style="color:var(--ink2);font-weight:500" data-i18n="auth.login.backToSpaces">← العودة للمساحات</a>
           </div>
 
           <!-- ── زر صاحب المساحة ── -->
-          <div class="owner-divider">بوابة أصحاب المساحات</div>
+          <div class="owner-divider" data-i18n="auth.login.ownerDivider">بوابة أصحاب المساحات</div>
           <a href="/dashboard/" class="owner-portal-btn">
             <div class="owner-portal-ico">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               <div class="owner-portal-dot"></div>
             </div>
             <div class="owner-portal-info">
-              <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
-              <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
+              <div class="owner-portal-title" data-i18n="auth.login.ownerTitle">صاحب مساحة؟ ادخل من هنا</div>
+              <div class="owner-portal-sub" data-i18n="auth.login.ownerSub">لوحة التحكم الخاصة بأصحاب المساحات</div>
             </div>
-            <div class="owner-portal-arrow">←</div>
+            <div class="owner-portal-arrow" data-i18n="arrowForward">←</div>
           </a>
 
         </div>
@@ -1216,28 +1241,28 @@
               <div class="auth-brand-en">Spot</div>
             </div>
           </div>
-          <div class="auth-headline">ابدأ مشروعك من<br><em>موقع صغير</em></div>
-          <p class="auth-subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
+          <div class="auth-headline" data-i18n-html="auth.signup.headline">ابدأ مشروعك من<br><em>موقع صغير</em></div>
+          <p class="auth-subline" data-i18n="auth.signup.subline">إنشاء حساب مجاني تماماً — بدون دفع، بدون التزامات.</p>
           <div class="auth-feats">
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
               <div>
-                <div class="auth-feat-t">مجاني تماماً</div>
-                <div class="auth-feat-s">إنشاء الحساب وتصفح المساحات والحجز</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat1t">مجاني تماماً</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat1s">إنشاء الحساب وتصفح المساحات والحجز</div>
               </div>
             </div>
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
               <div>
-                <div class="auth-feat-t">دقيقتان فقط</div>
-                <div class="auth-feat-s">أدخل بياناتك وابدأ فوراً</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat2t">دقيقتان فقط</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat2s">أدخل بياناتك وابدأ فوراً</div>
               </div>
             </div>
             <div class="auth-feat-row">
               <div class="auth-feat-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
               <div>
-                <div class="auth-feat-t">بياناتك آمنة</div>
-                <div class="auth-feat-s">لا نشاركها مع أي طرف ثالث</div>
+                <div class="auth-feat-t" data-i18n="auth.signup.feat3t">بياناتك آمنة</div>
+                <div class="auth-feat-s" data-i18n="auth.signup.feat3s">لا نشاركها مع أي طرف ثالث</div>
               </div>
             </div>
           </div>
@@ -1245,25 +1270,25 @@
         <div class="auth-panel-stats">
           <div>
             <div class="auth-stat-n">+١٢٠</div>
-            <div class="auth-stat-l">مساحة متاحة</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statSpaces">مساحة متاحة</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
             <div class="auth-stat-n">٣٢</div>
-            <div class="auth-stat-l">موقع شريك</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statLocations">موقع شريك</div>
           </div>
           <div class="auth-stat-sep"></div>
           <div>
             <div class="auth-stat-n">+٨٥٠</div>
-            <div class="auth-stat-l">مستأجر ناجح</div>
+            <div class="auth-stat-l" data-i18n="auth.login.statTenants">مستأجر ناجح</div>
           </div>
         </div>
       </div>
 
       <div class="auth-panel-right">
         <div class="auth-form-box">
-          <div class="auth-form-title">إنشاء حساب جديد</div>
-          <div class="auth-form-sub">ابدأ رحلتك مع مكاني Spot الآن</div>
+          <div class="auth-form-title" data-i18n="auth.signup.title">إنشاء حساب جديد</div>
+          <div class="auth-form-sub" data-i18n="auth.signup.subtitle">ابدأ رحلتك مع مكاني Spot الآن</div>
           <div id="signup-alert"></div>
           <button class="btn-google-auth" id="btn-google-signup" onclick="authWithGoogle()">
             <svg width="20" height="20" viewBox="0 0 24 24">
@@ -1276,71 +1301,71 @@
               <path fill="#EA4335"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            إنشاء حساب باستخدام Google
+            <span data-i18n="auth.signup.google">إنشاء حساب باستخدام Google</span>
           </button>
-          <div class="auth-or">أو بالبريد الإلكتروني</div>
+          <div class="auth-or" data-i18n="auth.signup.or">أو بالبريد الإلكتروني</div>
           <div class="afg-row">
-            <div class="afg" style="margin:0"><label>الاسم الكامل *</label><input type="text" id="su-name"
-                placeholder="اسمك الكريم"></div>
-            <div class="afg" style="margin:0"><label>رقم الموبايل *</label><input type="tel" id="su-phone"
+            <div class="afg" style="margin:0"><label data-i18n="auth.signup.nameLabel">الاسم الكامل *</label><input type="text" id="su-name"
+                data-i18n-attr="placeholder:auth.signup.namePlaceholder" placeholder="اسمك الكريم"></div>
+            <div class="afg" style="margin:0"><label data-i18n="auth.signup.phoneLabel">رقم الموبايل *</label><input type="tel" id="su-phone"
                 placeholder="01xxxxxxxxx" dir="ltr"></div>
           </div>
           <div class="afg" style="margin-top:13px">
-            <label>البريد الإلكتروني *</label>
+            <label data-i18n="auth.signup.emailLabel">البريد الإلكتروني *</label>
             <input type="email" id="su-email" placeholder="example@email.com" dir="ltr">
           </div>
           <div class="afg">
-            <label>كلمة المرور *</label>
+            <label data-i18n="auth.signup.passwordLabel">كلمة المرور *</label>
             <div class="pass-wrap-a">
-              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-              <input type="password" id="su-pass" placeholder="٨ أحرف على الأقل" dir="ltr">
+              <span class="pass-eye" onclick="togglePassVis('su-pass')" aria-label="إظهار كلمة المرور" data-i18n-attr="aria-label:auth.login.showPassword"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              <input type="password" id="su-pass" data-i18n-attr="placeholder:auth.signup.passwordPlaceholder" placeholder="٨ أحرف على الأقل" dir="ltr">
             </div>
           </div>
           <div class="afg-row">
             <div class="afg" style="margin:0">
-              <label>نوع الحساب *</label>
+              <label data-i18n="auth.signup.roleLabel">نوع الحساب *</label>
               <select id="su-role">
-                <option value="">اختر نوعك</option>
-                <option value="tenant">مستأجر — صاحب مشروع</option>
+                <option value="" data-i18n="auth.signup.rolePick">اختر نوعك</option>
+                <option value="tenant" data-i18n="auth.signup.roleTenant">مستأجر — صاحب مشروع</option>
               </select>
-              <div style="font-size:11px;color:var(--ink3);margin-top:4px">
+              <div style="font-size:11px;color:var(--ink3);margin-top:4px" data-i18n="auth.signup.roleHint">
                 عندك مساحة تأجّرها؟ سجّل كمستأجر، وبعدها اطلب تحويل حسابك لصاحب مساحة من لوحة التحكم.
               </div>
             </div>
             <div class="afg" style="margin:0">
-              <label>المدينة</label>
+              <label data-i18n="auth.signup.cityLabel">المدينة</label>
               <select id="su-city">
-                <option value="">اختر مدينتك</option>
-                <option>القاهرة</option>
-                <option>الجيزة</option>
-                <option>الإسكندرية</option>
-                <option>المنصورة</option>
-                <option>أسيوط</option>
-                <option>أخرى</option>
+                <option value="" data-i18n="auth.signup.cityPick">اختر مدينتك</option>
+                <option data-i18n="regions.cairo">القاهرة</option>
+                <option data-i18n="regions.giza">الجيزة</option>
+                <option data-i18n="regions.alexandria">الإسكندرية</option>
+                <option data-i18n="regions.mansoura">المنصورة</option>
+                <option data-i18n="regions.assiut">أسيوط</option>
+                <option data-i18n="auth.signup.cityOther">أخرى</option>
               </select>
             </div>
           </div>
-          <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px">إنشاء
+          <button class="btn-auth-submit" id="btn-signup-submit" onclick="doEmailSignup()" style="margin-top:16px" data-i18n="auth.signup.submit">إنشاء
             حساب ←</button>
           <div class="auth-switch-link" style="margin-top:18px">
-            عندك حساب بالفعل؟ <a onclick="showPage('login')">سجّل دخولك</a>
+            <span data-i18n="auth.signup.haveAccount">عندك حساب بالفعل؟</span> <a onclick="showPage('login')" data-i18n="auth.signup.loginNow">سجّل دخولك</a>
           </div>
           <div class="auth-switch-link" style="margin-top:8px">
-            <a onclick="showPage('market')" style="color:var(--ink2);font-weight:500">← العودة للمساحات</a>
+            <a onclick="showPage('market')" style="color:var(--ink2);font-weight:500" data-i18n="auth.signup.backToSpaces">← العودة للمساحات</a>
           </div>
 
           <!-- ── زر صاحب المساحة ── -->
-          <div class="owner-divider">بوابة أصحاب المساحات</div>
+          <div class="owner-divider" data-i18n="auth.signup.ownerDivider">بوابة أصحاب المساحات</div>
           <a href="/dashboard/" class="owner-portal-btn">
             <div class="owner-portal-ico">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               <div class="owner-portal-dot"></div>
             </div>
             <div class="owner-portal-info">
-              <div class="owner-portal-title">صاحب مساحة؟ ادخل من هنا</div>
-              <div class="owner-portal-sub">لوحة التحكم الخاصة بأصحاب المساحات</div>
+              <div class="owner-portal-title" data-i18n="auth.signup.ownerTitle">صاحب مساحة؟ ادخل من هنا</div>
+              <div class="owner-portal-sub" data-i18n="auth.signup.ownerSub">لوحة التحكم الخاصة بأصحاب المساحات</div>
             </div>
-            <div class="owner-portal-arrow">←</div>
+            <div class="owner-portal-arrow" data-i18n="arrowForward">←</div>
           </a>
 
         </div>
@@ -1357,19 +1382,19 @@
     <div class="confirm-wrap">
       <div class="confirm-box">
         <div class="confirm-icon-c"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
-        <div class="confirm-title-c">تحقق من <span>بريدك</span></div>
+        <div class="confirm-title-c" data-i18n-html="auth.confirm.title">تحقق من <span>بريدك</span></div>
         <p style="font-size:14px;color:var(--ink2);line-height:1.85;margin-bottom:20px">
-          أرسلنا لك رسالة تأكيد على<br>
+          <span data-i18n="auth.confirm.bodyPre">أرسلنا لك رسالة تأكيد على</span><br>
           <strong id="confirm-em-addr" style="color:var(--ink)">بريدك الإلكتروني</strong>.<br>
-          افتح الرسالة واضغط على رابط التأكيد لتفعيل حسابك.
+          <span data-i18n="auth.confirm.bodyPost">افتح الرسالة واضغط على رابط التأكيد لتفعيل حسابك.</span>
         </p>
         <div class="auth-alert auth-alert-info" style="text-align:right;margin-bottom:18px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-          <span>إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
+          <span data-i18n="auth.confirm.spamNote">إن لم تجد الرسالة، تحقق من مجلد Spam أو Junk.</span>
         </div>
         <div id="confirm-alert"></div>
-        <button id="btn-resend-confirm" class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()">إعادة إرسال رسالة التأكيد</button>
-        <button class="btn-auth-submit" onclick="showPage('login')">ارجع لتسجيل الدخول</button>
+        <button id="btn-resend-confirm" class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()" data-i18n="auth.confirm.resend">إعادة إرسال رسالة التأكيد</button>
+        <button class="btn-auth-submit" onclick="showPage('login')" data-i18n="auth.confirm.backToLogin">ارجع لتسجيل الدخول</button>
       </div>
     </div>
   </div><!-- end pg-confirm -->
@@ -1386,24 +1411,24 @@
           <span class="sf-logo-sep" aria-hidden="true"></span>
           <span class="sf-logo-en">Spot</span>
         </div>
-        <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
+        <p class="sf-about" data-i18n="footer.about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
         <div class="sf-paths">
-          <span class="sf-path">مساحات تجارية</span>
-          <span class="sf-path">بازارات ومعارض</span>
-          <span class="sf-path">مشاريع للبيع</span>
+          <span class="sf-path" data-i18n="footer.pathSpaces">مساحات تجارية</span>
+          <span class="sf-path" data-i18n="footer.pathBazaars">بازارات ومعارض</span>
+          <span class="sf-path" data-i18n="footer.pathProjects">مشاريع للبيع</span>
         </div>
       </div>
       <div class="sf-col sf-col--links">
-        <h4 class="sf-col-title">تصفح المنصة</h4>
-        <a class="sf-link" href="/">الرئيسية</a>
-        <a class="sf-link" href="/?p=market">المساحات التجارية</a>
-        <a class="sf-link" href="/bazaars/">البازارات والمعارض</a>
-        <a class="sf-link" href="/market/">مشاريع كاملة للبيع</a>
-        <a class="sf-link" href="/catalog/">كتالوج الأنشطة</a>
-        <a class="sf-link" href="/post-ad/">نشر إعلانك</a>
+        <h4 class="sf-col-title" data-i18n="footer.browseTitle">تصفح المنصة</h4>
+        <a class="sf-link" href="/" data-i18n="footer.linkHome">الرئيسية</a>
+        <a class="sf-link" href="/?p=market" data-i18n="footer.linkSpaces">المساحات التجارية</a>
+        <a class="sf-link" href="/bazaars/" data-i18n="footer.linkBazaars">البازارات والمعارض</a>
+        <a class="sf-link" href="/market/" data-i18n="footer.linkProjects">مشاريع كاملة للبيع</a>
+        <a class="sf-link" href="/catalog/" data-i18n="footer.linkCatalog">كتالوج الأنشطة</a>
+        <a class="sf-link" href="/post-ad/" data-i18n="footer.linkPostAd">نشر إعلانك</a>
       </div>
       <div class="sf-col sf-col--contact">
-        <h4 class="sf-col-title">تواصل معنا</h4>
+        <h4 class="sf-col-title" data-i18n="footer.contactTitle">تواصل معنا</h4>
         <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           <span dir="ltr">011 0346 7711</span>
@@ -1415,14 +1440,14 @@
         <div class="sf-col-divider"></div>
         <a class="sf-policies-link" href="/policies/">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          السياسات والشروط القانونية
+          <span data-i18n="footer.policiesLink">السياسات والشروط القانونية</span>
         </a>
       </div>
     </div>
     <div class="sf-bottom">
       <div class="sf-bottom-inner">
-        <span class="sf-legal">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
-        <span class="sf-copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
+        <span class="sf-legal" data-i18n="footer.legalLine">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
+        <span class="sf-copy" data-i18n="footer.copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
       </div>
     </div>
   </footer>
@@ -1446,8 +1471,8 @@
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       </span>
-      <span class="bn-label">الرئيسية</span>
-      <span class="bn-desc">الصفحة الرئيسية</span>
+      <span class="bn-label" data-i18n="bottomNav.home">الرئيسية</span>
+      <span class="bn-desc" data-i18n="bottomNav.homeDesc">الصفحة الرئيسية</span>
     </a>
 
     <!-- المساحات التجارية — نشط -->
@@ -1459,8 +1484,8 @@
           <circle cx="12" cy="10" r="3" />
         </svg>
       </span>
-      <span class="bn-label">مساحات</span>
-      <span class="bn-desc">ثابتة وتجارية</span>
+      <span class="bn-label" data-i18n="bottomNav.spaces">مساحات</span>
+      <span class="bn-desc" data-i18n="bottomNav.spacesDesc">ثابتة وتجارية</span>
     </button>
 
     <!-- البازارات -->
@@ -1472,8 +1497,8 @@
           <path d="M12 3v18"/>
         </svg>
       </span>
-      <span class="bn-label">بازارات</span>
-      <span class="bn-desc">أحداث وبازارات</span>
+      <span class="bn-label" data-i18n="bottomNav.bazaars">بازارات</span>
+      <span class="bn-desc" data-i18n="bottomNav.bazaarsDesc">أحداث وبازارات</span>
     </button>
 
     <!-- مشاريع للبيع -->
@@ -1486,8 +1511,8 @@
           <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none" />
         </svg>
       </span>
-      <span class="bn-label">مشاريع</span>
-      <span class="bn-desc">كاملة للبيع</span>
+      <span class="bn-label" data-i18n="bottomNav.projects">مشاريع</span>
+      <span class="bn-desc" data-i18n="bottomNav.projectsDesc">كاملة للبيع</span>
     </a>
 
     <!-- دخول / حساب -->
@@ -1499,8 +1524,8 @@
           <path d="M20 21a8 8 0 0 0-16 0" />
         </svg>
       </span>
-      <span class="bn-label" id="bn-user-label">دخول</span>
-      <span class="bn-desc" id="bn-user-desc">سجّل أو ادخل</span>
+      <span class="bn-label" id="bn-user-label" data-i18n="bottomNav.login">دخول</span>
+      <span class="bn-desc" id="bn-user-desc" data-i18n="bottomNav.loginDesc">سجّل أو ادخل</span>
     </button>
 
   </nav>
@@ -1511,10 +1536,10 @@
     padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;
     white-space:nowrap;font-family:'Cairo',sans-serif;">
     <span style="font-size:20px">🚀</span>
-    <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
+    <span style="color:#e8e8f0;font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
     <button onclick="window.location.reload()"
       style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;
-             font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
+             font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="swUpdate.button">
       🔄 تحديث الآن
     </button>
   </div>
@@ -1547,6 +1572,20 @@
         }
       });
     }
+  </script>
+
+  <!-- ── تبديل اللغة (English/عربي) ── -->
+  <script>
+    function updateLangSwitcherLabel() {
+      const el = document.getElementById('langSwitchLabel');
+      if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+    }
+    function toggleMakaniLocale() {
+      setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      initI18n(['spaces', 'common']).then(updateLangSwitcherLabel);
+    });
   </script>
 
 </body>

@@ -1,0 +1,18 @@
+<!--
+  Locale Flicker Prevention — انسخ هذا الكتلة (block) بالكامل في <head> كل صفحة،
+  فورًا بعد "Auth Flicker Prevention" (أو بنفس مكانها لو مفيش auth-flicker في الصفحة دي)،
+  وقبل <link rel="stylesheet" href=".../style.css"> مباشرة — لازم يشتغل قبل أول رسمة
+  عشان يمنع وميض الاتجاه (RTL يتحول LTR بعد ما الصفحة اتترسمت).
+  هذا الملف مرجع للنسخ فقط، مش بيتحمّل كـ <script src="..."> من أي صفحة.
+  راجع shared/i18n.js لمنطق تبديل اللغة الفعلي بعد التحميل.
+-->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>

@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>طلب توثيق المنظم — مكاني Spot</title>
+
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +24,12 @@
 <link rel="stylesheet" href="../style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <style>
 /* ── Standalone Nav (نسخة مشتركة) ── */
@@ -200,10 +219,16 @@
       <span class="logo-ar">مكاني</span>
       <span class="logo-en">Spot</span>
     </div>
-    <span class="bz-nav-title">🎪 توثيق المنظم</span>
+    <span class="bz-nav-title" data-i18n="verification.nav.title">🎪 توثيق المنظم</span>
   </a>
   <div class="bz-nav-right">
-    <a class="bz-nav-back" href="/bazaars/">← البازارات</a>
+    <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+      </svg>
+      <span id="langSwitchLabel">EN</span>
+    </button>
+    <a class="bz-nav-back" href="/bazaars/" data-i18n="manage.backToBazaars">← البازارات</a>
   </div>
 </nav>
 
@@ -211,8 +236,8 @@
 <div class="vr-page">
 
   <div class="vr-hero">
-    <h1>اطلب <span>توثيق حسابك</span> كمنظّم</h1>
-    <p>أكمل البيانات وهنراجع طلبك خلال ٤٨ ساعة — بعد التوثيق بتظهر شارة ✓ عندك في كل البازارات</p>
+    <h1 data-i18n-html="verification.hero.title">اطلب <span>توثيق حسابك</span> كمنظّم</h1>
+    <p data-i18n="verification.hero.sub">أكمل البيانات وهنراجع طلبك خلال ٤٨ ساعة — بعد التوثيق بتظهر شارة ✓ عندك في كل البازارات</p>
   </div>
 
   <div class="vr-form-wrap">
@@ -220,9 +245,9 @@
     <!-- حالة: يلزم تسجيل الدخول (مخفي افتراضياً) -->
     <div id="vr-login-wall" class="vr-login-wall" style="display:none">
       <div style="font-size:52px;margin-bottom:16px">🔐</div>
-      <h2>سجّل دخولك الأول</h2>
-      <p>لازم يكون عندك حساب على مكاني Spot عشان تقدر تقدم طلب توثيق كمنظّم.</p>
-      <a href="/bazaars/profile.html?redirect=verification" class="btn btn-primary" style="padding:12px 32px;display:inline-block">
+      <h2 data-i18n="verification.loginWall.title">سجّل دخولك الأول</h2>
+      <p data-i18n="verification.loginWall.desc">لازم يكون عندك حساب على مكاني Spot عشان تقدر تقدم طلب توثيق كمنظّم.</p>
+      <a href="/bazaars/profile.html?redirect=verification" class="btn btn-primary" style="padding:12px 32px;display:inline-block" data-i18n="profile.loginWall.loginBtn">
         دخول / تسجيل ←
       </a>
     </div>
@@ -231,14 +256,14 @@
     <div id="vr-success" style="display:none">
       <div class="vr-success">
         <div class="vr-success-icon">🎉</div>
-        <div class="vr-success-title">تم إرسال طلبك بنجاح!</div>
-        <div class="vr-success-sub">
+        <div class="vr-success-title" data-i18n="verification.success.title">تم إرسال طلبك بنجاح!</div>
+        <div class="vr-success-sub" data-i18n-html="verification.success.desc">
           شكراً على اهتمامك بالتوثيق. سنراجع بياناتك ونتواصل معك
           خلال <strong>٤٨ ساعة</strong> عبر رقم الواتساب الذي أدخلته.
         </div>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <a href="/bazaars/profile.html" class="btn btn-primary" style="padding:12px 28px">الملف الشخصي</a>
-          <a href="/bazaars/" class="btn" style="padding:12px 28px">← البازارات</a>
+          <a href="/bazaars/profile.html" class="btn btn-primary" style="padding:12px 28px" data-i18n="verification.success.profileBtn">الملف الشخصي</a>
+          <a href="/bazaars/" class="btn" style="padding:12px 28px" data-i18n="manage.backToBazaars">← البازارات</a>
         </div>
       </div>
     </div>
@@ -248,54 +273,54 @@
 
       <!-- القسم الأول: البيانات الأساسية -->
       <div class="vr-section">
-        <div class="vr-section-title">👤 القسم الأول — البيانات الأساسية</div>
+        <div class="vr-section-title" data-i18n="verification.section1.title">👤 القسم الأول — البيانات الأساسية</div>
         <div class="vr-grid">
           <div class="vr-fg">
-            <label>الاسم الكامل *</label>
-            <input type="text" id="vr-name" placeholder="اسمك الكريم">
+            <label><span data-i18n="verification.section1.nameLabel">الاسم الكامل</span> *</label>
+            <input type="text" id="vr-name" placeholder="اسمك الكريم" data-i18n-attr="placeholder:profile.editModal.namePlaceholder">
           </div>
           <div class="vr-fg">
-            <label>رقم الواتساب / الهاتف *</label>
+            <label><span data-i18n="verification.section1.phoneLabel">رقم الواتساب / الهاتف</span> *</label>
             <input type="tel" id="vr-phone" placeholder="01xxxxxxxxx" dir="ltr">
           </div>
         </div>
         <div class="vr-fg" style="margin-top:12px">
-          <label>المحافظة / المنطقة *</label>
+          <label><span data-i18n="verification.section1.regionLabel">المحافظة / المنطقة</span> *</label>
           <select id="vr-region">
-            <option value="">اختر محافظتك</option>
-            <option>القاهرة</option><option>الجيزة</option>
-            <option>الإسكندرية</option><option>القليوبية</option>
-            <option>الشرقية</option><option>الغربية</option>
-            <option>الدقهلية</option><option>البحيرة</option>
-            <option>المنوفية</option><option>المنيا</option>
-            <option>أسيوط</option><option>سوهاج</option>
-            <option>قنا</option><option>الأقصر</option>
-            <option>أسوان</option><option>أخرى</option>
+            <option value="" data-i18n="verification.section1.regionPlaceholder">اختر محافظتك</option>
+            <option value="القاهرة" data-i18n="regions.cairo">القاهرة</option><option value="الجيزة" data-i18n="regions.giza">الجيزة</option>
+            <option value="الإسكندرية" data-i18n="regions.alexandria">الإسكندرية</option><option value="القليوبية" data-i18n="regions.qalyubia">القليوبية</option>
+            <option value="الشرقية" data-i18n="regions.sharqia">الشرقية</option><option value="الغربية" data-i18n="regions.gharbia">الغربية</option>
+            <option value="الدقهلية" data-i18n="regions.dakahlia">الدقهلية</option><option value="البحيرة" data-i18n="regions.beheira">البحيرة</option>
+            <option value="المنوفية" data-i18n="regions.monufia">المنوفية</option><option value="المنيا" data-i18n="regions.minya">المنيا</option>
+            <option value="أسيوط" data-i18n="regions.assiut">أسيوط</option><option value="سوهاج" data-i18n="regions.sohag">سوهاج</option>
+            <option value="قنا" data-i18n="regions.qena">قنا</option><option value="الأقصر" data-i18n="regions.luxor">الأقصر</option>
+            <option value="أسوان" data-i18n="regions.aswan">أسوان</option><option value="أخرى" data-i18n="regions.other">أخرى</option>
           </select>
         </div>
       </div>
 
       <!-- القسم الثاني: إثبات الهوية -->
       <div class="vr-section">
-        <div class="vr-section-title">🪪 القسم الثاني — إثبات الهوية</div>
+        <div class="vr-section-title" data-i18n="verification.section2.title">🪪 القسم الثاني — إثبات الهوية</div>
         <div class="vr-grid">
           <div class="vr-fg">
-            <label>صورة البطاقة (أمامي) *</label>
+            <label><span data-i18n="verification.section2.frontLabel">صورة البطاقة (أمامي)</span> *</label>
             <div class="vr-upload-box" id="vr-front-box"
                  onclick="document.getElementById('vr-front-input').click()">
               <div class="vr-upload-ico">📷</div>
-              <div class="vr-upload-lbl">اضغط لرفع الصورة</div>
+              <div class="vr-upload-lbl" data-i18n="verification.section2.uploadHint">اضغط لرفع الصورة</div>
               <img id="vr-front-preview" src="" style="display:none">
             </div>
             <input type="file" id="vr-front-input" accept="image/*" style="display:none"
                    onchange="handleIdUpload('front', this)">
           </div>
           <div class="vr-fg">
-            <label>صورة البطاقة (خلفي) *</label>
+            <label><span data-i18n="verification.section2.backLabel">صورة البطاقة (خلفي)</span> *</label>
             <div class="vr-upload-box" id="vr-back-box"
                  onclick="document.getElementById('vr-back-input').click()">
               <div class="vr-upload-ico">📷</div>
-              <div class="vr-upload-lbl">اضغط لرفع الصورة</div>
+              <div class="vr-upload-lbl" data-i18n="verification.section2.uploadHint">اضغط لرفع الصورة</div>
               <img id="vr-back-preview" src="" style="display:none">
             </div>
             <input type="file" id="vr-back-input" accept="image/*" style="display:none"
@@ -303,58 +328,59 @@
           </div>
         </div>
         <div class="vr-fg" style="margin-top:12px">
-          <label>رقم السجل التجاري (اختياري — لو موجود)</label>
-          <input type="text" id="vr-trade-reg" placeholder="لو عندك سجل تجاري اكتب رقمه هنا" dir="ltr">
+          <label data-i18n="verification.section2.tradeRegLabel">رقم السجل التجاري (اختياري — لو موجود)</label>
+          <input type="text" id="vr-trade-reg" placeholder="لو عندك سجل تجاري اكتب رقمه هنا" data-i18n-attr="placeholder:verification.section2.tradeRegPlaceholder" dir="ltr">
         </div>
       </div>
 
       <!-- القسم الثالث: التجربة السابقة -->
       <div class="vr-section">
-        <div class="vr-section-title">🎪 القسم الثالث — التجربة السابقة</div>
+        <div class="vr-section-title" data-i18n="verification.section3.title">🎪 القسم الثالث — التجربة السابقة</div>
         <div class="vr-fg">
-          <label>سبق لك تنظيم بازارات؟</label>
+          <label data-i18n="verification.section3.experienceLabel">سبق لك تنظيم بازارات؟</label>
           <div class="vr-radio-group">
             <label class="vr-radio-btn" id="vr-exp-yes-btn" onclick="setVrExperience(true)">
-              <input type="radio" name="vr-exp" value="yes"> نعم، عندي خبرة
+              <input type="radio" name="vr-exp" value="yes"> <span data-i18n="verification.section3.expYes">نعم، عندي خبرة</span>
             </label>
             <label class="vr-radio-btn active" id="vr-exp-no-btn" onclick="setVrExperience(false)">
-              <input type="radio" name="vr-exp" value="no" checked> لأ، دي المرة الأولى
+              <input type="radio" name="vr-exp" value="no" checked> <span data-i18n="verification.section3.expNo">لأ، دي المرة الأولى</span>
             </label>
           </div>
         </div>
         <div id="vr-exp-details" style="display:none;margin-top:14px">
           <div class="vr-grid">
             <div class="vr-fg">
-              <label>كم مرة نظّمت بازار؟</label>
-              <input type="number" id="vr-exp-count" placeholder="مثال: 3" min="1">
+              <label data-i18n="verification.section3.countLabel">كم مرة نظّمت بازار؟</label>
+              <input type="number" id="vr-exp-count" placeholder="مثال: 3" data-i18n-attr="placeholder:verification.section3.countPlaceholder" min="1">
             </div>
             <div class="vr-fg">
-              <label>فين؟ (الأماكن)</label>
-              <input type="text" id="vr-exp-locations" placeholder="مثال: مول مصر، سيتي ستارز">
+              <label data-i18n="verification.section3.locationsLabel">فين؟ (الأماكن)</label>
+              <input type="text" id="vr-exp-locations" placeholder="مثال: مول مصر، سيتي ستارز" data-i18n-attr="placeholder:verification.section3.locationsPlaceholder">
             </div>
           </div>
           <div class="vr-fg" style="margin-top:12px">
-            <label>وصف مختصر لأحدث بازار نظّمته</label>
+            <label data-i18n="verification.section3.latestDescLabel">وصف مختصر لأحدث بازار نظّمته</label>
             <textarea id="vr-latest-desc" rows="3"
-              placeholder="مثال: نظّمت بازار صيف 2024 في مول مصر — كان فيه 20 فندور وامتد 3 أيام…"></textarea>
+              placeholder="مثال: نظّمت بازار صيف 2024 في مول مصر — كان فيه 20 فندور وامتد 3 أيام…"
+              data-i18n-attr="placeholder:verification.section3.latestDescPlaceholder"></textarea>
           </div>
         </div>
       </div>
 
       <!-- القسم الرابع: الموافقة على الشروط -->
       <div class="vr-section">
-        <div class="vr-section-title">✅ القسم الرابع — الموافقة على الشروط</div>
+        <div class="vr-section-title" data-i18n="verification.section4.title">✅ القسم الرابع — الموافقة على الشروط</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <label class="vr-checkbox-row">
             <input type="checkbox" id="vr-terms">
-            <span class="vr-checkbox-lbl">
+            <span class="vr-checkbox-lbl" data-i18n-html="verification.section4.termsText">
               أوافق على <strong>شروط مكاني Spot للمنظمين</strong> وأتعهد بالالتزام بها
               في جميع البازارات المدرجة على المنصة
             </span>
           </label>
           <label class="vr-checkbox-row">
             <input type="checkbox" id="vr-escrow">
-            <span class="vr-checkbox-lbl">
+            <span class="vr-checkbox-lbl" data-i18n-html="verification.section4.escrowText">
               أفهم وأوافق إن <strong>العربون يتحفظ عند مكاني Spot</strong> لحد انعقاد
               الفعالية، ولا يتحول إليّ إلا بعد التأكيد
             </span>
@@ -367,10 +393,10 @@
                   background:#FEF2F2;border:1px solid #FECACA;
                   border-radius:10px;color:#EF4444;font-size:13px"></div>
 
-      <button class="vr-submit-btn" id="vr-submit-btn" onclick="submitVerificationRequest()">
+      <button class="vr-submit-btn" id="vr-submit-btn" onclick="submitVerificationRequest()" data-i18n="verification.submitBtn">
         إرسال طلب التوثيق ←
       </button>
-      <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:10px">
+      <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:10px" data-i18n="verification.reviewNote">
         سيتم مراجعة طلبك يدوياً من فريق مكاني Spot خلال ٤٨ ساعة
       </div>
 
@@ -382,6 +408,20 @@
 <script src="/notifications.js?v=202607141600" defer></script>
 <script src="../media-handler.js" defer></script>
 <script src="verification.js" defer></script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+  });
+</script>
 </body>
 </html>
 

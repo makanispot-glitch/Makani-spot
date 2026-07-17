@@ -32,18 +32,10 @@ function _cairoTodayStr() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
 }
 
-/* ── status display ── */
-const STATUS_LABEL = {
-  published:      '🟢 منشور',
-  active:         '🟢 نشط',
-  upcoming:       '🔵 قادم',
-  live:           '⚡ جاري الآن',
-  completed:      '✅ انتهى',
-  postponed:      '🟠 مؤجّل',
-  cancelled:      '🔴 ملغي',
-  closed:         '⚫ منتهي',
-  pending_review: '⏳ قيد المراجعة',
-};
+/* ── status display — دالة بدل const ثابت، لازم تُستدعى وقت الرسم بعد جاهزية i18next ── */
+function STATUS_LABEL_OF(status) {
+  return t('manage.statusLabels.' + status, { defaultValue: status });
+}
 
 const MAX_POSTPONES      = 2;
 const EDITABLE_STATUSES  = ['published', 'active', 'upcoming', 'postponed', 'pending_review', 'live'];
@@ -56,32 +48,10 @@ const MAX_DOCS_LINKS     = 15;
 
 const KNOWN_DOMAINS = ['facebook.com', 'fb.com', 'instagram.com', 'tiktok.com', 'youtube.com', 'youtu.be', 'x.com', 'twitter.com', 'snapchat.com', 'linkedin.com'];
 
-const CHANGE_LABELS = {
-  /* m6b */
-  edit_info:           'تعديل معلومات البازار',
-  edit_slots_count:    'تعديل عدد الأماكن',
-  booking_paused:      'إيقاف الحجوزات مؤقتاً',
-  booking_resumed:     'استئناف الحجوزات',
-  admin_delete:        'حذف البازار من الأدمن',
-  /* m6c */
-  auto_expire_response: 'انتهاء مهلة الرد التلقائي',
-  /* أنواع أقدم */
-  info_updated:        'تعديل معلومات البازار',
-  slots_count_updated: 'تعديل عدد الأماكن',
-  slot_reserved:       'حجز مكان داخلياً',
-  slot_unreserved:     'تحرير مكان داخلي',
-  slot_premium_set:    'تحويل مكان إلى مميّز',
-  slot_premium_unset:  'تحويل مكان إلى عادي',
-  postponed:           'تأجيل البازار',
-  postpone:            'تأجيل البازار',
-  cancelled:           'إلغاء البازار',
-  cancel:              'إلغاء البازار',
-  status_changed:      'تغيير الحالة',
-  created:             'إنشاء البازار',
-  /* أنواع قديمة قبل m5a — للتوافق مع السجلات السابقة */
-  reserve_slot:        'حجز مكان داخلياً',
-  unreserve_slot:      'تحرير مكان داخلي',
-};
+/* دالة بدل const ثابت — لازم تُستدعى وقت الرسم بعد جاهزية i18next */
+function CHANGE_LABEL_OF(changeType) {
+  return t('manage.log.changeTypes.' + changeType, { defaultValue: changeType });
+}
 
 /* ════════════════════════════════════════════════════════
    LOCK WINDOW — 24h before event
@@ -118,7 +88,7 @@ function _applyLockWindow(b) {
   // Edit save button label
   const editBtn = document.getElementById('edit-save-btn');
   if (editBtn && locked) {
-    editBtn.title = 'فقط الوصف والصور قابلة للتعديل حالياً';
+    editBtn.title = t('manage.info.saveBtnLockedTitle');
   }
 
   // Slots tab banner + slot count locking
@@ -161,14 +131,14 @@ function _relTime(iso) {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'الآن';
-  if (m < 60) return `منذ ${m} دقيقة`;
+  if (m < 1)  return t('manage.activityFeed.timeAgo.now');
+  if (m < 60) return t('manage.activityFeed.timeAgo.minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `منذ ${h} ساعة`;
+  if (h < 24) return t('manage.activityFeed.timeAgo.hoursAgo', { count: h });
   const d = Math.floor(h / 24);
-  if (d === 1) return 'أمس';
-  if (d < 7)  return `منذ ${d} أيام`;
-  return new Date(iso).toLocaleDateString('ar-EG', { day:'numeric', month:'short' });
+  if (d === 1) return t('manage.activityFeed.timeAgo.yesterday');
+  if (d < 7)  return t('manage.activityFeed.timeAgo.daysAgo', { count: d });
+  return new Date(iso).toLocaleDateString(_mnLocale(), { day:'numeric', month:'short' });
 }
 
 async function loadActivityFeed(bazaarId) {
@@ -198,10 +168,10 @@ async function loadActivityFeed(bazaarId) {
       events.push({
         date: e.created_at,
         ico:  FEED_ICONS[e.change_type] || '📋',
-        text: CHANGE_LABELS[e.change_type] || e.change_type,
+        text: CHANGE_LABEL_OF(e.change_type),
         sub:  e.note || '',
         dot:  dotClass,
-        srcLabel: e.source === 'admin_panel' ? ' · 🛡️ أدمن' : e.source === 'automatic_system' ? ' · 🤖 تلقائي' : '',
+        srcLabel: e.source === 'admin_panel' ? t('manage.log.sourceAdmin') : e.source === 'automatic_system' ? t('manage.log.sourceAutomatic') : '',
       });
     });
 
@@ -213,8 +183,8 @@ async function loadActivityFeed(bazaarId) {
         date: newest.created_at,
         ico:  '🎫',
         text: bks.length === 1
-          ? `حجز جديد${newest.amount ? ' · ' + _num(newest.amount) + ' ج' : ''}`
-          : `${bks.length} حجوزات حديثة`,
+          ? (newest.amount ? t('manage.activityFeed.newBookingWithAmount', { amount: _num(newest.amount) }) : t('manage.activityFeed.newBooking'))
+          : t('manage.activityFeed.newBookingsCount', { count: bks.length }),
         sub:  '',
         dot:  'booking',
         srcLabel: '',
@@ -227,7 +197,7 @@ async function loadActivityFeed(bazaarId) {
     const top = events.slice(0, 6);
 
     if (!top.length) {
-      listEl.innerHTML = '<div style="font-size:12px;color:var(--ink3);padding:8px 0;text-align:center">لا يوجد نشاط مسجّل بعد</div>';
+      listEl.innerHTML = `<div style="font-size:12px;color:var(--ink3);padding:8px 0;text-align:center">${t('manage.activityFeed.noActivity')}</div>`;
       return;
     }
 
@@ -236,7 +206,7 @@ async function loadActivityFeed(bazaarId) {
         <div class="mn-feed-dot ${ev.dot}">${ev.ico}</div>
         <div class="mn-feed-body">
           <div class="mn-feed-text">
-            ${ev.isNew ? '<span class="mn-feed-new">جديد</span>' : ''}
+            ${ev.isNew ? `<span class="mn-feed-new">${t('manage.activityFeed.newBadge')}</span>` : ''}
             ${_esc(ev.text)}${ev.srcLabel ? `<span style="font-size:10px;color:var(--ink3)">${ev.srcLabel}</span>` : ''}
           </div>
           ${ev.sub ? `<div class="mn-feed-sub">${_esc(ev.sub)}</div>` : ''}
@@ -245,9 +215,40 @@ async function loadActivityFeed(bazaarId) {
       </div>`).join('')}
     </div>`;
   } catch {
-    listEl.innerHTML = '<div style="font-size:12px;color:var(--ink3);padding:8px 0">تعذّر تحميل النشاط</div>';
+    listEl.innerHTML = `<div style="font-size:12px;color:var(--ink3);padding:8px 0">${t('manage.activityFeed.loadError')}</div>`;
   }
 }
+
+/* ════════════════════════════════════════════════════════
+   🌐 دعم اللغتين — إعادة رسم المحتوى الديناميكي عند تبديل اللغة
+   مسجَّل عند تحميل الملف (top-level)، قبل أي نداء t() — راجع feedback-i18n-gotchas نقطة 6
+════════════════════════════════════════════════════════ */
+let _activeGuard = null; // { ico, titleKey, descKey, actionsBuilder } — لإعادة رسم شاشة الحراسة عند تبديل اللغة
+
+document.addEventListener('makani:locale-changed', () => {
+  resolveBackNav();
+  if (!activeBazaar) {
+    const heroTitleEl = document.getElementById('hero-title');
+    const heroSubEl   = document.getElementById('hero-sub');
+    const navTitleEl  = document.getElementById('nav-title');
+    if (heroTitleEl) heroTitleEl.innerHTML  = t('manage.heroTitle');
+    if (heroSubEl)   heroSubEl.textContent  = t('manage.heroSub');
+    if (navTitleEl)  navTitleEl.textContent = t('manage.navTitleDefault');
+  }
+  if (_activeGuard) { _activeGuard.rebuild(); return; }
+  if (myBazaars.length) { renderCards(); renderOverview(); }
+  if (activeBazaar) {
+    _updateDetailHeader(activeBazaar);
+    _populateInfoTab(activeBazaar);
+    _populateSlotsCount(activeBazaar);
+    if (activeSlots.length) switchSlotTab(activeSlotTab);
+    _populateStatusTab(activeBazaar);
+    _populateVerificationTab(activeBazaar);
+    loadActivityFeed(activeBazaar.id);
+    if (_logLoaded) loadBazaarLog();
+    if (_bookingsLoaded) loadBazaarBookings();
+  }
+});
 
 /* ════════════════════════════════════════════════════════
    INIT
@@ -262,10 +263,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   me = session?.user || null;
 
   if (!me) {
-    showGuard('🔒', 'يجب تسجيل الدخول أولاً',
-      'هذه الصفحة مخصصة للمنظمين الموثّقين. سجّل الدخول للمتابعة.',
-      `<a href="/?p=login&redirect=/bazaars/manage.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">تسجيل الدخول</a>`
-    );
+    _activeGuard = { rebuild: () => showGuard('🔒', t('manage.guard.loginRequiredTitle'),
+      t('manage.guard.loginRequiredDesc'),
+      `<a href="/?p=login&redirect=/bazaars/manage.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">${t('manage.guard.loginBtn')}</a>`
+    ) };
+    _activeGuard.rebuild();
     return;
   }
 
@@ -279,13 +281,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     .single();
 
   if (!prof?.is_verified) {
-    showGuard('🎪', 'أنت لست منظم بازارات حتى الآن',
-      'لا يمكنك الوصول إلى لوحة إدارة البازارات لأن حسابك غير مسجل كمنظم بازارات. يمكنك التقديم الآن، وبعد الموافقة على طلبك ستتمكن من إنشاء وإدارة البازارات الخاصة بك.',
+    _activeGuard = { rebuild: () => showGuard('🎪', t('manage.guard.notOrganizerTitle'),
+      t('manage.guard.notOrganizerDesc'),
       `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-         <a href="/bazaars/verification.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">التقديم لتصبح منظم بازارات</a>
-         <a href="/bazaars/" class="mn-btn" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">العودة إلى صفحة البازارات</a>
+         <a href="/bazaars/verification.html" class="mn-btn primary" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">${t('manage.guard.applyBtn')}</a>
+         <a href="/bazaars/" class="mn-btn" style="display:inline-flex;text-decoration:none;padding:10px 24px;font-size:14px;border-radius:50px">${t('manage.guard.backBtn')}</a>
        </div>`
-    );
+    ) };
+    _activeGuard.rebuild();
     return;
   }
 
@@ -311,11 +314,11 @@ function resolveBackNav() {
   if (!el) return;
 
   const MAP = {
-    '/bazaars/':             { href: '/bazaars/',              label: '← البازارات' },
-    '/bazaars/index.html':   { href: '/bazaars/',              label: '← البازارات' },
-    '/bazaars/profile.html': { href: '/bazaars/profile.html', label: '← ملفي' },
+    '/bazaars/':             { href: '/bazaars/',              label: t('manage.backToBazaars') },
+    '/bazaars/index.html':   { href: '/bazaars/',              label: t('manage.backToBazaars') },
+    '/bazaars/profile.html': { href: '/bazaars/profile.html', label: t('manage.backToProfile') },
   };
-  const FALLBACK = { href: '/bazaars/', label: '← البازارات' };
+  const FALLBACK = { href: '/bazaars/', label: t('manage.backToBazaars') };
 
   let target = FALLBACK;
   try {
@@ -406,9 +409,9 @@ async function loadMyBazaars() {
     document.getElementById('mn-cards').innerHTML = `
       <div class="mn-empty" style="border-color:#fca5a5">
         <div class="mn-empty-ico">⚠️</div>
-        <div class="mn-empty-title" style="color:#dc2626">تعذّر تحميل البازارات</div>
-        <div class="mn-empty-desc">حدث خطأ أثناء تحميل بيانات بازاراتك. يرجى تحديث الصفحة والمحاولة مرة أخرى.</div>
-        <button class="mn-btn primary" onclick="location.reload()" style="margin-top:12px">↻ تحديث الصفحة</button>
+        <div class="mn-empty-title" style="color:#dc2626">${t('manage.empty.loadErrorTitle')}</div>
+        <div class="mn-empty-desc">${t('manage.empty.loadErrorDesc')}</div>
+        <button class="mn-btn primary" onclick="location.reload()" style="margin-top:12px">${t('manage.empty.reloadBtn')}</button>
       </div>`;
     return;
   }
@@ -457,7 +460,7 @@ function _cardHTML(b) {
     ? `<img src="${cover}" alt="${_esc(b.title)}" loading="lazy">`
     : '🎪';
   const statusClass = b.status || 'pending_review';
-  const statusLabel = STATUS_LABEL[b.status] || b.status;
+  const statusLabel = STATUS_LABEL_OF(b.status);
 
   const bookedCount = (b.total_slots || 0) - (b.available_slots || 0);
   const dateStr     = _formatDateRange(b.start_date, b.end_date);
@@ -471,25 +474,25 @@ function _cardHTML(b) {
       <div class="mn-card-meta">
         ${b.location ? `<span>📍 ${_esc(b.location)}</span>` : ''}
         ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
-        <span>🎫 ${bookedCount}/${b.total_slots || 0} محجوز</span>
-        ${b.postponed_count > 0 ? `<span style="color:var(--orange)">⏩ أُجّل ${b.postponed_count} مرة</span>` : ''}
+        <span>${t('manage.card.bookedOf', { booked: bookedCount, total: b.total_slots || 0 })}</span>
+        ${b.postponed_count > 0 ? `<span style="color:var(--orange)">${t('manage.card.postponedTimes', { count: b.postponed_count })}</span>` : ''}
       </div>
       <div class="mn-card-badges">
         <span class="mn-status ${statusClass}">${statusLabel}</span>
-        ${(b.status === 'completed' || b.status === 'live') ? ((b.event_links && b.event_links.length > 0) ? `<span class="mn-status documented" title="أضاف المنظم روابط لهذا الحدث">🟢 أضاف روابط</span>` : `<span class="mn-status" style="background:#fefce8;color:#92400e;border-color:#fde047">🟡 بدون روابط</span>`) : ''}
-        ${b.premium_slots > 0 ? `<span class="mn-status" style="background:#fefce8;color:#a16207;border-color:#fde047">⭐ ${b.premium_slots} مميز</span>` : ''}
-        ${b.slot_price > 0 ? `<span class="mn-status" style="background:var(--surface2);color:var(--ink2);border-color:var(--border)">${_num(b.slot_price)} ج</span>` : ''}
+        ${(b.status === 'completed' || b.status === 'live') ? ((b.event_links && b.event_links.length > 0) ? `<span class="mn-status documented" title="${t('manage.card.documentedTooltip')}">${t('manage.card.documented')}</span>` : `<span class="mn-status" style="background:#fefce8;color:#92400e;border-color:#fde047">${t('manage.card.noLinks')}</span>`) : ''}
+        ${b.premium_slots > 0 ? `<span class="mn-status" style="background:#fefce8;color:#a16207;border-color:#fde047">${t('manage.card.premiumCount', { count: b.premium_slots })}</span>` : ''}
+        ${b.slot_price > 0 ? `<span class="mn-status" style="background:var(--surface2);color:var(--ink2);border-color:var(--border)">${_num(b.slot_price)} ${t('card.currency')}</span>` : ''}
       </div>
-      ${b.cancellation_reason ? `<div style="font-size:11px;color:#dc2626;margin-top:6px">سبب الإلغاء: ${_esc(b.cancellation_reason)}</div>` : ''}
+      ${b.cancellation_reason ? `<div style="font-size:11px;color:#dc2626;margin-top:6px">${t('manage.card.cancellationReason', { reason: t('manage.cancelReasons.' + b.cancellation_reason, { defaultValue: _esc(b.cancellation_reason) }) })}</div>` : ''}
     </div>
   </div>
   <div class="mn-card-actions">
-    <a class="mn-btn" href="/bazaars/?id=${b.id}" target="_blank">↗ عرض</a>
-    <button class="mn-btn primary" onclick="openBazaarDetail('${b.id}')">⚙️ إدارة</button>
+    <a class="mn-btn" href="/bazaars/?id=${b.id}" target="_blank">${t('manage.card.viewBtn')}</a>
+    <button class="mn-btn primary" onclick="openBazaarDetail('${b.id}')">${t('manage.card.manageBtn')}</button>
   </div>
   ${(b.status === 'completed' && !(b.event_links && b.event_links.length > 0)) ? `
   <div class="mn-card-docs-cta" onclick="event.stopPropagation();openBazaarDetail('${b.id}');setTimeout(()=>switchTab('docs'),350)">
-    🎉 البازار انتهى — <strong>أضف روابط التوثيق الآن</strong> ←
+    ${t('manage.card.docsCta')}
   </div>` : ''}
 </div>`;
 }
@@ -541,13 +544,13 @@ function _renderActionCenter() {
     <div class="mn-alert">
       <div class="mn-alert-ico">🔗</div>
       <div class="mn-alert-body">
-        <div class="mn-alert-title">بازار «${_esc(b.title)}» يحتاج روابط التوثيق</div>
-        <div class="mn-alert-desc">أضِف روابط الحدث لتظهر في ملفك وتُعزّز مصداقيتك لدى العملاء.</div>
+        <div class="mn-alert-title">${t('manage.overview.actionNeedsLinksTitle', { name: _esc(b.title) })}</div>
+        <div class="mn-alert-desc">${t('manage.overview.actionNeedsLinksDesc')}</div>
       </div>
-      <button class="mn-alert-cta" onclick="openBazaarDetail('${b.id}');setTimeout(()=>switchTab('docs'),350)">أضف الروابط الآن ←</button>
+      <button class="mn-alert-cta" onclick="openBazaarDetail('${b.id}');setTimeout(()=>switchTab('docs'),350)">${t('manage.overview.actionAddLinksBtn')}</button>
     </div>`).join('');
   const more = need.length > 3
-    ? `<div class="mn-alert-more">و${need.length - 3} بازارات أخرى تحتاج روابط…</div>`
+    ? `<div class="mn-alert-more">${t('manage.overview.actionMoreNeedLinks', { count: need.length - 3 })}</div>`
     : '';
   return `<div class="mn-action-center">${cards}${more}</div>`;
 }
@@ -560,8 +563,8 @@ function _renderSpotlight(b) {
   const occ     = total > 0 ? Math.round(booked / total * 100) : 0;
   const dateStr = _formatDateRange(b.start_date, b.end_date);
   const eyebrow = b.status === 'live'
-    ? '🟢 البازار النشط الآن'
-    : (['upcoming', 'published', 'active'].includes(b.status) ? '🔵 البازار القادم' : '📌 آخر بازار');
+    ? t('manage.overview.spotlightLiveEyebrow')
+    : (['upcoming', 'published', 'active'].includes(b.status) ? t('manage.overview.spotlightUpcomingEyebrow') : t('manage.overview.spotlightLastEyebrow'));
 
   return `
   <div class="mn-spotlight">
@@ -573,30 +576,30 @@ function _renderSpotlight(b) {
     </div>
     <div class="mn-kpis">
       <div class="mn-kpi">
-        <div class="mn-kpi-lbl">🎫 محجوز</div>
+        <div class="mn-kpi-lbl">${t('manage.overview.kpiBooked')}</div>
         <div class="mn-kpi-val">${booked}<small>/${total}</small></div>
       </div>
       <div class="mn-kpi">
-        <div class="mn-kpi-lbl">🪑 متبقٍّ</div>
-        <div class="mn-kpi-val">${avail}<small> مكان</small></div>
+        <div class="mn-kpi-lbl">${t('manage.overview.kpiRemaining')}</div>
+        <div class="mn-kpi-val">${avail}<small>${t('manage.overview.kpiRemainingUnit')}</small></div>
       </div>
       <div class="mn-kpi">
-        <div class="mn-kpi-lbl">📊 الإشغال</div>
+        <div class="mn-kpi-lbl">${t('manage.overview.kpiOccupancy')}</div>
         <div class="mn-kpi-val">${occ}<small>%</small></div>
         <div class="mn-occ-bar"><div class="mn-occ-fill" style="width:${occ}%"></div></div>
       </div>
       <div class="mn-kpi">
         <div class="mn-kpi-lbl">
-          <span>🆕 جديدة</span>
+          <span>${t('manage.overview.kpiNew')}</span>
           <span class="mn-newbk-toggle">
-            <button id="nbk-today" class="active" onclick="toggleNewBookings('today')">اليوم</button>
-            <button id="nbk-week" onclick="toggleNewBookings('week')">٧ أيام</button>
+            <button id="nbk-today" class="active" onclick="toggleNewBookings('today')">${t('manage.overview.todayBtn')}</button>
+            <button id="nbk-week" onclick="toggleNewBookings('week')">${t('manage.overview.weekBtn')}</button>
           </span>
         </div>
         <div class="mn-kpi-val" id="nbk-val">…</div>
       </div>
     </div>
-    <button class="mn-spot-cta" onclick="openBazaarDetail('${b.id}')">⚙️ إدارة البازار</button>
+    <button class="mn-spot-cta" onclick="openBazaarDetail('${b.id}')">${t('manage.overview.manageBtn')}</button>
   </div>`;
 }
 
@@ -701,9 +704,9 @@ function backToList() {
   document.getElementById('view-list').style.display   = 'block';
 
   /* restore hero */
-  document.getElementById('hero-title').innerHTML = 'إدارة <span>بازاراتي</span>';
-  document.getElementById('hero-sub').textContent  = 'تعديل التفاصيل، الإلغاء، التأجيل، وإدارة الأماكن بعد النشر';
-  document.getElementById('nav-title').textContent = '⚙️ إدارة البازارات';
+  document.getElementById('hero-title').innerHTML = t('manage.heroTitle');
+  document.getElementById('hero-sub').textContent  = t('manage.heroSub');
+  document.getElementById('nav-title').textContent = t('manage.navTitleDefault');
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -732,16 +735,16 @@ function _updateDetailHeader(b) {
   document.getElementById('detail-name').textContent = b.title || '—';
 
   const badge = document.getElementById('detail-status-badge');
-  badge.textContent = STATUS_LABEL[b.status] || b.status;
+  badge.textContent = STATUS_LABEL_OF(b.status);
   badge.className   = 'mn-status ' + (b.status || 'pending_review');
 
   document.getElementById('detail-view-link').href = `/bazaars/?id=${b.id}`;
 
   /* hero */
-  document.getElementById('hero-title').innerHTML  = `إدارة <span>${_esc(b.title || 'البازار')}</span>`;
+  document.getElementById('hero-title').innerHTML  = t('manage.heroTitleWithName', { name: _esc(b.title || t('manage.heroDefaultName')) });
   document.getElementById('hero-sub').textContent  =
     [_formatDateRange(b.start_date, b.end_date), b.location].filter(Boolean).join(' | ');
-  document.getElementById('nav-title').textContent = `⚙️ ${b.title || 'إدارة البازار'}`;
+  document.getElementById('nav-title').textContent = b.title ? t('manage.navTitleWithName', { name: b.title }) : t('manage.navTitleFallback');
 }
 
 /* خريطة مفاتيح التجهيزات (id الشيك بوكس ← التسمية العربية المخزَّنة) — نفس الترتيب المستخدم في organize.js */
@@ -833,8 +836,8 @@ function _populateInfoTab(b) {
     const noticeText = completedNotice.querySelector('.mn-warn-text');
     if (noticeText) {
       noticeText.innerHTML = isCancelled
-        ? 'البازار مُلغى — لا يمكن تعديل المعلومات.'
-        : 'البازار انتهى — لا يمكن تعديل المعلومات. يمكنك إضافة روابط التوثيق من تبويب <strong>🔗 التوثيق</strong>.';
+        ? t('manage.info.completedNoticeCancelled')
+        : t('manage.info.completedNoticeEnded');
     }
   }
 
@@ -849,7 +852,7 @@ function _populateInfoTab(b) {
     if (coverEl) coverEl.style.pointerEvents = '';
   }
 
-  _setBtnState('edit-save-btn', false, '💾 حفظ التعديلات');
+  _setBtnState('edit-save-btn', false, t('manage.info.saveBtn'));
   _applyLockWindow(b);
 }
 
@@ -898,7 +901,7 @@ async function handleEditCover(input) {
   const box   = document.getElementById('e-cover-box');
   const stat  = document.getElementById('e-cover-status');
   box.classList.add('uploading');
-  stat.textContent = 'جارٍ الرفع…';
+  stat.textContent = t('manage.info.uploading');
   try {
     const path = `bazaars/${me.id}/cover_${Date.now()}.webp`;
     const url  = await uploadSingleImageToR2(file, path, token);
@@ -908,10 +911,10 @@ async function handleEditCover(input) {
     box.classList.remove('uploading');
     box.classList.add('has-img');
     document.getElementById('e-cover-placeholder').style.display = 'none';
-    stat.textContent = '✅ تم رفع الغلاف';
+    stat.textContent = t('manage.info.uploadSuccess');
   } catch {
     box.classList.remove('uploading');
-    stat.textContent = '❌ فشل الرفع';
+    stat.textContent = t('manage.info.uploadFailed');
   }
 }
 
@@ -929,7 +932,7 @@ async function handleEditExtra(i, input) {
     _renderExtraGrid();
   } catch {
     slot.classList.remove('uploading');
-    showToast('فشل رفع الصورة', true);
+    showToast(t('manage.info.uploadImageFailed'), true);
   }
 }
 
@@ -937,11 +940,11 @@ async function saveEditInfo() {
   if (!activeBazaar) return;
 
   if (activeBazaar.status === 'completed') {
-    _showMsg('edit-msg', '⛔ البازار انتهى — لا يمكن تعديل المعلومات. يمكنك فقط إضافة روابط التوثيق', 'error');
+    _showMsg('edit-msg', t('manage.info.validation.cannotEditCompleted'), 'error');
     return;
   }
   if (activeBazaar.status === 'cancelled') {
-    _showMsg('edit-msg', '⛔ البازار مُلغى — لا يمكن تعديل المعلومات', 'error');
+    _showMsg('edit-msg', t('manage.info.validation.cannotEditCancelled'), 'error');
     return;
   }
 
@@ -951,9 +954,9 @@ async function saveEditInfo() {
   const endD   = _val('e-end-date');
 
   if (!locked) {
-    if (!title) { _showMsg('edit-msg', 'اسم البازار مطلوب', 'error'); return; }
+    if (!title) { _showMsg('edit-msg', t('manage.info.validation.titleRequired'), 'error'); return; }
     if (startD && endD && startD >= endD) {
-      _showMsg('edit-msg', 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية', 'error');
+      _showMsg('edit-msg', t('manage.info.validation.datesInvalid'), 'error');
       return;
     }
   }
@@ -993,7 +996,7 @@ async function saveEditInfo() {
   updates.will_have_social_coverage = !!document.getElementById('e-ad-social')?.checked;
   updates.will_have_paid_ads        = !!document.getElementById('e-ad-paidads')?.checked;
 
-  _setBtnState('edit-save-btn', true, '⏳ جارٍ الحفظ…');
+  _setBtnState('edit-save-btn', true, t('manage.info.saving'));
   _hide('edit-msg');
 
   const { data, error } = await sb.rpc('update_bazaar_info', {
@@ -1001,16 +1004,16 @@ async function saveEditInfo() {
     p_updates:   updates,
   });
 
-  _setBtnState('edit-save-btn', false, '💾 حفظ التعديلات');
+  _setBtnState('edit-save-btn', false, t('manage.info.saveBtn'));
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ غير معروف';
+    const err = data?.error || error?.message || t('manage.info.errors.generic');
     const msgs = {
-      bazaar_not_found:      'البازار غير موجود',
-      not_authorized:        'غير مصرح لك بهذا الإجراء',
-      cannot_edit_cancelled: 'لا يمكن تعديل بازار ملغي',
-      rate_limit_exceeded:   '⏳ تجاوزت الحد المسموح من التعديلات. يُرجى الانتظار 10 دقائق',
-      edit_locked_24h:       '🔒 التعديل مقيّد — لا يمكن تغيير هذه الحقول قبل 24 ساعة من البدء',
+      bazaar_not_found:      t('manage.info.errors.bazaar_not_found'),
+      not_authorized:        t('manage.info.errors.not_authorized'),
+      cannot_edit_cancelled: t('manage.info.errors.cannot_edit_cancelled'),
+      rate_limit_exceeded:   t('manage.info.errors.rate_limit_exceeded'),
+      edit_locked_24h:       t('manage.info.errors.edit_locked_24h'),
     };
     _showMsg('edit-msg', msgs[err] || err, 'error');
     if (err === 'edit_locked_24h') _applyLockWindow(activeBazaar);
@@ -1027,8 +1030,8 @@ async function saveEditInfo() {
 
   _updateDetailHeader(activeBazaar);
   renderCards();
-  _showMsg('edit-msg', '✅ تم حفظ التعديلات بنجاح', 'ok');
-  showToast('✅ تم حفظ التعديلات بنجاح');
+  _showMsg('edit-msg', t('manage.info.savedSuccess'), 'ok');
+  showToast(t('manage.info.savedSuccess'));
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1039,13 +1042,13 @@ function _populateSlotsCount(b) {
   _setText('sc-total',     b.total_slots || 0);
   _setText('sc-booked',    booked);
   _setText('sc-available', b.available_slots || 0);
-  _setText('sc-hint',      `الحجوزات الفعلية: ${booked} — الحد الأدنى المسموح به: ${booked}`);
+  _setText('sc-hint', t('manage.slots.hintWithBooked', { count: booked }));
 
   const inp = document.getElementById('sc-new-total');
   if (inp) { inp.value = b.total_slots || ''; inp.min = booked || 1; }
 
   _setText('sm-premium-price-display',
-    b.premium_price ? `${_num(b.premium_price)} جنيه` : 'غير محدد');
+    b.premium_price ? t('manage.slots.premiumPriceLabel', { price: _num(b.premium_price) }) : t('manage.slots.premiumPriceUndefined'));
 
   /* reset slot grids + reservation fields */
   _val('sm-reserved-for', '');
@@ -1065,7 +1068,7 @@ function _populateSlotsCount(b) {
 
   _hide('sc-msg');
   _hide('sm-msg');
-  _setBtnState('sc-save-btn', false, '✅ حفظ العدد');
+  _setBtnState('sc-save-btn', false, t('manage.slots.saveBtn'));
   _applyLockWindow(b);
 }
 
@@ -1086,14 +1089,14 @@ async function saveSlotsCount() {
   if (!activeBazaar) return;
 
   if (_isEditLocked(activeBazaar)) {
-    _showMsg('sc-msg', '🔒 التعديل مقيّد — لا يمكن تغيير عدد الأماكن قبل 24 ساعة من بدء البازار', 'error');
+    _showMsg('sc-msg', t('manage.slots.errors.locked_24h'), 'error');
     return;
   }
 
   const newTotal = parseInt(document.getElementById('sc-new-total').value, 10);
-  if (!newTotal || newTotal < 1) { _showMsg('sc-msg', 'أدخل عدداً صحيحاً', 'error'); return; }
+  if (!newTotal || newTotal < 1) { _showMsg('sc-msg', t('manage.slots.validation.invalidNumber'), 'error'); return; }
 
-  _setBtnState('sc-save-btn', true, '⏳ جارٍ الحفظ…');
+  _setBtnState('sc-save-btn', true, t('manage.slots.saving'));
   _hide('sc-msg');
 
   const { data, error } = await sb.rpc('update_bazaar_slots_count', {
@@ -1101,14 +1104,14 @@ async function saveSlotsCount() {
     p_new_total: newTotal,
   });
 
-  _setBtnState('sc-save-btn', false, '✅ حفظ العدد');
+  _setBtnState('sc-save-btn', false, t('manage.slots.saveBtn'));
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ';
+    const err = data?.error || error?.message || t('manage.slots.errors.generic');
     if (err === 'below_booked_count') {
-      _showMsg('sc-msg', `لا يمكن التقليل — هناك ${data.booked_count} حجز فعلي (الحد الأدنى: ${data.minimum})`, 'error');
+      _showMsg('sc-msg', t('manage.slots.errors.below_booked_count', { count: data.booked_count, min: data.minimum }), 'error');
     } else if (err === 'rate_limit_exceeded') {
-      _showMsg('sc-msg', '⏳ تجاوزت الحد المسموح من التعديلات. يُرجى الانتظار 10 دقائق', 'error');
+      _showMsg('sc-msg', t('manage.slots.errors.rate_limit_exceeded'), 'error');
     } else {
       _showMsg('sc-msg', err, 'error');
     }
@@ -1126,8 +1129,8 @@ async function saveSlotsCount() {
   if (inp) inp.min = data.booked_count || 1;
 
   renderCards();
-  _showMsg('sc-msg', `✅ تم تحديث عدد الأماكن إلى ${data.new_total}`, 'ok');
-  showToast(`✅ تم تحديث عدد الأماكن إلى ${data.new_total}`);
+  _showMsg('sc-msg', t('manage.slots.savedSuccess', { count: data.new_total }), 'ok');
+  showToast(t('manage.slots.savedSuccess', { count: data.new_total }));
 }
 
 function switchSlotTab(tab) {
@@ -1144,7 +1147,7 @@ function _renderSlotGrid(gridId, mode) {
   if (!grid) return;
 
   if (!activeSlots.length) {
-    grid.innerHTML = '<div style="font-size:13px;color:var(--ink3);padding:20px;text-align:center">لا توجد مقاعد لهذا البازار</div>';
+    grid.innerHTML = `<div style="font-size:13px;color:var(--ink3);padding:20px;text-align:center">${t('manage.slots.emptySlots')}</div>`;
     return;
   }
 
@@ -1179,10 +1182,10 @@ function _slotHTML(s, mode) {
     if (!isBooked)  onclick = `onclick="togglePremiumSlot('${s.id}', ${!isPremium})"`;
   }
 
-  const tooltip = isBooked   ? 'محجوز'
-    : isReserved             ? `محجوز بالمنظم${s.internal_note ? ': ' + s.internal_note : ''}`
-    : isPremium              ? '⭐ مميز'
-    :                          'متاح';
+  const tooltip = isBooked   ? t('manage.slots.tooltipBooked')
+    : isReserved             ? (s.internal_note ? t('manage.slots.tooltipReservedByOrganizerNote', { note: s.internal_note }) : t('manage.slots.tooltipReservedByOrganizer'))
+    : isPremium              ? t('manage.slots.tooltipPremium')
+    :                          t('manage.slots.tooltipAvailable');
 
   return `
 <div class="sm-slot ${cls}" ${onclick} title="${_esc(tooltip)}">
@@ -1203,12 +1206,12 @@ async function toggleReserveSlot(slotId, action) {
   const { data, error } = await sb.rpc(rpcName, params);
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ';
+    const err = data?.error || error?.message || t('manage.slots.errors.generic');
     const msgs = {
-      slot_not_found:               'المقعد غير موجود',
-      not_authorized:               'غير مصرح',
-      slot_not_available:           `المقعد غير متاح (الحالة: ${data?.status || ''})`,
-      slot_not_internally_reserved: 'المقعد ليس محجوزاً داخلياً',
+      slot_not_found:               t('manage.slots.errors.slot_not_found'),
+      not_authorized:               t('manage.slots.errors.not_authorized'),
+      slot_not_available:           t('manage.slots.errors.slot_not_available', { status: data?.status || '' }),
+      slot_not_internally_reserved: t('manage.slots.errors.slot_not_internally_reserved'),
     };
     _showSlotMsg(msgs[err] || err, true);
     return;
@@ -1230,7 +1233,7 @@ async function toggleReserveSlot(slotId, action) {
   }
 
   _renderSlotGrid('sm-grid-reserve', 'reserve');
-  _showSlotMsg(action === 'reserve' ? '✅ تم حجز المقعد داخلياً' : '✅ تم تحرير المقعد', false);
+  _showSlotMsg(action === 'reserve' ? t('manage.slots.reservedSuccess') : t('manage.slots.unreservedSuccess'), false);
 }
 
 async function togglePremiumSlot(slotId, makePremium) {
@@ -1241,9 +1244,9 @@ async function togglePremiumSlot(slotId, makePremium) {
     .eq('bazaar_id', activeBazaar.id)
     .select('id');
 
-  if (error) { _showSlotMsg('فشل تحديث نوع المقعد: ' + error.message, true); return; }
+  if (error) { _showSlotMsg(t('manage.slots.errors.premium_toggle_failed', { error: error.message }), true); return; }
   if (!data || data.length === 0) {
-    _showSlotMsg('تعذّر تحديث المقعد — أعد فتح البازار وحاول مرة أخرى', true);
+    _showSlotMsg(t('manage.slots.errors.premium_toggle_notfound'), true);
     return;
   }
 
@@ -1251,7 +1254,7 @@ async function togglePremiumSlot(slotId, makePremium) {
   if (slot) slot.is_featured = makePremium;
 
   _renderSlotGrid('sm-grid-premium', 'premium');
-  _showSlotMsg(makePremium ? '⭐ تم تحويل المقعد إلى مميّز' : '✅ تم تحويل المقعد إلى عادي', false);
+  _showSlotMsg(makePremium ? t('manage.slots.premiumSetSuccess') : t('manage.slots.premiumUnsetSuccess'), false);
 }
 
 function _showSlotMsg(text, isErr) {
@@ -1284,13 +1287,13 @@ function _populateStatusTab(b) {
     pNote.style.display = canPostpone ? 'none' : 'block';
     if (!canPostpone) {
       pNote.textContent = atPostponeLimit
-        ? `⛔ تجاوزت الحد الأقصى للتأجيل (${MAX_POSTPONES} مرات) — يمكنك إلغاء البازار فقط`
+        ? t('manage.statusTab.postponeLimitReached', { max: MAX_POSTPONES })
         : alreadyStarted
-        ? `⛔ البازار بدأ بالفعل في ${_formatDate(b.start_date)} — التأجيل غير مسموح`
-        : b.status === 'cancelled' ? 'البازار ملغي — لا يمكن التأجيل'
-        : b.status === 'closed'    ? 'البازار منتهي — لا يمكن التأجيل'
-        : b.status === 'live' || b.status === 'completed' ? 'البازار جارٍ أو انتهى — التأجيل غير مسموح'
-        : 'الحالة الحالية لا تسمح بالتأجيل';
+        ? t('manage.statusTab.postponeAlreadyStarted', { date: _formatDate(b.start_date) })
+        : b.status === 'cancelled' ? t('manage.statusTab.postponeNotAllowedCancelled')
+        : b.status === 'closed'    ? t('manage.statusTab.postponeNotAllowedClosed')
+        : b.status === 'live' || b.status === 'completed' ? t('manage.statusTab.postponeNotAllowedLiveCompleted')
+        : t('manage.statusTab.postponeNotAllowedGeneric');
     }
   }
   postponeSelectedReason = '';
@@ -1305,7 +1308,7 @@ function _populateStatusTab(b) {
   _hide('postpone-custom-wrap');
   _val('postpone-custom-reason', '');
   _hide('postpone-msg');
-  _setBtnState('postpone-confirm-btn', false, '📅 تأكيد التأجيل');
+  _setBtnState('postpone-confirm-btn', false, t('manage.statusTab.confirmPostponeBtn'));
 
   /* cancel section */
   const cSection = document.getElementById('cancel-section');
@@ -1313,21 +1316,21 @@ function _populateStatusTab(b) {
   if (cSection) cSection.classList.toggle('disabled', !canCancel);
   if (cNote) {
     cNote.style.display = canCancel ? 'none' : 'block';
-    if (!canCancel) cNote.textContent = 'الحالة الحالية لا تسمح بالإلغاء';
+    if (!canCancel) cNote.textContent = t('manage.statusTab.cancelNotAllowed');
   }
   cancelSelectedReason = '';
   const bookedCount = (b.total_slots || 0) - (b.available_slots || 0);
   const cwt = document.getElementById('cancel-warning-text');
   if (cwt) {
     cwt.innerHTML = bookedCount > 0
-      ? `سيتم إلغاء البازار <strong style="color:#dc2626">وإشعار ${bookedCount} صاحب حجز</strong>. هذا الإجراء لا يمكن التراجع عنه.`
-      : 'سيتم إلغاء البازار. لا توجد حجوزات نشطة حالياً.';
+      ? t('manage.statusTab.cancelWarnWithBookings', { count: bookedCount })
+      : t('manage.statusTab.cancelWarnNoBookings');
   }
   document.querySelectorAll('#cancel-reason-chips .mn-reason-chip').forEach(c => c.classList.remove('selected'));
   _hide('cancel-custom-wrap');
   _val('cancel-custom-reason', '');
   _hide('cancel-msg');
-  _setBtnState('cancel-confirm-btn', false, '🚫 تأكيد الإلغاء');
+  _setBtnState('cancel-confirm-btn', false, t('manage.statusTab.confirmCancelBtn'));
 }
 
 function _populateBookingPauseSection(b) {
@@ -1347,15 +1350,15 @@ function _populateBookingPauseSection(b) {
 
   if (isPaused) {
     activeNote.style.display  = 'block';
-    reasonDisp.textContent    = reason || 'لا يوجد سبب محدد';
+    reasonDisp.textContent    = reason || t('manage.statusTab.pauseNoReason');
     formWrap.style.display    = 'none';
-    btn.textContent           = '▶️ استئناف الحجوزات';
+    btn.textContent           = t('manage.statusTab.resumeBtn');
     btn.className             = 'mn-btn primary';
   } else {
     activeNote.style.display  = 'none';
     formWrap.style.display    = 'block';
     _val('pause-reason-input', '');
-    btn.textContent           = '⏸️ إيقاف الحجوزات';
+    btn.textContent           = t('manage.statusTab.pauseBtn');
     btn.className             = 'mn-btn warn';
   }
 
@@ -1370,7 +1373,7 @@ async function toggleBookingPause() {
   const newPaused = !isPaused;
   const reason   = newPaused ? (_val('pause-reason-input').trim() || null) : null;
 
-  _setBtnState('pause-toggle-btn', true, '⏳ جارٍ…');
+  _setBtnState('pause-toggle-btn', true, t('manage.statusTab.pausing'));
   _hide('pause-msg');
 
   const { data, error } = await sb.rpc('toggle_booking_pause', {
@@ -1382,14 +1385,14 @@ async function toggleBookingPause() {
   _setBtnState('pause-toggle-btn', false);
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ غير معروف';
+    const err = data?.error || error?.message || t('manage.statusTab.errors.generic');
     const msgs = {
-      bazaar_not_found:    'البازار غير موجود',
-      not_authorized:      'غير مصرح لك',
-      bazaar_cancelled:    'البازار ملغي — لا يمكن التعديل',
-      already_paused:      'الحجوزات موقوفة بالفعل',
-      already_active:      'الحجوزات نشطة بالفعل',
-      rate_limit_exceeded: `⏳ تجاوزت الحد المسموح من التعديلات. يُرجى الانتظار 10 دقائق`,
+      bazaar_not_found:    t('manage.statusTab.errors.bazaar_not_found'),
+      not_authorized:      t('manage.statusTab.errors.not_authorized'),
+      bazaar_cancelled:    t('manage.statusTab.errors.bazaar_cancelled'),
+      already_paused:      t('manage.statusTab.errors.already_paused'),
+      already_active:      t('manage.statusTab.errors.already_active'),
+      rate_limit_exceeded: t('manage.statusTab.errors.rate_limit_exceeded'),
     };
     _showMsg('pause-msg', msgs[err] || err, 'error');
     return;
@@ -1399,7 +1402,7 @@ async function toggleBookingPause() {
   activeBazaar.booking_pause_reason = newPaused ? reason : null;
 
   _populateBookingPauseSection(activeBazaar);
-  const msg = newPaused ? '⏸️ تم إيقاف الحجوزات مؤقتاً' : '▶️ تم استئناف الحجوزات';
+  const msg = newPaused ? t('manage.statusTab.pausedSuccess') : t('manage.statusTab.resumedSuccess');
   _showMsg('pause-msg', msg, 'ok');
   showToast(msg);
 }
@@ -1407,8 +1410,7 @@ async function toggleBookingPause() {
 function selectPostponeReason(reason) {
   postponeSelectedReason = reason;
   document.querySelectorAll('#postpone-reason-chips .mn-reason-chip').forEach(c => {
-    c.classList.toggle('selected',
-      c.textContent.trim() === reason || (reason === 'other' && c.textContent.includes('آخر')));
+    c.classList.toggle('selected', c.dataset.reason === reason);
   });
   document.getElementById('postpone-custom-wrap').style.display = reason === 'other' ? 'flex' : 'none';
 }
@@ -1418,32 +1420,32 @@ async function confirmPostpone() {
 
   /* guard: postpone limit */
   if ((activeBazaar.postponed_count || 0) >= MAX_POSTPONES) {
-    _showMsg('postpone-msg', `⛔ تجاوزت الحد الأقصى للتأجيل (${MAX_POSTPONES} مرات)`, 'error');
+    _showMsg('postpone-msg', t('manage.statusTab.validation.postponeLimitReached', { max: MAX_POSTPONES }), 'error');
     return;
   }
 
   const newStart = _val('p-new-start');
   const newEnd   = _val('p-new-end');
 
-  if (!newStart || !newEnd) { _showMsg('postpone-msg', 'يرجى تحديد الموعد الجديد', 'error'); return; }
-  if (newStart >= newEnd)   { _showMsg('postpone-msg', 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية', 'error'); return; }
+  if (!newStart || !newEnd) { _showMsg('postpone-msg', t('manage.statusTab.validation.datesRequired'), 'error'); return; }
+  if (newStart >= newEnd)   { _showMsg('postpone-msg', t('manage.statusTab.validation.datesInvalid'), 'error'); return; }
 
   /* client-side: لا يمكن التأجيل إذا بدأ البازار بالفعل */
   const today      = _cairoTodayStr();
   const bazaarStart = activeBazaar.start_date || '';
   if (bazaarStart && bazaarStart <= today) {
-    _showMsg('postpone-msg', '⛔ لا يمكن التأجيل — البازار بدأ بالفعل في ' + _formatDate(bazaarStart), 'error');
+    _showMsg('postpone-msg', t('manage.statusTab.validation.alreadyStarted', { date: _formatDate(bazaarStart) }), 'error');
     return;
   }
 
   let reason = postponeSelectedReason;
-  if (!reason) { _showMsg('postpone-msg', 'يرجى اختيار سبب التأجيل', 'error'); return; }
+  if (!reason) { _showMsg('postpone-msg', t('manage.statusTab.validation.reasonRequired'), 'error'); return; }
   if (reason === 'other') {
     reason = _val('postpone-custom-reason').trim();
-    if (!reason) { _showMsg('postpone-msg', 'يرجى كتابة سبب التأجيل', 'error'); return; }
+    if (!reason) { _showMsg('postpone-msg', t('manage.statusTab.validation.customReasonRequired'), 'error'); return; }
   }
 
-  _setBtnState('postpone-confirm-btn', true, '⏳ جارٍ التأجيل…');
+  _setBtnState('postpone-confirm-btn', true, t('manage.statusTab.postponing'));
   _hide('postpone-msg');
 
   const { data, error } = await sb.rpc('postpone_bazaar', {
@@ -1453,17 +1455,17 @@ async function confirmPostpone() {
     p_reason:    reason,
   });
 
-  _setBtnState('postpone-confirm-btn', false, '📅 تأكيد التأجيل');
+  _setBtnState('postpone-confirm-btn', false, t('manage.statusTab.confirmPostponeBtn'));
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ غير معروف';
+    const err = data?.error || error?.message || t('manage.statusTab.errors.generic');
     const msgs = {
-      bazaar_not_found:          'البازار غير موجود',
-      not_authorized:            'غير مصرح لك',
-      cannot_postpone_cancelled: 'لا يمكن تأجيل بازار ملغي',
-      max_postponements_reached: `⛔ تجاوزت الحد الأقصى للتأجيل (${MAX_POSTPONES} مرات)`,
-      invalid_dates:             'تواريخ غير صالحة',
-      bazaar_already_started:    '⛔ لا يمكن التأجيل — البازار بدأ بالفعل',
+      bazaar_not_found:          t('manage.statusTab.errors.bazaar_not_found'),
+      not_authorized:            t('manage.statusTab.errors.not_authorized'),
+      cannot_postpone_cancelled: t('manage.statusTab.errors.cannot_postpone_cancelled'),
+      max_postponements_reached: t('manage.statusTab.errors.max_postponements_reached', { max: MAX_POSTPONES }),
+      invalid_dates:             t('manage.statusTab.errors.invalid_dates'),
+      bazaar_already_started:    t('manage.statusTab.errors.bazaar_already_started'),
     };
     _showMsg('postpone-msg', msgs[err] || err, 'error');
     return;
@@ -1484,18 +1486,18 @@ async function confirmPostpone() {
   const pSection = document.getElementById('postpone-section');
   const pNote    = document.getElementById('postpone-disabled-note');
   if (pSection) pSection.classList.add('disabled');
-  if (pNote) { pNote.style.display = 'block'; pNote.textContent = 'تم التأجيل — لا يمكن التأجيل مجدداً حتى يُعاد تفعيل البازار'; }
+  if (pNote) { pNote.style.display = 'block'; pNote.textContent = t('manage.statusTab.postponeDisabledAfterSuccess'); }
 
   const n = data.notified_count || 0;
-  _showMsg('postpone-msg', `📅 تم التأجيل بنجاح${n > 0 ? ` — أُشعر ${n} حاجز` : ''}`, 'ok');
-  showToast(`📅 تم التأجيل بنجاح${n > 0 ? ` — أُشعر ${n} حاجز` : ''}`);
+  const msg = n > 0 ? t('manage.statusTab.postponeSuccessNotified', { count: n }) : t('manage.statusTab.postponeSuccess');
+  _showMsg('postpone-msg', msg, 'ok');
+  showToast(msg);
 }
 
 function selectCancelReason(reason) {
   cancelSelectedReason = reason;
   document.querySelectorAll('#cancel-reason-chips .mn-reason-chip').forEach(c => {
-    c.classList.toggle('selected',
-      c.textContent.trim() === reason || (reason === 'other' && c.textContent.includes('آخر')));
+    c.classList.toggle('selected', c.dataset.reason === reason);
   });
   document.getElementById('cancel-custom-wrap').style.display = reason === 'other' ? 'flex' : 'none';
 }
@@ -1504,13 +1506,13 @@ async function confirmCancel() {
   if (!activeBazaar) return;
 
   let reason = cancelSelectedReason;
-  if (!reason) { _showMsg('cancel-msg', 'يرجى اختيار سبب الإلغاء', 'error'); return; }
+  if (!reason) { _showMsg('cancel-msg', t('manage.statusTab.validation.reasonRequiredCancel'), 'error'); return; }
   if (reason === 'other') {
     reason = _val('cancel-custom-reason').trim();
-    if (!reason) { _showMsg('cancel-msg', 'يرجى كتابة سبب الإلغاء', 'error'); return; }
+    if (!reason) { _showMsg('cancel-msg', t('manage.statusTab.validation.customReasonRequiredCancel'), 'error'); return; }
   }
 
-  _setBtnState('cancel-confirm-btn', true, '⏳ جارٍ الإلغاء…');
+  _setBtnState('cancel-confirm-btn', true, t('manage.statusTab.cancelling'));
   _hide('cancel-msg');
 
   const { data, error } = await sb.rpc('cancel_bazaar', {
@@ -1518,14 +1520,14 @@ async function confirmCancel() {
     p_reason:    reason,
   });
 
-  _setBtnState('cancel-confirm-btn', false, '🚫 تأكيد الإلغاء');
+  _setBtnState('cancel-confirm-btn', false, t('manage.statusTab.confirmCancelBtn'));
 
   if (error || !data?.success) {
-    const err = data?.error || error?.message || 'خطأ غير معروف';
+    const err = data?.error || error?.message || t('manage.statusTab.errors.generic');
     const msgs = {
-      bazaar_not_found:  'البازار غير موجود',
-      not_authorized:    'غير مصرح لك',
-      already_cancelled: 'البازار ملغي بالفعل',
+      bazaar_not_found:  t('manage.statusTab.errors.bazaar_not_found'),
+      not_authorized:    t('manage.statusTab.errors.not_authorized'),
+      already_cancelled: t('manage.statusTab.errors.already_cancelled'),
     };
     _showMsg('cancel-msg', msgs[err] || err, 'error');
     return;
@@ -1545,10 +1547,10 @@ async function confirmCancel() {
   if (pSection) pSection.classList.add('disabled');
   if (cSection) cSection.classList.add('disabled');
   const cNote = document.getElementById('cancel-disabled-note');
-  if (cNote) { cNote.style.display = 'block'; cNote.textContent = 'البازار ملغي — لا يمكن اتخاذ إجراء آخر'; }
+  if (cNote) { cNote.style.display = 'block'; cNote.textContent = t('manage.statusTab.cancelDisabledAfterSuccess'); }
 
   const affected = data.affected_bookings || 0;
-  const msg = `🚫 تم إلغاء البازار${affected > 0 ? ` — أُشعر ${affected} حاجز` : ''}`;
+  const msg = affected > 0 ? t('manage.statusTab.cancelSuccessNotified', { count: affected }) : t('manage.statusTab.cancelSuccess');
   _showMsg('cancel-msg', msg, 'ok');
   showToast(msg);
 }
@@ -1576,11 +1578,11 @@ function _populateVerificationTab(b) {
       style="background:#fef2f2;border:2px solid #fca5a5;border-radius:14px;padding:16px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
       <span style="font-size:26px;flex-shrink:0">⚠️</span>
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:900;color:#b91c1c;margin-bottom:4px">انتهى البازار دون توثيق</div>
-        <div style="font-size:12.5px;color:#dc2626;line-height:1.65;margin-bottom:12px">إضافة روابط الفعالية (فيديوهات، صور، تغطيات) تُعزّز مصداقيتك لدى العارضين في البازارات القادمة</div>
+        <div style="font-size:14px;font-weight:900;color:#b91c1c;margin-bottom:4px">${t('manage.docsEndedAlert.title')}</div>
+        <div style="font-size:12.5px;color:#dc2626;line-height:1.65;margin-bottom:12px">${t('manage.docsEndedAlert.desc')}</div>
         <button onclick="document.getElementById('docs-add-btn')?.click()"
                 style="padding:9px 18px;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);font-family:var(--font-display);font-size:13px;font-weight:800;cursor:pointer">
-          📎 توثيق الحدث الآن
+          ${t('manage.docsEndedAlert.btn')}
         </button>
       </div>
     </div>`;
@@ -1601,8 +1603,8 @@ function _populateVerificationTab(b) {
       banner.classList.add('show');
       const remaining = 7 - daysAgo;
       if (deadline) deadline.textContent = remaining > 0
-        ? `لديك ${remaining} ${remaining === 1 ? 'يوم' : 'أيام'} لإضافة الروابط ليظهر التنبيه للزوار.`
-        : 'انتهت مدة التنبيه — يمكنك الإضافة في أي وقت.';
+        ? t('manage.docsBanner.deadlineDays', { count: remaining })
+        : t('manage.docsBanner.deadlineExpired');
     } else {
       banner.classList.remove('show');
     }
@@ -1614,19 +1616,18 @@ function _populateVerificationTab(b) {
   const sc = document.getElementById('docs-status-content');
   if (!sc) return;
   if (_docsCurrentLinks.length > 0) {
-    const addedAt   = b.links_added_at   ? new Date(b.links_added_at).toLocaleDateString('ar-EG')   : '—';
-    const updatedAt = b.links_last_updated_at ? new Date(b.links_last_updated_at).toLocaleDateString('ar-EG') : null;
-    sc.innerHTML = `<div class="mn-docs-status-pill green">🟢 تمت إضافة ${_docsCurrentLinks.length} ${_docsCurrentLinks.length === 1 ? 'رابط' : 'روابط'}</div>
-      <div style="font-size:11.5px;color:var(--ink3)">أُضيفت لأول مرة: ${addedAt}${updatedAt ? ` &nbsp;·&nbsp; آخر تحديث: ${updatedAt}` : ''}</div>`;
+    const addedAt   = b.links_added_at   ? new Date(b.links_added_at).toLocaleDateString(_mnLocale())   : '—';
+    const updatedAt = b.links_last_updated_at ? new Date(b.links_last_updated_at).toLocaleDateString(_mnLocale()) : null;
+    sc.innerHTML = `<div class="mn-docs-status-pill green">${t('manage.docs.statusAdded', { count: _docsCurrentLinks.length })}</div>
+      <div style="font-size:11.5px;color:var(--ink3)">${t('manage.docs.firstAddedOn', { date: addedAt })}${updatedAt ? t('manage.docs.lastUpdatedOn', { date: updatedAt }) : ''}</div>`;
   } else if (DOCS_ALLOWED.includes(b.status) || _expiredByDate) {
     const wasDeleted = b.links_deleted_at;
-    sc.innerHTML = `<div class="mn-docs-status-pill yellow">🟡 ${wasDeleted ? '⚠️ كان هذا الحدث يحتوي سابقاً على روابط قام المنظم بإزالتها لاحقاً' : 'لم تُضف روابط بعد'}</div>
-      <div style="font-size:11.5px;color:var(--ink3);margin-top:4px">${wasDeleted ? `تاريخ الإزالة: ${new Date(wasDeleted).toLocaleDateString('ar-EG')} — يمكنك إعادة الإضافة في أي وقت` : 'إضافة الروابط اختيارية — تُعزز مصداقيتك لدى العملاء'}</div>`;
+    sc.innerHTML = `<div class="mn-docs-status-pill yellow">${wasDeleted ? t('manage.docs.statusWasDeleted') : t('manage.docs.statusNoneYet')}</div>
+      <div style="font-size:11.5px;color:var(--ink3);margin-top:4px">${wasDeleted ? t('manage.docs.deletedOn', { date: new Date(wasDeleted).toLocaleDateString(_mnLocale()) }) : t('manage.docs.optionalHint')}</div>`;
   } else if (DOCS_NOT_HAPPENED.includes(b.status)) {
-    const label = b.status === 'cancelled' ? 'البازار مُلغى' : 'البازار مؤجَّل';
-    sc.innerHTML = `<div class="mn-docs-status-pill gray">⏸ التوثيق غير متاح — ${label}</div>`;
+    sc.innerHTML = `<div class="mn-docs-status-pill gray">${b.status === 'cancelled' ? t('manage.docs.notHappenedCancelled') : t('manage.docs.notHappenedPostponed')}</div>`;
   } else {
-    sc.innerHTML = `<div class="mn-docs-status-pill gray">⏸ التوثيق متاح بعد انطلاق البازار</div>`;
+    sc.innerHTML = `<div class="mn-docs-status-pill gray">${t('manage.docs.notYetAvailable')}</div>`;
   }
 
   /* hide save button if docs not yet meaningful */
@@ -1658,7 +1659,7 @@ function _renderDocsLinks() {
   const hadSaved = !!(activeBazaar?.links_added_at);
 
   if (_docsCurrentLinks.length === 0) {
-    container.innerHTML = `<div style="font-size:12px;color:var(--ink3);text-align:center;padding:14px 0">لا توجد روابط — اضغط "+ إضافة رابط"</div>`;
+    container.innerHTML = `<div style="font-size:12px;color:var(--ink3);text-align:center;padding:14px 0">${t('manage.docs.noLinks')}</div>`;
     return;
   }
 
@@ -1671,7 +1672,7 @@ function _renderDocsLinks() {
       <input type="url" class="mn-docs-link-input${isKnown ? '' : ' warn'}" dir="ltr"
         value="${_esc(url)}" placeholder="https://..."
         oninput="_docsCurrentLinks[${i}]=this.value">
-      ${!isKnown && url ? `<span class="mn-docs-warn-icon" title="منصة غير معروفة">⚠️</span>` : ''}
+      ${!isKnown && url ? `<span class="mn-docs-warn-icon" title="${t('manage.docs.unknownDomainTooltip')}">⚠️</span>` : ''}
       <button class="mn-docs-link-remove" onclick="docsRemoveLink(${i})">🗑</button>
     </div>`;
   }).join('');
@@ -1679,7 +1680,7 @@ function _renderDocsLinks() {
 
 function docsAddLink() {
   if (_docsCurrentLinks.length >= MAX_DOCS_LINKS) {
-    showToast(`⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا`);
+    showToast(t('manage.docs.tooManyLinksSimple', { max: MAX_DOCS_LINKS }));
     return;
   }
   _docsCurrentLinks.push('');
@@ -1735,17 +1736,17 @@ async function docsSaveLinks() {
   const rawLinks = _docsCurrentLinks.filter(u => u.length > 0);
 
   if (rawLinks.length === 0 && activeBazaar.links_added_at) {
-    if (!confirm('هل تريد حذف جميع روابط التوثيق؟\n\nسيُسجَّل أن المنظم قام بحذف الروابط لاحقاً، وسيظهر البازار بدون توثيق.')) return;
+    if (!confirm(t('manage.docs.confirmDeleteAll'))) return;
   }
 
   /* تطبيع (إضافة https:// تلقائياً لو ناقصة) + التحقق من صحة الروابط + إزالة التكرار */
   const { links, invalid, dupCount } = _normalizeDocsLinks(rawLinks);
   if (invalid.length > 0) {
-    _showMsg('docs-msg', `⚠️ ${invalid.length === 1 ? 'رابط غير صالح' : 'روابط غير صالحة'}: ${invalid.join('، ')}`, 'error');
+    _showMsg('docs-msg', t('manage.docs.invalidLink', { count: invalid.length, links: invalid.join('، ') }), 'error');
     return;
   }
   if (links.length > MAX_DOCS_LINKS) {
-    _showMsg('docs-msg', `⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا (لديك ${links.length})`, 'error');
+    _showMsg('docs-msg', t('manage.docs.tooManyLinks', { max: MAX_DOCS_LINKS, count: links.length }), 'error');
     return;
   }
 
@@ -1762,12 +1763,12 @@ async function docsSaveLinks() {
   const warnText = document.getElementById('docs-domain-warn-text');
   if (unknown.length > 0) {
     if (warn) warn.style.display = 'block';
-    if (warnText) warnText.textContent = `${unknown.length} ${unknown.length === 1 ? 'رابط من منصة' : 'روابط من منصات'} غير معروفة: ${unknown.map(_docsGetDomain).join('، ')}`;
+    if (warnText) warnText.textContent = t('manage.docs.unknownDomainWarn', { count: unknown.length, domains: unknown.map(_docsGetDomain).join('، ') });
   } else {
     if (warn) warn.style.display = 'none';
   }
 
-  _setBtnState('docs-save-btn', true, '⏳ جارٍ الحفظ…');
+  _setBtnState('docs-save-btn', true, t('manage.docs.saving'));
   _hide('docs-msg');
 
   const { data, error } = await sb.rpc('add_bazaar_event_links', {
@@ -1775,17 +1776,17 @@ async function docsSaveLinks() {
     p_links:     links,
   });
 
-  _setBtnState('docs-save-btn', false, '💾 حفظ الروابط');
+  _setBtnState('docs-save-btn', false, t('manage.docs.saveBtn'));
 
   if (error || !data?.ok) {
-    const err = data?.error || error?.message || 'خطأ غير معروف';
+    const err = data?.error || error?.message || t('manage.docs.errors.generic');
     const msgs = {
-      bazaar_not_found:        'البازار غير موجود',
-      not_authorized:          'غير مصرح لك',
-      cannot_remove_all_links: '⛔ لا يمكن حذف كل الروابط',
-      bazaar_not_active:       '⏳ البازار لم يبدأ بعد أو انتهى منذ وقت قصير ولم تتحدّث حالته في النظام بعد — حاول خلال ساعات قليلة',
-      invalid_link_format:     '⚠️ تأكد أن كل الروابط تبدأ بـ http:// أو https://',
-      too_many_links:          `⛔ الحد الأقصى ${MAX_DOCS_LINKS} رابطًا`,
+      bazaar_not_found:        t('manage.docs.errors.bazaar_not_found'),
+      not_authorized:          t('manage.docs.errors.not_authorized'),
+      cannot_remove_all_links: t('manage.docs.errors.cannot_remove_all_links'),
+      bazaar_not_active:       t('manage.docs.errors.bazaar_not_active'),
+      invalid_link_format:     t('manage.docs.errors.invalid_link_format'),
+      too_many_links:          t('manage.docs.errors.too_many_links', { max: MAX_DOCS_LINKS }),
     };
     _showMsg('docs-msg', msgs[err] || err, 'error');
     return;
@@ -1818,8 +1819,8 @@ async function docsSaveLinks() {
   if (badge) badge.textContent = links.length > 0 ? links.length : '';
 
   const msg = isSoftDelete
-    ? '🗑 تم حذف جميع الروابط — سيُسجَّل أن المنظم حذف الروابط لاحقاً'
-    : `✅ تم حفظ ${links.length} ${links.length === 1 ? 'رابط' : 'روابط'} بنجاح${dupCount > 0 ? ` (أُزيل ${dupCount} ${dupCount === 1 ? 'رابط مكرر' : 'روابط مكررة'})` : ''}`;
+    ? t('manage.docs.deletedAllSuccess')
+    : t('manage.docs.savedSuccess', { count: links.length }) + (dupCount > 0 ? t('manage.docs.savedWithDupes', { count: dupCount }) : '');
   _showMsg('docs-msg', msg, isSoftDelete ? 'warn' : 'ok');
   showToast(msg);
 }
@@ -1850,7 +1851,7 @@ async function loadBazaarLog() {
 
   /* change log */
   if (!logRes.data?.length) {
-    logEl.innerHTML = '<div style="font-size:13px;color:var(--ink3);padding:20px 0;text-align:center">لا توجد سجلات تغييرات</div>';
+    logEl.innerHTML = `<div style="font-size:13px;color:var(--ink3);padding:20px 0;text-align:center">${t('manage.log.noChanges')}</div>`;
   } else {
     const ICONS = {
       edit_info: '✏️', edit_slots_count: '🔢',
@@ -1864,12 +1865,12 @@ async function loadBazaarLog() {
       cancelled: '🚫', cancel: '🚫',
       status_changed: '🔄', created: '🎪',
     };
-    const SOURCE_LABEL = { admin_panel: '🛡️ أدمن', automatic_system: '🤖 تلقائي' };
+    const SOURCE_LABEL = { admin_panel: t('manage.log.sourceAdmin'), automatic_system: t('manage.log.sourceAutomatic') };
     logEl.innerHTML = `<div class="mn-log-list">${logRes.data.map(e => `
       <div class="mn-log-item">
         <div class="mn-log-dot">${ICONS[e.change_type] || '📋'}</div>
         <div class="mn-log-body">
-          <div class="mn-log-type">${CHANGE_LABELS[e.change_type] || e.change_type}${e.source && e.source !== 'organizer_panel' ? ` <span style="font-size:10px;color:var(--ink3)">${SOURCE_LABEL[e.source] || e.source}</span>` : ''}</div>
+          <div class="mn-log-type">${CHANGE_LABEL_OF(e.change_type)}${e.source && e.source !== 'organizer_panel' ? ` <span style="font-size:10px;color:var(--ink3)">${SOURCE_LABEL[e.source] || e.source}</span>` : ''}</div>
           ${e.note ? `<div class="mn-log-note">${_esc(e.note)}</div>` : ''}
           <div class="mn-log-date">${_formatDateTime(e.created_at)}</div>
         </div>
@@ -1878,7 +1879,7 @@ async function loadBazaarLog() {
 
   /* postponement history */
   if (!postRes.data?.length) {
-    postEl.innerHTML = '<div style="font-size:13px;color:var(--ink3);padding:20px 0;text-align:center">لا توجد تأجيلات سابقة</div>';
+    postEl.innerHTML = `<div style="font-size:13px;color:var(--ink3);padding:20px 0;text-align:center">${t('manage.log.noPostponements')}</div>`;
   } else {
     postEl.innerHTML = postRes.data.map(p => `
       <div class="mn-log-item">
@@ -1889,9 +1890,9 @@ async function loadBazaarLog() {
             &nbsp;→&nbsp;
             ${_formatDate(p.new_start)}–${_formatDate(p.new_end)}
           </div>
-          ${p.reason ? `<div class="mn-log-note">${_esc(p.reason)}</div>` : ''}
+          ${p.reason ? `<div class="mn-log-note">${_esc(t('manage.postponeReasons.' + p.reason, { defaultValue: p.reason }))}</div>` : ''}
           <div class="mn-log-note" style="color:var(--orange)">
-            ✅ ${p.accepted_count || 0} قبل &nbsp;|&nbsp; 🚫 ${p.cancelled_count || 0} ألغى
+            ${t('manage.log.acceptedCount', { count: p.accepted_count || 0 })} &nbsp;|&nbsp; ${t('manage.log.cancelledCount', { count: p.cancelled_count || 0 })}
           </div>
           <div class="mn-log-date">${_formatDateTime(p.created_at)}</div>
         </div>
@@ -1923,7 +1924,7 @@ async function loadBazaarBookings() {
   }
 
   if (error) {
-    container.innerHTML = '<div style="color:#dc2626;padding:20px;font-size:13px">خطأ في تحميل الحجوزات</div>';
+    container.innerHTML = `<div style="color:#dc2626;padding:20px;font-size:13px">${t('manage.bookings.loadError')}</div>`;
     return;
   }
 
@@ -1931,17 +1932,17 @@ async function loadBazaarBookings() {
     container.innerHTML = `
       <div class="mn-empty" style="margin:0">
         <div class="mn-empty-ico">🎫</div>
-        <div class="mn-empty-title">لا توجد حجوزات</div>
-        <div class="mn-empty-desc">لم يتم حجز أي مكان في هذا البازار بعد</div>
+        <div class="mn-empty-title">${t('manage.bookings.emptyTitle')}</div>
+        <div class="mn-empty-desc">${t('manage.bookings.emptyDesc')}</div>
       </div>`;
     return;
   }
 
   const BK_STATUS = {
-    pending:   { label: '⏳ معلّق',  bg: '#fef3c7', color: '#92400e' },
-    confirmed: { label: '✅ مؤكّد',  bg: '#ecfdf5', color: '#047857' },
-    cancelled: { label: '🚫 ملغي',   bg: '#fef2f2', color: '#dc2626' },
-    completed: { label: '🏁 مكتمل', bg: 'var(--surface2)', color: 'var(--ink3)' },
+    pending:   { label: t('manage.bookings.status.pending'),   bg: '#fef3c7', color: '#92400e' },
+    confirmed: { label: t('manage.bookings.status.confirmed'), bg: '#ecfdf5', color: '#047857' },
+    cancelled: { label: t('manage.bookings.status.cancelled'), bg: '#fef2f2', color: '#dc2626' },
+    completed: { label: t('manage.bookings.status.completed'), bg: 'var(--surface2)', color: 'var(--ink3)' },
   };
 
   container.innerHTML = `
@@ -1949,11 +1950,11 @@ async function loadBazaarBookings() {
       <table class="mn-bk-table">
         <thead>
           <tr>
-            <th>المكان</th>
-            <th>الحالة</th>
-            <th>السعر</th>
-            <th>ملاحظات</th>
-            <th>تاريخ الحجز</th>
+            <th>${t('manage.bookings.colPlace')}</th>
+            <th>${t('manage.bookings.colStatus')}</th>
+            <th>${t('manage.bookings.colPrice')}</th>
+            <th>${t('manage.bookings.colNotes')}</th>
+            <th>${t('manage.bookings.colDate')}</th>
           </tr>
         </thead>
         <tbody>
@@ -1964,7 +1965,7 @@ async function loadBazaarBookings() {
             return `<tr>
               <td>${_esc(loc)}</td>
               <td><span class="mn-bk-status" style="background:${s.bg};color:${s.color}">${s.label}</span></td>
-              <td>${bk.amount ? _num(bk.amount) + ' ج' : '—'}</td>
+              <td>${bk.amount ? _num(bk.amount) + ' ' + t('card.currency') : '—'}</td>
               <td style="color:var(--ink3)">${_esc(bk.notes || '—')}</td>
               <td>${_formatDateTime(bk.created_at)}</td>
             </tr>`;
@@ -2041,15 +2042,14 @@ function _coverUrl(images) {
 }
 
 function _num(n) {
-  return Number(n).toLocaleString('ar-EG');
+  return Number(n).toLocaleString(_mnLocale());
 }
+
+function _mnLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
 
 function _formatDate(d) {
   if (!d) return '—';
-  const [y, m, day] = d.split('-');
-  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
-                  'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+  return new Date(d).toLocaleDateString(_mnLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function _formatDateRange(s, e) {
@@ -2059,13 +2059,5 @@ function _formatDateRange(s, e) {
 
 function _formatDateTime(d) {
   if (!d) return '—';
-  const dt = new Date(d);
-  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
-                  'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  const day  = dt.getDate();
-  const mon  = months[dt.getMonth()];
-  const year = dt.getFullYear();
-  const hh   = String(dt.getHours()).padStart(2, '0');
-  const mm   = String(dt.getMinutes()).padStart(2, '0');
-  return `${day} ${mon} ${year}، ${hh}:${mm}`;
+  return new Date(d).toLocaleDateString(_mnLocale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }

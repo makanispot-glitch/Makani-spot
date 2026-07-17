@@ -23,6 +23,18 @@
 
 <title>البازارات — مكاني Spot</title>
 
+<!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('makani_locale') === 'en') {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,6 +42,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="../shared/sb-config.js" defer></script>
 <script src="/pwa-install.js?v=202607141600" defer></script>
+
+<!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
+<script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=202607141600" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=202607141600" defer></script>
+<script src="/shared/i18n.js?v=202607141600" defer></script>
 
 <style>
 /* ── Page wrapper ── */
@@ -228,9 +246,9 @@
 
   <!-- روابط التنقل + أزرار الأقسام الثلاثة -->
   <div class="nav-links">
-    <a href="/">الرئيسية</a>
-    <a href="/?p=how">كيف تعمل المنصة؟</a>
-    <a href="/?p=owner">عندك مساحة؟</a>
+    <a href="/" data-i18n="nav.home">الرئيسية</a>
+    <a href="/?p=how" data-i18n="nav.how">كيف تعمل المنصة؟</a>
+    <a href="/?p=owner" data-i18n="nav.owner">عندك مساحة؟</a>
 
     <div class="nav-divider"></div>
 
@@ -244,8 +262,8 @@
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>كل المساحات</strong>
-        <small>ابحث عن مساحة لمشروعك</small>
+        <strong data-i18n="nav.allSpaces">كل المساحات</strong>
+        <small data-i18n="nav.allSpacesDesc">ابحث عن مساحة لمشروعك</small>
       </span>
     </a>
     <a class="nav-section-btn active" id="nsb-bazaars" href="/bazaars/">
@@ -257,8 +275,8 @@
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>البازارات</strong>
-        <small>اشترك في بازار مؤقت</small>
+        <strong data-i18n="nav.bazaars">البازارات</strong>
+        <small data-i18n="nav.bazaarsDesc">اشترك في بازار مؤقت</small>
       </span>
     </a>
     <a class="nav-section-btn" id="nsb-market" href="/market/">
@@ -270,11 +288,18 @@
         </svg>
       </span>
       <span class="nsb-text">
-        <strong>مشاريع للبيع</strong>
-        <small>ابحث عن مشروع جاهز</small>
+        <strong data-i18n="nav.projects">مشاريع للبيع</strong>
+        <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
       </span>
     </a>
   </div>
+
+  <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
+    </svg>
+    <span id="langSwitchLabel">EN</span>
+  </button>
 
   <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
   <div class="nav-user-area" id="bz-nav-user">
@@ -284,9 +309,9 @@
         <circle cx="12" cy="8" r="4"/>
         <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
       </svg>
-      <span>دخول</span>
+      <span data-i18n="nav.loginBtn">دخول</span>
       <span class="btn-login-sep">|</span>
-      <span>سجّل</span>
+      <span data-i18n="nav.signupBtn">سجّل</span>
     </button>
   </div>
 
@@ -304,7 +329,7 @@
       <div style="background:#fff7ed;border:1.5px solid #fdba74;border-radius:16px;padding:16px 18px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <span style="font-size:20px">📅</span>
-          <span style="font-size:14px;font-weight:900;color:#7c2d12">بازارات تم تأجيلها — يرجى الرد</span>
+          <span style="font-size:14px;font-weight:900;color:#7c2d12" data-i18n="postponeAlert.title">بازارات تم تأجيلها — يرجى الرد</span>
           <span id="bz-postpone-count" style="background:#f97316;color:#fff;font-size:11px;font-weight:900;padding:2px 8px;border-radius:50px;margin-right:auto"></span>
         </div>
         <div id="bz-postpone-items" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -316,8 +341,8 @@
     <div class="bz-market-hero">
       <div class="bz-market-hero-bg"></div>
       <div class="bz-market-hero-inner">
-        <div class="bz-market-hero-title">البازارات — جرّب مشروعك بدون مخاطرة</div>
-        <div class="bz-market-hero-sub">احجز مكانك في البازار القادم واختر الوقت والموقع المناسب</div>
+        <div class="bz-market-hero-title" data-i18n="hero.title">البازارات — جرّب مشروعك بدون مخاطرة</div>
+        <div class="bz-market-hero-sub" data-i18n="hero.subtitle">احجز مكانك في البازار القادم واختر الوقت والموقع المناسب</div>
       </div>
     </div>
 
@@ -331,9 +356,10 @@
           <input type="text" id="bz-search"
                  class="bz-search-input"
                  placeholder="ابحث عن بازار… (الاسم، المكان، الفئة)"
+                 data-i18n-attr="placeholder:search.placeholder"
                  oninput="applyBzFilters()">
         </div>
-        <button class="bz-find-btn" onclick="applyBzFilters()">ابحث عن البازارات</button>
+        <button class="bz-find-btn" onclick="applyBzFilters()" data-i18n="search.button">ابحث عن البازارات</button>
       </div>
     </div>
 
@@ -342,24 +368,24 @@
       <div class="bz-chips-bar-inner">
 
         <div class="bz-time-nav">
-          <button class="bz-time-btn bz-time-active" data-nav="all" onclick="setBzTimeNav('all')">جميع البازارات</button>
-          <button class="bz-time-btn" data-nav="upcoming" onclick="setBzTimeNav('upcoming')">القادمة</button>
-          <button class="bz-time-btn" data-nav="today" onclick="setBzTimeNav('today')">اليوم</button>
-          <button class="bz-time-btn" data-nav="past" onclick="setBzTimeNav('past')">السابقة</button>
+          <button class="bz-time-btn bz-time-active" data-nav="all" onclick="setBzTimeNav('all')" data-i18n="timeNav.all">جميع البازارات</button>
+          <button class="bz-time-btn" data-nav="upcoming" onclick="setBzTimeNav('upcoming')" data-i18n="timeNav.upcoming">القادمة</button>
+          <button class="bz-time-btn" data-nav="today" onclick="setBzTimeNav('today')" data-i18n="timeNav.today">اليوم</button>
+          <button class="bz-time-btn" data-nav="past" onclick="setBzTimeNav('past')" data-i18n="timeNav.past">السابقة</button>
         </div>
 
         <div class="bz-chips-divider"></div>
 
         <div class="bz-chips-list">
-          <button class="bz-chip" data-chip="available" onclick="setBzChip('available',this)">بها أماكن متاحة</button>
-          <button class="bz-chip" data-chip="soldout" onclick="setBzChip('soldout',this)">المكتملة فقط</button>
+          <button class="bz-chip" data-chip="available" onclick="setBzChip('available',this)" data-i18n="chips.available">بها أماكن متاحة</button>
+          <button class="bz-chip" data-chip="soldout" onclick="setBzChip('soldout',this)" data-i18n="chips.soldout">المكتملة فقط</button>
         </div>
 
         <div class="bz-chips-divider"></div>
 
         <button class="bz-chip" id="bz-chip-org-search" onclick="toggleOrgSearch(this)" style="display:flex;align-items:center;gap:5px">
           <svg viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          بحث باسم المنظم
+          <span data-i18n="chips.orgSearch">بحث باسم المنظم</span>
         </button>
 
       </div>
@@ -374,6 +400,7 @@
         <input type="text" id="bz-org-search-input"
           style="width:100%;box-sizing:border-box;padding:11px 40px 11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-family:var(--font-body);font-size:14px;background:var(--surface);outline:none;transition:border-color .2s"
           placeholder="اكتب اسم المنظم…"
+          data-i18n-attr="placeholder:orgSearch.placeholder"
           oninput="searchOrganizers(this.value)"
           onfocus="this.style.borderColor='var(--orange)'"
           onblur="this.style.borderColor='var(--border)'">
@@ -386,29 +413,29 @@
       <div class="bz-filter-bar-inner">
 
         <div class="bz-fbar-group">
-          <label class="bz-fbar-label">المنطقة</label>
+          <label class="bz-fbar-label" data-i18n="filters.regionLabel">المنطقة</label>
           <select id="bz-region" class="bz-fbar-select" onchange="applyBzFilters()">
-            <option value="">كل المناطق</option>
-            <option>مدينة نصر</option><option>التجمع الخامس</option>
-            <option>المهندسين</option><option>الزمالك</option>
-            <option>الشيخ زايد</option><option>6 أكتوبر</option>
-            <option>مصر الجديدة</option>
+            <option value="" data-i18n="filters.allRegions">كل المناطق</option>
+            <option data-i18n="regions.nasrCity">مدينة نصر</option><option data-i18n="regions.fifthSettlement">التجمع الخامس</option>
+            <option data-i18n="regions.mohandessin">المهندسين</option><option data-i18n="regions.zamalek">الزمالك</option>
+            <option data-i18n="regions.sheikhZayed">الشيخ زايد</option><option data-i18n="regions.october6">6 أكتوبر</option>
+            <option data-i18n="regions.heliopolis">مصر الجديدة</option>
           </select>
         </div>
 
         <div class="bz-fbar-group">
-          <label class="bz-fbar-label">من تاريخ</label>
+          <label class="bz-fbar-label" data-i18n="filters.dateFromLabel">من تاريخ</label>
           <input type="date" id="bz-date-from" class="bz-fbar-select" onchange="applyBzFilters()">
         </div>
 
         <div class="bz-fbar-group">
-          <label class="bz-fbar-label">حتى تاريخ</label>
+          <label class="bz-fbar-label" data-i18n="filters.dateToLabel">حتى تاريخ</label>
           <input type="date" id="bz-date-to" class="bz-fbar-select" onchange="applyBzFilters()">
         </div>
 
         <div class="bz-fbar-group bz-fbar-price-group">
           <label class="bz-fbar-label">
-            السعر / مكان:&nbsp;<span id="bz-price-label" class="bz-fbar-price-val">بلا حد</span>
+            <span data-i18n="filters.priceLabel">السعر / مكان:</span>&nbsp;<span id="bz-price-label" class="bz-fbar-price-val">بلا حد</span>
           </label>
           <div class="slider-container slider-single" style="margin-top:10px">
             <div class="slider-track" id="bz-slider-track"></div>
@@ -419,16 +446,16 @@
         </div>
 
         <div class="bz-fbar-group">
-          <label class="bz-fbar-label">الترتيب</label>
+          <label class="bz-fbar-label" data-i18n="filters.sortLabel">الترتيب</label>
           <select id="bz-sort" onchange="applyBzFilters()" class="bz-fbar-select">
-            <option value="date-asc">الأقرب موعداً</option>
-            <option value="price-asc">السعر: من الأرخص</option>
-            <option value="price-desc">السعر: من الأغلى</option>
-            <option value="slots-desc">الأكثر أماكن متاحة</option>
+            <option value="date-asc" data-i18n="filters.sortDateAsc">الأقرب موعداً</option>
+            <option value="price-asc" data-i18n="filters.sortPriceAsc">السعر: من الأرخص</option>
+            <option value="price-desc" data-i18n="filters.sortPriceDesc">السعر: من الأغلى</option>
+            <option value="slots-desc" data-i18n="filters.sortSlotsDesc">الأكثر أماكن متاحة</option>
           </select>
         </div>
 
-        <button class="bz-fbar-clear" onclick="clearBzFilters()">مسح الكل</button>
+        <button class="bz-fbar-clear" onclick="clearBzFilters()" data-i18n="filters.clear">مسح الكل</button>
 
       </div>
     </div>
@@ -442,7 +469,7 @@
         <div class="bz-grid" id="bz-grid">
           <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
             <div style="font-size:40px;margin-bottom:14px;animation:spin 1.2s linear infinite">⏳</div>
-            <div style="font-size:15px;color:var(--ink3)">جاري تحميل البازارات…</div>
+            <div style="font-size:15px;color:var(--ink3)" data-i18n="grid.loading">جاري تحميل البازارات…</div>
           </div>
         </div>
         <div class="mp-pagination" id="bz-pagination"></div>
@@ -502,75 +529,76 @@
         <!-- هيدر البانل -->
         <div class="bz-bp-header">
           <div>
-            <div class="bz-bp-title">تأكيد حجز المكان</div>
-            <div class="bz-bp-slot-info" id="bzd-slot-info">اختر مكاناً من الخريطة أعلاه</div>
+            <div class="bz-bp-title" data-i18n="booking.title">تأكيد حجز المكان</div>
+            <div class="bz-bp-slot-info" id="bzd-slot-info" data-i18n="booking.selectPrompt">اختر مكاناً من الخريطة أعلاه</div>
           </div>
-          <button class="bz-bp-close" onclick="clearSlotSelection()" title="إلغاء الاختيار">×</button>
+          <button class="bz-bp-close" onclick="clearSlotSelection()" title="إلغاء الاختيار" data-i18n-attr="title:booking.closeTooltip">×</button>
         </div>
 
         <!-- فورم الحجز -->
         <div class="bz-bp-form">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
             <div class="afg" style="margin:0">
-              <label>الاسم الكامل *</label>
-              <input type="text" id="bzb-name" placeholder="اسمك الكريم">
+              <label data-i18n="booking.nameLabel">الاسم الكامل *</label>
+              <input type="text" id="bzb-name" placeholder="اسمك الكريم" data-i18n-attr="placeholder:booking.namePlaceholder">
             </div>
             <div class="afg" style="margin:0">
-              <label>رقم الموبايل *</label>
+              <label data-i18n="booking.phoneLabel">رقم الموبايل *</label>
               <input type="tel" id="bzb-phone" placeholder="01xxxxxxxxx" dir="ltr">
             </div>
           </div>
           <div class="afg">
-            <label>البريد الإلكتروني (اختياري)</label>
+            <label data-i18n="booking.emailLabel">البريد الإلكتروني (اختياري)</label>
             <input type="email" id="bzb-email" placeholder="email@example.com" dir="ltr">
           </div>
           <div class="afg">
-            <label>نوع النشاط / التخصص *</label>
+            <label data-i18n="booking.activityLabel">نوع النشاط / التخصص *</label>
             <select id="bzb-activity" style="width:100%;padding:10px 12px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface2);color:var(--ink);font-size:14px;font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);outline:none;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:left 12px center;padding-left:32px">
-              <option value="">— اختر نوع النشاط —</option>
-              <optgroup label="🍽️ طعام وشراب">
-                <option value="أكل ومشروبات">أكل ومشروبات</option>
-                <option value="حلويات">حلويات</option>
+              <option value="" data-i18n="booking.activityPick">— اختر نوع النشاط —</option>
+              <optgroup label="🍽️ طعام وشراب" data-i18n-attr="label:activities.groupFood">
+                <option value="أكل ومشروبات" data-i18n="activities.أكل ومشروبات">أكل ومشروبات</option>
+                <option value="حلويات" data-i18n="activities.حلويات">حلويات</option>
               </optgroup>
-              <optgroup label="👗 أزياء وإكسسوارات">
-                <option value="ملابس">ملابس</option>
-                <option value="إكسسوارات">إكسسوارات</option>
-                <option value="موضة">موضة</option>
-                <option value="مجوهرات">مجوهرات</option>
-                <option value="ساعات">ساعات</option>
+              <optgroup label="👗 أزياء وإكسسوارات" data-i18n-attr="label:activities.groupFashion">
+                <option value="ملابس" data-i18n="activities.ملابس">ملابس</option>
+                <option value="إكسسوارات" data-i18n="activities.إكسسوارات">إكسسوارات</option>
+                <option value="موضة" data-i18n="activities.موضة">موضة</option>
+                <option value="مجوهرات" data-i18n="activities.مجوهرات">مجوهرات</option>
+                <option value="ساعات" data-i18n="activities.ساعات">ساعات</option>
               </optgroup>
-              <optgroup label="🎁 هدايا وديكور">
-                <option value="هدايا">هدايا</option>
-                <option value="ديكور">ديكور</option>
-                <option value="مستلزمات منزلية">مستلزمات منزلية</option>
+              <optgroup label="🎁 هدايا وديكور" data-i18n-attr="label:activities.groupGifts">
+                <option value="هدايا" data-i18n="activities.هدايا">هدايا</option>
+                <option value="ديكور" data-i18n="activities.ديكور">ديكور</option>
+                <option value="مستلزمات منزلية" data-i18n="activities.مستلزمات منزلية">مستلزمات منزلية</option>
               </optgroup>
-              <optgroup label="✋ حرف وفنون">
-                <option value="حرف يدوية">حرف يدوية</option>
-                <option value="عطور">عطور</option>
-                <option value="عناية شخصية">عناية شخصية</option>
+              <optgroup label="✋ حرف وفنون" data-i18n-attr="label:activities.groupCrafts">
+                <option value="حرف يدوية" data-i18n="activities.حرف يدوية">حرف يدوية</option>
+                <option value="عطور" data-i18n="activities.عطور">عطور</option>
+                <option value="عناية شخصية" data-i18n="activities.عناية شخصية">عناية شخصية</option>
               </optgroup>
-              <optgroup label="📚 كتب وتقنية">
-                <option value="كتب">كتب</option>
-                <option value="إلكترونيات">إلكترونيات</option>
-                <option value="تقنية">تقنية</option>
+              <optgroup label="📚 كتب وتقنية" data-i18n-attr="label:activities.groupBooks">
+                <option value="كتب" data-i18n="activities.كتب">كتب</option>
+                <option value="إلكترونيات" data-i18n="activities.إلكترونيات">إلكترونيات</option>
+                <option value="تقنية" data-i18n="activities.تقنية">تقنية</option>
               </optgroup>
-              <optgroup label="👶 أطفال">
-                <option value="ألعاب أطفال">ألعاب أطفال</option>
+              <optgroup label="👶 أطفال" data-i18n-attr="label:activities.groupKids">
+                <option value="ألعاب أطفال" data-i18n="activities.ألعاب أطفال">ألعاب أطفال</option>
               </optgroup>
-              <optgroup label="🏪 أخرى">
-                <option value="بيع بالجملة">بيع بالجملة</option>
-                <option value="خدمات">خدمات</option>
-                <option value="متنوع">متنوع</option>
+              <optgroup label="🏪 أخرى" data-i18n-attr="label:activities.groupOther">
+                <option value="بيع بالجملة" data-i18n="activities.بيع بالجملة">بيع بالجملة</option>
+                <option value="خدمات" data-i18n="activities.خدمات">خدمات</option>
+                <option value="متنوع" data-i18n="activities.متنوع">متنوع</option>
               </optgroup>
             </select>
           </div>
           <div class="afg">
-            <label>اسم المشروع / النشاط *</label>
-            <input type="text" id="bzb-business" placeholder="مثال: عربية كنافة الست سميرة، مجوهرات نور…">
+            <label data-i18n="booking.businessLabel">اسم المشروع / النشاط *</label>
+            <input type="text" id="bzb-business" placeholder="مثال: عربية كنافة الست سميرة، مجوهرات نور…" data-i18n-attr="placeholder:booking.businessPlaceholder">
           </div>
           <div class="afg">
-            <label>ملاحظات (اختياري)</label>
+            <label data-i18n="booking.notesLabel">ملاحظات (اختياري)</label>
             <textarea id="bzb-notes" placeholder="أي تفاصيل إضافية تريد إضافتها…"
+                      data-i18n-attr="placeholder:booking.notesPlaceholder"
                       style="min-height:64px;resize:vertical;width:100%;
                              border-radius:var(--radius-md);border:1.5px solid var(--border);
                              padding:10px 12px;font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);
@@ -581,22 +609,23 @@
 
           <!-- بلوك ضمان العربون -->
           <div class="escrow-block">
-            <div class="escrow-header">
+            <div class="escrow-header" data-i18n="booking.escrowTitle">
               عربونك محمي بضمان مكاني Spot
             </div>
             <div class="escrow-items">
-              <div class="escrow-item">بتدفع العربون لـ <strong>مكاني</strong> (مش للمنظم)</div>
-              <div class="escrow-item">لو البازار اتعمل → الفلوس بتتحول للمنظم</div>
-              <div class="escrow-item">لو اتأجل أو اتلغى → بتاخد فلوسك كاملة</div>
+              <div class="escrow-item" data-i18n-html="booking.escrowItem1">بتدفع العربون لـ <strong>مكاني</strong> (مش للمنظم)</div>
+              <div class="escrow-item" data-i18n="booking.escrowItem2">لو البازار اتعمل → الفلوس بتتحول للمنظم</div>
+              <div class="escrow-item" data-i18n="booking.escrowItem3">لو اتأجل أو اتلغى → بتاخد فلوسك كاملة</div>
             </div>
           </div>
 
           <button class="btn btn-primary" onclick="submitBazaarBooking()"
                   style="width:100%;padding:14px;font-size:15px;margin-top:10px;
-                         justify-content:center;border-radius:var(--radius-lg)">
+                         justify-content:center;border-radius:var(--radius-lg)"
+                  data-i18n="booking.submitBtn">
             ⏳ أرسل طلب الحجز المبدئي
           </button>
-          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:8px;line-height:1.6">
+          <div style="font-size:11px;color:var(--ink2);text-align:center;margin-top:8px;line-height:1.6" data-i18n="booking.disclaimer">
             سيُحجز المكان مبدئياً — هيتواصل معاك الفريق لتأكيد الحجز النهائي ودفع العربون
           </div>
         </div>
@@ -628,29 +657,32 @@
         <input type="hidden" id="bz-prop-request-id">
 
         <div class="form-group" style="margin-bottom:14px">
-          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">رقم هاتفك للتواصل <span style="color:var(--red)">*</span></label>
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px"><span data-i18n="proposalModal.phoneLabel">رقم هاتفك للتواصل</span> <span style="color:var(--red)">*</span></label>
           <input type="tel" id="bz-prop-phone" placeholder="01xxxxxxxxx" required
             style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:14px;font-family:var(--font-body);background:var(--surface);outline:none"
             onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
         </div>
 
         <div class="form-group" style="margin-bottom:14px">
-          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">مفهوم البازار المقترح</label>
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.conceptLabel">مفهوم البازار المقترح</label>
           <textarea id="bz-prop-concept" rows="3" placeholder="نوع البازار، فئة العارضين، الأجواء المتوقعة، الجمهور المستهدف…"
+            data-i18n-attr="placeholder:proposalModal.conceptPlaceholder"
             style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
             onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
           <div>
-            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">الإيجار المقترح (ج.م.)</label>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.rentLabel">الإيجار المقترح (ج.م.)</label>
             <input type="number" id="bz-prop-rent" placeholder="مثال: 15000" min="0"
+              data-i18n-attr="placeholder:proposalModal.rentPlaceholder"
               style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
               onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           <div>
-            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">عدد العارضين المتوقع</label>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.exhibitorsLabel">عدد العارضين المتوقع</label>
             <input type="number" id="bz-prop-exhibitors" placeholder="مثال: 30" min="1"
+              data-i18n-attr="placeholder:proposalModal.exhibitorsPlaceholder"
               style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
               onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
           </div>
@@ -658,13 +690,13 @@
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
           <div>
-            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ البداية المقترح</label>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.startDateLabel">تاريخ البداية المقترح</label>
             <input type="date" id="bz-prop-start"
               style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
               onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           <div>
-            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">تاريخ النهاية</label>
+            <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.endDateLabel">تاريخ النهاية</label>
             <input type="date" id="bz-prop-end"
               style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none"
               onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
@@ -672,15 +704,17 @@
         </div>
 
         <div style="margin-bottom:18px">
-          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px">ملاحظات إضافية</label>
+          <label style="font-size:13px;font-weight:700;color:var(--ink2);display:block;margin-bottom:6px" data-i18n="proposalModal.notesLabel">ملاحظات إضافية</label>
           <textarea id="bz-prop-notes" rows="2" placeholder="أي تفاصيل إضافية لصاحب المساحة…"
+            data-i18n-attr="placeholder:proposalModal.notesPlaceholder"
             style="width:100%;box-sizing:border-box;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-lg);font-size:13px;font-family:var(--font-body);background:var(--surface);outline:none;resize:vertical"
             onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
         </div>
 
         <button type="submit" id="bz-prop-btn"
           style="width:100%;padding:14px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-lg);font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:opacity .15s"
-          onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
+          onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'"
+          data-i18n="proposalModal.submitBtn">
           📤 إرسال العرض
         </button>
       </form>
@@ -697,24 +731,24 @@
         <span class="sf-logo-sep" aria-hidden="true"></span>
         <span class="sf-logo-en">Spot</span>
       </div>
-      <p class="sf-about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
+      <p class="sf-about" data-i18n="footer.about">مكاني Spot هي المنصة الرقمية الأولى للاستغلال الأمثل للمساحات التجارية الصغيرة وغير المستغلة في مصر، وتسهيل تأجيرها لأصحاب المشاريع وصغار التجار.</p>
       <div class="sf-paths">
-        <span class="sf-path">مساحات تجارية</span>
-        <span class="sf-path">بازارات ومعارض</span>
-        <span class="sf-path">مشاريع للبيع</span>
+        <span class="sf-path" data-i18n="footer.pathSpaces">مساحات تجارية</span>
+        <span class="sf-path" data-i18n="footer.pathBazaars">بازارات ومعارض</span>
+        <span class="sf-path" data-i18n="footer.pathProjects">مشاريع للبيع</span>
       </div>
     </div>
     <div class="sf-col sf-col--links">
-      <h4 class="sf-col-title">تصفح المنصة</h4>
-      <a class="sf-link" href="/">الرئيسية</a>
-      <a class="sf-link" href="/?p=market">المساحات التجارية</a>
-      <a class="sf-link" href="/bazaars/">البازارات والمعارض</a>
-      <a class="sf-link" href="/market/">مشاريع كاملة للبيع</a>
-      <a class="sf-link" href="/catalog/">كتالوج الأنشطة</a>
-      <a class="sf-link" href="/post-ad/">نشر إعلانك</a>
+      <h4 class="sf-col-title" data-i18n="footer.browseTitle">تصفح المنصة</h4>
+      <a class="sf-link" href="/" data-i18n="footer.linkHome">الرئيسية</a>
+      <a class="sf-link" href="/?p=market" data-i18n="footer.linkSpaces">المساحات التجارية</a>
+      <a class="sf-link" href="/bazaars/" data-i18n="footer.linkBazaars">البازارات والمعارض</a>
+      <a class="sf-link" href="/market/" data-i18n="footer.linkProjects">مشاريع كاملة للبيع</a>
+      <a class="sf-link" href="/catalog/" data-i18n="footer.linkCatalog">كتالوج الأنشطة</a>
+      <a class="sf-link" href="/post-ad/" data-i18n="footer.linkPostAd">نشر إعلانك</a>
     </div>
     <div class="sf-col sf-col--contact">
-      <h4 class="sf-col-title">تواصل معنا</h4>
+      <h4 class="sf-col-title" data-i18n="footer.contactTitle">تواصل معنا</h4>
       <a class="sf-social-btn sf-wa" href="https://wa.me/201103467711?text=مرحبا، أريد الاستفسار عن مكاني Spot" target="_blank" rel="noopener">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.116 1.523 5.845L.057 23.428a.75.75 0 00.914.914l5.583-1.466A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.49-5.19-1.351l-.37-.214-3.838 1.008 1.008-3.763-.228-.383A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         <span dir="ltr">011 0346 7711</span>
@@ -726,14 +760,14 @@
       <div class="sf-col-divider"></div>
       <a class="sf-policies-link" href="/policies/">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        السياسات والشروط القانونية
+        <span data-i18n="footer.policiesLink">السياسات والشروط القانونية</span>
       </a>
     </div>
   </div>
   <div class="sf-bottom">
     <div class="sf-bottom-inner">
-      <span class="sf-legal">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
-      <span class="sf-copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
+      <span class="sf-legal" data-i18n="footer.legalLine">شركة كيوسك سبوت هب &nbsp;·&nbsp; KIOSQ SpotHub</span>
+      <span class="sf-copy" data-i18n="footer.copy">© ٢٠٢٦ مكاني Spot · جميع الحقوق محفوظة</span>
     </div>
   </div>
 </footer>
@@ -749,8 +783,8 @@
         <polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
     </span>
-    <span class="bn-label">الرئيسية</span>
-    <span class="bn-desc">الصفحة الرئيسية</span>
+    <span class="bn-label" data-i18n="bottomNav.home">الرئيسية</span>
+    <span class="bn-desc" data-i18n="bottomNav.homeDesc">الصفحة الرئيسية</span>
   </button>
 
   <!-- المساحات التجارية -->
@@ -761,8 +795,8 @@
         <circle cx="12" cy="10" r="3"/>
       </svg>
     </span>
-    <span class="bn-label">مساحات</span>
-    <span class="bn-desc">ثابتة وتجارية</span>
+    <span class="bn-label" data-i18n="bottomNav.spaces">مساحات</span>
+    <span class="bn-desc" data-i18n="bottomNav.spacesDesc">ثابتة وتجارية</span>
   </button>
 
   <!-- البازارات — نشط -->
@@ -773,8 +807,8 @@
         <path d="M12 3v18"/>
       </svg>
     </span>
-    <span class="bn-label">بازارات</span>
-    <span class="bn-desc">أحداث وبازارات</span>
+    <span class="bn-label" data-i18n="bottomNav.bazaars">بازارات</span>
+    <span class="bn-desc" data-i18n="bottomNav.bazaarsDesc">أحداث وبازارات</span>
   </button>
 
   <!-- مشاريع للبيع -->
@@ -785,8 +819,8 @@
         <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>
       </svg>
     </span>
-    <span class="bn-label">مشاريع</span>
-    <span class="bn-desc">كاملة للبيع</span>
+    <span class="bn-label" data-i18n="bottomNav.projects">مشاريع</span>
+    <span class="bn-desc" data-i18n="bottomNav.projectsDesc">كاملة للبيع</span>
   </a>
 
   <!-- دخول / حساب -->
@@ -810,8 +844,8 @@
 <!-- ═══ Service Worker + Update Bar ═══ -->
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
-  <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
-  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 تحديث الآن</button>
+  <span style="color:#e8e8f0;font-size:13px;font-weight:600" data-i18n="swUpdate.text">تحديث جديد متاح!</span>
+  <button onclick="window.location.reload()" style="background:#F36418;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="swUpdate.button">🔄 تحديث الآن</button>
   <button onclick="this.parentElement.style.display='none'" style="background:transparent;border:none;color:#6b6b8a;font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
 </div>
 <script>
@@ -835,6 +869,20 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+</script>
+
+<!-- ── تبديل اللغة (English/عربي) ── -->
+<script>
+  function updateLangSwitcherLabel() {
+    const el = document.getElementById('langSwitchLabel');
+    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+  }
+  function toggleMakaniLocale() {
+    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+  });
 </script>
 </body>
 </html>
