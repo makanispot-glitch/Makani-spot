@@ -43,7 +43,7 @@
 }
 .bz-nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .bz-nav-logo .logo-ar { font-size: 20px; font-weight: 900; font-family: var(--font-display); color: var(--dark); }
-.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--orange); }
+.bz-nav-logo .logo-en { font-size: 13px; font-weight: 700; font-family: var(--font-latin); color: var(--orange); }
 .bz-nav-title {
   font-size: 13px; font-weight: 700; font-family: var(--font-display); color: var(--ink2);
   padding: 4px 12px; background: var(--orange-ultra); border-radius: var(--radius-pill);
@@ -346,7 +346,7 @@
 <script>
   function updateLangSwitcherLabel() {
     const el = document.getElementById('langSwitchLabel');
-    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+    if (el) el.textContent = getLocale() === 'en' ? 'AR' : 'EN';
   }
   function toggleMakaniLocale() {
     setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);

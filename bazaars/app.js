@@ -304,12 +304,15 @@ function bzMountManageIcon() {
     '</svg>';
   btn.addEventListener('click', () => { window.location.href = '/bazaars/manage.html'; });
 
-  /* الترتيب المعتمد في كل صفحات المنصة: الجرس ملاصق للأفاتار مباشرة (GN.mount
-     بيحطه قبل avatarBtn مباشرة). فأيقونة الإدارة الجديدة لازم تتحط قبل الجرس
-     (بعيد عن الأفاتار)، مش بعده — عشان محدش يتقحّم بين الجرس والأفاتار. */
+  /* الترتيب الثابت المعتمد في كل صفحات المنصة: [لغة] ← [أفاتار] ← [جرس]،
+     والعناصر الخاصة بالصفحة (زي أيقونة إدارة البازارات دي) تيجي بعد الجرس. */
   const bell = wrap.querySelector('#gn-bell');
-  if (bell) bell.insertAdjacentElement('beforebegin', btn);
-  else wrap.insertBefore(btn, wrap.querySelector('.nav-avatar-btn') || wrap.firstChild);
+  if (bell) bell.insertAdjacentElement('afterend', btn);
+  else {
+    const av = wrap.querySelector('.nav-avatar-btn');
+    if (av) av.insertAdjacentElement('afterend', btn);
+    else wrap.insertBefore(btn, wrap.firstChild);
+  }
 }
 
 function bzToggleAccountMenu(e) {

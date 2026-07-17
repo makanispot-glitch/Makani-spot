@@ -53,7 +53,7 @@
 .bz-standalone-nav{position:sticky;top:0;z-index:300;background:rgba(250,250,247,0.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;box-shadow:var(--shadow);flex-shrink:0}
 .bz-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
 .bz-nav-logo .logo-ar{font-size:20px;font-weight:900;font-family:var(--font-display);color:var(--dark)}
-.bz-nav-logo .logo-en{font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--orange)}
+.bz-nav-logo .logo-en{font-size:13px;font-weight:700;font-family:var(--font-latin);color:var(--orange)}
 .bz-nav-title{font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--ink2);padding:4px 12px;background:var(--orange-ultra);border-radius:var(--radius-pill)}
 .bz-nav-right{display:flex;align-items:center;gap:12px}
 .bz-nav-back{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-pill);font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--ink2);text-decoration:none;transition:color var(--dur-fast) var(--ease-out)}
@@ -1105,7 +1105,7 @@ if ('serviceWorker' in navigator) {
 <script>
   function updateLangSwitcherLabel() {
     const el = document.getElementById('langSwitchLabel');
-    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+    if (el) el.textContent = getLocale() === 'en' ? 'AR' : 'EN';
   }
   function toggleMakaniLocale() {
     setLocale(getLocale() === 'en' ? 'ar' : 'en', sb && me ? { sbClient: sb, userId: me.id } : undefined).then(updateLangSwitcherLabel);

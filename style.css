@@ -461,18 +461,21 @@ body {
    عنصر في nav-user-area دايمًا (قبل زر الدخول أو الأفاتار) عشان يفضل
    في نفس المكان بغض النظر عن حالة تسجيل الدخول. نفس الماركب يتكرر
    يدويًا في كل نسخة nav عبر المنصة — راجع shared/i18n.js. */
+/* height/min-height صريحين لأن قاعدة "button, .btn { min-height:44px }" العامة
+   بتكسر أي زرار أصغر من 44px (نفس فخ .share-btn) */
 .lang-switch-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 34px;
-  padding: 0 12px;
+  gap: 4px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 9px;
   border-radius: var(--radius-pill);
   border: 1.5px solid var(--border);
   background: transparent;
   color: var(--fg-2);
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -481,8 +484,8 @@ body {
 }
 
 .lang-switch-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
 }
 
@@ -492,13 +495,15 @@ body {
   background: var(--orange-ultra);
 }
 
-@media (max-width: 400px) {
+@media (max-width: 640px) {
   .lang-switch-btn {
-    height: 30px;
-    padding: 0 9px;
-    font-size: 11.5px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0 7px;
+    gap: 3px;
+    font-size: 10.5px;
   }
-  .lang-switch-btn svg { width: 12px; height: 12px; }
+  .lang-switch-btn svg { width: 11px; height: 11px; }
 }
 
 /* زر "إنشاء بازار جديد" — الـ Primary Action الوحيد لمنظم البازارات (بعد نقل "فرص
@@ -662,6 +667,27 @@ body {
   }
 }
 
+/* ── الإنجليزية أطول من العربية دائماً في نفس هذا الشريط (حتى بدون زر
+   المنظم) — فتفيض منطقة [لغة/أفاتار/جرس] خارج الشاشة وتُقصّ بصمت بفعل
+   overflow-x:hidden على body. نطبّق نفس تدرّج :has(.bz-cta-organize)
+   أعلاه، لكن بشرط [dir="ltr"] العام بدل الاقتصار على وجود زر المنظم. */
+@media (max-width: 1460px) and (min-width: 769px) {
+  [dir="ltr"] .nsb-text small {
+    display: none;
+  }
+
+  [dir="ltr"] .nav-section-btn {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 1360px) and (min-width: 769px) {
+  [dir="ltr"] .nav-links > a:not(.nav-section-btn),
+  [dir="ltr"] .nav-divider {
+    display: none;
+  }
+}
+
 @media (max-width: 1024px) and (min-width: 769px) {
   .nav:has(.bz-cta-organize) .nav-avatar-info {
     display: none;
@@ -773,14 +799,30 @@ body {
   border-radius: var(--radius-lg);
   min-width: 260px;
   max-width: min(300px, calc(100vw - 32px));
+  /* على الشاشات القصيرة (لابتوب صغير، موبايل بالعرض) أو حساب فيه عناصر
+     كتير (مالك مساحة/منظّم) القائمة كانت بتطول عن ارتفاع الشاشة المتاح
+     وآخر عناصرها (زي تسجيل الخروج) تختفي تمامًا من غير أي سكرول ممكن —
+     نحدد سقف ارتفاع مبني على المساحة الفعلية المتبقية تحت الناف، ونخلي
+     الزيادة تتحول لسكرول داخلي بدل ما تُقصّ وتختفي. */
+  max-height: min(480px, calc(100vh - 96px));
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.13);
   z-index: 300;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   opacity: 0;
   transform: translateY(-8px) scale(0.97);
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
   transform-origin: top left;
+}
+
+/* في الواجهة الإنجليزية (LTR) الأفاتار يقف عند الحافة اليمنى للشاشة —
+   نفس "left:0" هيدفع القائمة خارج الشاشة يمينًا. اعكس الإرساء عشان تفضل
+   دايمًا جوه حدود الشاشة بغض النظر عن اللغة. */
+[dir="ltr"] .nav-dropdown {
+  left: auto;
+  right: 0;
+  transform-origin: top right;
 }
 
 .nav-dropdown.open {
@@ -878,11 +920,11 @@ body {
   background: none;
   width: 100%;
   font-family: var(--font-display);
-  text-align: right;
   text-decoration: none;
   /* يمنع الخطوط التسطيرية في <a> */
-  direction: rtl;
-  /* يضمن اتجاه النص الصحيح دائماً */
+  /* لا نفرض direction/text-align هنا — نخليها ترث من dir بتاع <html>،
+     عشان تتصحح تلقائيًا في الإنجليزية (LTR) بدل ما تفضل rtl قسرًا
+     وتخرج النصوص خارج حدود القائمة. */
   box-sizing: border-box;
 }
 
@@ -5489,6 +5531,11 @@ body {
     right: auto;
     min-width: min(270px, calc(100vw - 32px));
     max-width: calc(100vw - 32px);
+  }
+
+  [dir="ltr"] .nav-dropdown {
+    left: auto;
+    right: 0;
   }
 
   /* إظهار Bottom Nav */

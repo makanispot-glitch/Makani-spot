@@ -86,11 +86,20 @@
       '<span id="gn-badge" class="gn-badge"></span>';
     bell.addEventListener('click', toggle);
 
-    /* أدخل الجرس قبل الـ avatar btn مباشرة، أو قبل أول عنصر */
+    /* الترتيب الثابت المعتمد في كل صفحات المنصة: [لغة] ← [أفاتار] ← [جرس]،
+       والعناصر الخاصة بكل صفحة تيجي بعد كده. لو فيه أفاتار، الجرس يتحط
+       بعده مباشرة. لو الصفحة مالهاش أفاتار (نافات مستقلة زي bz-nav-right)،
+       يتحط بعد زر تبديل اللغة. غير كده (نادر) يتحط أول عنصر. */
     var avatarBtn = cont.querySelector(
       '.nav-avatar-btn, #eq-avatar-btn, #bz-avatar-btn, #nav-avatar-btn, .bz-nav-user-wrap'
     );
-    cont.insertBefore(bell, avatarBtn || cont.firstChild);
+    if (avatarBtn) {
+      avatarBtn.insertAdjacentElement('afterend', bell);
+    } else {
+      var langBtn = cont.querySelector('.lang-switch-btn');
+      if (langBtn) langBtn.insertAdjacentElement('afterend', bell);
+      else cont.insertBefore(bell, cont.firstChild);
+    }
 
     _syncBadge();
   }

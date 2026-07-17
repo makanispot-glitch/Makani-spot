@@ -294,25 +294,31 @@
     </a>
   </div>
 
-  <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
-    </svg>
-    <span id="langSwitchLabel">EN</span>
-  </button>
-
-  <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
-  <div class="nav-user-area" id="bz-nav-user">
-    <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
-      <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+  <!-- الترتيب الثابت المعتمد في كل صفحات المنصة: [لغة] ← [أفاتار] ← [جرس] —
+       الاثنان لازم يكونا داخل نفس حاوية nav-user-area الواحدة (مش عنصرين
+       منفصلين جنب بعض في .nav) عشان يتصرفوا كمجموعة واحدة مهما كان عرض
+       الشاشة أو طول نصوص nav-links، ونفس البنية تتكرر في كل صفحات المنصة. -->
+  <div class="nav-user-area">
+    <button type="button" class="lang-switch-btn" id="langSwitchBtn" onclick="toggleMakaniLocale()" aria-label="EN / عربي">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/>
       </svg>
-      <span data-i18n="nav.loginBtn">دخول</span>
-      <span class="btn-login-sep">|</span>
-      <span data-i18n="nav.signupBtn">سجّل</span>
+      <span id="langSwitchLabel">EN</span>
     </button>
+
+    <!-- منطقة المستخدم — تُملأ تلقائياً من app.js -->
+    <div id="bz-nav-user">
+      <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
+        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
+        </svg>
+        <span data-i18n="nav.loginBtn">دخول</span>
+        <span class="btn-login-sep">|</span>
+        <span data-i18n="nav.signupBtn">سجّل</span>
+      </button>
+    </div>
   </div>
 
 </nav>
@@ -875,7 +881,7 @@ if ('serviceWorker' in navigator) {
 <script>
   function updateLangSwitcherLabel() {
     const el = document.getElementById('langSwitchLabel');
-    if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+    if (el) el.textContent = getLocale() === 'en' ? 'AR' : 'EN';
   }
   function toggleMakaniLocale() {
     setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);

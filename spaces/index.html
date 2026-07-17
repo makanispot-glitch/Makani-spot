@@ -1578,7 +1578,7 @@
   <script>
     function updateLangSwitcherLabel() {
       const el = document.getElementById('langSwitchLabel');
-      if (el) el.textContent = getLocale() === 'en' ? 'عربي' : 'EN';
+      if (el) el.textContent = getLocale() === 'en' ? 'AR' : 'EN';
     }
     function toggleMakaniLocale() {
       setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);

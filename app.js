@@ -2022,6 +2022,7 @@ async function initAuth() {
       currentProfile = profile;
       currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
+      GN.init(sbClient, session.user.id);
 
       // يُفتح الداشبورد تلقائياً في حالتين صريحتين فقط:
       //   1) رابط مباشر /?p=dashboard (من الصفحات الفرعية)
@@ -2059,6 +2060,7 @@ async function initAuth() {
         currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       }
       setNavUser(session.user, currentProfile);
+      GN.init(sbClient, session.user.id);
 
       // تحديد الصفحة النشطة حالياً
       const activePage = document.querySelector('.page.active')?.id || '';
@@ -2082,6 +2084,7 @@ async function initAuth() {
       currentProfile = null;
       currentAvatarUrl = null;
       setNavUser(null, null);
+      GN.destroy();
     }
   });
 }
@@ -2143,6 +2146,9 @@ function setNavUser(user, profile) {
     if (ownerBtn) ownerBtn.style.display = caps.isOwner ? 'flex' : 'none';
 
     updateBnUser(user, profile);
+
+    // جرس الإشعارات الموحّد
+    GN.mount(loggedEl);
   }
 
   const bnUserIcon = document.getElementById('bn-user-icon');
