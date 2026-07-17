@@ -60,46 +60,46 @@
     _subscribe();
   }
 
-  /* mount(containerEl | containerId) — يُضيف جرس الإشعارات قبل الـ avatar btn
-     DOUBLE-INJECT GUARD: يُزيل الجرس القديم أولاً */
+  /* mount(containerEl | containerId) — يُضيف جرس الإشعارات أو يربطه بالعنصر الثابت
+     DOUBLE-INJECT GUARD: إذا كان الجرس مكتوباً كـ static HTML، تتم إعادة استخدامه */
   function mount(container) {
     var cont = typeof container === 'string'
       ? document.getElementById(container)
       : container;
     if (!cont) return;
 
-    /* أزل أي جرس موجود مسبقاً — يمنع ظهور جرسين */
-    cont.querySelector('#gn-bell')?.remove();
+    var bell = cont.querySelector('#gn-bell');
+    if (!bell) {
+      bell = document.createElement('div');
+      bell.id        = 'gn-bell';
+      bell.className = 'gn-bell';
+      bell.setAttribute('role', 'button');
+      bell.setAttribute('aria-label', 'الإشعارات');
+      bell.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+        '     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+        '     width="20" height="20" aria-hidden="true">' +
+        '  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>' +
+        '  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
+        '</svg>' +
+        '<span id="gn-badge" class="gn-badge"></span>';
 
-    var bell = document.createElement('div');
-    bell.id        = 'gn-bell';
-    bell.className = 'gn-bell';
-    bell.setAttribute('role', 'button');
-    bell.setAttribute('aria-label', 'الإشعارات');
-    bell.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-      '     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
-      '     width="20" height="20" aria-hidden="true">' +
-      '  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>' +
-      '  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
-      '</svg>' +
-      '<span id="gn-badge" class="gn-badge"></span>';
-    bell.addEventListener('click', toggle);
-
-    /* الترتيب الثابت المعتمد في كل صفحات المنصة: [لغة] ← [أفاتار] ← [جرس]،
-       والعناصر الخاصة بكل صفحة تيجي بعد كده. لو فيه أفاتار، الجرس يتحط
-       بعده مباشرة. لو الصفحة مالهاش أفاتار (نافات مستقلة زي bz-nav-right)،
-       يتحط بعد زر تبديل اللغة. غير كده (نادر) يتحط أول عنصر. */
-    var avatarBtn = cont.querySelector(
-      '.nav-avatar-btn, #eq-avatar-btn, #bz-avatar-btn, #nav-avatar-btn, .bz-nav-user-wrap'
-    );
-    if (avatarBtn) {
-      avatarBtn.insertAdjacentElement('afterend', bell);
-    } else {
-      var langBtn = cont.querySelector('.lang-switch-btn');
-      if (langBtn) langBtn.insertAdjacentElement('afterend', bell);
-      else cont.insertBefore(bell, cont.firstChild);
+      /* الترتيب الثابت المعتمد في كل صفحات المنصة: الأدوات الخاصة بالصفحة ← الإشعارات ← حساب المستخدم،
+         بحيث يكون الأفاتار هو العنصر الأخير في طرف النافبار. */
+      var avatarBtn = cont.querySelector(
+        '.nav-avatar-btn, #eq-avatar-btn, #bz-avatar-btn, #nav-avatar-btn, .bz-nav-user-wrap'
+      );
+      if (avatarBtn) {
+        avatarBtn.insertAdjacentElement('beforebegin', bell);
+      } else {
+        var langBtn = cont.querySelector('.lang-switch-btn');
+        if (langBtn) langBtn.insertAdjacentElement('afterend', bell);
+        else cont.insertBefore(bell, cont.firstChild);
+      }
     }
+
+    bell.removeEventListener('click', toggle);
+    bell.addEventListener('click', toggle);
 
     _syncBadge();
   }

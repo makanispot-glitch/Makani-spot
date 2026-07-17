@@ -2022,6 +2022,11 @@ function setNavUser(user, profile) {
   const loggedEl = document.getElementById('nav-logged');
   if (!guestEl || !loggedEl) return;
 
+  // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
+  // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
+  const langBtn = document.getElementById('langSwitchBtn');
+  if (langBtn) langBtn.style.display = user ? 'none' : '';
+
   if (!user) {
     guestEl.style.display  = 'flex';
     loggedEl.style.display = 'none';
@@ -2069,9 +2074,16 @@ function toggleUserDropdown() {
   const btn = document.getElementById('nav-avatar-btn');
   const dd  = document.getElementById('nav-dropdown');
   if (!btn || !dd) return;
-  dd.classList.contains('open')
-    ? (btn.classList.remove('open'), dd.classList.remove('open'))
-    : (btn.classList.add('open'), dd.classList.add('open'));
+  if (dd.classList.contains('open')) {
+    btn.classList.remove('open');
+    dd.classList.remove('open');
+  } else {
+    btn.classList.add('open');
+    dd.classList.add('open');
+    // كل مرة تتفتح القائمة تفتح مقفولة — بدون ما تفضل موسّعة من مرة سابقة
+    document.getElementById('dd-lang-trigger')?.classList.remove('open');
+    document.getElementById('dd-lang-panel')?.classList.remove('open');
+  }
 }
 
 function closeUserDropdown() {
@@ -2083,6 +2095,19 @@ document.addEventListener('click', e => {
   const area = document.getElementById('nav-avatar-btn');
   if (area && !area.contains(e.target)) closeUserDropdown();
 });
+
+/* عنصر "اللغة" داخل القائمة المنسدلة — أكورديون بسيط بيفتح خياري عربي/إنجليزي
+   بدل التنقل المباشر (setLocale/getLocale نفسها لم تتغيّر). */
+function toggleDdLangPanel(e) {
+  e.stopPropagation();
+  document.getElementById('dd-lang-trigger')?.classList.toggle('open');
+  document.getElementById('dd-lang-panel')?.classList.toggle('open');
+}
+
+function selectDdLocale(locale, e) {
+  e.stopPropagation();
+  setLocale(locale).then(() => { if (typeof updateLangSwitcherLabel === 'function') updateLangSwitcherLabel(); });
+}
 
 
 /* ================================================================

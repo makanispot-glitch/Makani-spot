@@ -180,6 +180,11 @@ function bzRenderNavUser() {
   const area = document.getElementById('bz-nav-user');
   if (!area) return;
 
+  // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
+  // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
+  const langBtn = document.getElementById('langSwitchBtn');
+  if (langBtn) langBtn.style.display = currentUser ? 'none' : '';
+
   if (currentUser) {
     const name      = currentProfile?.full_name || currentUser.email || '';
     const initial   = (name[0] || '?').toUpperCase();
@@ -198,6 +203,15 @@ function bzRenderNavUser() {
           <svg class="bz-cta-organize-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span class="bz-cta-organize-full">${t('userNav.createBazaar')}</span><span class="bz-cta-organize-short">${t('userNav.createBazaarShort')}</span>
         </a>` : ''}
+
+        <!-- جرس الإشعارات الموحد -->
+        <div id="gn-bell" class="gn-bell" role="button" aria-label="الإشعارات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span id="gn-badge" class="gn-badge"></span>
+        </div>
 
         <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
           <div class="nav-avatar-circle">${avatarHtml}</div>
@@ -247,6 +261,23 @@ function bzRenderNavUser() {
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
               ${t('userNav.findSpace')}
             </button>
+            <div class="nav-dropdown-sep"></div>
+            <button type="button" class="nav-dropdown-item nav-dd-lang-trigger" id="bz-lang-trigger" onclick="bzToggleLangPanel(event)">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg>
+              <span class="nav-dd-lang-label">${t('userNav.language')}</span>
+              <span class="nav-dd-lang-current">${getLocale() === 'en' ? 'English' : 'العربية'}</span>
+              <span class="nav-dd-lang-caret">▼</span>
+            </button>
+            <div class="nav-dd-lang-panel" id="bz-lang-panel">
+              <button type="button" class="nav-dd-lang-opt${getLocale() === 'ar' ? ' active' : ''}" data-locale="ar" onclick="bzSelectLocale('ar', event)">
+                <span class="nav-dd-lang-optlabel"><span class="nav-dd-lang-flag">🇪🇬</span>العربية</span>
+                <span class="nav-dd-lang-check">✓</span>
+              </button>
+              <button type="button" class="nav-dd-lang-opt${getLocale() === 'en' ? ' active' : ''}" data-locale="en" onclick="bzSelectLocale('en', event)">
+                <span class="nav-dd-lang-optlabel"><span class="nav-dd-lang-flag">🇬🇧</span>English</span>
+                <span class="nav-dd-lang-check">✓</span>
+              </button>
+            </div>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item danger" onclick="bzSignOut()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
@@ -304,13 +335,13 @@ function bzMountManageIcon() {
     '</svg>';
   btn.addEventListener('click', () => { window.location.href = '/bazaars/manage.html'; });
 
-  /* الترتيب الثابت المعتمد في كل صفحات المنصة: [لغة] ← [أفاتار] ← [جرس]،
-     والعناصر الخاصة بالصفحة (زي أيقونة إدارة البازارات دي) تيجي بعد الجرس. */
+  /* الترتيب الثابت المعتمد في كل صفحات المنصة: الأدوات الخاصة بالصفحة ← الإشعارات ← حساب المستخدم،
+     بحيث تكون أدوات الصفحة (مثل أيقونة إدارة البازارات) قبل الجرس (باتجاه داخل الصفحة). */
   const bell = wrap.querySelector('#gn-bell');
-  if (bell) bell.insertAdjacentElement('afterend', btn);
+  if (bell) bell.insertAdjacentElement('beforebegin', btn);
   else {
     const av = wrap.querySelector('.nav-avatar-btn');
-    if (av) av.insertAdjacentElement('afterend', btn);
+    if (av) av.insertAdjacentElement('beforebegin', btn);
     else wrap.insertBefore(btn, wrap.firstChild);
   }
 }
@@ -326,7 +357,23 @@ function bzToggleAccountMenu(e) {
   } else {
     btn.classList.add('open');
     dd.classList.add('open');
+    // كل مرة تتفتح القائمة تفتح مقفولة — بدون ما تفضل موسّعة من مرة سابقة
+    document.getElementById('bz-lang-trigger')?.classList.remove('open');
+    document.getElementById('bz-lang-panel')?.classList.remove('open');
   }
+}
+
+/* عنصر "اللغة" داخل القائمة المنسدلة — أكورديون بسيط بيفتح خياري عربي/إنجليزي
+   بدل التنقل المباشر (setLocale/getLocale نفسها لم تتغيّر). */
+function bzToggleLangPanel(e) {
+  e.stopPropagation();
+  document.getElementById('bz-lang-trigger')?.classList.toggle('open');
+  document.getElementById('bz-lang-panel')?.classList.toggle('open');
+}
+
+function bzSelectLocale(locale, e) {
+  e.stopPropagation();
+  setLocale(locale, sbClient && currentUser ? { sbClient, userId: currentUser.id } : undefined);
 }
 
 document.addEventListener('click', (e) => {

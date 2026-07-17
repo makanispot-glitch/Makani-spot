@@ -159,6 +159,15 @@ html.sb-authed #nav-logged { display: flex !important; }
   --egyptian-bronze: #A87C43;
   /* Copper & Bronze */
   --sand-glow: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+
+  /* ── Header Design System Tokens ── */
+  --nav-height: 72px;
+  --nav-gap: 8px;
+  --nav-avatar-size: 34px;
+  --nav-avatar-btn-padding: 5px 12px 5px 5px;
+  --nav-avatar-btn-gap: 9px;
+  --nav-icon-size: 36px;
+  --nav-icon-svg-size: 20px;
 }
 
 
@@ -561,13 +570,22 @@ body {
 .bz-nav-user-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--nav-gap);
 }
 
 /* ── موبايل: الأزرار تحتفظ بالنص بحجم مضغوط + ضغط منطقة المستخدم لمنع تجاوز عرض الشاشة ── */
 @media (max-width: 640px) {
-  .bz-nav-user-wrap {
-    gap: 6px;
+  :root {
+    --nav-avatar-size: 30px;
+    --nav-avatar-btn-padding: 4px;
+    --nav-avatar-btn-gap: 0px;
+    --nav-icon-size: 32px;
+    --nav-icon-svg-size: 18px;
+    --nav-gap: 6px;
+  }
+
+  .nav-user-area, #nav-logged, .bz-nav-user-wrap, #eq-nav-user {
+    gap: var(--nav-gap);
   }
 
   .bz-cta-organize {
@@ -575,30 +593,27 @@ body {
     font-size: 12px;
   }
 
-  /* الأفاتار: دائرة فقط داخل ناف البازارات — الاسم والإيميل في القائمة المنسدلة */
-  .bz-nav-user-wrap .nav-avatar-info {
+  /* الأفاتار: دائرة فقط على الموبايل — الاسم والإيميل والكاريت مخفيين لتوفير المساحة */
+  .nav-avatar-info, .nav-avatar-caret {
     display: none;
   }
 
-  .bz-nav-user-wrap .nav-avatar-btn {
-    padding: 4px 8px 4px 8px;
-    gap: 5px;
-  }
-
-  .bz-nav-user-wrap .nav-avatar-circle {
-    width: 30px;
-    height: 30px;
-    font-size: 13px;
-  }
-
-  .bz-nav-user-wrap .gn-bell {
-    width: 32px;
-    height: 32px;
+  .nav-avatar-btn {
+    border-radius: 50%;
   }
 }
 
 /* شاشات ضيقة جداً */
 @media (max-width: 400px) {
+  :root {
+    --nav-avatar-size: 28px;
+    --nav-avatar-btn-padding: 3px;
+    --nav-avatar-btn-gap: 0px;
+    --nav-icon-size: 28px;
+    --nav-icon-svg-size: 16px;
+    --nav-gap: 4px;
+  }
+
   .nav {
     padding: 0 12px;
   }
@@ -606,29 +621,6 @@ body {
   .bz-cta-organize {
     padding: 7px 12px;
     font-size: 11.5px;
-  }
-
-  .bz-nav-user-wrap {
-    gap: 3px;
-  }
-
-  .bz-nav-user-wrap .nav-avatar-caret {
-    display: none;
-  }
-
-  .bz-nav-user-wrap .nav-avatar-btn {
-    padding: 3px 6px;
-  }
-
-  .bz-nav-user-wrap .nav-avatar-circle {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .bz-nav-user-wrap .gn-bell {
-    width: 28px;
-    height: 28px;
   }
 }
 
@@ -713,9 +705,9 @@ body {
 .nav-avatar-btn {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--nav-avatar-btn-gap);
   cursor: pointer;
-  padding: 5px 12px 5px 5px;
+  padding: var(--nav-avatar-btn-padding);
   border-radius: 40px;
   border: 1.5px solid var(--border);
   background: var(--surface);
@@ -736,8 +728,8 @@ body {
 }
 
 .nav-avatar-circle {
-  width: 34px;
-  height: 34px;
+  width: var(--nav-avatar-size);
+  height: var(--nav-avatar-size);
   border-radius: 50%;
   background: linear-gradient(135deg, var(--orange), var(--orange-hover));
   color: #fff;
@@ -848,8 +840,22 @@ body {
   font-size: 11px;
   color: var(--ink3);
   direction: ltr;
+  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+[dir="ltr"] .nav-dropdown-email {
+  text-align: left;
+}
+
+[dir="ltr"] .nav-avatar-email {
+  text-align: left;
+}
+
+[dir="ltr"] .gn-panel {
+  left: auto;
+  right: 16px;
 }
 
 .nav-dropdown-role {
@@ -965,6 +971,97 @@ body {
 /* أيقونة أصحاب المساحات — خضراء */
 #dd-owner-dash-btn .dd-ico {
   color: #16a34a;
+}
+
+/* عنصر "اللغة" داخل القائمة المنسدلة — انتقل من زر مستقل في الناف (ظاهر
+   لكل الزوار) إلى هنا (للمستخدم المسجّل دخول فقط)، عشان يقلل ازدحام الناف.
+   أكورديون بسيط (مش تنقل لصفحة زي باقي العناصر) لأن اختيار اللغة إجراء
+   في مكانه، مش ملاحة. */
+.nav-dd-lang-trigger {
+  justify-content: flex-start;
+}
+
+.nav-dd-lang-label {
+  flex: 1;
+  text-align: start;
+}
+
+.nav-dd-lang-current {
+  font-size: 11px;
+  color: var(--ink3);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.nav-dd-lang-caret {
+  font-size: 9px;
+  color: var(--ink3);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-dd-lang-trigger.open .nav-dd-lang-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dd-lang-panel {
+  max-height: 0;
+  overflow: hidden;
+  background: var(--surface2);
+  transition: max-height 0.22s ease;
+}
+
+.nav-dd-lang-panel.open {
+  max-height: 110px;
+}
+
+.nav-dd-lang-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink2);
+  font-family: var(--font-display);
+}
+
+.nav-dd-lang-opt:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.nav-dd-lang-optlabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-dd-lang-flag {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.nav-dd-lang-check {
+  opacity: 0;
+  color: var(--orange);
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.nav-dd-lang-opt.active {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.nav-dd-lang-opt.active .nav-dd-lang-check {
+  opacity: 1;
 }
 
 /* SVG icon containers (replacing emoji) */
@@ -8816,8 +8913,8 @@ footer {
 .gn-bell {
   position: relative;
   cursor: pointer;
-  width: 36px;
-  height: 36px;
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8825,6 +8922,10 @@ footer {
   color: var(--ink2, #64748b);
   transition: background .15s, color .15s;
   flex-shrink: 0;
+}
+.gn-bell svg {
+  width: var(--nav-icon-svg-size);
+  height: var(--nav-icon-svg-size);
 }
 .gn-bell:hover {
   background: var(--orange-ultra, #fff7ed);

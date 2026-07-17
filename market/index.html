@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -1147,14 +1147,14 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 .eq-fav-nav-btn {
   position: relative;
   background: none; border: none;
-  width: 36px; height: 36px; min-height: 36px; border-radius: 50%;
+  width: var(--nav-icon-size); height: var(--nav-icon-size); min-height: var(--nav-icon-size); border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   color: var(--ink2); cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
   flex-shrink: 0;
 }
 .eq-fav-nav-btn:hover { background: var(--orange-ultra); color: var(--orange); }
-.eq-fav-nav-btn svg { width: 20px; height: 20px; display: block; }
+.eq-fav-nav-btn svg { width: var(--nav-icon-svg-size); height: var(--nav-icon-svg-size); display: block; }
 .eq-fav-badge {
   position: absolute; top: 0; left: 0;
   min-width: 16px; height: 16px;

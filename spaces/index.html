@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
 <head>
@@ -601,6 +601,15 @@
       <!-- الحالة الثانية: مستخدم مسجّل -->
       <div id="nav-logged" style="display:none;align-items:center;gap:8px">
 
+        <!-- جرس الإشعارات الموحد -->
+        <div id="gn-bell" class="gn-bell" role="button" aria-label="الإشعارات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span id="gn-badge" class="gn-badge"></span>
+        </div>
+
         <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleUserDropdown()">
           <div class="nav-avatar-circle" id="nav-av-circle">م</div>
           <div class="nav-avatar-info">
@@ -640,6 +649,23 @@
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
               <span data-i18n="userMenu.ownerDashboard">لوحة أصحاب المساحات</span>
             </button>
+            <div class="nav-dropdown-sep"></div>
+            <button type="button" class="nav-dropdown-item nav-dd-lang-trigger" id="dd-lang-trigger" onclick="toggleDdLangPanel(event)">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg>
+              <span class="nav-dd-lang-label" data-i18n="userMenu.language">اللغة</span>
+              <span class="nav-dd-lang-current" id="dd-lang-current"></span>
+              <span class="nav-dd-lang-caret">▼</span>
+            </button>
+            <div class="nav-dd-lang-panel" id="dd-lang-panel">
+              <button type="button" class="nav-dd-lang-opt" data-locale="ar" onclick="selectDdLocale('ar', event)">
+                <span class="nav-dd-lang-optlabel"><span class="nav-dd-lang-flag">🇪🇬</span>العربية</span>
+                <span class="nav-dd-lang-check">✓</span>
+              </button>
+              <button type="button" class="nav-dd-lang-opt" data-locale="en" onclick="selectDdLocale('en', event)">
+                <span class="nav-dd-lang-optlabel"><span class="nav-dd-lang-flag">🇬🇧</span>English</span>
+                <span class="nav-dd-lang-check">✓</span>
+              </button>
+            </div>
             <div class="nav-dropdown-sep"></div>
             <button class="nav-dropdown-item nav-dropdown-logout" onclick="doLogout()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
@@ -1579,6 +1605,11 @@
     function updateLangSwitcherLabel() {
       const el = document.getElementById('langSwitchLabel');
       if (el) el.textContent = getLocale() === 'en' ? 'AR' : 'EN';
+      const cur = document.getElementById('dd-lang-current');
+      if (cur) cur.textContent = getLocale() === 'en' ? 'English' : 'العربية';
+      document.querySelectorAll('.nav-dd-lang-opt').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.locale === getLocale());
+      });
     }
     function toggleMakaniLocale() {
       setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
