@@ -18,7 +18,7 @@ try {
     $root = $PSScriptRoot
 
     Write-Host ""
-    Write-Host "==> الإصدار الجديد: v$ver" -ForegroundColor Cyan
+    Write-Host "==> New version: v$ver" -ForegroundColor Cyan
 
     # ── 1. sw.js — CACHE_VER ─────────────────────────────────────
     $swPath = Join-Path $root "sw.js"
@@ -78,15 +78,15 @@ try {
     $ErrorActionPreference = $prevEAP
 
     Write-Host ""
-    Write-Host "==> تم توحيد الإصدار v$ver في كل مكان." -ForegroundColor Yellow
+    Write-Host "==> Version v$ver synced everywhere." -ForegroundColor Yellow
     Write-Host ""
     exit 0
 }
 catch {
     Write-Host ""
-    Write-Host "[X] bump-version.ps1 فشل: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "    الـ commit هيكمل عادي من غير تحديث الإصدار." -ForegroundColor Yellow
-    Write-Host "    شغّل ./bump-version.ps1 يدويًا وتأكد إنه يعدي قبل الرفع القادم." -ForegroundColor Yellow
+    Write-Host "[X] bump-version.ps1 failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "    The commit will proceed WITHOUT a version bump." -ForegroundColor Yellow
+    Write-Host "    Run ./bump-version.ps1 manually and make sure it succeeds before the next deploy." -ForegroundColor Yellow
     Write-Host ""
     exit 1
 }
