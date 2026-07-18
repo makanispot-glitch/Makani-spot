@@ -458,6 +458,8 @@
       "statusCompleted": "مكتمل 🏁",
       "kindBazaar": "بازار",
       "kindSpace": "مساحة",
+      "kindSharedPending": "🤝 حجز مشترك — بانتظار اكتمال الحجز",
+      "kindSharedComplete": "🤝 حجز مشترك — اكتمل",
       "spotNumPrefix": "مكان رقم",
       "bazaarSpot": "مكان بازار",
       "bazaarBookingDefault": "حجز بازار",

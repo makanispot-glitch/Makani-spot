@@ -3998,6 +3998,12 @@ body {
   border-color: var(--orange-pale);
 }
 
+/* 🤝 حجز نصف مكان مشترك — تمييز إضافي عن حجز البازار العادي */
+.booking-card-shared {
+  border-color: rgba(249, 115, 22, 0.45);
+  border-inline-start-width: 4px;
+}
+
 .booking-card-header {
   display: flex;
   justify-content: space-between;
@@ -9709,6 +9715,168 @@ footer {
 .bz-slot.featured:hover .bz-featured-tooltip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ══════════════════════════════════════════════════════
+   🤝 مكان قابل للمشاركة (Shared Booth Booking)
+   ══════════════════════════════════════════════════════ */
+
+/* متاح بالكامل + قابل للمشاركة — لون مختلف عن "متاح" العادي */
+.bz-slot.available.shareable {
+  background: rgba(250, 204, 21, 0.18);
+  border: 1.5px solid rgba(250, 204, 21, 0.65);
+  color: #a16207;
+  position: relative;
+}
+
+.bz-slot.available.shareable:hover {
+  background: rgba(250, 204, 21, 0.32);
+  border-color: #eab308;
+  transform: scale(1.12);
+  box-shadow: 0 3px 12px rgba(234, 179, 8, 0.25);
+}
+
+/* نصف محجوز — متبقٍّ مكان واحد */
+.bz-slot.half_booked {
+  background: rgba(249, 115, 22, 0.18);
+  border: 1.5px solid rgba(249, 115, 22, 0.65);
+  color: #c2410c;
+  cursor: pointer;
+  position: relative;
+}
+
+.bz-slot.half_booked:hover {
+  background: rgba(249, 115, 22, 0.32);
+  border-color: #f97316;
+  transform: scale(1.12);
+  box-shadow: 0 3px 12px rgba(249, 115, 22, 0.25);
+}
+
+/* شارة 🤝 أعلى يمين المكان المشترك */
+.bz-shared-badge {
+  position: absolute;
+  top: -9px;
+  left: -6px;
+  font-size: 11px;
+  line-height: 1;
+  z-index: 3;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+}
+
+/* مؤشر التقدم البصري "👥 ١/٢" أسفل المكان نصف المحجوز */
+.bz-half-progress {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.4;
+  background: #f97316;
+  color: #fff;
+  border-radius: 6px;
+  padding: 1.5px 4px;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+/* tooltip "🤝 مشاركة متاحة" عند الـ hover/touch — قبل فتح أي مودال */
+.bz-shared-tooltip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: rgba(30, 20, 0, 0.93);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  color: #fde047;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  font-family: var(--font-display);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+.bz-shared-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(250, 204, 21, 0.5);
+}
+
+.bz-slot.shareable:hover .bz-shared-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* مفتاح الألوان — حالتا المشاركة الجديدتان (الرمادي "محجوز" الحالي لم يتغيّر) */
+.bz-legend-dot.shareable {
+  background: rgba(250, 204, 21, 0.22);
+  border: 1.5px solid rgba(250, 204, 21, 0.65);
+}
+
+.bz-legend-dot.half_booked {
+  background: rgba(249, 115, 22, 0.2);
+  border: 1.5px solid rgba(249, 115, 22, 0.65);
+}
+
+/* زر "؟ ما هي المشاركة" + صندوق الشرح المنسدل */
+.bz-shared-help-btn {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink2);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.bz-shared-help-btn:hover {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+.bz-shared-help-box {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink2);
+}
+
+/* شارة "يوجد أماكن قابلة للمشاركة" أعلى صفحة تفاصيل البازار (قبل الخريطة) */
+.bz-shared-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #a16207;
+  background: rgba(250, 204, 21, 0.14);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  border-radius: 50px;
+  padding: 5px 12px;
+  margin-top: 6px;
 }
 
 /* ── بانل الحجز (يظهر عند اختيار مكان) ── */

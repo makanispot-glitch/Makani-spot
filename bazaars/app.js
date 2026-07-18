@@ -459,7 +459,7 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,shared_slots_allowed,shared_slots_count,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
       .in('status', ['published', 'live', 'completed'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
@@ -504,6 +504,8 @@ async function loadBazaars() {
       will_have_photography:      !!b.will_have_photography,
       will_have_social_coverage:  !!b.will_have_social_coverage,
       will_have_paid_ads:         !!b.will_have_paid_ads,
+      shared_slots_allowed:       !!b.shared_slots_allowed,
+      shared_slots_count:         Number(b.shared_slots_count) || 0,
     }));
 
     console.log(`✅ تم تحميل ${BAZAARS.length} بازار من Supabase`);
@@ -1165,7 +1167,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
   try {
     const { data: slots, error } = await sbClient
       .from('bazaar_slots')
-      .select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured')
+      .select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,is_shareable')
       .eq('bazaar_id', bazaarId)
       .order('row_label', { ascending: true });
 
@@ -1312,6 +1314,7 @@ function _renderBazaarInfo(b) {
               ${isSoldOut ? t('info.soldOutBadge') : t('info.availableBadge', { count: availSlots })}
             </span>
           </div>
+          ${b.shared_slots_allowed ? `<div class="bz-shared-info-badge">${t('info.sharedBadge')}</div>` : ''}
         </div>
       </div>
 
@@ -1954,16 +1957,20 @@ function _onSlotRealtimeUpdate(updated) {
   const slotEl = document.querySelector(`.bz-slot[data-slot-id="${updated.id}"]`);
   if (!slotEl) return;
 
-  const STATUSES = ['available', 'pending', 'booked', 'selected'];
+  const STATUSES = ['available', 'pending', 'half_booked', 'booked', 'selected'];
   const prevStatus = STATUSES.find(c => slotEl.classList.contains(c)) || '';
   const newStatus  = updated.status;
   if (prevStatus === newStatus) return;
 
-  // المستخدم الحالي كان قد اختار هذا المكان وجاء شخص آخر وحجزه
-  if (String(updated.id) === String(selectedSlotId) && newStatus !== 'available') {
+  slotEl.dataset.slotStatus = newStatus;
+
+  // المستخدم الحالي كان قد اختار هذا المكان وحُجز بالكامل من طرف آخر (نصف→ممتلئ لا يُعتبر "أُخذ" بحد ذاته)
+  if (String(updated.id) === String(selectedSlotId) && newStatus === 'booked') {
     selectedSlotId = null;
     const panel = document.getElementById('bzd-booking-panel');
     if (panel) panel.style.display = 'none';
+    const choicePanel = document.getElementById('bzd-share-choice-panel');
+    if (choicePanel) choicePanel.style.display = 'none';
     _showRealtimeToast(t('slotMap.realtimeSlotTaken'), '#b45309');
   }
 
@@ -1971,18 +1978,25 @@ function _onSlotRealtimeUpdate(updated) {
   STATUSES.forEach(c => slotEl.classList.remove(c));
   slotEl.classList.add(newStatus);
 
-  const isFeatured = slotEl.dataset.featured === 'true';
-  const lbl        = (slotEl.dataset.slotLabel || slotEl.textContent.trim().split('\n')[0]).trim();
+  const isFeatured  = slotEl.dataset.featured === 'true';
+  const isShareable = slotEl.dataset.shareable === 'true';
+  const lbl         = (slotEl.dataset.slotLabel || slotEl.textContent.trim().split('\n')[0]).trim();
 
   if (newStatus === 'available') {
     slotEl.onclick = () => selectSlot(updated.id, lbl);
     slotEl.title   = t('slotMap.slotLabel', { label: lbl }) + (isFeatured ? t('slotMap.featuredSuffix') : '') + ' — ' + t('slotMap.clickToBookStatus');
+  } else if (newStatus === 'half_booked') {
+    slotEl.onclick = () => selectSlot(updated.id, lbl);
+    slotEl.title   = t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.halfBookedStatus');
   } else {
     slotEl.onclick = null;
     slotEl.title   = newStatus === 'pending'
       ? t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.pendingStatus')
       : t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.bookedStatus');
   }
+
+  // إعادة بناء شارة/مؤشر المشاركة الداخلية لأن الحالة الجديدة قد تختلف بصرياً (👥١/٢ مثلاً)
+  slotEl.innerHTML = `${lbl}${_slotBadgesHtml(newStatus, isFeatured, isShareable)}`;
 
   // تحديث إحصائية الأماكن في رأس الخريطة
   _refreshSlotMapCounts();
@@ -2022,7 +2036,7 @@ async function refreshSlotMap() {
   try {
     const { data: slots, error } = await sbClient
       .from('bazaar_slots')
-      .select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured')
+      .select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,is_shareable')
       .eq('bazaar_id', currentBazaar.id)
       .order('row_label', { ascending: true });
 
@@ -2396,13 +2410,15 @@ function renderSlotMap(slots, opts = {}) {
   const el = document.getElementById('bzd-slotmap');
   if (!el) return;
 
-  const availCount    = slots.filter(s => s.status === 'available').length;
-  const pendingCount  = slots.filter(s => s.status === 'pending').length;
-  const bookedCount   = slots.filter(s => s.status === 'booked').length;
+  const availCount     = slots.filter(s => s.status === 'available').length;
+  const pendingCount   = slots.filter(s => s.status === 'pending').length;
+  const bookedCount    = slots.filter(s => s.status === 'booked').length;
+  const halfBookedCount = slots.filter(s => s.status === 'half_booked').length;
   const featuredCount = slots.filter(s =>
     s.is_featured == true || s.is_featured === 'true' ||
     s.is_featured === 1   || s.is_featured === '1'    || s.is_featured === 'yes'
   ).length;
+  const shareableCount = slots.filter(s => _bzIsShareable(s)).length;
 
   const hasLayout = slots.some(s => s.row != null && s.col != null);
   let gridHtml = '';
@@ -2455,9 +2471,10 @@ function renderSlotMap(slots, opts = {}) {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="sd-units-summary">
           <span class="sd-units-avail">${t('slotMap.availableCount', { count: availCount })}</span>
-          ${pendingCount  > 0 ? `<span class="sd-units-avail" style="color:#b45309;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)">${t('slotMap.pendingCount', { count: pendingCount })}</span>` : ''}
-          ${bookedCount   > 0 ? `<span class="sd-units-rented">${t('slotMap.bookedCount', { count: bookedCount })}</span>` : ''}
-          ${featuredCount > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">${t('slotMap.featuredCount', { count: featuredCount })}</span>` : ''}
+          ${pendingCount    > 0 ? `<span class="sd-units-avail" style="color:#b45309;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1)">${t('slotMap.pendingCount', { count: pendingCount })}</span>` : ''}
+          ${halfBookedCount > 0 ? `<span class="sd-units-avail" style="color:#c2410c;border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.1)">🤝 ${halfBookedCount}</span>` : ''}
+          ${bookedCount     > 0 ? `<span class="sd-units-rented">${t('slotMap.bookedCount', { count: bookedCount })}</span>` : ''}
+          ${featuredCount   > 0 ? `<span class="sd-units-avail" style="color:#c47800;border-color:rgba(245,200,66,.35);background:rgba(250,200,30,.1)">${t('slotMap.featuredCount', { count: featuredCount })}</span>` : ''}
         </div>
         <button class="bz-refresh-btn" onclick="refreshSlotMap()" title="${t('slotMap.refreshTooltip')}">↻</button>
       </div>
@@ -2469,7 +2486,12 @@ function renderSlotMap(slots, opts = {}) {
       <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> ${t('slotMap.legendBooked')}</span>
       ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected"></span> ${t('slotMap.legendSelected')}</span>` : ''}
       ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> ${t('slotMap.legendFeatured')}</span>` : ''}
+      ${shareableCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot shareable"></span> ${t('slotMap.legendShareable')}</span>` : ''}
+      ${halfBookedCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot half_booked"></span> ${t('slotMap.legendHalfBooked')}</span>` : ''}
+      ${shareableCount > 0 ? `<button type="button" class="bz-shared-help-btn" onclick="_toggleSharedHelpBox()" title="${t('slotMap.sharedHelpBtnTooltip')}">؟</button>` : ''}
     </div>
+
+    ${shareableCount > 0 ? `<div id="bz-shared-help-box" class="bz-shared-help-box" style="display:none">${t('slotMap.sharedHelpText')}</div>` : ''}
 
     <div class="bz-slotmap-wrap${mode === 'ended' ? ' bz-slotmap-ended' : ''}">
       <div class="bz-slotmap-scroll${readOnly ? ' bz-readonly' : ''}">${gridHtml}</div>
@@ -2481,61 +2503,158 @@ function renderSlotMap(slots, opts = {}) {
     </div>` : ''}`;
 }
 
-function _buildSlotHtml(slot, index = 0, readOnly = false) {
-  const isPending   = slot.status === 'pending';
-  const isBooked    = slot.status === 'booked';
-  const isAvailable = !isBooked && !isPending;
-  const isFeatured  = slot.is_featured == true || slot.is_featured === 'true'
-                   || slot.is_featured === 1   || slot.is_featured === '1'
-                   || slot.is_featured === 'yes';
+/* هل هذا المكان قابل للمشاركة؟ (نفس منطق تحقّق is_featured بأشكاله المختلفة القادمة من DB) */
+function _bzIsShareable(slot) {
+  return slot.is_shareable == true || slot.is_shareable === 'true'
+      || slot.is_shareable === 1    || slot.is_shareable === '1'
+      || slot.is_shareable === 'yes';
+}
 
-  let cls = isBooked ? 'booked' : isPending ? 'pending' : 'available';
-  if (isFeatured) cls += ' featured';
+/* شارة 🤝 + مؤشر التقدّم 👥١/٢ + tooltip المشاركة — تُستخدم في البناء الأولي وفي تحديثات Realtime معاً */
+function _slotBadgesHtml(status, isFeatured, isShareable) {
+  const featuredTip = isFeatured
+    ? `<span class="bz-featured-tooltip">${t('slotMap.legendFeatured')}</span>`
+    : '';
+  if (!isShareable || status === 'booked') return featuredTip;
+
+  const isHalfBooked = status === 'half_booked';
+  const sharedBadge   = `<span class="bz-shared-badge">🤝</span>`;
+  const halfProgress  = isHalfBooked ? `<span class="bz-half-progress">👥 1/2</span>` : '';
+  const sharedTip     = `<span class="bz-shared-tooltip">${isHalfBooked ? t('slotMap.sharedTooltipHalf') : t('slotMap.sharedTooltip')}</span>`;
+  return `${sharedBadge}${halfProgress}${featuredTip}${sharedTip}`;
+}
+
+function _toggleSharedHelpBox() {
+  const box = document.getElementById('bz-shared-help-box');
+  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function _buildSlotHtml(slot, index = 0, readOnly = false) {
+  const isPending     = slot.status === 'pending';
+  const isBooked      = slot.status === 'booked';
+  const isHalfBooked  = slot.status === 'half_booked';
+  const isAvailable   = !isBooked && !isPending && !isHalfBooked;
+  const isFeatured    = slot.is_featured == true || slot.is_featured === 'true'
+                     || slot.is_featured === 1   || slot.is_featured === '1'
+                     || slot.is_featured === 'yes';
+  const isShareable   = _bzIsShareable(slot);
+
+  let cls = isBooked ? 'booked' : isHalfBooked ? 'half_booked' : isPending ? 'pending' : 'available';
+  if (isFeatured)  cls += ' featured';
+  if (isShareable) cls += ' shareable';
 
   const displayLabel = (slot.row_label || '') + (slot.slot_number || '');
 
-  const clickAttr = (isAvailable && !readOnly)
+  const clickAttr = ((isAvailable || isHalfBooked) && !readOnly)
     ? `onclick="selectSlot('${slot.id}','${displayLabel || slot.id}')"`
     : '';
 
   const featSuffix   = isFeatured ? t('slotMap.featuredSuffix') : '';
   const bookedLabel  = t('slotMap.bookedStatus') + featSuffix;
   const pendingLabel = t('slotMap.pendingStatus') + featSuffix;
+  const halfLabel    = t('slotMap.halfBookedStatus');
   const availLabel   = (readOnly ? t('slotMap.availableStatus') : t('slotMap.clickToBookStatus')) + featSuffix;
   const slotLbl      = t('slotMap.slotLabel', { label: displayLabel });
   const titleAttr    = isBooked
     ? `title="${slotLbl} — ${bookedLabel}"`
+    : isHalfBooked
+    ? `title="${slotLbl} — ${halfLabel}"`
     : isPending
     ? `title="${slotLbl} — ${pendingLabel}"`
     : `title="${slotLbl} — ${availLabel}"`;
 
-  const delay       = Math.min(index * 0.028, 0.55).toFixed(3);
-  const featuredTip = isFeatured
-    ? `<span class="bz-featured-tooltip">${t('slotMap.legendFeatured')}</span>`
-    : '';
+  const delay = Math.min(index * 0.028, 0.55).toFixed(3);
 
   return `<div class="bz-slot ${cls}"
               data-slot-id="${slot.id}"
               data-featured="${isFeatured}"
+              data-shareable="${isShareable}"
+              data-slot-status="${slot.status}"
               data-price="${Number(slot.price || 0)}"
               data-slot-label="${displayLabel}"
               style="animation-delay:${delay}s"
               ${clickAttr} ${titleAttr}>
     ${displayLabel}
-    ${featuredTip}
+    ${_slotBadgesHtml(slot.status, isFeatured, isShareable)}
   </div>`;
 }
 
-function selectSlot(slotId, slotLabel) {
+let _pendingBookingKind    = 'full'; // 'full' | 'half' — نوع الحجز المُختار لمكان قابل للمشاركة
+let _pendingShareSlotId    = null;
+let _pendingShareSlotLabel = null;
+
+/* إعادة أي مكان "مُختار" سابقاً لحالته الحقيقية (متاح أو نصف محجوز) بدل افتراض "متاح" دائماً */
+function _restorePrevSelectedSlots() {
   document.querySelectorAll('.bz-slot.selected').forEach(el => {
     el.classList.remove('selected');
-    el.classList.add('available');
+    el.classList.add(el.dataset.slotStatus === 'half_booked' ? 'half_booked' : 'available');
   });
+}
+
+function selectSlot(slotId, slotLabel) {
+  const slotEl      = document.querySelector(`.bz-slot[data-slot-id="${slotId}"]`);
+  const status      = slotEl?.dataset?.slotStatus;
+  const isShareable = slotEl?.dataset?.shareable === 'true';
+
+  /* مكان مشترك فارغ بالكامل → اعرض شاشة الاختيار (كامل / نصف) أولاً */
+  if (isShareable && status === 'available') {
+    _openShareChoicePanel(slotId, slotLabel);
+    return;
+  }
+
+  /* مكان مشترك ونصفه مأخوذ → أكمل النصف الثاني مباشرة بلا شاشة اختيار */
+  _pendingBookingKind = (isShareable && status === 'half_booked') ? 'half' : 'full';
+  _openBookingForm(slotId, slotLabel);
+}
+
+function _openShareChoicePanel(slotId, slotLabel) {
+  const bookingPanel = document.getElementById('bzd-booking-panel');
+  if (bookingPanel) bookingPanel.style.display = 'none';
+
+  _pendingShareSlotId    = slotId;
+  _pendingShareSlotLabel = slotLabel;
+
+  const slotEl    = document.querySelector(`.bz-slot[data-slot-id="${slotId}"]`);
+  const fullPrice = Number(slotEl?.dataset?.price || currentBazaar?.price_per_slot || 0);
+  const halfPrice = Math.round(fullPrice / 2);
+
+  const infoEl = document.getElementById('bzd-share-choice-slot-info');
+  if (infoEl) infoEl.textContent = t('slotMap.slotLabel', { label: slotLabel });
+  const fullPriceEl = document.getElementById('bzd-share-full-price');
+  if (fullPriceEl) fullPriceEl.textContent = _bzFmtNum(fullPrice) + ' ' + t('card.currency');
+  const halfPriceEl = document.getElementById('bzd-share-half-price');
+  if (halfPriceEl) halfPriceEl.textContent = _bzFmtNum(halfPrice) + ' ' + t('card.currency');
+  const savingsEl = document.getElementById('bzd-share-savings');
+  if (savingsEl) savingsEl.textContent = t('booking.shareChoice.savings', { amount: _bzFmtNum(fullPrice - halfPrice) });
+
+  const panel = document.getElementById('bzd-share-choice-panel');
+  if (panel) {
+    panel.style.display = 'block';
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  }
+}
+
+function _closeShareChoicePanel() {
+  const panel = document.getElementById('bzd-share-choice-panel');
+  if (panel) panel.style.display = 'none';
+  _restorePrevSelectedSlots();
+  _pendingShareSlotId = null;
+}
+
+function _chooseBookingKind(kind) {
+  _pendingBookingKind = kind;
+  const choicePanel = document.getElementById('bzd-share-choice-panel');
+  if (choicePanel) choicePanel.style.display = 'none';
+  _openBookingForm(_pendingShareSlotId, _pendingShareSlotLabel);
+}
+
+function _openBookingForm(slotId, slotLabel) {
+  _restorePrevSelectedSlots();
 
   const slotEl    = document.querySelector(`.bz-slot[data-slot-id="${slotId}"]`);
   const isFeatured = slotEl?.dataset?.featured === 'true';
   if (slotEl) {
-    slotEl.classList.remove('available');
+    slotEl.classList.remove('available', 'half_booked');
     slotEl.classList.add('selected');
     slotEl.style.animation = 'none';
     requestAnimationFrame(() => {
@@ -2544,15 +2663,23 @@ function selectSlot(slotId, slotLabel) {
   }
 
   selectedSlotId = slotId;
+  const isHalf = _pendingBookingKind === 'half';
 
   const slotInfoEl = document.getElementById('bzd-slot-info');
   if (slotInfoEl && currentBazaar) {
-    const slotPrice = Number(slotEl?.dataset?.price || 0);
-    const displayPrice = slotPrice > 0 ? slotPrice : Number(currentBazaar.price_per_slot || 0);
-    const priceStr  = _bzFmtNum(displayPrice);
-    const featuredTag = isFeatured ? t('booking.featuredTag') : '';
-    slotInfoEl.textContent = t('booking.slotInfoSelected', { label: slotLabel, featured: featuredTag, price: priceStr });
+    const slotPrice    = Number(slotEl?.dataset?.price || 0);
+    const fullPrice    = slotPrice > 0 ? slotPrice : Number(currentBazaar.price_per_slot || 0);
+    const displayPrice = isHalf ? Math.round(fullPrice / 2) : fullPrice;
+    const priceStr     = _bzFmtNum(displayPrice);
+    const tag = isHalf ? t('booking.shareChoice.halfTag') : (isFeatured ? t('booking.featuredTag') : '');
+    slotInfoEl.textContent = t('booking.slotInfoSelected', { label: slotLabel, featured: tag, price: priceStr });
   }
+
+  const riskNotice = document.getElementById('bzd-half-risk-notice');
+  if (riskNotice) riskNotice.style.display = isHalf ? 'block' : 'none';
+
+  const submitBtn = document.querySelector('#bzd-booking-panel .btn-primary');
+  if (submitBtn) submitBtn.textContent = isHalf ? t('booking.submitBtnHalf') : t('booking.submitBtn');
 
   if (currentUser) {
     const nb = document.getElementById('bzb-name');
@@ -2571,11 +2698,12 @@ function selectSlot(slotId, slotLabel) {
 }
 
 function clearSlotSelection() {
-  document.querySelectorAll('.bz-slot.selected').forEach(el => {
-    el.classList.remove('selected');
-    el.classList.add('available');
-  });
+  _restorePrevSelectedSlots();
   selectedSlotId = null;
+  _pendingBookingKind = 'full';
+
+  const choicePanel = document.getElementById('bzd-share-choice-panel');
+  if (choicePanel) choicePanel.style.display = 'none';
 
   const panel = document.getElementById('bzd-booking-panel');
   if (panel) panel.style.display = 'none';
@@ -2625,6 +2753,12 @@ async function submitBazaarBooking() {
     submitBtn.innerHTML  = t('booking.submitting');
     submitBtn.disabled   = true;
     submitBtn.style.opacity = '0.7';
+  }
+
+  /* مسار مختلف بالكامل لحجز "نصف مكان" — RPC ذرية واحدة بدل خطوات UPDATE/INSERT منفصلة */
+  if (_pendingBookingKind === 'half') {
+    await _submitSharedHalfBooking({ name, phone, email, business, activity, notes, submitBtn, showBzbError });
+    return;
   }
 
   /* نحتفظ بـ ID المكان الذي قفلناه لنتمكن من التراجع عنه في حالة الفشل */
@@ -2789,6 +2923,106 @@ async function submitBazaarBooking() {
         ? t('booking.validation.slotTaken')
         : t('booking.validation.genericError');
     showBzbError(msg);
+  }
+}
+
+/* حجز "نصف مكان" — RPC ذرية واحدة (book_shared_bazaar_slot_half) بدل الخطوات المنفصلة أعلاه */
+async function _submitSharedHalfBooking({ name, phone, email, business, activity, notes, submitBtn, showBzbError }) {
+  const _capturedSlotId = selectedSlotId;
+
+  try {
+    const { data, error } = await sbClient.rpc('book_shared_bazaar_slot_half', {
+      p_bazaar_id:     String(currentBazaar.id),
+      p_slot_id:       _capturedSlotId,
+      p_user_name:     name,
+      p_user_phone:    phone,
+      p_user_email:    email || null,
+      p_business_name: business,
+      p_activity:      activity,
+      p_notes:         notes || null,
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data?.success) {
+      const errMap = {
+        not_authenticated:        t('booking.validation.connectionError'),
+        bazaar_not_active:        t('booking.validation.slotUnavailable'),
+        slot_not_found:           t('booking.validation.slotUnavailable'),
+        slot_not_shareable:       t('booking.validation.slotUnavailable'),
+        slot_full:                t('booking.validation.slotTaken'),
+        already_booked_this_slot: t('booking.shareChoice.alreadyBookedThisSlot'),
+      };
+      throw new Error(errMap[data?.error] || t('booking.validation.genericError'));
+    }
+
+    window.mkPwaInstall?.signalSuccess();
+
+    // إشعار المنظم بحجز نصف مكان جديد → جدول notifications الموحّد
+    if (currentBazaar.organizer_id) {
+      const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`)
+        ?.dataset?.slotLabel || _capturedSlotId;
+      sbClient.from('notifications').insert({
+        user_id:    currentBazaar.organizer_id,
+        type:       'new_booking',
+        source:     'bazaar',
+        title:      `🤝 حجز نصف مكان — ${currentBazaar.name}`,
+        body:       `${name} (${phone}) طلب حجز نصف مكان ${slotLabel} (مشاركة)`,
+        action_url: `/?p=dashboard`,
+        metadata:   { bazaar_id: String(currentBazaar.id) },
+      }).catch(() => {});
+    }
+
+    _saveLocalBazaarBooking(currentUser.id, {
+      id: data.booking_id, bazaar_id: String(currentBazaar.id), slot_id: _capturedSlotId,
+      user_id: currentUser.id, user_name: name, user_phone: phone, user_email: email || null,
+      business_name: business, notes: notes || null, status: 'pending',
+      amount: data.amount, booking_kind: 'half', created_at: new Date().toISOString(),
+    });
+
+    const slotEl = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`);
+    if (slotEl) {
+      const newStatus = data.new_slot_status; // 'half_booked' أو 'booked'
+      slotEl.dataset.slotStatus = newStatus;
+      slotEl.classList.remove('selected', 'available', 'half_booked', 'booked');
+      slotEl.classList.add(newStatus);
+      const lbl = slotEl.dataset.slotLabel || '';
+      if (newStatus === 'booked') {
+        slotEl.onclick = null;
+        slotEl.title   = t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.bookedStatus');
+      } else {
+        slotEl.onclick = () => selectSlot(_capturedSlotId, lbl);
+        slotEl.title   = t('slotMap.slotLabel', { label: lbl }) + ' — ' + t('slotMap.halfBookedStatus');
+      }
+      slotEl.innerHTML = `${lbl}${_slotBadgesHtml(newStatus, slotEl.dataset.featured === 'true', true)}`;
+    }
+
+    selectedSlotId = null;
+    _pendingBookingKind = 'full';
+
+    const panel = document.getElementById('bzd-booking-panel');
+    if (panel) {
+      panel.innerHTML = `
+        <div class="bz-bp-inner bz-bp-success">
+          <div class="success-circle" style="width:60px;height:60px;font-size:26px;margin:0 auto 16px">✓</div>
+          <div class="success-title" style="font-size:22px;margin-bottom:8px">${t('booking.shareChoice.successTitle')}</div>
+          <div class="success-body" style="font-size:14px;line-height:1.9;margin-bottom:20px">
+            ${t('booking.shareChoice.successBody', { name: _esc(name) })}
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" style="padding:12px 28px"
+                    onclick="closeBazaarDetail()">${t('booking.success.allBazaarsBtn')}</button>
+            <a class="btn" href="/?p=dashboard" style="padding:12px 28px">${t('booking.success.myBookingsBtn')}</a>
+          </div>
+        </div>`;
+    }
+
+  } catch (err) {
+    if (submitBtn) {
+      submitBtn.innerHTML  = t('booking.confirmBtnRetry');
+      submitBtn.disabled   = false;
+      submitBtn.style.opacity = '1';
+    }
+    showBzbError(err.message || t('booking.validation.genericError'));
   }
 }
 

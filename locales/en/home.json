@@ -457,6 +457,8 @@
       "statusCompleted": "Completed 🏁",
       "kindBazaar": "Bazaar",
       "kindSpace": "Space",
+      "kindSharedPending": "🤝 Shared booking — awaiting completion",
+      "kindSharedComplete": "🤝 Shared booking — complete",
       "spotNumPrefix": "Spot #",
       "bazaarSpot": "Bazaar Spot",
       "bazaarBookingDefault": "Bazaar Booking",

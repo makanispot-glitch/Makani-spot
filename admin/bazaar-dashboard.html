@@ -421,6 +421,8 @@ tbody tr:hover .row-acts{opacity:1}
         <div class="sc-sub">جنيه</div>
       </div>
     </div>
+    <div id="ov-shared-alert"></div>
+
     <div class="sh"><div class="st">البازارات <span>النشطة</span></div><button class="btn btn-gh btn-sm" onclick="gp('bz')">عرض الكل</button></div>
     <div class="tw" id="ov-tbl"><div class="ld"><div class="spin"></div>جارٍ التحميل...</div></div>
   </div>
@@ -478,6 +480,7 @@ tbody tr:hover .row-acts{opacity:1}
       <select class="fc-s" id="sl-fst" onchange="renderSlots()">
         <option value="">كل الحالات</option>
         <option value="pending">⏳ حجز مبدئي</option>
+        <option value="half_booked">🤝 نصف محجوز</option>
         <option value="available">✅ متاح</option>
         <option value="booked">🔴 محجوز مؤكد</option>
       </select>
@@ -729,6 +732,22 @@ tbody tr:hover .row-acts{opacity:1}
         </div>
       </div>
 
+      <!-- 🤝 أماكن قابلة للمشاركة -->
+      <div style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.35);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:0">
+          <input type="checkbox" id="asl-has-shared" onchange="updateSlotPreview()" style="width:16px;height:16px;accent-color:#a16207;cursor:pointer">
+          <span>🤝 تضمين أماكن قابلة للمشاركة</span>
+          <span style="font-size:11px;font-weight:400;color:var(--mu)">يسمح بحجز نصف المكان بنصف السعر</span>
+        </label>
+        <div id="asl-shared-opts" style="display:none;margin-top:12px">
+          <div class="fg" style="margin-bottom:0">
+            <label>عدد الأماكن القابلة للمشاركة <span class="rq">*</span></label>
+            <input type="number" class="fc" id="asl-shared-count" value="3" min="1" oninput="updateSlotPreview()">
+            <div class="hint" style="margin-top:4px">تُؤخذ من الوحدات العادية (غير المميزة)</div>
+          </div>
+        </div>
+      </div>
+
       <!-- SLOT PREVIEW GRID -->
       <div class="fg">
         <label style="display:flex;align-items:center;gap:10px">
@@ -739,6 +758,9 @@ tbody tr:hover .row-acts{opacity:1}
             </span>
             <span id="asl-feat-legend" style="display:none;align-items:center;gap:4px">
               <span style="width:11px;height:11px;border-radius:3px;background:rgba(250,200,30,.2);border:1px solid rgba(245,180,0,.5);display:inline-block"></span> ⭐ مميز
+            </span>
+            <span id="asl-shared-legend" style="display:none;align-items:center;gap:4px">
+              <span style="width:11px;height:11px;border-radius:3px;background:rgba(250,204,21,.2);border:1px solid rgba(234,179,8,.5);display:inline-block"></span> 🤝 مشاركة
             </span>
           </span>
         </label>
@@ -1474,7 +1496,7 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260718142707"></script>
+<script src="../shared/sb-config.js?v=20260719005443"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -1581,8 +1603,8 @@ async function loadData() {
   try {
     const [bzRes, slRes, bkRes, orgVerRes] = await Promise.all([
       db.from('bazaars').select('*').eq('is_archived', false).eq('is_deleted', false).order('created_at', { ascending: false }),
-      db.from('bazaar_slots').select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,trader_name,booked_by,activity,notes').limit(6000),
-      db.from('bazaar_bookings').select('id,bazaar_id,slot_id,user_name,user_phone,user_email,business_name,activity,amount,pay_status,status,created_at').order('created_at', { ascending: false }).limit(3000),
+      db.from('bazaar_slots').select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,is_shareable,trader_name,booked_by,activity,notes').limit(6000),
+      db.from('bazaar_bookings').select('id,bazaar_id,slot_id,user_name,user_phone,user_email,business_name,activity,amount,pay_status,status,booking_kind,created_at').order('created_at', { ascending: false }).limit(3000),
       db.from('organizer_requests').select('id').eq('status', 'pending')
     ]);
     if (bzRes.error) throw bzRes.error;
@@ -1698,6 +1720,7 @@ function mapSlot(s) {
     price:       Number(s.price) || 0,
     status:      s.status || 'available',
     is_featured: s.is_featured || false,
+    isShareable: !!s.is_shareable,
     traderName:  s.trader_name || s.booked_by || '',
     activity:    s.activity || '',
     notes:       s.notes || '',
@@ -1717,6 +1740,7 @@ function mapBooking(b) {
     amount:     Number(b.amount) || 0,
     payStatus:  b.pay_status || 'pending',
     bookStatus: b.status || 'pending',
+    bookingKind: b.booking_kind || 'full',
     bookDate:   b.created_at?.split('T')[0] || '',
   };
 }
@@ -1755,6 +1779,49 @@ function updateAll() {
 
   fBz=[...BAZAARS]; fSl=[...SLOTS]; fBk=[...BOOKINGS]; fCs=[...COSTS];
   renderOv(); renderBazaars(); renderSlots(); renderBookings(); renderCosts(); renderFinancial();
+  _renderSharedBoothAlert();
+}
+
+/* ══════════════════════════════════════════
+   🤝 حجوزات مشتركة غير مكتملة خلال ٤٨ ساعة
+   (اكتشاف آلي فقط — القرار والتنفيذ يدويان بالكامل بمعرفة الفريق)
+══════════════════════════════════════════ */
+function _renderSharedBoothAlert() {
+  const box = document.getElementById('ov-shared-alert');
+  if (!box) return;
+
+  const now       = new Date();
+  const in48h     = new Date(now.getTime() + 48 * 3600 * 1000);
+  const halfSlots = SLOTS.filter(s => s.status === 'half_booked');
+
+  const rows = halfSlots.map(s => {
+    const baz = BAZAARS.find(b => b.id === s.bazaarId);
+    if (!baz || !baz.dateStart) return null;
+    const eventAt = new Date(baz.dateStart + 'T' + (baz.time_start || '00:00'));
+    if (isNaN(eventAt) || eventAt < now || eventAt > in48h) return null;
+    const bk = BOOKINGS.find(b => b.slotId === s.slotId && b.bookingKind === 'half' && b.bookStatus !== 'cancelled');
+    return { baz, slot: s, bk, eventAt };
+  }).filter(Boolean).sort((a, b) => a.eventAt - b.eventAt);
+
+  if (!rows.length) { box.innerHTML = ''; return; }
+
+  box.innerHTML = `
+    <div class="scard" style="border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.05);margin-bottom:16px">
+      <div class="sc-ico">🤝</div>
+      <div class="sc-lbl">حجوزات مشتركة غير مكتملة خلال ٤٨ ساعة</div>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+        ${rows.map(r => `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--bd)">
+            <span>
+              <strong>${r.baz.name}</strong>
+              — مكان ${r.slot.rowLabel}${r.slot.slotNumber}
+              ${r.bk ? `— ${r.bk.vendorName} (${formatPhone(r.bk.phone)})` : ''}
+            </span>
+            <span style="color:#c2410c;white-space:nowrap">${r.eventAt.toLocaleString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--mu);margin-top:8px">اكتشاف آلي فقط — راجع كل حالة يدوياً مع المنظم قبل اتخاذ أي قرار (استمرار/إكمال/إلغاء واسترداد).</div>
+    </div>`;
 }
 
 /* ══════════════════════════════════════════
@@ -1875,17 +1942,22 @@ function renderSlots() {
     const bk      = bkMap[s.slotId];
     const isPend  = s.status === 'pending';
     const isBook  = s.status === 'booked';
+    const isHalf  = s.status === 'half_booked';
     const waPhone = (bk?.phone || '').replace(/\D/g,'');
     const waLink  = waPhone ? `https://wa.me/${waPhone.startsWith('0') ? '2'+waPhone : waPhone}` : null;
 
     const statusBadge = isPend
       ? `<span class="ba" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.3)">⏳ حجز مبدئي</span>`
+      : isHalf
+      ? `<span class="ba" style="background:rgba(249,115,22,.15);color:#c2410c;border:1px solid rgba(249,115,22,.4)">🤝 نصف محجوز</span>`
       : isBook
       ? `<span class="ba ba-bk">🔴 محجوز مؤكد</span>`
+      : s.isShareable
+      ? `<span class="ba" style="background:rgba(250,204,21,.15);color:#a16207;border:1px solid rgba(250,204,21,.4)">🤝 متاح (قابل للمشاركة)</span>`
       : `<span class="ba ba-av">✅ متاح</span>`;
 
-    /* بطاقة الحجز المبدئي — موسّعة */
-    if (isPend && bk) {
+    /* بطاقة الحجز المبدئي/نصف المحجوز — موسّعة */
+    if ((isPend || isHalf) && bk) {
       return `<tr style="background:rgba(245,158,11,.04);border-right:3px solid rgba(245,158,11,.6)">
         <td><code style="color:var(--or);font-size:11px">${s.rowLabel}${s.slotNumber}</code><br>
             <code style="color:var(--mu);font-size:9px">${s.slotId.slice(0,8)}…</code></td>
@@ -1951,6 +2023,14 @@ function renderSlots() {
   renderPag('sl-pg', fSl.length, slPg, p=>{slPg=p;renderSlots();});
 }
 
+/* بعد أي تحديث على bazaar_bookings.status لمكان قابل للمشاركة، الـ trigger على القاعدة
+   (sync_slot_from_booking_status) هو من يحسب حالة bazaar_slots الصحيحة (متاح/نصف محجوز/محجوز)
+   بناءً على عدد الحجوزات النشطة الفعلي — نعيد جلبها هنا بدل افتراضها يدوياً كما في المسار العادي. */
+async function _refetchSlotStatus(slotDbId) {
+  const { data } = await db.from('bazaar_slots').select('status').eq('id', slotDbId).single();
+  return data?.status || null;
+}
+
 async function confirmSlotBooking(slotId) {
   const s  = SLOTS.find(x => x.slotId === slotId);
   if (!s) return;
@@ -1958,9 +2038,15 @@ async function confirmSlotBooking(slotId) {
   if (!confirm(`تأكيد حجز المكان ${s.rowLabel}${s.slotNumber}${bk ? ' للتاجر ' + bk.vendorName : ''}؟`)) return;
 
   try {
-    await db.from('bazaar_slots').update({ status: 'booked' }).eq('id', s._dbId);
-    if (bk) await db.from('bazaar_bookings').update({ status: 'confirmed' }).eq('id', bk._dbId);
-    s.status = 'booked';
+    if (s.isShareable) {
+      /* لا نفرض status='booked' يدوياً — قد يكون لا يزال "نصف محجوز" لو النصف الآخر غير مكتمل بعد */
+      if (bk) await db.from('bazaar_bookings').update({ status: 'confirmed' }).eq('id', bk._dbId);
+      s.status = await _refetchSlotStatus(s._dbId) || s.status;
+    } else {
+      await db.from('bazaar_slots').update({ status: 'booked' }).eq('id', s._dbId);
+      if (bk) await db.from('bazaar_bookings').update({ status: 'confirmed' }).eq('id', bk._dbId);
+      s.status = 'booked';
+    }
     if (bk) bk.bookStatus = 'confirmed';
     renderSlots(); renderBookings(); updateStats();
     toast('✅ تم تأكيد الحجز', 's');
@@ -1974,14 +2060,22 @@ async function cancelSlotBooking(slotId) {
   if (!confirm(`إلغاء الحجز المبدئي للمكان ${s.rowLabel}${s.slotNumber}؟\nسيصبح المكان متاحاً مجدداً.`)) return;
 
   try {
-    await db.from('bazaar_slots').update({ status: 'available' }).eq('id', s._dbId);
-    if (bk) await db.from('bazaar_bookings').update({ status: 'cancelled' }).eq('id', bk._dbId);
-    s.status = 'available';
+    if (s.isShareable) {
+      /* إلغاء نصف واحد لا يعني بالضرورة أن المكان بأكمله متاح — النصف الآخر قد يبقى نشطاً */
+      if (bk) await db.from('bazaar_bookings').update({ status: 'cancelled' }).eq('id', bk._dbId);
+      s.status = await _refetchSlotStatus(s._dbId) || s.status;
+    } else {
+      await db.from('bazaar_slots').update({ status: 'available' }).eq('id', s._dbId);
+      if (bk) await db.from('bazaar_bookings').update({ status: 'cancelled' }).eq('id', bk._dbId);
+      s.status = 'available';
+    }
     if (bk) bk.bookStatus = 'cancelled';
-    /* إعادة available_slots بشكل atomic */
-    await db.rpc('increment_available_slots', { p_bazaar_id: String(s.bazaarId) });
-    const baz = BAZAARS.find(b => b.id === s.bazaarId);
-    if (baz) baz.availSlots = Math.min((baz.availSlots || 0) + 1, baz.totalSlots || 999);
+    /* إعادة available_slots بشكل atomic — فقط لو المكان أصبح متاحاً بالكامل فعلياً */
+    if (s.status === 'available') {
+      await db.rpc('increment_available_slots', { p_bazaar_id: String(s.bazaarId) });
+      const baz = BAZAARS.find(b => b.id === s.bazaarId);
+      if (baz) baz.availSlots = Math.min((baz.availSlots || 0) + 1, baz.totalSlots || 999);
+    }
     renderSlots(); renderBookings(); updateStats();
     toast('تم إلغاء الحجز — المكان متاح الآن', 'i');
   } catch(e) { toast('❌ ' + e.message, 'e'); }
@@ -2006,7 +2100,7 @@ function renderBookings() {
     const bsl={confirmed:'ba-cf',cancelled:'ba-ca'};
     return `<tr style="cursor:pointer" onclick="openBkDetail('${b.bookingId}')">
       <td><code style="color:var(--mu);font-size:10px">${b.bookingId}</code></td>
-      <td style="font-weight:600;font-size:12.5px">${b.vendorName}</td>
+      <td style="font-weight:600;font-size:12.5px">${b.vendorName}${b.bookingKind==='half'?' <span class="ba" style="background:rgba(249,115,22,.15);color:#c2410c;border:1px solid rgba(249,115,22,.4)" title="حجز نصف مكان — مشاركة">🤝 نصف</span>':''}</td>
       <td style="font-size:11.5px;direction:ltr;text-align:right">${formatPhone(b.phone)}</td>
       <td style="font-size:11.5px;color:var(--mu)">${b.bazaarName||b.bazaarId}</td>
       <td><code style="color:var(--or);font-size:11px">${b.slotId}</code></td>
@@ -2203,7 +2297,15 @@ async function changeBkStatus(id, field, val) {
   /* تحديث الذاكرة المحلية — trigger في DB يتولى تحديث bazaar_slots فعلياً */
   if (field === 'bookStatus' && b.slotId && val !== prevVal) {
     const slot = SLOTS.find(s => s._dbId === b.slotId || s.slotId === b.slotId);
-    if (val === 'confirmed') {
+    if (slot && slot.isShareable) {
+      /* مكان قابل للمشاركة: احتمال وجود نصف آخر نشط — اجلب الحالة الفعلية بدل افتراضها */
+      slot.status = await _refetchSlotStatus(slot._dbId) || slot.status;
+      if (slot.status === 'available') {
+        db.rpc('increment_available_slots', { p_bazaar_id: String(b.bazaarId) });
+        const bz = BAZAARS.find(x => x.id === b.bazaarId);
+        if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
+      }
+    } else if (val === 'confirmed') {
       if (slot) slot.status = 'booked';
     } else if (val === 'cancelled') {
       if (slot) slot.status = 'available';
@@ -2224,14 +2326,15 @@ async function deleteBooking(bookingId) {
   const b = BOOKINGS.find(x => x.bookingId === bookingId);
   if (!b) return;
   if (!confirm(`حذف نهائي للحجز؟\nالتاجر: ${b.vendorName}\nالوحدة: ${b.slotId?.slice(0,8)}…\n\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
-  const { error } = await db.rpc('admin_delete_bazaar_booking', { p_booking_id: b._dbId });
+  const { data, error } = await db.rpc('admin_delete_bazaar_booking', { p_booking_id: b._dbId });
   if (error) { toast('خطأ في الحذف: ' + error.message, 'e'); return; }
   /* تحديث الذاكرة المحلية */
   const bi = BOOKINGS.indexOf(b);
   if (bi >= 0) BOOKINGS.splice(bi, 1);
   const slot = SLOTS.find(s => s._dbId === b.slotId || s.slotId === b.slotId);
-  if (slot) slot.status = 'available';
-  if (!['cancelled','expired'].includes(b.bookStatus)) {
+  const newSlotStatus = data?.new_slot_status || 'available';
+  if (slot) slot.status = newSlotStatus;
+  if (!['cancelled','expired'].includes(b.bookStatus) && newSlotStatus === 'available') {
     const bz = BAZAARS.find(x => x.id === b.bazaarId);
     if (bz) bz.availSlots = Math.min((bz.availSlots || 0) + 1, bz.totalSlots || 999);
   }
@@ -2420,6 +2523,7 @@ function openBkDetail(id){
          ['التليفون',formatPhone(b.phone)],
          ['البريد',b.email||'—'],
          ['النشاط',b.activity||'—'],
+         ['نوع الحجز',b.bookingKind==='half'?'<span class="ba" style="background:rgba(249,115,22,.15);color:#c2410c;border:1px solid rgba(249,115,22,.4)">🤝 نصف مكان (مشاركة)</span>':'مكان كامل'],
          ['المبلغ',`<span class="pr">${fmt(b.amount)} ج</span>`],
          ['حالة الدفع',`<span class="ba ${psl[b.payStatus]}">${b.payStatus}</span>`],
          ['حالة الحجز',`<span class="ba ${bsl[b.bookStatus]}">${b.bookStatus}</span>`],
@@ -2574,12 +2678,21 @@ function updateSlotPreview(){
   const featCount  = hasFeat ? (Number(document.getElementById('asl-feat-count')?.value) || 0) : 0;
   const featPriceRaw = document.getElementById('asl-feat-price')?.value;
   const featPrice  = featPriceRaw ? Number(featPriceRaw) : price;
+  const hasShared   = document.getElementById('asl-has-shared')?.checked || false;
+  const regularCountForShared = count - featCount;
+  const sharedCount = hasShared ? Math.min(Number(document.getElementById('asl-shared-count')?.value) || 0, Math.max(0, regularCountForShared)) : 0;
 
   // إظهار/إخفاء خيارات الأماكن المميزة
   const featOpts   = document.getElementById('asl-featured-opts');
   const featLegend = document.getElementById('asl-feat-legend');
   if (featOpts)   featOpts.style.display   = hasFeat ? '' : 'none';
   if (featLegend) featLegend.style.display  = hasFeat ? 'flex' : 'none';
+
+  // إظهار/إخفاء خيارات الأماكن المشتركة
+  const sharedOpts   = document.getElementById('asl-shared-opts');
+  const sharedLegend = document.getElementById('asl-shared-legend');
+  if (sharedOpts)   sharedOpts.style.display   = hasShared ? '' : 'none';
+  if (sharedLegend) sharedLegend.style.display = hasShared ? 'flex' : 'none';
 
   const cont = document.getElementById('slot-preview-grid');
   const info = document.getElementById('slot-preview-info');
@@ -2590,14 +2703,18 @@ function updateSlotPreview(){
   outer: for (const r of rows) {
     for (let n = 1; n <= 10; n++) {
       if (c >= count) break outer;
-      const isFeat = hasFeat && c < featCount;
+      const isFeat   = hasFeat && c < featCount;
+      const isShared = !isFeat && hasShared && (c - featCount) < sharedCount;
       const style  = isFeat
         ? 'background:rgba(250,200,30,.18);border:1.5px solid rgba(245,180,0,.6);color:#b07800'
+        : isShared
+        ? 'background:rgba(250,204,21,.18);border:1.5px solid rgba(234,179,8,.6);color:#a16207'
         : 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.3);color:var(--gr)';
+      const tooltip = isFeat ? 'مميز ⭐' : isShared ? 'قابل للمشاركة 🤝' : 'عادي';
       cells.push(
         `<div style="width:40px;height:40px;border-radius:7px;${style};display:flex;flex-direction:column;` +
-        `align-items:center;justify-content:center;font-size:8.5px;font-weight:700;position:relative" title="${isFeat ? 'مميز ⭐' : 'عادي'}">` +
-        (isFeat ? `<span style="font-size:9px;line-height:1">⭐</span>` : '') +
+        `align-items:center;justify-content:center;font-size:8.5px;font-weight:700;position:relative" title="${tooltip}">` +
+        (isFeat ? `<span style="font-size:9px;line-height:1">⭐</span>` : isShared ? `<span style="font-size:9px;line-height:1">🤝</span>` : '') +
         `<span>${r}${n}</span></div>`
       );
       c++;
@@ -2614,6 +2731,9 @@ function updateSlotPreview(){
   } else {
     infoHtml += ` · سعر الوحدة: <strong style="color:var(--or)">${fmt(price)}</strong> ج`;
   }
+  if (hasShared && sharedCount > 0) {
+    infoHtml += ` · منها <strong style="color:#a16207">${sharedCount} 🤝 قابلة للمشاركة</strong>`;
+  }
   infoHtml += ` · إيراد متوقع: <strong style="color:var(--or)">${fmt(totalIncome)}</strong> ج`;
   info.innerHTML = infoHtml;
 }
@@ -2626,11 +2746,16 @@ async function submitSlots(){
   const featCount = hasFeat ? (Number(document.getElementById('asl-feat-count')?.value) || 0) : 0;
   const featPriceRaw = document.getElementById('asl-feat-price')?.value;
   const featPrice = featPriceRaw ? Number(featPriceRaw) : price;
+  const hasShared = document.getElementById('asl-has-shared')?.checked || false;
+  const regularCountForShared = count - featCount;
+  const sharedCount = hasShared ? (Number(document.getElementById('asl-shared-count')?.value) || 0) : 0;
 
   if (!bzId)           { toast('اختر بازار', 'e'); return; }
   if (!count || !price){ toast('أدخل عدد الوحدات والسعر', 'e'); return; }
   if (hasFeat && featCount >= count) { toast('عدد الأماكن المميزة يجب أن يكون أقل من الإجمالي', 'e'); return; }
   if (hasFeat && featCount < 1)      { toast('أدخل عدداً صحيحاً للأماكن المميزة', 'e'); return; }
+  if (hasShared && sharedCount < 1)  { toast('أدخل عدداً صحيحاً للأماكن القابلة للمشاركة', 'e'); return; }
+  if (hasShared && sharedCount > regularCountForShared) { toast('عدد الأماكن القابلة للمشاركة يجب ألا يتجاوز عدد الأماكن العادية', 'e'); return; }
 
   const rows = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const slotsToInsert = [];
@@ -2638,15 +2763,17 @@ async function submitSlots(){
   outer: for (const r of rows) {
     for (let n = 1; n <= 10; n++) {
       if (c >= count) break outer;
-      const isFeat = hasFeat && c < featCount;
+      const isFeat   = hasFeat && c < featCount;
+      const isShared = !isFeat && hasShared && (c - featCount) < sharedCount;
       slotsToInsert.push({
-        bazaar_id:   bzId,
-        row_label:   r,
-        slot_number: n,
-        col:         n,
-        price:       isFeat ? (featPrice || price) : price,
-        status:      'available',
-        is_featured: isFeat,
+        bazaar_id:    bzId,
+        row_label:    r,
+        slot_number:  n,
+        col:          n,
+        price:        isFeat ? (featPrice || price) : price,
+        status:       'available',
+        is_featured:  isFeat,
+        is_shareable: isShared,
       });
       c++;
     }
@@ -2660,7 +2787,12 @@ async function submitSlots(){
   if (error) {
     toast('خطأ: ' + error.message, 'e');
   } else {
-    await db.from('bazaars').update({ available_slots: count, total_slots: count }).eq('id', bzId);
+    const bzUpdate = { available_slots: count, total_slots: count };
+    if (hasShared && sharedCount > 0) {
+      bzUpdate.shared_slots_allowed = true;
+      bzUpdate.shared_slots_count   = sharedCount;
+    }
+    await db.from('bazaars').update(bzUpdate).eq('id', bzId);
     data.forEach(s => SLOTS.push(mapSlot(s)));
     const bz = BAZAARS.find(x => x.id === bzId);
     if (bz) { bz.totalSlots = count; bz.availSlots = count; }
@@ -2668,9 +2800,12 @@ async function submitSlots(){
     const featMsg = hasFeat && featCount > 0
       ? ` (منها <strong style="color:#c47800">${featCount} ⭐ مميزة</strong>)`
       : '';
+    const sharedMsg = hasShared && sharedCount > 0
+      ? ` (منها <strong style="color:#a16207">${sharedCount} 🤝 قابلة للمشاركة</strong>)`
+      : '';
     document.getElementById('add-sl-res').innerHTML =
-      `<div class="rok">✅ تم إنشاء ${count} وحدة${featMsg} في Supabase</div>`;
-    toast(`✅ تم إنشاء ${count} وحدة` + (hasFeat && featCount ? ` (${featCount} مميزة)` : ''), 's');
+      `<div class="rok">✅ تم إنشاء ${count} وحدة${featMsg}${sharedMsg} في Supabase</div>`;
+    toast(`✅ تم إنشاء ${count} وحدة` + (hasFeat && featCount ? ` (${featCount} مميزة)` : '') + (hasShared && sharedCount ? ` (${sharedCount} مشتركة)` : ''), 's');
   }
   btn.disabled = false; btn.textContent = '✅ إنشاء الوحدات';
 }

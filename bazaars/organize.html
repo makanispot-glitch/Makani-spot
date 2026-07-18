@@ -21,15 +21,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260718142707">
+<link rel="stylesheet" href="../style.css?v=20260719005443">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="../shared/sb-config.js?v=20260718142707" defer></script>
+<script src="../shared/sb-config.js?v=20260719005443" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260718142707" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260718142707" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260718142707" defer></script>
-<script src="/shared/i18n.js?v=20260718142707" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260719005443" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260719005443" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260719005443" defer></script>
+<script src="/shared/i18n.js?v=20260719005443" defer></script>
 
 <style>
 /* ── Standalone Nav ── */
@@ -892,6 +892,29 @@
       </div>
     </div>
 
+    <!-- 🤝 مشاركة عارضين -->
+    <div style="margin-top:18px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;background:var(--surface2);user-select:none">
+        <input type="checkbox" id="o-has-shared" onchange="orgToggleShared()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--orange)">
+        <span style="font-size:13.5px;font-weight:700;color:var(--dark)" data-i18n="organize.step3.sharedToggleLabel">🤝 السماح بمشاركة عارضين داخل نفس المكان</span>
+        <span style="font-size:11px;color:var(--ink3);margin-right:auto" data-i18n="organize.step3.sharedToggleHint">اضغط لتفعيل</span>
+      </label>
+
+      <div id="org-shared-fields" style="display:none;padding:16px;background:rgba(245,158,11,.04);border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;line-height:1.55" data-i18n="organize.step3.sharedInfoText">
+          عند تفعيل هذه الميزة، سيتمكن عارضان من مشاركة نفس المكان وتقسيم تكلفة الاشتراك بينهما (كل عارض يدفع نصف السعر).
+          الأماكن المشتركة تظهر بعلامة 🤝 على خريطة البازار.
+        </div>
+        <div class="org-grid">
+          <div class="org-fg">
+            <label><span data-i18n="organize.step3.sharedSlotsLabel">عدد الأماكن القابلة للمشاركة</span> <span class="req">*</span></label>
+            <input type="number" id="o-shared-slots" placeholder="مثال: 5" data-i18n-attr="placeholder:organize.step3.sharedSlotsPlaceholder" min="1" max="200" oninput="orgUpdatePrice()">
+            <div class="org-hint" data-i18n="organize.step3.sharedSlotsHint">يجب أن يكون أقل من أو يساوي عدد الأماكن العادية</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="org-price-box" id="org-price-preview" style="display:none;margin-top:16px">
       <div class="org-price-box-title" data-i18n="organize.step3.summaryTitle">📊 ملخص الإيراد المتوقع</div>
       <div class="org-price-row"><span data-i18n="organize.step3.regularUnitsLabel">وحدات عادية</span><span id="pp-slots">—</span></div>
@@ -972,9 +995,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-<script src="/notifications.js?v=20260718142707" defer></script>
-<script src="../media-handler.js?v=20260718142707" defer></script>
-<script src="organize.js?v=20260718142707" defer></script>
+<script src="/notifications.js?v=20260719005443" defer></script>
+<script src="../media-handler.js?v=20260719005443" defer></script>
+<script src="organize.js?v=20260719005443" defer></script>
 
 <!-- ── تبديل اللغة (English/عربي) ── -->
 <script>

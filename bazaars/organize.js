@@ -261,6 +261,15 @@ function _validateStep2() {
     if (premiumPrice <= 0) { _focusErr('o-premium-price', t('organize.step3.premiumPriceRequired')); return false; }
     if (premiumPrice <= price) { _focusErr('o-premium-price', t('organize.step3.premiumPriceMustBeHigher', { premium: premiumPrice, regular: price })); return false; }
   }
+
+  const hasShared = document.getElementById('o-has-shared')?.checked;
+  if (hasShared) {
+    const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
+    const regularSlots = Math.max(0, slots - premiumSlots);
+    const sharedSlots  = Number(document.getElementById('o-shared-slots').value) || 0;
+    if (sharedSlots < 1) { _focusErr('o-shared-slots', t('organize.step3.sharedSlotsRequired')); return false; }
+    if (sharedSlots > regularSlots) { _focusErr('o-shared-slots', t('organize.step3.sharedSlotsMustBeLess', { shared: sharedSlots, regular: regularSlots })); return false; }
+  }
   return true;
 }
 
@@ -470,6 +479,14 @@ function orgTogglePremium() {
   orgUpdatePrice();
 }
 
+function orgToggleShared() {
+  const checked = document.getElementById('o-has-shared').checked;
+  document.getElementById('org-shared-fields').style.display = checked ? '' : 'none';
+  if (!checked) {
+    document.getElementById('o-shared-slots').value = '';
+  }
+}
+
 function _orgLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
 function _orgFmtPrice(n) { return n.toLocaleString(_orgLocale()) + ' ' + t('organize.step3.egp'); }
 
@@ -609,6 +626,8 @@ async function orgSubmit() {
     const hasPremium   = document.getElementById('o-has-premium')?.checked;
     const premiumSlots = hasPremium ? (Number(document.getElementById('o-premium-slots').value) || 0) : 0;
     const premiumPrice = hasPremium ? (Number(document.getElementById('o-premium-price').value) || 0) : 0;
+    const hasShared    = document.getElementById('o-has-shared')?.checked;
+    const sharedSlots  = hasShared ? (Number(document.getElementById('o-shared-slots').value) || 0) : 0;
 
     // جمع روابط الصور مع انتظار أي رفع جارٍ
     const [coverUrl, sketchUrl, ...extraUrls] = await Promise.all([
@@ -665,6 +684,8 @@ async function orgSubmit() {
       extra_images:          validExtras.length > 0 ? validExtras : null,
       premium_slots:         premiumSlots || null,
       premium_price:         premiumPrice || null,
+      shared_slots_allowed:  !!hasShared,
+      shared_slots_count:    sharedSlots || 0,
       included_amenities:    includedAmenities,
       chair_count:           chairCount,
       other_amenities_note:  otherAmenitiesNote,
@@ -722,14 +743,14 @@ const _ORG_DRAFT_FIELDS = [
   'oi-facebook','oi-instagram','oi-tiktok',
   'o-name','o-venue','o-addr','o-ds','o-de','o-maps','o-desc',
   'o-slots','o-price','o-dep1','o-dep2','o-contract',
-  'o-premium-slots','o-premium-price',
+  'o-premium-slots','o-premium-price','o-shared-slots',
   'o-chair-count','o-amen-other-note','o-ad-budget',
   'o-phone','o-notes','o-sketch-url',
 ];
 
 /* حقول checkbox — تُحفظ/تُستعاد عبر .checked لا .value */
 const _ORG_DRAFT_CHECKBOXES = [
-  'o-has-premium',
+  'o-has-premium','o-has-shared',
   ...AMENITY_MAP.map(([id]) => id),
   'o-ad-photography','o-ad-social','o-ad-paidads',
 ];
@@ -778,6 +799,13 @@ function _orgRestoreDraft() {
     prem.checked = !!draft['o-has-premium'];
     const premSection = document.getElementById('org-premium-fields');
     if (premSection) premSection.style.display = prem.checked ? '' : 'none';
+  }
+
+  const shared = document.getElementById('o-has-shared');
+  if (shared && draft['o-has-shared'] !== undefined) {
+    shared.checked = !!draft['o-has-shared'];
+    const sharedSection = document.getElementById('org-shared-fields');
+    if (sharedSection) sharedSection.style.display = shared.checked ? '' : 'none';
   }
 
   const banner = document.getElementById('org-draft-banner');

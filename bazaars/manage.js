@@ -1056,17 +1056,27 @@ function _populateSlotsCount(b) {
   _setText('sm-premium-price-display',
     b.premium_price ? t('manage.slots.premiumPriceLabel', { price: _num(b.premium_price) }) : t('manage.slots.premiumPriceUndefined'));
 
+  const sharedAllowed = !!b.shared_slots_allowed;
+  _setText('sm-shared-count-display', sharedAllowed ? (b.shared_slots_count || 0) : '—');
+  const sharedDisabledMsg = document.getElementById('sm-shared-disabled-msg');
+  const sharedEnabledBlock = document.getElementById('sm-shared-enabled-block');
+  if (sharedDisabledMsg)  sharedDisabledMsg.style.display  = sharedAllowed ? 'none' : 'block';
+  if (sharedEnabledBlock) sharedEnabledBlock.style.display = sharedAllowed ? '' : 'none';
+
   /* reset slot grids + reservation fields */
   _val('sm-reserved-for', '');
   _val('sm-note', '');
   _setText('sm-grid-reserve', '');
   _setText('sm-grid-premium', '');
+  _setText('sm-grid-shared', '');
   activeSlots   = [];
   activeSlotTab = 'reserve';
   document.getElementById('smt-reserve')?.classList.add('active');
   document.getElementById('smt-premium')?.classList.remove('active');
+  document.getElementById('smt-shared')?.classList.remove('active');
   document.getElementById('smt-reserve-panel').style.display = 'block';
   document.getElementById('smt-premium-panel').style.display = 'none';
+  document.getElementById('smt-shared-panel').style.display  = 'none';
 
   const canSlotEdit = SLOTS_EDIT_ALLOWED.includes(b.status);
   const slotsSection = document.getElementById('tab-slots');
@@ -1081,7 +1091,7 @@ function _populateSlotsCount(b) {
 async function _loadSlots(bazaarId) {
   const { data: slots, error } = await sb
     .from('bazaar_slots')
-    .select('id,slot_number,row,col,status,is_featured,internal_note,reserved_at')
+    .select('id,slot_number,row,col,status,is_featured,is_shareable,internal_note,reserved_at')
     .eq('bazaar_id', bazaarId)
     .order('row').order('col');
 
@@ -1143,9 +1153,12 @@ function switchSlotTab(tab) {
   activeSlotTab = tab;
   document.getElementById('smt-reserve')?.classList.toggle('active', tab === 'reserve');
   document.getElementById('smt-premium')?.classList.toggle('active', tab === 'premium');
+  document.getElementById('smt-shared')?.classList.toggle('active', tab === 'shared');
   document.getElementById('smt-reserve-panel').style.display = tab === 'reserve' ? 'block' : 'none';
   document.getElementById('smt-premium-panel').style.display = tab === 'premium' ? 'block' : 'none';
-  _renderSlotGrid(tab === 'reserve' ? 'sm-grid-reserve' : 'sm-grid-premium', tab);
+  document.getElementById('smt-shared-panel').style.display  = tab === 'shared'  ? 'block' : 'none';
+  const gridId = tab === 'reserve' ? 'sm-grid-reserve' : tab === 'premium' ? 'sm-grid-premium' : 'sm-grid-shared';
+  _renderSlotGrid(gridId, tab);
 }
 
 function _renderSlotGrid(gridId, mode) {
@@ -1172,13 +1185,15 @@ function _renderSlotGrid(gridId, mode) {
 }
 
 function _slotHTML(s, mode) {
-  const isBooked   = ['booked', 'pending'].includes(s.status);
-  const isReserved = s.status === 'reserved_by_organizer';
-  const isAvail    = s.status === 'available';
-  const isPremium  = s.is_featured;
+  const isBooked     = ['booked', 'pending', 'half_booked'].includes(s.status);
+  const isReserved   = s.status === 'reserved_by_organizer';
+  const isAvail      = s.status === 'available';
+  const isPremium    = s.is_featured;
+  const isShareable  = s.is_shareable;
 
   let cls = s.status;
-  if (isPremium) cls += ' premium';
+  if (isPremium)   cls += ' premium';
+  if (isShareable) cls += ' shareable';
 
   let onclick = '';
   if (mode === 'reserve') {
@@ -1186,16 +1201,20 @@ function _slotHTML(s, mode) {
     if (isReserved) onclick = `onclick="toggleReserveSlot('${s.id}', 'unreserve')"`;
   } else if (mode === 'premium') {
     if (!isBooked)  onclick = `onclick="togglePremiumSlot('${s.id}', ${!isPremium})"`;
+  } else if (mode === 'shared') {
+    if (!isBooked)  onclick = `onclick="toggleShareableSlot('${s.id}', ${!isShareable})"`;
   }
 
-  const tooltip = isBooked   ? t('manage.slots.tooltipBooked')
+  const tooltip = isBooked   ? (s.status === 'half_booked' ? t('manage.slots.tooltipHalfBooked') : t('manage.slots.tooltipBooked'))
     : isReserved             ? (s.internal_note ? t('manage.slots.tooltipReservedByOrganizerNote', { note: s.internal_note }) : t('manage.slots.tooltipReservedByOrganizer'))
+    : isShareable            ? t('manage.slots.tooltipShareable')
     : isPremium              ? t('manage.slots.tooltipPremium')
     :                          t('manage.slots.tooltipAvailable');
 
   return `
 <div class="sm-slot ${cls}" ${onclick} title="${_esc(tooltip)}">
   ${isPremium ? '<span class="sm-star">⭐</span>' : ''}
+  ${isShareable ? '<span class="sm-shared-ico">🤝</span>' : ''}
   <span class="sm-num">${s.slot_number || ''}</span>
 </div>`;
 }
@@ -1261,6 +1280,32 @@ async function togglePremiumSlot(slotId, makePremium) {
 
   _renderSlotGrid('sm-grid-premium', 'premium');
   _showSlotMsg(makePremium ? t('manage.slots.premiumSetSuccess') : t('manage.slots.premiumUnsetSuccess'), false);
+}
+
+async function toggleShareableSlot(slotId, makeShareable) {
+  const { data, error } = await sb.rpc('toggle_shareable_slot', {
+    p_slot_id: slotId,
+    p_value:   makeShareable,
+  });
+
+  if (error || !data?.success) {
+    const err = data?.error || error?.message || t('manage.slots.errors.generic');
+    const msgs = {
+      not_authorized:                  t('manage.slots.errors.not_authorized'),
+      sharing_not_enabled_for_bazaar:  t('manage.slots.errors.sharingNotEnabled'),
+      slot_not_available:              t('manage.slots.errors.sharedSlotNotAvailable'),
+      shared_cap_reached:              t('manage.slots.errors.sharedCapReached', { cap: data?.cap ?? '' }),
+      active_half_booking_exists:      t('manage.slots.errors.activeHalfBookingExists'),
+    };
+    _showSlotMsg(msgs[err] || err, true);
+    return;
+  }
+
+  const slot = activeSlots.find(s => s.id === slotId);
+  if (slot) slot.is_shareable = makeShareable;
+
+  _renderSlotGrid('sm-grid-shared', 'shared');
+  _showSlotMsg(makeShareable ? t('manage.slots.sharedSetSuccess') : t('manage.slots.sharedUnsetSuccess'), false);
 }
 
 function _showSlotMsg(text, isErr) {

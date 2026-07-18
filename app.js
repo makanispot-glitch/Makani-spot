@@ -2689,6 +2689,17 @@ async function loadUserBookings(userId) {
       .order('created_at', { ascending: false })
       .limit(250);
 
+    /* حجوزات "نصف" مشتركة نشطة — نحتاج حالة المكان الفعلية (half_booked/booked) لمعرفة هل اكتمل الحجز */
+    const halfSlotIds = [...new Set((bazaarBookings || [])
+      .filter(b => b.booking_kind === 'half' && b.slot_id)
+      .map(b => b.slot_id))];
+    let halfSlotStatusMap = {};
+    if (halfSlotIds.length) {
+      const { data: halfSlots } = await sbClient
+        .from('bazaar_slots').select('id,status').in('id', halfSlotIds);
+      (halfSlots || []).forEach(s => { halfSlotStatusMap[s.id] = s.status; });
+    }
+
     const localBazaarBookings = _loadLocalBazaarBookings(userId);
     const bazaarById = new Map();
     const slotOwned = new Set(); // tracks "bazaar_id:slot_id" pairs already covered by DB
@@ -2725,11 +2736,15 @@ async function loadUserBookings(userId) {
 
     const normalizedBazaars = [...bazaarById.values()].map(b => {
       const bazaar = BAZAARS.find(x => String(x.id) === String(b.bazaar_id));
+      const isHalf = b.booking_kind === 'half';
+      const halfComplete = isHalf && halfSlotStatusMap[b.slot_id] === 'booked';
       const price = bazaar?.price_per_slot
         ? Number(bazaar.price_per_slot).toLocaleString(_appLocale()) + ' ' + t('tenantDash.bookings.perSlot')
         : t('tenantDash.bookings.kindBazaar');
       return {
         kind: 'bazaar',
+        bookingKind: isHalf ? 'half' : 'full',
+        halfComplete,
         title: bazaar?.name || b.bazaar_name || t('tenantDash.bookings.bazaarBookingDefault'),
         loc: bazaar?.location || bazaar?.region || '—',
         price,
@@ -2776,11 +2791,15 @@ async function loadUserBookings(userId) {
       const dateStr = b.created_at
         ? new Date(b.created_at).toLocaleDateString(_appLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
-      const kindLabel = b.kind === 'bazaar' ? t('tenantDash.bookings.kindBazaar') : t('tenantDash.bookings.kindSpace');
+      const kindLabel = b.kind === 'bazaar'
+        ? (b.bookingKind === 'half'
+            ? (b.halfComplete ? t('tenantDash.bookings.kindSharedComplete') : t('tenantDash.bookings.kindSharedPending'))
+            : t('tenantDash.bookings.kindBazaar'))
+        : t('tenantDash.bookings.kindSpace');
       const canWithdraw = b.kind === 'space' && b.id &&
         (b.isWaitlist || b.status === 'pending' || b.status === 'viewing_pending');
       return `
-      <div class="booking-card ${b.kind === 'bazaar' ? 'booking-card-bazaar' : ''}">
+      <div class="booking-card ${b.kind === 'bazaar' ? 'booking-card-bazaar' : ''}${b.bookingKind === 'half' ? ' booking-card-shared' : ''}">
         <div class="booking-card-header">
           <div>
             <div class="booking-space-name"><span class="booking-kind-badge">${kindLabel}</span>${b.title}</div>
