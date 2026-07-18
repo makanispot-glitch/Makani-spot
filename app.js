@@ -2228,8 +2228,7 @@ function toggleDdLangPanel(e) {
 
 function selectDdLocale(locale, e) {
   e.stopPropagation();
-  setLocale(locale, sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined)
-    .then(() => { if (typeof updateLangSwitcherLabel === 'function') updateLangSwitcherLabel(); });
+  setLocale(locale, sbClient && user ? { sbClient: sbClient, userId: user.id } : undefined);
 }
 
 

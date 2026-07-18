@@ -74,16 +74,16 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="../style.css?v=34">
+  <link rel="stylesheet" href="/style.css?v=34">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="../shared/sb-config.js?v=202607141600" defer></script>
+  <script src="/shared/sb-config.js?v=202607141600" defer></script>
   <script src="/pwa-install.js?v=202607141600" defer></script>
-  <script src="../shared/space-model.js?v=202607141600" defer></script>
-  <script src="../shared/booking.js?v=202607141600" defer></script>
-  <script src="../shared/account.js?v=202607141600" defer></script>
-  <script src="../shared/plan-badge.js?v=202607141600" defer></script>
+  <script src="/shared/space-model.js?v=202607141600" defer></script>
+  <script src="/shared/booking.js?v=202607141600" defer></script>
+  <script src="/shared/account.js?v=202607141600" defer></script>
+  <script src="/shared/plan-badge.js?v=202607141600" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
   <script src="/vendor/i18next/i18next.min.js?v=202607141600" defer></script>
@@ -1612,7 +1612,7 @@
       });
     }
     function toggleMakaniLocale() {
-      setLocale(getLocale() === 'en' ? 'ar' : 'en').then(updateLangSwitcherLabel);
+      setLocale(getLocale() === 'en' ? 'ar' : 'en', typeof sbClient !== 'undefined' && typeof currentUser !== 'undefined' && currentUser ? { sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
     }
     document.addEventListener('DOMContentLoaded', function () {
       initI18n(['spaces', 'common']).then(updateLangSwitcherLabel);

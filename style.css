@@ -567,7 +567,7 @@ body {
   white-space: nowrap;
 }
 
-.bz-nav-user-wrap {
+.bz-nav-user-wrap, #eq-nav-user, #bz-nav-user {
   display: flex;
   align-items: center;
   gap: var(--nav-gap);

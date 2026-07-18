@@ -271,6 +271,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  /* إزالة زر تغيير اللغة القديم إذا كان مسجلاً */
+  const langBtn = document.getElementById('langSwitchBtn');
+  if (langBtn && me) {
+    langBtn.remove();
+  }
+
   /* جرس الإشعارات الموحّد — نفس موقعه في كل صفحات البازارات */
   try { GN.init(sb, me.id); GN.mount(document.querySelector('.bz-nav-right')); } catch (_) {}
 

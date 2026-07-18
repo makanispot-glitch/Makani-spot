@@ -55,6 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.warn('[profile] Supabase init:', e.message);
   }
 
+  /* إزالة زر تغيير اللغة القديم إذا كان مسجلاً */
+  const langBtn = document.getElementById('langSwitchBtn');
+  if (langBtn && currentUser) {
+    langBtn.remove();
+  }
+
   /* جرس الإشعارات الموحّد — نفس موقعه في كل صفحات البازارات */
   if (currentUser) {
     try { GN.init(sbClient, currentUser.id); GN.mount(document.querySelector('.bz-nav-right')); } catch (_) {}

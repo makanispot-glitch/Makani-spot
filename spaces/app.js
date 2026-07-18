@@ -2025,7 +2025,11 @@ function setNavUser(user, profile) {
   // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
   // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
   const langBtn = document.getElementById('langSwitchBtn');
-  if (langBtn) langBtn.style.display = user ? 'none' : '';
+  if (langBtn && user) {
+    langBtn.remove();
+  } else if (langBtn) {
+    langBtn.style.display = '';
+  }
 
   if (!user) {
     guestEl.style.display  = 'flex';
@@ -2106,7 +2110,7 @@ function toggleDdLangPanel(e) {
 
 function selectDdLocale(locale, e) {
   e.stopPropagation();
-  setLocale(locale).then(() => { if (typeof updateLangSwitcherLabel === 'function') updateLangSwitcherLabel(); });
+  setLocale(locale, sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined);
 }
 
 

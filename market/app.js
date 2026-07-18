@@ -280,7 +280,11 @@ function eqRenderNavUser() {
   // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
   // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
   const langBtn = document.getElementById('langSwitchBtn');
-  if (langBtn) langBtn.style.display = eqUser ? 'none' : '';
+  if (langBtn && eqUser) {
+    langBtn.remove();
+  } else if (langBtn) {
+    langBtn.style.display = '';
+  }
 
   if (eqUser) {
     const initial   = (eqUser.user_metadata?.full_name || eqUser.email || '?')[0].toUpperCase();
@@ -410,7 +414,7 @@ function eqToggleLangPanel(e) {
 
 function eqSelectLocale(locale, e) {
   e.stopPropagation();
-  setLocale(locale);
+  setLocale(locale, eqSb && eqUser ? { sbClient: eqSb, userId: eqUser.id } : undefined);
 }
 
 function eqCloseAccountMenu() {

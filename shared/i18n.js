@@ -96,7 +96,12 @@ async function initI18n(namespaces) {
       returnEmptyString: false,
     });
   applyLocaleToDocument(i18next.language);
-  document.addEventListener('makani:locale-changed', () => applyDomTranslations(document));
+  document.addEventListener('makani:locale-changed', () => {
+    applyDomTranslations(document);
+    if (typeof updateLangSwitcherLabel === 'function') {
+      try { updateLangSwitcherLabel(); } catch (err) { console.warn('[i18n] updateLangSwitcherLabel error:', err); }
+    }
+  });
   // بيغطي data-i18n فورًا، وبيبلّغ أي مستمع صفحة-خاص (زي إعادة رسم كروت
   // market/spaces) إن الترجمة بقت جاهزة — أول مرة، مش بس عند setLocale() لاحقًا.
   document.dispatchEvent(new CustomEvent('makani:locale-changed', { detail: { locale: i18next.language, initial: true } }));
