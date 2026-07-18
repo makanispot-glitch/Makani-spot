@@ -1,0 +1,1 @@
+﻿window.APP_VERSION = 'v20260718122036';

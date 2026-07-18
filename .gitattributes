@@ -1,0 +1,3 @@
+# اجبر LF لملفات git hooks بغض النظر عن core.autocrlf المحلي —
+# لازم تفضل LF عشان shebang #!/bin/sh يشتغل صح تحت Git Bash/MSYS على وندوز.
+githooks/* text eol=lf

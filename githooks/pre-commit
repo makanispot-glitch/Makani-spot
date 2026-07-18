@@ -1,0 +1,27 @@
+#!/bin/sh
+# githooks/pre-commit — يحدّث الإصدار (version) في كل الملفات تلقائيًا قبل كل commit.
+# يُفعَّل محليًا عبر: git config core.hooksPath githooks   (راجع docs/VERSIONING.md)
+#
+# القاعدة الذهبية: هذا الملف لازم ميوقفش أي commit أبدًا مهما حصل جوه bump-version.ps1.
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+if ! command -v powershell.exe >/dev/null 2>&1; then
+  echo ""
+  echo "[!] pre-commit: powershell.exe مش موجود على الجهاز ده — الـ commit هيكمل من غير تحديث الإصدار."
+  echo "    شغّل ./bump-version.ps1 يدويًا قبل الرفع على Cloudflare."
+  echo ""
+  exit 0
+fi
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ROOT/bump-version.ps1"
+STATUS=$?
+
+if [ "$STATUS" -ne 0 ]; then
+  echo ""
+  echo "[!] pre-commit: bump-version.ps1 فشل (exit $STATUS) — الـ commit هيكمل من غير تحديث الإصدار."
+  echo "    شغّل ./bump-version.ps1 يدويًا وتأكد إنه يعدي قبل الرفع القادم."
+  echo ""
+fi
+
+exit 0
