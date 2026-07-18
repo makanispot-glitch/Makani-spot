@@ -18,10 +18,16 @@
 /* ── Auth Flicker Prevention ─────────────────────────────────────────────────
    html.sb-authed تُضاف بـ inline script في <head> قبل أول رسمة للمتصفح،
    بحيث يُخفى زر الدخول فوراً إذا كانت الجلسة موجودة في localStorage.
-   !important ضروري لتجاوز inline style على nav-guest / nav-logged.
+   !important ضروري لتجاوز inline style على nav-guest / nav-logged / langSwitchBtn.
+   #langSwitchBtn مدرج هنا كمان: زر تبديل اللغة المستقل يفضل ظاهر للزائر فقط
+   (المستخدم المسجّل بيغيّر اللغة من القائمة المنسدلة) — إخفاؤه كان يعتمد على
+   JS متأخر في setNavUser() (بعد await getSession() + طلب profiles شبكة حقيقي)
+   فيظهر الزر لحظيًا عند كل تحميل صفحة قبل ما يختفي. إدراجه هنا يخفيه من نفس
+   لحظة الرسم الأولى بدل انتظار السلسلة غير المتزامنة بالكامل.
 ────────────────────────────────────────────────────────────────────────────── */
-html.sb-authed #nav-guest  { display: none !important; }
-html.sb-authed #nav-logged { display: flex !important; }
+html.sb-authed #nav-guest     { display: none !important; }
+html.sb-authed #nav-logged    { display: flex !important; }
+html.sb-authed #langSwitchBtn { display: none !important; }
 
 /* ============================================================
    🎨 القسم الأول: الألوان والمتغيرات العامة (Makan Spot Design System)
@@ -232,7 +238,13 @@ body {
 .logo-text {
   display: flex;
   flex-direction: column;
+  /* align-items:center (بدل stretch الافتراضي) يمركز "SPOT" تحت "مكاني" بدل ما
+     يلتصق بحافة واحدة (يمين في RTL، يسار في LTR) — "مكاني" أعرض العنصرين
+     فيفضل زي ما هو، و"SPOT" الأضيق ياخد نفس المسافة على الجانبين. حل نسبي
+     بيتكيّف مع أي حجم خط تلقائيًا، مش إزاحة بالبكسل. */
+  align-items: center;
   line-height: 1.1;
+  gap: 5px;
 }
 
 .logo-ar {
