@@ -85,7 +85,7 @@
     "nextPage": "التالي"
   },
   "card": {
-    "verifiedOrganizer": "⭐ منظّم موثّق",
+    "verifiedOrganizer": "✓ منظم موثق",
     "organizerFallback": "منظّم البازار",
     "verifiedBadge": "✓ موثّق",
     "noDescription": "لا يوجد وصف",
@@ -97,7 +97,8 @@
     "soldOut": "مكتمل",
     "activeNow": "جارٍ الآن 🟢",
     "shareTooltip": "مشاركة البازار",
-    "detailsBtn": "التفاصيل ←"
+    "detailsBtn": "التفاصيل ←",
+    "viewProfile": "عرض الملف الشخصي"
   },
   "nav": {
     "prevBazaar": "← {{name}}",
@@ -244,14 +245,32 @@
     "bookedCount": "{{count}} محجوز مؤكد",
     "featuredCount": "⭐ {{count}} مميز",
     "liveBanner": "🔴 انتهى استقبال الحجوزات، والبازار جارٍ حالياً.",
-    "legendAvailable": "متاح",
+    "legendAvailable": "متاح للحجز",
     "legendAvailableBookHint": " — اضغط للحجز",
-    "legendPending": "حجز مبدئي ⏳",
-    "legendBooked": "محجوز مؤكد",
+    "legendPending": "حجز مبدئي",
+    "legendBooked": "حجز مؤكد",
     "legendSelected": "مختارك",
-    "legendFeatured": "مكان مميز ⭐",
-    "legendShareable": "قابل للمشاركة 🤝",
+    "legendFeatured": "مكان مميز",
+    "legendShareable": "قابل للمشاركة",
     "legendHalfBooked": "نصف ممتلئ",
+    "legendTooltipTitle": {
+      "available": "متاح للحجز",
+      "pending": "حجز مبدئي",
+      "booked": "حجز مؤكد",
+      "selected": "مختارك",
+      "featured": "مكان مميز",
+      "shareable": "قابل للمشاركة",
+      "half_booked": "نصف ممتلئ"
+    },
+    "legendTooltip": {
+      "available": "هذا المكان متاح ويمكنك حجزه مباشرة.",
+      "pending": "تم إرسال طلب حجز لهذا المكان وهو الآن قيد المراجعة من فريق Makani Spot. سيظل المكان محجوزًا مؤقتًا حتى يتم مراجعة الطلب وتأكيده أو إلغاؤه.",
+      "booked": "تم إرسال طلب حجز لهذا المكان وقد تمت مراجعته وتأكيده من فريق Makani Spot، وأصبح المكان محجوزاً بشكل نهائي.",
+      "selected": "هذا هو المكان الذي قمت باختياره حاليًا لإتمام عملية الحجز.",
+      "featured": "هذا المكان يقع في موقع مميز داخل البازار ويتميز بظهور أفضل وحركة زوار أعلى.",
+      "shareable": "هذا المكان يسمح بحجز نصف المساحة أو المساحة بالكامل، مما يتيح لعارضين مشاركة نفس المكان وتقسيم تكلفة الاشتراك.",
+      "half_booked": "هذا المكان قابل للمشاركة وقد قام عارض آخر بحجز نصفه بالفعل. يمكنك حجز النصف المتبقي بنصف تكلفة الاشتراك للمشاركة معه."
+    },
     "clickHint": "اضغط على أي مكان متاح لاختياره وإتمام الحجز",
     "sharedTooltip": "🤝 مشاركة متاحة — احجز بنصف السعر",
     "sharedTooltipHalf": "🤝 مشاركة متاحة — متبقٍّ مكان واحد",

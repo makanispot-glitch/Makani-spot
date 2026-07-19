@@ -87,7 +87,7 @@
     "nextPage": "Next"
   },
   "card": {
-    "verifiedOrganizer": "⭐ Verified Organizer",
+    "verifiedOrganizer": "✓ Verified Organizer",
     "organizerFallback": "Bazaar Organizer",
     "verifiedBadge": "✓ Verified",
     "noDescription": "No description available",
@@ -100,7 +100,8 @@
     "soldOut": "Sold Out",
     "activeNow": "Happening Now 🟢",
     "shareTooltip": "Share this bazaar",
-    "detailsBtn": "Details →"
+    "detailsBtn": "Details →",
+    "viewProfile": "View Profile"
   },
   "nav": {
     "prevBazaar": "← {{name}}",
@@ -256,14 +257,32 @@
     "bookedCount": "{{count}} booked",
     "featuredCount": "⭐ {{count}} featured",
     "liveBanner": "🔴 Bookings are closed — the bazaar is happening now.",
-    "legendAvailable": "Available",
+    "legendAvailable": "Available for booking",
     "legendAvailableBookHint": " — tap to book",
-    "legendPending": "Pending ⏳",
-    "legendBooked": "Booked",
-    "legendSelected": "Your pick",
-    "legendFeatured": "Featured spot ⭐",
-    "legendShareable": "Shareable 🤝",
-    "legendHalfBooked": "Half full",
+    "legendPending": "Pending Reservation",
+    "legendBooked": "Confirmed Booking",
+    "legendSelected": "Your Pick",
+    "legendFeatured": "Featured Spot",
+    "legendShareable": "Shareable",
+    "legendHalfBooked": "Half Full",
+    "legendTooltipTitle": {
+      "available": "Available for booking",
+      "pending": "Pending Reservation",
+      "booked": "Confirmed Booking",
+      "selected": "Your Pick",
+      "featured": "Featured Spot",
+      "shareable": "Shareable",
+      "half_booked": "Half Full"
+    },
+    "legendTooltip": {
+      "available": "This spot is available and can be booked directly.",
+      "pending": "A booking request has been submitted for this spot and is currently under review by the Makani Spot team. The spot remains temporarily reserved.",
+      "booked": "A booking request has been submitted for this spot and has been reviewed and confirmed by the Makani Spot team.",
+      "selected": "This is the spot you have currently selected to complete your booking.",
+      "featured": "This spot is located in a prime area inside the bazaar, featuring higher visibility and foot traffic.",
+      "shareable": "This spot allows booking half or all of the space, enabling two exhibitors to share the same spot and split the participation cost.",
+      "half_booked": "This spot is shareable and another exhibitor has already booked half. You can book the remaining half at half price to share it."
+    },
     "clickHint": "Tap any available spot to select it and complete your booking",
     "sharedTooltip": "🤝 Sharing available — book at half price",
     "sharedTooltipHalf": "🤝 Sharing available — 1 spot left",

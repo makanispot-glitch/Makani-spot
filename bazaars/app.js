@@ -574,7 +574,7 @@ function buildBazaarCard(b) {
   const orgName     = b.organizer || '';
   const orgInitial  = orgName ? orgName[0].toUpperCase() : '🎪';
   const orgVerified = b.is_organizer_verified;
-  const orgSubText  = orgVerified ? t('card.verifiedOrganizer') : t('card.organizerFallback');
+  const orgSubText  = t('card.organizerFallback');
 
   const orgProfileHref = b.organizer_id
     ? `/bazaars/profile.html?organizer=${b.organizer_id}`
@@ -591,12 +591,19 @@ function buildBazaarCard(b) {
   <div class="bz-card-organizer" ${orgProfileHref ? `style="cursor:pointer" onclick="event.stopPropagation();window.location.href='${orgProfileHref}'"` : ''}>
     <div class="bz-org-avatar" data-org-id="${b.organizer_id || ''}" data-initial="${_esc(orgInitial)}">${orgAvatarInner}</div>
     <div class="bz-org-info">
-      <div class="bz-org-name">🎪 ${orgName}</div>
+      <div class="bz-org-name">${orgName}</div>
       <div class="bz-org-sub">${orgSubText}</div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-right:auto">
+    <div style="display:flex;align-items:center;gap:8px;margin-right:auto;margin-left:4px">
       ${orgVerified ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>` : ''}
-      ${orgProfileHref ? `<span style="font-size:10px;color:var(--orange);opacity:.8">${getLocale() === 'en' ? '→' : '←'}</span>` : ''}
+      ${orgProfileHref ? `
+        <span class="bz-org-profile-icon" title="${t('card.viewProfile')}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </span>
+      ` : ''}
     </div>
   </div>` : '';
 
@@ -2481,17 +2488,14 @@ function renderSlotMap(slots, opts = {}) {
     </div>
 
     <div class="bz-legend">
-      <span class="bz-legend-item"><span class="bz-legend-dot available"></span> ${t('slotMap.legendAvailable')}${readOnly ? '' : t('slotMap.legendAvailableBookHint')}</span>
-      ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending"></span> ${t('slotMap.legendPending')}</span>` : ''}
-      <span class="bz-legend-item"><span class="bz-legend-dot booked"></span> ${t('slotMap.legendBooked')}</span>
-      ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected"></span> ${t('slotMap.legendSelected')}</span>` : ''}
-      ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured"></span> ${t('slotMap.legendFeatured')}</span>` : ''}
-      ${shareableCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot shareable"></span> ${t('slotMap.legendShareable')}</span>` : ''}
-      ${halfBookedCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot half_booked"></span> ${t('slotMap.legendHalfBooked')}</span>` : ''}
-      ${shareableCount > 0 ? `<button type="button" class="bz-shared-help-btn" onclick="_toggleSharedHelpBox()" title="${t('slotMap.sharedHelpBtnTooltip')}">؟</button>` : ''}
+      <span class="bz-legend-item"><span class="bz-legend-dot available" onclick="toggleLegendTooltip(event, 'available')">؟</span> ${t('slotMap.legendAvailable')}</span>
+      ${pendingCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot pending" onclick="toggleLegendTooltip(event, 'pending')">؟</span> ${t('slotMap.legendPending')}</span>` : ''}
+      <span class="bz-legend-item"><span class="bz-legend-dot booked" onclick="toggleLegendTooltip(event, 'booked')">؟</span> ${t('slotMap.legendBooked')}</span>
+      ${!readOnly ? `<span class="bz-legend-item"><span class="bz-legend-dot selected" onclick="toggleLegendTooltip(event, 'selected')">؟</span> ${t('slotMap.legendSelected')}</span>` : ''}
+      ${featuredCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot featured" onclick="toggleLegendTooltip(event, 'featured')">؟</span> ${t('slotMap.legendFeatured')}</span>` : ''}
+      ${shareableCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot shareable" onclick="toggleLegendTooltip(event, 'shareable')">؟</span> ${t('slotMap.legendShareable')}</span>` : ''}
+      ${halfBookedCount > 0 ? `<span class="bz-legend-item"><span class="bz-legend-dot half_booked" onclick="toggleLegendTooltip(event, 'half_booked')">؟</span> ${t('slotMap.legendHalfBooked')}</span>` : ''}
     </div>
-
-    ${shareableCount > 0 ? `<div id="bz-shared-help-box" class="bz-shared-help-box" style="display:none">${t('slotMap.sharedHelpText')}</div>` : ''}
 
     <div class="bz-slotmap-wrap${mode === 'ended' ? ' bz-slotmap-ended' : ''}">
       <div class="bz-slotmap-scroll${readOnly ? ' bz-readonly' : ''}">${gridHtml}</div>
@@ -2524,9 +2528,94 @@ function _slotBadgesHtml(status, isFeatured, isShareable) {
   return `${sharedBadge}${halfProgress}${featuredTip}${sharedTip}`;
 }
 
-function _toggleSharedHelpBox() {
-  const box = document.getElementById('bz-shared-help-box');
-  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+/* التول تيب التفاعلية الجديدة لمفتاح خريطة البازار */
+function toggleLegendTooltip(event, state) {
+  event.stopPropagation();
+  const dot = event.currentTarget;
+  const existing = document.getElementById('bz-legend-tooltip');
+  
+  if (existing) {
+    const activeState = existing.getAttribute('data-state');
+    existing.remove();
+    if (activeState === state) {
+      return;
+    }
+  }
+  
+  const tooltip = document.createElement('div');
+  tooltip.id = 'bz-legend-tooltip';
+  tooltip.setAttribute('data-state', state);
+  if (getLocale() === 'en') {
+    tooltip.classList.add('ltr');
+  }
+  
+  const title = t(`slotMap.legendTooltipTitle.${state}`) || '';
+  const desc = t(`slotMap.legendTooltip.${state}`) || '';
+  
+  tooltip.innerHTML = `<h4>${title}</h4><p>${desc}</p>`;
+  document.body.appendChild(tooltip);
+  
+  const rect = dot.getBoundingClientRect();
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+  
+  const dotCenter = rect.left + scrollX + rect.width / 2;
+  const dotTop = rect.top + scrollY;
+  const dotBottom = rect.bottom + scrollY;
+  
+  // الوضع الافتراضي فوق الزر
+  tooltip.classList.add('pos-above');
+  let topPos = dotTop - tooltip.offsetHeight - 10;
+  let leftPos = dotCenter - tooltip.offsetWidth / 2;
+  
+  // معالجة الارتطام بالحافة العلوية للشاشة
+  if (rect.top - tooltip.offsetHeight - 10 < 10) {
+    tooltip.classList.remove('pos-above');
+    tooltip.classList.add('pos-below');
+    topPos = dotBottom + 10;
+  }
+  
+  // معالجة الارتطام باليمين أو اليسار
+  if (leftPos < 10) {
+    leftPos = 10;
+  } else if (leftPos + tooltip.offsetWidth > window.innerWidth - 10) {
+    leftPos = window.innerWidth - tooltip.offsetWidth - 10;
+  }
+  
+  // تعديل موضع السهم ديناميكياً ليظل مشيراً إلى مركز المربع عند إزاحة التول تيب
+  const shiftedBy = leftPos - (dotCenter - tooltip.offsetWidth / 2);
+  if (Math.abs(shiftedBy) > 2) {
+    const arrowStyle = document.createElement('style');
+    arrowStyle.id = 'bz-legend-tooltip-arrow-adjust';
+    const percentOffset = 50 + (shiftedBy / tooltip.offsetWidth) * 100;
+    arrowStyle.innerHTML = `
+      #bz-legend-tooltip::after, #bz-legend-tooltip::before {
+        left: ${100 - percentOffset}% !important;
+      }
+    `;
+    const oldStyle = document.getElementById('bz-legend-tooltip-arrow-adjust');
+    if (oldStyle) oldStyle.remove();
+    document.head.appendChild(arrowStyle);
+  } else {
+    const oldStyle = document.getElementById('bz-legend-tooltip-arrow-adjust');
+    if (oldStyle) oldStyle.remove();
+  }
+  
+  tooltip.style.top = `${topPos}px`;
+  tooltip.style.left = `${leftPos}px`;
+}
+
+// تهيئة إغلاق التول تيب عند الضغط في أي مكان خارجي
+if (!window._bzLegendTooltipInitialized) {
+  window._bzLegendTooltipInitialized = true;
+  document.addEventListener('click', function(e) {
+    const tooltip = document.getElementById('bz-legend-tooltip');
+    if (tooltip && !tooltip.contains(e.target) && !e.target.classList.contains('bz-legend-dot')) {
+      tooltip.remove();
+      const style = document.getElementById('bz-legend-tooltip-arrow-adjust');
+      if (style) style.remove();
+    }
+  });
 }
 
 function _buildSlotHtml(slot, index = 0, readOnly = false) {
@@ -2830,21 +2919,6 @@ async function submitBazaarBooking() {
     // تحديث available_slots بشكل atomic (RPC تضمن عدم التعارض بين مستخدمين)
     await sbClient.rpc('decrement_available_slots', { p_bazaar_id: String(currentBazaar.id) });
 
-    // إشعار المنظم بالحجز الجديد → جدول notifications الموحّد
-    if (currentBazaar.organizer_id) {
-      const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${selectedSlotId}"]`)
-        ?.dataset?.slotLabel || selectedSlotId;
-      sbClient.from('notifications').insert({
-        user_id:    currentBazaar.organizer_id,
-        type:       'new_booking',
-        source:     'bazaar',
-        title:      `حجز جديد — ${currentBazaar.name}`,
-        body:       `${name} (${phone}) طلب حجز مكان ${slotLabel}`,
-        action_url: `/?p=dashboard`,
-        metadata:   { bazaar_id: String(currentBazaar.id) },
-      }).catch(() => {});
-    }
-
     const bazaarBookingRecord = {
       id: insertedBooking?.id || null,
       bazaar_id: String(currentBazaar.id), slot_id: selectedSlotId,
@@ -2889,6 +2963,25 @@ async function submitBazaarBooking() {
         </div>`;
     }
 
+    // إشعار المنظم بالحجز الجديد → جدول notifications الموحّد
+    // (بعد عرض شاشة النجاح عمداً: أثر جانبي غير حرج، لا يجوز أن يمنع تأكيد الحجز للمستخدم لو فشل)
+    // ملحوظة: query builder الخاص بـ Supabase كائن "thenable" فقط (يدعم .then فقط) وليس Promise
+    // حقيقي — لا يدعم .catch()/.finally() إطلاقاً، فاستخدامه يرمي "catch is not a function" فوراً
+    // قبل حتى إرسال الطلب (lazy execution). استخدم .then(onFulfilled, onRejected) دائماً بدل .catch().
+    if (currentBazaar.organizer_id) {
+      const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${bazaarBookingRecord.slot_id}"]`)
+        ?.dataset?.slotLabel || bazaarBookingRecord.slot_id;
+      sbClient.from('notifications').insert({
+        user_id:    currentBazaar.organizer_id,
+        type:       'new_booking',
+        source:     'bazaar',
+        title:      `حجز جديد — ${currentBazaar.name}`,
+        body:       `${name} (${phone}) طلب حجز مكان ${slotLabel}`,
+        action_url: `/?p=dashboard`,
+        metadata:   { bazaar_id: String(currentBazaar.id) },
+      }).then(() => {}, () => {});
+    }
+
   } catch (err) {
     /*
      * Rollback: إذا كنا قفلنا الـ slot (وضعناه pending) لكن فشل إدراج الحجز،
@@ -2898,7 +2991,7 @@ async function submitBazaarBooking() {
       sbClient.from('bazaar_slots')
         .update({ status: 'available' })
         .eq('id', _capturedSlotId)
-        .catch(() => {});
+        .then(() => {}, () => {});
 
       // تحديث الـ DOM فوراً دون انتظار الـ DB
       const slotElRb = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`);
@@ -2957,21 +3050,6 @@ async function _submitSharedHalfBooking({ name, phone, email, business, activity
 
     window.mkPwaInstall?.signalSuccess();
 
-    // إشعار المنظم بحجز نصف مكان جديد → جدول notifications الموحّد
-    if (currentBazaar.organizer_id) {
-      const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`)
-        ?.dataset?.slotLabel || _capturedSlotId;
-      sbClient.from('notifications').insert({
-        user_id:    currentBazaar.organizer_id,
-        type:       'new_booking',
-        source:     'bazaar',
-        title:      `🤝 حجز نصف مكان — ${currentBazaar.name}`,
-        body:       `${name} (${phone}) طلب حجز نصف مكان ${slotLabel} (مشاركة)`,
-        action_url: `/?p=dashboard`,
-        metadata:   { bazaar_id: String(currentBazaar.id) },
-      }).catch(() => {});
-    }
-
     _saveLocalBazaarBooking(currentUser.id, {
       id: data.booking_id, bazaar_id: String(currentBazaar.id), slot_id: _capturedSlotId,
       user_id: currentUser.id, user_name: name, user_phone: phone, user_email: email || null,
@@ -3014,6 +3092,23 @@ async function _submitSharedHalfBooking({ name, phone, email, business, activity
             <a class="btn" href="/?p=dashboard" style="padding:12px 28px">${t('booking.success.myBookingsBtn')}</a>
           </div>
         </div>`;
+    }
+
+    // إشعار المنظم بحجز نصف مكان جديد → جدول notifications الموحّد
+    // (بعد عرض شاشة النجاح عمداً — أثر جانبي غير حرج، لا يجوز أن يمنع تأكيد الحجز لو فشل)
+    // .then(ok, err) لا .catch() — راجع الملحوظة في submitBazaarBooking أعلاه لسبب ذلك
+    if (currentBazaar.organizer_id) {
+      const slotLabel = document.querySelector(`.bz-slot[data-slot-id="${_capturedSlotId}"]`)
+        ?.dataset?.slotLabel || _capturedSlotId;
+      sbClient.from('notifications').insert({
+        user_id:    currentBazaar.organizer_id,
+        type:       'new_booking',
+        source:     'bazaar',
+        title:      `🤝 حجز نصف مكان — ${currentBazaar.name}`,
+        body:       `${name} (${phone}) طلب حجز نصف مكان ${slotLabel} (مشاركة)`,
+        action_url: `/?p=dashboard`,
+        metadata:   { bazaar_id: String(currentBazaar.id) },
+      }).then(() => {}, () => {});
     }
 
   } catch (err) {
