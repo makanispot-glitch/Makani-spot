@@ -127,7 +127,9 @@
     "copyLinkFailedToast": "⚠️ Couldn't copy the link — please try again",
     "shareTooltip": "Share this bazaar",
     "shareLabel": "Share",
-    "navCount": "{{current}} / {{total}}"
+    "navCount": "{{current}} / {{total}}",
+    "nextImage": "Next photo",
+    "prevImage": "Previous photo"
   },
   "info": {
     "aboutTitle": "📝 About This Bazaar",

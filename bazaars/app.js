@@ -459,7 +459,7 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,shared_slots_allowed,shared_slots_count,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,extra_images,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,shared_slots_allowed,shared_slots_count,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
       .in('status', ['published', 'live', 'completed'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
@@ -485,6 +485,7 @@ async function loadBazaars() {
       available_slots:      Number(b.available_slots) || 0,
       total_slots:          Number(b.total_slots) || 0,
       image:                _toDirectImgUrl(b.image || ''),
+      extra_images:         Array.isArray(b.extra_images) ? b.extra_images.map(_toDirectImgUrl) : [],
       description:          b.description || '',
       category:             b.category || b.venue_type || '',
       organizer:            b.organizer || '',
@@ -1348,8 +1349,8 @@ function _renderBazaarInfo(b) {
                     class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
               ${t('info.sketchMap')}
             </button>` : ''}
-            ${b.event_image_url ? `
-            <button onclick="openBazaarMap('photo')"
+            ${(b.image || b.event_image_url) ? `
+            <button onclick="openBzPhotoGallery(0)"
                     class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
               ${t('info.realPhoto')}
             </button>` : ''}
@@ -1366,8 +1367,8 @@ function _renderBazaarInfo(b) {
                   class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
             ${t('info.sketchMap')}
           </button>` : ''}
-          ${b.event_image_url ? `
-          <button onclick="openBazaarMap('photo')"
+          ${(b.image || b.event_image_url) ? `
+          <button onclick="openBzPhotoGallery(0)"
                   class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
             ${t('info.realPhoto')}
           </button>` : ''}
@@ -2108,6 +2109,134 @@ function openBazaarMap(type) {
 
   const onKey = e => { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onKey); } };
   document.addEventListener('keydown', onKey);
+}
+
+/* ================================================================
+   🖼️ معرض صور البازار الكامل (Lightbox) — الغلاف + الصور الإضافية
+   نقطة الدخول الوحيدة: زر "📸 صورة واقعية للمكان"
+   ================================================================ */
+
+let _bzGalleryImages = [];
+let _bzGalleryIndex  = 0;
+let _bzGalleryScale  = 1;
+
+function openBzPhotoGallery(startIndex = 0) {
+  if (!currentBazaar) return;
+  const b     = currentBazaar;
+  const cover = b.image || b.event_image_url;
+  const extra = Array.isArray(b.extra_images) ? b.extra_images : [];
+  _bzGalleryImages = [cover, ...extra].filter((url, i, arr) => url && arr.indexOf(url) === i);
+  if (!_bzGalleryImages.length) return;
+
+  _bzGalleryIndex = Math.min(Math.max(startIndex, 0), _bzGalleryImages.length - 1);
+  _bzGalleryScale = 1;
+
+  const existing = document.getElementById('bz-photo-lightbox');
+  if (existing) existing.remove();
+
+  const lb = document.createElement('div');
+  lb.id = 'bz-photo-lightbox';
+  Object.assign(lb.style, {
+    position: 'fixed', inset: '0', zIndex: '9999',
+    background: 'rgba(0,0,0,0.92)',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    padding: '20px', cursor: 'zoom-out',
+  });
+  lb.onclick = () => _closeBzPhotoGallery();
+  document.body.appendChild(lb);
+
+  document.addEventListener('keydown', _bzGalleryKeyHandler);
+  _bzGalleryInitSwipe(lb);
+
+  _renderBzGalleryLightbox();
+}
+
+function _closeBzPhotoGallery() {
+  const lb = document.getElementById('bz-photo-lightbox');
+  if (lb) lb.remove();
+  document.removeEventListener('keydown', _bzGalleryKeyHandler);
+}
+
+function _renderBzGalleryLightbox() {
+  const lb = document.getElementById('bz-photo-lightbox');
+  if (!lb) return;
+
+  const total = _bzGalleryImages.length;
+  const multi = total > 1;
+  const url   = _bzGalleryImages[_bzGalleryIndex];
+  const name  = currentBazaar?.name || t('slotMap.defaultBazaarName');
+  const title = t('slotMap.lightboxPhotoTitle', { name });
+  const circleBtn = "background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:20px;font-family:'Cairo',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0";
+
+  lb.innerHTML = `
+    <div style="max-width:92vw;max-height:92vh;display:flex;flex-direction:column;gap:14px;cursor:default"
+         onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="color:#fff;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700">${title}</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="_bzGalleryZoom(0.25)" style="${circleBtn}">+</button>
+          <button onclick="_bzGalleryZoom(-0.25)" style="${circleBtn}">−</button>
+          <button onclick="_closeBzPhotoGallery()" style="${circleBtn};font-size:22px">×</button>
+        </div>
+      </div>
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        ${multi ? `
+        <button onclick="event.stopPropagation();_bzGalleryNav(-1)" class="sd-arrow sd-arrow-prev"
+                title="${t('detail.prevImage')}" style="position:absolute">&#8249;</button>` : ''}
+        <img id="bz-lb-img" src="${url}" alt="${_esc(name)}"
+             style="max-width:80vw;max-height:70vh;object-fit:contain;border-radius:12px;display:block;
+                    box-shadow:0 8px 40px rgba(0,0,0,0.5);transition:transform .2s;transform:scale(${_bzGalleryScale})"
+             onerror="this.outerHTML='<div style=&quot;color:white;text-align:center;padding:40px;font-family:Cairo,sans-serif&quot;>${t('slotMap.lightboxLoadError')}</div>'">
+        ${multi ? `
+        <button onclick="event.stopPropagation();_bzGalleryNav(1)" class="sd-arrow sd-arrow-next"
+                title="${t('detail.nextImage')}" style="position:absolute">&#8250;</button>` : ''}
+      </div>
+      ${multi ? `<div style="text-align:center;color:#fff;font-size:13px;font-weight:700;font-family:'Cairo',sans-serif">${t('detail.navCount', { current: _bzGalleryIndex + 1, total })}</div>` : ''}
+      <div style="text-align:center">
+        <a href="${url}" target="_blank" rel="noopener"
+           style="color:rgba(255,255,255,0.65);font-size:12px;font-family:'Cairo',sans-serif;text-decoration:none">
+          ${t('slotMap.lightboxOpenNewTab')}
+        </a>
+      </div>
+    </div>`;
+}
+
+function _bzGalleryNav(delta) {
+  const total = _bzGalleryImages.length;
+  if (total < 2) return;
+  _bzGalleryIndex = (_bzGalleryIndex + delta + total) % total;
+  _bzGalleryScale = 1;
+  _renderBzGalleryLightbox();
+}
+
+function _bzGalleryZoom(delta) {
+  _bzGalleryScale = Math.min(4, Math.max(1, _bzGalleryScale + delta));
+  const img = document.getElementById('bz-lb-img');
+  if (img) img.style.transform = `scale(${_bzGalleryScale})`;
+}
+
+function _bzGalleryKeyHandler(e) {
+  if (e.key === 'Escape') { _closeBzPhotoGallery(); return; }
+  if (_bzGalleryImages.length < 2) return;
+  if (e.key === 'ArrowRight') _bzGalleryNav(1);
+  else if (e.key === 'ArrowLeft') _bzGalleryNav(-1);
+}
+
+function _bzGalleryInitSwipe(el) {
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (_bzGalleryImages.length < 2) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) > 40 && dy < 60) {
+      _bzGalleryNav(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
 }
 
 

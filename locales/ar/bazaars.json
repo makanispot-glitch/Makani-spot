@@ -124,7 +124,9 @@
     "copyLinkFailedToast": "⚠️ تعذّر نسخ الرابط — حاول مرة أخرى",
     "shareTooltip": "مشاركة البازار",
     "shareLabel": "مشاركة",
-    "navCount": "{{current}} / {{total}}"
+    "navCount": "{{current}} / {{total}}",
+    "nextImage": "الصورة التالية",
+    "prevImage": "الصورة السابقة"
   },
   "info": {
     "aboutTitle": "📝 عن هذا البازار",
