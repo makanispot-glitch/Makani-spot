@@ -172,6 +172,34 @@
     "linksAddedNoteTitle": "هذه الروابط يضيفها المنظم مباشرة، والمنصة لا تتحقق منها تلقائياً",
     "linksNotAddedTitle": "🟡 لم يُضف المنظم روابط لهذا الحدث",
     "linksNotAddedBody": "لم يُضف المنظّم روابط للحدث حتى الآن.",
+    "docLinksModal": {
+      "title": "توثيق الحدث",
+      "subtitle": "أضف روابط تغطية البازار على وسائل التواصل",
+      "hint": "قم برفع صور أو فيديوهات البازار على صفحاتكم في وسائل التواصل الاجتماعي، ثم أضف الروابط هنا حتى يستطيع الزوار مشاهدة التغطية الحقيقية لهذا الحدث.",
+      "addBtn": "➕ إضافة روابط التوثيق",
+      "editTooltip": "تعديل روابط التوثيق",
+      "saveBtn": "💾 حفظ الروابط",
+      "previewPrefix": "سيظهر كـ:",
+      "chips": {
+        "tiktok": "TikTok",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "youtube": "YouTube",
+        "googleDrive": "Google Drive",
+        "other": "رابط آخر"
+      }
+    },
+    "linkAction": {
+      "tiktok": "شاهد تغطية البازار على TikTok",
+      "facebook": "شاهد صور وتفاصيل البازار على Facebook",
+      "instagram": "شاهد صور البازار على Instagram",
+      "youtube": "شاهد فيديوهات البازار على YouTube",
+      "googleDrive": "استعرض صور وملفات البازار على Google Drive",
+      "x": "شاهد تغطية البازار على X",
+      "snapchat": "شاهد تغطية البازار على Snapchat",
+      "linkedin": "شاهد تغطية البازار على LinkedIn",
+      "generic": "شاهد تغطية البازار (رابط خارجي)"
+    },
     "reportBtn": "🚩 الإبلاغ عن خطأ أو محتوى مضلل"
   },
   "pastBazaars": {
@@ -182,6 +210,10 @@
     "title": "📊 إحصائيات الأنشطة داخل البازار",
     "loading": "جاري تحميل الإحصائيات…",
     "emptyBody": "لا توجد بيانات كافية لعرض توزيع الأنشطة حتى الآن.",
+    "infoTooltipTitle": "📊 ما هذا القسم؟",
+    "infoTooltipBody": "يعرض توزيع الأنشطة التجارية المشارِكة في هذا البازار، بناءً على الحجوزات المؤكَّدة فقط. من أمثلة الأنشطة:",
+    "infoTooltipMore": "🏷️ وغيرها…",
+    "infoTooltipFootnote": "يتحدّث تلقائيًا مع كل حجز جديد ✨",
     "confirmedSlot": "{{count}} مكان محجوز (مؤكّد)",
     "confirmedSlotLabel": "مكان محجوز (مؤكّد)",
     "differentActivities": "{{count}} نشاط مختلف",

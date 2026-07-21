@@ -40,6 +40,8 @@ let _slotMapChannel  = null;   // قناة Realtime لخريطة الأماكن
 let _bzRenderPending = false;  // throttle للرندر بـ requestAnimationFrame
 let _bazaarStatsChannel = null; // قناة Realtime لإحصائيات الأنشطة (bazaar_bookings)
 let _bzStatsDebounce    = null; // مؤقّت تهدئة إعادة جلب إحصائيات الأنشطة
+let _dlmLinks           = [];   // روابط التوثيق داخل نافذة الإضافة السريعة (Doc Links Modal)
+let _dlmBazaarId        = null; // id البازار المفتوح حالياً في نافذة الإضافة السريعة
 
 /* "اليوم" بتوقيت القاهرة — نفس المنطقة الزمنية التي يعتمدها الكرون في قاعدة البيانات
    (update_bazaar_statuses/auto_archive_expired_bazaars) لتفادي أي تعارض قرب منتصف الليل
@@ -66,6 +68,7 @@ document.addEventListener('makani:locale-changed', () => {
     if (currentUser) openBazaarDetail(currentBazaar.id, { silent: true });
     else _showBzLoginGate(currentBazaar);
   }
+  if (document.getElementById('dlm-modal')?.classList.contains('open')) _dlmRenderRows();
   if (currentUser) bzLoadPostponeAlerts();
   if (document.getElementById('bz-opp-cards')) _bzInitOpportunitiesPage();
 });
@@ -432,6 +435,26 @@ function _safeEventLinkHref(u) {
     if (p.protocol !== 'http:' && p.protocol !== 'https:') return null;
     return _esc(u);
   } catch { return null; }
+}
+
+/* نص وصفي ذكي لرابط توثيق حسب المنصة المكتشفة من الدومين — بدل عرض الرابط الخام.
+   t() يُستدعى داخل الدالة وقت الرندر الفعلي فقط، لا داخل الـconst (تفادي باگ سباق i18next
+   الموثَّق — راجع feedback-i18n-gotchas نقطة 12) */
+const _EVENT_LINK_PLATFORMS = [
+  { test: d => d.includes('tiktok.com'),                            icon: '🎵', key: 'tiktok' },
+  { test: d => d.includes('facebook.com') || d.includes('fb.com'),  icon: '📘', key: 'facebook' },
+  { test: d => d.includes('instagram.com'),                         icon: '📸', key: 'instagram' },
+  { test: d => d.includes('youtube.com') || d.includes('youtu.be'), icon: '▶️', key: 'youtube' },
+  { test: d => d.includes('drive.google.com') || d.includes('docs.google.com'), icon: '📁', key: 'googleDrive' },
+  { test: d => d.includes('x.com') || d.includes('twitter.com'),    icon: '🐦', key: 'x' },
+  { test: d => d.includes('snapchat.com'),                          icon: '👻', key: 'snapchat' },
+  { test: d => d.includes('linkedin.com'),                          icon: '💼', key: 'linkedin' },
+];
+function _eventLinkMeta(u) {
+  let domain = '';
+  try { domain = new URL(u).hostname.replace('www.', ''); } catch { /* دومين فاضي → generic */ }
+  const m = _EVENT_LINK_PLATFORMS.find(p => p.test(domain));
+  return { icon: m ? m.icon : '🔗', label: t('info.linkAction.' + (m ? m.key : 'generic')) };
 }
 
 /* تهريب HTML — يمنع XSS عند إدراج محتوى المستخدم في innerHTML */
@@ -1130,7 +1153,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
       </div>`;
   }
 
-  _renderBazaarInfo(b);
+  _renderBazaarInfo(b, isMyBazaar);
 
   /* ── تحقق من حالة البازار: منتهي / جارٍ الآن (توقّف استقبال الحجوزات) / متاح للحجز ── */
   const _todayStr  = _cairoTodayStr();
@@ -1208,7 +1231,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
   if (opts.scrollToBooking) _scrollToBazaarBookingSection();
 }
 
-function _renderBazaarInfo(b) {
+function _renderBazaarInfo(b, isMyBazaar) {
   const infoEl = document.getElementById('bzd-info');
   if (!infoEl) return;
 
@@ -1382,22 +1405,24 @@ function _renderBazaarInfo(b) {
         if (!_rl_exp && b.status !== 'completed' && b.status !== 'live') return '';
         const links = Array.isArray(b.event_links) ? b.event_links.filter(u => u) : [];
         if (links.length > 0) {
-          const icons = { 'facebook.com':'📘','fb.com':'📘','instagram.com':'📸','tiktok.com':'🎵','youtube.com':'▶️','youtu.be':'▶️','x.com':'🐦','twitter.com':'🐦','snapchat.com':'👻','linkedin.com':'💼' };
-          const getIcon = u => { try { const d = new URL(u).hostname.replace('www.',''); return Object.entries(icons).find(([k]) => d.includes(k))?.[1] || '🔗'; } catch { return '🔗'; } };
           return `<div class="sd-info-card sd-info-full" style="border-color:#86efac;background:#f0fdf4">
             <div class="sd-info-title" style="color:#15803d;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
               <span>${t('info.linksAddedTitle')}</span>
-              <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="${t('info.linksAddedNoteTitle')}">
-                ${t('info.linksAddedNote')}
+              <span style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="${t('info.linksAddedNoteTitle')}">
+                  ${t('info.linksAddedNote')}
+                </span>
+                ${isMyBazaar ? `<button type="button" class="bzd-doclink-edit-btn" onclick="openDocLinksModal('${b.id}')" title="${t('info.docLinksModal.editTooltip')}">✏️</button>` : ''}
               </span>
             </div>
             <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
               ${links.map(u => {
                 const safeHref = _safeEventLinkHref(u);
                 if (!safeHref) return '';
-                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" dir="ltr"
-                  style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none;word-break:break-all">
-                  <span>${getIcon(u)}</span><span>${_esc(u)}</span>
+                const meta = _eventLinkMeta(u);
+                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"
+                  style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none">
+                  <span>${meta.icon}</span><span>${meta.label}</span>
                 </a>`;
               }).join('')}
             </div>
@@ -1405,7 +1430,10 @@ function _renderBazaarInfo(b) {
         }
         return (_rl_exp || b.status === 'completed')
           ? `<div class="sd-info-card sd-info-full" style="border-color:#fde047;background:#fefce8">
-              <div class="sd-info-title" style="color:#92400e">${t('info.linksNotAddedTitle')}</div>
+              <div class="sd-info-title" style="color:#92400e;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <span>${t('info.linksNotAddedTitle')}</span>
+                ${isMyBazaar ? `<button type="button" class="bzd-doclink-add-btn" onclick="openDocLinksModal('${b.id}')">${t('info.docLinksModal.addBtn')}</button>` : ''}
+              </div>
               <div style="font-size:12px;color:#a16207;margin-top:6px">${t('info.linksNotAddedBody')}</div>
             </div>`
           : '';
@@ -1456,9 +1484,6 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
 
     if (!past?.length) { el.remove(); return; }
 
-    const icons = { 'facebook.com':'📘','fb.com':'📘','instagram.com':'📸','tiktok.com':'🎵','youtube.com':'▶️','youtu.be':'▶️','x.com':'🐦','twitter.com':'🐦','snapchat.com':'👻','linkedin.com':'💼' };
-    const getIcon = u => { try { const d = new URL(u).hostname.replace('www.',''); return Object.entries(icons).find(([k]) => d.includes(k))?.[1] || '🔗'; } catch { return '🔗'; } };
-
     const rows = past.map(pb => {
       const links   = Array.isArray(pb.event_links) ? pb.event_links.filter(u => u) : [];
       const dateStr = pb.date_end
@@ -1473,9 +1498,10 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
                 ${links.map(u => {
                   const safeHref = _safeEventLinkHref(u);
                   if (!safeHref) return '';
-                  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" dir="ltr"
-                    style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none;word-break:break-all">
-                    <span>${getIcon(u)}</span><span>${_esc(u)}</span>
+                  const meta = _eventLinkMeta(u);
+                  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"
+                    style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none">
+                    <span>${meta.icon}</span><span>${meta.label}</span>
                   </a>`;
                 }).join('')}
               </div>`
@@ -1555,15 +1581,16 @@ function _renderBazaarActivityStats(data, b) {
 
   const total      = Number(data.total_confirmed) || 0;
   const activities = Array.isArray(data.activities) ? data.activities : [];
-  const headerHtml = `<div class="sd-subspaces-header"><h2 class="sd-section-title">${t('activityStats.title')}</h2></div>`;
+  const headerHtml = `<div class="sd-subspaces-header">
+    <h2 class="sd-section-title bz-stats-title-clickable" onclick="toggleActivityStatsInfo(event)">
+      <span>${t('activityStats.title')}</span><span class="bz-info-ico">ⓘ</span>
+    </h2>
+  </div>`;
 
+  /* لا بيانات كافية → العنوان فقط، بلا صندوق "لا توجد بيانات" (قرار UX متعمَّد: لا نعرض
+     رسائل سلبية بلا فائدة حقيقية — القسم كاملاً بالإحصائيات يظهر تلقائيًا فور توفّر حجوزات) */
   if (!total || !activities.length) {
-    el.innerHTML = `
-      ${headerHtml}
-      <div class="bz-stats-empty">
-        <div class="bz-stats-empty-ico">📊</div>
-        <div>${t('activityStats.emptyBody')}</div>
-      </div>`;
+    el.innerHTML = headerHtml;
     return;
   }
 
@@ -1642,6 +1669,91 @@ function _escBz(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* أمثلة أنشطة للشرح التوضيحي — مفاتيح خام فقط (لا نصوص t() جوه const، راجع
+   feedback-i18n-gotchas نقطة 12)، الأيقونة/الترجمة الفعليتان من BZ_ACTIVITY_ICONS/'activities.*'
+   الموجودتين أصلاً — نفس مصدر الحقيقة المستخدَم في القسم نفسه، لا نص مستقل مكرَّر */
+const _BZ_INFO_EXAMPLE_KEYS = ['ملابس', 'إكسسوارات', 'أكل ومشروبات', 'حرف يدوية', 'مستلزمات منزلية'];
+
+/* التول تيب التوضيحية لعنوان قسم إحصائيات الأنشطة — نفس فكرة/آلية toggleLegendTooltip
+   (خريطة الأماكن) لكن بمحتوى ثابت واحد (لا حالات متعددة)، ومُكرَّرة عمداً بمعرّفات مستقلة
+   لتفادي أي تعارض مع نظام تول تيب الخريطة الآخر الذي يعمل بشكل مستقل تماماً */
+function toggleActivityStatsInfo(event) {
+  event.stopPropagation();
+  const trigger  = event.currentTarget;
+  const existing = document.getElementById('bz-activity-info-tooltip');
+  if (existing) { existing.remove(); return; }
+
+  const tooltip = document.createElement('div');
+  tooltip.id = 'bz-activity-info-tooltip';
+  if (getLocale() === 'en') tooltip.classList.add('ltr');
+
+  const examplesHtml = _BZ_INFO_EXAMPLE_KEYS
+    .map(k => `<li>${BZ_ACTIVITY_ICONS[k] || '🏷️'} ${t('activities.' + k)}</li>`)
+    .join('') + `<li>${t('activityStats.infoTooltipMore')}</li>`;
+
+  tooltip.innerHTML = `
+    <h4>${t('activityStats.infoTooltipTitle')}</h4>
+    <p>${t('activityStats.infoTooltipBody')}</p>
+    <ul>${examplesHtml}</ul>
+    <p class="bz-info-tooltip-footnote">${t('activityStats.infoTooltipFootnote')}</p>`;
+  document.body.appendChild(tooltip);
+
+  const rect    = trigger.getBoundingClientRect();
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+
+  const triggerCenter = rect.left + scrollX + rect.width / 2;
+  const triggerTop    = rect.top + scrollY;
+  const triggerBottom = rect.bottom + scrollY;
+
+  /* الوضع الافتراضي أسفل العنوان (عنصر أعلى القسم، الأرجح وجود مساحة تحته) */
+  tooltip.classList.add('pos-below');
+  let topPos  = triggerBottom + 10;
+  let leftPos = triggerCenter - tooltip.offsetWidth / 2;
+
+  if (topPos + tooltip.offsetHeight > scrollY + window.innerHeight - 10) {
+    tooltip.classList.remove('pos-below');
+    tooltip.classList.add('pos-above');
+    topPos = triggerTop - tooltip.offsetHeight - 10;
+  }
+
+  if (leftPos < 10) {
+    leftPos = 10;
+  } else if (leftPos + tooltip.offsetWidth > window.innerWidth - 10) {
+    leftPos = window.innerWidth - tooltip.offsetWidth - 10;
+  }
+
+  const shiftedBy = leftPos - (triggerCenter - tooltip.offsetWidth / 2);
+  if (Math.abs(shiftedBy) > 2) {
+    const arrowStyle = document.createElement('style');
+    arrowStyle.id = 'bz-activity-info-tooltip-arrow-adjust';
+    const percentOffset = 50 + (shiftedBy / tooltip.offsetWidth) * 100;
+    arrowStyle.innerHTML = `
+      #bz-activity-info-tooltip::after, #bz-activity-info-tooltip::before {
+        left: ${100 - percentOffset}% !important;
+      }
+    `;
+    document.getElementById('bz-activity-info-tooltip-arrow-adjust')?.remove();
+    document.head.appendChild(arrowStyle);
+  } else {
+    document.getElementById('bz-activity-info-tooltip-arrow-adjust')?.remove();
+  }
+
+  tooltip.style.top  = `${topPos}px`;
+  tooltip.style.left = `${leftPos}px`;
+}
+
+if (!window._bzActivityInfoTooltipInitialized) {
+  window._bzActivityInfoTooltipInitialized = true;
+  document.addEventListener('click', function (e) {
+    const tooltip = document.getElementById('bz-activity-info-tooltip');
+    if (tooltip && !tooltip.contains(e.target) && !e.target.closest('.bz-stats-title-clickable')) {
+      tooltip.remove();
+      document.getElementById('bz-activity-info-tooltip-arrow-adjust')?.remove();
+    }
+  });
 }
 
 /* ── Realtime: تحديث الإحصائيات تلقائيًا عند تأكيد/إلغاء أي حجز داخل هذا البازار ── */
@@ -3958,5 +4070,193 @@ function _bzEsc(str) {
   return String(str == null ? '' : str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ════════════════════════════════════════════════════════
+   🔗 نافذة الإضافة السريعة لروابط التوثيق (Doc Links Modal)
+   فتح مباشر من صفحة تفاصيل البازار — بلا حاجة للدخول لصفحة الإدارة.
+   تكتب لنفس عمود event_links عبر نفس RPC المستخدم في bazaars/manage.js
+   (add_bazaar_event_links — SECURITY DEFINER، يتحقق من الملكية والحالة في القاعدة نفسها).
+   منطق التطبيع/التحقق مكرَّر عمداً من manage.js لا مستورد — بنفس نمط تكرار
+   isExpired/_esc المقبول أصلاً في هذا المشروع (لا نظام build لمشاركة كود بين الصفحات).
+════════════════════════════════════════════════════════ */
+
+const DLM_MAX_LINKS = 15;
+const _DLM_VALID_HOSTNAME_RE = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+function _dlmNormalize(rawLinks) {
+  const normalized = [];
+  const invalid    = [];
+  for (const u of rawLinks) {
+    let candidate = u;
+    if (!/^https?:\/\//i.test(candidate)) candidate = 'https://' + candidate;
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') { invalid.push(u); continue; }
+      if (!_DLM_VALID_HOSTNAME_RE.test(parsed.hostname)) { invalid.push(u); continue; }
+      normalized.push(candidate);
+    } catch { invalid.push(u); }
+  }
+  const seen = new Set();
+  const deduped = [];
+  let dupCount = 0;
+  for (const u of normalized) {
+    const key = u.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    if (seen.has(key)) { dupCount++; continue; }
+    seen.add(key);
+    deduped.push(u);
+  }
+  return { links: deduped, invalid, dupCount };
+}
+
+function _dlmPreviewHtml(url) {
+  const meta = _eventLinkMeta(url);
+  return `${t('info.docLinksModal.previewPrefix')} ${meta.icon} ${meta.label}`;
+}
+
+function _dlmRenderRows() {
+  const container = document.getElementById('dlm-links-container');
+  if (!container) return;
+
+  if (_dlmLinks.length === 0) {
+    container.innerHTML = `<div style="font-size:12px;color:var(--ink3);text-align:center;padding:14px 0">${t('manage.docs.noLinks')}</div>`;
+    return;
+  }
+
+  container.innerHTML = _dlmLinks.map((url, i) => `
+    <div class="dlm-link-item">
+      <div class="dlm-link-row">
+        <span class="dlm-link-icon" id="dlm-icon-${i}">${url ? _eventLinkMeta(url).icon : '🔗'}</span>
+        <input type="url" class="dlm-link-input" dir="ltr" value="${_esc(url)}" placeholder="https://..."
+          oninput="_dlmLinks[${i}]=this.value;_dlmUpdateRowPreview(${i})">
+        <button type="button" class="dlm-link-remove" onclick="_dlmRemoveRow(${i})">🗑</button>
+      </div>
+      <div class="dlm-link-preview" id="dlm-preview-${i}">${url ? _dlmPreviewHtml(url) : ''}</div>
+    </div>`).join('');
+}
+
+function _dlmUpdateRowPreview(i) {
+  const url    = _dlmLinks[i];
+  const iconEl = document.getElementById(`dlm-icon-${i}`);
+  const prevEl = document.getElementById(`dlm-preview-${i}`);
+  if (!url) {
+    if (iconEl) iconEl.textContent = '🔗';
+    if (prevEl) prevEl.innerHTML = '';
+    return;
+  }
+  const meta = _eventLinkMeta(url);
+  if (iconEl) iconEl.textContent = meta.icon;
+  if (prevEl) prevEl.innerHTML = _dlmPreviewHtml(url);
+}
+
+function _dlmAddRow() {
+  if (_dlmLinks.length >= DLM_MAX_LINKS) {
+    _showShareToast(t('manage.docs.tooManyLinksSimple', { max: DLM_MAX_LINKS }));
+    return;
+  }
+  _dlmLinks.push('');
+  _dlmRenderRows();
+  const inputs = document.querySelectorAll('.dlm-link-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function _dlmRemoveRow(i) {
+  _dlmLinks.splice(i, 1);
+  _dlmRenderRows();
+}
+
+/* اختصارات سريعة فوق القائمة — تجميلية بحتة (placeholder فقط)، لا تصنّف الرابط فعلياً؛
+   الاكتشاف الحقيقي يتم من الدومين الفعلي وقت الكتابة/الحفظ عبر _eventLinkMeta */
+function _dlmAddRowFromChip(placeholderUrl) {
+  _dlmAddRow();
+  const inputs = document.querySelectorAll('.dlm-link-input');
+  const last   = inputs[inputs.length - 1];
+  if (last && placeholderUrl) last.placeholder = placeholderUrl;
+}
+
+function openDocLinksModal(bazaarId) {
+  const b = BAZAARS.find(x => String(x.id) === String(bazaarId));
+  if (!b) return;
+  _dlmBazaarId = bazaarId;
+  _dlmLinks    = Array.isArray(b.event_links) ? b.event_links.filter(u => u) : [];
+  _dlmRenderRows();
+  const msgEl = document.getElementById('dlm-msg');
+  if (msgEl) msgEl.style.display = 'none';
+  const modal = document.getElementById('dlm-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeDocLinksModal() {
+  const modal = document.getElementById('dlm-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function saveDocLinksModal() {
+  if (!_dlmBazaarId || !sbClient) return;
+
+  document.querySelectorAll('.dlm-link-input').forEach((el, i) => { _dlmLinks[i] = el.value.trim(); });
+  const rawLinks = _dlmLinks.filter(u => u.length > 0);
+
+  const { links, invalid, dupCount } = _dlmNormalize(rawLinks);
+  const msgEl   = document.getElementById('dlm-msg');
+  const saveBtn = document.getElementById('dlm-save-btn');
+  const showErr = (text) => { if (msgEl) { msgEl.textContent = text; msgEl.style.display = 'block'; } };
+
+  if (msgEl) msgEl.style.display = 'none';
+
+  if (invalid.length > 0) {
+    showErr(t('manage.docs.invalidLink', { count: invalid.length, links: invalid.join('، ') }));
+    return;
+  }
+  if (links.length > DLM_MAX_LINKS) {
+    showErr(t('manage.docs.tooManyLinks', { max: DLM_MAX_LINKS, count: links.length }));
+    return;
+  }
+
+  _dlmLinks = [...links];
+  _dlmRenderRows();
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.dataset.origText = saveBtn.dataset.origText || saveBtn.textContent;
+    saveBtn.textContent = t('manage.docs.saving');
+  }
+
+  const { data, error } = await sbClient.rpc('add_bazaar_event_links', {
+    p_bazaar_id: _dlmBazaarId,
+    p_links:     links,
+  });
+
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = saveBtn.dataset.origText || t('info.docLinksModal.saveBtn'); }
+
+  if (error || !data?.ok) {
+    const err = data?.error || error?.message || t('manage.docs.errors.generic');
+    const msgs = {
+      bazaar_not_found:        t('manage.docs.errors.bazaar_not_found'),
+      not_authorized:          t('manage.docs.errors.not_authorized'),
+      cannot_remove_all_links: t('manage.docs.errors.cannot_remove_all_links'),
+      bazaar_not_active:       t('manage.docs.errors.bazaar_not_active'),
+      invalid_link_format:     t('manage.docs.errors.invalid_link_format'),
+      too_many_links:          t('manage.docs.errors.too_many_links', { max: DLM_MAX_LINKS }),
+    };
+    showErr(msgs[err] || err);
+    return;
+  }
+
+  /* نفس مرجع الكائن المخزَّن في BAZAARS — التحديث يسري فوراً بلا استعلام إضافي */
+  const b = BAZAARS.find(x => String(x.id) === String(_dlmBazaarId));
+  if (b) {
+    b.event_links = links;
+    if (currentBazaar && String(currentBazaar.id) === String(b.id)) {
+      const _isOwner = currentUser && b.organizer_id && String(currentUser.id) === String(b.organizer_id);
+      _renderBazaarInfo(b, _isOwner);
+    }
+  }
+
+  closeDocLinksModal();
+  const msg = links.length > 0
+    ? t('manage.docs.savedSuccess', { count: links.length }) + (dupCount > 0 ? t('manage.docs.savedWithDupes', { count: dupCount }) : '')
+    : t('manage.docs.deletedAllSuccess');
+  _showShareToast(msg);
 }
 

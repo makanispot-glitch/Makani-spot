@@ -46,7 +46,7 @@ const DOCS_ALLOWED       = ['live', 'completed'];
 const DOCS_NOT_HAPPENED  = ['cancelled', 'postponed'];
 const MAX_DOCS_LINKS     = 15;
 
-const KNOWN_DOMAINS = ['facebook.com', 'fb.com', 'instagram.com', 'tiktok.com', 'youtube.com', 'youtu.be', 'x.com', 'twitter.com', 'snapchat.com', 'linkedin.com'];
+const KNOWN_DOMAINS = ['facebook.com', 'fb.com', 'instagram.com', 'tiktok.com', 'youtube.com', 'youtu.be', 'x.com', 'twitter.com', 'snapchat.com', 'linkedin.com', 'drive.google.com', 'docs.google.com'];
 
 /* دالة بدل const ثابت — لازم تُستدعى وقت الرسم بعد جاهزية i18next */
 function CHANGE_LABEL_OF(changeType) {
@@ -1631,7 +1631,7 @@ function _populateVerificationTab(b) {
       <div style="flex:1">
         <div style="font-size:14px;font-weight:900;color:#b91c1c;margin-bottom:4px">${t('manage.docsEndedAlert.title')}</div>
         <div style="font-size:12.5px;color:#dc2626;line-height:1.65;margin-bottom:12px">${t('manage.docsEndedAlert.desc')}</div>
-        <button onclick="document.getElementById('docs-add-btn')?.click()"
+        <button onclick="switchTab('docs');document.getElementById('tab-docs')?.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('docs-add-btn')?.click()"
                 style="padding:9px 18px;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-pill);font-family:var(--font-display);font-size:13px;font-weight:800;cursor:pointer">
           ${t('manage.docsEndedAlert.btn')}
         </button>
@@ -1698,6 +1698,7 @@ function _docsGetIcon(domain) {
   if (domain.includes('instagram')) return '📸';
   if (domain.includes('tiktok'))    return '🎵';
   if (domain.includes('youtube') || domain.includes('youtu.be')) return '▶️';
+  if (domain.includes('drive.google.com') || domain.includes('docs.google.com')) return '📁';
   if (domain.includes('x.com') || domain.includes('twitter'))    return '🐦';
   if (domain.includes('snapchat'))  return '👻';
   if (domain.includes('linkedin'))  return '💼';

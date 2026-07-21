@@ -177,6 +177,34 @@
     "linksAddedNoteTitle": "These links are added directly by the organizer — the platform doesn't verify them automatically",
     "linksNotAddedTitle": "🟡 The organizer hasn't added links for this event",
     "linksNotAddedBody": "The organizer hasn't added any links for this event yet.",
+    "docLinksModal": {
+      "title": "Event Documentation",
+      "subtitle": "Add coverage links for this bazaar on social media",
+      "hint": "Upload photos or videos of the bazaar to your social media pages, then add the links here so visitors can see the real coverage of this event.",
+      "addBtn": "➕ Add Documentation Links",
+      "editTooltip": "Edit documentation links",
+      "saveBtn": "💾 Save Links",
+      "previewPrefix": "Will show as:",
+      "chips": {
+        "tiktok": "TikTok",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "youtube": "YouTube",
+        "googleDrive": "Google Drive",
+        "other": "Other link"
+      }
+    },
+    "linkAction": {
+      "tiktok": "Watch the bazaar coverage on TikTok",
+      "facebook": "See bazaar photos and details on Facebook",
+      "instagram": "See bazaar photos on Instagram",
+      "youtube": "Watch bazaar videos on YouTube",
+      "googleDrive": "Browse bazaar photos and files on Google Drive",
+      "x": "See bazaar coverage on X",
+      "snapchat": "See bazaar coverage on Snapchat",
+      "linkedin": "See bazaar coverage on LinkedIn",
+      "generic": "View bazaar coverage (external link)"
+    },
     "reportBtn": "🚩 Report an Error or Misleading Content"
   },
   "pastBazaars": {
@@ -187,6 +215,10 @@
     "title": "📊 Activity Breakdown",
     "loading": "Loading stats…",
     "emptyBody": "Not enough data yet to show an activity breakdown.",
+    "infoTooltipTitle": "📊 What is this section?",
+    "infoTooltipBody": "Shows the breakdown of business activities taking part in this bazaar, based on confirmed bookings only. Example activities:",
+    "infoTooltipMore": "🏷️ And more…",
+    "infoTooltipFootnote": "Updates automatically with every new booking ✨",
     "confirmedSlot_one": "{{count}} confirmed slot",
     "confirmedSlot_other": "{{count}} confirmed slots",
     "confirmedSlotLabel_one": "Confirmed slot",

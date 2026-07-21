@@ -6,8 +6,8 @@
 <meta name="description" content="البازارات — مكاني Spot. احجز مكانك في البازار القادم وابدأ البيع من أول يوم بدون إيجار شهري أو التزام طويل.">
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260720142802">
-<script src="/version.js?v=20260720142802"></script>
+<link rel="manifest" href="/manifest.json?v=20260721134623">
+<script src="/version.js?v=20260721134623"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -39,16 +39,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260720142802">
+<link rel="stylesheet" href="/style.css?v=20260721134623">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260720142802" defer></script>
-<script src="/pwa-install.js?v=20260720142802" defer></script>
+<script src="/shared/sb-config.js?v=20260721134623" defer></script>
+<script src="/pwa-install.js?v=20260721134623" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260720142802" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260720142802" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260720142802" defer></script>
-<script src="/shared/i18n.js?v=20260720142802" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260721134623" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260721134623" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260721134623" defer></script>
+<script src="/shared/i18n.js?v=20260721134623" defer></script>
 
 <style>
 /* ── Page wrapper ── */
@@ -195,6 +195,128 @@
   height: 3px;
   background: linear-gradient(90deg, #22C55E, #4ade80);
   margin: 0;
+}
+
+/* ── نافذة الإضافة السريعة لروابط توثيق الحدث (#dlm-modal) ── */
+.dlm-hint {
+  font-size: 12.5px;
+  color: var(--ink3);
+  line-height: 1.7;
+  background: var(--surface2);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.dlm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.dlm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink2);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.dlm-chip:hover {
+  border-color: var(--orange-pale);
+  background: var(--orange-ultra);
+  color: var(--orange);
+}
+.dlm-link-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dlm-link-item:last-child { border-bottom: none; }
+.dlm-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dlm-link-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+.dlm-link-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface2);
+  outline: none;
+  font-family: var(--font-body);
+  direction: ltr;
+  transition: border-color var(--dur-fast);
+}
+.dlm-link-input:focus {
+  border-color: var(--orange);
+  background: var(--surface);
+  box-shadow: var(--ring-focus);
+}
+.dlm-link-remove {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink3);
+  flex-shrink: 0;
+  transition: all var(--dur-fast);
+}
+.dlm-link-remove:hover {
+  border-color: #fca5a5;
+  color: #dc2626;
+  background: #fef2f2;
+}
+.dlm-link-preview {
+  font-size: 11.5px;
+  color: var(--ink3);
+  margin-top: 4px;
+  padding-inline-start: 32px;
+}
+.dlm-add-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink2);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.dlm-add-link-btn:hover {
+  border-color: var(--orange-pale);
+  background: var(--orange-ultra);
+  color: var(--orange);
+}
+.dlm-msg {
+  font-size: 12.5px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  margin-top: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
 }
 </style>
 
@@ -761,6 +883,45 @@
   </div>
 </div>
 
+<!-- ═══ نافذة الإضافة السريعة لروابط توثيق الحدث ═══ -->
+<div id="dlm-modal" class="modal-overlay" onclick="if(event.target===this)closeDocLinksModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-header-inner">
+        <div class="modal-icon">🔗</div>
+        <div>
+          <div class="modal-title" data-i18n="info.docLinksModal.title">توثيق الحدث</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px" data-i18n="info.docLinksModal.subtitle">أضف روابط تغطية البازار على وسائل التواصل</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeDocLinksModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="dlm-hint" data-i18n="info.docLinksModal.hint">
+        قم برفع صور أو فيديوهات البازار على صفحاتكم في وسائل التواصل الاجتماعي، ثم أضف الروابط هنا حتى يستطيع الزوار مشاهدة التغطية الحقيقية لهذا الحدث.
+      </div>
+
+      <div class="dlm-chips">
+        <button type="button" class="dlm-chip" onclick="_dlmAddRowFromChip('https://tiktok.com/@...')">🎵 <span data-i18n="info.docLinksModal.chips.tiktok">TikTok</span></button>
+        <button type="button" class="dlm-chip" onclick="_dlmAddRowFromChip('https://facebook.com/...')">📘 <span data-i18n="info.docLinksModal.chips.facebook">Facebook</span></button>
+        <button type="button" class="dlm-chip" onclick="_dlmAddRowFromChip('https://instagram.com/...')">📸 <span data-i18n="info.docLinksModal.chips.instagram">Instagram</span></button>
+        <button type="button" class="dlm-chip" onclick="_dlmAddRowFromChip('https://youtube.com/...')">▶️ <span data-i18n="info.docLinksModal.chips.youtube">YouTube</span></button>
+        <button type="button" class="dlm-chip" onclick="_dlmAddRowFromChip('https://drive.google.com/...')">📁 <span data-i18n="info.docLinksModal.chips.googleDrive">Google Drive</span></button>
+        <button type="button" class="dlm-chip" onclick="_dlmAddRow()">🔗 <span data-i18n="info.docLinksModal.chips.other">رابط آخر</span></button>
+      </div>
+
+      <div id="dlm-links-container" style="margin:14px 0 10px"></div>
+      <button type="button" class="dlm-add-link-btn" onclick="_dlmAddRow()" data-i18n="manage.docs.addBtn">+ إضافة رابط</button>
+
+      <div id="dlm-msg" class="dlm-msg" style="display:none"></div>
+
+      <div style="margin-top:16px">
+        <button type="button" id="dlm-save-btn" class="bzd-doclink-add-btn" style="width:100%;justify-content:center" onclick="saveDocLinksModal()" data-i18n="info.docLinksModal.saveBtn">💾 حفظ الروابط</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">
@@ -876,9 +1037,9 @@
 
 </nav>
 
-<script src="/notifications.js?v=20260720142802" defer></script>
-<script src="/shared/account.js?v=20260720142802" defer></script>
-<script src="app.js?v=20260720142802" defer></script>
+<script src="/notifications.js?v=20260721134623" defer></script>
+<script src="/shared/account.js?v=20260721134623" defer></script>
+<script src="app.js?v=20260721134623" defer></script>
 
 <!-- ═══ Service Worker + Update Bar ═══ -->
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
