@@ -18,8 +18,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260721134623">
-<script src="/version.js?v=20260721134623"></script>
+<link rel="manifest" href="/manifest.json?v=20260722181835">
+<script src="/version.js?v=20260722181835"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,16 +29,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260721134623">
+<link rel="stylesheet" href="../style.css?v=20260722181835">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="../shared/sb-config.js?v=20260721134623" defer></script>
-<script src="/pwa-install.js?v=20260721134623" defer></script>
+<script src="../shared/sb-config.js?v=20260722181835" defer></script>
+<script src="/pwa-install.js?v=20260722181835" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260721134623" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260721134623" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260721134623" defer></script>
-<script src="/shared/i18n.js?v=20260721134623" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260722181835" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260722181835" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260722181835" defer></script>
+<script src="/shared/i18n.js?v=20260722181835" defer></script>
 
 <style>
 /* ══════════════════════════════════════════════════
@@ -470,6 +470,35 @@
   letter-spacing: .5px; border-bottom: 1px solid var(--border);
   padding-bottom: 5px; margin-top: 4px;
 }
+
+/* بطاقة "📎 روابط التوثيق" القابلة للضغط داخل شبكة سجل الأداء — الشبكة نفسها
+   (الأربع بطاقات الأخرى) تبقى بلا تفاعل، هذا الكلاس محصور بها فقط */
+.op-stat-clickable {
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.op-stat-clickable:hover {
+  border-color: var(--orange-pale) !important;
+  background: var(--orange-ultra) !important;
+  transform: translateY(-1px);
+}
+.op-stat-clickable:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* نافذة "روابط التوثيق" — مجموعة بازار واحد (اسم + تاريخ) فوق روابطه */
+.org-docs-bazaar-group {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.org-docs-bazaar-group:last-child { border-bottom: none; padding-bottom: 0; }
+.org-docs-bazaar-group:first-child { padding-top: 0; }
+.org-docs-bazaar-hd {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.org-docs-bazaar-name { font-size: 13.5px; font-weight: 800; color: var(--dark); }
+.org-docs-bazaar-date { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+
 .vr-fg { display: flex; flex-direction: column; gap: 5px; }
 .vr-fg label { font-size: 12px; font-weight: 700; font-family: var(--font-display); color: var(--ink2); }
 .vr-fg input, .vr-fg select {
@@ -799,6 +828,21 @@
   </div>
 </div>
 
+<!-- ── نافذة روابط التوثيق (أحدث 5 بازارات موثَّقة) ── -->
+<div class="op-modal" id="org-docs-modal">
+  <div class="op-modal-card" style="max-width:440px">
+    <div class="op-modal-header">
+      <span class="op-modal-title" data-i18n="profile.docsShowcase.title">📎 روابط التوثيق</span>
+      <button class="op-modal-close" onclick="closeOrgDocsShowcase()">×</button>
+    </div>
+    <div class="op-modal-body">
+      <div style="font-size:12px;color:var(--ink3)" data-i18n="profile.docsShowcase.subtitle">أحدث الفعاليات التي وثّقها هذا المنظّم</div>
+      <div id="org-docs-modal-body"></div>
+      <div style="font-size:11px;color:var(--ink3);text-align:center" data-i18n="profile.docsShowcase.footnote">يُعرض هنا أحدث 5 بازارات موثَّقة فقط</div>
+    </div>
+  </div>
+</div>
+
 <!-- Success Toast -->
 <div id="edit-success-toast" data-i18n="profile.editModal.successToast">✅ تم حفظ التعديلات بنجاح!</div>
 
@@ -806,10 +850,10 @@
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
 <input type="file" id="cover-file-input"  accept="image/*" style="display:none" onchange="uploadCoverImage(this)">
 
-<script src="/notifications.js?v=20260721134623" defer></script>
-<script src="/media-handler.js?v=20260721134623" defer></script>
-<script src="../shared/account.js?v=20260721134623" defer></script>
-<script src="profile.js?v=20260721134623" defer></script>
+<script src="/notifications.js?v=20260722181835" defer></script>
+<script src="/media-handler.js?v=20260722181835" defer></script>
+<script src="../shared/account.js?v=20260722181835" defer></script>
+<script src="profile.js?v=20260722181835" defer></script>
 
 <!-- ── تبديل اللغة (English/عربي) ── -->
 <script>

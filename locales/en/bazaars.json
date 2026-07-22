@@ -1468,6 +1468,7 @@
       "completedCount": "Bazaars completed",
       "bookedCount": "Spots booked",
       "addedLinksCount": "Added documentation",
+      "viewDocsLinksCta": "📎 View documentation links →",
       "cancelledCount": "Cancelled",
       "successRateLabel": "Organizing success rate",
       "reliabilityWarningTitle": "Reliability Notice",
@@ -1479,6 +1480,11 @@
       "docVerified": "🟢 Documented",
       "docMissing": "🟡 No links yet",
       "fillRateBadge": "🎫 {{pct}}%"
+    },
+    "docsShowcase": {
+      "title": "📎 Documentation Links",
+      "subtitle": "The most recent events this organizer has documented",
+      "footnote": "Only the latest 5 documented bazaars are shown here"
     },
     "badges": {
       "organizerLabel": "Bazaar Organizer",

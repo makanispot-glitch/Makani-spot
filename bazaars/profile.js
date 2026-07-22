@@ -27,6 +27,10 @@ let myUserProfile  = null;   // profiles row
 let myMergedPhone  = null;   // هاتف مدمج من مصادر متعددة
 let myMergedCity   = null;   // مدينة مدمجة من مصادر متعددة
 
+/* بازارات المنظّم المعروض بروفايله حاليًا — تُحفَظ هنا لأن نافذة "روابط التوثيق"
+   (openOrgDocsShowcase) تُفتَح لاحقًا من onclick، بعيدًا عن نطاق _renderPublicProfile */
+let _profOrgBazaars = [];
+
 /* ── تقييم المشاركين (المنظم → المستأجر) — نظام أحادي الاتجاه ──
    المنظم يقيّم العارضين الذين حجزوا/شاركوا فعلياً في بازاراته فقط. */
 let bzRateableParticipants = [];   // من organizer_list_rateable_participants()
@@ -1105,6 +1109,8 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
     ? Number(bazaarRating.avg_rating).toFixed(1)
     : null;
 
+  _profOrgBazaars = bazaars;
+
   /* إحصائيات الأداء */
   const completedBazaars = bazaars.filter(b => b.status === 'completed');
   const docsCount        = completedBazaars.filter(b => Array.isArray(b.event_links) && b.event_links.filter(u => u).length > 0).length;
@@ -1304,9 +1310,9 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
         <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.bookedCount')}</div>
       </div>` : ''}
       ${docsCount > 0 ? `
-      <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
-        <div style="font-size:22px;font-weight:900;color:#059669">🔗 ${docsCount}</div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.addedLinksCount')}</div>
+      <div class="op-stat-clickable" style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border);cursor:pointer" onclick="openOrgDocsShowcase()">
+        <div style="font-size:22px;font-weight:900;color:#059669">📎 ${docsCount}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-weight:600">${t('profile.publicSections.viewDocsLinksCta')}</div>
       </div>` : ''}
       ${cancelledCount > 0 ? `
       <div style="text-align:center;background:var(--surface2);border-radius:12px;padding:12px 8px;border:1px solid var(--border)">
@@ -1353,6 +1359,79 @@ function _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, t
     <div class="op-section-title"><span>${t('profile.reviewsSection.titlePublic', { count: reviews.length })}</span></div>
     ${reviewsHtml}
   </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   📎 نافذة "روابط التوثيق" — أحدث 5 بازارات موثَّقة لهذا المنظم
+   مكرَّرة عمداً من bazaars/app.js's _eventLinkMeta/_safeEventLinkHref (لا استيراد بين
+   الصفحات) — تستخدم نفس مفاتيح الترجمة 'info.linkAction.*' لأن هذه الصفحة تحمّل
+   بالفعل namespace 'bazaars' نفسه (initI18n(['bazaars','common']))
+════════════════════════════════════════════════════════ */
+const _PROF_LINK_PLATFORMS = [
+  { test: d => d.includes('tiktok.com'),                            icon: '🎵', key: 'tiktok' },
+  { test: d => d.includes('facebook.com') || d.includes('fb.com'),  icon: '📘', key: 'facebook' },
+  { test: d => d.includes('instagram.com'),                         icon: '📸', key: 'instagram' },
+  { test: d => d.includes('youtube.com') || d.includes('youtu.be'), icon: '▶️', key: 'youtube' },
+  { test: d => d.includes('drive.google.com') || d.includes('docs.google.com'), icon: '📁', key: 'googleDrive' },
+  { test: d => d.includes('x.com') || d.includes('twitter.com'),    icon: '🐦', key: 'x' },
+  { test: d => d.includes('snapchat.com'),                          icon: '👻', key: 'snapchat' },
+  { test: d => d.includes('linkedin.com'),                          icon: '💼', key: 'linkedin' },
+];
+function _profLinkMeta(u) {
+  let domain = '';
+  try { domain = new URL(u).hostname.replace('www.', ''); } catch {}
+  const m = _PROF_LINK_PLATFORMS.find(p => p.test(domain));
+  return { icon: m ? m.icon : '🔗', label: t('info.linkAction.' + (m ? m.key : 'generic')) };
+}
+
+function _profSafeLinkHref(u) {
+  try {
+    const p = new URL(u);
+    if (p.protocol !== 'http:' && p.protocol !== 'https:') return null;
+    return _escR(u);
+  } catch { return null; }
+}
+
+function openOrgDocsShowcase() {
+  const modal = document.getElementById('org-docs-modal');
+  const body  = document.getElementById('org-docs-modal-body');
+  if (!modal || !body) return;
+
+  const documented = _profOrgBazaars
+    .filter(b => Array.isArray(b.event_links) && b.event_links.filter(u => u).length > 0)
+    .sort((a, b) => (b.date_end || b.date_start || '').localeCompare(a.date_end || a.date_start || ''))
+    .slice(0, 5);
+
+  body.innerHTML = documented.map(b => {
+    const dateStr = b.date_start
+      ? new Date(b.date_start).toLocaleDateString(_profLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
+      : '—';
+    const links = b.event_links.filter(u => u);
+    const linksHtml = links.map(u => {
+      const safeHref = _profSafeLinkHref(u);
+      if (!safeHref) return '';
+      const meta = _profLinkMeta(u);
+      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="bz-doclink-btn">
+        <span class="bz-doclink-ico">${meta.icon}</span>
+        <span class="bz-doclink-label">${meta.label}</span>
+        <span class="bz-doclink-arrow">↗</span>
+      </a>`;
+    }).join('');
+    return `
+      <div class="org-docs-bazaar-group">
+        <div class="org-docs-bazaar-hd">
+          <span class="org-docs-bazaar-name">${_escR(b.name)}</span>
+          <span class="org-docs-bazaar-date">📅 ${dateStr}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">${linksHtml}</div>
+      </div>`;
+  }).join('');
+
+  modal.classList.add('open');
+}
+
+function closeOrgDocsShowcase() {
+  document.getElementById('org-docs-modal')?.classList.remove('open');
 }
 
 /* ── السمعة كمستأجر: شارة + معايير + تقييمات مستلمة (للملف العام) ──

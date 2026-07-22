@@ -1420,9 +1420,10 @@ function _renderBazaarInfo(b, isMyBazaar) {
                 const safeHref = _safeEventLinkHref(u);
                 if (!safeHref) return '';
                 const meta = _eventLinkMeta(u);
-                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"
-                  style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#047857;text-decoration:none">
-                  <span>${meta.icon}</span><span>${meta.label}</span>
+                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="bz-doclink-btn">
+                  <span class="bz-doclink-ico">${meta.icon}</span>
+                  <span class="bz-doclink-label">${meta.label}</span>
+                  <span class="bz-doclink-arrow">↗</span>
                 </a>`;
               }).join('')}
             </div>
@@ -1499,9 +1500,10 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
                   const safeHref = _safeEventLinkHref(u);
                   if (!safeHref) return '';
                   const meta = _eventLinkMeta(u);
-                  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"
-                    style="display:flex;align-items:center;gap:6px;font-size:12px;color:#047857;text-decoration:none">
-                    <span>${meta.icon}</span><span>${meta.label}</span>
+                  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="bz-doclink-btn">
+                    <span class="bz-doclink-ico">${meta.icon}</span>
+                    <span class="bz-doclink-label">${meta.label}</span>
+                    <span class="bz-doclink-arrow">↗</span>
                   </a>`;
                 }).join('')}
               </div>`

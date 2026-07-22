@@ -1441,6 +1441,7 @@
       "completedCount": "بازار اكتمل",
       "bookedCount": "مكان محجوز",
       "addedLinksCount": "أضاف روابط",
+      "viewDocsLinksCta": "📎 عرض روابط التوثيق ←",
       "cancelledCount": "إلغاء",
       "successRateLabel": "معدل نجاح التنظيم",
       "reliabilityWarningTitle": "تنبيه موثوقية",
@@ -1452,6 +1453,11 @@
       "docVerified": "🟢 وثّق",
       "docMissing": "🟡 بدون روابط",
       "fillRateBadge": "🎫 {{pct}}%"
+    },
+    "docsShowcase": {
+      "title": "📎 روابط التوثيق",
+      "subtitle": "أحدث الفعاليات التي وثّقها هذا المنظّم",
+      "footnote": "يُعرض هنا أحدث 5 بازارات موثَّقة فقط"
     },
     "badges": {
       "organizerLabel": "منظم بازارات",
