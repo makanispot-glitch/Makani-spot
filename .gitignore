@@ -5,3 +5,13 @@ test-results/
 playwright.config.js
 package.json
 package-lock.json
+
+# ── ملفات داخلية: محلّية فقط، لا تُرفع ولا تُنشر ──────────────
+# Cloudflare Pages ينشر كل ملف في المستودع، فأي ملف هنا كان
+# يُقدَّم علنًا على makanispot.com/<path>. هذه الملفات تبقى على
+# الجهاز فقط ولا تدخل git إطلاقًا.
+PLATFORM_GUIDE.md
+docs/
+migrations/
+bump-version.ps1
+githooks/
