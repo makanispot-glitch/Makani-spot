@@ -19,8 +19,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260729150948">
-<script src="/version.js?v=20260729150948"></script>
+<link rel="manifest" href="/manifest.json?v=20260729213646">
+<script src="/version.js?v=20260729213646"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,16 +36,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260729150948">
+<link rel="stylesheet" href="/style.css?v=20260729213646">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260729150948" defer></script>
-<script src="/pwa-install.js?v=20260729150948" defer></script>
+<script src="/shared/sb-config.js?v=20260729213646" defer></script>
+<script src="/pwa-install.js?v=20260729213646" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260729150948" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260729150948" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260729150948" defer></script>
-<script src="/shared/i18n.js?v=20260729150948" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260729213646" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260729213646" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260729213646" defer></script>
+<script src="/shared/i18n.js?v=20260729213646" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -149,34 +149,44 @@
 .eq-account-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
 /* ── Hero ── */
-.eq-hero {
-  background: var(--navy-700);
-  padding: 40px 32px 54px;
-  text-align: center;
-  color: #fff;
-  position: relative;
-  overflow: hidden;
+/* ── ترويسة الصفحة ──
+   المكوّن نفسه (.mp-header وتوابعه) معرَّف في style.css المشترك. كان هنا
+   نسخة محلية (.eq-hero) تباعدت عنه: خلفية وزخرفة متطابقة تقريبًا لكن
+   بعنوان 36px برتقالي الجزء ومحاذاة وسط وحشو ضِعف الأصل — فبدت الصفحة
+   من نظام تصميم آخر. حُذفت النسخة، وبقي هنا فقط نفس الضبط الدقيق
+   المطبَّق في /spaces/ حرفيًا حتى تتطابق الصفحتان. */
+/* هذه الصفحة وحدها (`body.eq-page`) عمود Flex بارتفاع مُعرَّف
+   (`min-height:100vh` + قاعدة `html,body{height:100%}` العامة) — بخلاف
+   /spaces/ التي بجسم عادي بلا Flex. أي عنصر Flex بلا ارتفاع صريح
+   و`overflow:hidden` يفقد حده الأدنى التلقائي لمساحته (تتحوّل قيمته
+   الفعلية لصفر بدل حجم محتواه)، فتضغطه الخوارزمية على حساب حشوه فقط
+   إن احتاج باقي محتوى الصفحة مساحة. هذا بالضبط ما كان يحدث لـ.mp-header
+   (المكوّن نفسه يحمل overflow:hidden لحصر زخرفته الخلفية — ضروري
+   ويبقى)، فانضغط لحشوه فقط (49px) وقُصّ العنوان والوصف. الإصلاح: تثبيت
+   ألّا يقلّ عن ارتفاع محتواه الطبيعي أبدًا، بصرف النظر عمّا يحتاجه بقية
+   الصفحة — الحل القياسي لهذا الفخ، دون إزالة overflow:hidden. */
+.mp-header { flex-shrink: 0; }
+
+.mp-header-title {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 3vw, 24px);
+  letter-spacing: -0.01em;
+  /* العنوان هنا <h1> (الصفحة عامة ومفهرَسة وتحتاج عنوانًا دلاليًا واحدًا)
+     بينما هو <div> في /spaces/ — تصفير هوامش المتصفح الافتراضية يجعل
+     الشكل مطابقًا تمامًا رغم اختلاف الوسم. */
+  margin: 0 0 4px;
 }
-.eq-hero::before {
-  content: '';
-  position: absolute; inset: 0; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(243,100,24,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(243,100,24,0.06) 1px, transparent 1px);
-  background-size: 48px 48px;
+.mp-header-sub {
+  font-family: var(--font-body);
+  line-height: 1.6;
 }
-.eq-hero::after {
-  content: '';
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 65% 55% at 50% 0%, rgba(243,100,24,0.16) 0%, transparent 65%);
+/* البحث داخل .mp-header-actions — يتمدّد على الشاشات الضيقة ويبقى
+   محدود العرض على الواسعة كي لا يزاحم العنوان. */
+.mp-header-actions .eq-search-wrap { width: 380px; max-width: 100%; margin: 0; }
+@media (max-width: 768px) {
+  .mp-header-actions { width: 100%; }
+  .mp-header-actions .eq-search-wrap { width: 100%; }
 }
-.eq-hero-inner { position: relative; z-index: 1; }
-.eq-hero h1 {
-  font-family: var(--font-display); font-size: 36px; font-weight: 900;
-  margin-bottom: 12px; letter-spacing: -0.02em; line-height: 1.2;
-}
-.eq-hero h1 span { color: var(--orange); }
-.eq-hero p { font-family: var(--font-body); font-size: 16px; color: rgba(255,255,255,0.62); margin-bottom: 32px; line-height: 1.75; }
 
 /* ── Search Bar ── */
 .eq-search-wrap {
@@ -780,8 +790,7 @@ body.lightbox-open { overflow: hidden; }
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .eq-nav { padding: 0 16px; }
-  .eq-hero { padding: 26px 16px 36px; }
-  .eq-hero h1 { font-size: 24px; }
+  /* حشو الترويسة على الموبايل يأتي من .mp-header في style.css المشترك */
   .eq-filters-inner { padding: 0 16px; }
   .eq-main { padding: 20px 16px; }
   .eq-mobile-filter-btn { display: flex; }
@@ -1110,28 +1119,36 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 }
 
 /* ── Quick Links Bar ── */
+/* ── شريط بطاقات التنقّل ──
+   الأزرار نفسها من .nav-section-btn المشترك (style.css) — لا تنسيق محلي
+   لها هنا إطلاقًا. هذا الحاوي فقط يضبط موضع الشريط داخل الصفحة.
+   كان لهذه البطاقات مكوّن محلي (.eq-quick-link) بحشو 14px×18px وارتفاع
+   80px وسهم إضافي، فبدت بطاقات محتوى ثقيلة لا أزرار تنقّل. */
 .eq-quick-links {
-  display: flex; gap: 12px; padding: 14px 32px;
+  display: flex; gap: 10px; padding: 12px 32px;
   background: var(--surface); border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
-.eq-quick-link {
-  display: flex; align-items: center; gap: 12px;
-  flex: 1; min-width: 240px; padding: 14px 18px;
-  background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: 12px; text-decoration: none; color: var(--ink1);
-  transition: all var(--dur-fast) var(--ease-out);
-}
-.eq-quick-link:hover { border-color: var(--orange); background: var(--orange-ultra); }
-.eq-ql-icon { font-size: 22px; color: var(--orange); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.eq-ql-icon svg { width: 22px; height: 22px; }
-.eq-ql-text { flex: 1; }
-.eq-ql-text strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 2px; }
-.eq-ql-text small { font-size: 12px; color: var(--ink3); }
-.eq-ql-arrow { font-size: 18px; color: var(--orange); font-weight: 900; }
+/* الأزرار المشتركة flex-shrink:0 بطبعها (مصمَّمة لشريط ناف أفقي) —
+   هنا نريدها تتقاسم عرض السطر بالتساوي كبطاقتَي تنقّل.
+   واللون صريح لأن .nav-section-btn لا يضبط color بنفسه: داخل الناف يرثه
+   من .nav-links a، وخارجها يسقط الرابط للأزرق الافتراضي فتتلوّن الأيقونة
+   (currentColor) بالأزرق. البرتقالي هنا يبقي الأيقونة كما كانت تمامًا. */
+.eq-quick-links .nav-section-btn { flex: 1 1 240px; color: var(--orange); }
+/* style.css يُخفي وصف الأزرار في الإنجليزية بين 769px و1460px لأن شريط
+   الناف يفيض عندها — قيد خاص بالناف تسرّب إلى هنا فأضاع سطر الوصف من
+   البطاقات رغم اتساع المكان. نستثني هذا الشريط صراحةً (نفس الأولوية،
+   وهذا الملف يُحمَّل بعد style.css فيغلب). */
+.eq-quick-links .nsb-text small { display: block; }
 @media (max-width: 768px) {
-  .eq-quick-links { padding: 12px 16px; }
-  .eq-quick-link { min-width: 100%; }
+  .eq-quick-links { padding: 10px 16px; gap: 8px; }
+  /* لا نُجبر التكديس هنا: flex-basis 240px + flex-wrap يقرّران بأنفسهما —
+     بطاقتان جنبًا إلى جنب على التابلت، وواحدة لكل سطر على الموبايل حين
+     لا يتسع العرض فعلًا. هذا يمنع ارتفاعًا زائدًا بلا داعٍ على التابلت.
+     النصوص المشتركة nowrap لأنها مصمَّمة لكلمات قصيرة في الناف، وعناوين
+     هذه البطاقات أطول (والإنجليزية أطول) — نسمح بالالتفاف عند الضيق. */
+  .eq-quick-links .nsb-text strong,
+  .eq-quick-links .nsb-text small { white-space: normal; }
 }
 
 /* ── Favorite Button on Card ── */
@@ -1422,43 +1439,49 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<!-- ── Hero ── -->
-<section class="eq-hero">
-  <div class="eq-hero-inner">
-    <h1><span data-i18n="hero.titlePre">ابدأ بمشروع</span> <span data-i18n="hero.titleSpan">جاهز للبيع</span></h1>
-    <p data-i18n="hero.subtitle">تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</p>
-    <div class="eq-search-wrap">
-      <input type="text" id="eq-search" data-i18n-attr="placeholder:hero.searchPlaceholder" placeholder="ابحث عن مشروع أو منطقة…">
-      <span class="eq-search-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
+<!-- ── Page Header — نفس مكوّن .mp-header المشترك المستخدم في /spaces/
+     (العنوان أبيض بوزن 900 ومحاذاة start، والبحث في .mp-header-actions
+     تمامًا كما تضع صفحة المساحات أدوات الفرز والفلاتر هناك) ── -->
+<section class="mp-header">
+  <div class="mp-header-inner">
+    <div>
+      <h1 class="mp-header-title"><span data-i18n="hero.titlePre">ابدأ بمشروع</span> <span data-i18n="hero.titleSpan">جاهز للبيع</span></h1>
+      <div class="mp-header-sub" data-i18n="hero.subtitle">تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</div>
+    </div>
+    <div class="mp-header-actions">
+      <div class="eq-search-wrap">
+        <input type="text" id="eq-search" data-i18n-attr="placeholder:hero.searchPlaceholder" placeholder="ابحث عن مشروع أو منطقة…">
+        <span class="eq-search-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── Quick Links ── -->
+<!-- ── Quick Links — نفس مكوّن .nav-section-btn المشترك (style.css) الذي
+     يستخدمه شريط الأقسام في /spaces/ و/bazaars/ والناف نفسه أعلى هذه
+     الصفحة. بطاقات تنقّل مضغوطة لا بطاقات محتوى: بلا سهم ولا حشو زائد. ── -->
 <div class="eq-quick-links">
-  <a class="eq-quick-link" href="/?p=market">
-    <span class="eq-ql-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
+  <a class="nav-section-btn" href="/?p=market">
+    <span class="nsb-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h20l-2 4H4Z"/><path d="M4 11v9h16v-9"/><path d="M9 20v-6h6v6"/></svg>
     </span>
-    <span class="eq-ql-text">
+    <span class="nsb-text">
       <strong data-i18n="quickLinks.spacesTitle">تصفح المساحات التجارية</strong>
       <small data-i18n="quickLinks.spacesDesc">ابحث عن موقع مناسب لمشروعك</small>
     </span>
-    <span class="eq-ql-arrow" data-i18n="arrowForward">←</span>
   </a>
-  <a class="eq-quick-link" href="/bazaars/">
-    <span class="eq-ql-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
+  <a class="nav-section-btn" href="/bazaars/">
+    <span class="nsb-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 21h17L12 3 3.5 21Z"/><path d="M12 3v18"/></svg>
     </span>
-    <span class="eq-ql-text">
+    <span class="nsb-text">
       <strong data-i18n="quickLinks.bazaarsTitle">البازارات والمعارض المؤقتة</strong>
       <small data-i18n="quickLinks.bazaarsDesc">اشترك في بازار قريب منك</small>
     </span>
-    <span class="eq-ql-arrow" data-i18n="arrowForward">←</span>
   </a>
 </div>
 
@@ -1798,8 +1821,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="/notifications.js?v=20260729150948" defer></script>
-<script src="app.js?v=20260729150948" defer></script>
+<script src="/notifications.js?v=20260729213646" defer></script>
+<script src="app.js?v=20260729213646" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">

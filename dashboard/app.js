@@ -49,6 +49,7 @@ let editingContractId = null;
 /* ── حالة التحويل بوكينج → عقد ── */
 let _pendingContractFromBooking = null;   /* الحجز المراد تحويله لعقد (يُملأ من convertBookingToContract) */
 const _confirmingReject = new Set();     /* IDs الحجوزات التي ضُغط عليها "رفض" وتنتظر تأكيداً */
+const _outcomeSnoozed   = new Set();     /* IDs طلبات أُجّل سؤال نتيجتها في هذه الجلسة (التأجيل الفعلي محفوظ في القاعدة) */
 
 /* ── آخر دفعة مسجَّلة (لطباعة الإيصال فور الحفظ) ── */
 let _lastSavedPaymentId = null;
@@ -1154,8 +1155,21 @@ function initDashboard() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('visible');
 
-  const firstNav = document.querySelector('[onclick*="overview"]');
-  goTo('overview', firstNav);
+  /* رابط عميق ?view=<id> — تستخدمه إشعارات المتابعة كي تفتح على القسم
+     المقصود مباشرة بدل أن ينزل المالك على "نظرة عامة" ويبحث بنفسه.
+     مقيّد بقائمة سماح: أي قيمة غريبة تُتجاهَل وتُفتح النظرة العامة. */
+  const DEEP_VIEWS = ['overview','tenants','bookings','spaces','add-space','contracts',
+                      'ratings','revenue','analytics','insights','alerts','reports',
+                      'public-profile','settings'];
+  let startView = 'overview';
+  try {
+    const v = new URLSearchParams(window.location.search).get('view');
+    if (v && DEEP_VIEWS.includes(v)) startView = v;
+  } catch (_) {}
+
+  const startNav = document.querySelector(`[onclick*="'${startView}'"]`)
+                || document.querySelector('[onclick*="overview"]');
+  goTo(startView, startNav);
 }
 
 /* ══════════════════════════════════════════
@@ -3630,7 +3644,64 @@ function renderKPIs() {
 /* ══════════════════════════════════════════
    🏠  OVERVIEW — يملأ كل عناصر الصفحة الرئيسية ديناميكياً
    ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   🚀 خطوات البداية — لوحة صاحب مساحة لم ينشر شيئًا بعد
+   ──────────────────────────────────────────
+   المالك المعتمَد حديثًا كان يصل للوحة كاملة الأقسام لكن كل أرقامها
+   أصفار، بلا أي إشارة للخطوة التالية. هذه البطاقة تظهر فقط عند صفر
+   مساحات وتختفي نهائيًا بعد نشر أول مساحة — لا إعداد ولا تخزين حالة.
+   ══════════════════════════════════════════ */
+function renderOnboarding() {
+  const wrap = document.getElementById('ob-wrap');
+  if (!wrap) return;
+
+  /* ⚠️ المرجع هنا ownerSpacesFull (سجلّات المساحات كاملة: منشورة وموقوفة)
+     وليس ownerSpaces — تلك قائمة **وحدات** المساحات المنشورة فقط، فمالك
+     لديه مساحة موقوفة أو بلا وحدات كان سيُعامَل خطأً كأنه لم يبدأ بعد. */
+  if (!Array.isArray(ownerSpacesFull) || ownerSpacesFull.length > 0) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const name = (currentOwner?.name || '').split(' ')[0] || '';
+  wrap.innerHTML = `
+    <div class="ob-card">
+      <div class="ob-title">👋 أهلًا بك${name ? ' يا ' + _escBk(name) : ''} — لنبدأ بأول مساحة</div>
+      <div class="ob-sub">حسابك جاهز تمامًا. تفصلك ثلاث خطوات عن استقبال أول طلب حجز:</div>
+      <div class="ob-steps">
+        <div class="ob-step">
+          <div class="ob-num">١</div>
+          <div>
+            <div class="ob-step-txt">أضف أول مساحة</div>
+            <div class="ob-step-desc">الاسم والمنطقة والنوع — دقيقتان لا أكثر.</div>
+          </div>
+        </div>
+        <div class="ob-step">
+          <div class="ob-num">٢</div>
+          <div>
+            <div class="ob-step-txt">أكمل بياناتها</div>
+            <div class="ob-step-desc">الصور والمقاسات والأسعار والأنشطة المسموح بها — كلما اكتملت البيانات زادت جدّية الطلبات.</div>
+          </div>
+        </div>
+        <div class="ob-step">
+          <div class="ob-num">٣</div>
+          <div>
+            <div class="ob-step-txt">تُنشر فورًا وتبدأ الطلبات</div>
+            <div class="ob-step-desc">لا انتظار موافقة — المساحة تظهر في البحث مباشرة، وتصلك الطلبات هنا في "الحجوزات".</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="goTo('add-space', document.querySelector('[data-view=add-space]'))">
+        ➕ أضف مساحتك الأولى
+      </button>
+    </div>`;
+  wrap.style.display = '';
+}
+
 function renderOverview() {
+  renderOnboarding();
+
   const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
                      'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   const COLORS    = ['var(--orange)','var(--green)','var(--blue)','var(--yellow)','var(--red)'];
@@ -4977,6 +5048,12 @@ function renderBookings() {
         const isPending = b.status === 'pending' || b.status === 'viewing_pending';
         const dateStr = b.createdAt ? new Date(b.createdAt).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' }) : '—';
         const startStr = b.startDate || '—';
+        /* إغلاق الحلقة: طلب معلّق مضى عليه أسبوع فأكثر — نسأل عن نتيجته.
+           العمر من createdAt حصرًا (updated_at يتغيّر مع كل تذكير آلي). */
+        const daysOld = b.createdAt
+          ? Math.floor((Date.now() - new Date(b.createdAt).getTime()) / 86400000) : 0;
+        const askOutcome = isPending && daysOld >= 7
+                        && !_confirmingReject.has(b.id) && !_outcomeSnoozed.has(b.id);
         return `
         <div class="bk-card${isPending && _confirmingReject.has(b.id) ? ' bk-card--rejecting' : ''}">
           <div class="bk-card-head">
@@ -4998,6 +5075,17 @@ function renderBookings() {
               <span class="bk-lbl">🕐 استلمنا الطلب</span><span class="bk-val">${dateStr}</span>
             </div>
           </div>
+
+          <!-- سؤال النتيجة — طلب معلّق مضى عليه أسبوع بلا حسم -->
+          ${askOutcome ? `
+          <div class="bk-outcome">
+            <div class="bk-outcome-q">❓ ماذا حدث بهذا الطلب؟ <span>مرّ عليه ${daysOld} يومًا وما زال معلّقًا</span></div>
+            <div class="bk-outcome-btns">
+              <button class="btn btn-sm bk-btn-done" onclick="markBookingCompleted('${b.id}')">✅ تمت الصفقة</button>
+              <button class="btn btn-sm bk-btn-reject" onclick="rejectBooking('${b.id}')">❌ لم تتم</button>
+              <button class="btn btn-ghost btn-sm" onclick="snoozeBookingOutcome('${b.id}')">⏳ قيد التفاوض</button>
+            </div>
+          </div>` : ''}
 
           <!-- أزرار الإجراءات — تُخفى عند فتح فورم الرفض للطلبات المعلقة -->
           ${!(isPending && _confirmingReject.has(b.id)) ? `
@@ -5299,6 +5387,58 @@ async function acceptBooking(bookingId) {
   } catch (e) {
     console.warn('[Makani] acceptBooking:', e.message);
     if (btn) { btn.disabled = false; btn.textContent = '✅ قبول'; }
+  }
+}
+
+/* ══════════════════════════════════════════
+   ✅ إغلاق دورة الطلب (Closing the Loop)
+   ──────────────────────────────────────────
+   بدون هذه الخطوة تظل المنصة تعرف عدد الطلبات فقط ولا تعرف كم صفقة
+   نجحت فعلًا. "تمت الصفقة" تنقل الطلب إلى completed — وهي حالة مدعومة
+   أصلًا في owner_update_booking_status، فلا حاجة لأي حالة جديدة.
+   "لم تتم" تعيد استخدام rejectBooking بالكامل (سبب + إشعار للعميل).
+   ══════════════════════════════════════════ */
+async function markBookingCompleted(bookingId) {
+  if (_guardWrite('تسجيل نتيجة الطلب')) return;
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const btn = event?.currentTarget;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الحفظ…'; }
+  try {
+    const { error } = await sb.rpc('owner_update_booking_status', {
+      p_booking_id: bookingId,
+      p_status:     'completed',
+    });
+    if (error) throw error;
+    const bk = bookingsList.find(b => b.id === bookingId);
+    if (bk) bk.status = 'completed';
+    renderBookings();
+    updateBookingsBadge();
+    loadSpaceInterest();
+  } catch (e) {
+    console.warn('[Makani] markBookingCompleted:', e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ تمت الصفقة'; }
+  }
+}
+
+/* "ما زالت قيد التفاوض" — تأجيل السؤال أسبوعًا بدل إجبار المالك على
+   حسم لم يحدث بعد. تُحدّث outcome_asked_at فقط، فتختفي البطاقة الآن
+   ويعود السؤال بعد أسبوع لو ظل الطلب معلّقًا. */
+async function snoozeBookingOutcome(bookingId) {
+  if (_guardWrite('تأجيل سؤال النتيجة')) return;
+  const sb = getSB();
+  if (!sb || !currentOwner?.id) return;
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('owner_snooze_booking_outcome', { p_booking_id: bookingId });
+    if (error) throw error;
+    /* إخفاء محلي فوري — السجلّ نفسه لم تتغيّر حالته */
+    _outcomeSnoozed.add(bookingId);
+    renderBookings();
+  } catch (e) {
+    console.warn('[Makani] snoozeBookingOutcome:', e.message);
+    if (btn) btn.disabled = false;
   }
 }
 

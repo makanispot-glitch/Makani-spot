@@ -1245,7 +1245,7 @@ async function eqOpenDetail(id) {
        ${listing.contact_pref !== 'whatsapp'
         ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">${t('detail.callSeller')}</a>`
         : ''}`
-    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="/">${t('detail.loginToContact')}</a>`;
+    : `<a class="eq-btn eq-btn-primary eq-btn-full" href="/?p=login&next=${encodeURIComponent('/market/?listing=' + id)}">${t('detail.loginToContact')}</a>`;
 
   document.getElementById('eq-modal-body').innerHTML = `
     ${galleryHtml}
@@ -1400,7 +1400,7 @@ async function eqSubmitReport() {
 async function eqLoadMyListings() {
   if (!eqUser) {
     document.getElementById('eq-my-listings').innerHTML =
-      `<div class="eq-empty"><p>${t('myListings.loginRequired')}</p><a class="eq-btn eq-btn-primary" href="/">${t('myListings.loginBtn')}</a></div>`;
+      `<div class="eq-empty"><p>${t('myListings.loginRequired')}</p><a class="eq-btn eq-btn-primary" href="/?p=login&next=${encodeURIComponent('/market/?myListings=1')}">${t('myListings.loginBtn')}</a></div>`;
     return;
   }
 

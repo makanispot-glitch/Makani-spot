@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>مكاني Spot — لوحة تحكم أصحاب المساحات</title>
-<link rel="manifest" href="/manifest.json?v=20260729150948">
-<script src="/version.js?v=20260729150948"></script>
+<link rel="manifest" href="/manifest.json?v=20260729213646">
+<script src="/version.js?v=20260729213646"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -947,6 +947,33 @@ body {
 .bk-btn-reject { background:rgba(255,77,77,.14); color:var(--red); border-color:rgba(255,77,77,.32); }
 .bk-btn-reject:hover { background:rgba(255,77,77,.22); }
 .empty-hint { text-align:center; padding:40px 20px; color:var(--text3); font-size:13px; }
+
+/* ── خطوات البداية لصاحب مساحة جديد (لوحة فارغة) ──
+   نبرة ترحيب لا تنبيه خطأ: نفس لغة بطاقات اللوحة، بحدّ برتقالي خفيف. */
+.ob-card { background:var(--panel2); border:1px solid rgba(255,107,0,.28); border-radius:14px;
+           padding:18px 20px; margin-bottom:16px; }
+.ob-title { font-size:16px; font-weight:800; color:var(--text); margin-bottom:4px; }
+.ob-sub   { font-size:12.5px; color:var(--text3); margin-bottom:14px; line-height:1.7; }
+.ob-steps { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.ob-step  { display:flex; align-items:flex-start; gap:10px; }
+.ob-num   { flex:0 0 24px; height:24px; border-radius:50%; display:grid; place-items:center;
+            font-size:11px; font-weight:800; background:rgba(255,107,0,.14);
+            color:var(--orange); border:1px solid rgba(255,107,0,.3); }
+.ob-step-txt  { font-size:13px; font-weight:700; color:var(--text); }
+.ob-step-desc { font-size:11.5px; color:var(--text3); margin-top:2px; line-height:1.6; }
+@media (max-width:640px){ .ob-card { padding:16px; } }
+
+/* ── سؤال نتيجة الطلب (يظهر بعد 7 أيام على الطلب المعلّق) ──
+   نبرة تنبيه هادئة بلون المنصة، متمايزة عن أزرار القبول/الرفض
+   حتى لا تُقرأ كإجراء رابع على الطلب. */
+.bk-outcome  { margin:0 16px 12px; padding:10px 12px; border-radius:10px;
+               background:rgba(255,107,0,.08); border:1px solid rgba(255,107,0,.22); }
+.bk-outcome-q { font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.bk-outcome-q span { color:var(--text3); font-weight:600; }
+.bk-outcome-btns { display:flex; gap:6px; flex-wrap:wrap; }
+.bk-outcome-btns .btn { font-size:11.5px; padding:5px 12px; }
+/* لون زر "تمت الصفقة" مُعرَّف في قسم BUTTONS بالطبقة المتأخرة أدناه —
+   لو عُرِّف هنا لتجاوزته قاعدة .btn العامة هناك (نفس الأولوية، ترتيب أحدث). */
 
 /* ── Booker identity block (هوية مقدّم الطلب) ── */
 .bk-booker { display:flex; align-items:center; gap:11px; padding:4px 16px 12px;
@@ -2017,6 +2044,10 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 .btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 14px 32px -8px rgba(255,106,26,0.6); }
 .btn-ghost { background: transparent; border-color: var(--border); }
 .btn-ghost:hover { background: rgba(255,255,255,0.05); }
+/* "تمت الصفقة" — التلميح الوحيد بلون النجاح في اللوحة. البرتقالي محجوز
+   للإجراء الأساسي (.btn-primary) فلا يتنافس زران بنفس اللون في البطاقة. */
+.bk-btn-done { background: rgba(34,212,110,0.12); color: var(--green); border-color: rgba(34,212,110,0.30); }
+.bk-btn-done:hover { background: rgba(34,212,110,0.20); color: var(--green); border-color: rgba(34,212,110,0.45); }
 
 /* ── BADGES ── */
 .badge { padding: 4px 11px; font-size: 11px; }
@@ -2565,6 +2596,10 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
            🔗 DB-LINK: جلب الـ KPIs من Google Sheets أو Supabase
            ============================================================ -->
       <div class="view active" id="view-overview">
+
+        <!-- ── خطوات البداية — تظهر لصاحب مساحة لم ينشر شيئًا بعد فقط،
+             وتختفي نهائيًا بمجرّد نشر أول مساحة (renderOnboarding) ── -->
+        <div id="ob-wrap" style="display:none"></div>
 
         <!-- ── KPI STATUS — occupancy first, revenue last ── -->
         <!-- 🔗 DB-LINK: KPIs → جلب من جدول spaces + bookings + payments -->
@@ -4236,15 +4271,15 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=20260729150948"></script>
+<script src="../media-handler.js?v=20260729213646"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="/notifications.js?v=20260729150948"></script>
-<script src="../shared/sb-config.js?v=20260729150948"></script>
-<script src="../shared/account.js?v=20260729150948"></script>
-<script src="/pwa-install.js?v=20260729150948" defer></script>
-<script src="app.js?v=20260729150948"></script>
+<script src="/notifications.js?v=20260729213646"></script>
+<script src="../shared/sb-config.js?v=20260729213646"></script>
+<script src="../shared/account.js?v=20260729213646"></script>
+<script src="/pwa-install.js?v=20260729213646" defer></script>
+<script src="app.js?v=20260729213646"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
