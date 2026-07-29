@@ -17,11 +17,15 @@
  *
  * @param {object|null} profile - صفّ من جدول profiles (أو null إن لم يُحمَّل بعد)
  * @param {object|null} [organizerProfile] - صفّ من جدول organizer_profiles إن كان محمّلاً (اختياري)
+ * @param {Array|null} [orgMemberships] - نتيجة organization_members لهذا المستخدم إن كانت محمّلة
+ *   (اختياري — كل عنصر بشكل {organization_id, org_role}). عضوية لوحة المؤسسة مفهوم مستقل
+ *   تمامًا عن role/roles[] الأساسي (نفس مبدأ الفصل بين identityVerified وorganizerVerified أعلاه).
  * @returns {object} كائن قدرات صريح الدلالة — لا يحتوي أي حقل خام لإعادة استخدامه
  */
-function getAccountCapabilities(profile, organizerProfile) {
+function getAccountCapabilities(profile, organizerProfile, orgMemberships) {
   const role  = profile?.role || 'tenant';
   const roles = Array.isArray(profile?.roles) ? profile.roles : [];
+  const orgs  = Array.isArray(orgMemberships) ? orgMemberships : [];
 
   return Object.freeze({
     // ── نوع الحساب الأساسي (من profiles.role — القيمة الوحيدة القانونية) ──
@@ -47,5 +51,9 @@ function getAccountCapabilities(profile, organizerProfile) {
     subscriptionStatus:     profile?.subscription_status || null,
     isSuspended:            !!profile?.is_suspended,
     isReadOnlySubscription: ['expired', 'cancelled', 'suspended'].includes(profile?.subscription_status),
+
+    // ── لوحة المؤسسة (Multi-Branch) — greenfield، لا تتقاطع مع role/roles[] ──
+    isOrgMember: orgs.length > 0,
+    orgRoles:    orgs.map(m => ({ organizationId: m.organization_id, role: m.org_role })),
   });
 }

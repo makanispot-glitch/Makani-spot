@@ -1149,12 +1149,42 @@ function initDashboard() {
   subscribeNotificationsRealtime();
   cleanupOldNotifications();       /* حذف الإشعارات الأقدم من 90 يوم */
   cleanupOldCancelledBookings();   /* حذف الحجوزات الملغاة الأقدم من 30 يوم (Soft Delete) */
+  loadOrgBranchStatus();           /* ADR-0004 سادساً: شفافية عضوية المؤسسة (لا تُظهر شيئًا لغالبية الحسابات) */
 
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').classList.add('visible');
 
   const firstNav = document.querySelector('[onclick*="overview"]');
   goTo('overview', firstNav);
+}
+
+/* ══════════════════════════════════════════
+   🏢 عضوية مؤسسة (ADR-0004، بند سادساً)
+   شفافية دائمة بدل الاعتماد على إشعار عابر — لا تُظهر شيئًا لغالبية
+   الحسابات (فقط الفروع المرتبطة فعليًا بمؤسسة). قراءة فقط بالكامل.
+   ══════════════════════════════════════════ */
+async function loadOrgBranchStatus() {
+  try {
+    const { data, error } = await getSB().rpc('get_my_org_branch_status');
+    if (error || !data?.is_member) return;
+
+    const card = document.getElementById('org-membership-card');
+    if (!card) return;
+
+    const attachedDate = data.attached_at
+      ? new Date(data.attached_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+    document.getElementById('org-membership-sub').textContent = attachedDate ? `منذ ${attachedDate}` : '';
+    document.getElementById('org-membership-name').textContent = data.organization_name || '';
+
+    const disputeLink = document.getElementById('org-membership-dispute-link');
+    if (disputeLink) {
+      const msg = encodeURIComponent(`لدي اعتراض على ربط حسابي كفرع ضمن مؤسسة "${data.organization_name}" — بريدي: ${currentOwner?.email || ''}`);
+      disputeLink.href = `https://wa.me/201103467711?text=${msg}`;
+    }
+
+    card.style.display = 'block';
+  } catch { /* فشل صامت — هذه بطاقة معلوماتية إضافية، لا يجب أن تعطّل أي شيء آخر بالداشبورد */ }
 }
 
 /* ══════════════════════════════════════════

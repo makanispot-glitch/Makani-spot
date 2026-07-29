@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>مكاني Spot — لوحة تحكم أصحاب المساحات</title>
-<link rel="manifest" href="/manifest.json?v=20260722181835">
-<script src="/version.js?v=20260722181835"></script>
+<link rel="manifest" href="/manifest.json?v=20260729102537">
+<script src="/version.js?v=20260729102537"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -4021,6 +4021,28 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
       <div class="view" id="view-settings">
         <div class="section-label">الإعدادات</div>
+
+        <!-- عضوية مؤسسة (تظهر فقط لو كان هذا الحساب فرعًا ضمن مؤسسة — ADR-0004، بند سادساً) -->
+        <div class="pcard" id="org-membership-card" style="display:none;border-color:rgba(126,34,206,0.25)">
+          <div class="pcard-head" style="background:rgba(126,34,206,0.04)">
+            <div>
+              <div class="pcard-title" style="color:#7E22CE">🏢 عضوية مؤسسة</div>
+              <div class="pcard-sub" id="org-membership-sub"></div>
+            </div>
+          </div>
+          <div class="pcard-body">
+            <div style="font-size:12px;color:var(--text3);line-height:1.8;margin-bottom:14px">
+              هذا الحساب مُدرَج كفرع ضمن مؤسسة <strong id="org-membership-name" style="color:var(--text)"></strong> من قِبل إدارة المنصة.
+              لوحة تحكمك هذه لم تتغيّر ولن تتأثر بأي شكل — تسمح هذه العضوية للمؤسسة برؤية أداء هذا الفرع فقط (نسبة الإشغال، الحجوزات، الإيراد،
+              متوسط تقييمات المستأجرين، وعدد المخالفات) في لوحة مؤسستها الخاصة، دون أي صلاحية تعديل أو كتابة على حسابك.
+            </div>
+            <a id="org-membership-dispute-link" href="#" target="_blank" class="btn"
+               style="background:var(--bg3);border-color:var(--border);color:var(--text2);text-decoration:none;display:inline-flex">
+              لديّ اعتراض على هذا الربط — تواصل مع الإدارة
+            </a>
+          </div>
+        </div>
+
         <div class="grid-2">
           <div class="pcard">
             <div class="pcard-head">
@@ -4214,15 +4236,15 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=20260722181835"></script>
+<script src="../media-handler.js?v=20260729102537"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="/notifications.js?v=20260722181835"></script>
-<script src="../shared/sb-config.js?v=20260722181835"></script>
-<script src="../shared/account.js?v=20260722181835"></script>
-<script src="/pwa-install.js?v=20260722181835" defer></script>
-<script src="app.js?v=20260722181835"></script>
+<script src="/notifications.js?v=20260729102537"></script>
+<script src="../shared/sb-config.js?v=20260729102537"></script>
+<script src="../shared/account.js?v=20260729102537"></script>
+<script src="/pwa-install.js?v=20260729102537" defer></script>
+<script src="app.js?v=20260729102537"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
@@ -4232,7 +4254,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
-    setInterval(() => reg.update(), 30 * 60 * 1000);
+    setInterval(() => reg.update().catch(err => console.warn('SW update check failed:', err)), 30 * 60 * 1000);
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
       w?.addEventListener('statechange', () => {

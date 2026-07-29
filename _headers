@@ -10,6 +10,9 @@
 /dashboard/*
   X-Robots-Tag: noindex, nofollow
 
+/org/*
+  X-Robots-Tag: noindex, nofollow
+
 /offline.html
   X-Robots-Tag: noindex, nofollow
 

@@ -2089,7 +2089,7 @@ async function initAuth() {
   });
 }
 
-function setNavUser(user, profile) {
+async function setNavUser(user, profile) {
   // يُزامن الـ class مع الحالة النهائية (بعد تأكيد getSession)
   document.documentElement.classList.toggle('sb-authed', !!user);
 
@@ -2109,7 +2109,16 @@ function setNavUser(user, profile) {
     const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || t('spaces:userNav.defaultName');
     const email = user.email || '';
     const initial = name.trim()[0] || '؟';
-    const caps = getAccountCapabilities(profile);
+
+    // عضوية لوحة المؤسسة — مستقلة تمامًا عن role/roles[] (راجع ADR-0004، رابعاً)؛
+    // فشل الاستعلام لا يجب أن يمنع باقي شريط التنقّل من الظهور
+    let orgMemberships = [];
+    try {
+      const { data: orgData } = await sbClient.rpc('get_my_org_memberships');
+      orgMemberships = orgData || [];
+    } catch {}
+
+    const caps = getAccountCapabilities(profile, null, orgMemberships);
     const roleLabel = caps.isOwner ? t('spaces:userNav.roleOwner') : caps.isTenant ? t('spaces:userNav.roleTenant') : t('spaces:userNav.roleUser');
 
     guestEl.style.display = 'none';
@@ -2149,6 +2158,9 @@ function setNavUser(user, profile) {
 
     const ownerBtn = document.getElementById('dd-owner-dash-btn');
     if (ownerBtn) ownerBtn.style.display = caps.isOwner ? 'flex' : 'none';
+
+    const orgBtn = document.getElementById('dd-org-dash-btn');
+    if (orgBtn) orgBtn.style.display = caps.isOrgMember ? 'flex' : 'none';
 
     updateBnUser(user, profile);
 

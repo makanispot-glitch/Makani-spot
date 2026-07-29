@@ -1,0 +1,802 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>إدارة المؤسسات (المؤسسات متعددة الفروع) — مكاني Spot Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F36418">
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-size: 14px; }
+
+/* ── Login Screen ── */
+.adm-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%);
+}
+.adm-login-box {
+  background: #fff; border-radius: 20px; padding: 40px 36px;
+  width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.adm-login-box h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+.adm-login-box p  { font-size: 13px; color: #666; margin-bottom: 28px; }
+.adm-login-box input {
+  width: 100%; padding: 13px 16px; border: 2px solid #E8E8E8;
+  border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 15px;
+  outline: none; margin-bottom: 14px; transition: border .2s;
+}
+.adm-login-box input:focus { border-color: #F36418; }
+.adm-login-err { color: #EF4444; font-size: 13px; margin-bottom: 10px; display: none; }
+.adm-login-btn {
+  width: 100%; padding: 14px; background: #F36418; color: #fff;
+  border: none; border-radius: 10px; font-family: 'Cairo', sans-serif;
+  font-size: 16px; font-weight: 800; cursor: pointer; transition: background .2s;
+}
+.adm-login-btn:hover { background: #E85E00; }
+
+/* ── Main Layout ── */
+#adm-main { display: none; min-height: 100vh; }
+.adm-nav {
+  background: #1A1A1A; color: #fff;
+  padding: 0 28px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.adm-nav h1 { font-size: 18px; font-weight: 900; }
+.adm-nav-right { display: flex; align-items: center; gap: 14px; }
+.adm-nav span { font-size: 13px; color: rgba(255,255,255,0.6); }
+.adm-logout {
+  padding: 7px 16px; background: rgba(255,255,255,0.1); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+  cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px;
+  transition: background .2s;
+}
+.adm-logout:hover { background: rgba(255,255,255,0.2); }
+.adm-hub-btn {
+  padding: 7px 16px; background: rgba(255,107,0,0.2); color: #F36418;
+  border: 1px solid rgba(255,107,0,0.4); border-radius: 8px;
+  text-decoration: none; font-family: 'Cairo', sans-serif; font-size: 13px;
+  font-weight: 700; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+}
+.adm-hub-btn:hover { background: #F36418; color: #fff; }
+
+/* ── Stats Bar ── */
+.adm-stats { display: flex; gap: 16px; padding: 18px 28px; background: #fff; border-bottom: 1px solid #E8E8E8; flex-wrap: wrap; }
+.adm-stat { padding: 10px 20px; border-radius: 10px; text-align: center; min-width: 120px; }
+.adm-stat-num { font-size: 26px; font-weight: 900; }
+.adm-stat-lbl { font-size: 12px; font-weight: 700; margin-top: 2px; }
+.adm-stat.total   { background: #E0F2FE; } .adm-stat.total .adm-stat-num   { color: #0369A1; } .adm-stat.total .adm-stat-lbl   { color: #0284C7; }
+.adm-stat.active  { background: #DCFCE7; } .adm-stat.active .adm-stat-num { color: #15803D; } .adm-stat.active .adm-stat-lbl { color: #16A34A; }
+.adm-stat.branch  { background: #FFF7ED; } .adm-stat.branch .adm-stat-num { color: #C2410C; } .adm-stat.branch .adm-stat-lbl { color: #EA580C; }
+.adm-stat.member  { background: #F3E8FF; } .adm-stat.member .adm-stat-num { color: #7E22CE; } .adm-stat.member .adm-stat-lbl { color: #9333EA; }
+
+/* ── Toolbar ── */
+.adm-toolbar { padding: 14px 28px; background: #fff; border-bottom: 1px solid #E8E8E8; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.adm-search { margin-left: 0; padding: 9px 14px; border: 1.5px solid #E8E8E8; border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 13px; outline: none; min-width: 220px; transition: border .2s; }
+.adm-search:focus { border-color: #F36418; }
+.adm-refresh, .adm-primary-btn { padding: 9px 16px; border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; transition: all .2s; border: 1.5px solid #E8E8E8; background: #F7F7F7; }
+.adm-refresh:hover { background: #E8E8E8; }
+.adm-primary-btn { margin-right: auto; background: #F36418; color: #fff; border-color: #F36418; }
+.adm-primary-btn:hover { background: #E85E00; }
+.adm-back-btn { padding: 9px 16px; border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; background: #F7F7F7; border: 1.5px solid #E8E8E8; }
+.adm-back-btn:hover { background: #E8E8E8; }
+
+.adm-content { padding: 24px 28px; }
+
+/* ── Org Cards ── */
+.org-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.org-card { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 18px; cursor: pointer; transition: box-shadow .2s, border-color .2s; }
+.org-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); border-color: #F36418; }
+.org-card-top { display: flex; align-items: start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.org-card h3 { font-size: 16px; font-weight: 800; color: #1A1A1A; }
+.org-badge { display: inline-block; padding: 3px 10px; border-radius: 50px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.org-badge.on  { background: #DCFCE7; color: #15803D; }
+.org-badge.off { background: #F3F4F6; color: #6B7280; }
+.org-card-meta { display: flex; gap: 14px; font-size: 12px; color: #666; margin-top: 8px; }
+.org-card-meta b { color: #1A1A1A; font-size: 15px; }
+.org-card-date { font-size: 11px; color: #BBB; margin-top: 10px; }
+
+/* ── Detail view ── */
+#detail-view { display: none; }
+.detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.detail-head h2 { font-size: 20px; font-weight: 900; }
+.detail-toggle { display: flex; align-items: center; gap: 8px; }
+.switch { position: relative; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: #E8E8E8; border-radius: 24px; cursor: pointer; transition: .2s; }
+.slider::before { content: ''; position: absolute; height: 18px; width: 18px; right: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+input:checked + .slider { background: #22C55E; }
+input:checked + .slider::before { transform: translateX(-20px); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid #E8E8E8; margin-bottom: 18px; }
+.tab-btn { padding: 10px 18px; background: none; border: none; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800; color: #999; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.tab-btn.on { color: #F36418; border-color: #F36418; }
+.tab-panel { display: none; }
+.tab-panel.on { display: block; }
+
+.item-card { background: #fff; border: 1px solid #E8E8E8; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.item-info strong { display: block; font-size: 14px; font-weight: 800; color: #1A1A1A; }
+.item-info span { font-size: 12px; color: #777; }
+.item-chip { display: inline-block; padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 800; margin-top: 4px; margin-left: 4px; }
+.chip-starter { background: #F3F4F6; color: #6B7280; }
+.chip-growth  { background: #FFF7ED; color: #C2410C; }
+.chip-pro     { background: #F3E8FF; color: #7E22CE; }
+.chip-suspended { background: #FEE2E2; color: #991B1B; }
+.chip-ceo { background: #F3E8FF; color: #7E22CE; }
+.chip-regional_manager { background: #E0F2FE; color: #0369A1; }
+.chip-branch_manager { background: #F3F4F6; color: #6B7280; }
+
+.adm-btn { padding: 7px 14px; border-radius: 8px; border: none; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 800; cursor: pointer; transition: all .2s; white-space: nowrap; }
+.adm-btn-danger { background: #FEE2E2; color: #991B1B; }
+.adm-btn-danger:hover { background: #EF4444; color: #fff; }
+.adm-btn-ghost { background: #F7F7F7; color: #333; border: 1.5px solid #E8E8E8; }
+.adm-btn-ghost:hover { background: #E8E8E8; }
+.adm-btn:disabled { opacity: .5; cursor: default; }
+
+.audit-row { padding: 10px 0; border-bottom: 1px solid #F0F0F0; font-size: 13px; }
+.audit-row .a-actor { font-weight: 800; color: #1A1A1A; }
+.audit-row .a-action { color: #F36418; font-weight: 700; }
+.audit-row .a-time { color: #BBB; font-size: 11px; margin-right: 8px; }
+.audit-row .a-meta { color: #999; font-size: 12px; margin-top: 2px; }
+
+.adm-empty { text-align: center; padding: 60px 20px; color: #999; font-size: 15px; }
+.adm-loading { text-align: center; padding: 60px 20px; color: #999; }
+.adm-spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid #E8E8E8; border-top-color: #F36418; animation: spin 0.9s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; align-items: center; justify-content: center; padding: 16px; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; max-height: 86vh; overflow-y: auto; }
+.modal-box h3 { font-size: 17px; font-weight: 900; margin-bottom: 16px; }
+.modal-box label { display: block; font-size: 12px; font-weight: 800; color: #666; margin: 12px 0 5px; }
+.modal-box input, .modal-box select, .modal-box textarea {
+  width: 100%; padding: 10px 12px; border: 1.5px solid #E8E8E8; border-radius: 8px;
+  font-family: 'Cairo', sans-serif; font-size: 13px; outline: none;
+}
+.modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: #F36418; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-actions button { flex: 1; padding: 11px; border-radius: 8px; border: none; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800; cursor: pointer; }
+.modal-btn-cancel { background: #F7F7F7; color: #333; }
+.modal-btn-submit { background: #F36418; color: #fff; }
+.modal-btn-submit:hover { background: #E85E00; }
+.search-results { max-height: 180px; overflow-y: auto; margin-top: 6px; border: 1px solid #E8E8E8; border-radius: 8px; }
+.search-result-row { padding: 8px 12px; cursor: pointer; font-size: 12px; border-bottom: 1px solid #F0F0F0; }
+.search-result-row:hover { background: #FFF7ED; }
+.search-result-row.picked { background: #DCFCE7; }
+.scope-hint { font-size: 11px; color: #999; margin-top: 4px; }
+
+/* ── Toast ── */
+.adm-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1A1A1A; color: #fff; padding: 12px 22px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; box-shadow: 0 8px 28px rgba(0,0,0,.3);
+  opacity: 0; pointer-events: none; transition: all .25s; z-index: 600;
+}
+.adm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.adm-toast.err { background: #991B1B; }
+
+@media (max-width: 768px) {
+  .adm-nav, .adm-stats, .adm-toolbar, .adm-content { padding-left: 14px; padding-right: 14px; }
+  .adm-content { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="adm-login" class="adm-login">
+  <div class="adm-login-box">
+    <div style="font-size:40px;margin-bottom:12px">🏢</div>
+    <h1>إدارة المؤسسات</h1>
+    <p>أدخل كلمة مرور الإدارة للدخول</p>
+    <div class="adm-login-err" id="adm-login-err">كلمة المرور غير صحيحة</div>
+    <input type="password" id="adm-pass" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')admLogin()">
+    <br>
+    <button class="adm-login-btn" onclick="admLogin()">دخول</button>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div id="adm-main">
+  <nav class="adm-nav">
+    <h1>🏢 إدارة المؤسسات (Multi-Branch)</h1>
+    <div class="adm-nav-right">
+      <span id="adm-last-update"></span>
+      <a href="./admin-hub.html" class="adm-hub-btn">🏠 لوحة التحكم</a>
+      <button class="adm-logout" onclick="admLogout()">خروج</button>
+    </div>
+  </nav>
+
+  <!-- ── List view ── -->
+  <div id="list-view">
+    <div class="adm-stats" id="adm-stats">
+      <div class="adm-stat total">  <div class="adm-stat-num" id="stat-total">—</div>  <div class="adm-stat-lbl">🏢 إجمالي المؤسسات</div></div>
+      <div class="adm-stat active"> <div class="adm-stat-num" id="stat-active">—</div> <div class="adm-stat-lbl">✅ مفعّلة</div></div>
+      <div class="adm-stat branch"> <div class="adm-stat-num" id="stat-branches">—</div><div class="adm-stat-lbl">🏬 إجمالي الفروع المرتبطة</div></div>
+      <div class="adm-stat member"> <div class="adm-stat-num" id="stat-members">—</div><div class="adm-stat-lbl">👤 إجمالي الأعضاء</div></div>
+    </div>
+
+    <div class="adm-toolbar">
+      <input class="adm-search" id="adm-search" type="text" placeholder="بحث باسم المؤسسة…" oninput="admRenderList()">
+      <button class="adm-refresh" onclick="admLoadOrgs()">🔄 تحديث</button>
+      <button class="adm-primary-btn" onclick="openModal('modal-create-org')">+ مؤسسة جديدة</button>
+    </div>
+
+    <div class="adm-content">
+      <div id="org-list-container"><div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div></div>
+    </div>
+  </div>
+
+  <!-- ── Detail view ── -->
+  <div id="detail-view">
+    <div class="adm-content">
+      <button class="adm-back-btn" onclick="showList()">→ عودة لقائمة المؤسسات</button>
+
+      <div class="detail-head" style="margin-top:16px">
+        <h2 id="detail-org-name">—</h2>
+        <div class="detail-toggle">
+          <button class="adm-btn adm-btn-danger" onclick="openModal('modal-delete-org')">🗑️ حذف المؤسسة</button>
+          <span style="font-size:12px;color:#666;font-weight:700">مفعّلة</span>
+          <label class="switch">
+            <input type="checkbox" id="detail-active-toggle" onchange="toggleOrgActive()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn on" data-tab="branches" onclick="switchTab('branches',this)">🏬 الفروع</button>
+        <button class="tab-btn" data-tab="members" onclick="switchTab('members',this)">👤 الأعضاء</button>
+        <button class="tab-btn" data-tab="audit" onclick="switchTab('audit',this)">📜 سجل التدقيق</button>
+      </div>
+
+      <div class="tab-panel on" id="panel-branches">
+        <button class="adm-primary-btn" style="margin-bottom:14px" onclick="openAttachBranchModal()">+ ربط فرع جديد</button>
+        <div id="branches-list"></div>
+      </div>
+
+      <div class="tab-panel" id="panel-members">
+        <button class="adm-primary-btn" style="margin-bottom:14px" onclick="openModal('modal-grant-member')">+ منح عضوية جديدة</button>
+        <div id="members-list"></div>
+      </div>
+
+      <div class="tab-panel" id="panel-audit">
+        <div id="audit-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: create org ── -->
+<div class="modal-overlay" id="modal-create-org">
+  <div class="modal-box">
+    <h3>+ إنشاء مؤسسة جديدة</h3>
+    <label>اسم المؤسسة</label>
+    <input type="text" id="create-org-name" placeholder="مثال: مجموعة العربي القابضة">
+    <label>ملاحظات (اختياري)</label>
+    <textarea id="create-org-notes" rows="2" placeholder="أي ملاحظات داخلية…"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-create-org')">إلغاء</button>
+      <button class="modal-btn-submit" onclick="submitCreateOrg()">إنشاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: attach branch ── -->
+<div class="modal-overlay" id="modal-attach-branch">
+  <div class="modal-box">
+    <h3>+ ربط فرع (حساب صاحب مساحة)</h3>
+    <label>ابحث بالاسم أو البريد أو اسم النشاط</label>
+    <input type="text" id="attach-owner-search" placeholder="اكتب للبحث…" oninput="searchOwnersForAttach()">
+    <div class="search-results" id="attach-owner-results"></div>
+    <div class="scope-hint" id="attach-owner-picked-hint"></div>
+    <label>اسم مختصر للفرع (اختياري)</label>
+    <input type="text" id="attach-branch-label" placeholder="مثال: فرع مول أكتوبر">
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-attach-branch')">إلغاء</button>
+      <button class="modal-btn-submit" onclick="submitAttachBranch()">ربط الفرع</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: grant member ── -->
+<div class="modal-overlay" id="modal-grant-member">
+  <div class="modal-box">
+    <h3>+ منح عضوية مؤسسة</h3>
+    <label>ابحث بالاسم أو البريد</label>
+    <input type="text" id="grant-user-search" placeholder="اكتب للبحث… (حرفين على الأقل)" oninput="searchProfilesForGrant()">
+    <div class="search-results" id="grant-user-results"></div>
+    <div class="scope-hint" id="grant-user-picked-hint"></div>
+    <label>الدور داخل المؤسسة</label>
+    <select id="grant-org-role" onchange="onGrantRoleChange()">
+      <option value="ceo">CEO — رؤية كل الفروع</option>
+      <option value="regional_manager">مدير منطقة — فروع محددة فقط</option>
+      <option value="branch_manager">مدير فرع — بدون حاجة لتفعيل، هو صاحب الفرع أصلًا</option>
+    </select>
+    <div id="grant-scope-wrap" style="display:none">
+      <label>الفروع المسموح رؤيتها لهذا المدير</label>
+      <div class="search-results" id="grant-scope-branches" style="max-height:140px"></div>
+      <div class="scope-hint">اختر فرعًا أو أكثر بالنقر عليه</div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-grant-member')">إلغاء</button>
+      <button class="modal-btn-submit" onclick="submitGrantMember()">منح العضوية</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: delete organization ── -->
+<div class="modal-overlay" id="modal-delete-org">
+  <div class="modal-box">
+    <h3>🗑️ حذف المؤسسة</h3>
+    <p style="font-size:13px;color:#666;line-height:1.8;margin-bottom:10px">
+      سيتم فصل كل الفروع المرتبطة (لن تُحذف حسابات أصحابها) وسحب كل العضويات، مع الاحتفاظ بسجل التدقيق كشاهد.
+      هذا الإجراء لا يمكن التراجع عنه. للتأكيد، اكتب اسم المؤسسة بالضبط:
+    </p>
+    <label id="delete-org-name-label" style="font-weight:900"></label>
+    <input type="text" id="delete-org-confirm-input" placeholder="اكتب اسم المؤسسة هنا">
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeModal('modal-delete-org')">إلغاء</button>
+      <button class="modal-btn-submit" style="background:#991B1B" onclick="submitDeleteOrg()">حذف نهائيًا</button>
+    </div>
+  </div>
+</div>
+
+<div class="adm-toast" id="adm-toast"></div>
+
+<script src="../shared/sb-config.js?v=20260729102537"></script>
+<script>
+/* ── Supabase (RLS مُتجاوَز عبر دوال SECURITY DEFINER + is_admin()) ── */
+const ADM_SB_URL = SUPABASE_URL;
+const ADM_SB_KEY = SUPABASE_KEY;
+const ADMIN_EMAIL = 'makanispot@gmail.com';
+
+let sbDirect = null;
+let orgsAll = [];
+let currentOrgId = null;
+let currentOrgDetail = null;
+let pickedOwnerId = null;
+let pickedUserId = null;
+let pickedScopeBranchIds = new Set();
+
+/* ── XSS Protection ── */
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── Auth ── */
+async function admLogin() {
+  const pass  = document.getElementById('adm-pass').value;
+  const errEl = document.getElementById('adm-login-err');
+  errEl.style.display = 'none';
+  try {
+    const { data, error } = await sbDirect.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pass });
+    if (error || !data?.session) {
+      errEl.style.display = 'block';
+      document.getElementById('adm-pass').value = '';
+      return;
+    }
+    admShowDash();
+  } catch {
+    errEl.textContent = 'خطأ في الاتصال — حاول مرة أخرى';
+    errEl.style.display = 'block';
+  }
+}
+async function admLogout() { await sbDirect.auth.signOut(); location.reload(); }
+function admShowDash() {
+  document.getElementById('adm-login').style.display = 'none';
+  document.getElementById('adm-main').style.display = 'block';
+  admLoadOrgs();
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  sbDirect = supabase.createClient(ADM_SB_URL, ADM_SB_KEY);
+  const { data: { session } } = await sbDirect.auth.getSession();
+  if (session) admShowDash();
+});
+
+/* ── List load/render ── */
+async function admLoadOrgs() {
+  document.getElementById('org-list-container').innerHTML =
+    '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const { data, error } = await sbDirect.rpc('admin_get_organizations');
+    if (error) throw error;
+    orgsAll = data || [];
+    admUpdateStats();
+    admRenderList();
+    document.getElementById('adm-last-update').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+  } catch (e) {
+    document.getElementById('org-list-container').innerHTML =
+      `<div class="adm-empty">⚠️ تعذّر تحميل المؤسسات: ${escHtml(e.message || e)}</div>`;
+  }
+}
+
+function admUpdateStats() {
+  document.getElementById('stat-total').textContent = orgsAll.length;
+  document.getElementById('stat-active').textContent = orgsAll.filter(o => o.status === 'active').length;
+  document.getElementById('stat-branches').textContent = orgsAll.reduce((s,o) => s + Number(o.branch_count||0), 0);
+  document.getElementById('stat-members').textContent = orgsAll.reduce((s,o) => s + Number(o.member_count||0), 0);
+}
+
+function admRenderList() {
+  const q = (document.getElementById('adm-search').value || '').toLowerCase();
+  const list = orgsAll.filter(o => !q || (o.name||'').toLowerCase().includes(q));
+  const cont = document.getElementById('org-list-container');
+  if (!list.length) {
+    cont.innerHTML = '<div class="adm-empty">لا توجد مؤسسات مطابقة — أنشئ أول مؤسسة من الزر أعلاه</div>';
+    return;
+  }
+  cont.innerHTML = `<div class="org-grid">${list.map(o => `
+    <div class="org-card" onclick="openOrgDetail('${o.id}')">
+      <div class="org-card-top">
+        <h3>${escHtml(o.name)}</h3>
+        <span class="org-badge ${o.status === 'active' ? 'on' : 'off'}">${ORG_STATUS_LABEL[o.status] || o.status}</span>
+      </div>
+      <div class="org-card-meta">
+        <span><b>${o.branch_count}</b> فرع</span>
+        <span><b>${o.member_count}</b> عضو</span>
+      </div>
+      <div class="org-card-date">أُنشئت ${new Date(o.created_at).toLocaleDateString('ar-EG')}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+/* ── Create org ── */
+async function submitCreateOrg() {
+  const name = document.getElementById('create-org-name').value.trim();
+  const notes = document.getElementById('create-org-notes').value.trim();
+  if (!name) { admToast('اسم المؤسسة مطلوب', true); return; }
+  try {
+    const { error } = await sbDirect.rpc('admin_create_organization', { p_name: name, p_notes: notes || null });
+    if (error) throw error;
+    closeModal('modal-create-org');
+    document.getElementById('create-org-name').value = '';
+    document.getElementById('create-org-notes').value = '';
+    admToast('✅ تم إنشاء المؤسسة');
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+/* ── Detail view ── */
+function showList() {
+  document.getElementById('detail-view').style.display = 'none';
+  document.getElementById('list-view').style.display = 'block';
+  currentOrgId = null;
+}
+
+async function openOrgDetail(orgId) {
+  currentOrgId = orgId;
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('detail-view').style.display = 'block';
+  document.getElementById('detail-org-name').textContent = 'جاري التحميل…';
+  await loadOrgDetail();
+  switchTab('branches', document.querySelector('.tab-btn[data-tab="branches"]'));
+}
+
+async function loadOrgDetail() {
+  try {
+    const { data, error } = await sbDirect.rpc('admin_get_organization_detail', { p_organization_id: currentOrgId });
+    if (error) throw error;
+    currentOrgDetail = data;
+    document.getElementById('detail-org-name').textContent = data.name;
+    document.getElementById('detail-active-toggle').checked = data.status === 'active';
+    renderBranches();
+    renderMembers();
+    loadAuditLog();
+  } catch (e) {
+    admToast('تعذّر تحميل تفاصيل المؤسسة: ' + (e.message || e), true);
+  }
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  if (el) el.classList.add('on');
+  document.getElementById('panel-' + tab).classList.add('on');
+}
+
+async function toggleOrgActive() {
+  const val = document.getElementById('detail-active-toggle').checked;
+  const newStatus = val ? 'active' : 'suspended';
+  try {
+    const { error } = await sbDirect.rpc('admin_set_organization_status', { p_organization_id: currentOrgId, p_status: newStatus });
+    if (error) throw error;
+    admToast(val ? '✅ تم تفعيل المؤسسة' : '⏸️ تم إيقاف المؤسسة مؤقتًا');
+  } catch (e) {
+    admToast('خطأ: ' + (e.message || e), true);
+    document.getElementById('detail-active-toggle').checked = !val;
+  }
+}
+
+/* ── Branches tab ── */
+const PLAN_CHIP = { starter: 'chip-starter', growth: 'chip-growth', pro: 'chip-pro' };
+const PLAN_LABEL = { starter: 'Starter', growth: 'Growth', pro: 'Pro' };
+
+function renderBranches() {
+  const cont = document.getElementById('branches-list');
+  const branches = currentOrgDetail.branches || [];
+  if (!branches.length) {
+    cont.innerHTML = '<div class="adm-empty">لا يوجد أي فرع مرتبط بعد — استخدم زر "ربط فرع جديد" أعلاه</div>';
+    return;
+  }
+  cont.innerHTML = branches.map(b => `
+    <div class="item-card">
+      <div class="item-info">
+        <strong>${escHtml(b.label || b.owner_name || 'فرع بدون اسم')}</strong>
+        <span>${escHtml(b.owner_name || '—')} · ${escHtml(b.owner_email || '—')}</span>
+        <div>
+          <span class="item-chip ${PLAN_CHIP[b.plan_tier] || 'chip-starter'}">${PLAN_LABEL[b.plan_tier] || b.plan_tier || 'starter'}</span>
+          ${b.is_suspended ? '<span class="item-chip chip-suspended">موقوف</span>' : ''}
+        </div>
+      </div>
+      <button class="adm-btn adm-btn-danger" onclick="detachBranch('${b.owner_id}')">فصل الفرع</button>
+    </div>
+  `).join('');
+}
+
+async function detachBranch(ownerId) {
+  if (!confirm('فصل هذا الفرع عن المؤسسة؟ سجل الأداء التاريخي يبقى محفوظًا، ولوحة تحكم الفرع نفسها لن تتأثر.')) return;
+  try {
+    const { error } = await sbDirect.rpc('admin_manage_org_branch', {
+      p_organization_id: currentOrgId, p_owner_id: ownerId, p_action: 'detach'
+    });
+    if (error) throw error;
+    admToast('تم فصل الفرع');
+    loadOrgDetail();
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+function openAttachBranchModal() {
+  pickedOwnerId = null;
+  document.getElementById('attach-owner-search').value = '';
+  document.getElementById('attach-owner-results').innerHTML = '';
+  document.getElementById('attach-owner-picked-hint').textContent = '';
+  document.getElementById('attach-branch-label').value = '';
+  openModal('modal-attach-branch');
+}
+
+let _attachSearchTimer = null;
+function searchOwnersForAttach() {
+  clearTimeout(_attachSearchTimer);
+  _attachSearchTimer = setTimeout(async () => {
+    const q = document.getElementById('attach-owner-search').value.trim();
+    const { data, error } = await sbDirect.rpc('admin_search_owners_for_org', { p_query: q });
+    const cont = document.getElementById('attach-owner-results');
+    if (error || !data) { cont.innerHTML = ''; return; }
+    cont.innerHTML = data.map(o => `
+      <div class="search-result-row" onclick="pickOwnerForAttach('${o.id}','${escHtml(o.full_name)}','${escHtml(o.entity_name||'')}',${o.is_attached})">
+        ${escHtml(o.full_name)} — ${escHtml(o.email)} ${o.entity_name ? '· ' + escHtml(o.entity_name) : ''}
+        ${o.is_attached ? `<span style="color:#991B1B"> (مرتبط بـ ${escHtml(o.attached_org_name || 'مؤسسة أخرى')})</span>` : ''}
+      </div>
+    `).join('') || '<div class="search-result-row">لا نتائج</div>';
+  }, 250);
+}
+
+function pickOwnerForAttach(id, name, entityName, isAttached) {
+  if (isAttached) { admToast('هذا الحساب مرتبط بالفعل بمؤسسة أخرى — افصله أولًا', true); return; }
+  pickedOwnerId = id;
+  document.getElementById('attach-owner-picked-hint').textContent = '✅ تم اختيار: ' + name + (entityName ? ' · ' + entityName : '');
+  document.getElementById('attach-owner-results').innerHTML = '';
+}
+
+async function submitAttachBranch() {
+  if (!pickedOwnerId) { admToast('اختر حساب صاحب المساحة أولًا', true); return; }
+  const label = document.getElementById('attach-branch-label').value.trim();
+  try {
+    const { error } = await sbDirect.rpc('admin_manage_org_branch', {
+      p_organization_id: currentOrgId, p_owner_id: pickedOwnerId, p_action: 'attach', p_label: label || null
+    });
+    if (error) throw error;
+    closeModal('modal-attach-branch');
+    admToast('✅ تم ربط الفرع');
+    loadOrgDetail();
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+/* ── Members tab ── */
+const ROLE_LABEL = { ceo: 'CEO', regional_manager: 'مدير منطقة', branch_manager: 'مدير فرع' };
+const ORG_STATUS_LABEL = { active: 'مفعّلة', suspended: 'موقوفة', trial_expired: 'انتهت التجربة', payment_failed: 'فشل الدفع', cancelled: 'ملغاة' };
+
+function renderMembers() {
+  const cont = document.getElementById('members-list');
+  const members = currentOrgDetail.members || [];
+  if (!members.length) {
+    cont.innerHTML = '<div class="adm-empty">لا يوجد أعضاء بعد — استخدم زر "منح عضوية جديدة" أعلاه</div>';
+    return;
+  }
+  const branches = currentOrgDetail.branches || [];
+  cont.innerHTML = members.map(m => {
+    // نفس الشخص قد يكون "عضو إدارة" و"صاحب فرع" معًا بنفس المؤسسة — نوضّح هذا صراحةً
+    // بدل عرض الاسم/البريد فقط وترك الأدمن يفترض أنهما شخصان مختلفان أو يخلط بينهما
+    const ownedBranch = branches.find(b => b.owner_id === m.user_id);
+    const ownerTag = ownedBranch ? `<span class="item-chip" style="background:#ECFEFF;color:#0E7490">📍 صاحب فرع أيضًا: ${escHtml(ownedBranch.label)}</span>` : '';
+    return `
+    <div class="item-card">
+      <div class="item-info">
+        <strong>${escHtml(m.user_name || '—')} <span style="font-weight:400;color:#999;font-size:11px">(عضو إدارة)</span></strong>
+        <span>${escHtml(m.user_email || '—')}</span>
+        <div><span class="item-chip chip-${m.org_role}">${ROLE_LABEL[m.org_role] || m.org_role}</span>${ownerTag}</div>
+      </div>
+      <button class="adm-btn adm-btn-danger" onclick="revokeMember('${m.user_id}')">سحب العضوية</button>
+    </div>
+  `;
+  }).join('');
+}
+
+async function revokeMember(userId, force) {
+  if (!force && !confirm('سحب عضوية هذا المستخدم من المؤسسة؟')) return;
+  try {
+    const { data, error } = await sbDirect.rpc('admin_manage_org_member', {
+      p_organization_id: currentOrgId, p_user_id: userId, p_action: 'revoke', p_force: !!force
+    });
+    if (error) throw error;
+    if (data && data.ok === false && data.warning === 'last_ceo') {
+      const proceed = confirm(
+        `⚠️ هذا العضو هو آخر CEO فعّال في هذه المؤسسة.\n` +
+        `سحب صلاحيته سيترك المؤسسة بلا أي عضو يمكنه إدارتها ذاتيًا (يبقى الأدمن قادرًا على منح صلاحيات جديدة دائمًا).\n\n` +
+        `متابعة السحب رغم ذلك؟`
+      );
+      if (proceed) return revokeMember(userId, true);
+      return;
+    }
+    admToast('تم سحب العضوية');
+    loadOrgDetail();
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+let _grantSearchTimer = null;
+function searchProfilesForGrant() {
+  clearTimeout(_grantSearchTimer);
+  _grantSearchTimer = setTimeout(async () => {
+    const q = document.getElementById('grant-user-search').value.trim();
+    if (q.length < 2) { document.getElementById('grant-user-results').innerHTML = ''; return; }
+    const { data, error } = await sbDirect.rpc('admin_search_profiles', { p_query: q });
+    const cont = document.getElementById('grant-user-results');
+    if (error || !data) { cont.innerHTML = ''; return; }
+    cont.innerHTML = data.map(p => `
+      <div class="search-result-row" onclick="pickUserForGrant('${p.id}','${escHtml(p.full_name)}')">
+        ${escHtml(p.full_name)} — ${escHtml(p.email)} <span style="color:#999">(${escHtml(p.role)})</span>
+      </div>
+    `).join('') || '<div class="search-result-row">لا نتائج</div>';
+  }, 250);
+}
+
+function pickUserForGrant(id, name) {
+  pickedUserId = id;
+  document.getElementById('grant-user-picked-hint').textContent = '✅ تم اختيار: ' + name;
+  document.getElementById('grant-user-results').innerHTML = '';
+}
+
+function onGrantRoleChange() {
+  const role = document.getElementById('grant-org-role').value;
+  const wrap = document.getElementById('grant-scope-wrap');
+  if (role !== 'regional_manager') { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  pickedScopeBranchIds = new Set();
+  const branches = (currentOrgDetail && currentOrgDetail.branches) || [];
+  document.getElementById('grant-scope-branches').innerHTML = branches.map(b => `
+    <div class="search-result-row" onclick="toggleScopeBranch('${b.id}', this)">${escHtml(b.label || b.owner_name)}</div>
+  `).join('') || '<div class="search-result-row">لا توجد فروع في هذه المؤسسة بعد</div>';
+}
+
+function toggleScopeBranch(branchId, el) {
+  if (pickedScopeBranchIds.has(branchId)) { pickedScopeBranchIds.delete(branchId); el.classList.remove('picked'); }
+  else { pickedScopeBranchIds.add(branchId); el.classList.add('picked'); }
+}
+
+async function submitGrantMember(force) {
+  if (!pickedUserId) { admToast('اختر المستخدم أولًا', true); return; }
+  const role = document.getElementById('grant-org-role').value;
+  if (role === 'regional_manager' && pickedScopeBranchIds.size === 0) {
+    admToast('مدير المنطقة يجب أن يُحدَّد له فرع واحد على الأقل ضمن نطاقه', true);
+    return;
+  }
+  try {
+    const { data, error } = await sbDirect.rpc('admin_manage_org_member', {
+      p_organization_id: currentOrgId, p_user_id: pickedUserId, p_action: 'grant',
+      p_org_role: role,
+      p_scope_branch_ids: role === 'regional_manager' ? Array.from(pickedScopeBranchIds) : null,
+      p_force: !!force
+    });
+    if (error) throw error;
+    if (data && data.ok === false && data.warning === 'owns_branch_in_org') {
+      const proceed = confirm(
+        `⚠️ هذا الحساب يملك بالفعل فرعًا نشطًا داخل هذه المؤسسة ("${data.conflict_branch_label}").\n` +
+        `منحه هذه الصلاحية يعني اطّلاعه على بيانات كل الفروع الأخرى في نفس المؤسسة (وقد تكون فروعًا منافسة له).\n\n` +
+        `متابعة المنح رغم ذلك؟`
+      );
+      if (proceed) return submitGrantMember(true);
+      return;
+    }
+    closeModal('modal-grant-member');
+    admToast('✅ تم منح العضوية');
+    loadOrgDetail();
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+/* ── Audit tab ── */
+async function loadAuditLog() {
+  const cont = document.getElementById('audit-list');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div></div>';
+  try {
+    const { data, error } = await sbDirect.rpc('admin_get_org_audit_log', { p_organization_id: currentOrgId });
+    if (error) throw error;
+    if (!data || !data.length) { cont.innerHTML = '<div class="adm-empty">لا يوجد سجل بعد</div>'; return; }
+    cont.innerHTML = data.map(l => `
+      <div class="audit-row">
+        <span class="a-actor">${escHtml(l.actor_name)}</span>
+        <span class="a-action">${escHtml(l.action)}</span>
+        <span class="a-time">${new Date(l.created_at).toLocaleString('ar-EG')}</span>
+        ${l.meta ? `<div class="a-meta">${escHtml(JSON.stringify(l.meta))}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    cont.innerHTML = `<div class="adm-empty">تعذّر تحميل السجل: ${escHtml(e.message || e)}</div>`;
+  }
+}
+
+/* ── Modal helpers ── */
+function openModal(id) {
+  if (id === 'modal-grant-member') {
+    pickedUserId = null;
+    document.getElementById('grant-user-search').value = '';
+    document.getElementById('grant-user-results').innerHTML = '';
+    document.getElementById('grant-user-picked-hint').textContent = '';
+    document.getElementById('grant-org-role').value = 'ceo';
+    document.getElementById('grant-scope-wrap').style.display = 'none';
+  }
+  if (id === 'modal-delete-org') {
+    document.getElementById('delete-org-name-label').textContent = currentOrgDetail?.name || '';
+    document.getElementById('delete-org-confirm-input').value = '';
+  }
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+async function submitDeleteOrg() {
+  const typed = document.getElementById('delete-org-confirm-input').value;
+  try {
+    const { error } = await sbDirect.rpc('admin_delete_organization', {
+      p_organization_id: currentOrgId, p_confirm_name: typed
+    });
+    if (error) throw error;
+    closeModal('modal-delete-org');
+    admToast('🗑️ تم حذف المؤسسة');
+    showList();
+    admLoadOrgs();
+  } catch (e) { admToast('خطأ: ' + (e.message || e), true); }
+}
+
+/* ── Toast ── */
+let _toastTimer = null;
+function admToast(msg, isErr) {
+  const t = document.getElementById('adm-toast');
+  t.textContent = msg;
+  t.className = 'adm-toast show' + (isErr ? ' err' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = 'adm-toast'; }, 3000);
+}
+
+/* ── Enter key login ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('adm-login').style.display !== 'none') admLogin();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>لوحة المؤسسة — مكاني Spot</title>
+<meta name="theme-color" content="#F36418">
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #F7F7F7; color: #333; font-size: 14px; }
+
+/* ── Gate screen (session / no-org states) ── */
+.gate {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2E2E2E 100%); padding: 20px;
+}
+.gate-box { background: #fff; border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 440px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.gate-logo { font-size: 40px; margin-bottom: 12px; }
+.gate-box h1 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+.gate-box p { font-size: 13px; color: #666; line-height: 1.8; margin-bottom: 24px; }
+.gate-btn { display: inline-block; padding: 13px 28px; background: #F36418; color: #fff; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 14px; }
+.gate-btn:hover { background: #E85E00; }
+.org-pick-list { text-align: right; margin-top: 10px; }
+.org-pick-item { padding: 14px 16px; border: 1.5px solid #E8E8E8; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: border-color .2s; }
+.org-pick-item:hover { border-color: #F36418; }
+.org-pick-item strong { display: block; font-size: 14px; font-weight: 800; }
+.org-pick-item span { font-size: 12px; color: #888; }
+
+/* ── Main ── */
+#dash { display: none; min-height: 100vh; }
+.top-nav {
+  background: #1A1A1A; color: #fff; padding: 10px 28px; min-height: 64px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  position: sticky; top: 0; z-index: 100;
+}
+.top-nav .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 16px; }
+.top-nav .brand .org-name { color: #F36418; }
+.top-nav-right { display: flex; align-items: center; gap: 14px; font-size: 13px; flex-wrap: wrap; row-gap: 8px; }
+.stale-note { color: #FBBF24; }
+.nav-btn { padding: 7px 14px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 12px; }
+.nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+.goal-strip { background: #FFF7ED; border: 1px solid #FBD5B5; border-radius: 12px; padding: 12px 18px; font-size: 12.5px; color: #9A3412; margin-bottom: 20px; line-height: 1.7; }
+
+/* ── Executive snapshot + since-last-visit (مراجعة UX الثانية) ── */
+.exec-snapshot { font-size: 16px; font-weight: 900; padding: 16px 20px; border-radius: 14px; margin-bottom: 14px; }
+.exec-good { background: #ECFDF5; color: #15803D; border: 1px solid #A7F3D0; }
+.exec-warn { background: #FFF7ED; color: #C2410C; border: 1px solid #FDBA74; }
+.since-visit-box { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; }
+.since-visit-hdr { font-weight: 800; color: #666; margin-bottom: 8px; }
+.since-visit-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.since-visit-list li { color: #333; }
+
+/* ── Status census strip ── */
+.status-census { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 14px; }
+.census-item { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 50px; background: #F7F7F7; color: #555; }
+
+/* ── Best/worst spotlight ── */
+.spotlight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.spotlight-card { border-radius: 14px; padding: 14px 16px; }
+.spotlight-best { background: #ECFDF5; border: 1px solid #A7F3D0; }
+.spotlight-worst { background: #FEF2F2; border: 1px solid #FCA5A5; }
+.spotlight-lbl { font-size: 11px; font-weight: 800; opacity: .75; margin-bottom: 4px; }
+.spotlight-name { font-size: 14px; font-weight: 900; color: #1A1A1A; }
+.spotlight-score { font-size: 11px; margin-top: 2px; opacity: .8; }
+
+/* ── Owner contact + new-branch tag on branch cards ── */
+.branch-contact { font-size: 11px; color: #888; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.branch-contact a { color: #1D4ED8; text-decoration: none; }
+.new-branch-tag { background: #EFF6FF; color: #1D4ED8; }
+
+/* ── Activity feed ── */
+.activity-list { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 6px 18px; }
+.activity-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F3F3F3; font-size: 12.5px; color: #333; }
+.activity-row:last-child { border-bottom: none; }
+.activity-time { font-size: 11px; color: #AAA; flex-shrink: 0; }
+
+/* ── Alerts ── */
+.alerts-box { margin-bottom: 24px; }
+.alert-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
+.alert-critical { background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; }
+.alert-warning  { background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E; }
+.alert-info     { background: #EFF6FF; border: 1px solid #93C5FD; color: #1D4ED8; }
+.alert-row b { font-weight: 800; }
+
+/* ── KPI tiles ── */
+.section-title { font-size: 14px; font-weight: 900; color: #1A1A1A; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.kpi-tile { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 16px 18px; }
+.kpi-num { font-size: 26px; font-weight: 900; color: #1A1A1A; }
+.kpi-num.dim { color: #BBB; font-size: 18px; }
+.kpi-lbl { font-size: 11.5px; font-weight: 700; color: #888; margin-top: 4px; }
+.kpi-trend { font-size: 11px; font-weight: 800; margin-top: 6px; }
+.trend-up { color: #16A34A; } .trend-down { color: #DC2626; } .trend-flat { color: #999; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-left: 4px; }
+.dot-g { background: #22C55E; } .dot-y { background: #F59E0B; } .dot-r { background: #EF4444; } .dot-n { background: #D1D5DB; }
+
+/* ── Branch health cards ── */
+.branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.branch-card { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 16px 18px; }
+.branch-card.crown { border-color: #F59E0B; box-shadow: 0 0 0 1px #F59E0B inset; }
+.branch-top { display: flex; align-items: start; justify-content: space-between; margin-bottom: 10px; }
+.branch-name { font-weight: 800; font-size: 14px; color: #1A1A1A; }
+.branch-plan { font-size: 10px; color: #999; margin-top: 2px; }
+.health-num { font-size: 28px; font-weight: 900; }
+.health-lbl { font-size: 11px; font-weight: 800; margin-top: -4px; }
+.health-g { color: #16A34A; } .health-y { color: #D97706; } .health-r { color: #DC2626; } .health-n { color: #6B7280; }
+.branch-metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 11px; color: #666; }
+.branch-metrics span { background: #F7F7F7; border-radius: 6px; padding: 3px 8px; }
+.opp-badge { display: inline-flex; align-items: center; gap: 4px; background: #F3E8FF; color: #7E22CE; border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 800; margin-top: 10px; }
+.suspended-tag { background: #FEE2E2; color: #991B1B; }
+
+/* ── Compare ── */
+.compare-list { background: #fff; border: 1px solid #E8E8E8; border-radius: 14px; padding: 18px 20px; }
+.compare-controls { display: flex; gap: 8px; margin-bottom: 16px; }
+.compare-controls button { padding: 6px 14px; border-radius: 50px; border: 1.5px solid #E8E8E8; background: #fff; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+.compare-controls button.on { background: #1A1A1A; color: #fff; border-color: #1A1A1A; }
+.compare-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.compare-name { width: 130px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compare-bar-wrap { flex: 1; background: #F0F0F0; border-radius: 6px; height: 16px; overflow: hidden; }
+.compare-bar { height: 100%; background: linear-gradient(90deg,#F36418,#FBBF24); border-radius: 6px; }
+.compare-val { width: 46px; font-size: 12px; font-weight: 800; text-align: left; flex-shrink: 0; }
+
+.empty-box { text-align: center; padding: 50px 20px; color: #999; background: #fff; border: 1px dashed #E0E0E0; border-radius: 14px; }
+.empty-box .e-icon { font-size: 36px; margin-bottom: 10px; }
+.hint-note { font-size: 12px; color: #AAA; text-align: center; margin-top: 10px; }
+
+.loading-box { text-align: center; padding: 60px 20px; color: #999; }
+.spinner { width: 38px; height: 38px; border-radius: 50%; border: 4px solid #E8E8E8; border-top-color: #F36418; animation: spin .9s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .top-nav { padding: 10px 14px; }
+  .wrap { padding: 18px 12px 50px; }
+  #nav-updated { display: none; } /* الشارة عند التقادم أهم من نص الوقت الدقيق على الشاشات الضيقة */
+  .top-nav-right { gap: 8px; }
+  .top-nav .brand { font-size: 14px; }
+  .spotlight-row { grid-template-columns: 1fr; }
+  .exec-snapshot { font-size: 14px; padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Gate ── -->
+<div class="gate" id="gate">
+  <div class="gate-box" id="gate-box">
+    <div class="gate-logo">🏢</div>
+    <h1 id="gate-title">جاري التحقق من الجلسة…</h1>
+    <p id="gate-body">لحظات من فضلك.</p>
+    <div id="gate-cta"></div>
+  </div>
+</div>
+
+<!-- ── Dashboard ── -->
+<div id="dash">
+  <nav class="top-nav">
+    <div class="brand">🏢 لوحة المؤسسة — <span class="org-name" id="nav-org-name">—</span></div>
+    <div class="top-nav-right">
+      <a href="/" class="nav-btn" style="text-decoration:none">← المنصة</a>
+      <a href="/dashboard/" class="nav-btn" id="nav-my-branch-btn" style="display:none;text-decoration:none">لوحة فرعي ←</a>
+      <span id="nav-updated"></span>
+      <span class="stale-note" id="nav-stale" style="display:none">⚠️ البيانات قديمة</span>
+      <button class="nav-btn" onclick="refreshNow()">🔄 تحديث الآن</button>
+      <button class="nav-btn" onclick="doLogout()">خروج</button>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <div class="goal-strip">
+      🎯 هذه اللوحة لدعم القرار فقط — لا تُستخدم لإدارة العمليات اليومية. لإدارة مساحة أو حجز بعينه، افتح لوحة الفرع نفسها من حسابه الخاص.
+    </div>
+
+    <div id="content"><div class="loading-box"><div class="spinner"></div>جاري تحميل بيانات المؤسسة…</div></div>
+  </div>
+</div>
+
+<script src="../shared/sb-config.js?v=20260729102537"></script>
+<script src="app.js?v=20260729102537"></script>
+</body>
+</html>

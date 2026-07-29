@@ -8,8 +8,8 @@
     content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260722181835">
-  <script src="/version.js?v=20260722181835"></script>
+  <link rel="manifest" href="/manifest.json?v=20260729102537">
+  <script src="/version.js?v=20260729102537"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -94,16 +94,16 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=20260722181835">
+  <link rel="stylesheet" href="style.css?v=20260729102537">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260722181835" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260722181835" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260722181835" defer></script>
-  <script src="/shared/i18n.js?v=20260722181835" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260729102537" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260729102537" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260729102537" defer></script>
+  <script src="/shared/i18n.js?v=20260729102537" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -321,6 +321,17 @@
                 <path d="M9 20v-6h6v6" />
               </svg>
               <span data-i18n="userMenu.ownerDashboard">لوحة أصحاب المساحات</span>
+            </button>
+            <button class="nav-dropdown-item" id="dd-org-dash-btn" onclick="window.location.href='/org/';closeUserDropdown()"
+              style="display:none;color:#7E22CE;font-weight:700">
+              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="9" rx="1" />
+                <rect x="14" y="3" width="7" height="5" rx="1" />
+                <rect x="14" y="12" width="7" height="9" rx="1" />
+                <rect x="3" y="16" width="7" height="5" rx="1" />
+              </svg>
+              <span>لوحة المؤسسة</span>
             </button>
             <div class="nav-dropdown-sep"></div>
             <button type="button" class="nav-dropdown-item nav-dd-lang-trigger" id="dd-lang-trigger" onclick="toggleDdLangPanel(event)">
@@ -3094,14 +3105,14 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=20260722181835" defer></script>
-  <script src="/pwa-install.js?v=20260722181835" defer></script>
-  <script src="shared/space-model.js?v=20260722181835" defer></script>
-  <script src="shared/booking.js?v=20260722181835" defer></script>
-  <script src="shared/account.js?v=20260722181835" defer></script>
-  <script src="shared/plan-badge.js?v=20260722181835" defer></script>
-  <script src="/notifications.js?v=20260722181835" defer></script>
-  <script src="app.js?v=20260722181835" defer></script>
+  <script src="shared/sb-config.js?v=20260729102537" defer></script>
+  <script src="/pwa-install.js?v=20260729102537" defer></script>
+  <script src="shared/space-model.js?v=20260729102537" defer></script>
+  <script src="shared/booking.js?v=20260729102537" defer></script>
+  <script src="shared/account.js?v=20260729102537" defer></script>
+  <script src="shared/plan-badge.js?v=20260729102537" defer></script>
+  <script src="/notifications.js?v=20260729102537" defer></script>
+  <script src="app.js?v=20260729102537" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -3221,7 +3232,7 @@
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
           .then(reg => {
             /* فحص دوري للتحديثات كل 30 دقيقة */
-            setInterval(() => reg.update(), 30 * 60 * 1000);
+            setInterval(() => reg.update().catch(err => console.warn('SW update check failed:', err)), 30 * 60 * 1000);
 
             reg.addEventListener('updatefound', () => {
               const worker = reg.installing;
