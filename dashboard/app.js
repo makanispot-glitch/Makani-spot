@@ -1146,6 +1146,7 @@ function initDashboard() {
   /* كل البيانات من Supabase: loadOwnerData يحمّل المساحات + العقود + المدفوعات
      + المخالفات + التقييمات + الإعدادات + الحجوزات، ثم يحسب الفراغ ويرسم كل شيء. */
   loadOwnerData().then(() => loadOwnerRatings());
+  loadFormCatalogs();   /* كتالوجا الأنشطة والمناطق — بالتوازي، جاهزة عادةً قبل فتح أي نموذج */
   GN.init(getSB(), currentOwner.id);
   subscribeNotificationsRealtime();
   cleanupOldNotifications();       /* حذف الإشعارات الأقدم من 90 يوم */
@@ -4022,6 +4023,90 @@ const SE_AMENITIES = [
   { id:'light',   val:'إضاءة',     ico:'💡' },
 ];
 
+/* ── كتالوجا الأنشطة والمناطق المعتمدة (space_activities / space_areas) —
+   مصدر واحد يغذّي منتقيَي الأنشطة (إضافة/تعديل) وقائمتَي المناطق المقترحة ── */
+let DASH_ACTIVITIES      = [];
+let DASH_AREAS           = [];
+let _formCatalogsPromise = null;
+let _asIconManuallySet   = false;
+
+function _escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadFormCatalogs() {
+  if (_formCatalogsPromise) return _formCatalogsPromise;
+  const sb = getSB();
+  if (!sb) return Promise.resolve();
+  _formCatalogsPromise = Promise.all([
+    sb.from('space_activities').select('id,emoji,name_ar').eq('is_active', true).order('sort_order'),
+    sb.from('space_areas').select('id,name').eq('is_active', true).order('sort_order'),
+  ]).then(([actRes, areaRes]) => {
+    DASH_ACTIVITIES = actRes.data || [];
+    DASH_AREAS      = areaRes.data || [];
+    renderAsActivityPicker();
+    renderSeActivityPicker();
+    populateAreaDatalists();
+  }).catch(() => {});
+  return _formCatalogsPromise;
+}
+
+function populateAreaDatalists() {
+  const dl = document.getElementById('area-presets');
+  if (dl) dl.innerHTML = DASH_AREAS.map(a => `<option value="${_escHtml(a.name)}"></option>`).join('');
+}
+
+/* ── منتقي الأنشطة — شبكة چيبس مشتركة الشكل بين نموذجي الإضافة والتعديل ── */
+function renderAsActivityPicker(selected) {
+  const picker = document.getElementById('as-acts-picker');
+  if (!picker) return;
+  const selectedSet = new Set(selected || Array.from(document.querySelectorAll('.as-act-pick:checked')).map(x=>x.value));
+  if (!DASH_ACTIVITIES.length) {
+    picker.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px">⏳ جاري تحميل الأنشطة…</div>';
+    return;
+  }
+  picker.innerHTML = DASH_ACTIVITIES.map(a => `
+    <label class="pick-chip">
+      <input type="checkbox" class="as-act-pick" value="${_escHtml(a.id)}" ${selectedSet.has(a.id)?'checked':''} onchange="onAsActPick(this)">
+      <span>${_escHtml(a.emoji||'🏷️')} ${_escHtml(a.name_ar||a.id)}</span>
+    </label>`).join('');
+}
+
+function renderSeActivityPicker(selected) {
+  const picker = document.getElementById('se-acts-picker');
+  if (!picker) return;
+  const selectedSet = new Set(selected || Array.from(document.querySelectorAll('.se-act-pick:checked')).map(x=>x.value));
+  if (!DASH_ACTIVITIES.length) {
+    picker.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:6px">⏳ جاري تحميل الأنشطة…</div>';
+    return;
+  }
+  picker.innerHTML = DASH_ACTIVITIES.map(a => `
+    <label class="pick-chip">
+      <input type="checkbox" class="se-act-pick" value="${_escHtml(a.id)}" ${selectedSet.has(a.id)?'checked':''}>
+      <span>${_escHtml(a.emoji||'🏷️')} ${_escHtml(a.name_ar||a.id)}</span>
+    </label>`).join('');
+}
+
+/* أول نشاط يُختار (ما لم يتدخل المستخدم يدويًا عبر "✏️ تغيير") يشتق أيقونة المساحة تلقائيًا */
+function onAsActPick(checkbox) {
+  if (!checkbox.checked || _asIconManuallySet) return;
+  const act = DASH_ACTIVITIES.find(a => a.id === checkbox.value);
+  if (act && act.emoji) updateAsIconPreview(act.emoji);
+}
+
+function toggleIconOverride() {
+  const sel = document.getElementById('as-icon');
+  if (sel) sel.style.display = sel.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateAsIconPreview(emoji) {
+  if (!emoji) return;
+  const preview = document.getElementById('as-icon-preview');
+  if (preview) preview.textContent = emoji;
+  const sel = document.getElementById('as-icon');
+  if (sel) sel.value = emoji;
+}
+
 function openSpaceEdit(spaceId) {
   const s = ownerSpacesFull.find(x => x.id === spaceId);
   if (!s) return;
@@ -4041,7 +4126,8 @@ function openSpaceEdit(spaceId) {
   set('se-sizes',  s.sizesStr);
   set('se-season', s.season);
   set('se-insight',s.insight);
-  set('se-acts',   s.activities.join(' · '));
+  loadFormCatalogs();
+  renderSeActivityPicker(s.activities);
   setChk('se-all-acts', s.allActs);
 
   document.getElementById('se-title').textContent = '✏️ تعديل: ' + s.name;
@@ -4183,8 +4269,7 @@ async function submitSpaceEdit() {
   const customAmen = get('se-amen-custom');
   if (customAmen) amenArr.push(customAmen);
 
-  const actsRaw = get('se-acts');
-  const actsArr = actsRaw ? actsRaw.split('·').map(x=>x.trim()).filter(Boolean) : [];
+  const actsArr = Array.from(document.querySelectorAll('.se-act-pick:checked')).map(x=>x.value);
 
   const payload = {
     name:         name,
@@ -5880,14 +5965,6 @@ function getSizesString() {
   return sizes.join(' · ');
 }
 
-function addAct(act) {
-  const el = document.getElementById('as-acts');
-  if (!el) return;
-  const cur = el.value.trim();
-  if (!cur) { el.value = act; return; }
-  if (!cur.split('·').map(s=>s.trim()).includes(act)) el.value = cur + ' · ' + act;
-}
-
 function getAmenitiesString() {
   const checked = Array.from(document.querySelectorAll('[id^="as-amen-"]:checked')).map(c => c.value);
   const custom  = document.getElementById('as-amen-custom')?.value.trim();
@@ -5896,11 +5973,10 @@ function getAmenitiesString() {
 }
 
 function updateSpaceIcon() {
-  const type    = document.getElementById('as-type')?.value;
-  const iconSel = document.getElementById('as-icon');
-  if (!iconSel || !type) return;
+  const type = document.getElementById('as-type')?.value;
+  if (!type || _asIconManuallySet) return;
   const defaults = { mall:'🏬', club:'🏊', school:'🏫' };
-  if (defaults[type]) iconSel.value = defaults[type];
+  if (defaults[type]) updateAsIconPreview(defaults[type]);
 }
 
 /* ── map profile entityType (Arabic string) → space type code ── */
@@ -5928,7 +6004,14 @@ function initAddSpaceForm() {
     typeChip.textContent = display;
     typeChip.style.color = 'var(--text1)';
   }
+  _asIconManuallySet = false;
+  const iconOverrideSel = document.getElementById('as-icon');
+  if (iconOverrideSel) iconOverrideSel.style.display = 'none';
   updateSpaceIcon();
+
+  /* الأنشطة والمناطق المعتمدة — تُحمَّل مرة واحدة (loadFormCatalogs مُخزَّنة مؤقتًا) */
+  loadFormCatalogs();
+  renderAsActivityPicker([]);
 
   /* المنطقة/المدينة — من البروفايل (بدون تغيير لو الحقل فيه قيمة بالفعل) */
   const locEl = document.getElementById('as-loc');
@@ -6342,8 +6425,7 @@ async function submitAddSpace(e) {
     };
     const tm = typeMap[resolvedType] || typeMap.mall;
 
-    const actsRaw = get('as-acts');
-    const actsArr = actsRaw ? actsRaw.split('·').map(s => s.trim()).filter(Boolean) : [];
+    const actsArr = Array.from(document.querySelectorAll('.as-act-pick:checked')).map(x=>x.value);
     const amenStr = getAmenitiesString();
     const amenArr = amenStr ? amenStr.split('·').map(s => s.trim()).filter(Boolean) : [];
 

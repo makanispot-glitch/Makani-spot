@@ -1472,16 +1472,13 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
   if (!el || !sbClient) return;
   try {
     const todayStr = _cairoTodayStr();
-    const { data: past } = await sbClient
-      .from('bazaars')
-      .select('id,name,date_start,date_end,event_links')
-      .eq('organizer_id', organizerId)
-      .neq('id', currentBazaarId)
-      .lt('date_end', todayStr)
-      .in('status', ['published', 'live', 'completed'])
-      .eq('is_deleted', false)
-      .order('date_end', { ascending: false })
-      .limit(5);
+    /* get_organizer_public_bazaars لا يستبعد المؤرشف عمدًا — الأرشفة تخفي البازار من /bazaars/
+       العامة بس، مش من "بازارات سابقة" هنا. الفرز/الحد الأقصى بقى في JS بدل السلسلة على .from() */
+    const { data: allOrgBz } = await sbClient.rpc('get_organizer_public_bazaars', { p_organizer_id: organizerId });
+    const past = (allOrgBz || [])
+      .filter(b => b.id !== currentBazaarId && b.date_end && b.date_end < todayStr)
+      .sort((a, b) => (b.date_end || '').localeCompare(a.date_end || ''))
+      .slice(0, 5);
 
     if (!past?.length) { el.remove(); return; }
 

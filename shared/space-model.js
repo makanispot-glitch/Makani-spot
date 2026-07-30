@@ -86,6 +86,21 @@ function resolveSizePrice(space, sizeLabel) {
   return space.price || 0;
 }
 
+/**
+ * يجلب كتالوج الأنشطة التجارية (space_activities) — مصدر واحد بدل تكرار نفس
+ * الاستعلام في app.js و spaces/app.js. يُعيد الصفوف الخام {id, emoji, name_ar}
+ * (وليس label مدموجاً) لأن بعض المستهلكين (منتقي لوحة المالك) يحتاجون emoji بمفرده.
+ */
+async function fetchActivitiesCatalog(sbClient) {
+  const { data, error } = await sbClient
+    .from('space_activities')
+    .select('id, emoji, name_ar')
+    .eq('is_active', true)
+    .order('sort_order');
+  if (error) throw error;
+  return data || [];
+}
+
 /* fetchLiveSpaces (تحميل كل المساحات دفعة واحدة) أُزيلت — كانت جذر مشكلة
    عدم وجود Pagination خادمي. استبدلها searchPublicSpaces أدناه لكل الحالات. */
 

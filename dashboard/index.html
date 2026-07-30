@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>مكاني Spot — لوحة تحكم أصحاب المساحات</title>
-<link rel="manifest" href="/manifest.json?v=20260729213646">
-<script src="/version.js?v=20260729213646"></script>
+<link rel="manifest" href="/manifest.json?v=20260730171541">
+<script src="/version.js?v=20260730171541"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -2255,6 +2255,18 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 .amenity-chip .chip-check { display: none; }
 .amenity-chip:has(input:checked) .chip-check { display: inline; }
 
+/* ── Activity picker chips (add/edit space forms) — منتقي الأنشطة الموحّد ── */
+.chip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 6px; }
+.pick-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r);
+  padding: 7px 9px; font-size: 12px; font-weight: 600; color: var(--text2);
+  cursor: pointer; user-select: none; transition: all .15s;
+}
+.pick-chip:hover { border-color: var(--orange); color: var(--text1); }
+.pick-chip input { accent-color: var(--orange); }
+.pick-chip:has(input:checked) { background: var(--orange-pale); border-color: rgba(255,106,26,0.35); color: var(--orange); }
+
 /* ── Size presets + rows (add-space form) ── */
 .size-preset-chip {
   font-size: 12px;
@@ -3038,7 +3050,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
               <div class="se-section-title">📋 البيانات الأساسية</div>
               <div class="form-row">
                 <div class="form-group" style="margin:0"><label>اسم المساحة *</label><input type="text" id="se-name" placeholder="مثال: مول الخليج — الجناح الغربي"></div>
-                <div class="form-group" style="margin:0"><label>المنطقة *</label><input type="text" id="se-region" placeholder="مثال: مدينة نصر، القاهرة"></div>
+                <div class="form-group" style="margin:0"><label>المنطقة *</label><input type="text" id="se-region" list="area-presets" placeholder="مثال: مدينة نصر، القاهرة"></div>
               </div>
               <div class="form-group" style="margin-top:12px">
                 <label>وصف المساحة</label>
@@ -3065,8 +3077,8 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
               <!-- الأنشطة -->
               <div class="se-section-title" style="margin-top:20px">🏷️ الأنشطة المسموح بها</div>
               <div class="form-group" style="margin:0">
-                <label>الأنشطة (افصل بنقطة وسطى ·)</label>
-                <input type="text" id="se-acts" placeholder="مطعم · مقهى · متجر ملابس · عطور">
+                <label>الأنشطة</label>
+                <div id="se-acts-picker" class="chip-grid"></div>
               </div>
               <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;cursor:pointer">
                 <input type="checkbox" id="se-all-acts" style="accent-color:var(--orange)">
@@ -3561,12 +3573,18 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <div class="form-row" style="margin-top:12px">
                   <div class="form-group" style="margin:0">
                     <label>المنطقة / المدينة <span style="color:var(--red)">*</span></label>
-                    <input type="text" id="as-loc" placeholder="مثال: مدينة نصر، الزمالك" required>
-                    <div style="font-size:10px;color:var(--text3);margin-top:4px">مأخوذ من بروفايلك — يمكن تغييره لهذه المساحة تحديداً</div>
+                    <input type="text" id="as-loc" list="area-presets" placeholder="مثال: مدينة نصر، الزمالك" required>
+                    <datalist id="area-presets"></datalist>
+                    <div style="font-size:10px;color:var(--text3);margin-top:4px">مأخوذ من بروفايلك — يمكن تغييره لهذه المساحة تحديداً. اكتب اسمًا جديدًا لو منطقتك غير موجودة</div>
                   </div>
                   <div class="form-group" style="margin:0">
-                    <label>أيقونة النشاط</label>
-                    <select id="as-icon">
+                    <label>أيقونة المساحة</label>
+                    <div id="as-icon-display" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;min-height:38px">
+                      <span id="as-icon-preview" style="font-size:18px">🏬</span>
+                      <span style="font-size:11px;color:var(--text3);flex:1">تُشتق تلقائيًا من أول نشاط تختاره أدناه</span>
+                      <button type="button" onclick="toggleIconOverride()" style="background:none;border:none;color:var(--orange);font-size:11px;cursor:pointer;padding:0;flex-shrink:0">✏️ تغيير</button>
+                    </div>
+                    <select id="as-icon" style="display:none;margin-top:6px" onchange="_asIconManuallySet=true;updateAsIconPreview(this.value)">
                       <option value="🏬">🏬 متجر عام</option>
                       <option value="☕">☕ قهوة / مقهى</option>
                       <option value="🥤">🥤 مشروبات</option>
@@ -3594,18 +3612,8 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 
                 <!-- activities — مخفي لما allActs مفعّل -->
                 <div id="as-acts-section" class="form-group">
-                  <label>الأنشطة المسموحة <span style="font-size:10px;color:var(--text3)">(افصل بـ · )</span></label>
-                  <input type="text" id="as-acts" placeholder="مثال: قهوة · مشروبات · حلويات">
-                  <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:5px">
-                    <button type="button" onclick="addAct('قهوة')"       style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">☕ قهوة</button>
-                    <button type="button" onclick="addAct('مشروبات')"    style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🥤 مشروبات</button>
-                    <button type="button" onclick="addAct('حلويات')"     style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🍬 حلويات</button>
-                    <button type="button" onclick="addAct('أكل')"        style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🍔 أكل</button>
-                    <button type="button" onclick="addAct('إكسسوار')"   style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">💎 إكسسوار</button>
-                    <button type="button" onclick="addAct('ملابس')"      style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">👗 ملابس</button>
-                    <button type="button" onclick="addAct('هاند ميد')"  style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">🎨 هاند ميد</button>
-                    <button type="button" onclick="addAct('متنوع')"      style="background:var(--orange-pale);border:1px solid rgba(255,107,0,0.25);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--orange)">📦 متنوع</button>
-                  </div>
+                  <label>الأنشطة المسموحة</label>
+                  <div id="as-acts-picker" class="chip-grid"></div>
                 </div>
 
                 <!-- description -->
@@ -4271,15 +4279,15 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=20260729213646"></script>
+<script src="../media-handler.js?v=20260730171541"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="/notifications.js?v=20260729213646"></script>
-<script src="../shared/sb-config.js?v=20260729213646"></script>
-<script src="../shared/account.js?v=20260729213646"></script>
-<script src="/pwa-install.js?v=20260729213646" defer></script>
-<script src="app.js?v=20260729213646"></script>
+<script src="/notifications.js?v=20260730171541"></script>
+<script src="../shared/sb-config.js?v=20260730171541"></script>
+<script src="../shared/account.js?v=20260730171541"></script>
+<script src="/pwa-install.js?v=20260730171541" defer></script>
+<script src="app.js?v=20260730171541"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>

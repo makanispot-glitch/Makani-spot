@@ -215,9 +215,10 @@ textarea.fc{resize:vertical;min-height:72px}
 .f-err-msg{font-size:11px;color:var(--rd);margin-top:4px}
 .f-ok-msg{font-size:11px;color:var(--gr);margin-top:4px}
 /* sizes preview chips */
-.size-chip{padding:3px 9px;border-radius:7px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.size-chip-ok {background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.25)}
-.size-chip-err{background:rgba(239,68,68,.12);color:var(--rd);border:1px solid rgba(239,68,68,.25)}
+.size-preset-chip{font-size:11px;font-weight:600;padding:4px 12px;border-radius:16px;border:1px solid var(--bd);background:var(--bg4);color:var(--tx2);cursor:pointer;transition:all .15s}
+.size-preset-chip:hover{border-color:var(--or);color:var(--or)}
+.f-size-row{display:grid;grid-template-columns:1fr 140px 34px;gap:8px;margin-bottom:8px;align-items:center}
+.f-size-row .fc{margin:0}
 /* region chips in activities page */
 .region-chip{background:var(--bg4);border:1px solid var(--bd);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
 .region-chip-dup{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
@@ -263,6 +264,9 @@ textarea.fc{resize:vertical;min-height:72px}
 .activity-row{display:grid;grid-template-columns:90px 1fr 90px 90px 130px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
 .activity-row:hover{background:rgba(255,107,0,.03)}
 .activity-row-hd{background:var(--bg4);color:var(--mu);font-size:11px;font-weight:800;border-radius:var(--r) var(--r) 0 0}
+.area-row{display:grid;grid-template-columns:1fr 100px 90px 90px 130px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.area-row:hover{background:rgba(255,107,0,.03)}
+.area-row-hd{background:var(--bg4);color:var(--mu);font-size:11px;font-weight:800;border-radius:var(--r) var(--r) 0 0}
 .extra-imgs-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .extra-img-wrap{position:relative;width:90px;height:70px;border-radius:8px;overflow:hidden;flex-shrink:0}
 .extra-img-wrap img{width:100%;height:100%;object-fit:cover}
@@ -471,6 +475,9 @@ textarea.fc{resize:vertical;min-height:72px}
       <div class="sb-item" id="sbi-activities" onclick="gp('activities',this)">
         <span class="sb-ico">🏷️</span> الأنشطة
       </div>
+      <div class="sb-item" id="sbi-areas" onclick="gp('areas',this)">
+        <span class="sb-ico">🗺️</span> المناطق
+      </div>
       <div class="sb-sep"></div>
       <div class="sb-item" id="sbi-finance" onclick="gp('finance',this)">
         <span class="sb-ico">💰</span> المالية
@@ -592,8 +599,8 @@ textarea.fc{resize:vertical;min-height:72px}
 </div>
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../media-handler.js?v=20260729213646"></script>
-<script src="../shared/sb-config.js?v=20260729213646"></script>
+<script src="../media-handler.js?v=20260730171541"></script>
+<script src="../shared/sb-config.js?v=20260730171541"></script>
 <script>
 /* ═══════════════════════════════
    CONFIG
@@ -605,8 +612,7 @@ async function sbHeaders() {
   const { data: { session } } = await db.auth.getSession();
   return {'apikey':SB_KEY,'Authorization':'Bearer '+(session?.access_token||SB_KEY),'Content-Type':'application/json'};
 }
-const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة',announcements:'الإعلانات الرسمية','ann-form':'نموذج إعلان رسمي'};
-const REGION_PRESETS = ['مدينة نصر','التجمع الخامس','المعادي','مصر الجديدة','الزمالك','6 أكتوبر','الشيخ زايد','الدقي','المهندسين','القاهرة الجديدة','الشروق','العبور','الإسكندرية'];
+const PAGE_TITLES = {overview:'نظرة عامة',spaces:'المساحات',pending:'طلبات المراجعة',owners:'أصحاب المساحات','owner-requests':'طلبات تحويل الحساب',subscriptions:'إدارة الاشتراكات',activities:'إدارة الأنشطة',areas:'مناطق المنصة',finance:'النظرة المالية',bookings:'الحجوزات والمعاينات',notif:'إشعارات جماعية',export:'تصدير البيانات',maintenance:'صيانة قاعدة البيانات',form:'إضافة / تعديل مساحة',announcements:'الإعلانات الرسمية','ann-form':'نموذج إعلان رسمي'};
 const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة المدارس','العام الدراسي','الشتاء والربيع','طوال العام','المواسم الرياضية','الويك إند'];
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
 
@@ -614,6 +620,8 @@ let adminHash   = null;
 let allSpaces   = [];
 let allOwners   = [];
 let allActivities    = [];
+let allAreas          = [];
+let areaSearch        = '';
 let allOwnerRequests = [];
 let allAnnouncements  = [];
 let annEditingId      = null;
@@ -700,10 +708,11 @@ async function loadAll() {
   setPageLoading(currentPage);
   try {
     let ownerReqsErr = null;
-    const [spaces, owners, activities, ownerReqs, announcements] = await Promise.all([
+    const [spaces, owners, activities, areas, ownerReqs, announcements] = await Promise.all([
       sbRpc('admin_get_spaces'),
       sbRpc('admin_get_owners'),
       fetchActivities().catch(()=>[]),
+      fetchAreas().catch(()=>[]),
       sbRpc('admin_get_upgrade_requests')
         .catch(e => { ownerReqsErr = e; return []; }),
       sbRpc('admin_get_announcements').catch(()=>[]),
@@ -711,6 +720,7 @@ async function loadAll() {
     allSpaces        = spaces        || [];
     allOwners        = owners        || [];
     allActivities    = activities    || [];
+    allAreas         = areas         || [];
     allOwnerRequests = ownerReqs     || [];
     allAnnouncements = announcements || [];
     if (ownerReqsErr) console.error('[upgrade_requests]', ownerReqsErr.message);
@@ -747,8 +757,14 @@ async function loadSpaceDetail(id) {
 }
 
 async function fetchActivities() {
-  const res = await fetch(`${SB_URL}/rest/v1/space_activities?select=id,emoji,name_ar,sort_order,is_active&order=sort_order.asc`, {headers:SB_HDR});
+  const res = await fetch(`${SB_URL}/rest/v1/space_activities?select=id,emoji,name_ar,sort_order,is_active&order=sort_order.asc`, {headers: await sbHeaders()});
   if (!res.ok) throw new Error('فشل تحميل الأنشطة: HTTP ' + res.status);
+  return res.json();
+}
+
+async function fetchAreas() {
+  const res = await fetch(`${SB_URL}/rest/v1/space_areas?select=id,name,sort_order,is_active&order=sort_order.asc`, {headers: await sbHeaders()});
+  if (!res.ok) throw new Error('فشل تحميل المناطق: HTTP ' + res.status);
   return res.json();
 }
 
@@ -794,6 +810,7 @@ function renderCurrentPage() {
     case 'owner-requests': renderOwnerRequests();  break;
     case 'subscriptions':  renderSubscriptions();  break;
     case 'activities':     renderActivities();     break;
+    case 'areas':          renderAreas();          break;
     case 'finance':        renderFinance();        break;
     case 'bookings':       renderBookings();       break;
     case 'notif':          renderBulkNotif();      break;
@@ -2124,50 +2141,14 @@ function renderActivities() {
   }
   const active   = allActivities.filter(a=>a.is_active!==false).length;
   const inactive = allActivities.length - active;
-
-  /* region usage map — sorted by count desc */
-  const regionMap = {};
-  allSpaces.forEach(s => { if (s.region) regionMap[s.region] = (regionMap[s.region]||0) + 1; });
-  const regionEntries  = Object.entries(regionMap).sort((a,b)=>b[1]-a[1]);
-  const nonStandard    = regionEntries.filter(([r])=>!REGION_PRESETS.includes(r));
-  const regionSectionHtml = regionEntries.length ? `
-  <div class="form-sec" style="margin-bottom:12px">
-    <div class="form-sec-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between"
-         onclick="const b=document.getElementById('region-hub-body');b.style.display=b.style.display==='none'?'block':'none'">
-      <span>🗺 إدارة المناطق
-        <span style="font-size:11px;font-weight:400;color:var(--mu)">
-          (${regionEntries.length} منطقة${nonStandard.length ? ` · <span style="color:var(--yw)">${nonStandard.length} غير موحدة</span>` : ''})
-        </span>
-      </span>
-      <span style="font-size:11px;color:var(--mu)">▼</span>
-    </div>
-    <div id="region-hub-body" style="display:none;padding-top:10px">
-      ${nonStandard.length ? `<div style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.7;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:8px 12px">
-        ⚠ المناطق المميزة بالأصفر غير موجودة في القائمة المعتمدة — قد تكون أخطاء إملائية أو تكرارات.
-        استخدم <b>دمج</b> لتوحيدها مع المنطقة الصحيحة (يُحدِّث جميع المساحات دفعةً واحدة).
-      </div>` : ''}
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        ${regionEntries.map(([r, cnt]) => {
-          const std = REGION_PRESETS.includes(r);
-          return `<div style="display:flex;align-items:center;gap:0;background:${std?'var(--bg4)':'rgba(245,158,11,.1)'};border:1px solid ${std?'var(--bd)':'rgba(245,158,11,.35)'};border-radius:20px;padding:4px 4px 4px 12px">
-            <span style="font-size:12px;font-weight:700;color:${std?'var(--tx)':'var(--yw)'};margin-left:6px">${esc(r)}</span>
-            <span style="font-size:10px;color:var(--mu);background:var(--bg3);border-radius:10px;padding:1px 8px;margin-left:6px">${cnt}</span>
-            ${!std ? `<button class="btn btn-yw" style="font-size:10px;padding:2px 8px;border-radius:14px" onclick="promptMergeRegion('${esc(r)}')">دمج ←</button>` : ''}
-          </div>`;
-        }).join('')}
-      </div>
-      ${regionEntries.length === 0 ? '<div style="font-size:12px;color:var(--mu);text-align:center;padding:12px">لا توجد مساحات بعد</div>' : ''}
-    </div>
-  </div>` : '';
+  const sortedAll = [...allActivities].sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
 
   const html = `
   <div class="stats-bar">
     <div class="stat-chip"><span class="stat-num">${allActivities.length}</span> إجمالي الأنشطة</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> مفعلة</div>
     <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${inactive}</span> مخفية</div>
-    ${nonStandard.length ? `<div class="stat-chip" style="cursor:pointer" onclick="const b=document.getElementById('region-hub-body');if(b){b.style.display='block';b.scrollIntoView({behavior:'smooth',block:'start'})}"><span class="stat-num" style="color:var(--yw)">${nonStandard.length}</span> منطقة غير موحدة ⚠</div>` : ''}
   </div>
-  ${regionSectionHtml}
   <div class="form-sec">
     <div class="form-sec-title">➕ إضافة / تعديل نشاط</div>
     <div class="fg3">
@@ -2182,7 +2163,10 @@ function renderActivities() {
   <div class="filter-bar"><input class="f-inp" placeholder="🔎 بحث في الأنشطة..." value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderActivities()"><div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div></div>
   <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
     <div class="activity-row activity-row-hd"><div>ID</div><div>النشاط</div><div>الترتيب</div><div>الحالة</div><div>الإجراءات</div></div>
-    ${filtered.map(a=>`<div class="activity-row"><div style="font-family:'IBM Plex Mono',monospace;color:var(--or);direction:ltr;text-align:left">${esc(a.id)}</div><div style="font-weight:800">${esc(a.emoji||'🏷️')} ${esc(a.name_ar||'')}</div><div>${a.sort_order??0}</div><div><span class="badge ${a.is_active!==false?'b-approved':'b-hidden'}">${a.is_active!==false?'مفعل':'مخفي'}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-yw" onclick="fillActivity('${esc(a.id)}')">تعديل</button><button class="btn btn-neu" onclick="toggleActivity('${esc(a.id)}',${a.is_active!==false})">${a.is_active!==false?'إخفاء':'تفعيل'}</button><button class="btn btn-err" onclick="deleteActivity('${esc(a.id)}')">حذف</button></div></div>`).join('')}
+    ${filtered.map(a=>{
+      const idx = sortedAll.findIndex(x=>x.id===a.id);
+      return `<div class="activity-row"><div style="font-family:'IBM Plex Mono',monospace;color:var(--or);direction:ltr;text-align:left">${esc(a.id)}</div><div style="font-weight:800">${esc(a.emoji||'🏷️')} ${esc(a.name_ar||'')}</div><div style="display:flex;align-items:center;gap:5px">${a.sort_order??0}<span style="display:inline-flex;flex-direction:column;gap:1px"><button class="btn btn-neu" style="padding:0 4px;font-size:9px;line-height:1.5" ${idx<=0?'disabled':''} onclick="moveActivityUp('${esc(a.id)}')">⬆</button><button class="btn btn-neu" style="padding:0 4px;font-size:9px;line-height:1.5" ${idx>=sortedAll.length-1?'disabled':''} onclick="moveActivityDown('${esc(a.id)}')">⬇</button></span></div><div><span class="badge ${a.is_active!==false?'b-approved':'b-hidden'}">${a.is_active!==false?'مفعل':'مخفي'}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-yw" onclick="fillActivity('${esc(a.id)}')">تعديل</button><button class="btn btn-neu" onclick="toggleActivity('${esc(a.id)}',${a.is_active!==false})">${a.is_active!==false?'إخفاء':'تفعيل'}</button><button class="btn btn-err" onclick="deleteActivity('${esc(a.id)}')">حذف</button></div></div>`;
+    }).join('')}
   </div>`;
   setPageContent('activities', html);
 }
@@ -2246,6 +2230,277 @@ function deleteActivity(id) {
   const btnClean = modal.querySelector('#del-act-clean');
   if (btnOnly)  btnOnly.onclick  = () => doDelete(false);
   if (btnClean) btnClean.onclick = () => doDelete(affected.length > 0);
+}
+
+/* ── إعادة الترتيب (يُستخدم للأنشطة والمناطق معًا) ── */
+async function _swapSortOrder(table, list, id, dir, onDone) {
+  const sorted = [...list].sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
+  const idx = sorted.findIndex(x=>x.id===id);
+  const swapIdx = idx + dir;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= sorted.length) return;
+  const a = sorted[idx], b = sorted[swapIdx];
+  const aOrder = a.sort_order ?? 0, bOrder = b.sort_order ?? 0;
+  try {
+    await Promise.all([
+      sbTable('PATCH', table, {sort_order:bOrder}, `?id=eq.${encodeURIComponent(a.id)}`),
+      sbTable('PATCH', table, {sort_order:aOrder}, `?id=eq.${encodeURIComponent(b.id)}`),
+    ]);
+    await onDone();
+  } catch(e) { toast('خطأ: '+e.message,'e'); }
+}
+async function moveActivityUp(id)   { await _swapSortOrder('space_activities', allActivities, id, -1, async()=>{allActivities=await fetchActivities();renderActivities();}); }
+async function moveActivityDown(id) { await _swapSortOrder('space_activities', allActivities, id, +1, async()=>{allActivities=await fetchActivities();renderActivities();}); }
+async function moveAreaUp(id)       { await _swapSortOrder('space_areas', allAreas, id, -1, async()=>{allAreas=await fetchAreas();renderAreas();}); }
+async function moveAreaDown(id)     { await _swapSortOrder('space_areas', allAreas, id, +1, async()=>{allAreas=await fetchAreas();renderAreas();}); }
+
+/* ═══════════════════════════════
+   AREAS — مناطق المنصة
+═══════════════════════════════ */
+function renderAreas() {
+  let filtered = [...allAreas];
+  if (areaSearch) {
+    const q = areaSearch.toLowerCase();
+    filtered = filtered.filter(a => (a.name||'').toLowerCase().includes(q));
+  }
+  const active    = allAreas.filter(a=>a.is_active!==false).length;
+  const inactive  = allAreas.length - active;
+  const sortedAll = [...allAreas].sort((a,b)=>(a.sort_order??0)-(b.sort_order??0));
+  const usageOf   = name => allSpaces.filter(s=>s.region===name).length;
+
+  /* مناطق موجودة فعليًا على مساحات لكن غير معتمدة بعد في الكتالوج */
+  const regionMap = {};
+  allSpaces.forEach(s => { if (s.region) regionMap[s.region] = (regionMap[s.region]||0) + 1; });
+  const knownNames  = new Set(allAreas.map(a=>a.name));
+  const nonStandard = Object.entries(regionMap).filter(([r])=>!knownNames.has(r)).sort((a,b)=>b[1]-a[1]);
+
+  const nonStandardHtml = nonStandard.length ? `
+  <div class="form-sec" style="margin-bottom:12px">
+    <div class="form-sec-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between"
+         onclick="const b=document.getElementById('region-hub-body');b.style.display=b.style.display==='none'?'block':'none'">
+      <span>⚠ مناطق غير موحّدة على مساحات قائمة
+        <span style="font-size:11px;font-weight:400;color:var(--mu)">(${nonStandard.length})</span>
+      </span>
+      <span style="font-size:11px;color:var(--mu)">▼</span>
+    </div>
+    <div id="region-hub-body" style="display:none;padding-top:10px">
+      <div style="font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.7;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:8px 12px">
+        هذه القيم موجودة فعليًا في حقل "المنطقة" لمساحات قائمة لكنها ليست بالقائمة المعتمدة أدناه —
+        استخدم <b>➕ اعتماد</b> لإضافتها كمنطقة رسمية، أو <b>دمج</b> لتوحيدها مع منطقة معتمدة موجودة (يُحدِّث كل المساحات المرتبطة دفعةً واحدة).
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${nonStandard.map(([r,cnt]) => `<div style="display:flex;align-items:center;gap:0;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:20px;padding:4px 4px 4px 12px">
+          <span style="font-size:12px;font-weight:700;color:var(--yw);margin-left:6px">${esc(r)}</span>
+          <span style="font-size:10px;color:var(--mu);background:var(--bg3);border-radius:10px;padding:1px 8px;margin-left:6px">${cnt}</span>
+          <button class="btn btn-ok" style="font-size:10px;padding:2px 8px;border-radius:14px;margin-left:4px" onclick="promoteRegionToArea('${esc(r)}')">➕ اعتماد</button>
+          <button class="btn btn-yw" style="font-size:10px;padding:2px 8px;border-radius:14px" onclick="promptMergeRegion('${esc(r)}')">دمج ←</button>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>` : '';
+
+  const html = `
+  <div class="stats-bar">
+    <div class="stat-chip"><span class="stat-num">${allAreas.length}</span> إجمالي المناطق</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--gr)">${active}</span> مفعلة</div>
+    <div class="stat-chip"><span class="stat-num" style="color:var(--rd)">${inactive}</span> مخفية</div>
+    ${nonStandard.length ? `<div class="stat-chip" style="cursor:pointer" onclick="const b=document.getElementById('region-hub-body');if(b){b.style.display='block';b.scrollIntoView({behavior:'smooth',block:'start'})}"><span class="stat-num" style="color:var(--yw)">${nonStandard.length}</span> منطقة غير موحدة ⚠</div>` : ''}
+  </div>
+  ${nonStandardHtml}
+  <div class="form-sec">
+    <div class="form-sec-title">➕ إضافة / تعديل منطقة</div>
+    <div class="fg3">
+      <div class="fg"><label class="fl">اسم المنطقة</label><input class="fc" id="area-name" placeholder="مدينة نصر"></div>
+      <div class="fg"><label class="fl">ترتيب العرض</label><input class="fc" id="area-order" type="number" min="0" placeholder="0"></div>
+      <div class="fg"><label class="fl">الحالة</label><select class="fc" id="area-active"><option value="true">مفعلة</option><option value="false">مخفية</option></select></div>
+    </div>
+    <div class="form-toolbar"><button class="btn btn-or" onclick="saveArea()">💾 حفظ المنطقة</button><button class="btn btn-neu" onclick="clearAreaForm()">مسح</button></div>
+  </div>
+  <div class="filter-bar"><input class="f-inp" placeholder="🔎 ابحث عن منطقة..." value="${esc(areaSearch)}" oninput="areaSearch=this.value;renderAreas()"><div style="margin-right:auto;font-size:12px;color:var(--mu)">${filtered.length} نتيجة</div></div>
+  <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+    <div class="area-row area-row-hd"><div>المنطقة</div><div>عدد المساحات</div><div>الترتيب</div><div>الحالة</div><div>الإجراءات</div></div>
+    ${filtered.length ? filtered.map(a=>{
+      const idx = sortedAll.findIndex(x=>x.id===a.id);
+      const cnt = usageOf(a.name);
+      return `<div class="area-row"><div style="font-weight:800">${esc(a.name)}</div><div>${cnt ? `<span class="badge b-approved">${cnt}</span>` : `<span style="color:var(--mu)">—</span>`}</div><div style="display:flex;align-items:center;gap:5px">${a.sort_order??0}<span style="display:inline-flex;flex-direction:column;gap:1px"><button class="btn btn-neu" style="padding:0 4px;font-size:9px;line-height:1.5" ${idx<=0?'disabled':''} onclick="moveAreaUp('${a.id}')">⬆</button><button class="btn btn-neu" style="padding:0 4px;font-size:9px;line-height:1.5" ${idx>=sortedAll.length-1?'disabled':''} onclick="moveAreaDown('${a.id}')">⬇</button></span></div><div><span class="badge ${a.is_active!==false?'b-approved':'b-hidden'}">${a.is_active!==false?'مفعلة':'مخفية'}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-yw" onclick="fillArea('${a.id}')">تعديل</button><button class="btn btn-neu" onclick="toggleArea('${a.id}',${a.is_active!==false})">${a.is_active!==false?'إخفاء':'تفعيل'}</button><button class="btn btn-err" onclick="deleteArea('${a.id}')">حذف</button></div></div>`;
+    }).join('') : `<div style="padding:24px;text-align:center;color:var(--mu);font-size:12px">لا توجد نتائج</div>`}
+  </div>`;
+  setPageContent('areas', html);
+}
+
+let _areaEditingId = null;
+function clearAreaForm(){_areaEditingId=null;['area-name','area-order'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const a=document.getElementById('area-active');if(a)a.value='true';}
+function fillArea(id){const a=allAreas.find(x=>x.id===id);if(!a)return;_areaEditingId=id;document.getElementById('area-name').value=a.name||'';document.getElementById('area-order').value=a.sort_order??0;document.getElementById('area-active').value=String(a.is_active!==false);}
+
+async function saveArea() {
+  const name = (document.getElementById('area-name')?.value||'').trim();
+  if (!name) { toast('اكتب اسم المنطقة','e'); return; }
+  const payload = {
+    name,
+    sort_order: parseInt(document.getElementById('area-order')?.value||'0')||0,
+    is_active: document.getElementById('area-active')?.value!=='false',
+  };
+  const exists = _areaEditingId && allAreas.some(a=>a.id===_areaEditingId);
+
+  const doSave = async () => {
+    try {
+      if (exists) {
+        await sbTable('PATCH','space_areas',payload,`?id=eq.${encodeURIComponent(_areaEditingId)}`);
+      } else {
+        await sbTable('POST','space_areas',[payload]);
+      }
+      allAreas = await fetchAreas();
+      clearAreaForm();
+      renderAreas();
+      toast('تم حفظ المنطقة','s');
+    } catch(e) { toast('خطأ: '+e.message,'e'); }
+  };
+
+  const similar = findSimilarAreas(name, exists ? _areaEditingId : null);
+  if (similar.length) showAreaSimilarityModal(name, similar, doSave);
+  else await doSave();
+}
+
+async function toggleArea(id,isActive){try{await sbTable('PATCH','space_areas',{is_active:!isActive},`?id=eq.${encodeURIComponent(id)}`);allAreas=await fetchAreas();renderAreas();toast('تم تحديث المنطقة','s');}catch(e){toast('خطأ: '+e.message,'e');}}
+
+function deleteArea(id) {
+  const area = allAreas.find(a=>a.id===id);
+  if (!area) return;
+  const usage = allSpaces.filter(s=>s.region===area.name).length;
+  const existing = document.getElementById('del-area-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'del-area-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center';
+
+  if (usage > 0) {
+    modal.innerHTML = `
+      <div style="background:var(--bg3);border:1.5px solid rgba(245,158,11,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+        <div style="font-size:26px;text-align:center;margin-bottom:10px">🚫</div>
+        <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:8px">لا يمكن حذف هذه المنطقة</div>
+        <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:8px">${esc(area.name)}</div>
+        <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:18px;line-height:1.7">
+          مستخدمة حاليًا في <b style="color:var(--yw)">${usage}</b> مساحة. حذفها من القائمة المعتمدة لن يمس بيانات هذه المساحات،
+          لكن يُفضَّل تعطيلها بدل حذفها — تختفي من كل القوائم الجديدة فورًا مع الحفاظ على نظافة البيانات.
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-neu" onclick="document.getElementById('del-area-modal').remove()">إلغاء</button>
+          <button class="btn btn-yw" id="del-area-disable">⏸ تعطيل المنطقة بدلًا من الحذف</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+    modal.querySelector('#del-area-disable').onclick = async () => { modal.remove(); await toggleArea(id, true); };
+    return;
+  }
+
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(239,68,68,.4);border-radius:var(--r2);padding:28px;max-width:420px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:26px;text-align:center;margin-bottom:10px">🗑️</div>
+      <div style="font-size:15px;font-weight:800;color:var(--rd);margin-bottom:8px;text-align:center">حذف المنطقة</div>
+      <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:16px">${esc(area.name)}</div>
+      <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:18px">لا توجد مساحات تستخدمها حاليًا.</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-neu" onclick="document.getElementById('del-area-modal').remove()">إلغاء</button>
+        <button class="btn btn-err" id="del-area-confirm">حذف نهائي</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+  modal.querySelector('#del-area-confirm').onclick = async () => {
+    try {
+      await sbTable('DELETE','space_areas',null,`?id=eq.${encodeURIComponent(id)}`);
+      modal.remove();
+      allAreas = await fetchAreas();
+      renderAreas();
+      toast('🗑 تم حذف المنطقة','s');
+    } catch(e) { toast('خطأ: '+e.message,'e'); }
+  };
+}
+
+async function promoteRegionToArea(name) {
+  const doPromote = async () => {
+    try {
+      await sbTable('POST','space_areas',[{name, sort_order: allAreas.length}]);
+      allAreas = await fetchAreas();
+      renderAreas();
+      toast(`✅ "${name}" بقت منطقة معتمدة`, 's');
+    } catch(e) { toast('خطأ: '+e.message,'e'); }
+  };
+  const similar = findSimilarAreas(name, null);
+  if (similar.length) showAreaSimilarityModal(name, similar, doPromote);
+  else await doPromote();
+}
+
+/* ── منع تكرار أسماء المناطق: تطبيع النص + مقارنة تشابه (Levenshtein) ── */
+function normalizeAreaName(s) {
+  return String(s||'')
+    .trim()
+    .replace(/[-–—.\s]+$/,'')
+    .replace(/\s+/g,' ')
+    .replace(/[إأآ]/g,'ا')
+    .replace(/ة/g,'ه')
+    .replace(/ى/g,'ي')
+    .toLowerCase();
+}
+
+function _levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
+  for (let i=0;i<=m;i++) dp[i][0]=i;
+  for (let j=0;j<=n;j++) dp[0][j]=j;
+  for (let i=1;i<=m;i++) {
+    for (let j=1;j<=n;j++) {
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/* تُعيد أفضل 3 مناطق معتمدة مشابهة نصيًا للاسم المُدخَل (تطابق/احتواء/مسافة تحرير قريبة) */
+function findSimilarAreas(name, excludeId) {
+  const norm = normalizeAreaName(name);
+  if (!norm) return [];
+  const scored = allAreas
+    .filter(a => a.id !== excludeId)
+    .map(a => {
+      const an = normalizeAreaName(a.name);
+      let score;
+      if (an === norm) score = 0;
+      else if (an.includes(norm) || norm.includes(an)) score = 1;
+      else score = _levenshtein(norm, an);
+      return { area:a, score };
+    })
+    .filter(x => x.score <= Math.max(2, Math.floor(norm.length*0.3)))
+    .sort((a,b)=>a.score-b.score);
+  return scored.slice(0,3).map(x=>x.area);
+}
+
+function showAreaSimilarityModal(name, matches, onConfirmCreate) {
+  const existing = document.getElementById('area-similar-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'area-similar-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:450;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--bg3);border:1.5px solid rgba(255,107,0,.4);border-radius:var(--r2);padding:28px;max-width:440px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="font-size:26px;text-align:center;margin-bottom:10px">🤔</div>
+      <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:6px">هل تقصد إحدى هذه المناطق؟</div>
+      <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:16px">
+        كتبت "<b style="color:var(--tx)">${esc(name)}</b>" — وجدنا أسماء مشابهة في القائمة المعتمدة بالفعل، لتفادي التكرار:
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px">
+        ${matches.map(m=>`<button class="btn btn-neu" style="justify-content:flex-start;padding:9px 12px" onclick="document.getElementById('area-similar-modal').remove();toast('تم الإبقاء على «${esc(m.name)}» — لم تُنشأ منطقة جديدة','s')">✓ ${esc(m.name)}${m.is_active===false?' <span style="color:var(--yw)">(مخفية حاليًا)</span>':''}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-neu" onclick="document.getElementById('area-similar-modal').remove()">إلغاء</button>
+        <button class="btn btn-or" id="area-similar-proceed">لا، إنشاء منطقة مختلفة فعلاً</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+  modal.querySelector('#area-similar-proceed').onclick = () => { modal.remove(); onConfirmCreate(); };
 }
 
 /* ═══════════════════════════════
@@ -3661,16 +3916,19 @@ function renderFormPage(sp, units) {
     <div class="fg2">
       <div class="fg">
         <label class="fl" style="display:flex;align-items:center;justify-content:space-between">
-          <span>الأحجام والأسعار (حجم:سعر · حجم:سعر)</span>
-          <button type="button" class="btn btn-neu" style="font-size:10px;padding:2px 8px"
-                  onclick="insertSizeSep()">أدخل ·</button>
+          <span>الأحجام والأسعار</span>
+          <button type="button" class="btn btn-neu" style="font-size:10px;padding:2px 8px" onclick="addSizeRow()">+ مقاس مخصص</button>
         </label>
-        <input class="fc" id="f-sizes" value="${esc(sp.sizes_prices||'')}"
-               placeholder="مثال: ١×١م:4500 · ١×٢م:7500"
-               oninput="updateSizesPreview(this.value)">
-        <div id="f-sizes-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-          ${sp.sizes_prices ? buildSizesPreviewHtml(sp.sizes_prices) : ''}
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px">
+          <span style="font-size:11px;color:var(--mu)">مقاسات شائعة:</span>
+          <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('1×1 م')">1×1</button>
+          <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('1×2 م')">1×2</button>
+          <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('2×2 م')">2×2</button>
+          <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('2×3 م')">2×3</button>
+          <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('3×3 م')">3×3</button>
         </div>
+        <div id="f-sizes-container"></div>
+        <div id="f-sizes-empty" style="text-align:center;color:var(--mu);padding:14px;font-size:12px">📐 لم تُضَف أحجام بعد — اختر مقاسًا شائعًا أعلاه أو اضغط "+ مقاس مخصص"</div>
       </div>
       <div class="fg"><label class="fl">أدنى سعر (ج.م.)</label>
         <input class="fc" type="number" id="f-price" value="${sp.min_price||''}" placeholder="0" min="0"></div>
@@ -3755,6 +4013,8 @@ function renderFormPage(sp, units) {
 
   setPageContent('form', html);
   fUnitCounter = units.length;
+  fSizeRowCount = 0;
+  parseSizesToRows(sp.sizes_prices).forEach(r => addSizeRow(r.label, r.price));
 }
 
 function activityPickerHtml(selected) {
@@ -3763,7 +4023,7 @@ function activityPickerHtml(selected) {
     {id:'coffee',emoji:'☕',name_ar:'قهوة ومشروبات',is_active:true},
     {id:'food',emoji:'🥪',name_ar:'أكل سريع',is_active:true},
     {id:'sweets',emoji:'🍰',name_ar:'حلويات ومخبوزات',is_active:true},
-    {id:'accessories',emoji:'💍',name_ar:'إكسسوارات',is_active:true},
+    {id:'access',emoji:'💍',name_ar:'إكسسوارات',is_active:true},
   ];
   const knownValues = new Set();
   const chips = items.filter(a=>a.is_active!==false).map(a=>{
@@ -3977,23 +4237,12 @@ async function submitSpaceForm() {
   const region = get('f-region');
   if (!name || !region) { showFormMsg('error','اسم المساحة والمنطقة مطلوبان'); return; }
 
-  /* ── Hard block: sizes format ── */
-  const sizesVal = get('f-sizes');
-  if (sizesVal) {
-    const badEntries = sizesVal.split(/[|·]/).map(e=>e.trim()).filter(e=>e && !e.includes(':'));
-    if (badEntries.length) {
-      showFormMsg('error', `خطأ في حقل الأحجام — كل إدخال يجب أن يحتوي على ":" مثل "١×١م:4500". إدخالات خاطئة: ${badEntries.slice(0,3).map(e=>`"${e}"`).join('، ')}`);
-      document.getElementById('f-sizes')?.scrollIntoView({behavior:'smooth',block:'center'});
-      return;
-    }
-  }
-
   /* ── Soft warnings (skip once if user bypassed) ── */
   if (!formBypassWarnings) {
     const warnings = [];
     if (!fMainImgUrl) warnings.push({ icon:'🖼', text:'لا توجد صورة رئيسية — ستظهر المساحة بدون صورة على الماركت' });
     if (!get('f-desc'))  warnings.push({ icon:'📝', text:'لا يوجد وصف — العملاء لن يعرفوا تفاصيل المساحة' });
-    if (!get('f-price') && !sizesVal) warnings.push({ icon:'💰', text:'لا يوجد سعر أو أحجام — يصعب على العملاء اتخاذ القرار' });
+    if (!get('f-price') && !getSizesString()) warnings.push({ icon:'💰', text:'لا يوجد سعر أو أحجام — يصعب على العملاء اتخاذ القرار' });
     if (warnings.length) {
       const existing = document.getElementById('form-warn-modal');
       if (existing) existing.remove();
@@ -4042,7 +4291,7 @@ async function submitSpaceForm() {
     type:         get('f-type'),
     icon_emoji:   get('f-icon')||'🏪',
     thumb_color:  get('f-thumb'),
-    sizes_prices: get('f-sizes'),
+    sizes_prices: getSizesString(),
     min_price:    parseInt(get('f-price'))||0,
     all_acts:     document.getElementById('f-allacts')?.checked||false,
     activities:   acts,
@@ -4113,8 +4362,9 @@ function filterOwnerSelect(q) {
 
 /* ── Region helpers ── */
 function getKnownRegions() {
-  const fromSpaces = allSpaces.map(s=>s.region).filter(Boolean);
-  return [...new Set([...REGION_PRESETS, ...fromSpaces])].sort((a,b)=>a.localeCompare(b,'ar'));
+  const fromSpaces  = allSpaces.map(s=>s.region).filter(Boolean);
+  const fromCatalog = allAreas.map(a=>a.name);
+  return [...new Set([...fromCatalog, ...fromSpaces])].sort((a,b)=>a.localeCompare(b,'ar'));
 }
 
 function checkRegionKnown(val) {
@@ -4124,37 +4374,82 @@ function checkRegionKnown(val) {
   warn.style.display = (val.trim() && !known.includes(val.trim())) ? 'flex' : 'none';
 }
 
-/* ── Sizes/prices helpers ── */
-function buildSizesPreviewHtml(val) {
-  if (!val || !val.trim()) return '';
-  return val.split(/[|·]/).map(e=>e.trim()).filter(Boolean).map(e => {
-    if (!e.includes(':'))
-      return `<span class="size-chip size-chip-err" title="يجب أن يحتوي على ':' بين الحجم والسعر">⚠ ${esc(e)}</span>`;
-    const [sz, pr] = e.split(':');
-    return `<span class="size-chip size-chip-ok">${esc(sz.trim())} <span style="opacity:.6">→</span> ${esc(pr.trim())} ج</span>`;
-  }).join('');
+/* ── Sizes/prices — صفوف مقاس+سعر منظّمة (نفس UX لوحة أصحاب المساحات) ── */
+let fSizeRowCount = 0;
+
+function _toLatinDigitsAdmin(str) {
+  if (!str) return str;
+  const arabic  = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  return String(str).replace(/[٠-٩۰-۹]/g, d => {
+    const ai = arabic.indexOf(d);
+    if (ai > -1) return ai;
+    return persian.indexOf(d);
+  });
 }
 
-function updateSizesPreview(val) {
-  const prev = document.getElementById('f-sizes-preview');
-  if (prev) prev.innerHTML = buildSizesPreviewHtml(val);
-  /* live error border */
-  const inp = document.getElementById('f-sizes');
-  if (!inp || !val.trim()) { inp?.classList.remove('fc-err','fc-warn'); return; }
-  const hasError = val.split(/[|·]/).map(e=>e.trim()).filter(Boolean).some(e=>!e.includes(':'));
-  inp.classList.toggle('fc-err', hasError);
-  inp.classList.toggle('fc-warn', false);
+function addSizeRow(label, price) {
+  const container = document.getElementById('f-sizes-container');
+  const emptyMsg  = document.getElementById('f-sizes-empty');
+  if (!container) return;
+  if (emptyMsg) emptyMsg.style.display = 'none';
+  const idx = fSizeRowCount++;
+  const div = document.createElement('div');
+  div.id = 'f-size-row-' + idx;
+  div.className = 'f-size-row';
+  div.innerHTML = `
+    <input class="fc" id="f-size-label-${idx}" value="${esc(label||'')}" placeholder="مثال: 1×1 م">
+    <input class="fc" id="f-size-price-${idx}" type="text" inputmode="numeric" value="${esc(price!=null?String(price):'')}" placeholder="السعر/شهر" style="font-family:'IBM Plex Mono',monospace" oninput="_sanitizeSizePrice(this);calcSizesDefaultPrice()">
+    <button type="button" onclick="removeSizeRow(${idx})" style="background:none;border:1px solid var(--rd);color:var(--rd);border-radius:var(--r);height:34px;cursor:pointer;font-size:13px">✕</button>`;
+  container.appendChild(div);
+  calcSizesDefaultPrice();
+  return idx;
 }
 
-function insertSizeSep() {
-  const inp = document.getElementById('f-sizes');
-  if (!inp) return;
-  const pos = inp.selectionStart;
-  const v   = inp.value;
-  inp.value = v.slice(0, pos) + ' · ' + v.slice(pos);
-  inp.setSelectionRange(pos + 3, pos + 3);
-  inp.focus();
-  updateSizesPreview(inp.value);
+function addPresetSizeRow(label) {
+  const idx = addSizeRow(label, '');
+  document.getElementById('f-size-price-' + idx)?.focus();
+}
+
+function removeSizeRow(idx) {
+  document.getElementById('f-size-row-' + idx)?.remove();
+  const container = document.getElementById('f-sizes-container');
+  const emptyMsg  = document.getElementById('f-sizes-empty');
+  if (container && !container.children.length && emptyMsg) emptyMsg.style.display = 'block';
+  calcSizesDefaultPrice();
+}
+
+function _sanitizeSizePrice(el) {
+  el.value = _toLatinDigitsAdmin(el.value).replace(/[^0-9]/g,'');
+}
+
+/* يملأ "أدنى سعر" تلقائيًا من متوسط أسعار الصفوف — فقط لو الحقل لسه فاضي، حتى لا يتجاهل تعديلًا يدويًا */
+function calcSizesDefaultPrice() {
+  const prices = Array.from(document.querySelectorAll('[id^="f-size-price-"]')).map(r=>parseFloat(r.value)||0).filter(p=>p>0);
+  const avg = prices.length ? Math.round(prices.reduce((a,b)=>a+b,0)/prices.length) : 0;
+  const priceEl = document.getElementById('f-price');
+  if (priceEl && avg > 0 && !priceEl.value) priceEl.value = avg;
+}
+
+function getSizesString() {
+  const rows = [];
+  document.querySelectorAll('[id^="f-size-row-"]').forEach(row => {
+    const idx   = row.id.replace('f-size-row-','');
+    const label = document.getElementById('f-size-label-'+idx)?.value.trim();
+    const price = document.getElementById('f-size-price-'+idx)?.value.trim();
+    if (!label) return;
+    rows.push(price ? `${label}:${price}` : label);
+  });
+  return rows.join(' · ');
+}
+
+/* يحوّل نص sizes_prices القديم (مقاس:سعر · مقاس:سعر) لصفوف قابلة للتعبئة — تُستخدم عند فتح مساحة موجودة للتعديل */
+function parseSizesToRows(str) {
+  if (!str || !str.trim()) return [];
+  return str.split(/[|·]/).map(e=>e.trim()).filter(Boolean).map(e => {
+    const parts = e.split(':');
+    return { label: parts[0].trim(), price: parts[1] ? parts[1].trim() : '' };
+  });
 }
 
 /* ── Region merge modal ── */
@@ -4176,7 +4471,7 @@ function promptMergeRegion(oldRegion) {
         <label class="fl">المنطقة الموحدة الجديدة</label>
         <input id="merge-region-inp" class="fc" list="merge-region-opts" placeholder="اختر من القائمة أو اكتب...">
         <datalist id="merge-region-opts">
-          ${REGION_PRESETS.filter(r=>r!==oldRegion).map(r=>`<option value="${esc(r)}"></option>`).join('')}
+          ${allAreas.filter(a=>a.name!==oldRegion).map(a=>`<option value="${esc(a.name)}"></option>`).join('')}
         </datalist>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -4195,7 +4490,7 @@ function promptMergeRegion(oldRegion) {
       await sbTable('PATCH','spaces',{region:newRegion},`?region=eq.${encodeURIComponent(oldRegion)}`);
       modal.remove();
       await loadAll();
-      renderActivities();
+      renderAreas();
       toast(`✅ تم دمج "${oldRegion}" في "${newRegion}"`, 's');
     } catch(e) {
       btn.disabled = false; btn.textContent = `دمج وتحديث ${affected} مساحة`;
@@ -4722,10 +5017,11 @@ async function toggleAnn(id, newActive) {
 
 /* حذف إعلان واحد من R2 + Supabase عبر Pages Function */
 async function _deleteAnnWithR2(id) {
+  const { data: { session } } = await db.auth.getSession();
   const res = await fetch('/admin/delete-announcement', {
     method:  'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ id, p_secret: adminHash }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (session?.access_token || '') },
+    body:    JSON.stringify({ id }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

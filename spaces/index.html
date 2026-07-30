@@ -8,8 +8,8 @@
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260729213646">
-  <script src="/version.js?v=20260729213646"></script>
+  <link rel="manifest" href="/manifest.json?v=20260730171541">
+  <script src="/version.js?v=20260730171541"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -75,22 +75,22 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20260729213646">
+  <link rel="stylesheet" href="/style.css?v=20260730171541">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20260729213646" defer></script>
-  <script src="/pwa-install.js?v=20260729213646" defer></script>
-  <script src="/shared/space-model.js?v=20260729213646" defer></script>
-  <script src="/shared/booking.js?v=20260729213646" defer></script>
-  <script src="/shared/account.js?v=20260729213646" defer></script>
-  <script src="/shared/plan-badge.js?v=20260729213646" defer></script>
+  <script src="/shared/sb-config.js?v=20260730171541" defer></script>
+  <script src="/pwa-install.js?v=20260730171541" defer></script>
+  <script src="/shared/space-model.js?v=20260730171541" defer></script>
+  <script src="/shared/booking.js?v=20260730171541" defer></script>
+  <script src="/shared/account.js?v=20260730171541" defer></script>
+  <script src="/shared/plan-badge.js?v=20260730171541" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260729213646" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260729213646" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260729213646" defer></script>
-  <script src="/shared/i18n.js?v=20260729213646" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260730171541" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260730171541" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260730171541" defer></script>
+  <script src="/shared/i18n.js?v=20260730171541" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -754,14 +754,7 @@
               <div class="mp-filter-title" data-i18n="market.regionTitle">المنطقة</div>
               <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="market.regionAll">كل المناطق والمحافظات</option>
-                <optgroup label="أحياء القاهرة الكبرى" data-i18n-attr="label:market.regionGroupCairo">
-                  <option data-i18n="regions.nasrCity">مدينة نصر</option>
-                  <option data-i18n="regions.fifthSettlement">التجمع الخامس</option>
-                  <option data-i18n="regions.mohandessin">المهندسين</option>
-                  <option data-i18n="regions.zamalek">الزمالك</option>
-                  <option data-i18n="regions.sheikhZayed">الشيخ زايد</option>
-                  <option data-i18n="regions.october6">6 أكتوبر</option>
-                  <option data-i18n="regions.heliopolis">مصر الجديدة</option>
+                <optgroup id="mp-region-areas-group" label="أحياء القاهرة الكبرى" data-i18n-attr="label:market.regionGroupCairo">
                 </optgroup>
                 <optgroup label="المحافظات المصرية" data-i18n-attr="label:market.regionGroupGov">
                   <option data-i18n="regions.cairo">القاهرة</option>
@@ -1483,8 +1476,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260729213646" defer></script>
-  <script src="app.js?v=20260729213646" defer></script>
+  <script src="/notifications.js?v=20260730171541" defer></script>
+  <script src="app.js?v=20260730171541" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

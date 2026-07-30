@@ -1017,8 +1017,7 @@ async function _loadPublicProfile(userId) {
       sbClient.from('organizer_profiles').select('*').eq('user_id', userId).single(),
       sbClient.from('organizer_reviews').select('*')
               .eq('organizer_id', userId).order('created_at', { ascending: false }),
-      sbClient.from('bazaars').select('id,name,date_start,date_end,location,image,total_slots,available_slots,status,is_archived,event_links')
-              .eq('organizer_id', userId).eq('is_deleted', false).order('date_start', { ascending: false }),
+      sbClient.rpc('get_organizer_public_bazaars', { p_organizer_id: userId }),
       sbClient.rpc('get_organizer_total_exhibitors', { p_organizer_id: userId }),
       sbClient.rpc('get_organizer_overall_rating', { p_organizer_id: userId }),
     ]);
@@ -1026,7 +1025,8 @@ async function _loadPublicProfile(userId) {
     publicUser  = profileRes.data  || null;
     organizer   = orgProfileRes.data || null;
     reviews     = reviewsRes.data   || [];
-    bazaars     = bazaarsRes.data   || [];
+    /* المؤرشف يفضل محسوب في سجل المنظم — الأرشفة تخفي البازار من /bazaars/ العامة بس، مش من تاريخه */
+    bazaars     = (bazaarsRes.data || []).sort((a, b) => (b.date_start || '').localeCompare(a.date_start || ''));
     totalExhibitors = exhibitorsRes.data || 0;
     bazaarRating = bazaarRatingRes.data || bazaarRating;
   } catch (e) {

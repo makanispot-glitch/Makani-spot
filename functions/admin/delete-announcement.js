@@ -1,16 +1,17 @@
 /**
  * Cloudflare Pages Function — DELETE /admin/delete-announcement
  * حذف إعلان رسمي من Supabase + صوره من R2
- * مصادقة: p_secret (نفس hash RPCs Supabase)
+ * مصادقة: جلسة Supabase Auth الحقيقية للأدمن، تُتحقّق عبر is_admin() —
+ * نفس الآلية المستخدمة في كل admin RPCs الأخرى بصفحة spaces-hub (sbRpc/sbHeaders).
+ * (لم يعد هناك سرّ ثابت مُخزَّن في الكود — الفحص يتم فعلياً على هوية المستخدم.)
  */
 
-const ADMIN_HASH    = 'a4c15e2dbf7cc7122f2ec14cca6cca4a5d9556ab02022ebd04a3bfc47a7a8fd2';
 const R2_PUBLIC_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export async function onRequestOptions() {
@@ -24,13 +25,29 @@ export async function onRequestDelete(context) {
   const SERVICE_KEY  = env.SUPABASE_SERVICE_KEY;
   if (!SUPABASE_URL || !SERVICE_KEY) return fail(503, 'Server misconfigured');
 
+  const accessToken = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!accessToken) return fail(401, 'غير مصرّح');
+
+  /* تحقّق الصلاحية عبر is_admin() بجلسة المستخدم نفسه — يطابق منطق كل RPCs الأدمن الأخرى */
+  const adminCheck = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    method:  'POST',
+    headers: {
+      'apikey':        SERVICE_KEY,
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type':  'application/json',
+    },
+    body: '{}',
+  });
+  let isAdmin = false;
+  try { isAdmin = (await adminCheck.json()) === true; } catch {}
+  if (!adminCheck.ok || !isAdmin) return fail(401, 'غير مصرّح');
+
   let body;
   try { body = await request.json(); }
   catch { return fail(400, 'Invalid JSON'); }
 
-  const { id, p_secret } = body;
-  if (!id)                          return fail(400, 'id مطلوب');
-  if (p_secret !== ADMIN_HASH)      return fail(401, 'غير مصرّح');
+  const { id } = body;
+  if (!id) return fail(400, 'id مطلوب');
 
   const sbHeaders = {
     'apikey':        SERVICE_KEY,

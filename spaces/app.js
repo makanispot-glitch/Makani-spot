@@ -66,6 +66,7 @@ function _initCardViewTracking() {
    ================================================================ */
 
 let ACTIVITIES     = [];
+let AREAS          = [];   // قائمة المناطق المعتمدة (space_areas)
 let sbClient       = null;
 let currentUser    = null;
 let currentProfile = null;
@@ -198,17 +199,20 @@ async function findOrFetchSpace(spaceId) {
 async function loadData() {
   showLoadingState('mp-grid');
   try {
-    // تحميل الأنشطة
-    const { data: activitiesData, error: actErr } = await sbClient
-      .from('space_activities')
-      .select('id, emoji, name_ar')
-      .eq('is_active', true)
-      .order('sort_order');
-    if (actErr) throw actErr;
-    ACTIVITIES = (activitiesData || []).map(a => ({
+    // تحميل الأنشطة (مصدر مشترك — shared/space-model.js)
+    const activitiesCatalog = await fetchActivitiesCatalog(sbClient);
+    ACTIVITIES = activitiesCatalog.map(a => ({
       id:    a.id,
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
+
+    // تحميل المناطق المعتمدة (space_areas) — نفس مصدر لوحة الأدمن ولوحة المالك
+    const { data: areasData } = await sbClient
+      .from('space_areas')
+      .select('name')
+      .eq('is_active', true)
+      .order('sort_order');
+    AREAS = (areasData || []).map(a => a.name);
 
     // تحميل الإعلانات الرسمية النشطة (بدون فلتر الموعد — الإخفاء يدوي من الأدمن)
     const { data: annData } = await sbClient
@@ -220,6 +224,7 @@ async function loadData() {
 
     buildModalActivityPicker();
     buildMpActivityFilters();
+    buildRegionFilterOptions();
 
     // المساحات المنشورة تُجلب خادميًا (بحث/فلترة/ترتيب/ترقيم — shared/space-model.js)
     await _applyCurrentFilters();
@@ -392,6 +397,18 @@ function buildModalActivityPicker() {
 function onActivityChange(sel) {
   const wrap = document.getElementById('other-act-wrap');
   if (wrap) wrap.style.display = (sel.value === 'other') ? 'block' : 'none';
+}
+
+/* يملأ optgroup "أحياء القاهرة الكبرى" داخل #mp-region من كتالوج space_areas الحي —
+   optgroup المحافظات (لفلترة الإعلانات الرسمية) مستقل ولا يُمس */
+function buildRegionFilterOptions() {
+  const group = document.getElementById('mp-region-areas-group');
+  if (!group) return;
+  group.innerHTML = AREAS.map(name => `<option value="${_escAttr(name)}">${_escAttr(name)}</option>`).join('');
+}
+
+function _escAttr(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function buildMpActivityFilters() {
