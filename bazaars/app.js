@@ -69,6 +69,11 @@ document.addEventListener('makani:locale-changed', () => {
     else _showBzLoginGate(currentBazaar);
   }
   if (document.getElementById('dlm-modal')?.classList.contains('open')) _dlmRenderRows();
+  if (_dirOpen) {
+    _dirRenderWeekdays();
+    _dirRenderMonth();
+    if (_dirSelectedDay) _dirRenderPanel();
+  }
   if (currentUser) bzLoadPostponeAlerts();
   if (document.getElementById('bz-opp-cards')) _bzInitOpportunitiesPage();
 });
@@ -4257,5 +4262,380 @@ async function saveDocLinksModal() {
     ? t('manage.docs.savedSuccess', { count: links.length }) + (dupCount > 0 ? t('manage.docs.savedWithDupes', { count: dupCount }) : '')
     : t('manage.docs.deletedAllSuccess');
   _showShareToast(msg);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   📅 القسم: دليل البازارات في مصر (Bazaar Directory)
+
+   تقويم شهري داخل نافذة منبثقة يجمع مصدرين:
+     • بازارات منشورة على مكاني Spot (تلقائياً)
+     • بازارات خارجية يرصدها فريق المنصة ويضيفها من لوحة الأدمن
+
+   النافذة الزمنية: ٣ شهور سابقة + ٣ شهور قادمة، والسنة تُقرأ تلقائياً.
+   البيانات تُجلب باستدعاء واحد عند أول فتح وتُخزَّن طوال الجلسة.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const DIR_WA_NUMBER  = '201103467711';   // واتساب مكاني Spot الرسمي
+const DIR_DAY_MAX    = 3;                // أقصى عدد حبّات داخل خانة اليوم
+const DIR_PANEL_MAX  = 3;                // أقصى عدد بطاقات قبل "عرض المزيد"
+
+let _dirOpen        = false;
+let _dirLoading     = false;
+let _dirData        = null;   // { today, rows[], interested[] } كما ترجع من الـ RPC
+let _dirDayMap      = null;   // Map<'YYYY-MM-DD', bazaar[]>
+let _dirInterested  = null;   // Set<'source:id'>
+let _dirCursor      = null;   // 'YYYY-MM' الشهر المعروض
+let _dirMinMonth    = null;   // 'YYYY-MM'
+let _dirMaxMonth    = null;   // 'YYYY-MM'
+let _dirSelectedDay = null;   // 'YYYY-MM-DD'
+let _dirExpanded    = false;  // هل ضُغط "عرض المزيد" لليوم الحالي
+let _dirSwipeBound  = false;
+
+/* ── أدوات تواريخ نصّية (تفادياً لانزياح المناطق الزمنية) ── */
+function _dirMonthOf(dateStr) { return String(dateStr).slice(0, 7); }
+function _dirShiftMonth(ym, delta) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, (m - 1) + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+function _dirAddDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + n));
+  return dt.toISOString().slice(0, 10);
+}
+function _dirDaysInMonth(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+/* عمود اليوم في شبكة تبدأ بالسبت: السبت=0 … الجمعة=6 */
+function _dirColOf(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 1) % 7;
+}
+function _dirFmt(dateStr, opts) {
+  return new Date(dateStr + 'T00:00:00Z')
+    .toLocaleDateString(_bzNumLocale(), Object.assign({ timeZone: 'UTC' }, opts));
+}
+
+/* ── الفتح والإغلاق ── */
+async function openBazaarDirectory() {
+  const modal = document.getElementById('bz-dir-modal');
+  if (!modal) return;
+  _dirOpen = true;
+  modal.classList.add('open');
+  document.addEventListener('keydown', _dirKeyHandler);
+
+  if (!_dirData) await _dirLoad();
+  else _dirRenderMonth();
+}
+
+function closeBazaarDirectory() {
+  const modal = document.getElementById('bz-dir-modal');
+  if (modal) modal.classList.remove('open');
+  _dirOpen = false;
+  document.removeEventListener('keydown', _dirKeyHandler);
+}
+
+function _dirKeyHandler(e) {
+  if (!_dirOpen) return;
+  if (e.key === 'Escape') { closeBazaarDirectory(); return; }
+  const rtl = getLocale() !== 'en';
+  // في RTL زر "التالي" (›) يقع يسار الشاشة، فالسهم الأيسر يعني الشهر التالي
+  if (e.key === 'ArrowLeft')  _dirNavMonth(rtl ? 1 : -1);
+  if (e.key === 'ArrowRight') _dirNavMonth(rtl ? -1 : 1);
+}
+
+/* ── جلب البيانات: استدعاء واحد للنافذة الزمنية كاملة ── */
+async function _dirLoad() {
+  if (_dirLoading) return;
+  _dirLoading = true;
+  const grid = document.getElementById('bz-dir-grid');
+  if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:50px 10px;color:var(--ink3);font-size:13px">⏳ ${_esc(t('grid.loading'))}</div>`;
+
+  try {
+    const { data, error } = await sbClient.rpc('get_bazaar_directory', { p_from: null, p_to: null });
+    if (error) throw error;
+
+    _dirData       = data || { today: _cairoTodayStr(), rows: [], interested: [] };
+    _dirInterested = new Set(_dirData.interested || []);
+    _dirBuildDayMap();
+
+    const todayMonth = _dirMonthOf(_dirData.today || _cairoTodayStr());
+    _dirMinMonth = _dirShiftMonth(todayMonth, -3);
+    _dirMaxMonth = _dirShiftMonth(todayMonth,  3);
+    _dirCursor   = todayMonth;
+
+    _dirRenderWeekdays();
+    _dirRenderMonth();
+  } catch (e) {
+    console.error('directory load error:', e);
+    if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:44px 10px;color:var(--ink3);font-size:13px">⚠️ ${_esc(t('directory.loadError'))}</div>`;
+  } finally {
+    _dirLoading = false;
+  }
+}
+
+/* توزيع كل بازار على كل أيام مداه — بازار من ٥ لـ٧ يظهر في التلات أيام */
+function _dirBuildDayMap() {
+  _dirDayMap = new Map();
+  (_dirData?.rows || []).forEach(b => {
+    const end = b.date_end || b.date_start;
+    let d = b.date_start, guard = 0;
+    while (d <= end && guard++ < 400) {
+      if (!_dirDayMap.has(d)) _dirDayMap.set(d, []);
+      _dirDayMap.get(d).push(b);
+      d = _dirAddDays(d, 1);
+    }
+  });
+  // بازارات المنصة أولاً ثم الخارجية، وداخل كل مجموعة بالاسم
+  _dirDayMap.forEach(list => list.sort((x, y) =>
+    x.source === y.source
+      ? String(x.name).localeCompare(String(y.name), _bzNumLocale())
+      : (x.source === 'platform' ? -1 : 1)
+  ));
+}
+
+/* ── رسم أسماء أيام الأسبوع (مشتقّة من Intl — لا مصفوفات ثابتة) ── */
+function _dirRenderWeekdays() {
+  const el = document.getElementById('bz-dir-weekdays');
+  if (!el) return;
+  // 2024-01-06 يوم سبت — مرجع لبناء أسماء الأيام بالترتيب المصري
+  const names = Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(2024, 0, 6 + i)).toLocaleDateString(_bzNumLocale(), { weekday: 'short', timeZone: 'UTC' })
+  );
+  el.innerHTML = names.map(n => `<div class="bz-dir-wd">${_esc(n)}</div>`).join('');
+}
+
+/* ── رسم شبكة الشهر ── */
+function _dirRenderMonth(anim) {
+  if (!_dirCursor) return;
+  const grid  = document.getElementById('bz-dir-grid');
+  const label = document.getElementById('bz-dir-monthlabel');
+  if (!grid || !label) return;
+
+  label.textContent = _dirFmt(_dirCursor + '-01', { year: 'numeric', month: 'long' });
+
+  const prevBtn = document.getElementById('bz-dir-prev');
+  const nextBtn = document.getElementById('bz-dir-next');
+  if (prevBtn) prevBtn.disabled = _dirCursor <= _dirMinMonth;
+  if (nextBtn) nextBtn.disabled = _dirCursor >= _dirMaxMonth;
+
+  const today = _dirData?.today || _cairoTodayStr();
+  const total = _dirDaysInMonth(_dirCursor);
+  const lead  = _dirColOf(_dirCursor + '-01');
+  let html = '';
+
+  for (let i = 0; i < lead; i++) html += '<div class="bz-dir-day bz-dir-day--blank"></div>';
+
+  for (let day = 1; day <= total; day++) {
+    const ds   = `${_dirCursor}-${String(day).padStart(2, '0')}`;
+    const list = _dirDayMap.get(ds) || [];
+    const cls  = ['bz-dir-day'];
+    if (list.length)          cls.push('bz-dir-day--has');
+    if (ds < today)           cls.push('bz-dir-day--past');
+    if (ds === today)         cls.push('bz-dir-day--today');
+    if (ds === _dirSelectedDay) cls.push('bz-dir-day--sel');
+
+    const pills = list.slice(0, DIR_DAY_MAX).map(b =>
+      `<span class="bz-dir-pill bz-dir-pill--${b.source}" title="${_esc(b.name)}">${_esc(b.name)}</span>`
+    ).join('');
+    const more = list.length > DIR_DAY_MAX
+      ? `<span class="bz-dir-more">+${_bzFmtNum(list.length - DIR_DAY_MAX)}</span>` : '';
+
+    html += list.length
+      ? `<button type="button" class="${cls.join(' ')}" onclick="_dirSelectDay('${ds}')">
+           <span class="bz-dir-daynum">${_bzFmtNum(day)}</span>
+           <span class="bz-dir-pills">${pills}</span>${more}
+         </button>`
+      : `<div class="${cls.join(' ')}"><span class="bz-dir-daynum">${_bzFmtNum(day)}</span></div>`;
+  }
+
+  grid.className = 'bz-dir-grid';
+  // إعادة تشغيل الأنيميشن تتطلب reflow
+  void grid.offsetWidth;
+  if (anim) grid.classList.add(anim > 0 ? 'bz-dir-in-next' : 'bz-dir-in-prev');
+  grid.innerHTML = html;
+
+  if (!_dirSwipeBound) { _dirInitSwipe(document.getElementById('bz-dir-shell')); _dirSwipeBound = true; }
+  if (!_dirSelectedDay) _dirRenderPanelEmpty();
+}
+
+function _dirNavMonth(delta) {
+  if (!_dirCursor) return;
+  const next = _dirShiftMonth(_dirCursor, delta);
+  if (next < _dirMinMonth || next > _dirMaxMonth) return;
+  _dirCursor = next;
+  _dirBackToMonth();
+  _dirRenderMonth(delta);
+}
+
+/* ── البانل: يوم مختار ── */
+function _dirRenderPanelEmpty() {
+  const p = document.getElementById('bz-dir-panel');
+  if (!p) return;
+  p.innerHTML = `
+    <div class="bz-dir-panel-empty">
+      <div class="bz-dir-panel-empty-ico">👆</div>
+      <div class="bz-dir-panel-empty-txt">${_esc(t('directory.panelEmpty'))}</div>
+    </div>`;
+}
+
+function _dirSelectDay(ds) {
+  _dirSelectedDay = ds;
+  _dirExpanded    = false;
+  document.getElementById('bz-dir-shell')?.classList.add('bz-dir-panel-open');
+  document.querySelectorAll('.bz-dir-day--sel').forEach(el => el.classList.remove('bz-dir-day--sel'));
+  document.querySelector(`.bz-dir-day[onclick*="'${ds}'"]`)?.classList.add('bz-dir-day--sel');
+  _dirRenderPanel();
+}
+
+function _dirBackToMonth() {
+  _dirSelectedDay = null;
+  _dirExpanded    = false;
+  document.getElementById('bz-dir-shell')?.classList.remove('bz-dir-panel-open');
+  document.querySelectorAll('.bz-dir-day--sel').forEach(el => el.classList.remove('bz-dir-day--sel'));
+  _dirRenderPanelEmpty();
+}
+
+function _dirToggleMore() { _dirExpanded = true; _dirRenderPanel(); }
+
+function _dirRenderPanel() {
+  const p = document.getElementById('bz-dir-panel');
+  if (!p || !_dirSelectedDay) return;
+  const list  = _dirDayMap.get(_dirSelectedDay) || [];
+  const shown = _dirExpanded ? list : list.slice(0, DIR_PANEL_MAX);
+  const rest  = list.length - shown.length;
+
+  p.innerHTML = `
+    <div class="bz-dir-panel-head">
+      <button type="button" class="bz-dir-back" onclick="_dirBackToMonth()">→ ${_esc(t('directory.backToMonth'))}</button>
+      <div class="bz-dir-panel-date">${_esc(_dirFmt(_dirSelectedDay, { weekday: 'long', day: 'numeric', month: 'long' }))}</div>
+      <div class="bz-dir-panel-count">${_esc(t('directory.countLabel', { count: list.length, num: _bzFmtNum(list.length) }))}</div>
+    </div>
+    ${shown.map(_dirCardHtml).join('')}
+    ${rest > 0 ? `<button type="button" class="bz-dir-showmore" onclick="_dirToggleMore()">+ ${_esc(t('directory.showMore', { count: rest, num: _bzFmtNum(rest) }))}</button>` : ''}`;
+}
+
+function _dirCardHtml(b) {
+  const today   = _dirData?.today || _cairoTodayStr();
+  const end     = b.date_end || b.date_start;
+  const isPast  = end < today;
+  const key     = `${b.source}:${b.id}`;
+  const done    = _dirInterested?.has(key);
+  const isPlat  = b.source === 'platform';
+  // بازار منصّة منتهٍ قد يكون مؤرشفاً وغير موجود في BAZAARS ← لا نعرض زراً ميتاً
+  const canOpen = isPlat && BAZAARS.some(x => String(x.id) === String(b.id));
+
+  const meta = [
+    b.region || '',
+    b.date_start === end
+      ? _dirFmt(b.date_start, { day: 'numeric', month: 'long' })
+      : `${_dirFmt(b.date_start, { day: 'numeric', month: 'long' })} ${getLocale() === 'en' ? '→' : '←'} ${_dirFmt(end, { day: 'numeric', month: 'long' })}`,
+    t('directory.daysCount', { count: b.days_count || 1, num: _bzFmtNum(b.days_count || 1) })
+  ].filter(Boolean).join(' · ');
+
+  const acts = [];
+  if (canOpen) {
+    acts.push(`<button type="button" class="bz-dir-btn bz-dir-btn--details" onclick="_dirOpenDetails('platform','${b.id}')">${_esc(t('directory.detailsBtn'))}</button>`);
+  } else if (!isPlat && !isPast) {
+    acts.push(`<button type="button" class="bz-dir-btn bz-dir-btn--details" onclick="_dirOpenDetails('external','${b.id}')">${_esc(t('directory.detailsBtn'))}</button>`);
+  }
+  if (!isPast) {
+    acts.push(done
+      ? `<button type="button" class="bz-dir-btn bz-dir-btn--done" disabled>✓ ${_esc(t('directory.interestDone'))}</button>`
+      : `<button type="button" class="bz-dir-btn bz-dir-btn--interest" id="dir-int-${b.source}-${b.id}" onclick="_dirRegisterInterest('${b.source}','${b.id}',this)">${_esc(t('directory.interestBtn'))}</button>`);
+  }
+
+  return `
+    <div class="bz-dir-card bz-dir-card--${b.source}${isPast ? ' bz-dir-card--past' : ''}">
+      <div class="bz-dir-card-top">
+        <div class="bz-dir-card-name">${_esc(b.name)}</div>
+        ${isPlat ? `<span class="bz-dir-badge">${_esc(t('directory.badgePlatform'))}</span>` : ''}
+      </div>
+      <div class="bz-dir-card-meta">${_esc(meta)}</div>
+      ${acts.length ? `<div class="bz-dir-card-acts">${acts.join('')}</div>` : ''}
+      <div class="bz-dir-login-note" id="dir-note-${b.source}-${b.id}" style="display:none"></div>
+    </div>`;
+}
+
+/* ── زر التفاصيل ── */
+function _dirOpenDetails(source, id) {
+  const b = (_dirData?.rows || []).find(x => String(x.id) === String(id) && x.source === source);
+  if (!b) return;
+
+  if (source === 'platform') {
+    closeBazaarDirectory();
+    openBazaarDetail(id);           // يتكفّل بجيتنج تسجيل الدخول بنفسه (_showBzLoginGate)
+    return;
+  }
+  // خارجي: لا توجد له صفحة داخل المنصة ← واتساب مكاني Spot برسالة جاهزة
+  const msg = t('directory.waMessage', {
+    name: b.name,
+    date: _dirFmt(b.date_start, { day: 'numeric', month: 'long', year: 'numeric' })
+  });
+  window.open(`https://wa.me/${DIR_WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+}
+
+/* ── زر «مهتم» ── */
+async function _dirRegisterInterest(source, id, btn) {
+  const note = document.getElementById(`dir-note-${source}-${id}`);
+
+  if (!currentUser) {
+    if (note) {
+      note.innerHTML = `${_esc(t('directory.loginRequired'))} <a href="/?p=login">${_esc(t('directory.loginLink'))}</a>`;
+      note.style.display = '';
+    }
+    return;
+  }
+  if (note) note.style.display = 'none';
+
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const { data, error } = await sbClient.rpc('register_bazaar_interest', { p_source: source, p_id: id });
+    if (error) throw error;
+    if (!data?.ok) {
+      if (data?.error === 'login_required') {
+        if (note) {
+          note.innerHTML = `${_esc(t('directory.loginRequired'))} <a href="/?p=login">${_esc(t('directory.loginLink'))}</a>`;
+          note.style.display = '';
+        }
+        btn.disabled = false; btn.textContent = old;
+        return;
+      }
+      throw new Error(data?.error || 'failed');
+    }
+
+    _dirInterested.add(`${source}:${id}`);
+    btn.className   = 'bz-dir-btn bz-dir-btn--done';
+    btn.textContent = '✓ ' + t('directory.interestDone');
+    btn.disabled    = true;
+    if (!data.already) _showShareToast(t('directory.interestSaved'));
+  } catch (e) {
+    console.error('register interest error:', e);
+    btn.disabled = false; btn.textContent = old;
+    _showShareToast(t('directory.interestError'));
+  }
+}
+
+/* ── السحب يمين/شمال لتغيير الشهر (نفس نمط معرض الصور) ── */
+function _dirInitSwipe(el) {
+  if (!el) return;
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (!_dirOpen || _dirSelectedDay) return;     // لا سحب أثناء عرض بانل اليوم
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) > 40 && dy < 60) {
+      const rtl = getLocale() !== 'en';
+      _dirNavMonth(rtl ? (dx > 0 ? 1 : -1) : (dx < 0 ? 1 : -1));
+    }
+  }, { passive: true });
 }
 

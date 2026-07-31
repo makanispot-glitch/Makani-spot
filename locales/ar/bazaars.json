@@ -84,6 +84,43 @@
     "prevPage": "السابق",
     "nextPage": "التالي"
   },
+  "directory": {
+    "ctaTitle": "دليل البازارات في مصر",
+    "ctaSub": "فريق مكاني Spot بيرصد البازارات المعلنة في مصر ويجمّعها هنا — اللي على المنصة واللي بره",
+    "modalTitle": "دليل البازارات في مصر",
+    "modalSub": "كل البازارات اللي رصدها فريق مكاني Spot — على المنصة وخارجها",
+    "legendPlatform": "على المنصة",
+    "legendExternal": "خارجي",
+    "legendPast": "منتهي",
+    "panelEmpty": "اختار يوم من التقويم عشان تشوف البازارات اللي فيه",
+    "backToMonth": "رجوع للشهر",
+    "countLabel_zero": "لا توجد بازارات",
+    "countLabel_one": "بازار واحد",
+    "countLabel_two": "بازاران",
+    "countLabel_few": "{{num}} بازارات",
+    "countLabel_many": "{{num}} بازارًا",
+    "countLabel_other": "{{num}} بازار",
+    "showMore_one": "عرض بازار آخر",
+    "showMore_two": "عرض بازارين آخرين",
+    "showMore_few": "عرض {{num}} بازارات أخرى",
+    "showMore_many": "عرض {{num}} بازارًا آخر",
+    "showMore_other": "عرض {{num}} بازار آخر",
+    "badgePlatform": "على المنصة",
+    "daysCount_one": "يوم واحد",
+    "daysCount_two": "يومان",
+    "daysCount_few": "{{num}} أيام",
+    "daysCount_many": "{{num}} يومًا",
+    "daysCount_other": "{{num}} يوم",
+    "detailsBtn": "التفاصيل",
+    "interestBtn": "مهتم",
+    "interestDone": "سجّلت اهتمامك",
+    "interestSaved": "✅ تم تسجيل اهتمامك بالبازار",
+    "interestError": "⚠️ حصلت مشكلة، جرّب تاني",
+    "loginRequired": "سجّل دخولك الأول عشان تقدر تسجّل اهتمامك.",
+    "loginLink": "تسجيل الدخول",
+    "waMessage": "أنا مهتم ببازار «{{name}}» يوم {{date}}، وأرغب في معرفة تفاصيله، وسعر الاشتراك، وهل ما زال الحجز متاحًا؟",
+    "loadError": "تعذّر تحميل الدليل — جرّب تاني"
+  },
   "card": {
     "verifiedOrganizer": "✓ منظم موثق",
     "organizerFallback": "منظّم البازار",
@@ -1057,7 +1094,9 @@
     }
   },
   "organize": {
-    "nav": { "title": "🎪 تنظيم بازار" },
+    "nav": {
+      "title": "🎪 تنظيم بازار"
+    },
     "hero": {
       "title": "نظّم <span>بازارك</span> معنا",
       "sub": "أرسل طلب تنظيم البازار وسيراجعه فريق مكاني Spot خلال 48 ساعة — منظمون موثّقون فقط"
@@ -1514,7 +1553,9 @@
     }
   },
   "verification": {
-    "nav": { "title": "🎪 توثيق المنظم" },
+    "nav": {
+      "title": "🎪 توثيق المنظم"
+    },
     "hero": {
       "title": "اطلب <span>توثيق حسابك</span> كمنظّم",
       "sub": "أكمل البيانات وهنراجع طلبك خلال ٤٨ ساعة — بعد التوثيق بتظهر شارة ✓ عندك في كل البازارات"

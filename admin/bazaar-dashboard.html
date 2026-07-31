@@ -360,6 +360,11 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('archive')" id="ni-archive"><span class="ic">📦</span>الأرشيف<span class="nb" id="nb-archive" style="display:none;background:var(--mu);color:#fff">0</span></div>
     <div class="ni" onclick="gp('trash')" id="ni-trash"><span class="ic">🗑️</span>المحذوفة<span class="nb r" id="nb-trash" style="display:none">0</span></div>
 
+    <div class="nl">📅 دليل البازارات</div>
+    <div class="ni" onclick="gp('dir-list')" id="ni-dir-list"><span class="ic">🗓️</span>البازارات الخارجية<span class="nb" id="nb-dir-list" style="display:none">0</span></div>
+    <div class="ni" onclick="gp('dir-add')"><span class="ic">➕</span>إضافة بازار خارجي</div>
+    <div class="ni" onclick="gp('dir-interests')" id="ni-dir-interests"><span class="ic">👥</span>المهتمون بالبازارات<span class="nb g" id="nb-dir-interests" style="display:none">0</span></div>
+
     <div class="nl">الدعم</div>
     <div class="ni" onclick="gp('org-support')" id="ni-org-support"><span class="ic">🛡️</span>دعم المنظّمين<span class="nb g" id="nb-org-support" style="display:none">0</span></div>
 
@@ -1014,6 +1019,115 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
   </div>
 
+  <!-- ═══ DIRECTORY — البازارات الخارجية ═══ -->
+  <div class="pg" id="pg-dir-list">
+    <div class="sh">
+      <div class="st">🗓️ دليل البازارات — <span>البازارات الخارجية</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadDirList()">🔄 تحديث</button>
+    </div>
+
+    <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:var(--tx);line-height:1.7">
+      <strong style="color:#60a5fa">📅 دليل البازارات في مصر</strong> — بازارات يرصدها الفريق من خارج المنصة ويضيفها يدوياً.
+      تظهر تلقائياً في تقويم الدليل داخل صفحة البازارات إلى جانب بازارات المنصة.
+      <br>الأرشفة تلقائية بعد <strong>3 شهور</strong> من انتهاء البازار، والحذف النهائي بعد <strong>4 شهور</strong>.
+    </div>
+
+    <div class="sc" style="margin-bottom:14px">
+      <div class="sc-card"><div class="sc-val" id="dir-s-total">0</div><div class="sc-lbl">في هذا القسم</div></div>
+      <div class="sc-card"><div class="sc-val" id="dir-s-int" style="color:var(--gr)">0</div><div class="sc-lbl">إجمالي الاهتمامات</div></div>
+      <div class="sc-card"><div class="sc-val" id="dir-s-clean" style="font-size:13px">—</div><div class="sc-lbl">آخر تنظيف تلقائي</div></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-sm btn-or" id="dir-tab-active"   onclick="setDirScope('active')">النشطة</button>
+      <button class="btn btn-sm btn-gh" id="dir-tab-archived" onclick="setDirScope('archived')">المؤرشفة</button>
+    </div>
+
+    <div id="dir-list"><div class="ld"><div class="spin"></div>جارٍ التحميل…</div></div>
+  </div>
+
+  <!-- ═══ DIRECTORY — إضافة/تعديل بازار خارجي ═══ -->
+  <div class="pg" id="pg-dir-add">
+    <div class="sh">
+      <div class="st">➕ <span id="dir-form-title">إضافة بازار خارجي</span></div>
+      <button class="btn btn-gh btn-sm" onclick="clearDirForm()">🗑️ مسح</button>
+    </div>
+
+    <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--mu);line-height:1.7">
+      بيانات مختصرة فقط — الاسم والمنطقة والتاريخ. لا تُرفع صور ولا رابط مصدر؛ مصادر الرصد لا تُعرض للجمهور إطلاقاً.
+    </div>
+
+    <div class="fgrid">
+      <div>
+        <div class="fg">
+          <label>اسم البازار <span class="rq">*</span></label>
+          <input type="text" class="fc" id="dir-name" placeholder="مثال: Handmade Expo" oninput="dirUpdatePreview()">
+        </div>
+        <div class="fr2">
+          <div class="fg">
+            <label>المحافظة / المنطقة</label>
+            <select class="fc" id="dir-region" onchange="dirUpdatePreview()"><option value="">— بدون —</option></select>
+          </div>
+          <div class="fg">
+            <label>اسم المكان <span style="font-size:10px;color:var(--mu)">(اختياري — داخلي)</span></label>
+            <input type="text" class="fc" id="dir-venue" placeholder="مثال: مول مصر">
+          </div>
+        </div>
+        <div class="fr3">
+          <div class="fg"><label>تاريخ البداية <span class="rq">*</span></label><input type="date" class="fc" id="dir-ds" oninput="dirCalcDays();dirUpdatePreview()"></div>
+          <div class="fg"><label>تاريخ النهاية</label><input type="date" class="fc" id="dir-de" oninput="dirCalcDays();dirUpdatePreview()"></div>
+          <div class="fg"><label>عدد الأيام</label><input type="number" class="fc" id="dir-days" placeholder="تلقائي" readonly style="color:var(--mu)"></div>
+        </div>
+        <div class="fg">
+          <label>ملاحظات داخلية <span style="font-size:10px;color:var(--mu)">(للفريق فقط — لا تظهر للمستخدم)</span></label>
+          <textarea class="fc" id="dir-notes" placeholder="مثال: المنظّم بيرد على الواتس بسرعة — السعر السنة اللي فاتت كان 1500ج"></textarea>
+        </div>
+      </div>
+      <div>
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px;margin-bottom:12px">
+          <div style="font-size:10.5px;font-weight:700;color:var(--mu);margin-bottom:8px">معاينة بطاقة الدليل</div>
+          <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="font-weight:800;font-size:13.5px" id="dir-prev-name">اسم البازار…</div>
+              <span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(148,163,184,.16);color:#94a3b8;white-space:nowrap">خارجي</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--mu);margin-top:5px" id="dir-prev-meta">—</div>
+          </div>
+        </div>
+        <div class="hint">البازار يظهر في التقويم في <strong>كل</strong> أيامه، وبلون مختلف عن بازارات المنصة.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-or" id="btn-dir-save" onclick="saveDirBazaar()">✅ حفظ</button>
+      <button class="btn btn-gh" onclick="clearDirForm();gp('dir-list')">إلغاء</button>
+    </div>
+    <div id="dir-add-res"></div>
+  </div>
+
+  <!-- ═══ DIRECTORY — المهتمون ═══ -->
+  <div class="pg" id="pg-dir-interests">
+    <div class="sh">
+      <div class="st">👥 <span>المهتمون بالبازارات</span></div>
+      <button class="btn btn-gh btn-sm" onclick="loadDirInterests()">🔄 تحديث</button>
+    </div>
+
+    <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.22);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:var(--tx);line-height:1.7">
+      <strong style="color:var(--gr)">👥 مؤشّر الطلب</strong> — كل صف هنا مستخدم ضغط «مهتم» على بازار داخل الدليل.
+      التسجيل مرة واحدة لكل مستخدم لكل بازار، ويتطلب تسجيل دخول — فالبيانات نظيفة وقابلة للتواصل.
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-sm btn-or" id="dint-tab-all"      onclick="setDintSource('')">الكل</button>
+      <button class="btn btn-sm btn-gh" id="dint-tab-platform" onclick="setDintSource('platform')">على المنصة</button>
+      <button class="btn btn-sm btn-gh" id="dint-tab-external" onclick="setDintSource('external')">خارجية</button>
+      <span style="margin-inline-start:auto;font-size:12px;color:var(--mu)">الإجمالي: <strong id="dint-total" style="color:var(--or)">0</strong></span>
+    </div>
+
+    <div id="dint-list"><div class="ld"><div class="spin"></div>جارٍ التحميل…</div></div>
+    <div id="dint-pager" style="display:flex;gap:8px;justify-content:center;margin-top:14px"></div>
+  </div>
+
   <!-- ═══ AUDIT LOG ═══ -->
   <div class="pg" id="pg-audit">
     <div class="sh">
@@ -1496,7 +1610,7 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260730171541"></script>
+<script src="../shared/sb-config.js?v=20260731191900"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -3336,6 +3450,9 @@ function gp(tab){
   if(tab==='mkt-log')     { _mktLogPage=1; loadMktLog(); }
   if(tab==='abuse')       loadAbusePage();
   if(tab==='reported-comments') loadReportedComments();
+  if(tab==='dir-list')      loadDirList();
+  if(tab==='dir-add')       dirInitForm();
+  if(tab==='dir-interests') { _dintPage=1; loadDirInterests(); }
 }
 
 /* ══════════════════════════════════════════
@@ -5375,6 +5492,365 @@ async function adminRestoreSnapshot(bazaarId, logId) {
 /* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════
+   📅 دليل البازارات في مصر — البازارات الخارجية + المهتمون
+   ════════════════════════════════════════════════════════════════ */
+
+const DIR_REGIONS = ['القاهرة','الجيزة','الإسكندرية','الغربية','المنوفية','البحيرة','الدقهلية','الشرقية','القليوبية','كفر الشيخ','دمياط','بورسعيد','الإسماعيلية','السويس','شمال سيناء','جنوب سيناء','البحر الأحمر','سوهاج','قنا','الأقصر','أسوان','أسيوط','المنيا','الفيوم','بني سويف','مطروح','الوادي الجديد'];
+
+let _dirScope     = 'active';   // 'active' | 'archived'
+let _dirEditingId = null;       // id البازار الجاري تعديله (null = إضافة جديدة)
+let _dirRows      = [];         // آخر قائمة مُحمّلة (لتفادي تمرير الأسماء في onclick)
+let _dintPage     = 1;
+let _dintSource   = '';         // '' | 'platform' | 'external'
+const DINT_PER_PAGE = 50;
+
+function dirEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _dirFmtRange(ds, de) {
+  if (!ds) return '—';
+  const end = de || ds;
+  if (end === ds) return ds;
+  return `${ds} → ${end}`;
+}
+
+/* ─────────── النموذج ─────────── */
+
+function dirInitForm() {
+  const sel = document.getElementById('dir-region');
+  if (sel && sel.options.length <= 1) {
+    sel.innerHTML = '<option value="">— بدون —</option>' +
+      DIR_REGIONS.map(r => `<option value="${dirEsc(r)}">${dirEsc(r)}</option>`).join('');
+  }
+  dirUpdatePreview();
+}
+
+function clearDirForm() {
+  _dirEditingId = null;
+  ['dir-name','dir-venue','dir-ds','dir-de','dir-days','dir-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const reg = document.getElementById('dir-region'); if (reg) reg.value = '';
+  document.getElementById('dir-form-title').textContent = 'إضافة بازار خارجي';
+  document.getElementById('btn-dir-save').textContent   = '✅ حفظ';
+  document.getElementById('dir-add-res').innerHTML      = '';
+  dirUpdatePreview();
+}
+
+function dirCalcDays() {
+  const ds = document.getElementById('dir-ds').value;
+  const de = document.getElementById('dir-de').value;
+  const out = document.getElementById('dir-days');
+  if (!ds) { out.value = ''; return; }
+  const end = de || ds;
+  if (end < ds) { out.value = ''; return; }
+  out.value = Math.round((new Date(end) - new Date(ds)) / 86400000) + 1;
+}
+
+function dirUpdatePreview() {
+  const name = (document.getElementById('dir-name')?.value || '').trim();
+  const reg  = document.getElementById('dir-region')?.value || '';
+  const ds   = document.getElementById('dir-ds')?.value || '';
+  const de   = document.getElementById('dir-de')?.value || '';
+  const days = document.getElementById('dir-days')?.value || '';
+  const nEl = document.getElementById('dir-prev-name');
+  const mEl = document.getElementById('dir-prev-meta');
+  if (nEl) nEl.textContent = name || 'اسم البازار…';
+  if (mEl) {
+    const parts = [];
+    if (reg) parts.push(reg);
+    if (ds)  parts.push(_dirFmtRange(ds, de));
+    if (days) parts.push(days + (days === '1' ? ' يوم' : ' أيام'));
+    mEl.textContent = parts.length ? parts.join(' · ') : '—';
+  }
+}
+
+async function saveDirBazaar(force) {
+  const btn = document.getElementById('btn-dir-save');
+  const res = document.getElementById('dir-add-res');
+  const payload = {
+    name:       document.getElementById('dir-name').value.trim(),
+    region:     document.getElementById('dir-region').value,
+    date_start: document.getElementById('dir-ds').value,
+    date_end:   document.getElementById('dir-de').value || null,
+    venue_name: document.getElementById('dir-venue').value.trim(),
+    notes:      document.getElementById('dir-notes').value.trim()
+  };
+  if (_dirEditingId) payload.id = _dirEditingId;
+  if (force)         payload.force = true;
+
+  if (!payload.name)       { toast('اسم البازار مطلوب', 'e'); return; }
+  if (!payload.date_start) { toast('تاريخ البداية مطلوب', 'e'); return; }
+  if (payload.date_end && payload.date_end < payload.date_start) {
+    toast('تاريخ النهاية قبل تاريخ البداية', 'e'); return;
+  }
+
+  btn.disabled = true;
+  const oldTxt = btn.textContent;
+  btn.textContent = '⏳ جارٍ الحفظ…';
+  try {
+    const { data, error } = await db.rpc('admin_upsert_external_bazaar', { p_data: payload });
+    if (error) throw error;
+
+    if (!data?.success) {
+      if (data?.error === 'duplicate') {
+        const ex = data.existing || {};
+        const ok = confirm(
+          `⚠️ هذا البازار مُسجّل بالفعل:\n\n` +
+          `"${ex.name}"\n${ex.region ? ex.region + '\n' : ''}${_dirFmtRange(ex.date_start, ex.date_end)}\n\n` +
+          `هل تريد إضافته مرة أخرى رغم ذلك؟`
+        );
+        btn.disabled = false; btn.textContent = oldTxt;
+        if (ok) saveDirBazaar(true);
+        return;
+      }
+      const msgs = {
+        name_required:       'اسم البازار مطلوب',
+        date_start_required: 'تاريخ البداية مطلوب',
+        bad_date_range:      'تاريخ النهاية قبل تاريخ البداية',
+        not_found:           'البازار غير موجود'
+      };
+      throw new Error(msgs[data?.error] || data?.error || 'خطأ غير معروف');
+    }
+
+    const wasEdit = !!_dirEditingId;
+    res.innerHTML = `<div class="rok">✅ ${wasEdit ? 'تم التعديل' : 'تمت الإضافة'}: ${dirEsc(payload.name)}</div>`;
+    toast(wasEdit ? '✅ تم تعديل البازار الخارجي' : '✅ تمت إضافة البازار للدليل', 's');
+    clearDirForm();
+    _refreshDirBadges();
+    if (wasEdit) gp('dir-list');
+  } catch (e) {
+    res.innerHTML = `<div class="rer">❌ ${dirEsc(e.message)}</div>`;
+    toast('❌ ' + e.message, 'e');
+  } finally {
+    btn.disabled = false; btn.textContent = oldTxt;
+  }
+}
+
+/* ─────────── القائمة ─────────── */
+
+function setDirScope(scope) {
+  _dirScope = scope;
+  document.getElementById('dir-tab-active').className   = 'btn btn-sm ' + (scope === 'active'   ? 'btn-or' : 'btn-gh');
+  document.getElementById('dir-tab-archived').className = 'btn btn-sm ' + (scope === 'archived' ? 'btn-or' : 'btn-gh');
+  loadDirList();
+}
+
+async function loadDirList() {
+  const el = document.getElementById('dir-list');
+  if (!el) return;
+  el.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  try {
+    const { data, error } = await db.rpc('admin_list_external_bazaars', {
+      p_scope: _dirScope, p_limit: 200, p_offset: 0
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'فشل التحميل');
+
+    _dirRows = data.rows || [];
+    document.getElementById('dir-s-total').textContent = data.total || 0;
+    document.getElementById('dir-s-int').textContent =
+      _dirRows.reduce((s, r) => s + (r.interest_count || 0), 0);
+    document.getElementById('dir-s-clean').textContent = data.last_cleanup || 'لم يعمل بعد';
+
+    renderDirList(_dirRows);
+    _refreshDirBadges();
+  } catch (e) {
+    el.innerHTML = `<div class="empty"><div class="ei">❌</div>فشل التحميل: ${dirEsc(e.message)}</div>`;
+    console.error('loadDirList error:', e);
+  }
+}
+
+function renderDirList(list) {
+  const el = document.getElementById('dir-list');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="ei">🗓️</div>${
+      _dirScope === 'archived' ? 'لا توجد بازارات مؤرشفة' : 'لا توجد بازارات خارجية — ابدأ بإضافة واحد'
+    }</div>`;
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  el.innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>البازار</th><th>المنطقة</th><th>التاريخ</th><th>الأيام</th><th>مهتمون</th><th>الإجراءات</th>
+      </tr></thead>
+      <tbody>
+        ${list.map(r => {
+          const end    = r.date_end || r.date_start;
+          const isPast = end < today;
+          return `<tr${isPast ? ' style="opacity:.62"' : ''}>
+            <td>
+              <div style="font-weight:700;font-size:13px">${dirEsc(r.name)}</div>
+              ${r.venue_name ? `<div style="font-size:10px;color:var(--mu)">${dirEsc(r.venue_name)}</div>` : ''}
+              ${r.notes ? `<div style="font-size:10px;color:var(--mu);margin-top:2px" title="${dirEsc(r.notes)}">📝 ${dirEsc(r.notes.slice(0, 48))}${r.notes.length > 48 ? '…' : ''}</div>` : ''}
+            </td>
+            <td style="font-size:12px">${dirEsc(r.region || '—')}</td>
+            <td style="font-size:11.5px">${dirEsc(r.date_start)}${end !== r.date_start ? `<br><span style="color:var(--mu);font-size:10px">→ ${dirEsc(end)}</span>` : ''}${isPast ? '<br><span style="color:var(--mu);font-size:9.5px">منتهٍ</span>' : ''}</td>
+            <td style="font-size:12px">${r.days_count || 1}</td>
+            <td style="font-size:12px"><span style="color:${r.interest_count ? 'var(--gr)' : 'var(--mu)'};font-weight:700">${r.interest_count || 0}</span></td>
+            <td>
+              <div class="row-acts">
+                <button class="btn btn-sm btn-gh" onclick="editDirBazaar('${r.id}')">✏️ تعديل</button>
+                ${_dirScope === 'archived'
+                  ? `<button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)" onclick="restoreDirBazaar('${r.id}')">♻️ استعادة</button>`
+                  : `<button class="btn btn-sm" style="background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.28)" onclick="archiveDirBazaar('${r.id}')">📦 أرشفة</button>`}
+                <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)" onclick="purgeDirBazaar('${r.id}')">☠️ حذف نهائي</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function editDirBazaar(id) {
+  const r = _dirRows.find(x => x.id === id);
+  if (!r) { toast('البازار غير موجود في القائمة الحالية', 'e'); return; }
+  gp('dir-add');
+  dirInitForm();
+  _dirEditingId = id;
+  document.getElementById('dir-name').value   = r.name || '';
+  document.getElementById('dir-region').value = r.region || '';
+  document.getElementById('dir-ds').value     = r.date_start || '';
+  document.getElementById('dir-de').value     = r.date_end || '';
+  document.getElementById('dir-venue').value  = r.venue_name || '';
+  document.getElementById('dir-notes').value  = r.notes || '';
+  document.getElementById('dir-form-title').textContent = 'تعديل بازار خارجي';
+  document.getElementById('btn-dir-save').textContent   = '💾 حفظ التعديلات';
+  document.getElementById('dir-add-res').innerHTML      = '';
+  dirCalcDays(); dirUpdatePreview();
+}
+
+async function archiveDirBazaar(id) {
+  const r = _dirRows.find(x => x.id === id);
+  if (!confirm(`📦 أرشفة "${r?.name || ''}"؟\n\nهيختفي من تقويم الدليل، وتقدر تستعيده من تبويب "المؤرشفة".`)) return;
+  await _dirMutate('admin_delete_external_bazaar', { p_id: id, p_permanent: false }, '📦 تمت الأرشفة');
+}
+
+async function restoreDirBazaar(id) {
+  await _dirMutate('admin_restore_external_bazaar', { p_id: id }, '♻️ تمت الاستعادة');
+}
+
+async function purgeDirBazaar(id) {
+  const r = _dirRows.find(x => x.id === id);
+  const n = r?.interest_count || 0;
+  if (!confirm(
+    `☠️ حذف نهائي بلا رجعة: "${r?.name || ''}"\n\n` +
+    (n ? `⚠️ سيتم حذف ${n} تسجيل اهتمام مرتبط به أيضاً.\n\n` : '') +
+    `متابعة؟`)) return;
+  if (!confirm('تأكيد أخير — الحذف نهائي ولا يمكن التراجع عنه.')) return;
+  await _dirMutate('admin_delete_external_bazaar', { p_id: id, p_permanent: true }, '☠️ تم الحذف النهائي');
+}
+
+async function _dirMutate(fn, params, okMsg) {
+  try {
+    const { data, error } = await db.rpc(fn, params);
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error === 'not_found' ? 'البازار غير موجود' : (data?.error || 'فشلت العملية'));
+    toast(okMsg, 's');
+    loadDirList();
+  } catch (e) {
+    toast('❌ ' + e.message, 'e');
+    console.error(fn + ' error:', e);
+  }
+}
+
+/* ─────────── المهتمون ─────────── */
+
+function setDintSource(src) {
+  _dintSource = src;
+  _dintPage = 1;
+  ['all','platform','external'].forEach(k => {
+    const btn = document.getElementById('dint-tab-' + k);
+    const on = (k === 'all' && src === '') || k === src;
+    if (btn) btn.className = 'btn btn-sm ' + (on ? 'btn-or' : 'btn-gh');
+  });
+  loadDirInterests();
+}
+
+async function loadDirInterests() {
+  const el = document.getElementById('dint-list');
+  if (!el) return;
+  el.innerHTML = '<div class="ld"><div class="spin"></div>جارٍ التحميل…</div>';
+  try {
+    const { data, error } = await db.rpc('admin_list_bazaar_interests', {
+      p_limit:  DINT_PER_PAGE,
+      p_offset: (_dintPage - 1) * DINT_PER_PAGE,
+      p_source: _dintSource || null
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'فشل التحميل');
+
+    document.getElementById('dint-total').textContent = data.total || 0;
+    renderDirInterests(data.rows || [], data.total || 0);
+    _refreshDirBadges();
+  } catch (e) {
+    el.innerHTML = `<div class="empty"><div class="ei">❌</div>فشل التحميل: ${dirEsc(e.message)}</div>`;
+    console.error('loadDirInterests error:', e);
+  }
+}
+
+function renderDirInterests(rows, total) {
+  const el = document.getElementById('dint-list');
+  if (!el) return;
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">👥</div>لا توجد تسجيلات اهتمام بعد</div>';
+    document.getElementById('dint-pager').innerHTML = '';
+    return;
+  }
+  el.innerHTML = `
+    <table class="tbl">
+      <thead><tr><th>المستخدم</th><th>الهاتف</th><th>البازار</th><th>النوع</th><th>التاريخ</th></tr></thead>
+      <tbody>
+        ${rows.map(r => {
+          const wa = (r.user_phone || '').replace(/\D/g, '');
+          return `<tr>
+            <td>
+              <div style="font-weight:700;font-size:12.5px">${dirEsc(r.user_name || '—')}</div>
+              ${r.user_email ? `<div style="font-size:10px;color:var(--mu)">${dirEsc(r.user_email)}</div>` : ''}
+            </td>
+            <td style="font-size:11.5px">${wa
+              ? `<a href="https://wa.me/${wa.startsWith('0') ? '2' + wa : wa}" target="_blank" rel="noopener" style="color:var(--gr);text-decoration:none">💬 ${dirEsc(r.user_phone)}</a>`
+              : '—'}</td>
+            <td style="font-size:12.5px;font-weight:600">${dirEsc(r.bazaar_name)}</td>
+            <td><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;${
+              r.source === 'platform'
+                ? 'background:rgba(243,100,24,.15);color:var(--or)'
+                : 'background:rgba(148,163,184,.16);color:#94a3b8'
+            }">${r.source === 'platform' ? 'على المنصة' : 'خارجي'}</span></td>
+            <td style="font-size:10.5px;color:var(--mu)">${new Date(r.created_at).toLocaleString('ar-EG')}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  const pages = Math.ceil(total / DINT_PER_PAGE);
+  document.getElementById('dint-pager').innerHTML = pages > 1
+    ? `<button class="btn btn-sm btn-gh" ${_dintPage <= 1 ? 'disabled' : ''} onclick="_dintPage--;loadDirInterests()">→ السابق</button>
+       <span style="font-size:12px;color:var(--mu);align-self:center">صفحة ${_dintPage} من ${pages}</span>
+       <button class="btn btn-sm btn-gh" ${_dintPage >= pages ? 'disabled' : ''} onclick="_dintPage++;loadDirInterests()">التالي ←</button>`
+    : '';
+}
+
+async function _refreshDirBadges() {
+  try {
+    const [{ count: extCount }, { count: intCount }] = await Promise.all([
+      db.from('external_bazaars').select('id', { count: 'exact', head: true }).eq('is_archived', false),
+      db.from('bazaar_interests').select('id', { count: 'exact', head: true })
+    ]);
+    const b1 = document.getElementById('nb-dir-list');
+    if (b1) { b1.textContent = extCount || 0; b1.style.display = extCount ? '' : 'none'; }
+    const b2 = document.getElementById('nb-dir-interests');
+    if (b2) { b2.textContent = intCount || 0; b2.style.display = intCount ? '' : 'none'; }
+  } catch(_) {}
+}
+
 // تحديث المعاينة عند الكتابة
 document.getElementById('nb-name').addEventListener('input',updatePreview);
 document.getElementById('nb-area').addEventListener('input',updatePreview);
@@ -5395,6 +5871,7 @@ async function mkLogout() {
   }
   loadData();
   loadArchiveDays();
+  _refreshDirBadges();
 })();
 </script>
 </body>

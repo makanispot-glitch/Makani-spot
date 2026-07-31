@@ -86,6 +86,34 @@
     "prevPage": "Previous",
     "nextPage": "Next"
   },
+  "directory": {
+    "ctaTitle": "Bazaar Directory — Egypt",
+    "ctaSub": "The Makani Spot team tracks bazaars advertised across Egypt and gathers them here — both on the platform and beyond it",
+    "modalTitle": "Bazaar Directory — Egypt",
+    "modalSub": "Every bazaar the Makani Spot team has tracked — on the platform and outside it",
+    "legendPlatform": "On the platform",
+    "legendExternal": "External",
+    "legendPast": "Ended",
+    "panelEmpty": "Pick a day from the calendar to see its bazaars",
+    "backToMonth": "Back to month",
+    "countLabel_zero": "No bazaars",
+    "countLabel_one": "1 bazaar",
+    "countLabel_other": "{{num}} bazaars",
+    "showMore_one": "Show 1 more bazaar",
+    "showMore_other": "Show {{num}} more bazaars",
+    "badgePlatform": "On the platform",
+    "daysCount_one": "1 day",
+    "daysCount_other": "{{num}} days",
+    "detailsBtn": "Details",
+    "interestBtn": "Interested",
+    "interestDone": "Interest registered",
+    "interestSaved": "✅ Your interest has been registered",
+    "interestError": "⚠️ Something went wrong — please try again",
+    "loginRequired": "Please log in first to register your interest.",
+    "loginLink": "Log in",
+    "waMessage": "I'm interested in the \"{{name}}\" bazaar on {{date}}. I'd like to know more about it, the participation price, and whether booking is still open.",
+    "loadError": "Couldn't load the directory — please try again"
+  },
   "card": {
     "verifiedOrganizer": "✓ Verified Organizer",
     "organizerFallback": "Bazaar Organizer",
@@ -1078,7 +1106,9 @@
     }
   },
   "organize": {
-    "nav": { "title": "🎪 Organize a Bazaar" },
+    "nav": {
+      "title": "🎪 Organize a Bazaar"
+    },
     "hero": {
       "title": "Organize <span>Your Bazaar</span> With Us",
       "sub": "Submit your bazaar request and the Makani Spot team will review it within 48 hours — verified organizers only"
@@ -1542,7 +1572,9 @@
     }
   },
   "verification": {
-    "nav": { "title": "🎪 Organizer Verification" },
+    "nav": {
+      "title": "🎪 Organizer Verification"
+    },
     "hero": {
       "title": "Request <span>Organizer Verification</span>",
       "sub": "Complete your info and we'll review your request within 48 hours — once verified, a ✓ badge appears on all your bazaars"
