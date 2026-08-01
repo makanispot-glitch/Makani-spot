@@ -4324,6 +4324,9 @@ async function openBazaarDirectory() {
   if (!modal) return;
   _dirOpen = true;
   modal.classList.add('open');
+  // على الموبايل #bottom-nav ثابت بنفس z-index المودال ويأتي بعده في الـ DOM، فيغطي
+  // أسفل التقويم (نفس فئة الخطأ الموثّقة في sd-detail-open) — يُخفى طول ما المودال مفتوح
+  document.body.classList.add('bz-dir-open');
   document.addEventListener('keydown', _dirKeyHandler);
 
   if (!_dirData) await _dirLoad();
@@ -4334,6 +4337,7 @@ function closeBazaarDirectory() {
   const modal = document.getElementById('bz-dir-modal');
   if (modal) modal.classList.remove('open');
   _dirOpen = false;
+  document.body.classList.remove('bz-dir-open');
   document.removeEventListener('keydown', _dirKeyHandler);
 }
 
