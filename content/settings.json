@@ -1,0 +1,11 @@
+{
+  "sectionTitle": "مركز المعرفة",
+  "sectionDescription": "أدلة عملية وأرقام حقيقية لأصحاب المشاريع الصغيرة في مصر — من اختيار المكان إلى التراخيص والتسعير.",
+  "perPage": 9,
+  "featuredMode": "hero",
+  "featuredCount": 3,
+  "relatedCount": 3,
+  "showAuthor": true,
+  "showReadingTime": true,
+  "showUpdatedDate": true
+}

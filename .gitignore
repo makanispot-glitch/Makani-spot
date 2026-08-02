@@ -11,7 +11,16 @@ package-lock.json
 # يُقدَّم علنًا على makanispot.com/<path>. هذه الملفات تبقى على
 # الجهاز فقط ولا تدخل git إطلاقًا.
 PLATFORM_GUIDE.md
+SETUP-CONTENT.md
 docs/
 migrations/
 bump-version.ps1
 githooks/
+
+# مخرجات build-content.js — تُبنى في كل ديبلوي على Cloudflare Pages،
+# فلا داعي لدخولها المستودع. المصدر هو content/articles/*.md فقط.
+# فائدة جانبية: bump-version.ps1 (git ls-files -- '*.html') لا يراها،
+# والسكربت هو من يختم ?v= عليها بقراءة version.js وقت البناء.
+/articles/*/
+/articles/_index.json
+/sitemap.xml

@@ -1,0 +1,1608 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>مكاني Spot — إدارة المحتوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../vendor/easymde/easymde.min.css?v=20260802174819">
+<style>
+/* التوكنات والقشرة منسوخة من admin/spaces-hub.html ليطابق شكل بقية لوحات الأدمن.
+   التكرار مقصود — الصفحات الثماني كلها تكرّر الناف، ولا قشرة مشتركة في المنصة. */
+:root {
+  --bg:#080810;--bg2:#0d0d1a;--bg3:#12121f;--bg4:#1a1a2e;--bg5:#222238;
+  --or:#F36418;--or2:#ff8c3a;--org:rgba(255,107,0,.12);--bdo:rgba(255,107,0,.3);
+  --tx:#e8e8f0;--tx2:#b0b0c8;--mu:#6b6b8a;--mu2:#3a3a55;--bd:rgba(255,255,255,.07);
+  --gr:#22C55E;--rd:#EF4444;--yw:#F59E0B;--bl:#60A5FA;--pu:#A78BFA;
+  --r:10px;--r2:14px;--sb:240px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+a{color:var(--or);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;color:var(--tx)}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,107,0,.03)1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+#app.visible{display:flex}
+
+.sidebar{position:fixed;top:0;right:0;width:var(--sb);height:100vh;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;z-index:100;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.sb-logo{display:flex;align-items:center;gap:12px;padding:20px 18px 16px;border-bottom:1px solid var(--bd)}
+.sb-logo-ico{font-size:28px}
+.sb-logo-name{font-size:14px;font-weight:800;color:var(--or)}
+.sb-logo-sub{font-size:10px;color:var(--mu);margin-top:1px}
+.sb-nav{flex:1;padding:10px 8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;font-weight:600;color:var(--tx2);cursor:pointer;transition:all .18s;margin-bottom:2px}
+.sb-item:hover{background:var(--bg3);color:var(--tx)}
+.sb-item.active{background:var(--org);color:var(--or);border:1px solid var(--bdo)}
+.sb-ico{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.sb-badge{background:var(--rd);color:#fff;border-radius:10px;font-size:10px;font-weight:800;padding:1px 7px;margin-right:auto}
+.sb-sep{height:1px;background:var(--bd);margin:8px 12px}
+.sb-bottom{padding:12px 8px 20px;border-top:1px solid var(--bd)}
+.sb-logout{width:100%;background:transparent;border:1px solid var(--mu2);border-radius:var(--r);padding:9px;font-size:12px;font-weight:700;color:var(--mu);transition:all .2s}
+.sb-logout:hover{border-color:var(--rd);color:var(--rd)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+.main-wrap{margin-right:var(--sb);min-height:100vh;display:flex;flex-direction:column;flex:1;transition:margin-right .28s}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
+.topbar-menu{background:transparent;border:none;color:var(--tx2);font-size:20px;padding:4px 8px;border-radius:6px;display:none}
+.topbar-title{font-size:16px;font-weight:800;color:var(--tx);flex:1}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tbtn{background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--tx2);transition:all .2s}
+.tbtn:hover{border-color:var(--or);color:var(--or)}
+.tbtn-primary{background:var(--or);border-color:var(--or);color:#fff}
+.tbtn-primary:hover{opacity:.88}
+
+.page-body{flex:1;overflow-y:auto}
+.page{display:none;padding:24px}
+.page.active{display:block}
+
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.stat-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 18px;display:flex;flex-direction:column;gap:4px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--bdo)}
+.stat-card-ico{font-size:20px;margin-bottom:4px}
+.stat-card-val{font-size:26px;font-weight:900;font-family:'IBM Plex Mono',monospace;line-height:1}
+.stat-card-lbl{font-size:11px;color:var(--mu);font-weight:600;margin-top:2px}
+
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.sec-title{font-size:14px;font-weight:800;color:var(--tx)}
+.sec-sub{font-size:11px;color:var(--mu);margin-top:2px}
+
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.f-inp,.f-sel{background:var(--bg3);border:1.5px solid var(--mu2);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--tx);outline:none;transition:border-color .2s}
+.f-inp:focus,.f-sel:focus{border-color:var(--or)}
+.f-sel{cursor:pointer}
+.f-chip{background:var(--bg3);border:1px solid var(--bd);border-radius:20px;padding:6px 15px;font-size:12px;font-weight:700;color:var(--tx2);transition:all .18s}
+.f-chip:hover{border-color:var(--or);color:var(--or)}
+.f-chip.active{background:var(--org);border-color:var(--bdo);color:var(--or)}
+
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-published{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
+.b-draft{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.b-hidden{background:rgba(107,107,138,.15);color:#6b6b8a;border:1px solid rgba(107,107,138,.3)}
+.b-scheduled{background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.3)}
+.b-featured{background:rgba(251,191,36,.15);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
+
+.t-wrap{overflow-x:auto}
+.t{width:100%;border-collapse:collapse;font-size:12px}
+.t th{background:var(--bg4);padding:10px 12px;text-align:right;font-weight:700;color:var(--mu);border-bottom:1px solid var(--bd);white-space:nowrap}
+.t td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.t tr:hover td{background:rgba(255,107,0,.04)}
+.a-title{font-weight:700;color:var(--tx);display:block;margin-bottom:3px}
+.a-slug{font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace;direction:ltr;display:inline-block}
+
+.btn{border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn:hover{opacity:.82}
+.btn-ok{background:rgba(34,197,94,.18);color:#22C55E}
+.btn-err{background:rgba(239,68,68,.18);color:#EF4444}
+.btn-neu{background:var(--bg5);color:var(--tx2);border:1px solid var(--bd)}
+.btn-or{background:var(--or);color:#fff}
+.btn-yw{background:rgba(245,158,11,.18);color:#F59E0B}
+.btn-bl{background:rgba(96,165,250,.18);color:#60A5FA}
+
+.form-wrap{max-width:900px}
+.form-sec{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:22px;margin-bottom:16px}
+.form-sec-title{font-size:13px;font-weight:800;color:var(--or);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-size:11px;font-weight:600;color:var(--tx2)}
+.fl .rq{color:var(--rd)}
+.fh{font-size:10px;color:var(--mu);margin-top:2px;line-height:1.6}
+.fc{background:var(--bg4);border:1.5px solid var(--mu2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--tx);outline:none;transition:border-color .2s;width:100%}
+.fc:focus{border-color:var(--or)}
+.fc.ltr{direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:12px}
+textarea.fc{resize:vertical;min-height:72px;line-height:1.9}
+.fc-err{border-color:var(--rd)!important}
+.err-msg{font-size:10px;color:var(--rd);min-height:13px}
+
+.radio-row{display:flex;gap:8px;flex-wrap:wrap}
+.radio-chip{display:flex;align-items:center;gap:6px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;color:var(--tx2);cursor:pointer;user-select:none;transition:all .18s}
+.radio-chip:hover{border-color:var(--or);color:var(--tx)}
+.radio-chip input{accent-color:var(--or)}
+.radio-chip:has(input:checked){background:var(--org);border-color:var(--bdo);color:var(--or)}
+
+.upload-zone{border:2px dashed rgba(255,107,0,.3);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;background:var(--org);transition:all .2s}
+.upload-zone:hover{border-color:var(--or);background:rgba(255,107,0,.16)}
+.upload-zone-ico{font-size:24px;margin-bottom:4px}
+.upload-zone-lbl{font-size:11px;color:var(--or);font-weight:600}
+.cover-prev{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);background:var(--bg4)}
+.cover-prev img{width:100%;max-height:220px;object-fit:cover;display:block}
+.cover-x{position:absolute;top:8px;left:8px;background:rgba(239,68,68,.9);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700}
+
+.form-actions{display:flex;gap:8px;flex-wrap:wrap;padding:16px 0 40px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 24%)}
+.big-btn{border:none;border-radius:9px;padding:11px 22px;font-size:13px;font-weight:800;transition:opacity .2s}
+.big-btn:hover{opacity:.87}
+.big-btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ── SEO preview ── */
+.seo-prev{background:#fff;border-radius:8px;padding:14px 16px;margin-top:10px}
+.seo-prev-url{font-size:11px;color:#5f6368;direction:ltr;text-align:left;margin-bottom:3px}
+.seo-prev-title{font-size:16px;color:#1a0dab;line-height:1.4;margin-bottom:2px}
+.seo-prev-desc{font-size:12px;color:#4d5156;line-height:1.6}
+.meter{font-size:10px;font-family:'IBM Plex Mono',monospace}
+.meter.ok{color:var(--gr)} .meter.warn{color:var(--yw)} .meter.bad{color:var(--rd)}
+
+/* ── Toast / confirm ── */
+.toast-wrap{position:fixed;bottom:20px;left:20px;z-index:400;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg4);border:1px solid var(--bd);border-right:3px solid var(--or);border-radius:9px;padding:11px 18px;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.6);animation:tin .2s ease;max-width:380px}
+.toast-s{border-right-color:var(--gr)} .toast-e{border-right-color:var(--rd)} .toast-w{border-right-color:var(--yw)}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:20px}
+.modal-ov.open{display:flex}
+.modal-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r2);padding:26px;width:460px;max-width:100%;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:8px}
+.modal-sub{font-size:12px;color:var(--mu);line-height:1.9;margin-bottom:18px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+.empty{text-align:center;padding:60px 20px;color:var(--mu)}
+.empty-ico{font-size:40px;margin-bottom:10px}
+.empty-t{font-size:15px;font-weight:700;color:var(--tx2);margin-bottom:6px}
+.note{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);border-radius:var(--r);padding:12px 15px;font-size:11.5px;color:var(--tx2);line-height:1.9;margin-bottom:16px}
+.note b{color:var(--bl)}
+.note-warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.28)}
+.note-warn b{color:var(--yw)}
+code.k{background:var(--bg5);border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-size:11px;direction:ltr;display:inline-block}
+
+/* ══ EasyMDE ══
+   EasyMDE يستخدم أسماء كلاسات FontAwesome (fa fa-bold) لكن ملف CSS
+   الخاص به لا يحوي أي تعريف لها — فبدون تحميل FontAwesome تظهر الأزرار
+   فارغة. بدل إضافة تبعية خارجية ٧٠ KB نعرّف أيقوناتنا نصًّا/إيموجي. */
+.EasyMDEContainer{background:var(--bg4);border-radius:8px}
+.EasyMDEContainer .CodeMirror{background:var(--bg4);color:var(--tx);border:1.5px solid var(--mu2);border-top:none;border-radius:0 0 8px 8px;font-family:'Cairo',sans-serif;font-size:14.5px;line-height:1.95;padding:10px 12px;min-height:420px}
+.EasyMDEContainer .CodeMirror-focused{border-color:var(--or)}
+.EasyMDEContainer .CodeMirror-cursor{border-left-color:var(--or)}
+.EasyMDEContainer .CodeMirror-selected{background:rgba(255,107,0,.18)!important}
+.EasyMDEContainer .CodeMirror-placeholder{color:var(--mu)}
+/* اتجاه تلقائي لكل سطر: العربي RTL واللاتيني LTR داخل نفس المستند */
+.EasyMDEContainer .CodeMirror-line{unicode-bidi:plaintext;text-align:start}
+.editor-toolbar{background:var(--bg5);border:1.5px solid var(--mu2);border-bottom:none;border-radius:8px 8px 0 0;opacity:1}
+.editor-toolbar button{color:var(--tx2)!important;border:none!important;border-radius:6px}
+.editor-toolbar button:hover,.editor-toolbar button.active{background:var(--org)!important;color:var(--or)!important}
+.editor-toolbar i.separator{border-left:1px solid var(--mu2);border-right:none;margin:0 4px}
+.editor-statusbar{color:var(--mu);font-size:11px;padding:6px 10px}
+.editor-preview,.editor-preview-side{background:var(--bg3);color:var(--tx);padding:18px 20px;line-height:1.95}
+.editor-preview h1,.editor-preview h2,.editor-preview h3,.editor-preview-side h1,.editor-preview-side h2,.editor-preview-side h3{color:var(--or);margin:1.4em 0 .5em}
+.editor-preview table,.editor-preview-side table{border-collapse:collapse;width:100%;margin:1em 0}
+.editor-preview th,.editor-preview td,.editor-preview-side th,.editor-preview-side td{border:1px solid var(--bd);padding:7px 10px}
+.editor-preview blockquote,.editor-preview-side blockquote{border-right:3px solid var(--or);border-left:none;padding:6px 14px;margin:1em 0;color:var(--tx2)}
+.editor-preview pre,.editor-preview-side pre{background:var(--bg);padding:12px;border-radius:8px;overflow-x:auto}
+.editor-preview code,.editor-preview-side code{background:var(--bg5);padding:1px 5px;border-radius:4px}
+/* أيقونات نصية بديلة عن FontAwesome */
+.mdebtn::before{font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;line-height:1}
+.mdebtn-bold::before{content:'B';font-weight:900}
+.mdebtn-italic::before{content:'I';font-style:italic}
+.mdebtn-h2::before{content:'H2'}
+.mdebtn-h3::before{content:'H3'}
+.mdebtn-ul::before{content:'☰'}
+.mdebtn-ol::before{content:'1.'}
+.mdebtn-link::before{content:'🔗'}
+.mdebtn-image::before{content:'🖼'}
+.mdebtn-quote::before{content:'❝'}
+.mdebtn-code::before{content:'</>';font-size:11px}
+.mdebtn-table::before{content:'▦'}
+.mdebtn-cta::before{content:'📣'}
+.mdebtn-preview::before{content:'👁'}
+.mdebtn-side::before{content:'⇹'}
+.mdebtn-full::before{content:'⛶'}
+.editor-toolbar .easymde-dropdown{position:relative}
+.editor-toolbar .easymde-dropdown-content{background:var(--bg5);border:1px solid var(--bd);border-radius:8px;padding:4px;box-shadow:0 8px 26px rgba(0,0,0,.6);z-index:60}
+.editor-toolbar .easymde-dropdown-content button{width:100%;text-align:right;padding:8px 12px!important;font-size:12px!important;font-weight:700;white-space:nowrap}
+.mde-hint{font-size:10px;color:var(--mu);margin-top:6px;line-height:1.8}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:none}
+  .sb-overlay.open{display:block}
+  .main-wrap{margin-right:0}
+  .topbar-menu{display:block}
+  .fg2{grid-template-columns:1fr}
+  .page{padding:16px}
+}
+</style>
+</head>
+
+<body>
+<div class="bg-grid"></div>
+
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-ico">📝</div>
+      <div>
+        <div class="sb-logo-name">مكاني Spot</div>
+        <div class="sb-logo-sub">Admin — إدارة المحتوى</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active" id="sbi-overview" onclick="gp('overview',this)">
+        <span class="sb-ico">📊</span> نظرة عامة
+      </div>
+      <div class="sb-item" id="sbi-articles" onclick="gp('articles',this)">
+        <span class="sb-ico">📝</span> المقالات
+        <span id="art-badge" class="sb-badge" style="display:none">0</span>
+      </div>
+      <div class="sb-item" id="sbi-settings" onclick="gp('settings',this)">
+        <span class="sb-ico">⚙️</span> إعدادات القسم
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item" id="sbi-add" onclick="openForm(null)">
+        <span class="sb-ico">➕</span> مقال جديد
+      </div>
+      <div class="sb-item" onclick="openTokenModal()">
+        <span class="sb-ico">🔑</span> توكن النشر
+      </div>
+      <div class="sb-sep"></div>
+      <div class="sb-item" onclick="window.open('/articles/','_blank')">
+        <span class="sb-ico">🌐</span> عرض القسم
+      </div>
+      <div class="sb-item" onclick="window.location.href='./admin-hub.html'">
+        <span class="sb-ico">←</span> لوحة الأدمن
+      </div>
+    </nav>
+    <div class="sb-bottom">
+      <div style="font-size:10px;color:var(--mu2);text-align:center;margin-bottom:8px" id="sb-sync"></div>
+      <button class="sb-logout" onclick="doLogout()">⏏ خروج</button>
+    </div>
+  </aside>
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <div class="main-wrap">
+    <div class="topbar">
+      <button class="topbar-menu" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">نظرة عامة</div>
+      <div class="topbar-actions">
+        <button class="tbtn" onclick="loadAll()">🔄 تحديث</button>
+        <button class="tbtn tbtn-primary" onclick="openForm(null)">+ مقال جديد</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div id="pg-overview" class="page active"></div>
+      <div id="pg-articles" class="page"></div>
+      <div id="pg-form"     class="page"></div>
+      <div id="pg-settings" class="page"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Token modal ══ -->
+<div class="modal-ov" id="token-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 توكن النشر على GitHub</div>
+    <div class="modal-sub">
+      النشر يتم بعمل commit مباشر على المستودع. لأن المنصة بلا خادم وسيط، يُحفظ التوكن
+      في <b>ذاكرة التبويب فقط</b> (sessionStorage) ويُمحى تلقائيًا عند إغلاق التبويب.
+    </div>
+    <div class="note note-warn" style="margin-bottom:16px">
+      <b>مهم:</b> أنشئ <code class="k">Fine-grained token</code> من GitHub مقصورًا على مستودع
+      <code class="k">Makani-spot</code> وحده، بصلاحية <code class="k">Contents: Read and write</code> فقط،
+      وبمدة انتهاء ٩٠ يومًا. لا تستخدم توكنًا عامًّا (classic) بصلاحيات واسعة.
+    </div>
+    <div class="fg">
+      <label class="fl">المستودع</label>
+      <input class="fc ltr" id="gh-repo" placeholder="owner/repo">
+    </div>
+    <div class="fg">
+      <label class="fl">الفرع</label>
+      <input class="fc ltr" id="gh-branch" placeholder="main">
+    </div>
+    <div class="fg">
+      <label class="fl">التوكن</label>
+      <input class="fc ltr" id="gh-token" type="password" placeholder="github_pat_…" autocomplete="off">
+      <div class="fh">يُحفظ في هذا التبويب فقط. أعد لصقه بعد كل إغلاق.</div>
+    </div>
+    <div id="gh-token-status" style="font-size:11px;min-height:16px;margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="tbtn" onclick="closeTokenModal()">إلغاء</button>
+      <button class="tbtn" onclick="clearToken()">مسح</button>
+      <button class="tbtn tbtn-primary" onclick="saveToken()">فحص وحفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Confirm modal ══ -->
+<div class="modal-ov" id="confirm-modal">
+  <div class="modal-box" style="width:400px">
+    <div class="modal-title" id="confirm-title">تأكيد</div>
+    <div class="modal-sub" id="confirm-sub"></div>
+    <div class="modal-actions">
+      <button class="tbtn" onclick="closeConfirm()">إلغاء</button>
+      <button class="tbtn tbtn-primary" id="confirm-ok">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="../vendor/easymde/easymde.min.js?v=20260802174819"></script>
+<script src="../media-handler.js?v=20260802174819"></script>
+<script src="../shared/sb-config.js?v=20260802174819"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIG + AUTH — نفس نمط admin/spaces-hub.html بالضبط
+   ══════════════════════════════════════════════════════════════ */
+const SB_URL = SUPABASE_URL;
+const SB_KEY = SUPABASE_KEY;
+const db = supabase.createClient(SB_URL, SB_KEY);
+
+const PAGE_TITLES = {
+  overview: 'نظرة عامة', articles: 'المقالات',
+  form: 'تحرير مقال', settings: 'إعدادات القسم',
+};
+
+const ARTICLES_DIR = 'content/articles';
+const SETTINGS_PATH = 'content/settings.json';
+const INDEX_URL = '/articles/_index.json';
+const GH_API = 'https://api.github.com';
+const TOKEN_KEY = 'makani_gh_token';
+const REPO_KEY  = 'makani_gh_repo';
+const BRANCH_KEY = 'makani_gh_branch';
+const DEFAULT_REPO = 'makanispot-glitch/Makani-spot';
+const DEFAULT_BRANCH = 'main';
+
+const CATEGORY_PRESETS = ['مشاريع صغيرة','البازارات','أصحاب المساحات','التسويق','الاستثمار','دراسات السوق','قصص نجاح','أفكار مشاريع'];
+
+let currentPage = 'overview';
+let allArticles = [];      /* [{slug, path, sha, fm, published}] */
+let settingsData = null;
+let settingsSha = null;
+let editing = null;        /* {slug, path, sha} أو null لمقال جديد */
+let coverUrl = '', ogUrl = '';
+let fltStatus = '', fltSearch = '';
+
+async function doLogout() {
+  await db.auth.signOut();
+  window.location.replace('./admin-hub.html');
+}
+
+(async function () {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.replace('./admin-hub.html'); return; }
+  document.getElementById('app').classList.add('visible');
+  setTimeout(loadAll, 100);
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   GitHub client
+   ══════════════════════════════════════════════════════════════ */
+const ghToken  = () => sessionStorage.getItem(TOKEN_KEY) || '';
+const ghRepo   = () => localStorage.getItem(REPO_KEY) || DEFAULT_REPO;
+const ghBranch = () => localStorage.getItem(BRANCH_KEY) || DEFAULT_BRANCH;
+
+/* base64 ↔ UTF-8 — btoa وحده يكسر العربية */
+function b64encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin);
+}
+function b64decode(b64) {
+  const bin = atob(String(b64).replace(/\s/g, ''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+async function gh(path, opts = {}) {
+  const token = ghToken();
+  if (!token) throw new Error('NO_TOKEN');
+  const res = await fetch(`${GH_API}${path}`, Object.assign({}, opts, {
+    headers: Object.assign({
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    }, opts.headers || {}),
+  }));
+  if (res.status === 401) throw new Error('التوكن غير صالح أو منتهي — حدّثه من «توكن النشر»');
+  if (res.status === 403) throw new Error('التوكن بلا صلاحية Contents: Read and write على هذا المستودع');
+  if (res.status === 404 && opts.allow404) return null;
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const e = await res.json(); msg = e.message || msg; } catch (e) {}
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+const ghList = (dir) => gh(`/repos/${ghRepo()}/contents/${dir}?ref=${encodeURIComponent(ghBranch())}`, { allow404: true });
+
+async function ghGetFile(path) {
+  const r = await gh(`/repos/${ghRepo()}/contents/${path}?ref=${encodeURIComponent(ghBranch())}`, { allow404: true });
+  if (!r || !r.content) return null;
+  return { text: b64decode(r.content), sha: r.sha };
+}
+
+function ghPutFile(path, text, sha, message) {
+  return gh(`/repos/${ghRepo()}/contents/${path}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message, content: b64encode(text), branch: ghBranch(),
+      ...(sha ? { sha } : {}),
+    }),
+  });
+}
+
+function ghDeleteFile(path, sha, message) {
+  return gh(`/repos/${ghRepo()}/contents/${path}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ message, sha, branch: ghBranch() }),
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Front Matter — نفس صيغة build-content.js
+   ══════════════════════════════════════════════════════════════ */
+const FM_ORDER = ['title','slug','locale','description','category','tags','cover','coverAlt','ogImage',
+  'author','publishedAt','updatedAt','status','featured','showOnHomepage','showUpdatedDate',
+  'seoTitle','seoDescription','canonical','focusKeyword','cta'];
+
+function parseFM(raw) {
+  const text = String(raw || '').replace(/^﻿/, '').replace(/\r\n/g, '\n');
+  if (!text.startsWith('---')) return { data: {}, body: text };
+  const end = text.indexOf('\n---', 3);
+  if (end === -1) return { data: {}, body: text };
+  const head = text.slice(3, end).replace(/^\n/, '');
+  const body = text.slice(end + 4).replace(/^\n/, '');
+  const data = {};
+  head.split('\n').forEach(line => {
+    if (!line.trim() || line.trim().startsWith('#')) return;
+    const c = line.indexOf(':');
+    if (c === -1) return;
+    const key = line.slice(0, c).trim();
+    if (!key) return;
+    let val = line.slice(c + 1).trim();
+    if (val === '') { data[key] = ''; return; }
+
+    /* المقتبس أولًا ثم التعليق — نفس ترتيب build-content.js بالضبط.
+       عكسه يقصّ عنوانًا يحوي " # " بصمت. */
+    if (val.startsWith('"')) {
+      const end = val.lastIndexOf('"');
+      if (end > 0) { try { data[key] = JSON.parse(val.slice(0, end + 1)); return; } catch (e) {} }
+    }
+    if (val.startsWith("'")) {
+      const end = val.lastIndexOf("'");
+      if (end > 0) { data[key] = val.slice(1, end); return; }
+    }
+
+    val = val.replace(/\s+#\s.*$/, '').trim();
+    if (val === '') { data[key] = ''; return; }
+
+    if (val.startsWith('[') && val.endsWith(']')) {
+      data[key] = val.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+      return;
+    }
+    if (val === 'true')  { data[key] = true;  return; }
+    if (val === 'false') { data[key] = false; return; }
+    data[key] = val;
+  });
+  return { data, body };
+}
+
+function fmValue(v) {
+  if (Array.isArray(v)) return '[' + v.join(', ') + ']';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  const s = String(v == null ? '' : v);
+  /* اقتبس فقط عند الحاجة — يبقى الملف مقروءًا.
+     \s# مهمّة: القارئ في build-content.js يعامل " # " كتعليق ويقصّ ما بعدها،
+     فعنوان مثل «دليل # الجزء الأول» كان يفقد نصفه بصمت بلا اقتباس. */
+  if (/^\s|\s$|^[\[{>|&*!%@`]|:\s|\s#/.test(s)) return JSON.stringify(s);
+  return s;
+}
+
+function buildMd(fm, body) {
+  const lines = FM_ORDER.map(k => `${k}: ${fmValue(fm[k])}`);
+  return '---\n' + lines.join('\n') + '\n---\n\n' + String(body || '').trim() + '\n';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Helpers
+   ══════════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const x = new Date(d);
+  return isNaN(x) ? '—' : x.toLocaleDateString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function toast(msg, type = 'i') {
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+function showConfirm(title, sub, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-sub').textContent = sub;
+  document.getElementById('confirm-ok').onclick = () => { closeConfirm(); cb(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+const closeConfirm = () => document.getElementById('confirm-modal').classList.remove('open');
+const toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-overlay').classList.toggle('open'); };
+const closeSidebar  = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-overlay').classList.remove('open'); };
+
+/* الحالة المعروضة مشتقّة: "مجدول" ليست حالة مستقلة في الملف */
+function effStatus(fm) {
+  const st = fm.status || 'draft';
+  if (st === 'published' && fm.publishedAt && new Date(fm.publishedAt) > new Date()) return 'scheduled';
+  if (st === 'scheduled') {
+    return (fm.publishedAt && new Date(fm.publishedAt) <= new Date()) ? 'published' : 'scheduled';
+  }
+  return st;
+}
+const STATUS_LBL = { published:'✅ منشور', draft:'📝 مسودة', hidden:'🙈 مخفي', scheduled:'📅 مجدول' };
+
+function slugify(s) {
+  const map = { 'ا':'a','أ':'a','إ':'a','آ':'a','ب':'b','ت':'t','ث':'th','ج':'j','ح':'h','خ':'kh','د':'d','ذ':'dh','ر':'r','ز':'z','س':'s','ش':'sh','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'gh','ف':'f','ق':'q','ك':'k','ل':'l','م':'m','ن':'n','ه':'h','و':'w','ي':'y','ى':'a','ة':'a','ء':'' };
+  return String(s || '').trim().toLowerCase()
+    .replace(/[؀-ۿ]/g, ch => (map[ch] !== undefined ? map[ch] : '-'))
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Navigation
+   ══════════════════════════════════════════════════════════════ */
+function gp(page, el) {
+  /* نظّف المحرر عند مغادرة النموذج — نسخة CodeMirror معلّقة على DOM
+     مخفي تستهلك ذاكرة وتلتقط اختصارات لوحة المفاتيح */
+  if (currentPage === 'form' && page !== 'form') destroyMde();
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('pg-' + page);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else { const sbi = document.getElementById('sbi-' + page); if (sbi) sbi.classList.add('active'); }
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+  if (window.innerWidth <= 900) closeSidebar();
+  renderCurrentPage();
+}
+
+function renderCurrentPage() {
+  if (currentPage === 'overview') renderOverview();
+  else if (currentPage === 'articles') renderArticles();
+  else if (currentPage === 'settings') renderSettings();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Token
+   ══════════════════════════════════════════════════════════════ */
+function openTokenModal() {
+  document.getElementById('gh-repo').value = ghRepo();
+  document.getElementById('gh-branch').value = ghBranch();
+  document.getElementById('gh-token').value = ghToken();
+  document.getElementById('gh-token-status').innerHTML = '';
+  document.getElementById('token-modal').classList.add('open');
+}
+const closeTokenModal = () => document.getElementById('token-modal').classList.remove('open');
+
+async function saveToken() {
+  const repo = document.getElementById('gh-repo').value.trim() || DEFAULT_REPO;
+  const branch = document.getElementById('gh-branch').value.trim() || DEFAULT_BRANCH;
+  const token = document.getElementById('gh-token').value.trim();
+  const st = document.getElementById('gh-token-status');
+  if (!token) { st.innerHTML = '<span style="color:var(--rd)">أدخل التوكن</span>'; return; }
+
+  localStorage.setItem(REPO_KEY, repo);
+  localStorage.setItem(BRANCH_KEY, branch);
+  sessionStorage.setItem(TOKEN_KEY, token);
+
+  st.innerHTML = '<span style="color:var(--mu)">جارٍ الفحص…</span>';
+  try {
+    const r = await gh(`/repos/${repo}`);
+    if (!r.permissions || !r.permissions.push) throw new Error('التوكن يقرأ فقط — يحتاج صلاحية الكتابة');
+    st.innerHTML = '<span style="color:var(--gr)">✅ التوكن صالح — صلاحية الكتابة مؤكّدة</span>';
+    toast('تم حفظ التوكن — النشر جاهز', 's');
+    setTimeout(() => { closeTokenModal(); loadAll(); }, 900);
+  } catch (e) {
+    sessionStorage.removeItem(TOKEN_KEY);
+    st.innerHTML = '<span style="color:var(--rd)">❌ ' + esc(e.message) + '</span>';
+  }
+}
+
+function clearToken() {
+  sessionStorage.removeItem(TOKEN_KEY);
+  document.getElementById('gh-token').value = '';
+  document.getElementById('gh-token-status').innerHTML = '<span style="color:var(--mu)">تم مسح التوكن</span>';
+  toast('تم مسح التوكن من هذا التبويب', 'w');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Data
+   ══════════════════════════════════════════════════════════════ */
+async function loadAll() {
+  const sync = document.getElementById('sb-sync');
+  if (sync) sync.textContent = 'جارٍ التحميل…';
+
+  /* الفهرس المولّد يعطي بيانات المنشور مجانًا بطلب واحد */
+  let liveIndex = { articles: [] };
+  try {
+    const r = await fetch(INDEX_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) liveIndex = await r.json();
+  } catch (e) { /* لم يُبنَ بعد */ }
+  const liveBySlug = {};
+  (liveIndex.articles || []).forEach(a => { liveBySlug[a.slug] = a; });
+
+  if (!ghToken()) {
+    allArticles = (liveIndex.articles || []).map(a => ({
+      slug: a.slug, path: `${ARTICLES_DIR}/${a.slug}.md`, sha: null, fm: a, live: true,
+    }));
+    if (sync) sync.textContent = 'بلا توكن — المنشور فقط';
+    renderCurrentPage();
+    return;
+  }
+
+  try {
+    const files = (await ghList(ARTICLES_DIR)) || [];
+    const mdFiles = files.filter(f => f.type === 'file' && /\.md$/i.test(f.name));
+
+    /* المنشور: بياناته جاهزة من الفهرس. غير المنشور فقط يحتاج جلب محتواه. */
+    const items = await Promise.all(mdFiles.map(async f => {
+      const slug = f.name.replace(/\.md$/i, '');
+      const live = liveBySlug[slug];
+      if (live) return { slug, path: f.path, sha: f.sha, fm: live, live: true };
+      try {
+        const raw = await fetch(f.download_url, { cache: 'no-store' }).then(r => r.text());
+        const { data } = parseFM(raw);
+        return { slug: data.slug || slug, path: f.path, sha: f.sha, fm: data, live: false };
+      } catch (e) {
+        return { slug, path: f.path, sha: f.sha, fm: { title: slug, status: 'draft' }, live: false };
+      }
+    }));
+
+    items.sort((a, b) => new Date(b.fm.publishedAt || 0) - new Date(a.fm.publishedAt || 0));
+    allArticles = items;
+    if (sync) sync.textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG');
+  } catch (e) {
+    toast('تعذّر جلب المقالات: ' + e.message, 'e');
+    if (sync) sync.textContent = 'فشل التحميل';
+  }
+
+  const badge = document.getElementById('art-badge');
+  if (badge) {
+    const drafts = allArticles.filter(a => effStatus(a.fm) === 'draft').length;
+    badge.style.display = drafts ? '' : 'none';
+    badge.textContent = drafts;
+  }
+  renderCurrentPage();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Pages
+   ══════════════════════════════════════════════════════════════ */
+function renderOverview() {
+  const by = { published: 0, draft: 0, hidden: 0, scheduled: 0 };
+  allArticles.forEach(a => { by[effStatus(a.fm)] = (by[effStatus(a.fm)] || 0) + 1; });
+  const featured = allArticles.filter(a => a.fm.featured).length;
+  const noCover  = allArticles.filter(a => !a.fm.cover).length;
+  const noSeo    = allArticles.filter(a => !(a.fm.seoDescription || a.fm.description)).length;
+
+  const tokenNote = ghToken() ? '' : `
+    <div class="note note-warn">
+      <b>لا يوجد توكن نشر في هذا التبويب.</b> تُعرض المقالات المنشورة فقط، ولا يمكن الحفظ أو النشر.
+      اضغط «🔑 توكن النشر» من القائمة لإضافته.
+    </div>`;
+
+  document.getElementById('pg-overview').innerHTML = `
+    ${tokenNote}
+    <div class="ov-grid">
+      ${statCard('📝', allArticles.length, 'إجمالي المقالات', 'var(--tx)')}
+      ${statCard('✅', by.published || 0, 'منشور', 'var(--gr)')}
+      ${statCard('📄', by.draft || 0, 'مسودة', 'var(--yw)')}
+      ${statCard('📅', by.scheduled || 0, 'مجدول', 'var(--bl)')}
+      ${statCard('🙈', by.hidden || 0, 'مخفي', 'var(--mu)')}
+      ${statCard('⭐', featured, 'مميّز', '#FBBF24')}
+    </div>
+
+    <div class="sec-hd"><div><div class="sec-title">جودة المحتوى</div>
+      <div class="sec-sub">مؤشرات سريعة تؤثر على الظهور في البحث والمشاركة</div></div></div>
+    <div class="ov-grid">
+      ${statCard('🖼️', noCover, 'بلا صورة غلاف', noCover ? 'var(--yw)' : 'var(--gr)')}
+      ${statCard('🔍', noSeo, 'بلا وصف SEO', noSeo ? 'var(--yw)' : 'var(--gr)')}
+    </div>
+
+    <div class="note">
+      <b>كيف يعمل النشر؟</b> عند الحفظ يُنشأ ملف Markdown في <code class="k">content/articles/</code>
+      ويُرفع إلى GitHub مباشرة. تلتقطه Cloudflare Pages وتشغّل <code class="k">node build-content.js</code>
+      الذي يحوّله إلى صفحة HTML ثابتة على <code class="k">/articles/{slug}/</code>.
+      يستغرق الأمر حوالي دقيقة بعد الحفظ.
+    </div>`;
+}
+
+const statCard = (ico, val, lbl, color) => `
+  <div class="stat-card">
+    <div class="stat-card-ico">${ico}</div>
+    <div class="stat-card-val" style="color:${color}">${val}</div>
+    <div class="stat-card-lbl">${esc(lbl)}</div>
+  </div>`;
+
+/* تفويض أحداث بدل onclick="...('${esc(slug)}')" — esc() هناك كانت
+   بلا أثر فعليًا: المتصفح يفكّ &#39; إلى ' قبل أن يُحلَّل السطر كجافاسكربت،
+   فسطر منتحَل مثل foo');alert(1);// كان سيُنفَّذ. data-slug تُقرأ عبر
+   getAttribute() كنص خالص لا كود، فالتهريب هنا فعّال حقًا لا شكليًا.
+   الاستماع على #pg-articles نفسه (لا الصفوف) لأنه يبقى بعد كل
+   إعادة رسم — نفس نمط التفويض في articles/app.js:227 بالضبط. */
+let articlesTableWired = false;
+function wireArticlesTable() {
+  if (articlesTableWired) return;
+  articlesTableWired = true;
+  document.getElementById('pg-articles').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const slug = btn.getAttribute('data-slug');
+    switch (btn.getAttribute('data-action')) {
+      case 'edit':    openForm(slug); break;
+      case 'view':    window.open(btn.getAttribute('data-view-url'), '_blank'); break;
+      case 'publish': quickStatus(slug, 'published'); break;
+      case 'hide':    quickStatus(slug, 'hidden'); break;
+      case 'delete':  deleteArticle(slug); break;
+    }
+  });
+}
+
+function renderArticles() {
+  wireArticlesTable();
+  const counts = { all: allArticles.length, published: 0, draft: 0, scheduled: 0, hidden: 0 };
+  allArticles.forEach(a => { counts[effStatus(a.fm)]++; });
+
+  let list = allArticles.slice();
+  if (fltStatus) list = list.filter(a => effStatus(a.fm) === fltStatus);
+  if (fltSearch) {
+    const q = fltSearch.toLowerCase();
+    list = list.filter(a => [a.fm.title, a.slug, a.fm.category, (a.fm.tags || []).join(' ')]
+      .join(' ').toLowerCase().includes(q));
+  }
+
+  const chip = (val, lbl, n) =>
+    `<button class="f-chip ${fltStatus === val ? 'active' : ''}" onclick="setStatusFilter('${val}')">${lbl} (${n})</button>`;
+
+  const rows = list.map(a => {
+    const st = effStatus(a.fm);
+    const url = '/articles/' + encodeURIComponent(a.slug) + '/';
+    return `<tr>
+      <td><span class="badge b-${st}">${STATUS_LBL[st] || st}</span>
+        ${a.fm.featured ? '<br><span class="badge b-featured" style="margin-top:4px">⭐ مميّز</span>' : ''}</td>
+      <td>
+        <span class="a-title">${esc(a.fm.title || a.slug)}</span>
+        <span class="a-slug">${esc(a.slug)}</span>
+      </td>
+      <td>${esc(a.fm.category || '—')}</td>
+      <td>${esc(a.fm.author || '—')}</td>
+      <td style="white-space:nowrap">${fmtDate(a.fm.publishedAt)}</td>
+      <td style="white-space:nowrap">${fmtDate(a.fm.updatedAt)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn btn-or" data-action="edit" data-slug="${esc(a.slug)}">✏️ تعديل</button>
+          ${a.live ? `<button class="btn btn-neu" data-action="view" data-view-url="${esc(url)}">👁 عرض</button>` : ''}
+          ${st === 'published'
+            ? `<button class="btn btn-yw" data-action="hide" data-slug="${esc(a.slug)}">⏸ إخفاء</button>`
+            : `<button class="btn btn-ok" data-action="publish" data-slug="${esc(a.slug)}">▶ نشر</button>`}
+          <button class="btn btn-err" data-action="delete" data-slug="${esc(a.slug)}">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pg-articles').innerHTML = `
+    <div class="filter-bar">
+      ${chip('', 'الكل', counts.all)}
+      ${chip('published', '✅ منشور', counts.published)}
+      ${chip('draft', '📝 مسودة', counts.draft)}
+      ${chip('scheduled', '📅 مجدول', counts.scheduled)}
+      ${chip('hidden', '🙈 مخفي', counts.hidden)}
+      <input class="f-inp" style="flex:1;min-width:180px" placeholder="🔍 بحث بالعنوان أو الرابط أو الوسم…"
+             value="${esc(fltSearch)}" oninput="setSearch(this.value)">
+    </div>
+    ${!list.length ? `
+      <div class="empty">
+        <div class="empty-ico">📝</div>
+        <div class="empty-t">${allArticles.length ? 'لا نتائج مطابقة' : 'لا توجد مقالات بعد'}</div>
+        <div style="font-size:12px">${allArticles.length ? 'جرّب فلترًا آخر.' : 'ابدأ بإنشاء أول مقال.'}</div>
+      </div>` : `
+      <div class="t-wrap"><table class="t">
+        <thead><tr>
+          <th>الحالة</th><th>العنوان</th><th>التصنيف</th><th>الكاتب</th>
+          <th>تاريخ النشر</th><th>آخر تحديث</th><th>إجراءات</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`}`;
+}
+
+function setStatusFilter(v) { fltStatus = v; renderArticles(); }
+let _searchT;
+function setSearch(v) {
+  fltSearch = v;
+  clearTimeout(_searchT);
+  _searchT = setTimeout(() => {
+    renderArticles();
+    const inp = document.querySelector('#pg-articles .f-inp');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 200);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Form
+   ══════════════════════════════════════════════════════════════ */
+async function openForm(slug) {
+  gp('form');
+  const pg = document.getElementById('pg-form');
+  pg.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div>جارٍ التحميل…</div></div>';
+
+  let fm = {
+    title:'', slug:'', locale:'ar', description:'', category:'', tags:[], cover:'', coverAlt:'',
+    ogImage:'', author:'فريق مكاني Spot', publishedAt:'', updatedAt:'', status:'draft',
+    featured:false, showOnHomepage:false, showUpdatedDate:true,
+    seoTitle:'', seoDescription:'', canonical:'', focusKeyword:'', cta:'spaces',
+  };
+  let body = '';
+  editing = null;
+
+  if (slug) {
+    const item = allArticles.find(a => a.slug === slug);
+    if (!item) { toast('المقال غير موجود', 'e'); gp('articles'); return; }
+    try {
+      const file = await ghGetFile(item.path);
+      if (!file) throw new Error('تعذّر جلب الملف');
+      const parsed = parseFM(file.text);
+      fm = Object.assign(fm, parsed.data);
+      body = parsed.body;
+      editing = { slug: item.slug, path: item.path, sha: file.sha };
+    } catch (e) {
+      toast('تعذّر فتح المقال: ' + e.message, 'e');
+      gp('articles'); return;
+    }
+  }
+
+  coverUrl = fm.cover || '';
+  ogUrl = fm.ogImage || '';
+  pg.innerHTML = formHtml(fm, body);
+  wireForm();
+}
+
+function formHtml(fm, body) {
+  const dtLocal = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const st = effStatus(fm);
+  const radio = (val, lbl) =>
+    `<label class="radio-chip"><input type="radio" name="f-status" value="${val}" ${st === val ? 'checked' : ''}> ${lbl}</label>`;
+
+  return `<div class="form-wrap">
+
+    <div class="form-sec">
+      <div class="form-sec-title">📄 محتوى المقال</div>
+
+      <div class="fg">
+        <label class="fl">العنوان <span class="rq">*</span></label>
+        <input class="fc" id="f-title" value="${esc(fm.title)}" placeholder="عنوان جذّاب وواضح">
+        <div class="err-msg" id="e-title"></div>
+      </div>
+
+      <div class="fg2">
+        <div class="fg">
+          <label class="fl">الرابط (Slug) <span class="rq">*</span></label>
+          <div style="display:flex;gap:6px">
+            <input class="fc ltr" id="f-slug" value="${esc(fm.slug)}" placeholder="how-to-open-kiosk">
+            <button class="tbtn" type="button" onclick="genSlug()" title="توليد من العنوان">🔄</button>
+          </div>
+          <div class="fh">أحرف لاتينية صغيرة وأرقام وشرطات فقط. الرابط: <code class="k">/articles/<span id="slug-prev">…</span>/</code></div>
+          <div class="err-msg" id="e-slug"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">التصنيف</label>
+          <input class="fc" id="f-category" list="cat-list" value="${esc(fm.category)}" placeholder="مشاريع صغيرة">
+          <datalist id="cat-list">${CATEGORY_PRESETS.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">الوصف المختصر</label>
+        <textarea class="fc" id="f-description" rows="2" placeholder="سطران يلخّصان المقال — يظهران في صفحة القسم وفي نتائج البحث">${esc(fm.description)}</textarea>
+      </div>
+
+      <div class="fg">
+        <label class="fl">الوسوم</label>
+        <input class="fc" id="f-tags" value="${esc((fm.tags || []).join('، '))}" placeholder="كشك، قهوة، مشروع صغير">
+        <div class="fh">افصل بينها بفاصلة.</div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">المحتوى <span class="rq">*</span></label>
+        <textarea id="f-body">${esc(body)}</textarea>
+        <input type="file" id="f-inline-img" accept="image/*" style="display:none">
+        <div class="mde-hint">
+          استخدم شريط الأدوات — لست بحاجة لحفظ رموز Markdown.
+          زر <b>🖼</b> يضغط الصورة ويحوّلها WebP ويرفعها إلى R2 ثم يدرج رابطها.
+          زر <b>📣</b> يدرج دعوة جاهزة لاتخاذ إجراء. <b>Ctrl+Alt+P</b> معاينة، <b>F11</b> ملء الشاشة.
+          وسوم HTML الخام غير مسموحة وتُعرض كنص عادي.
+        </div>
+        <div class="err-msg" id="e-body"></div>
+      </div>
+    </div>
+
+    <div class="form-sec">
+      <div class="form-sec-title">🖼️ صورة الغلاف</div>
+      <div id="cover-slot"></div>
+      <input type="file" id="f-cover-file" accept="image/*" style="display:none">
+      <div class="fg" style="margin-top:12px">
+        <label class="fl">النص البديل للصورة</label>
+        <input class="fc" id="f-coverAlt" value="${esc(fm.coverAlt)}" placeholder="وصف مختصر لمحتوى الصورة">
+      </div>
+    </div>
+
+    <div class="form-sec">
+      <div class="form-sec-title">🔍 تحسين محركات البحث</div>
+      <div class="fg">
+        <label class="fl">عنوان SEO <span class="meter" id="m-seotitle"></span></label>
+        <input class="fc" id="f-seoTitle" value="${esc(fm.seoTitle)}" placeholder="اتركه فارغًا لاستخدام عنوان المقال">
+      </div>
+      <div class="fg">
+        <label class="fl">وصف SEO <span class="meter" id="m-seodesc"></span></label>
+        <textarea class="fc" id="f-seoDescription" rows="2" placeholder="اتركه فارغًا لاستخدام الوصف المختصر">${esc(fm.seoDescription)}</textarea>
+      </div>
+      <div class="fg2">
+        <div class="fg">
+          <label class="fl">الكلمة المفتاحية</label>
+          <input class="fc" id="f-focusKeyword" value="${esc(fm.focusKeyword)}" placeholder="كشك قهوة">
+        </div>
+        <div class="fg">
+          <label class="fl">Canonical URL</label>
+          <input class="fc ltr" id="f-canonical" value="${esc(fm.canonical)}" placeholder="اتركه فارغًا (الافتراضي صحيح)">
+        </div>
+      </div>
+      <div class="fl" style="margin-bottom:6px">معاينة نتيجة البحث</div>
+      <div class="seo-prev">
+        <div class="seo-prev-url" id="sp-url">makanispot.com › articles › …</div>
+        <div class="seo-prev-title" id="sp-title">—</div>
+        <div class="seo-prev-desc" id="sp-desc">—</div>
+      </div>
+    </div>
+
+    <div class="form-sec">
+      <div class="form-sec-title">🚀 النشر</div>
+      <div class="fg">
+        <label class="fl">الحالة</label>
+        <div class="radio-row">
+          ${radio('draft', '📝 مسودة')}
+          ${radio('published', '✅ منشور')}
+          ${radio('scheduled', '📅 مجدول')}
+          ${radio('hidden', '🙈 مخفي')}
+        </div>
+      </div>
+      <div class="fg" id="sched-wrap" style="display:none">
+        <label class="fl">موعد النشر</label>
+        <input class="fc" type="datetime-local" id="f-publishedAt-dt" value="${dtLocal(fm.publishedAt)}">
+        <div class="note note-warn" style="margin-top:8px;margin-bottom:0">
+          <b>ملاحظة:</b> الصفحة لا تُبنى إلا عند أول ديبلوي بعد حلول الموعد.
+          حتى تُفعَّل الجدولة التلقائية، أعد النشر يدويًا في الموعد.
+        </div>
+      </div>
+      <div class="fg2">
+        <div class="fg">
+          <label class="fl">الكاتب</label>
+          <input class="fc" id="f-author" value="${esc(fm.author)}">
+        </div>
+        <div class="fg">
+          <label class="fl">دعوة لاتخاذ إجراء (CTA)</label>
+          <select class="fc" id="f-cta">
+            <option value="spaces"  ${fm.cta === 'spaces'  ? 'selected' : ''}>🏢 ابحث عن مساحة</option>
+            <option value="bazaars" ${fm.cta === 'bazaars' ? 'selected' : ''}>🎪 تصفّح البازارات</option>
+            <option value="none"    ${fm.cta === 'none'    ? 'selected' : ''}>بلا CTA</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">خيارات</label>
+        <div class="radio-row">
+          <label class="radio-chip"><input type="checkbox" id="f-featured" ${fm.featured ? 'checked' : ''}> ⭐ مقال مميّز</label>
+          <label class="radio-chip"><input type="checkbox" id="f-showOnHomepage" ${fm.showOnHomepage ? 'checked' : ''}> 🏠 في الرئيسية</label>
+          <label class="radio-chip"><input type="checkbox" id="f-showUpdatedDate" ${fm.showUpdatedDate !== false ? 'checked' : ''}> 🕓 إظهار تاريخ التحديث</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="big-btn btn-or" id="btn-save" onclick="saveArticle()">💾 حفظ ونشر</button>
+      <button class="big-btn btn-neu" onclick="downloadMd()">⬇️ تنزيل الملف</button>
+      <button class="big-btn btn-neu" onclick="gp('articles')">← رجوع</button>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EasyMDE — محرر Markdown
+   الرفع الداخلي معطّل عمدًا (uploadImage:false)؛ زر الصورة يمرّ على
+   نفس pipeline المنصة في media-handler.js.
+   ══════════════════════════════════════════════════════════════ */
+let mde = null;
+
+const CTA_SNIPPETS = {
+  spaces: '\n---\n\n## ابدأ مشروعك الآن\n\nهل تبحث عن مساحة مناسبة لمشروعك؟\n\n[تصفح المساحات](/spaces/)\n',
+  bazaars: '\n---\n\n## ابحث عن بازار مناسب\n\nاحجز مكانك في البازارات والمعارض القادمة.\n\n[تصفح البازارات](/bazaars/)\n',
+};
+
+function insertAtCursor(text) {
+  if (!mde) return;
+  const cm = mde.codemirror;
+  cm.replaceSelection(text);
+  cm.focus();
+}
+
+const mdeBtn = (name, cls, title, action) => ({ name, className: 'mdebtn ' + cls, title, action });
+
+function buildToolbar() {
+  return [
+    mdeBtn('bold', 'mdebtn-bold', 'عريض (Ctrl+B)', EasyMDE.toggleBold),
+    mdeBtn('italic', 'mdebtn-italic', 'مائل (Ctrl+I)', EasyMDE.toggleItalic),
+    '|',
+    mdeBtn('heading-2', 'mdebtn-h2', 'عنوان رئيسي H2', EasyMDE.toggleHeading2),
+    mdeBtn('heading-3', 'mdebtn-h3', 'عنوان فرعي H3', EasyMDE.toggleHeading3),
+    '|',
+    mdeBtn('unordered-list', 'mdebtn-ul', 'قائمة نقطية', EasyMDE.toggleUnorderedList),
+    mdeBtn('ordered-list', 'mdebtn-ol', 'قائمة مرقّمة', EasyMDE.toggleOrderedList),
+    mdeBtn('quote', 'mdebtn-quote', 'اقتباس', EasyMDE.toggleBlockquote),
+    '|',
+    mdeBtn('link', 'mdebtn-link', 'رابط (Ctrl+K)', EasyMDE.drawLink),
+    mdeBtn('image', 'mdebtn-image', 'إدراج صورة (ضغط + رفع إلى R2)', () => {
+      document.getElementById('f-inline-img').click();
+    }),
+    mdeBtn('table', 'mdebtn-table', 'جدول', EasyMDE.drawTable),
+    mdeBtn('code', 'mdebtn-code', 'كود', EasyMDE.toggleCodeBlock),
+    '|',
+    {
+      name: 'cta',
+      className: 'mdebtn mdebtn-cta',
+      title: 'إدراج دعوة لاتخاذ إجراء',
+      children: [
+        { name: 'cta-spaces',  className: 'mdebtn-ctaitem', title: '🏢 CTA — ابحث عن مساحة',
+          action: () => insertAtCursor(CTA_SNIPPETS.spaces) },
+        { name: 'cta-bazaars', className: 'mdebtn-ctaitem', title: '🎪 CTA — تصفّح البازارات',
+          action: () => insertAtCursor(CTA_SNIPPETS.bazaars) },
+      ],
+    },
+    '|',
+    mdeBtn('preview', 'mdebtn-preview', 'معاينة (Ctrl+Alt+P)', EasyMDE.togglePreview),
+    mdeBtn('side-by-side', 'mdebtn-side', 'معاينة جانبية', EasyMDE.toggleSideBySide),
+    mdeBtn('fullscreen', 'mdebtn-full', 'ملء الشاشة (F11)', EasyMDE.toggleFullScreen),
+  ];
+}
+
+function destroyMde() {
+  if (!mde) return;
+  try { mde.toTextArea(); } catch (e) { /* العنصر أُزيل مع إعادة الرسم */ }
+  mde = null;
+}
+
+function initMde() {
+  destroyMde();
+  const ta = document.getElementById('f-body');
+  if (!ta || typeof EasyMDE === 'undefined') return;
+
+  mde = new EasyMDE({
+    element: ta,
+    autoDownloadFontAwesome: false,   /* أيقوناتنا نصية — لا تبعية خارجية */
+    uploadImage: false,               /* الرفع يمرّ على media-handler.js فقط */
+    spellChecker: false,
+    autofocus: false,
+    status: ['lines', 'words'],
+    placeholder: '## عنوان فرعي\n\nاكتب مقالك هنا…',
+    toolbar: buildToolbar(),
+    /* تُستدعى كـ options.previewRender(value, el) فيكون this = options
+       وthis.parent هو نسخة المحرر (نفس ما يفعله التنفيذ الافتراضي) */
+    previewRender: function (plain) {
+      const editor = this.parent || mde;
+      const safe = escapeRawHtmlForPreview(plain);
+      return editor ? editor.markdown(safe) : safe;
+    },
+    shortcuts: { togglePreview: 'Ctrl-Alt-P', toggleSideBySide: null, toggleFullScreen: 'F11' },
+    /* لا نحفظ تلقائيًا في localStorage: المسودة تُحفظ في المستودع،
+       وautosave هنا كان يخلط محتوى مقالين عند التنقل بينهما */
+    autosave: { enabled: false },
+  });
+
+  mde.codemirror.on('change', () => { /* مزامنة للتحقق فقط */ });
+}
+
+/* المعاينة يجب أن تطابق ما سيبنيه build-content.js: وسوم HTML الخام
+   تُعرض كنص لا كوسوم. نهرب < و> قبل تمريرها لمحوّل Markdown، ما عدا
+   داخل أسوار الكود التي يهربها المحوّل أصلًا. */
+function escapeRawHtmlForPreview(plain) {
+  const parts = String(plain || '').split(/(```[\s\S]*?```|`[^`\n]*`)/g);
+  return parts.map((p, i) =>
+    (i % 2) ? p : p.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  ).join('');
+}
+
+async function handleInlineImage(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  ev.target.value = '';
+
+  const slug = document.getElementById('f-slug').value.trim() || 'new';
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
+    toast('حدّد الرابط (Slug) أولًا — مسار الصورة يعتمد عليه', 'w');
+    return;
+  }
+
+  toast('جارٍ ضغط الصورة ورفعها…', 'i');
+  try {
+    const year = new Date().getFullYear();
+    const urls = await uploadImages([file], `articles/${year}/${slug}`, null, SB_KEY);
+    const alt = (file.name || 'صورة').replace(/\.[^.]+$/, '');
+    insertAtCursor(`\n![${alt}](${urls[0]})\n`);
+    toast('تم إدراج الصورة ✅', 's');
+  } catch (e) {
+    toast('فشل رفع الصورة: ' + e.message, 'e');
+  }
+}
+
+function wireForm() {
+  const $ = id => document.getElementById(id);
+  ['f-title','f-slug','f-description','f-seoTitle','f-seoDescription'].forEach(id => {
+    const e = $(id); if (e) e.addEventListener('input', updatePreview);
+  });
+  initMde();
+  const inline = $('f-inline-img');
+  if (inline) inline.addEventListener('change', handleInlineImage);
+  document.querySelectorAll('input[name="f-status"]').forEach(r => {
+    r.addEventListener('change', () => {
+      $('sched-wrap').style.display = r.value === 'scheduled' && r.checked ? '' : 'none';
+    });
+  });
+  const cur = document.querySelector('input[name="f-status"]:checked');
+  if (cur && cur.value === 'scheduled') $('sched-wrap').style.display = '';
+
+  $('f-cover-file').addEventListener('change', handleCoverUpload);
+  renderCoverSlot();
+  updatePreview();
+}
+
+function updatePreview() {
+  const $ = id => document.getElementById(id);
+  const title = $('f-seoTitle').value.trim() || $('f-title').value.trim() || '—';
+  const desc  = $('f-seoDescription').value.trim() || $('f-description').value.trim() || '—';
+  const slug  = $('f-slug').value.trim() || '…';
+
+  $('sp-title').textContent = title + ' — مكاني Spot';
+  $('sp-desc').textContent = desc;
+  $('sp-url').textContent = 'makanispot.com › articles › ' + slug;
+  const sp = $('slug-prev'); if (sp) sp.textContent = slug;
+
+  meter('m-seotitle', title.length, 60);
+  meter('m-seodesc', desc.length, 160);
+}
+
+function meter(id, len, max) {
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = `${len}/${max}`;
+  e.className = 'meter ' + (len === 0 || len > max ? 'bad' : len > max * 0.85 ? 'warn' : 'ok');
+}
+
+function genSlug() {
+  const t = document.getElementById('f-title').value;
+  const s = slugify(t);
+  if (!s) { toast('اكتب العنوان أولًا (أو أدخل الرابط يدويًا بأحرف لاتينية)', 'w'); return; }
+  document.getElementById('f-slug').value = s;
+  updatePreview();
+}
+
+/* ── رفع الغلاف — يعيد استخدام media-handler.js حرفيًا ── */
+function renderCoverSlot() {
+  const slot = document.getElementById('cover-slot');
+  if (!slot) return;
+  slot.innerHTML = coverUrl
+    ? `<div class="cover-prev">
+         <img src="${esc(coverUrl)}" alt="">
+         <button class="cover-x" onclick="clearCover()">✕ إزالة</button>
+       </div>
+       <div class="fh" style="margin-top:6px">
+         ${ogUrl ? '✅ نسخة OG (1200×630 JPEG) جاهزة للمشاركة' : '⚠️ بلا نسخة OG — أعد الرفع'}
+       </div>`
+    : `<div class="upload-zone" onclick="document.getElementById('f-cover-file').click()">
+         <div class="upload-zone-ico">🖼️</div>
+         <div class="upload-zone-lbl">اضغط لاختيار صورة الغلاف</div>
+         <div class="upload-status" id="cover-status"></div>
+       </div>`;
+}
+
+function clearCover() { coverUrl = ''; ogUrl = ''; renderCoverSlot(); }
+
+/* صورة OG بمقاس 1200×630 بالضبط (نسبة 1.91:1) بقصّ cover.
+   لا نستخدم compressImage() من media-handler لأنها تحافظ على نسبة
+   الصورة الأصلية (فتخرج 1280×960 لصورة 4:3) فيقصّها فيسبوك عشوائيًا،
+   ولا نستخدم _f.webp لأن واتساب يتعثّر في WebP داخل معاينات الروابط.
+   JPEG هنا مقصود. */
+async function makeOgJpeg(file) {
+  const W = 1200, H = 630;
+  let src;
+  try {
+    /* imageOrientation يطبّق دوران EXIF تلقائيًا — أبسط وأدق من المصفوفة اليدوية */
+    src = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch (e) {
+    src = await new Promise((res, rej) => {
+      const img = new Image();
+      const u = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(u); res(img); };
+      img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('فشل قراءة الصورة')); };
+      img.src = u;
+    });
+  }
+
+  const sw = src.width || src.naturalWidth;
+  const sh = src.height || src.naturalHeight;
+  if (!sw || !sh) throw new Error('أبعاد الصورة غير صالحة');
+
+  /* قصّ cover: املأ الإطار كاملًا مع اقتطاع الفائض من المنتصف */
+  const scale = Math.max(W / sw, H / sh);
+  const dw = sw * scale, dh = sh * scale;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  if (src.close) src.close();
+
+  return new Promise((res, rej) => {
+    canvas.toBlob(b => (b ? res(b) : rej(new Error('فشل توليد صورة المشاركة'))), 'image/jpeg', 0.82);
+  });
+}
+
+async function handleCoverUpload(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  ev.target.value = '';
+
+  const slug = document.getElementById('f-slug').value.trim() || 'new';
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
+    toast('حدّد الرابط (Slug) أولًا — مسار الصورة يعتمد عليه', 'w');
+    return;
+  }
+
+  const st = document.getElementById('cover-status');
+  const setSt = m => { if (st) st.textContent = m; };
+  setSt('جارٍ الضغط والرفع…');
+
+  try {
+    const year = new Date().getFullYear();
+    const folder = `articles/${year}/${slug}`;
+
+    /* ١) النسخ الثلاث WebP عبر المكتبة المشتركة (نفس ما تفعله المساحات والبازارات) */
+    const urls = await uploadImages([file], folder, null, SB_KEY);
+    coverUrl = urls[0];
+
+    /* ٢) نسخة OG منفصلة بمقاس 1200×630 JPEG (uploadToR2 يُرجع الرابط كنص) */
+    setSt('جارٍ تجهيز صورة المشاركة…');
+    try {
+      const jpg = await makeOgJpeg(file);
+      ogUrl = await uploadToR2(jpg, `${folder}/og.jpg`, SB_KEY);
+    } catch (e) {
+      ogUrl = '';
+      console.warn('OG image failed:', e);
+    }
+
+    renderCoverSlot();
+    toast('تم رفع صورة الغلاف', 's');
+  } catch (e) {
+    setSt('');
+    toast('فشل الرفع: ' + e.message, 'e');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Save
+   ══════════════════════════════════════════════════════════════ */
+function collectForm() {
+  const $ = id => document.getElementById(id);
+  const v = id => ($(id) ? $(id).value.trim() : '');
+  const statusEl = document.querySelector('input[name="f-status"]:checked');
+  let status = statusEl ? statusEl.value : 'draft';
+
+  let publishedAt = '';
+  if (status === 'scheduled') {
+    const dt = v('f-publishedAt-dt');
+    publishedAt = dt ? new Date(dt).toISOString() : '';
+  } else if (status === 'published') {
+    const existing = editing && allArticles.find(a => a.slug === editing.slug);
+    publishedAt = (existing && existing.fm.publishedAt) || new Date().toISOString();
+  } else {
+    const existing = editing && allArticles.find(a => a.slug === editing.slug);
+    publishedAt = (existing && existing.fm.publishedAt) || '';
+  }
+
+  return {
+    fm: {
+      title: v('f-title'),
+      slug: v('f-slug'),
+      locale: 'ar',
+      description: v('f-description'),
+      category: v('f-category'),
+      tags: v('f-tags').split(/[,،]/).map(s => s.trim()).filter(Boolean),
+      cover: coverUrl,
+      coverAlt: v('f-coverAlt'),
+      ogImage: ogUrl,
+      author: v('f-author') || 'فريق مكاني Spot',
+      publishedAt,
+      updatedAt: new Date().toISOString(),
+      status,
+      featured: $('f-featured').checked,
+      showOnHomepage: $('f-showOnHomepage').checked,
+      showUpdatedDate: $('f-showUpdatedDate').checked,
+      seoTitle: v('f-seoTitle'),
+      seoDescription: v('f-seoDescription'),
+      canonical: v('f-canonical'),
+      focusKeyword: v('f-focusKeyword'),
+      cta: v('f-cta') || 'none',
+    },
+    /* المصدر هو نسخة EasyMDE لا الـ textarea — الأخير لا يُزامَن تلقائيًا */
+    body: mde ? mde.value() : ($('f-body') ? $('f-body').value : ''),
+  };
+}
+
+function validate(fm, body) {
+  let ok = true;
+  const fail = (field, msg) => {
+    ok = false;
+    const e = document.getElementById('e-' + field);
+    const i = document.getElementById('f-' + field);
+    if (e) e.textContent = msg;
+    if (i) i.classList.add('fc-err');
+  };
+  ['title','slug','body'].forEach(f => {
+    const e = document.getElementById('e-' + f); if (e) e.textContent = '';
+    const i = document.getElementById('f-' + f); if (i) i.classList.remove('fc-err');
+  });
+
+  if (!fm.title) fail('title', 'العنوان مطلوب');
+  if (!fm.slug) fail('slug', 'الرابط مطلوب');
+  else if (!/^[a-z0-9][a-z0-9-]{0,119}$/.test(fm.slug))
+    fail('slug', 'أحرف لاتينية صغيرة وأرقام وشرطات فقط، ويبدأ بحرف أو رقم');
+  else {
+    const clash = allArticles.some(a => a.slug === fm.slug && (!editing || a.slug !== editing.slug));
+    if (clash) fail('slug', 'هذا الرابط مستخدم في مقال آخر');
+  }
+  if (!String(body).trim()) fail('body', 'محتوى المقال مطلوب');
+  if (fm.status === 'scheduled' && !fm.publishedAt) {
+    ok = false; toast('حدّد موعد النشر للمقال المجدول', 'w');
+  }
+  if (!ok) toast('راجع الحقول المطلوبة', 'e');
+  return ok;
+}
+
+async function saveArticle() {
+  const { fm, body } = collectForm();
+  if (!validate(fm, body)) return;
+
+  if (!ghToken()) {
+    toast('لا يوجد توكن نشر — أضفه أو استخدم «تنزيل الملف»', 'e');
+    openTokenModal();
+    return;
+  }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.textContent = '⏳ جارٍ الحفظ…';
+
+  const md = buildMd(fm, body);
+  const newPath = `${ARTICLES_DIR}/${fm.slug}.md`;
+  const renamed = editing && editing.slug !== fm.slug;
+
+  try {
+    /* عند تغيير الرابط: أنشئ الجديد ثم احذف القديم (نداءان — GitHub
+       Contents API لا يدعم النقل الذرّي؛ لو فشل الحذف يبقى الملفان
+       وتظهر رسالة صريحة بدل فقدان المحتوى) */
+    await ghPutFile(newPath, md, renamed ? null : (editing ? editing.sha : null),
+      (editing ? 'تحديث مقال: ' : 'مقال جديد: ') + fm.title);
+
+    if (renamed) {
+      try {
+        await ghDeleteFile(editing.path, editing.sha, 'حذف الرابط القديم: ' + editing.slug);
+      } catch (e) {
+        toast('حُفظ المقال، لكن تعذّر حذف الملف القديم (' + editing.slug + ') — احذفه يدويًا', 'w');
+      }
+    }
+
+    toast('تم الحفظ ✅ — Cloudflare يبني الصفحة الآن (~دقيقة)', 's');
+    editing = null;
+    await loadAll();
+    gp('articles');
+  } catch (e) {
+    if (/sha|conflict|409|422/i.test(e.message)) {
+      toast('تعارض: عُدّل الملف من مكان آخر. اضغط تحديث ثم أعد المحاولة.', 'e');
+    } else {
+      toast('فشل الحفظ: ' + e.message, 'e');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 حفظ ونشر';
+  }
+}
+
+/* مسار احتياطي بلا توكن إطلاقًا */
+function downloadMd() {
+  const { fm, body } = collectForm();
+  if (!fm.slug) { toast('حدّد الرابط (Slug) أولًا', 'w'); return; }
+  const blob = new Blob([buildMd(fm, body)], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fm.slug + '.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('ضع الملف في content/articles/ وارفعه بـ git', 'i');
+}
+
+async function quickStatus(slug, newStatus) {
+  const item = allArticles.find(a => a.slug === slug);
+  if (!item) return;
+  if (!ghToken()) { toast('لا يوجد توكن نشر', 'e'); openTokenModal(); return; }
+
+  try {
+    const file = await ghGetFile(item.path);
+    if (!file) throw new Error('تعذّر جلب الملف');
+    const { data, body } = parseFM(file.text);
+    data.status = newStatus;
+    data.updatedAt = new Date().toISOString();
+    if (newStatus === 'published' && !data.publishedAt) data.publishedAt = new Date().toISOString();
+    await ghPutFile(item.path, buildMd(data, body), file.sha,
+      (newStatus === 'published' ? 'نشر: ' : 'إخفاء: ') + (data.title || slug));
+    toast(newStatus === 'published' ? 'تم النشر ✅' : 'تم الإخفاء', 's');
+    loadAll();
+  } catch (e) {
+    toast('فشل: ' + e.message, 'e');
+  }
+}
+
+function deleteArticle(slug) {
+  const item = allArticles.find(a => a.slug === slug);
+  if (!item) return;
+  showConfirm('حذف المقال؟',
+    `سيُحذف «${item.fm.title || slug}» نهائيًا من المستودع وتختفي صفحته. لا يمكن التراجع من هنا (يبقى في سجل Git).`,
+    async () => {
+      if (!ghToken()) { toast('لا يوجد توكن نشر', 'e'); openTokenModal(); return; }
+      try {
+        let sha = item.sha;
+        if (!sha) { const f = await ghGetFile(item.path); sha = f && f.sha; }
+        if (!sha) throw new Error('تعذّر تحديد الملف');
+        await ghDeleteFile(item.path, sha, 'حذف مقال: ' + (item.fm.title || slug));
+        toast('تم الحذف', 's');
+        loadAll();
+      } catch (e) {
+        toast('فشل الحذف: ' + e.message, 'e');
+      }
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Settings
+   ══════════════════════════════════════════════════════════════ */
+async function renderSettings() {
+  const pg = document.getElementById('pg-settings');
+  if (!settingsData) {
+    pg.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><div>جارٍ التحميل…</div></div>';
+    try {
+      if (ghToken()) {
+        const f = await ghGetFile(SETTINGS_PATH);
+        if (f) { settingsData = JSON.parse(f.text); settingsSha = f.sha; }
+      }
+      if (!settingsData) {
+        const r = await fetch(INDEX_URL + '?t=' + Date.now(), { cache: 'no-store' });
+        if (r.ok) settingsData = (await r.json()).settings || {};
+      }
+    } catch (e) { settingsData = settingsData || {}; }
+  }
+  const s = settingsData || {};
+  const num = (id, lbl, val, hint) => `
+    <div class="fg">
+      <label class="fl">${lbl}</label>
+      <input class="fc" type="number" id="${id}" value="${esc(val)}">
+      ${hint ? `<div class="fh">${hint}</div>` : ''}
+    </div>`;
+
+  pg.innerHTML = `<div class="form-wrap">
+    <div class="note">
+      هذه الإعدادات تُحفظ في <code class="k">content/settings.json</code> ويقرأها
+      <code class="k">build-content.js</code> عند البناء وصفحة القسم عند العرض.
+    </div>
+    <div class="form-sec">
+      <div class="form-sec-title">⚙️ إعدادات القسم</div>
+      <div class="fg">
+        <label class="fl">عنوان القسم</label>
+        <input class="fc" id="s-sectionTitle" value="${esc(s.sectionTitle || 'مركز المعرفة')}">
+      </div>
+      <div class="fg">
+        <label class="fl">وصف القسم</label>
+        <textarea class="fc" id="s-sectionDescription" rows="2">${esc(s.sectionDescription || '')}</textarea>
+      </div>
+      <div class="fg2">
+        ${num('s-perPage', 'عدد المقالات في الصفحة', s.perPage != null ? s.perPage : 9)}
+        ${num('s-featuredCount', 'عدد المقالات المميّزة', s.featuredCount != null ? s.featuredCount : 3)}
+      </div>
+      <div class="fg2">
+        ${num('s-relatedCount', 'عدد المقالات ذات الصلة', s.relatedCount != null ? s.relatedCount : 3, 'تظهر أسفل كل مقال')}
+        <div class="fg">
+          <label class="fl">عرض المقالات المميّزة</label>
+          <select class="fc" id="s-featuredMode">
+            <option value="hero"  ${s.featuredMode === 'hero'  ? 'selected' : ''}>بطاقة كبيرة (hero)</option>
+            <option value="strip" ${s.featuredMode === 'strip' ? 'selected' : ''}>شريط بطاقات</option>
+            <option value="off"   ${s.featuredMode === 'off'   ? 'selected' : ''}>إيقاف</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">خيارات العرض</label>
+        <div class="radio-row">
+          <label class="radio-chip"><input type="checkbox" id="s-showAuthor" ${s.showAuthor !== false ? 'checked' : ''}> 👤 إظهار الكاتب</label>
+          <label class="radio-chip"><input type="checkbox" id="s-showReadingTime" ${s.showReadingTime !== false ? 'checked' : ''}> ⏱ وقت القراءة</label>
+          <label class="radio-chip"><input type="checkbox" id="s-showUpdatedDate" ${s.showUpdatedDate !== false ? 'checked' : ''}> 🕓 تاريخ التحديث</label>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="big-btn btn-or" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+    </div>
+  </div>`;
+}
+
+async function saveSettings() {
+  if (!ghToken()) { toast('لا يوجد توكن نشر', 'e'); openTokenModal(); return; }
+  const $ = id => document.getElementById(id);
+  const n = (id, d) => { const x = parseInt($(id).value, 10); return isNaN(x) ? d : x; };
+
+  const data = {
+    sectionTitle: $('s-sectionTitle').value.trim() || 'مركز المعرفة',
+    sectionDescription: $('s-sectionDescription').value.trim(),
+    perPage: Math.min(48, Math.max(3, n('s-perPage', 9))),
+    featuredMode: $('s-featuredMode').value,
+    featuredCount: Math.max(1, n('s-featuredCount', 3)),
+    relatedCount: Math.max(0, n('s-relatedCount', 3)),
+    showAuthor: $('s-showAuthor').checked,
+    showReadingTime: $('s-showReadingTime').checked,
+    showUpdatedDate: $('s-showUpdatedDate').checked,
+  };
+
+  try {
+    const cur = await ghGetFile(SETTINGS_PATH);
+    await ghPutFile(SETTINGS_PATH, JSON.stringify(data, null, 2) + '\n',
+      cur ? cur.sha : null, 'تحديث إعدادات مركز المعرفة');
+    settingsData = data;
+    toast('تم حفظ الإعدادات ✅', 's');
+  } catch (e) {
+    toast('فشل الحفظ: ' + e.message, 'e');
+  }
+}
+</script>
+</body>
+</html>

@@ -13,7 +13,7 @@
 /* ── الإصدار: غيّر هذا الرقم عند كل نشر جديد ────────────────
    الصيغة: YYYYMMDD-HHMM  →  سهل تعرف امتى اتعمل
    ─────────────────────────────────────────────────────────── */
-const CACHE_VER   = 'v20260801183728';
+const CACHE_VER   = 'v20260802174819';
 const SHELL_CACHE = `makani-shell-${CACHE_VER}`;
 const FONT_CACHE  = `makani-fonts-${CACHE_VER}`;
 const CDN_CACHE   = `makani-cdn-${CACHE_VER}`;
@@ -84,7 +84,12 @@ self.addEventListener('fetch', event => {
   if (url.hostname.endsWith('supabase.co') ||
       url.hostname.endsWith('r2.dev') ||
       url.pathname.startsWith('/upload') ||
-      url.pathname.startsWith('/admin/')) {
+      url.pathname.startsWith('/admin/') ||
+      /* sitemap.xml مولَّد في كل بناء؛ بدون هذا يقع على قاعدة الأصول
+         الثابتة (٦) cache-first ويتجمّد حتى يتغيّر CACHE_VER */
+      url.pathname === '/sitemap.xml' ||
+      /* فهرس المقالات — يتغيّر مع كل نشر، ولا يصح تجميده */
+      url.pathname === '/articles/_index.json') {
     return;
   }
 
@@ -123,7 +128,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* 6. الأصول الثابتة (صور، أيقونات) → Cache-First */
+  /* 6. الأصول الثابتة (صور، أيقونات) من نفس الموقع → Cache-First.
+     حرج: أي مصدر خارجي لم يُصرَّح له صراحة في القواعد 1-3 أعلاه كان
+     يسقط هنا افتراضيًا فيُخزَّن أبديًا. تحديدًا: نداءات
+     api.github.com وraw.githubusercontent.com من لوحة إدارة المحتوى
+     (admin/content-hub.html) لا تبدأ بـ /admin/ ولا تنتهي بـ .css/.js
+     ولا تحمل Accept: text/html، فتقع هنا مباشرة. النتيجة العملية:
+     فتح مسودة → تعديل → حفظ → إعادة فتحها تُظهر النسخة القديمة
+     المخزَّنة → تعديل عليها يُلغي الحفظ الأول بصمت. */
+  if (url.origin !== self.location.origin) {
+    return;
+  }
   event.respondWith(cacheFirst(request));
 });
 

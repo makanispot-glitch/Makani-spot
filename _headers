@@ -16,6 +16,11 @@
 /offline.html
   X-Robots-Tag: noindex, nofollow
 
+# مصدر المقالات (.md خام + الفهرس). Cloudflare Pages تنشر كل ملف في
+# المستودع، فهذه الملفات مجلوبة علنًا — نمنع فهرستها كمحتوى مكرر.
+/content/*
+  X-Robots-Tag: noindex, nofollow
+
 # ══════════════════════════════════════════
 # HTML — لا كاش أبداً (يُجلب من الشبكة دائماً)
 # هذا يضمن أن المتصفح يرى ?v= الجديدة في روابط CSS/JS
@@ -36,6 +41,15 @@
 
 /admin/
   Cache-Control: no-cache, no-store, must-revalidate
+
+# صفحات المقالات على /articles/{slug}/ — روابط مجلدات لا تنتهي بـ .html
+# فقاعدة /*.html أدناه لا تلتقطها. قاعدتا /*.css و/*.js تأتيان بعدها
+# فتغلبان عليها لملفي article.css و article.js (لهما ?v= من السكربت).
+# max-age=0 (لا no-store) يسمح بكاش حافة Cloudflare وrevalidate شرطي
+# بدل رحلة كاملة للأصل في كل زيارة — هذا هو سبب فصل article.css أصلًا
+# (10 KB بدل style.css الرئيسي 311 KB)، وno-store كانت تُبطل المكسب.
+/articles/*
+  Cache-Control: public, max-age=0, must-revalidate
 
 # ══════════════════════════════════════════
 # CSS و JS — كاش طويل لأن الـ ?v= بيتغير عند كل تحديث
