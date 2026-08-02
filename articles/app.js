@@ -313,11 +313,29 @@
         render();
       })
       .catch(function (err) {
+        /* التمييز بين 404 وبقية الأخطاء مقصود: 404 على هذا المسار له
+           سبب واحد عمليًا — أن build-content.js لم يعمل على الخادم
+           (الملف مولَّد ومستبعَد من git). رسالة عامة هنا كانت تُخفي
+           السبب وتُظهرها كعُطل شبكة عابر. */
+        var isMissing = /HTTP 404/.test(String(err && err.message));
         console.error('تعذّر تحميل فهرس المقالات:', err);
+        if (isMissing) {
+          console.error(
+            'articles/_index.json غير موجود على الخادم. هذا الملف يولّده build-content.js ' +
+            'وهو مستبعَد من git عمدًا. تأكّد أن Build command في Cloudflare Pages = "node build-content.js" ' +
+            'وأن Build output directory = "/".'
+          );
+        }
         el.grid.innerHTML =
           '<div class="kc-empty" style="grid-column:1/-1">' +
-            '<div class="kc-empty-title">تعذّر تحميل المقالات</div>' +
-            '<div>حدّث الصفحة أو حاول بعد قليل.</div>' +
+            '<div class="kc-empty-title">' +
+              (isMissing ? 'لم يُبنَ فهرس المقالات بعد' : 'تعذّر تحميل المقالات') +
+            '</div>' +
+            '<div>' +
+              (isMissing
+                ? 'المحتوى موجود لكن خطوة البناء لم تُنفَّذ على الخادم. التفاصيل في console.'
+                : 'حدّث الصفحة أو حاول بعد قليل.') +
+            '</div>' +
           '</div>';
       });
   }

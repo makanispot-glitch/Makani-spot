@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>مكاني Spot — إدارة المحتوى</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../vendor/easymde/easymde.min.css?v=20260802174819">
+<link rel="stylesheet" href="../vendor/easymde/easymde.min.css?v=20260802203116">
 <style>
 /* التوكنات والقشرة منسوخة من admin/spaces-hub.html ليطابق شكل بقية لوحات الأدمن.
    التكرار مقصود — الصفحات الثماني كلها تكرّر الناف، ولا قشرة مشتركة في المنصة. */
@@ -293,7 +293,7 @@ code.k{background:var(--bg5);border-radius:4px;padding:1px 6px;font-family:'IBM 
     <div class="modal-title">🔑 توكن النشر على GitHub</div>
     <div class="modal-sub">
       النشر يتم بعمل commit مباشر على المستودع. لأن المنصة بلا خادم وسيط، يُحفظ التوكن
-      في <b>ذاكرة التبويب فقط</b> (sessionStorage) ويُمحى تلقائيًا عند إغلاق التبويب.
+      في متصفحك أنت — لا يُرسَل لأي طرف ثالث.
     </div>
     <div class="note note-warn" style="margin-bottom:16px">
       <b>مهم:</b> أنشئ <code class="k">Fine-grained token</code> من GitHub مقصورًا على مستودع
@@ -311,7 +311,12 @@ code.k{background:var(--bg5);border-radius:4px;padding:1px 6px;font-family:'IBM 
     <div class="fg">
       <label class="fl">التوكن</label>
       <input class="fc ltr" id="gh-token" type="password" placeholder="github_pat_…" autocomplete="off">
-      <div class="fh">يُحفظ في هذا التبويب فقط. أعد لصقه بعد كل إغلاق.</div>
+    </div>
+    <div class="fg">
+      <label class="radio-chip" style="width:100%">
+        <input type="checkbox" id="gh-remember" onchange="updateRememberHint()"> 💾 تذكّرني على هذا الجهاز
+      </label>
+      <div class="fh" id="gh-remember-hint"></div>
     </div>
     <div id="gh-token-status" style="font-size:11px;min-height:16px;margin-bottom:12px"></div>
     <div class="modal-actions">
@@ -336,9 +341,9 @@ code.k{background:var(--bg5);border-radius:4px;padding:1px 6px;font-family:'IBM 
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../vendor/easymde/easymde.min.js?v=20260802174819"></script>
-<script src="../media-handler.js?v=20260802174819"></script>
-<script src="../shared/sb-config.js?v=20260802174819"></script>
+<script src="../vendor/easymde/easymde.min.js?v=20260802203116"></script>
+<script src="../media-handler.js?v=20260802203116"></script>
+<script src="../shared/sb-config.js?v=20260802203116"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════
@@ -388,7 +393,14 @@ async function doLogout() {
 /* ══════════════════════════════════════════════════════════════
    GitHub client
    ══════════════════════════════════════════════════════════════ */
-const ghToken  = () => sessionStorage.getItem(TOKEN_KEY) || '';
+/* التوكن يُقرأ من الجلسة أولًا ثم من التخزين الدائم.
+   الافتراضي sessionStorage (يُمحى بإغلاق التبويب) لأنه الأأمن، لكن
+   إعادة لصق التوكن كل جلسة احتكاك حقيقي — فخيار «تذكّرني» ينقله إلى
+   localStorage بقرار صريح من المستخدم. لا يوجد أبدًا في المكانين معًا:
+   saveToken() يمسح الآخر دائمًا حتى لا تبقى نسخة منسيّة بعد إلغاء
+   التذكّر. */
+const ghToken = () => sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || '';
+const ghTokenIsPersistent = () => !!localStorage.getItem(TOKEN_KEY);
 const ghRepo   = () => localStorage.getItem(REPO_KEY) || DEFAULT_REPO;
 const ghBranch = () => localStorage.getItem(BRANCH_KEY) || DEFAULT_BRANCH;
 
@@ -595,11 +607,20 @@ function renderCurrentPage() {
 /* ══════════════════════════════════════════════════════════════
    Token
    ══════════════════════════════════════════════════════════════ */
+function updateRememberHint() {
+  const on = document.getElementById('gh-remember').checked;
+  document.getElementById('gh-remember-hint').innerHTML = on
+    ? '⚠️ سيبقى التوكن محفوظًا على هذا الجهاز بعد إغلاق المتصفح. لا تفعّله على جهاز مشترك أو عام.'
+    : 'يُحفظ في هذا التبويب فقط ويُمحى عند إغلاقه — الخيار الأأمن.';
+}
+
 function openTokenModal() {
   document.getElementById('gh-repo').value = ghRepo();
   document.getElementById('gh-branch').value = ghBranch();
   document.getElementById('gh-token').value = ghToken();
+  document.getElementById('gh-remember').checked = ghTokenIsPersistent();
   document.getElementById('gh-token-status').innerHTML = '';
+  updateRememberHint();
   document.getElementById('token-modal').classList.add('open');
 }
 const closeTokenModal = () => document.getElementById('token-modal').classList.remove('open');
@@ -608,31 +629,46 @@ async function saveToken() {
   const repo = document.getElementById('gh-repo').value.trim() || DEFAULT_REPO;
   const branch = document.getElementById('gh-branch').value.trim() || DEFAULT_BRANCH;
   const token = document.getElementById('gh-token').value.trim();
+  const remember = document.getElementById('gh-remember').checked;
   const st = document.getElementById('gh-token-status');
   if (!token) { st.innerHTML = '<span style="color:var(--rd)">أدخل التوكن</span>'; return; }
 
   localStorage.setItem(REPO_KEY, repo);
   localStorage.setItem(BRANCH_KEY, branch);
-  sessionStorage.setItem(TOKEN_KEY, token);
+
+  /* اكتب في المخزن المختار وامسح الآخر دائمًا — لا نسخة منسيّة */
+  if (remember) {
+    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.removeItem(TOKEN_KEY);
+  } else {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    localStorage.removeItem(TOKEN_KEY);
+  }
 
   st.innerHTML = '<span style="color:var(--mu)">جارٍ الفحص…</span>';
   try {
     const r = await gh(`/repos/${repo}`);
     if (!r.permissions || !r.permissions.push) throw new Error('التوكن يقرأ فقط — يحتاج صلاحية الكتابة');
-    st.innerHTML = '<span style="color:var(--gr)">✅ التوكن صالح — صلاحية الكتابة مؤكّدة</span>';
+    st.innerHTML = '<span style="color:var(--gr)">✅ التوكن صالح — صلاحية الكتابة مؤكّدة'
+      + (remember ? ' — محفوظ على هذا الجهاز' : ' — محفوظ لهذه الجلسة فقط') + '</span>';
     toast('تم حفظ التوكن — النشر جاهز', 's');
     setTimeout(() => { closeTokenModal(); loadAll(); }, 900);
   } catch (e) {
+    /* توكن غير صالح لا يُحفَظ في أي مخزن */
     sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     st.innerHTML = '<span style="color:var(--rd)">❌ ' + esc(e.message) + '</span>';
   }
 }
 
 function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   document.getElementById('gh-token').value = '';
+  document.getElementById('gh-remember').checked = false;
+  updateRememberHint();
   document.getElementById('gh-token-status').innerHTML = '<span style="color:var(--mu)">تم مسح التوكن</span>';
-  toast('تم مسح التوكن من هذا التبويب', 'w');
+  toast('تم مسح التوكن من هذا الجهاز', 'w');
 }
 
 /* ══════════════════════════════════════════════════════════════

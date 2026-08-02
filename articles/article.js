@@ -64,7 +64,13 @@
     }
     if (authed) {
       var navCta = document.querySelector('.kc-nav-cta');
-      if (navCta) { navCta.textContent = 'حسابي'; navCta.setAttribute('href', '/dashboard/'); }
+      /* /?p=dashboard لا /dashboard/ — الأخيرة هي لوحة تحكم أصحاب
+         المساحات تحديدًا (راجع <title> في dashboard/index.html)، وكان
+         توجيه كل مستخدم مسجَّل إليها خطأ. لوحة المستخدم العادي صفحة
+         داخل SPA الرئيسية، ومسارها الخارجي المعتمَد هو ?p=dashboard —
+         تتعامل معه app.js:2127 صراحةً، وهو ما تستخدمه بقية الصفحات
+         الفرعية (مثال: spaces/app.js عند showPage('dashboard')). */
+      if (navCta) { navCta.textContent = 'حسابي'; navCta.setAttribute('href', '/?p=dashboard'); }
     }
   } catch (e) { /* localStorage محجوب — تجاهل */ }
 
