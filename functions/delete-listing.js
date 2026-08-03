@@ -7,7 +7,7 @@
  *   SUPABASE_URL, SUPABASE_SERVICE_KEY, BUCKET (R2 binding)
  */
 
-const R2_PUBLIC_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
+import { deleteMediaByUrls } from './admin/_media.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -71,21 +71,9 @@ export async function onRequestDelete(context) {
   if (!listing) return fail(404, 'الإعلان غير موجود');
   if (listing.user_id !== userId) return fail(403, 'ليس لديك صلاحية حذف هذا الإعلان');
 
-  /* حذف الصور من R2 */
+  /* حذف الصور من R2 — عبر الوحدة المشتركة (كانت هذه الحلقة مكرَّرة في 3 ملفات) */
   const bucket = env.BUCKET || env['BUCKET-1'];
-  if (bucket) {
-    const allUrls = [listing.cover_image, ...(listing.images || [])].filter(Boolean);
-    for (const url of allUrls) {
-      if (typeof url === 'string' && url.startsWith(R2_PUBLIC_BASE)) {
-        const path = url.slice(R2_PUBLIC_BASE.length);
-        try { await bucket.delete(path); } catch {}
-        if (path.endsWith('_f.webp')) {
-          try { await bucket.delete(path.replace('_f.webp', '_c.webp')); } catch {}
-          try { await bucket.delete(path.replace('_f.webp', '_d.webp')); } catch {}
-        }
-      }
-    }
-  }
+  await deleteMediaByUrls(bucket, [listing.cover_image, ...(listing.images || [])], 3);
 
   /* حذف السجل من Supabase */
   const delRes = await fetch(

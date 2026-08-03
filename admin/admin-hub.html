@@ -898,6 +898,136 @@ body {
   .aq-row-head { flex-wrap: wrap; }
   #dashboard { padding: 16px 14px 40px; }
 }
+
+/* ─────────────────────────────────────────────
+   MAINTENANCE CENTER — مركز صيانة المنصة
+   ───────────────────────────────────────────── */
+.mt-wrap { margin-bottom: 32px; }
+.mt-open-btn {
+  width: 100%; background: var(--bg2); border: 1px solid var(--bd);
+  border-radius: var(--r); padding: 16px 18px; cursor: pointer;
+  font-family: Cairo, sans-serif; color: var(--tx);
+  display: flex; align-items: center; gap: 12px; text-align: right;
+  transition: border-color .2s;
+}
+.mt-open-btn:hover { border-color: var(--bdo); }
+.mt-open-btn .mt-ob-ico { font-size: 22px; }
+.mt-open-btn .mt-ob-t   { font-weight: 700; font-size: 14px; }
+.mt-open-btn .mt-ob-s   { font-size: 11px; color: var(--mu); margin-top: 3px; line-height: 1.6; }
+.mt-open-btn .mt-ob-go  { margin-right: auto; color: var(--or); font-size: 12px; font-weight: 700; }
+
+.mt-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.mt-tab {
+  padding: 9px 16px; border-radius: 8px; border: 1px solid var(--bd);
+  background: var(--bg2); color: var(--mu); cursor: pointer;
+  font-family: Cairo, sans-serif; font-size: 12px; font-weight: 700;
+}
+.mt-tab.active { background: var(--org); border-color: var(--bdo); color: var(--or2); }
+.mt-tab:hover:not(.active) { color: var(--tx); }
+
+.mt-card {
+  background: var(--bg2); border: 1px solid var(--bd);
+  border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px;
+}
+.mt-card-t {
+  font-size: 13px; font-weight: 700; color: var(--tx);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--bd);
+}
+.mt-card-t .mt-sub { margin-right: auto; font-size: 11px; font-weight: 400; color: var(--mu); }
+
+.mt-res { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mt-res-box { background: var(--bg3); border: 1px solid var(--bd); border-radius: 8px; padding: 13px 15px; }
+.mt-res-lbl { font-size: 11px; color: var(--mu); margin-bottom: 6px; }
+.mt-res-val { font-size: 19px; font-weight: 700; letter-spacing: -.5px; }
+.mt-bar { height: 6px; background: var(--bg5); border-radius: 3px; overflow: hidden; margin-top: 9px; }
+.mt-bar > i { display: block; height: 100%; border-radius: 3px; background: var(--gr); transition: width .4s; }
+.mt-bar > i.warn { background: var(--yw); }
+.mt-bar > i.crit { background: var(--rd); }
+.mt-res-note { font-size: 10px; color: var(--mu); margin-top: 6px; }
+
+.mt-kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 10px; }
+.mt-kpi { background: var(--bg3); border: 1px solid var(--bd); border-radius: 8px; padding: 11px 13px; }
+.mt-kpi-v { font-size: 17px; font-weight: 700; }
+.mt-kpi-l { font-size: 10px; color: var(--mu); margin-top: 3px; }
+
+.mt-tables { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 10px; }
+.mt-tbl { background: var(--bg3); border: 1px solid var(--bd); border-radius: 8px; padding: 10px 12px; font-size: 11px; }
+.mt-tbl.attn { border-color: rgba(239,68,68,.45); }
+.mt-tbl-h {
+  font-weight: 700; font-size: 11.5px; color: var(--tx); margin-bottom: 7px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--bd);
+  display: flex; justify-content: space-between; align-items: center; gap: 6px;
+}
+.mt-tbl-r { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+.mt-tbl-r span:first-child { color: var(--mu); }
+.mt-flag { font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+.mt-flag.ok   { background: rgba(34,197,94,.14);  color: var(--gr); }
+.mt-flag.warn { background: rgba(245,158,11,.14); color: var(--yw); }
+.mt-flag.crit { background: rgba(239,68,68,.14);  color: var(--rd); }
+.mt-flag.neg  { background: var(--bg5);           color: var(--mu); }
+.mt-flag.info { background: rgba(96,165,250,.14); color: var(--bl); }
+
+.mt-grp { margin-bottom: 16px; }
+.mt-grp-h {
+  font-size: 12px; font-weight: 700; color: var(--or2); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.mt-grp-h .mt-grp-n { font-size: 10px; color: var(--mu); font-weight: 400; }
+.mt-item {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 7px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.mt-item.hot { border-color: rgba(245,158,11,.4); }
+.mt-item-chk { flex-shrink: 0; }
+.mt-item-main { flex: 1 1 200px; min-width: 0; }
+.mt-item-l { font-size: 12px; font-weight: 600; }
+.mt-item-s { font-size: 10px; color: var(--mu); margin-top: 3px; line-height: 1.6; }
+.mt-item-n { font-size: 15px; font-weight: 700; min-width: 46px; text-align: center; }
+.mt-days { width: 68px; padding: 5px 7px; border-radius: 6px; border: 1px solid var(--bd);
+  background: var(--bg4); color: var(--tx); font-family: Cairo, sans-serif; font-size: 11px; text-align: center; }
+.mt-prev { flex: 1 1 100%; font-size: 11px; min-height: 0; }
+
+.mt-btn {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--bd);
+  background: var(--bg4); color: var(--tx); cursor: pointer;
+  font-family: Cairo, sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.mt-btn:hover:not(:disabled) { border-color: var(--bdo); }
+.mt-btn.danger { background: rgba(239,68,68,.14); border-color: rgba(239,68,68,.35); color: #fca5a5; }
+.mt-btn.go     { background: var(--org); border-color: var(--bdo); color: var(--or2); }
+.mt-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.mt-jobs { display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 10px; }
+.mt-job { background: var(--bg3); border: 1px solid var(--bd); border-radius: 8px; padding: 11px 13px; }
+.mt-job.fail { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.05); }
+.mt-job.off  { opacity: .55; }
+.mt-job-n { font-weight: 700; font-size: 11.5px; margin-bottom: 5px; word-break: break-word; }
+.mt-job-c { font-size: 10px; color: var(--bl); font-family: ui-monospace, monospace;
+  background: var(--bg2); border-radius: 5px; padding: 3px 7px; display: inline-block; margin-bottom: 6px; }
+.mt-job-m { font-size: 10px; color: var(--mu); line-height: 1.7; }
+
+.mt-log { width: 100%; border-collapse: collapse; font-size: 11px; }
+.mt-log th { text-align: right; color: var(--mu); font-weight: 600; font-size: 10px;
+  padding: 6px 8px; border-bottom: 1px solid var(--bd); white-space: nowrap; }
+.mt-log td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.03); }
+.mt-log tr:last-child td { border-bottom: 0; }
+.mt-scroll { overflow-x: auto; }
+
+.mt-modal { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.8);
+  display: none; align-items: center; justify-content: center; padding: 20px; }
+.mt-modal.open { display: flex; }
+.mt-modal-box { background: var(--bg2); border: 1px solid var(--bd); border-radius: 14px;
+  padding: 22px; max-width: 560px; width: 100%; max-height: 84vh; overflow-y: auto; box-shadow: var(--sh); }
+
+.mt-note { font-size: 11px; color: var(--mu); line-height: 1.8;
+  background: var(--bg3); border-radius: 8px; padding: 9px 13px; margin-top: 10px; }
+
+@media (max-width: 700px) {
+  .mt-res { grid-template-columns: 1fr; }
+  .mt-item-n { min-width: 38px; }
+}
 </style>
 
 <!-- Google Analytics 4 — Makani Spot -->
@@ -1031,6 +1161,25 @@ body {
       </div>
       <span class="status-pill pill-idle" id="st-supabase">CHECK</span>
     </div>
+  </div>
+
+  <!-- ─── MAINTENANCE CENTER ─── -->
+  <div class="sec-title" id="maintenance">🧰 مركز صيانة المنصة</div>
+  <div class="mt-wrap">
+    <button class="mt-open-btn" id="mt-open" onclick="openMaintenance()">
+      <span class="mt-ob-ico">🧰</span>
+      <span>
+        <span class="mt-ob-t">صيانة قاعدة البيانات وملفات التخزين</span>
+        <span class="mt-ob-s">سياسات الاحتفاظ · التنظيف الشامل · الصفوف اليتيمة · المهام المجدولة · ملفات R2</span>
+      </span>
+      <span class="mt-ob-go">فتح ↓</span>
+    </button>
+    <div id="mt-body" style="display:none;margin-top:14px"></div>
+  </div>
+
+  <!-- مودال المحاكاة قبل أي تنفيذ جماعي -->
+  <div class="mt-modal" id="mt-sim-modal">
+    <div class="mt-modal-box" id="mt-sim-box"></div>
   </div>
 
   <!-- ─── QUICK ACCESS ─── -->
@@ -1664,7 +1813,7 @@ body {
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260802203116"></script>
+<script src="../shared/sb-config.js?v=20260804011112"></script>
 <script>
 const ADMIN_EMAIL = 'makanispot@gmail.com';
 const MAX_TRIES = 5;
@@ -2363,6 +2512,625 @@ function statusLabel(s){ return {live:'✅ منشورة',paused:'⏸ موقوف�
 function planClass(p)  { return {starter:'plan-starter',growth:'plan-growth',pro:'plan-pro'}[p]||'plan-starter'; }
 function planLabel(p)  { return {starter:'Starter',growth:'✓ Growth',pro:'🏆 Pro'}[p]||p; }
 function fmtDate(d)    { return d ? new Date(d).toLocaleDateString('ar-EG',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+
+/* ════════════════════════════════════════════════════════════════
+   MAINTENANCE CENTER — مركز صيانة المنصة
+   القسم كسول: لا يُحمَّل عند تسجيل الدخول، فقط عند فتحه.
+   يستهلك: admin_get_maintenance_overview · admin_maintenance_targets
+           admin_get_maintenance_metrics · admin_find_orphans
+           admin_maintenance_cleanup(_bulk) · admin_cleanup_orphans · admin_run_analyze
+   ════════════════════════════════════════════════════════════════ */
+
+let mtData    = null;   /* overview */
+let mtTargets = [];     /* بنود التنظيف */
+let mtMetrics = null;
+let mtOrphans = null;
+let mtCoverage = null;
+let mtTab     = 'db';
+let mtLoaded  = false;
+
+const MT_GRP = {
+  spaces:        '🏢 المساحات',
+  bazaars:       '🛍️ البازارات',
+  listings:      '📦 المشاريع الجاهزة',
+  notifications: '🔔 الإشعارات',
+  logs:          '📜 السجلات',
+  media:         '🖼️ الملفات',
+};
+
+function fmtBytes(b) {
+  b = Number(b) || 0;
+  if (b < 1024) return b + ' B';
+  const u = ['KB','MB','GB','TB']; let i = -1;
+  do { b /= 1024; i++; } while (b >= 1024 && i < u.length - 1);
+  return b.toFixed(b < 10 ? 1 : 0) + ' ' + u[i];
+}
+function fmtWhen(d) {
+  if (!d) return '—';
+  const diff = (Date.now() - new Date(d).getTime()) / 1000;
+  if (diff < 60)    return 'الآن';
+  if (diff < 3600)  return `منذ ${Math.floor(diff/60)} د`;
+  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} س`;
+  if (diff < 2592000) return `منذ ${Math.floor(diff/86400)} ي`;
+  return fmtDate(d);
+}
+
+async function openMaintenance() {
+  const body = document.getElementById('mt-body');
+  const btn  = document.getElementById('mt-open');
+  if (body.style.display !== 'none') {          /* طيّ */
+    body.style.display = 'none';
+    btn.querySelector('.mt-ob-go').textContent = 'فتح ↓';
+    return;
+  }
+  body.style.display = 'block';
+  btn.querySelector('.mt-ob-go').textContent = 'طيّ ↑';
+  if (!mtLoaded) await loadMaintenance();
+}
+
+async function loadMaintenance(silent) {
+  const body = document.getElementById('mt-body');
+  if (!silent) body.innerHTML = '<div class="aq-empty"><div style="font-size:22px;margin-bottom:8px">🔄</div>جاري تحميل بيانات الصيانة…</div>';
+  try {
+    const [ov, tg, mx, or, cv] = await Promise.all([
+      sbRpc('admin_get_maintenance_overview', {}),
+      sbRpc('admin_maintenance_targets', {}),
+      sbRpc('admin_get_maintenance_metrics', { p_days: 30 }),
+      sbRpc('admin_find_orphans', {}),
+      sbRpc('admin_maintenance_coverage', {}),
+    ]);
+    mtData     = ov;
+    mtTargets  = Array.isArray(tg?.targets) ? tg.targets : [];
+    mtMetrics  = mx;
+    mtOrphans  = or;
+    mtCoverage = cv;
+    mtLoaded   = true;
+    renderMaintenance();
+  } catch (e) {
+    body.innerHTML = `<div class="mt-card" style="border-color:rgba(239,68,68,.4)">
+      <div class="mt-card-t">⚠️ تعذّر تحميل بيانات الصيانة</div>
+      <div style="font-size:12px;color:var(--mu);line-height:1.8">${esc(e.message)}</div>
+      <button class="mt-btn" style="margin-top:12px" onclick="loadMaintenance()">🔄 حاول مجددًا</button>
+    </div>`;
+  }
+}
+
+function mtSwitch(tab) { mtTab = tab; renderMaintenance(); }
+
+function renderMaintenance() {
+  const body = document.getElementById('mt-body');
+  body.innerHTML = `
+    ${mtHeaderCard()}
+    <div class="mt-tabs">
+      <button class="mt-tab ${mtTab==='db'?'active':''}"    onclick="mtSwitch('db')">🗄️ قاعدة البيانات</button>
+      <button class="mt-tab ${mtTab==='clean'?'active':''}" onclick="mtSwitch('clean')">🧹 التنظيف الشامل</button>
+      <button class="mt-tab ${mtTab==='jobs'?'active':''}"  onclick="mtSwitch('jobs')">⚙️ المهام المجدولة</button>
+      <button class="mt-tab ${mtTab==='media'?'active':''}" onclick="mtSwitch('media')">🖼️ الملفات (R2)</button>
+      <button class="mt-tab ${mtTab==='cover'?'active':''}" onclick="mtSwitch('cover')">🛡️ التغطية${(mtCoverage?.gaps_total||0)>0?` <span style="color:var(--rd)">(${mtCoverage.gaps_total})</span>`:''}</button>
+      <button class="mt-tab ${mtTab==='log'?'active':''}"   onclick="mtSwitch('log')">📜 سجل الصيانة</button>
+    </div>
+    ${ mtTab==='db'    ? mtTablesCard()
+     : mtTab==='clean' ? mtCleanupCard() + mtOrphansCard()
+     : mtTab==='jobs'  ? mtJobsCard()
+     : mtTab==='media' ? mtMediaCard()
+     : mtTab==='cover' ? mtCoverageCard()
+     :                   mtLogCard() }`;
+}
+
+/* ── الشريط العلوي: الموردان + مقاييس آخر 30 يومًا ── */
+function mtHeaderCard() {
+  const db    = mtData?.db || {};
+  const used  = Number(db.total_bytes) || 0;
+  const limit = Number(db.plan_limit_bytes) || 524288000;
+  const pct   = Math.min(100, (used / limit) * 100);
+  const cls   = pct >= 85 ? 'crit' : pct >= 60 ? 'warn' : '';
+
+  const st       = mtData?.storage || null;
+  const r2Used   = Number(st?.total_bytes) || 0;
+  const r2Limit  = Number(st?.plan_limit_bytes) || 10737418240;   /* 10 GB */
+  const r2Pct    = Math.min(100, (r2Used / r2Limit) * 100);
+  const r2Cls    = r2Pct >= 85 ? 'crit' : r2Pct >= 60 ? 'warn' : '';
+
+  const totalCand = mtTargets.reduce((s,t) => s + (Number(t.candidates)||0), 0);
+  const totalBy   = mtTargets.reduce((s,t) => s + (Number(t.bytes_est)||0), 0);
+  const m = mtMetrics || {};
+
+  return `<div class="mt-card">
+    <div class="mt-card-t">📊 موارد المنصة
+      <span class="mt-sub">آخر صيانة: ${fmtWhen(mtData?.last_maintenance)}</span>
+      <button class="mt-btn" onclick="loadMaintenance()">🔄 تحديث</button>
+    </div>
+    <div class="mt-res">
+      <div class="mt-res-box">
+        <div class="mt-res-lbl">🗄️ قاعدة البيانات</div>
+        <div class="mt-res-val">${esc(db.total_pretty||'—')} <span style="font-size:12px;color:var(--mu)">من ${fmtBytes(limit)}</span></div>
+        <div class="mt-bar"><i class="${cls}" style="width:${pct.toFixed(1)}%"></i></div>
+        <div class="mt-res-note">${pct.toFixed(1)}% مستهلك · ${(mtData?.tables||[]).length} جدول</div>
+      </div>
+      <div class="mt-res-box">
+        <div class="mt-res-lbl">🖼️ ملفات R2</div>
+        ${ st
+          ? `<div class="mt-res-val">${fmtBytes(r2Used)} <span style="font-size:12px;color:var(--mu)">من ${fmtBytes(r2Limit)}</span></div>
+             <div class="mt-bar"><i class="${r2Cls}" style="width:${r2Pct.toFixed(1)}%"></i></div>
+             <div class="mt-res-note">${r2Pct.toFixed(1)}% مستهلك · ${st.objects||0} ملف · قياس ${fmtWhen(st.measured_at)}</div>`
+          : `<div class="mt-res-val" style="font-size:14px;color:var(--mu)">لم يُقَس بعد</div>
+             <div class="mt-res-note">اللقطة يكتبها Worker على Cloudflare — تظهر بعد أول تشغيل</div>` }
+      </div>
+    </div>
+    <div class="mt-kpis" style="margin-top:14px">
+      <div class="mt-kpi"><div class="mt-kpi-v" style="color:${totalCand>0?'var(--yw)':'var(--gr)'}">${totalCand}</div>
+        <div class="mt-kpi-l">صف مرشّح للتنظيف</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${fmtBytes(totalBy)}</div>
+        <div class="mt-kpi-l">مساحة قابلة للتحرير ≈</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${m.rows_deleted||0}</div>
+        <div class="mt-kpi-l">صف حُذف (30 يومًا)</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${fmtBytes(m.bytes_freed)}</div>
+        <div class="mt-kpi-l">مساحة محرَّرة داخليًا</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v" style="color:${(m.cron_success_pct??100)>=99?'var(--gr)':'var(--yw)'}">${m.cron_success_pct ?? '—'}%</div>
+        <div class="mt-kpi-l">نجاح المهام المجدولة</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${m.avg_duration_ms||0} <span style="font-size:11px">ms</span></div>
+        <div class="mt-kpi-l">متوسط مدة العملية</div></div>
+    </div>
+    <div class="mt-note">
+      💡 <b>«مساحة محرَّرة داخليًا»</b> وليست مساحة قرص مُستعادة — <code>DELETE</code> في PostgreSQL
+      يُحرِّر المساحة لإعادة الاستخدام داخل الجدول، ولا يُعيدها لنظام الملفات قبل <code>VACUUM</code>.
+    </div>
+  </div>`;
+}
+
+/* ── صحة الجداول ── */
+function mtTablesCard() {
+  const tables = mtData?.tables || [];
+  const attn   = tables.filter(t => t.needs_attention).length;
+  const bySchema = (mtData?.db?.by_schema) || [];
+
+  const rows = tables.map(t => {
+    const flag = t.needs_attention ? '<span class="mt-flag crit">⚠ يحتاج تنظيف</span>'
+               : t.negligible      ? '<span class="mt-flag neg">حجم مهمل</span>'
+               :                     '<span class="mt-flag ok">جيد</span>';
+    return `<div class="mt-tbl ${t.needs_attention?'attn':''}">
+      <div class="mt-tbl-h"><span>${esc(t.table_name)}</span>${flag}</div>
+      <div class="mt-tbl-r"><span>الحجم</span><span style="font-weight:600">${esc(t.total_size||'—')}</span></div>
+      <div class="mt-tbl-r"><span>صفوف نشطة</span><span style="color:var(--gr);font-weight:600">${t.live_rows||0}</span></div>
+      <div class="mt-tbl-r"><span>dead rows</span><span style="color:${t.needs_attention?'var(--rd)':'var(--mu)'};font-weight:600">${t.dead_rows||0} (${t.dead_pct||0}%)</span></div>
+      <div class="mt-tbl-r"><span>فهارس</span><span>${t.index_count||0}${t.unused_indexes>0?` <span style="color:var(--yw)">(${t.unused_indexes} بلا استخدام)</span>`:''}</span></div>
+      <div class="mt-tbl-r"><span>آخر vacuum</span><span style="color:var(--mu)">${fmtWhen(t.last_vacuum)}</span></div>
+      <div class="mt-tbl-r"><span>آخر analyze</span><span style="color:var(--mu)">${fmtWhen(t.last_analyze)}</span></div>
+    </div>`;
+  }).join('');
+
+  return `<div class="mt-card">
+    <div class="mt-card-t">🗂️ التقسيم حسب المخطّط
+      <span class="mt-sub">ما لا يمكن تقليصه يُعرض كما هو</span></div>
+    <div class="mt-kpis">
+      ${bySchema.map(s => `<div class="mt-kpi">
+        <div class="mt-kpi-v" style="font-size:14px">${esc(s.pretty)}</div>
+        <div class="mt-kpi-l">${esc(s.schema)}</div></div>`).join('')}
+    </div>
+    <div class="mt-note">
+      <code>pg_catalog</code> هو فهرس PostgreSQL الداخلي — ثابت الحجم تقريبًا ولا يتقلّص بأي تنظيف.
+      المساحة القابلة للإدارة فعليًا هي <code>public</code> و<code>cron</code>.
+    </div>
+  </div>
+
+  <div class="mt-card">
+    <div class="mt-card-t">📊 صحة الجداول
+      <span class="mt-sub">${tables.length} جدول · ${attn} يحتاج تدخّلًا</span>
+      <button class="mt-btn" onclick="mtAnalyze()">📐 تحديث إحصاءات المخطِّط (ANALYZE)</button>
+    </div>
+    <div class="mt-tables">${rows || '<div style="color:var(--mu);font-size:12px">لا توجد جداول</div>'}</div>
+    <div class="mt-note">
+      🔎 <b>«يحتاج تنظيف»</b> يتطلّب شرطين معًا: نسبة صفوف ميتة ≥ 25% <b>و</b> أكثر من 1000 صف ميت.
+      النسبة وحدها مضلِّلة — جدول فيه 3 صفوف حيّة و41 ميتًا يعطي 93% بينما حجمه لا يُذكر.
+      <br>🧹 لا يوجد زرّ VACUUM يدوي: PostgreSQL يمنع تنفيذه داخل دالة. البديل المعتمد هو
+      ضبط <code>autovacuum</code> لكل جدول عالي التغيّر + مهمة <code>weekly-maintenance-vacuum</code> الأسبوعية.
+    </div>
+  </div>`;
+}
+
+/* ── التنظيف الشامل ── */
+function mtCleanupCard() {
+  const groups = {};
+  mtTargets.forEach(t => { (groups[t.grp] ||= []).push(t); });
+
+  const html = Object.keys(MT_GRP).filter(g => groups[g]).map(g => {
+    const items = groups[g];
+    const n = items.reduce((s,i) => s + (Number(i.candidates)||0), 0);
+    return `<div class="mt-grp">
+      <div class="mt-grp-h">${MT_GRP[g]} <span class="mt-grp-n">${items.length} بند · ${n} مرشّح</span></div>
+      ${items.map(mtItemRow).join('')}
+    </div>`;
+  }).join('');
+
+  return `<div class="mt-card">
+    <div class="mt-card-t">🧹 التنظيف الشامل
+      <span class="mt-sub">المدد من سجل السياسات — تعديلها هنا يغيّرها في كل مكان</span>
+      <button class="mt-btn" onclick="mtSelectAll(true)">تحديد الكل</button>
+      <button class="mt-btn" onclick="mtSelectAll(false)">إلغاء</button>
+      <button class="mt-btn go" onclick="mtSimulate()">🔍 محاكاة المحدَّد</button>
+    </div>
+    ${html}
+    <div class="mt-note">
+      🛡️ لا حذف بلا معاينة: زرّ الحذف يبقى معطَّلًا حتى تُرجع المعاينة عددًا أكبر من صفر.
+      المعاينة والحذف يستخدمان <b>نفس الشرط حرفيًا</b> فلا يمكن أن تختلف نتيجتهما.
+      <br>🔒 الصفوف المعلَّمة <code>protected</code> مستثناة دائمًا من كل بند.
+    </div>
+  </div>`;
+}
+
+function mtItemRow(t) {
+  const ext  = t.external_handler;
+  const n    = Number(t.candidates) || 0;
+  const unit = t.unit === 'hours' ? 'ساعة' : 'يوم';
+  return `<div class="mt-item ${n>0?'hot':''}">
+    <input type="checkbox" class="mt-item-chk mt-sel" value="${esc(t.key)}" ${ext?'disabled':''}>
+    <div class="mt-item-main">
+      <div class="mt-item-l">${esc(t.label)}</div>
+      <div class="mt-item-s">
+        ${ext ? '⚙️ يُنفَّذ خارج القاعدة (Worker على Cloudflare)' : `<code>${esc(t.target_table||'')}</code>`}
+        ${t.protect_note ? ` · 🔒 ${esc(t.protect_note)}` : ''}
+        ${t.last_run_at ? ` · آخر تشغيل ${fmtWhen(t.last_run_at)} (${t.rows_last_run||0} صف)` : ''}
+      </div>
+    </div>
+    <div class="mt-item-n" style="color:${n>0?'var(--yw)':'var(--mu)'}">${ext?'—':n}</div>
+    <label style="font-size:10px;color:var(--mu);display:flex;align-items:center;gap:5px">
+      أقدم من
+      <input type="number" class="mt-days" id="mtd-${esc(t.key)}" value="${t.amount}" min="0" max="3650">
+      ${unit}
+    </label>
+    ${ ext ? '' : `
+      <button class="mt-btn" onclick="mtPreview('${esc(t.key)}')">🔍 معاينة</button>
+      <button class="mt-btn danger" id="mtx-${esc(t.key)}" disabled onclick="mtRun('${esc(t.key)}')">🗑 حذف</button>` }
+    <div class="mt-prev" id="mtp-${esc(t.key)}"></div>
+  </div>`;
+}
+
+async function mtPreview(key) {
+  const prev = document.getElementById('mtp-'+key);
+  const del  = document.getElementById('mtx-'+key);
+  const days = parseInt(document.getElementById('mtd-'+key)?.value ?? '', 10);
+  prev.innerHTML = '<span style="color:var(--mu)">⏳ جاري الفحص…</span>';
+  if (del) del.disabled = true;
+  try {
+    const r = await sbRpc('admin_maintenance_cleanup', {
+      p_key: key, p_dry_run: true, p_days: Number.isFinite(days) ? days : null });
+    if (!r.ok) { prev.innerHTML = `<span style="color:var(--rd)">تعذّر: ${esc(r.error||'')}</span>`; return; }
+    const n = r.would_delete || 0;
+    prev.innerHTML = n > 0
+      ? `<span style="color:var(--yw)">⚠ <b>${n}</b> صف سيُحذف نهائيًا · ${fmtBytes(r.bytes_freed_est)} تقريبًا
+         ${r.needs_confirm ? ' · <b style="color:var(--rd)">فوق عتبة الأمان: سيُطلب تأكيد</b>' : ''}</span>`
+      : '<span style="color:var(--gr)">✓ لا شيء يستوفي شروط الحذف</span>';
+    if (del) del.disabled = n === 0;
+  } catch (e) { prev.innerHTML = `<span style="color:var(--rd)">خطأ: ${esc(e.message)}</span>`; }
+}
+
+async function mtRun(key) {
+  const prev = document.getElementById('mtp-'+key);
+  const days = parseInt(document.getElementById('mtd-'+key)?.value ?? '', 10);
+  prev.innerHTML = '<span style="color:var(--mu)">⏳ جاري التنفيذ…</span>';
+  try {
+    let r = await sbRpc('admin_maintenance_cleanup', {
+      p_key: key, p_dry_run: false, p_days: Number.isFinite(days) ? days : null });
+
+    /* Safe Mode: فوق العتبة لا تنفيذ بلا تأكيد صريح */
+    if (!r.ok && r.error === 'confirmation_required') {
+      const go = confirm(`تحذير: ${r.would_delete} صف — أعلى من عتبة الأمان (${r.safe_threshold}).\n\nهذا حذف نهائي لا رجعة فيه. متابعة؟`);
+      if (!go) { prev.innerHTML = '<span style="color:var(--mu)">أُلغي</span>'; return; }
+      r = await sbRpc('admin_maintenance_cleanup', {
+        p_key: key, p_dry_run: false, p_days: Number.isFinite(days) ? days : null, p_confirm: 'CONFIRMED' });
+    }
+    if (!r.ok) { prev.innerHTML = `<span style="color:var(--rd)">تعذّر: ${esc(r.error||'')}</span>`; return; }
+
+    toast(`✅ حُذف ${r.deleted} صف · ${fmtBytes(r.bytes_freed_est)} محرَّرة داخليًا`, 's');
+    await loadMaintenance(true);
+  } catch (e) { prev.innerHTML = `<span style="color:var(--rd)">خطأ: ${esc(e.message)}</span>`; }
+}
+
+function mtSelected() {
+  return Array.from(document.querySelectorAll('.mt-sel:checked')).map(c => c.value);
+}
+function mtSelectAll(on) {
+  document.querySelectorAll('.mt-sel:not(:disabled)').forEach(c => { c.checked = on; });
+}
+
+/* ── وضع المحاكاة: ملخّص كامل قبل أي تنفيذ جماعي ── */
+async function mtSimulate() {
+  const keys = mtSelected();
+  if (!keys.length) { toast('اختر بندًا واحدًا على الأقل', 'w'); return; }
+
+  const modal = document.getElementById('mt-sim-modal');
+  const box   = document.getElementById('mt-sim-box');
+  box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mu)">⏳ جاري المحاكاة…</div>';
+  modal.classList.add('open');
+
+  try {
+    const r     = await sbRpc('admin_maintenance_preview_bulk', { p_keys: keys });
+    const items = r.items || [];
+    const byKey = Object.fromEntries(mtTargets.map(t => [t.key, t.label]));
+    const hot   = items.filter(i => (i.would_delete||0) > 0);
+    const bad   = items.filter(i => !i.ok);
+    const needConfirm = items.some(i => i.needs_confirm);
+
+    box.innerHTML = `
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">🔍 محاكاة التنظيف</div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:16px">لم يُحذف شيء بعد — هذا ما سيحدث عند التنفيذ.</div>
+
+      <div class="mt-kpis" style="margin-bottom:14px">
+        <div class="mt-kpi"><div class="mt-kpi-v" style="color:var(--yw)">${r.total_rows||0}</div><div class="mt-kpi-l">صف سيُحذف</div></div>
+        <div class="mt-kpi"><div class="mt-kpi-v">${fmtBytes(r.total_bytes_est)}</div><div class="mt-kpi-l">مساحة محرَّرة ≈</div></div>
+        <div class="mt-kpi"><div class="mt-kpi-v" style="color:${bad.length?'var(--rd)':'var(--gr)'}">${r.succeeded||0}/${keys.length}</div><div class="mt-kpi-l">بند فُحص بنجاح</div></div>
+      </div>
+
+      ${ hot.length ? `<div class="mt-scroll"><table class="mt-log">
+        <thead><tr><th>البند</th><th>صفوف</th><th>مساحة ≈</th></tr></thead><tbody>
+        ${hot.map(i => `<tr><td>${esc(byKey[i.key]||i.key)}</td>
+          <td style="color:var(--yw);font-weight:700">${i.would_delete}</td>
+          <td>${fmtBytes(i.bytes_freed_est)}</td></tr>`).join('')}
+        </tbody></table></div>`
+        : '<div style="font-size:12px;color:var(--gr);padding:10px 0">✓ لا شيء يستوفي شروط الحذف في البنود المحدَّدة.</div>' }
+
+      ${ bad.length ? `<div class="mt-note" style="color:#fca5a5">
+          ⚠ فشل فحص ${bad.length} بند (البقية تُنفَّذ رغم ذلك):<br>
+          ${bad.map(i => `<code>${esc(i.key)}</code> — ${esc(i.error||'')}`).join('<br>')}</div>` : '' }
+
+      ${ needConfirm ? `<div class="mt-note" style="color:var(--yw)">
+          🛑 أحد البنود يتجاوز عتبة الأمان — سيُطلب تأكيد إضافي عند التنفيذ.</div>` : '' }
+
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button class="mt-btn" onclick="document.getElementById('mt-sim-modal').classList.remove('open')">إغلاق</button>
+        ${ (r.total_rows||0) > 0
+          ? `<button class="mt-btn danger" onclick="mtRunBulk(${JSON.stringify(keys).replace(/"/g,'&quot;')})">🗑 تنفيذ الحذف (${r.total_rows} صف)</button>`
+          : '' }
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--rd);font-size:13px">خطأ: ${esc(e.message)}</div>
+      <button class="mt-btn" style="margin-top:12px" onclick="document.getElementById('mt-sim-modal').classList.remove('open')">إغلاق</button>`;
+  }
+}
+
+async function mtRunBulk(keys) {
+  const box = document.getElementById('mt-sim-box');
+  box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mu)">⏳ جاري التنفيذ…</div>';
+  try {
+    let r = await sbRpc('admin_maintenance_cleanup_bulk', { p_keys: keys, p_dry_run: false });
+    const needs = (r.items||[]).filter(i => i.error === 'confirmation_required');
+    if (needs.length) {
+      const go = confirm(`${needs.length} بند يتجاوز عتبة الأمان.\n\nهذا حذف نهائي لا رجعة فيه. متابعة؟`);
+      if (go) r = await sbRpc('admin_maintenance_cleanup_bulk',
+        { p_keys: keys, p_dry_run: false, p_confirm: 'CONFIRMED' });
+    }
+    document.getElementById('mt-sim-modal').classList.remove('open');
+    toast(`✅ ${r.succeeded} بند نُفِّذ · ${r.total_rows} صف${r.failed ? ` · ⚠ ${r.failed} فشل` : ''}`,
+          r.failed ? 'w' : 's');
+    await loadMaintenance(true);
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--rd);font-size:13px">خطأ: ${esc(e.message)}</div>
+      <button class="mt-btn" style="margin-top:12px" onclick="document.getElementById('mt-sim-modal').classList.remove('open')">إغلاق</button>`;
+  }
+}
+
+/* ── الصفوف اليتيمة ── */
+function mtOrphansCard() {
+  const rels  = mtOrphans?.relations || [];
+  const total = mtOrphans?.total || 0;
+  return `<div class="mt-card">
+    <div class="mt-card-t">🧩 الصفوف اليتيمة
+      <span class="mt-sub">${total === 0 ? '✅ لا يوجد' : `${total} صف يتيم`}</span></div>
+    ${ rels.map(r => `<div class="mt-item ${r.orphans>0?'hot':''}">
+        <div class="mt-item-main">
+          <div class="mt-item-l">${esc(r.label)}</div>
+          <div class="mt-item-s"><code>${esc(r.table)}</code></div>
+        </div>
+        <div class="mt-item-n" style="color:${r.orphans>0?'var(--yw)':'var(--gr)'}">${r.orphans>0?r.orphans:'✓'}</div>
+        ${ r.orphans > 0
+          ? `<button class="mt-btn danger" onclick="mtCleanOrphans('${esc(r.rel)}',${r.orphans})">🗑 تنظيف</button>`
+          : '' }
+        ${ !r.ok ? `<span class="mt-flag crit">فشل الفحص</span>` : '' }
+      </div>`).join('') }
+    <div class="mt-note">
+      الأيتام تنشأ فقط حيث لا يوجد قيد مفتاح أجنبي. القيمة هنا أن يبقى العدد صفرًا —
+      وأن نعلم فورًا إن لم يبقَ.
+    </div>
+  </div>`;
+}
+
+async function mtCleanOrphans(rel, n) {
+  if (!confirm(`حذف ${n} صف يتيم من «${rel}»؟\n\nهذا حذف نهائي لا رجعة فيه.`)) return;
+  try {
+    const r = await sbRpc('admin_cleanup_orphans', { p_relation: rel, p_dry_run: false });
+    if (!r.ok) { toast('تعذّر: ' + (r.error||''), 'e'); return; }
+    toast(`✅ حُذف ${r.deleted} صف يتيم`, 's');
+    await loadMaintenance(true);
+  } catch (e) { toast('خطأ: ' + e.message, 'e'); }
+}
+
+/* ── المهام المجدولة (حيّة من cron.job) ── */
+function mtJobsCard() {
+  const jobs = mtData?.cron || [];
+  const meta = mtData?.cron_meta || {};
+  const cards = jobs.map(j => {
+    const failed = (j.failed_7d || 0) > 0;
+    const bad    = j.last_status && j.last_status !== 'succeeded';
+    return `<div class="mt-job ${failed||bad?'fail':''} ${j.active?'':'off'}">
+      <div class="mt-job-n">${j.active ? '' : '⏸ '}${esc(j.jobname)}</div>
+      <div class="mt-job-c">${esc(j.schedule)}</div>
+      <div class="mt-job-m">
+        ${ j.last_status
+          ? `${bad ? '❌' : '✅'} آخر تشغيل ${fmtWhen(j.last_start)}${j.last_duration_ms!=null?` · ${j.last_duration_ms} ms`:''}`
+          : '— لم يُسجَّل تشغيل بعد' }
+        ${ failed ? `<br><span style="color:var(--rd)">⚠ ${j.failed_7d} إخفاق خلال 7 أيام</span>` : '' }
+        ${ bad && j.last_message ? `<br><span style="color:var(--rd)">${esc(j.last_message.slice(0,120))}</span>` : '' }
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="mt-card">
+    <div class="mt-card-t">⚙️ المهام المجدولة
+      <span class="mt-sub">مقروءة حيًّا من <code>cron.job</code> — لا قائمة مكتوبة يدويًا</span></div>
+    <div class="mt-kpis" style="margin-bottom:14px">
+      <div class="mt-kpi"><div class="mt-kpi-v">${meta.active||0}<span style="font-size:12px;color:var(--mu)">/${meta.total||0}</span></div>
+        <div class="mt-kpi-l">مهمة نشطة</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v" style="color:${(meta.failed_7d||0)>0?'var(--rd)':'var(--gr)'}">${meta.failed_7d||0}</div>
+        <div class="mt-kpi-l">إخفاق خلال 7 أيام</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${meta.history_rows||0}</div>
+        <div class="mt-kpi-l">صف في سجل التشغيل</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${esc(meta.history_size||'—')}</div>
+        <div class="mt-kpi-l">حجم سجل التشغيل</div></div>
+    </div>
+    <div class="mt-jobs">${cards}</div>
+  </div>`;
+}
+
+/* ── الملفات (R2) ── */
+function mtMediaCard() {
+  const st = mtData?.storage;
+  if (!st) {
+    return `<div class="mt-card">
+      <div class="mt-card-t">🖼️ ملفات التخزين (R2)</div>
+      <div style="font-size:12px;color:var(--mu);line-height:1.9">
+        لا توجد لقطة تخزين بعد. اللقطة يكتبها Worker على Cloudflare في
+        <code>admin_metrics['storage_snapshot']</code> عند أول تشغيل لمهمة
+        <code>cron-cleanup-listings</code> بعد تفعيل مسح الوسائط.
+      </div>
+      <div class="mt-note">
+        📌 حتى ذلك الحين، لا تُعرض أرقام تخمينية هنا — عرض رقم غير مقيس أسوأ من عدم عرضه.
+      </div>
+    </div>`;
+  }
+  const byPrefix = st.by_prefix || [];
+  return `<div class="mt-card">
+    <div class="mt-card-t">🖼️ استهلاك R2 حسب المنظومة
+      <span class="mt-sub">قياس ${fmtWhen(st.measured_at)}</span></div>
+    <div class="mt-kpis">
+      ${byPrefix.map(p => `<div class="mt-kpi">
+        <div class="mt-kpi-v" style="font-size:14px">${fmtBytes(p.bytes)}</div>
+        <div class="mt-kpi-l">${esc(p.label||p.prefix)} · ${p.objects||0} ملف</div></div>`).join('')}
+    </div>
+    ${ (st.orphans||[]).length ? `
+      <div class="mt-card-t" style="margin-top:16px">🧹 ملفات يتيمة مرشّحة</div>
+      ${ st.orphans.map(o => `<div class="mt-item ${o.count>0?'hot':''}">
+          <div class="mt-item-main">
+            <div class="mt-item-l">${esc(o.label||o.prefix)}</div>
+            <div class="mt-item-s">
+              <code>${esc(o.prefix)}</code> ·
+              ${ o.enabled ? '<span style="color:var(--gr)">الكنس مُفعَّل</span>'
+                           : '<span style="color:var(--yw)">معاينة فقط — لم يُكنس قط</span>' }
+            </div>
+          </div>
+          <div class="mt-item-n" style="color:${o.count>0?'var(--yw)':'var(--gr)'}">${o.count||0}</div>
+          <div style="font-size:11px;color:var(--mu)">${fmtBytes(o.bytes)}</div>
+        </div>`).join('') }` : '' }
+    ${ (st.unknown_prefix||0) > 0 ? `<div class="mt-note" style="color:var(--yw)">
+        ❓ <b>${st.unknown_prefix}</b> مفتاح لا يطابق أي مصدر معروف — يُعرض للمراجعة اليدوية
+        <b>ولا يُحذف منه شيء</b>. المجهول لا يُحذف بالخطأ.</div>` : '' }
+    <div class="mt-note">
+      🛡️ لا يُحذف ملف إلا بعد التأكد أنه غير مرجوع من أي سجل في القاعدة — طابور الحذف اقتراح لا أمر.
+    </div>
+  </div>`;
+}
+
+/* ── الصيانة الوقائية: النظام يراجع تغطيته بنفسه ──
+   لا يُجاب سؤال «هل بقي مكان خارج النظام؟» مرة واحدة في تقرير، بل يُعاد
+   حسابه مع كل فتح. أي ميزة جديدة تُضيف عمود صور أو جدولًا ينمو أو مهمة
+   مجدولة تظهر هنا تلقائيًا حتى تُسجَّل. */
+function mtCoverageCard() {
+  const c    = mtCoverage || {};
+  const gaps = c.gaps_total || 0;
+  const media = c.unregistered_media || [];
+  const trg   = c.registry_without_trigger || [];
+  const pol   = c.tables_without_policy || [];
+  const cron  = c.cron_needs_attention || [];
+
+  const block = (title, items, render, fix) => `
+    <div class="mt-grp">
+      <div class="mt-grp-h">${title}
+        <span class="mt-grp-n">${items.length ? `${items.length} بند يحتاج تسجيلًا` : '✅ لا قصور'}</span></div>
+      ${ items.length
+        ? items.map(render).join('') + `<div class="mt-note">🔧 ${fix}</div>`
+        : '' }
+    </div>`;
+
+  return `<div class="mt-card">
+    <div class="mt-card-t">🛡️ تغطية النظام
+      <span class="mt-sub">آخر فحص ${fmtWhen(c.computed_at)}</span></div>
+
+    <div class="mt-kpis" style="margin-bottom:16px">
+      <div class="mt-kpi"><div class="mt-kpi-v" style="color:${gaps?'var(--rd)':'var(--gr)'}">${gaps ? gaps : '✓'}</div>
+        <div class="mt-kpi-l">${gaps ? 'فجوة تغطية' : 'لا فجوات'}</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${c.registered_media_tables||0}</div>
+        <div class="mt-kpi-l">جدول صور مسجَّل</div></div>
+      <div class="mt-kpi"><div class="mt-kpi-v">${c.acknowledged_exclusions||0}</div>
+        <div class="mt-kpi-l">استثناء مبرَّر</div></div>
+    </div>
+
+    ${block('🖼️ أعمدة صور غير مسجَّلة', media,
+      m => `<div class="mt-item hot"><div class="mt-item-main">
+              <div class="mt-item-l"><code>${esc(m.table_name)}.${esc(m.column_name)}</code></div>
+              <div class="mt-item-s">${esc(m.data_type)} — لا محفّز يُدرِج ملفاته في طابور الحذف</div>
+            </div></div>`,
+      'سجّل العمود في <code>media_registry</code> ثم نفّذ <code>sync_media_triggers()</code> — أو أضفه لـ<code>media_registry_exclusions</code> بسبب مكتوب إن لم يكن ملفًا.')}
+
+    ${block('⚙️ جداول مسجَّلة بلا محفّز', trg,
+      t => `<div class="mt-item hot"><div class="mt-item-main">
+              <div class="mt-item-l"><code>${esc(t)}</code></div>
+              <div class="mt-item-s">مسجَّل لكن المحفّز غير مركَّب — انحراف بين السجل والواقع</div>
+            </div></div>`,
+      'نفّذ <code>sync_media_triggers()</code> لإعادة تركيب المحفّزات من السجل.')}
+
+    ${block('📈 جداول تنمو بلا سياسة احتفاظ', pol,
+      p => `<div class="mt-item hot">
+              <div class="mt-item-main">
+                <div class="mt-item-l"><code>${esc(p.table_name)}</code></div>
+                <div class="mt-item-s">${p.rows} صف · ${esc(p.size)} — لديه عمود زمني ولا بند تنظيف يستهدفه</div>
+              </div>
+              <div class="mt-item-n" style="color:var(--yw)">${p.rows}</div>
+            </div>`,
+      'أضف سياسة في <code>retention_policies</code> وبندًا في <code>_maintenance_spec</code> — أو استثنِ الجدول صراحةً إن كان مرجعيًا لا يتراكم.')}
+
+    ${block('⏱ مهام مجدولة تحتاج انتباهًا', cron,
+      j => `<div class="mt-item hot"><div class="mt-item-main">
+              <div class="mt-item-l"><code>${esc(j.jobname)}</code> <span class="mt-flag ${j.active?'crit':'neg'}">${j.active?`${j.failed_7d} إخفاق`:'متوقّفة'}</span></div>
+              <div class="mt-item-s">${esc(j.schedule)}</div>
+            </div></div>`,
+      'راجع سبب الإخفاق في تبويب المهام المجدولة — الرسالة الأخيرة معروضة هناك.')}
+
+    <div class="mt-note">
+      🔁 هذه الفحوص تُعاد مع كل تحميل للقسم — ليست لقطة تدقيق لمرة واحدة.
+      أي ميزة جديدة تُضيف صورة أو جدولًا ينمو تظهر هنا حتى تُسجَّل، فلا يعتمد
+      النظام على تذكُّر المطوّر.
+    </div>
+  </div>`;
+}
+
+/* ── سجل الصيانة ── */
+function mtLogCard() {
+  const runs  = mtData?.runs || [];
+  const byKey = Object.fromEntries(mtTargets.map(t => [t.key, t.label]));
+  return `<div class="mt-card">
+    <div class="mt-card-t">📜 سجل الصيانة <span class="mt-sub">آخر ${runs.length} عملية</span></div>
+    <div class="mt-scroll"><table class="mt-log">
+      <thead><tr><th>البند</th><th>النوع</th><th>المصدر</th><th>صفوف</th><th>مساحة ≈</th><th>المدة</th><th>متى</th></tr></thead>
+      <tbody>${ runs.length ? runs.map(r => `<tr>
+        <td>${r.ok ? '' : '<span class="mt-flag crit">فشل</span> '}${esc(byKey[r.key] || r.key)}
+            ${r.error ? `<div style="font-size:10px;color:var(--rd)">${esc(r.error)}</div>` : ''}</td>
+        <td>${r.mode === 'dry' ? '<span class="mt-flag info">معاينة</span>' : '<span class="mt-flag warn">تنفيذ</span>'}</td>
+        <td style="color:var(--mu)">${r.trigger_src === 'cron' ? '⏱ مجدول' : r.trigger_src === 'worker' ? '☁️ Worker' : '👤 يدوي'}</td>
+        <td style="font-weight:700">${r.rows_affected}</td>
+        <td>${fmtBytes(r.bytes_freed_est)}</td>
+        <td style="color:var(--mu)">${r.duration_ms != null ? r.duration_ms + ' ms' : '—'}</td>
+        <td style="color:var(--mu);white-space:nowrap">${fmtWhen(r.created_at)}</td>
+      </tr>`).join('') : '<tr><td colspan="7" style="color:var(--mu);padding:16px">لا توجد عمليات مسجَّلة بعد</td></tr>' }
+      </tbody></table></div>
+  </div>`;
+}
+
+async function mtAnalyze() {
+  try {
+    const r = await sbRpc('admin_run_analyze', {});
+    toast(`✅ حُدِّثت إحصاءات ${r.analyzed} جدول`, 's');
+    await loadMaintenance(true);
+  } catch (e) { toast('خطأ: ' + e.message, 'e'); }
+}
 </script>
 </body>
 </html>

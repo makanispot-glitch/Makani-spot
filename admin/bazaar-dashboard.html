@@ -1610,7 +1610,7 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260802203116"></script>
+<script src="../shared/sb-config.js?v=20260804011112"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -5063,14 +5063,11 @@ async function adminPurgeBazaar(bazaarId, bazaarName) {
     if (error) throw error;
     if (!data?.success) throw new Error(data?.error || 'unknown');
 
-    // Show image URLs that need manual R2 cleanup
-    const imgs = data.image_urls || [];
-    let msg = `✅ تم الحذف النهائي لـ "${data.name}"`;
-    if (imgs.length) {
-      msg += `\n\nيجب حذف ${imgs.length} صورة من R2 يدوياً:\n` + imgs.join('\n');
-      alert(msg);
-    }
-    toast(`🗑️ تم الحذف النهائي للبازار "${bazaarName}"`, 's');
+    // الصور تدخل طابور الحذف تلقائياً (pending_media_deletions) ويستهلكها
+    // Worker على Cloudflare بعد التأكد أنها غير مرجوعة من أي سجلّ آخر —
+    // لم يعد هناك حذف يدوي من R2.
+    const queued = data.images_queued ?? 0;
+    toast(`🗑️ تم الحذف النهائي للبازار "${bazaarName}"${queued ? ` · ${queued} صورة في طابور حذف R2` : ''}`, 's');
     loadCancelledBazaars();
   } catch(e) {
     toast('❌ فشل الحذف الكامل: ' + e.message, 'e');
