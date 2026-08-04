@@ -1,8 +1,14 @@
+# ══════════════════════════════════════════
+# Content Signals — نفس سياسة robots.txt لكن كترويسة HTTP، فتغطّي كل
+# الصفحات والملفات (بما فيها غير الـ HTML) والزواحف التي لا تقرأ
+# robots.txt أصلاً. المرجع: contentsignals.org
+# ══════════════════════════════════════════
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Signal: search=yes, ai-input=yes, ai-train=no
 
 /admin/*
   X-Robots-Tag: noindex, nofollow
@@ -29,9 +35,16 @@
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
 
+# ══════════════════════════════════════════
+# Link (RFC 8288) — اكتشاف للوكلاء على الصفحة الرئيسية.
+# علاقتان مسجّلتان في IANA فقط، وكلتاهما تشير إلى مورد موجود فعلاً.
+# لا نعلن api-catalog ولا service-doc: لا يوجد API عام موثّق، وإعلان
+# مسار يرجّع 404 أضرّ للوكيل من عدم الإعلان أصلاً.
+# ══════════════════════════════════════════
 /
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
+  Link: </policies/#policy-terms>; rel="terms-of-service", </policies/#policy-privacy>; rel="privacy-policy"
 
 /bazaars/
   Cache-Control: no-cache, no-store, must-revalidate

@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
   loadData();
   initAuth();
   subscribeSpacesRealtime();
+  _initOnboarding();
 
   // إعادة رسم المحتوى الديناميكي عند تبديل اللغة — data-i18n بيغطي النص
   // الثابت بس، الكروت/صفحة التفاصيل مبنيين بـ t() وقت البناء فمحتاجين
@@ -184,6 +185,42 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+/* ── إشارات الإرشاد السياقي ──────────────────────────────────────────
+   حالة الصفحة كما يراها سجلّ التلميحات. تُقرأ فقط عبر getContext ولا
+   يعرف المحرّك أيًّا من حقولها — كل معرفة بالمنتج تبقى هنا. */
+const _obSignals = {
+  hasSearched:        false,
+  hasOpenedDetail:    false,
+  hasBooked:          false,
+  lastBookingIsBroker: false,
+};
+
+function _initOnboarding() {
+  if (!global_OB()) return;
+  global_OB().init({
+    page: 'spaces',
+    userId: currentUser?.id || null,
+    t: (k, o) => t('common:' + k, o),
+    getContext: () => ({
+      isLoggedIn:      !!currentUser,
+      spacesVisible:   mpCurrentSpaces.length,
+      detailOpen:      !!currentSpaceDetail,
+      hasSearched:     _obSignals.hasSearched,
+      hasOpenedDetail: _obSignals.hasOpenedDetail,
+      hasBooked:       _obSignals.hasBooked,
+      lastBookingIsBroker: _obSignals.lastBookingIsBroker,
+    }),
+  });
+}
+
+/* الوصول للمحرّك اختياري: لو لم يُحمَّل الملف لأي سبب، الصفحة تعمل كما هي */
+function global_OB() { return typeof OB !== 'undefined' ? OB : null; }
+
+function _obMark(sig, value) {
+  _obSignals[sig] = value === undefined ? true : value;
+  if (global_OB()) global_OB().refresh({ userId: currentUser?.id || null });
+}
 
 /* يبحث عن مساحة فيما هو معروض حاليًا (شبكة الماركت بليس)، وإلا يجلبها مباشرة
    بالمعرّف — مصدر واحد لكل أزرار الإجراء السريع (تفاصيل/حجز) */
@@ -367,6 +404,9 @@ async function _applyCurrentFilters() {
 
   renderMarketplace();
   _updateResultsCounter();
+  /* الشبكة اكتملت الآن — أعد تقييم التلميحات. عند الإقلاع تكون البيانات
+     لم تصل بعد فيقرأ المحرّك spacesVisible=0 ولا يجد ما يعرضه. */
+  if (global_OB()) global_OB().refresh({ userId: currentUser?.id || null });
 }
 
 /* منفصلة عن _applyCurrentFilters عشان تبديل اللغة يقدر يحدّث النص بس
@@ -539,12 +579,160 @@ function buildCardHtml(s, fromPage) {
   </div>`;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   🧭 الحالة الفارغة كصفحة تحويل (Dynamic Empty State)
+   ────────────────────────────────────────────────────────────────
+   مع مخزون صغير، الفراغ ليس حالة استثنائية بل **الناتج الافتراضي** لأغلب
+   تركيبات الفلاتر (١٣ نوع مكان و١٣ منطقة مقابل مخزون في منطقتين ونوع واحد).
+   فبدل رسالة مسدودة، الحالة الفارغة تُسمّي الفلتر الذي أفشل البحث، ثم تعرض
+   مخارج فعلية: المناطق التي بها مخزون حقًا، ومساحات بديلة، ومسح الفلاتر.
+
+   الرسم على مرحلتين عمدًا: الهيكل يُرسم فورًا (تزامنيًا) حتى لا تتأخر
+   الاستجابة، ثم تُحقن الاقتراحات عند وصولها — لأن renderMarketplace()
+   تزامنية ولا يصح تحويلها لـasync (تُستدعى من مسارات كثيرة).
+   ════════════════════════════════════════════════════════════════ */
+
+/* يبني وصف الفلتر الذي أنتج صفرًا — الأولوية للمنطقة لأنها أوضح للمستخدم */
+function _emptyActiveFilters() {
+  const region  = document.getElementById('mp-region')?.value    || '';
+  const place   = document.getElementById('mp-place-sel')?.value || '';
+  const act     = document.getElementById('mp-act-sel')?.value   || '';
+  const slider  = document.getElementById('mp-slider-max');
+  const maxVal  = parseInt(slider?.value) || 0;
+  const sliderMax = parseInt(slider?.max || 50000);
+  return {
+    region, place, act,
+    maxPrice: (maxVal && maxVal < sliderMax) ? maxVal : null,
+    any: !!(region || place || act || (maxVal && maxVal < sliderMax)),
+  };
+}
+
+/* العنوان يصف **تركيبة الفلاتر النشطة كاملةً**، لا أوّل فلتر فقط.
+   ذكر المنطقة وحدها كان يُنتج جملة غير صحيحة: فلترة «نادٍ في الشيخ زايد»
+   تعطي صفرًا رغم وجود مساحتين هناك، فيقرأ المستخدم «مفيش مساحات في
+   الشيخ زايد» وهو خطأ صريح يدفعه لترك المنطقة بلا سبب. */
+function _emptyHeadline(f) {
+  const parts = [];
+  if (f.place) {
+    const label = document.querySelector(`#mp-place-sel option[value="${f.place}"]`)?.textContent?.trim();
+    if (label) parts.push(t('empty.dynFragType', { type: label }));
+  }
+  if (f.act) {
+    const a = ACTIVITIES.find(x => x.id === f.act);
+    if (a) parts.push(t('empty.dynFragActivity', { activity: a.label }));
+  }
+  if (f.region) parts.push(t('empty.dynFragRegion', { region: f.region }));
+  if (f.maxPrice) {
+    parts.push(t('empty.dynFragPrice', {
+      price: Number(f.maxPrice).toLocaleString(getLocale() === 'en' ? 'en-US' : 'ar-EG'),
+    }));
+  }
+  if (!parts.length) return t('empty.titleShort');
+  return t('empty.dynNoneCombo', { what: parts.join(' ') });
+}
+
+/* ينتقل لمنطقة بها مخزون فعلي بضغطة واحدة (يمسح باقي الفلاتر حتى لا يقع
+   المستخدم في فراغ ثانٍ فورًا) */
+function mpJumpToRegion(region) {
+  const placeSel = document.getElementById('mp-place-sel');
+  const actSel   = document.getElementById('mp-act-sel');
+  const slider   = document.getElementById('mp-slider-max');
+  const regionEl = document.getElementById('mp-region');
+  if (placeSel) placeSel.value = '';
+  if (actSel)   actSel.value   = '';
+  if (slider)   slider.value   = parseInt(slider.max || 50000);
+  if (regionEl) regionEl.value = region || '';
+  updateMpSlider();
+  mpPage = 1;
+  _applyCurrentFilters();
+  document.getElementById('mp-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* الهيكل الفوري — يُرسم تزامنيًا، ثم _emptyHydrate يملأ المخارج */
+function _renderDynamicEmpty(grid) {
+  const f = _emptyActiveFilters();
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:56px 20px 40px;text-align:center">
+      <div style="font-size:52px;margin-bottom:14px">🔍</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:8px;color:var(--dark);font-family:'Cairo',sans-serif">
+        ${_emptyHeadline(f)}
+      </div>
+      <div style="font-size:13.5px;color:var(--ink2);margin-bottom:22px;line-height:1.8">
+        ${t('empty.dynSub')}
+      </div>
+      <div id="mp-empty-regions" style="margin-bottom:20px"></div>
+      ${f.any ? `<button class="btn btn-primary" style="padding:12px 30px;font-size:14.5px"
+                onclick="clearMpFilters()">${t('empty.dynShowAll')}</button>` : ''}
+      <div id="mp-empty-alt" style="margin-top:34px"></div>
+    </div>`;
+  _emptyHydrate(f);
+}
+
+/* يجلب المخارج الحقيقية: المناطق التي بها مخزون + مساحات بديلة.
+   استعلام واحد بلا فلاتر يخدم الغرضين معًا بدل استعلامين. */
+async function _emptyHydrate(f) {
+  if (!sbClient) return;
+  let all = [];
+  try {
+    const res = await searchPublicSpaces(sbClient, { limit: 50, sort: 'default' });
+    all = res.items || [];
+  } catch (_) { return; }          // فشل الاقتراحات لا يكسر الحالة الفارغة نفسها
+  if (!all.length) return;
+
+  // ── ١) شرائح المناطق التي بها مخزون فعلًا (باستثناء المنطقة الفاشلة) ──
+  const byRegion = new Map();
+  all.forEach(s => { if (s.loc) byRegion.set(s.loc, (byRegion.get(s.loc) || 0) + 1); });
+
+  /* المنطقة الحالية تُستبعَد فقط لو كانت هي وحدها سبب الفراغ. لو الفراغ ناتج
+     عن نوع/نشاط/سعر مع منطقة بها مخزون، فالقفز إليها مفيد فعلًا لأن
+     mpJumpToRegion يمسح باقي الفلاتر — واستبعادها كان يُخفي مخزونًا موجودًا. */
+  const regionIsSoleFilter = !!f.region && !f.place && !f.act && !f.maxPrice;
+  const regions = [...byRegion.entries()]
+    .filter(([r]) => !(regionIsSoleFilter && r === f.region))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  const regEl = document.getElementById('mp-empty-regions');
+  if (regEl && regions.length) {
+    regEl.innerHTML = `
+      <div style="font-size:12.5px;color:var(--ink3);margin-bottom:10px;font-weight:700">${t('empty.dynRegionsLabel')}</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        ${regions.map(([r, n]) => `
+          <button onclick="mpJumpToRegion('${String(r).replace(/'/g, "\\'")}')"
+                  style="background:#fff;border:1.5px solid var(--line,#e5e5e5);border-radius:999px;
+                         padding:8px 15px;font-size:13px;font-weight:700;cursor:pointer;
+                         font-family:'Cairo',sans-serif;color:var(--dark);white-space:nowrap">
+            📍 ${r} <span style="color:var(--orange);font-weight:800">${n}</span>
+          </button>`).join('')}
+      </div>`;
+  }
+
+  // ── ٢) مساحات بديلة — نفس بطاقة الشبكة حتى تبدو أصيلة لا عنصرًا غريبًا ──
+  const alt = all.filter(s => !(regionIsSoleFilter && s.loc === f.region)).slice(0, 3);
+  const altEl = document.getElementById('mp-empty-alt');
+  if (altEl && alt.length) {
+    altEl.innerHTML = `
+      <div style="font-size:13.5px;font-weight:800;color:var(--dark);margin-bottom:16px;
+                  font-family:'Cairo',sans-serif">${t('empty.dynAltTitle')}</div>
+      <!-- min(260px,100%) لا 260px الثابتة: auto-fit وحدها تفرض عمودًا بعرض
+           260px حتى على شاشة 375px فتخرج البطاقات خارج الإطار على الموبايل -->
+      <div style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));
+                  max-width:900px;margin:0 auto;text-align:initial">
+        ${alt.map(s => buildCardHtml(s, 'market')).join('')}
+      </div>`;
+    setTimeout(() => csInitAll(), 120);
+  }
+}
+
 function renderCards(data, gridId, showViewAll, fromPage) {
   const grid = document.getElementById(gridId || 'mp-grid');
   if (!grid) return;
   fromPage = fromPage || 'market';
 
   if (!data.length) {
+    /* شبكة الماركت تحصل على الحالة الديناميكية الكاملة؛ الشبكات الأخرى
+       (لو أُضيفت لاحقًا) تكتفي بالرسالة البسيطة لأن فلاتر mp-* لا تخصّها */
+    if ((gridId || 'mp-grid') === 'mp-grid') { _renderDynamicEmpty(grid); return; }
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--ink2)">
         <div style="font-size:48px;margin-bottom:16px">🔍</div>
@@ -563,81 +751,13 @@ function renderCards(data, gridId, showViewAll, fromPage) {
    🏢 القسم السابع: صفحة تفاصيل المساحة
    ================================================================ */
 
-function _showSpaceLoginGate(s, fromPage) {
-  currentSpaceDetail = s;
-  detailPrevPage = fromPage || 'market';
-
-  const headerEl = document.getElementById('sd-header');
-  if (headerEl) {
-    headerEl.innerHTML = `
-      <div class="sd-header-inner">
-        <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeSpaceDetail()">${t('detail.back')}</button>
-          <div class="sd-breadcrumb">
-            <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
-            <span class="sd-bc-sep">·</span>
-            <span onclick="showPage('market')" style="cursor:pointer">${t('detail.spacesCrumb')}</span>
-            <span class="sd-bc-sep">·</span>
-            <span style="color:var(--orange)">${s.name}</span>
-          </div>
-        </div>
-        <div class="sd-title-row">
-          <div>
-            <h1 class="sd-name">${s.name}</h1>
-            <div class="sd-meta">
-              <span>📍 ${s.loc}</span>
-              <span class="sd-meta-sep">·</span>
-              <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
-            </div>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  const galleryEl = document.getElementById('sd-gallery');
-  if (galleryEl) galleryEl.innerHTML = '';
-
-  const infoEl = document.getElementById('sd-info');
-  if (infoEl) {
-    infoEl.innerHTML = `
-      <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
-        <div style="font-size:64px;margin-bottom:20px">🔒</div>
-        <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
-          ${t('detail.loginRequiredTitle')}
-        </h2>
-        <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
-          ${t('detail.loginRequiredBody')}
-        </p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
-                  onclick="showPage('login')">
-            ${t('detail.loginBtn')}
-          </button>
-          <button class="btn" style="padding:13px 22px;font-size:14px"
-                  onclick="closeSpaceDetail()">
-            ${t('detail.backToSpacesBtn')}
-          </button>
-        </div>
-      </div>`;
-  }
-
-  const subEl = document.getElementById('sd-subspaces');
-  if (subEl) subEl.innerHTML = '';
-
-  showPage('space-detail');
-  window.scrollTo({ top: 0, behavior: 'instant' });
-}
 
 async function openSpaceDetail(spaceId, fromPage) {
   const s = await findOrFetchSpace(spaceId);
   if (!s) return;
 
   _trackSpaceEvent(s.id, s.ownerId, 'detail_click');
-
-  if (!currentUser) {
-    _showSpaceLoginGate(s, fromPage);
-    return;
-  }
+  _obMark('hasOpenedDetail');
 
   currentSpaceDetail = s;
   detailPrevPage = fromPage || 'market';
@@ -1045,6 +1165,9 @@ function applyMpFilters() {
   mpPage = 1;
   _applyCurrentFilters();
   updateMpChips();
+  /* إشارة «بحث فعلي» — من تفاعل المستخدم وحده، لا من التحميل الأول
+     (_applyCurrentFilters تُستدعى أيضًا عند الإقلاع وrealtime) */
+  _obMark('hasSearched');
 }
 
 function setContentFilter(type, btn) {
@@ -1127,13 +1250,7 @@ function renderMarketplace() {
   const pageData = [...mpCurrentSpaces, ...annForThisPage];
 
   if (!pageData.length) {
-    grid.innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
-        <div style="font-size:52px;margin-bottom:14px">🔍</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('empty.titleShort')}</div>
-        <div style="font-size:13px;color:var(--ink2);margin-bottom:18px">${t('empty.hintShort')}</div>
-        <button class="btn btn-primary" onclick="clearMpFilters()">${t('market.clearFilters')}</button>
-      </div>`;
+    _renderDynamicEmpty(grid);
     renderMpPagination();
     return;
   }
@@ -1625,9 +1742,12 @@ async function openBooking(spaceId) {
   const s = await findOrFetchSpace(spaceId);
   if (!s) return null;
 
-  // بوابة الدخول — لا حجز بدون تسجيل (لضمان ربط الحجز بالمستخدم وصاحب المساحة)
+  /* بوابة الدخول عند لحظة النية فقط — التفاصيل مفتوحة للجميع، والحجز وحده يتطلّب
+     حسابًا (لربط الطلب بالمستخدم وصاحب المساحة). نمرّر next= ليعود الزائر لنفس
+     المساحة ويُفتح النموذج تلقائيًا عبر book=1 المدعوم أصلًا في deep-link أعلى الملف. */
   if (!currentUser) {
-    _showSpaceLoginGate(s, detailPrevPage || 'market');
+    const back = `/spaces/?space=${encodeURIComponent(s.id)}&book=1`;
+    window.location.href = `/?p=login&next=${encodeURIComponent(back)}`;
     return null;
   }
 
@@ -1919,6 +2039,16 @@ async function submitBooking() {
   trackEvent('booking_submitted', { space_id: bookingSpace?.id, space_name: bookingSpace?.name });
   document.getElementById('modal-form-wrap').style.display = 'none';
   document.getElementById('modal-success').style.display   = 'block';
+
+  /* «ماذا بعد الطلب؟» — المعلومة الأهم في الرحلة كلها، ودور المنصة يختلف
+     جذريًا بين مساحة بروكر (الفريق يتفاوض) ومالك مسجَّل (المالك يبتّ).
+     البيانات محمَّلة أصلًا في bookingSpace — بلا استعلام إضافي. */
+  _obSignals.hasBooked = true;
+  _obSignals.lastBookingIsBroker = !bookingSpace?.ownerId;
+  if (global_OB()) {
+    global_OB().refresh({ userId: currentUser?.id || null });
+    global_OB().trigger('spaces.afterRequest');
+  }
 }
 
 function showFormError(msg) {

@@ -64,10 +64,7 @@ document.addEventListener('makani:locale-changed', () => {
   bzRenderNavUser();
   if (BAZAARS.length) renderBazaarCards();
   updateBzSlider();
-  if (currentBazaar) {
-    if (currentUser) openBazaarDetail(currentBazaar.id, { silent: true });
-    else _showBzLoginGate(currentBazaar);
-  }
+  if (currentBazaar) openBazaarDetail(currentBazaar.id, { silent: true });
   if (document.getElementById('dlm-modal')?.classList.contains('open')) _dlmRenderRows();
   if (_dirOpen) {
     _dirRenderWeekdays();
@@ -541,7 +538,6 @@ async function loadBazaars() {
       shared_slots_count:         Number(b.shared_slots_count) || 0,
     }));
 
-    console.log(`✅ تم تحميل ${BAZAARS.length} بازار من Supabase`);
     applyBzFilters();
 
   } catch (err) {
@@ -1002,76 +998,10 @@ function setBzTimeNav(nav) {
    🗺️ القسم 11: صفحة تفاصيل البازار
    ================================================================ */
 
-function _showBzLoginGate(b) {
-  currentBazaar  = b;
-  selectedSlotId = null;
-
-  const dateStr = b.date_start
-    ? _bzFmtDateLong(b.date_start, { month:'long', day:'numeric' })
-    : '';
-
-  const headerEl = document.getElementById('bzd-header');
-  if (headerEl) {
-    headerEl.innerHTML = `
-      <div class="sd-header-inner">
-        <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeBazaarDetail()">${t('loginGate.backToBazaars')}</button>
-        </div>
-        <div class="sd-title-row">
-          <div style="flex:1">
-            ${b.category ? `<span class="bz-detail-cat-badge">${b.category}</span>` : ''}
-            <h1 class="sd-name" style="margin-top:8px">${b.name}</h1>
-            <div class="sd-meta">
-              <span>📍 ${b.location || '—'}</span>
-              ${dateStr ? `<span class="sd-meta-sep">·</span><span>📅 ${dateStr}</span>` : ''}
-            </div>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  const infoEl = document.getElementById('bzd-info');
-  if (infoEl) {
-    infoEl.innerHTML = `
-      <div style="text-align:center;padding:64px 24px;max-width:460px;margin:0 auto">
-        <div style="font-size:64px;margin-bottom:20px">🔒</div>
-        <h2 style="font-size:22px;font-weight:900;color:var(--dark);margin-bottom:10px;font-family:'Cairo',sans-serif">
-          ${t('loginGate.title')}
-        </h2>
-        <p style="font-size:14px;color:var(--ink3);line-height:1.9;margin-bottom:28px;font-family:'IBM Plex Sans Arabic',sans-serif">
-          ${t('loginGate.body')}
-        </p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary" style="padding:13px 32px;font-size:15px"
-                  onclick="window.location.href='/?p=login'">
-            ${t('loginGate.loginBtn')}
-          </button>
-          <button class="btn" style="padding:13px 22px;font-size:14px"
-                  onclick="closeBazaarDetail()">
-            ${t('loginGate.backBtn')}
-          </button>
-        </div>
-      </div>`;
-  }
-
-  const slotmapEl = document.getElementById('bzd-slotmap');
-  if (slotmapEl) slotmapEl.innerHTML = '';
-
-  const panel = document.getElementById('bzd-booking-panel');
-  if (panel) panel.style.display = 'none';
-
-  showBzPage('bazaar-detail');
-  window.scrollTo({ top: 0, behavior: 'instant' });
-}
 
 async function openBazaarDetail(bazaarId, opts = {}) {
   const b = BAZAARS.find(x => String(x.id) === String(bazaarId));
   if (!b) return;
-
-  if (!currentUser) {
-    _showBzLoginGate(b);
-    return;
-  }
 
   currentBazaar  = b;
   selectedSlotId = null;
@@ -3055,8 +2985,11 @@ function clearSlotSelection() {
 async function submitBazaarBooking() {
   if (!selectedSlotId || !currentBazaar) return;
 
+  /* next= يعيده لنفس البازار مع الانتقال لخريطة الأماكن (book=1 مدعوم في
+     مهيّئ الصفحة أعلاه) بدل قذفه للرئيسية وفقدان البازار — نفس نمط market/. */
   if (!currentUser) {
-    window.location.href = '/?p=login';
+    const back = `/bazaars/?bazaar=${encodeURIComponent(currentBazaar.id)}&book=1`;
+    window.location.href = `/?p=login&next=${encodeURIComponent(back)}`;
     return;
   }
 
@@ -4574,7 +4507,7 @@ function _dirOpenDetails(source, id) {
 
   if (source === 'platform') {
     closeBazaarDirectory();
-    openBazaarDetail(id);           // يتكفّل بجيتنج تسجيل الدخول بنفسه (_showBzLoginGate)
+    openBazaarDetail(id);           // التفاصيل مفتوحة للجميع؛ الدخول مطلوب عند الحجز فقط
     return;
   }
   // خارجي: لا توجد له صفحة داخل المنصة ← واتساب مكاني Spot برسالة جاهزة

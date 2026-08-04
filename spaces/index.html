@@ -8,8 +8,8 @@
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260804011112">
-  <script src="/version.js?v=20260804011112"></script>
+  <link rel="manifest" href="/manifest.json?v=20260804230653">
+  <script src="/version.js?v=20260804230653"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -75,22 +75,28 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20260804011112">
+  <link rel="stylesheet" href="/style.css?v=20260804230653">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20260804011112" defer></script>
-  <script src="/pwa-install.js?v=20260804011112" defer></script>
-  <script src="/shared/space-model.js?v=20260804011112" defer></script>
-  <script src="/shared/booking.js?v=20260804011112" defer></script>
-  <script src="/shared/account.js?v=20260804011112" defer></script>
-  <script src="/shared/plan-badge.js?v=20260804011112" defer></script>
+  <script src="/shared/sb-config.js?v=20260804230653" defer></script>
+  <script src="/pwa-install.js?v=20260804230653" defer></script>
+  <script src="/shared/space-model.js?v=20260804230653" defer></script>
+  <script src="/shared/booking.js?v=20260804230653" defer></script>
+  <script src="/shared/account.js?v=20260804230653" defer></script>
+  <script src="/shared/plan-badge.js?v=20260804230653" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260804011112" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260804011112" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260804011112" defer></script>
-  <script src="/shared/i18n.js?v=20260804011112" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260804230653" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260804230653" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260804230653" defer></script>
+  <script src="/shared/i18n.js?v=20260804230653" defer></script>
+
+  <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
+       shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20260804230653">
+  <script src="/shared/onboarding.js?v=20260804230653" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20260804230653" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -734,8 +740,8 @@
 
             <!-- 2. نوع المكان — dropdown موسّع -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title" data-i18n="market.placeTypeTitle">نوع المكان</div>
-              <select id="mp-place-sel" class="mp-select" onchange="applyMpFilters()">
+              <div id="lbl-mp-place-sel" class="mp-filter-title" data-i18n="market.placeTypeTitle">نوع المكان</div>
+              <select aria-labelledby="lbl-mp-place-sel" id="mp-place-sel" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="market.placeTypeAll">كل أنواع الأماكن</option>
                 <option value="mall" data-i18n="placeTypes.mall">🏬 مول تجاري</option>
                 <option value="admin_mall" data-i18n="placeTypes.admin_mall">🏢 مول إداري</option>
@@ -755,8 +761,8 @@
 
             <!-- 3. المنطقة -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title" data-i18n="market.regionTitle">المنطقة</div>
-              <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
+              <div id="lbl-mp-region" class="mp-filter-title" data-i18n="market.regionTitle">المنطقة</div>
+              <select aria-labelledby="lbl-mp-region" id="mp-region" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="market.regionAll">كل المناطق والمحافظات</option>
                 <optgroup id="mp-region-areas-group" label="أحياء القاهرة الكبرى" data-i18n-attr="label:market.regionGroupCairo">
                 </optgroup>
@@ -794,11 +800,11 @@
 
             <!-- 4. مؤشر السعر (مساحات فقط) -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title" data-i18n="market.priceTitle">الحد الأقصى للسعر / شهر</div>
+              <div id="lbl-mp-slider-max" class="mp-filter-title" data-i18n="market.priceTitle">الحد الأقصى للسعر / شهر</div>
               <div class="mp-price-single-val" id="mp-price-max-label" data-i18n="market.priceNoLimit">بلا حد</div>
               <div class="slider-container slider-single" style="margin-top:14px">
                 <div class="slider-track" id="mp-slider-track"></div>
-                <input type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500"
+                <input aria-labelledby="lbl-mp-slider-max" type="range" class="price-slider" id="mp-slider-max" min="0" max="50000" value="50000" step="500"
                   oninput="updateMpSlider();clearTimeout(window._mpSliderDeb);window._mpSliderDeb=setTimeout(applyMpFilters,400)">
               </div>
               <div class="slider-hints" style="margin-top:6px">
@@ -809,16 +815,16 @@
 
             <!-- 5. النشاط التجاري — dropdown -->
             <div class="mp-filter-group">
-              <div class="mp-filter-title" data-i18n="market.activityTitle">النشاط التجاري</div>
-              <select id="mp-act-sel" class="mp-select" onchange="applyMpFilters()">
+              <div id="lbl-mp-act-sel" class="mp-filter-title" data-i18n="market.activityTitle">النشاط التجاري</div>
+              <select aria-labelledby="lbl-mp-act-sel" id="mp-act-sel" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="market.activityAll">كل الأنشطة</option>
               </select>
             </div>
 
             <!-- 6. تصنيف الإعلان (يظهر مع الإعلانات فقط) -->
             <div class="mp-filter-group" id="mp-ann-class-wrap" style="display:none">
-              <div class="mp-filter-title" data-i18n="market.annClassTitle">تصنيف الإعلان</div>
-              <select id="mp-ann-class" class="mp-select" onchange="applyMpFilters()">
+              <div id="lbl-mp-ann-class" class="mp-filter-title" data-i18n="market.annClassTitle">تصنيف الإعلان</div>
+              <select aria-labelledby="lbl-mp-ann-class" id="mp-ann-class" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="market.annClassAll">كل التصنيفات</option>
                 <option data-i18n="annClasses.cafeteria">إدارة واستغلال كافتيريا</option>
                 <option data-i18n="annClasses.buffet">إدارة واستغلال بوفيه</option>
@@ -981,15 +987,15 @@
         <!-- الفورم -->
         <div class="vm-body">
           <div class="vm-field">
-            <label data-i18n="visitModal.nameLabel">الاسم الكريم *</label>
+            <label for="vm-name" data-i18n="visitModal.nameLabel">الاسم الكريم *</label>
             <input type="text" id="vm-name" data-i18n-attr="placeholder:visitModal.namePlaceholder" placeholder="اسمك الكريم">
           </div>
           <div class="vm-field">
-            <label data-i18n="visitModal.phoneLabel">رقم الموبايل *</label>
+            <label for="vm-phone" data-i18n="visitModal.phoneLabel">رقم الموبايل *</label>
             <input type="tel" id="vm-phone" placeholder="01xxxxxxxxx" dir="ltr">
           </div>
           <div class="vm-field">
-            <label data-i18n="visitModal.dateLabel">تاريخ المعاينة المقترح (اختياري)</label>
+            <label for="vm-date" data-i18n="visitModal.dateLabel">تاريخ المعاينة المقترح (اختياري)</label>
             <input type="date" id="vm-date">
           </div>
           <div class="vm-error" id="vm-error"></div>
@@ -1051,7 +1057,7 @@
                 placeholder="01xxxxxxxxx"></div>
           </div>
           <div class="mfg">
-            <label data-i18n="bookingModal.emailLabel">البريد الإلكتروني (اختياري)</label>
+            <label for="bk-email" data-i18n="bookingModal.emailLabel">البريد الإلكتروني (اختياري)</label>
             <input type="email" id="bk-email" placeholder="email@example.com">
           </div>
           <div class="mfg" style="margin-top:4px">
@@ -1084,7 +1090,7 @@
           </div>
           <!-- ── حقل صورة المشروع (اختياري) ── -->
           <div class="mfg" style="margin-top:12px">
-            <label><span data-i18n="bookingModal.imageLabel">📸 صورة من شكل مشروعك</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
+            <label for="bk-project-image"><span data-i18n="bookingModal.imageLabel">📸 صورة من شكل مشروعك</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
             <input type="url" id="bk-project-image" dir="ltr" placeholder="https://drive.google.com/file/d/...">
             <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7" data-i18n-html="bookingModal.imageHint">
               ضع رابط Google Drive لصورة توضح شكل مشروعك أو ديكورك — يساعدنا في تجهيز المساحة المناسبة لك.<br>
@@ -1094,7 +1100,7 @@
 
           <!-- ── حقل بروفايل العلامة التجارية (اختياري) ── -->
           <div class="mfg" style="margin-top:12px">
-            <label><span data-i18n="bookingModal.profileLabel">🏷 بروفايل علامتك التجارية</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
+            <label for="bk-profile-link"><span data-i18n="bookingModal.profileLabel">🏷 بروفايل علامتك التجارية</span> <span style="font-weight:400;color:var(--ink2)" data-i18n="bookingModal.optional">(اختياري)</span></label>
             <input type="url" id="bk-profile-link" dir="ltr" placeholder="https://drive.google.com/drive/folders/...">
             <div style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.7" data-i18n-html="bookingModal.profileHint">
               شارك رابط Google Drive يحتوي على صور براندك أو هويتك التجارية — تأكد إن الرابط مفتوح للعرض.<br>
@@ -1481,8 +1487,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260804011112" defer></script>
-  <script src="app.js?v=20260804011112" defer></script>
+  <script src="/notifications.js?v=20260804230653" defer></script>
+  <script src="app.js?v=20260804230653" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

@@ -1,4 +1,17 @@
+# ══════════════════════════════════════════
+# Content Signals — تفضيلات استخدام المحتوى (contentsignals.org)
+#   search    = فهرسة وإظهار روابط ومقتطفات في نتائج البحث
+#   ai-input  = جلب المحتوى وقت السؤال لتغذية إجابة توليدية (RAG)
+#   ai-train  = استخدام المحتوى في تدريب أو ضبط نماذج الذكاء الاصطناعي
+#
+# NOTICE: The operator of this site permits automated access to its content
+# for search indexing and for AI retrieval-augmented generation, and does NOT
+# permit its use for training or fine-tuning AI models. Any other automated
+# collection requires express written permission from the site's operator.
+# ══════════════════════════════════════════
+
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 Disallow: /admin/
 Disallow: /dashboard/

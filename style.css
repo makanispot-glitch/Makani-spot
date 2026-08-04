@@ -13,7 +13,11 @@
    ================================================================ */
 
 /* ---------- Fonts (Google — Cairo + IBM Plex Sans Arabic + Inter) ---------- */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+/* الخطوط تُحمَّل عبر <link rel="preconnect"> + <link rel="stylesheet"> في <head>
+   كل صفحة (تحقّقنا: كل صفحة تحمّل style.css لديها الوسم بنفس الرابط حرفيًا).
+   حُذف @import المكرّر من هنا لسببين: كان يُنزّل الخطوط مرّتين، والأهم أنه
+   يحجب العرض ولا يبدأ إلا بعد اكتمال تنزيل style.css نفسه (سلسلة تسلسلية)
+   بينما وسم <head> يبدأ فورًا بالتوازي. */
 
 /* ── Auth Flicker Prevention ─────────────────────────────────────────────────
    html.sb-authed تُضاف بـ inline script في <head> قبل أول رسمة للمتصفح،
@@ -14580,4 +14584,47 @@ footer {
     height: 94px;
     grid-template-columns: 88px 1fr;
   }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   👆 توسيع مساحة اللمس للأزرار الدائرية الصغيرة (بلا أي تغيير بصري)
+   ──────────────────────────────────────────────────────────────────
+   هذه الأزرار تتجاوز عمدًا قاعدة button{min-height:44px} العامة لتبقى
+   دوائر صغيرة أنيقة (26–32px)، لكنها بذلك تنزل تحت الحدّ الأدنى الموصى
+   به للمس (44px) فيصعب إصابتها على الموبايل.
+
+   الحل القياسي: طبقة ::after شفافة تتمدّد خارج الحدود فتوسّع مساحة
+   الإصابة وحدها — الشكل والحجم والتخطيط تبقى كما هي بالضبط.
+   ══════════════════════════════════════════════════════════════════ */
+
+.share-btn,
+.share-btn-inline,
+.bz-featured-share-btn,
+.lang-switch-btn,
+.obc-x {
+  position: relative;   /* مرجع للطبقة الشفافة (.share-btn مطلق أصلًا — لا يتأثر) */
+}
+
+.share-btn::after,
+.share-btn-inline::after,
+.bz-featured-share-btn::after,
+.lang-switch-btn::after,
+.obc-x::after {
+  content: '';
+  position: absolute;
+  inset: -2px;          /* الافتراضي محافظ — الماوس دقيق ولا يحتاج توسيعًا */
+  border-radius: inherit;
+  /* شفافة تمامًا ولا ترسم شيئًا — وظيفتها توسيع الإصابة فقط */
+}
+
+/* التوسيع الفعلي لأجهزة اللمس وحدها (pointer: coarse). عكس الشرط متعمَّد:
+   نُضيف التوسيع حيث يلزم بدل تعميمه ثم استثناء الماوس — أضمن ألّا يبتلع
+   زرٌّ مساحةَ جاره على سطح المكتب. */
+@media (pointer: coarse) {
+  .share-btn::after,
+  .share-btn-inline::after,
+  .bz-featured-share-btn::after,
+  .lang-switch-btn::after,
+  .obc-x::after { inset: -8px; }   /* 32+16=48px · 26+16=42px */
 }

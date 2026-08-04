@@ -182,7 +182,16 @@
     "title": "No spaces match your filters",
     "hint": "Try adjusting the activity, area, or price",
     "titleShort": "No spaces found",
-    "hintShort": "Try adjusting your filters"
+    "hintShort": "Try adjusting your filters",
+    "dynNoneCombo": "No spaces {{what}} yet",
+    "dynFragType": "of type {{type}}",
+    "dynFragActivity": "for {{activity}}",
+    "dynFragRegion": "in {{region}}",
+    "dynFragPrice": "under EGP {{price}}",
+    "dynSub": "We are adding new spaces every week — here is where spaces are available right now",
+    "dynRegionsLabel": "Areas with available spaces",
+    "dynShowAll": "Show all available spaces",
+    "dynAltTitle": "Spaces you might like"
   },
   "chips": {
     "spacesOnly": "🏢 Spaces Only",

@@ -72,6 +72,17 @@
     "prev": "Previous",
     "next": "Next"
   },
+  "empty": {
+    "dynNoneCombo": "No listings {{what}} yet",
+    "dynFragCat": "in {{cat}}",
+    "dynFragGov": "in {{gov}}",
+    "dynFragPrice": "under {{price}}",
+    "dynFragSearch": "matching \"{{q}}\"",
+    "dynSub": "New listings are posted every week — here is where listings are available right now",
+    "dynGovsLabel": "Governorates with available listings",
+    "dynShowAll": "Show all listings",
+    "dynAltTitle": "Listings you might like"
+  },
   "grid": {
     "empty": "No listings match your search 🔍",
     "countZero": "0 listings",

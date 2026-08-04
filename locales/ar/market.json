@@ -61,6 +61,17 @@
     "prev": "السابقة",
     "next": "التالية"
   },
+  "empty": {
+    "dynNoneCombo": "لسه مفيش إعلانات {{what}}",
+    "dynFragCat": "في قسم {{cat}}",
+    "dynFragGov": "في {{gov}}",
+    "dynFragPrice": "في حدود {{price}}",
+    "dynFragSearch": "بكلمة «{{q}}»",
+    "dynSub": "إعلانات جديدة بتتنشر كل أسبوع — دي المحافظات اللي فيها إعلانات دلوقتي",
+    "dynGovsLabel": "محافظات فيها إعلانات متاحة",
+    "dynShowAll": "شوف كل الإعلانات",
+    "dynAltTitle": "إعلانات ممكن تهمّك"
+  },
   "grid": {
     "empty": "لا توجد إعلانات تطابق بحثك 🔍",
     "countZero": "0 إعلان",

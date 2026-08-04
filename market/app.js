@@ -1146,6 +1146,81 @@ function eqBuildCard(listing) {
    🔄 القسم 7: عرض الشبكة + Load More
    ================================================================ */
 
+/* ── الحالة الفارغة كصفحة تحويل — نظير ما في /spaces/ لكن بلا استعلام إضافي،
+   لأن الفلترة هنا محلية فوق eqListings المحمَّلة أصلًا ── */
+function _eqEmptyHeadline() {
+  const parts = [];
+  if (eqActiveCategory) parts.push(t('empty.dynFragCat',   { cat: eqCatLabel(eqActiveCategory) }));
+  if (eqGov)            parts.push(t('empty.dynFragGov',   { gov: eqGovLabel(eqGov) }));
+  if (eqPriceMax > 0)   parts.push(t('empty.dynFragPrice', { price: _eqFmtPrice(eqPriceMax) }));
+  if (eqSearch.trim())  parts.push(t('empty.dynFragSearch',{ q: eqSearch.trim() }));
+  if (!parts.length) return t('grid.empty');
+  return t('empty.dynNoneCombo', { what: parts.join(' ') });
+}
+
+function eqClearAllFilters() {
+  eqActiveCategory = ''; eqSearch = ''; eqGov = ''; eqPriceMax = 0;
+  const s = document.getElementById('eq-search');     if (s) s.value = '';
+  const g = document.getElementById('eq-gov');        if (g) g.value = '';
+  const p = document.getElementById('eq-price-max');  if (p) p.value = p.min || 0;
+  const lbl = document.getElementById('eq-price-label'); if (lbl) lbl.textContent = _eqFmtPrice(0);
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach((tb, i) => tb.classList.toggle('on', i === 0));
+  if (typeof eqSyncDrawerFromActive === 'function') eqSyncDrawerFromActive();
+  if (typeof eqUpdateDrawerBadge   === 'function') eqUpdateDrawerBadge();
+  eqApplyFilters();
+}
+
+/* يمسح باقي الفلاتر حتى لا يقع المستخدم في فراغ ثانٍ فورًا */
+function eqJumpToGov(gov) {
+  eqActiveCategory = ''; eqSearch = ''; eqPriceMax = 0; eqGov = gov || '';
+  const s = document.getElementById('eq-search');    if (s) s.value = '';
+  const p = document.getElementById('eq-price-max'); if (p) p.value = p.min || 0;
+  const g = document.getElementById('eq-gov');       if (g) g.value = eqGov;
+  document.querySelectorAll('#eq-tabs .eq-tab').forEach((tb, i) => tb.classList.toggle('on', i === 0));
+  if (typeof eqSyncDrawerFromActive === 'function') eqSyncDrawerFromActive();
+  if (typeof eqUpdateDrawerBadge   === 'function') eqUpdateDrawerBadge();
+  eqApplyFilters();
+  document.getElementById('eq-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function _eqRenderDynamicEmpty(grid) {
+  const anyFilter = !!(eqActiveCategory || eqGov || eqPriceMax > 0 || eqSearch.trim());
+
+  const byGov = new Map();
+  eqListings.forEach(l => { if (l.region) byGov.set(l.region, (byGov.get(l.region) || 0) + 1); });
+  const govSoleFilter = !!eqGov && !eqActiveCategory && !eqPriceMax && !eqSearch.trim();
+  const govs = [...byGov.entries()]
+    .filter(([g]) => !(govSoleFilter && g === eqGov))
+    .sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+  const alt = eqListings.filter(l => !(govSoleFilter && l.region === eqGov)).slice(0, 3);
+
+  grid.innerHTML = `
+    <div class="eq-empty" style="grid-column:1/-1;text-align:center">
+      <div style="font-size:46px;margin-bottom:12px">🔍</div>
+      <p style="font-size:16px;font-weight:800;margin-bottom:6px">${_eqEmptyHeadline()}</p>
+      <p style="font-size:13px;opacity:.75;margin-bottom:18px">${t('empty.dynSub')}</p>
+      ${govs.length ? `
+        <div style="font-size:12.5px;opacity:.7;margin-bottom:9px;font-weight:700">${t('empty.dynGovsLabel')}</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
+          ${govs.map(([g, n]) => `
+            <button class="eq-btn eq-btn-outline" style="padding:7px 14px;font-size:12.5px"
+                    onclick="eqJumpToGov('${String(g).replace(/'/g, "\\'")}')">
+              📍 ${eqGovLabel(g)} (${n})
+            </button>`).join('')}
+        </div>` : ''}
+      ${anyFilter ? `<button class="eq-btn eq-btn-primary" onclick="eqClearAllFilters()">${t('empty.dynShowAll')}</button>` : ''}
+      ${alt.length ? `
+        <div style="margin-top:30px">
+          <div style="font-size:13.5px;font-weight:800;margin-bottom:14px">${t('empty.dynAltTitle')}</div>
+          <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));
+                      max-width:840px;margin:0 auto;text-align:initial">
+            ${alt.map(eqBuildCard).join('')}
+          </div>
+        </div>` : ''}
+    </div>`;
+}
+
 function eqRenderGrid() {
   const grid  = document.getElementById('eq-grid');
   const count = document.getElementById('eq-count');
@@ -1154,7 +1229,7 @@ function eqRenderGrid() {
   if (!grid) return;
 
   if (eqFiltered.length === 0) {
-    grid.innerHTML = `<div class="eq-empty">${t('grid.empty')}</div>`;
+    _eqRenderDynamicEmpty(grid);
     if (count) count.textContent = t('grid.countZero');
     if (more)  more.style.display = 'none';
     return;

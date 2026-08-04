@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="manifest" href="/manifest.json?v=20260804011112">
-<script src="/version.js?v=20260804011112"></script>
+<link rel="manifest" href="/manifest.json?v=20260804230653">
+<script src="/version.js?v=20260804230653"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,9 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260804011112">
+<link rel="stylesheet" href="../style.css?v=20260804230653">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../media-handler.js?v=20260804011112"></script>
+<script src="../media-handler.js?v=20260804230653"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -328,7 +328,7 @@ body { background: var(--surface2); }
       <div class="pa-card-title">📦 بيانات المعدة</div>
 
       <div class="pa-field">
-        <label class="pa-label">التصنيف <span>*</span></label>
+        <label for="pa-category" class="pa-label">التصنيف <span>*</span></label>
         <select class="pa-select" id="pa-category">
           <option value="">— اختر التصنيف —</option>
           <option value="food-juice-cart">عربية أكل / عصير</option>
@@ -346,14 +346,14 @@ body { background: var(--surface2); }
       </div>
 
       <div class="pa-field">
-        <label class="pa-label">عنوان الإعلان <span>*</span></label>
+        <label for="pa-title" class="pa-label">عنوان الإعلان <span>*</span></label>
         <input class="pa-input" type="text" id="pa-title" placeholder="مثال: ثلاجة عرض Liebherr 4 أبواب نظيفة" maxlength="100">
         <div class="pa-hint">وصف موجز ومحدد — يساعد المشترين في العثور على إعلانك</div>
         <div class="pa-error-msg" id="err-title">من فضلك اكتب عنوان الإعلان (10 أحرف على الأقل)</div>
       </div>
 
       <div class="pa-field">
-        <label class="pa-label">وصف المعدة <span>*</span></label>
+        <label for="pa-description" class="pa-label">وصف المعدة <span>*</span></label>
         <textarea class="pa-textarea" id="pa-description" placeholder="اذكر الحالة، العمر، المشكلات إن وجدت، سبب البيع…" maxlength="1000"></textarea>
         <div class="pa-error-msg" id="err-description">من فضلك اكتب وصفاً (20 حرف على الأقل)</div>
       </div>
@@ -447,7 +447,7 @@ body { background: var(--surface2); }
       </div>
 
       <div class="pa-field">
-        <label class="pa-label">طريقة التواصل المفضّلة <span>*</span></label>
+        <label for="pa-contact-method" class="pa-label">طريقة التواصل المفضّلة <span>*</span></label>
         <select class="pa-select" id="pa-contact-method">
           <option value="both">واتساب + اتصال</option>
           <option value="whatsapp">واتساب فقط</option>
@@ -489,8 +489,8 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
-<script src="../shared/sb-config.js?v=20260804011112"></script>
-<script src="/pwa-install.js?v=20260804011112" defer></script>
+<script src="../shared/sb-config.js?v=20260804230653"></script>
+<script src="/pwa-install.js?v=20260804230653" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;

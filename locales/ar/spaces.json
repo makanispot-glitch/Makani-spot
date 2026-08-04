@@ -178,7 +178,16 @@
     "title": "مش لاقيين مساحات بالمعايير دي",
     "hint": "جرب تغيير النشاط أو المنطقة أو السعر",
     "titleShort": "مش لاقيين مساحات",
-    "hintShort": "جرب تغيير الفلاتر"
+    "hintShort": "جرب تغيير الفلاتر",
+    "dynNoneCombo": "لسه مفيش مساحات {{what}}",
+    "dynFragType": "من نوع {{type}}",
+    "dynFragActivity": "لنشاط {{activity}}",
+    "dynFragRegion": "في {{region}}",
+    "dynFragPrice": "في حدود {{price}} ج",
+    "dynSub": "المنصة بتكبر كل أسبوع — دي المناطق اللي فيها مساحات متاحة دلوقتي",
+    "dynRegionsLabel": "مناطق فيها مساحات متاحة",
+    "dynShowAll": "شوف كل المساحات المتاحة",
+    "dynAltTitle": "مساحات ممكن تناسبك"
   },
   "chips": {
     "spacesOnly": "🏢 المساحات فقط",

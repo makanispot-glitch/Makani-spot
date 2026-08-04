@@ -449,6 +449,7 @@
     "bookings": {
       "emptyText": "No bookings yet —",
       "emptyCta": "Start browsing for a space →",
+      "emptyCtaBazaars": "or browse bazaars →",
       "statusPending": "Under Review ⏳",
       "statusViewingPending": "Inspection Requested ⏳",
       "statusWaitlist": "Waitlist ⏳",

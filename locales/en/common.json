@@ -173,5 +173,62 @@
     "checkOutBazaar": "Check out this bazaar on Makani Spot: {{name}}",
     "linkCopied": "✅ Link copied!",
     "linkFallback": "📋 Link: {{url}}"
+  },
+  "onboarding": {
+    "dismiss": "Dismiss",
+    "spaces": {
+      "search": {
+        "title": "Start with the area",
+        "body": "Pick your area and activity — or browse all available spaces."
+      },
+      "detail": {
+        "title": "Full details, no signup",
+        "body": "Photos, prices, sizes and amenities — open to everyone."
+      },
+      "book": {
+        "title": "Free request, no commitment",
+        "body": "You only sign in when sending, and you can withdraw anytime."
+      },
+      "afterRequestBroker": {
+        "title": "Request received ✅",
+        "body": "The Makani Spot team will contact you to finalise details. Track it in My Bookings."
+      },
+      "afterRequestOwner": {
+        "title": "Request received ✅",
+        "body": "The space owner will review and reply. Track it in My Bookings."
+      }
+    },
+    "owner": {
+      "whereBookings": {
+        "title": "Your space is live",
+        "body": "New booking requests will arrive here under Booking Requests."
+      },
+      "handleBooking": {
+        "title": "Your first request",
+        "body": "Accept, reject, or move it to the waitlist — the client is notified instantly."
+      },
+      "editSpace": {
+        "title": "Edits go live instantly",
+        "body": "Update photos, prices and sizes anytime — no review needed."
+      }
+    },
+    "organizer": {
+      "firstBazaar": {
+        "title": "Account verified ✅",
+        "body": "Start your first bazaar: details, dates, slot price and slot count."
+      },
+      "pendingReview": {
+        "title": "Your bazaar is under review",
+        "body": "Once approved it goes public, and the slot map is generated automatically."
+      },
+      "slots": {
+        "title": "Slot map is ready",
+        "body": "Mark and price slots, and reserve internally for sponsors or press."
+      },
+      "bookingsReadOnly": {
+        "title": "Bookings table is read-only",
+        "body": "Only the admin confirms bookings, after contact and deposit collection."
+      }
+    }
   }
 }

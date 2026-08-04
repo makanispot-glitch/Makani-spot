@@ -1,0 +1,173 @@
+/* ══════════════════════════════════════════════════════════════════
+   🧭 Contextual Onboarding — أنماط المكوّن (المصدر الوحيد)
+   ──────────────────────────────────────────────────────────────────
+   هذا الملف هو **المكان الوحيد** الذي تعيش فيه أنماط .obc-*. لا نسخة
+   في style.css ولا داخل أي <style> مضمَّن. أي صفحة تستخدم الإرشاد
+   تحمّل هذا الملف مع shared/onboarding.js — الاثنان مكوّن واحد.
+
+   ── لماذا ملف مستقل لا كتلة في style.css؟ ──
+   المكوّن يعمل على أسطح لا تحمّل style.css إطلاقًا (dashboard/, org/,
+   catalog/, admin/*) ولها :root خاص بها. جعل تلك الأسطح تحمّل style.css
+   (٣٠٤ ك.ب و2025 قاعدة) لأجل مكوّن بحجم ٣ ك.ب كان سيخاطر بتصميمها
+   بالكامل، وتكرار الأنماط كان سيخلق مصدرين يتباعدان. سابقة النمط
+   قائمة أصلًا في المشروع: articles/article.css.
+
+   ── الاكتفاء الذاتي (شرط صحّة لا تحسين) ──
+   لوحة المالك تعرّف ٥٤ متغيّرًا فقط، ينقصها ١٧ من الرموز الـ٢١ التي
+   يستخدمها هذا المكوّن. لذلك تُعلَن كلها هنا داخل .obc نفسه بقيم
+   افتراضية مطابقة لنظام التصميم، مع var(--token, fallback) لتبقى
+   قابلة للتجاوز حين توفّرها الصفحة المضيفة. النتيجة: شكل واحد في كل
+   مكان، وتحديث واحد يسري على كل الأسطح.
+   ══════════════════════════════════════════════════════════════════ */
+
+.obc {
+  /* رموز المكوّن — ترث من الصفحة المضيفة إن وُجدت، وإلا تستعمل قيم النظام */
+  --obc-bg:        var(--bg-raised, #FFFFFF);
+  --obc-border:    var(--border, #E8E6DF);
+  --obc-fg:        var(--fg, #0E1218);
+  --obc-fg-2:      var(--fg-2, #3A4554);
+  --obc-fg-3:      var(--fg-3, #5E6878);
+  --obc-sunken:    var(--bg-sunken, #F4F3EE);
+  --obc-accent:    var(--accent, var(--orange, #F36418));
+  --obc-tint:      var(--accent-tint, #FFF4ED);
+  --obc-tint-line: var(--orange-200, #FFC3A0);
+  --obc-radius:    var(--radius-lg, 16px);
+  --obc-radius-sm: var(--radius-sm, 8px);
+  --obc-pill:      var(--radius-pill, 999px);
+  --obc-shadow:    var(--shadow-lg, 0 12px 28px rgba(14,18,24,.09), 0 4px 10px rgba(14,18,24,.05));
+  --obc-ring:      var(--ring-focus, 0 0 0 3px rgba(243,100,24,.30));
+  --obc-font:      var(--font-body, 'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif);
+  --obc-font-head: var(--font-display, 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif);
+  --obc-dur-fast:  var(--dur-fast, 160ms);
+  --obc-dur-base:  var(--dur-base, 240ms);
+  --obc-ease-out:  var(--ease-out, cubic-bezier(.2,.8,.2,1));
+  --obc-ease-spring: var(--ease-spring, cubic-bezier(.34,1.36,.64,1));
+  --obc-ease-io:   var(--ease-in-out, cubic-bezier(.65,0,.35,1));
+
+  position: fixed;
+  z-index: 9500;                 /* فوق المحتوى، تحت المودالات (10000) */
+  /* width:max-content ضروري لا تجميلي: العنصر fixed بلا width يتقلّص
+     shrink-to-fit وقت القياس فيُرجع offsetWidth ≈ عرض زرّ الإغلاق وحده،
+     فيحسب JS تموضعًا خاطئًا خارج الشاشة. */
+  width: max-content;
+  max-width: min(280px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 13px 15px 14px;
+  background: var(--obc-bg);
+  border: 1px solid var(--obc-border);
+  border-radius: var(--obc-radius);
+  box-shadow: var(--obc-shadow);
+  font-family: var(--obc-font);
+  opacity: 0;
+  transform: translateY(6px) scale(.97);
+  transition: opacity var(--obc-dur-fast) var(--obc-ease-out),
+              transform var(--obc-dur-base) var(--obc-ease-spring);
+  pointer-events: auto;          /* الصندوق فقط — لا طبقة فوق الصفحة */
+}
+
+.obc.obc-in  { opacity: 1; transform: translateY(0) scale(1); }
+.obc.obc-out { opacity: 0; transform: translateY(4px) scale(.98); transition-duration: var(--obc-dur-fast); }
+
+.obc-title {
+  font-family: var(--obc-font-head);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--obc-fg);
+  line-height: 1.5;
+  margin-bottom: 4px;
+  padding-inline-end: 18px;      /* مساحة زرّ الإغلاق — منطقي لا يمين/يسار */
+}
+
+.obc-body {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--obc-fg-2);
+}
+
+.obc-x {
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 9px;
+  width: 22px;
+  height: 22px;
+  min-height: 0;                 /* يبطل button{min-height:44px} العام */
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--obc-pill);
+  font-size: 17px;
+  line-height: 1;
+  color: var(--obc-fg-3);
+  cursor: pointer;
+  transition: background var(--obc-dur-fast) var(--obc-ease-out),
+              color var(--obc-dur-fast) var(--obc-ease-out);
+}
+.obc-x:hover { background: var(--obc-sunken); color: var(--obc-fg); }
+.obc-x:focus-visible { outline: none; box-shadow: var(--obc-ring); }
+
+/* ── السهم — يتبع الهدف عبر متغيّر --obc-arrow الذي يضبطه JS ── */
+.obc-popover::before,
+.obc-popover::after {
+  content: '';
+  position: absolute;
+  left: var(--obc-arrow, 50%);
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+}
+.obc-popover.obc-below::before { top: -14px; border-bottom-color: var(--obc-border); }
+.obc-popover.obc-below::after  { top: -12px; border-bottom-color: var(--obc-bg); }
+.obc-popover.obc-above::before { bottom: -14px; border-top-color: var(--obc-border); }
+.obc-popover.obc-above::after  { bottom: -12px; border-top-color: var(--obc-bg); }
+
+/* ── تعليم الهدف: حلقة خفيفة، بلا تعتيم وبلا حجب ── */
+.obc-target {
+  position: relative;
+  z-index: 9501;
+  border-radius: var(--radius-sm, 8px);
+  animation: obcPulse 2.4s var(--ease-in-out, cubic-bezier(.65,0,.35,1)) 3;
+}
+@keyframes obcPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(243, 100, 24, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(243, 100, 24, .22); }
+}
+
+/* ── البطاقة داخل التدفّق (لا عائمة) — لشرح «ماذا بعدها» ── */
+.obc-card {
+  position: relative;
+  max-width: none;
+  width: 100%;
+  margin: 0 0 16px;
+  background: var(--obc-tint);
+  border: 1px solid var(--obc-tint-line);
+  box-shadow: none;
+  transform: translateY(-4px);
+}
+.obc-card.obc-in { transform: translateY(0); }
+
+/* ── الموبايل: شريط سفلي بدل popover ضيّق ──
+   تحت 420px لا يتّسع popover بعرض 280px لسطرين بلا قصّ، وقد يغطّي هدفه. */
+@media (max-width: 420px) {
+  .obc-popover {
+    position: fixed;
+    top: auto !important;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    left: 12px !important;
+    right: 12px;
+    max-width: none;
+    width: auto;
+    transform: translateY(14px);
+  }
+  .obc-popover.obc-in  { transform: translateY(0); }
+  .obc-popover.obc-out { transform: translateY(10px); }
+  .obc-popover::before,
+  .obc-popover::after { display: none; }   /* لا سهم بلا ارتباط بصري بالهدف */
+}
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  .obc { transition-duration: 1ms; }
+  .obc-target { animation: none; }
+}

@@ -8,8 +8,8 @@
     content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260804011112">
-  <script src="/version.js?v=20260804011112"></script>
+  <link rel="manifest" href="/manifest.json?v=20260804230653">
+  <script src="/version.js?v=20260804230653"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -94,16 +94,16 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=20260804011112">
+  <link rel="stylesheet" href="style.css?v=20260804230653">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260804011112" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260804011112" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260804011112" defer></script>
-  <script src="/shared/i18n.js?v=20260804011112" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260804230653" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260804230653" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260804230653" defer></script>
+  <script src="/shared/i18n.js?v=20260804230653" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -700,13 +700,13 @@
         <!-- صف الفلاتر الرئيسية -->
         <div class="filter-row">
           <div class="fg">
-            <label data-i18n="search.regionLabel">المنطقة</label>
+            <label id="lbl-mp-region" for="f-region" data-i18n="search.regionLabel">المنطقة</label>
             <select id="f-region">
               <option value="" data-i18n="search.regionAll">كل المناطق</option>
             </select>
           </div>
           <div class="fg">
-            <label data-i18n="search.durationLabel">مدة الإيجار</label>
+            <label for="f-dur" data-i18n="search.durationLabel">مدة الإيجار</label>
             <select id="f-dur">
               <option value="" data-i18n="search.durationAny">أي مدة</option>
               <option data-i18n="search.durationDaily">يومي</option>
@@ -717,7 +717,7 @@
             </select>
           </div>
           <div class="fg">
-            <label data-i18n="search.typeLabel">نوع المكان</label>
+            <label for="f-type" data-i18n="search.typeLabel">نوع المكان</label>
             <select id="f-type">
               <option value="" data-i18n="search.typeAll">الكل</option>
               <option value="mall" data-i18n="search.typeMall">مول تجاري</option>
@@ -726,7 +726,7 @@
             </select>
           </div>
           <div class="fg">
-            <label>&nbsp;</label>
+            <label aria-hidden="true">&nbsp;</label>
             <button class="btn btn-primary" onclick="doSearch()" style="height:45px;padding:0 26px" data-i18n="search.searchBtn">بحث</button>
           </div>
         </div>
@@ -734,12 +734,12 @@
         <!-- مؤشر السعر — نقطة واحدة (الحد الأقصى) -->
         <div class="price-slider-wrap">
           <div class="price-slider-label-row">
-            <span class="price-slider-title" data-i18n="search.priceLabel">الحد الأقصى للسعر / شهر</span>
+            <span class="price-slider-title" id="price-slider-title" data-i18n="search.priceLabel">الحد الأقصى للسعر / شهر</span>
             <span class="price-single-val" id="price-max-label">بلا حد</span>
           </div>
           <div class="slider-container slider-single">
             <div class="slider-track" id="slider-track"></div>
-            <input type="range" class="price-slider" id="slider-max" min="0" max="50000" value="50000" step="500"
+            <input type="range" class="price-slider" id="slider-max" aria-labelledby="price-slider-title" min="0" max="50000" value="50000" step="500"
               oninput="updateMainSlider()">
           </div>
           <div class="slider-hints">
@@ -751,9 +751,9 @@
 
         <!-- فلتر النشاط التجاري (يُملأ تلقائياً من الشيت) -->
         <div class="act-filter-section">
-          <div class="act-filter-lbl" data-i18n="search.activityLabel">فلتر بالنشاط التجاري</div>
+          <div class="act-filter-lbl" id="act-filter-lbl" data-i18n="search.activityLabel">فلتر بالنشاط التجاري</div>
           <div class="fg" style="max-width:320px">
-            <select id="f-act" onchange="onActDropdown(this.value)" style="padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);
+            <select id="f-act" aria-labelledby="act-filter-lbl" onchange="onActDropdown(this.value)" style="padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);
                          background:var(--surface2);font-size:14px;color:var(--ink);
                          font-family:'Cairo',sans-serif;outline:none;transition:all 0.15s;cursor:pointer;">
               <option value="" data-i18n="search.activityPick">— اختر النشاط —</option>
@@ -2194,7 +2194,7 @@
             <!-- المنطقة -->
             <div class="mp-filter-group">
               <div class="mp-filter-title" data-i18n="search.regionLabel">المنطقة</div>
-              <select id="mp-region" class="mp-select" onchange="applyMpFilters()">
+              <select aria-labelledby="lbl-mp-region" id="mp-region" class="mp-select" onchange="applyMpFilters()">
                 <option value="" data-i18n="search.regionAll">كل المناطق</option>
               </select>
             </div>
@@ -2336,7 +2336,7 @@
           <div class="auth-or" data-i18n="auth.login.or">أو بالبريد الإلكتروني</div>
           <form id="login-form" onsubmit="doEmailLogin(); return false;" autocomplete="on" novalidate>
           <div class="afg">
-            <label data-i18n="auth.login.emailLabel">البريد الإلكتروني</label>
+            <label for="li-email" data-i18n="auth.login.emailLabel">البريد الإلكتروني</label>
             <input type="email" id="li-email" placeholder="example@email.com" dir="ltr" autocomplete="email">
           </div>
           <div class="afg">
@@ -2478,13 +2478,13 @@
           </button>
           <div class="auth-or" data-i18n="auth.signup.or">أو بالبريد الإلكتروني</div>
           <div class="afg-row">
-            <div class="afg" style="margin:0"><label data-i18n="auth.signup.nameLabel">الاسم الكامل *</label><input type="text" id="su-name"
+            <div class="afg" style="margin:0"><label for="su-name" data-i18n="auth.signup.nameLabel">الاسم الكامل *</label><input type="text" id="su-name"
                 placeholder="اسمك الكريم" data-i18n-attr="placeholder:auth.signup.namePlaceholder"></div>
             <div class="afg" style="margin:0"><label data-i18n="auth.signup.phoneLabel">رقم الموبايل *</label><input type="tel" id="su-phone"
                 placeholder="01xxxxxxxxx" dir="ltr"></div>
           </div>
           <div class="afg" style="margin-top:13px">
-            <label data-i18n="auth.signup.emailLabel">البريد الإلكتروني *</label>
+            <label for="su-email" data-i18n="auth.signup.emailLabel">البريد الإلكتروني *</label>
             <input type="email" id="su-email" placeholder="example@email.com" dir="ltr">
           </div>
           <div class="afg">
@@ -2764,11 +2764,11 @@
                 placeholder="01xxxxxxxxx"></div>
           </div>
           <div class="mfg">
-            <label data-i18n="bookingModal.emailLabelOptional">البريد الإلكتروني (اختياري)</label>
+            <label for="bk-email" data-i18n="bookingModal.emailLabelOptional">البريد الإلكتروني (اختياري)</label>
             <input type="email" id="bk-email" placeholder="email@example.com">
           </div>
           <div class="mfg" style="margin-top:4px">
-            <label data-i18n="bookingModal.activityLabel">نوع نشاطك التجاري *</label>
+            <label for="bk-other-act" data-i18n="bookingModal.activityLabel">نوع نشاطك التجاري *</label>
             <div class="act-picker" id="modal-act-picker"></div>
           </div>
           <div class="mfg" id="other-act-wrap" style="display:none">
@@ -3100,14 +3100,14 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=20260804011112" defer></script>
-  <script src="/pwa-install.js?v=20260804011112" defer></script>
-  <script src="shared/space-model.js?v=20260804011112" defer></script>
-  <script src="shared/booking.js?v=20260804011112" defer></script>
-  <script src="shared/account.js?v=20260804011112" defer></script>
-  <script src="shared/plan-badge.js?v=20260804011112" defer></script>
-  <script src="/notifications.js?v=20260804011112" defer></script>
-  <script src="app.js?v=20260804011112" defer></script>
+  <script src="shared/sb-config.js?v=20260804230653" defer></script>
+  <script src="/pwa-install.js?v=20260804230653" defer></script>
+  <script src="shared/space-model.js?v=20260804230653" defer></script>
+  <script src="shared/booking.js?v=20260804230653" defer></script>
+  <script src="shared/account.js?v=20260804230653" defer></script>
+  <script src="shared/plan-badge.js?v=20260804230653" defer></script>
+  <script src="/notifications.js?v=20260804230653" defer></script>
+  <script src="app.js?v=20260804230653" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -3305,20 +3305,20 @@
 
           <!-- رقم الواتساب — إلزامي -->
           <div class="mfg">
-            <label><span data-i18n="ownerRequestModal.phoneLabel">رقم الواتساب</span> <span style="color:var(--red,#ef4444)">*</span></label>
+            <label for="oreq-phone"><span data-i18n="ownerRequestModal.phoneLabel">رقم الواتساب</span> <span style="color:var(--red,#ef4444)">*</span></label>
             <input class="mfg-inp" id="oreq-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr"
               style="text-align:right;font-size:15px;letter-spacing:1px" autocomplete="tel">
           </div>
 
           <!-- اسم المكان — اختياري -->
           <div class="mfg">
-            <label><span data-i18n="ownerRequestModal.placeNameLabel">اسم المكان / المول</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
+            <label for="oreq-place-name"><span data-i18n="ownerRequestModal.placeNameLabel">اسم المكان / المول</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <input class="mfg-inp" id="oreq-place-name" placeholder="مثال: مول العرب، نادي الجيزة…" autocomplete="off" data-i18n-attr="placeholder:ownerRequestModal.placeNamePlaceholder">
           </div>
 
           <!-- نوع المكان — اختياري -->
           <div class="mfg">
-            <label><span data-i18n="search.typeLabel">نوع المكان</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
+            <label for="oreq-place-type"><span data-i18n="search.typeLabel">نوع المكان</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <select class="mfg-inp" id="oreq-place-type">
               <option value="" data-i18n="ownerRequestModal.placeTypeChoosePlaceholder">— اختر النوع —</option>
               <option value="mall" data-i18n="ownerRequestModal.placeTypeMall">🏬 مول تجاري</option>
@@ -3330,7 +3330,7 @@
 
           <!-- الباقة المطلوبة — اختياري -->
           <div class="mfg">
-            <label><span data-i18n="ownerRequestModal.planLabel">الباقة التي تريدها</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
+            <label for="oreq-selected-plan"><span data-i18n="ownerRequestModal.planLabel">الباقة التي تريدها</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <select class="mfg-inp" id="oreq-selected-plan">
               <option value="" data-i18n="ownerRequestModal.planChoosePlaceholder">— لم أقرر بعد —</option>
               <option value="starter" data-i18n="ownerRequestModal.planStarter">🆓 Starter — مجاناً</option>
@@ -3341,7 +3341,7 @@
 
           <!-- ملاحظات — اختياري -->
           <div class="mfg">
-            <label><span data-i18n="ownerRequestModal.notesLabel">ملاحظات إضافية</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
+            <label for="oreq-notes"><span data-i18n="ownerRequestModal.notesLabel">ملاحظات إضافية</span> <span style="font-size:11px;color:var(--ink2)" data-i18n="ownerRequestModal.optional">(اختياري)</span></label>
             <textarea class="mfg-inp" id="oreq-notes" rows="2" placeholder="أي تفاصيل تريد إضافتها حول مكانك أو نشاطك…"
               style="resize:vertical" data-i18n-attr="placeholder:ownerRequestModal.notesPlaceholder"></textarea>
           </div>
@@ -3391,7 +3391,7 @@
     setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && user ? { sbClient: sbClient, userId: user.id } : undefined).then(updateLangSwitcherLabel);
   }
   document.addEventListener('DOMContentLoaded', function () {
-    initI18n(['home', 'common', 'spaces', 'bazaars', 'market']).then(updateLangSwitcherLabel);
+    initI18n(['home', 'common', 'spaces', 'market']).then(updateLangSwitcherLabel);
   });
 </script>
 

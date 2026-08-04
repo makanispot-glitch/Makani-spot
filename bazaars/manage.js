@@ -430,6 +430,10 @@ async function loadMyBazaars() {
   document.getElementById('view-list').style.display = 'block';
   renderCards();
   renderOverview();
+  /* البيانات وصلت الآن — أعد تقييم التلميحات (عند الإقلاع تكون القائمة
+     فارغة فيقرأ المحرّك bazaarsCount=0 ولا يميّز «لا بازار بعد» عن «لم يُحمَّل») */
+  _initOnboarding();
+  _obRefresh();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -440,6 +444,37 @@ function applyFilter(filter, btn) {
   document.querySelectorAll('.mn-filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderCards();
+}
+
+/* ── إشارات الإرشاد السياقي ─────────────────────────────────────────
+   حالة صفحة الإدارة كما يراها سجلّ التلميحات. تُقرأ عبر getContext فقط،
+   والمحرّك لا يعرف أيًّا من حقولها. */
+const _obSignals = { hasEditedSlots: false };
+
+function _ob() { return typeof OB !== 'undefined' ? OB : null; }
+
+function _initOnboarding() {
+  if (!_ob()) return;
+  _ob().init({
+    page: 'bz-manage',
+    userId: currentUser?.id || null,
+    t: (k, o) => t('common:' + k, o),
+    getContext: () => ({
+      isOrganizer:      true,   /* الصفحة نفسها محروسة بتوثيق المنظّم */
+      bazaarsCount:     myBazaars.length,
+      pendingBazaars:   myBazaars.filter(b => b.status === 'pending_review').length,
+      publishedBazaars: myBazaars.filter(b => ['published', 'live', 'completed'].includes(b.status)).length,
+      /* لا عمود bookings_count على الجدول — والأماكن المشغولة إشارة مكافئة
+         ومجلوبة أصلًا: أي مكان غير متاح يعني حجزًا وصل (معلّقًا أو مؤكَّدًا). */
+      bookingsCount:    myBazaars.reduce(
+        (n, b) => n + Math.max(0, (Number(b.total_slots) || 0) - (Number(b.available_slots) || 0)), 0),
+      hasEditedSlots:   _obSignals.hasEditedSlots,
+    }),
+  });
+}
+
+function _obRefresh() {
+  if (_ob()) _ob().refresh({ userId: currentUser?.id || null });
 }
 
 function renderCards() {
@@ -718,6 +753,10 @@ function backToList() {
 }
 
 function switchTab(tab) {
+  /* فتح تبويب الأماكن = وصل لخريطة الأماكن، فتلميح «الخريطة جاهزة» أدّى غرضه */
+  if (tab === 'slots') { _obSignals.hasEditedSlots = true; }
+  if (typeof _obRefresh === 'function') _obRefresh();
+
   /* tab buttons */
   document.querySelectorAll('.mn-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`tab-btn-${tab}`)?.classList.add('active');
