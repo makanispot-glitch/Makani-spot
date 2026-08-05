@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="manifest" href="/manifest.json?v=20260804230653">
-<script src="/version.js?v=20260804230653"></script>
+<link rel="manifest" href="/manifest.json?v=20260805124242">
+<script src="/version.js?v=20260805124242"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,9 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260804230653">
+<link rel="stylesheet" href="../style.css?v=20260805124242">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../media-handler.js?v=20260804230653"></script>
+<script src="../media-handler.js?v=20260805124242"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -489,8 +489,8 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
-<script src="../shared/sb-config.js?v=20260804230653"></script>
-<script src="/pwa-install.js?v=20260804230653" defer></script>
+<script src="../shared/sb-config.js?v=20260805124242"></script>
+<script src="/pwa-install.js?v=20260805124242" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;
@@ -550,30 +550,26 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 /* ── Listing Limit Precheck ──
    تحقّق UX فقط لتوفير وقت المستخدم — التطبيق الفعلي والملزم يتم عبر
-   trigger على مستوى قاعدة البيانات (enforce_listing_rate_limit) لا يمكن تجاوزه. */
+   trigger على مستوى قاعدة البيانات (enforce_listing_rate_limit) لا يمكن تجاوزه.
+
+   الأرقام (الحد الأقصى / ساعات الانتظار) وحالة الاستثناء كلها تأتي من
+   my_listing_publishing_status() في القاعدة — نفس مصدر الـ trigger — فلا يوجد
+   رقم مكرَّر هنا يمكن أن يفترق عن القيد الحقيقي. */
 async function paCheckListingLimit() {
   try {
-    const { data: isExempt } = await paSb.rpc('am_i_listing_rate_limit_exempt');
-    if (isExempt) return null;
+    const { data: st, error } = await paSb.rpc('my_listing_publishing_status');
+    if (error || !st || !st.blocked) return null;
 
-    const { count: activeCount } = await paSb.from('listings')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', paUser.id).in('status', ['approved', 'paused']);
-
-    if ((activeCount || 0) >= 3) {
-      return 'لديك حالياً 3 إعلانات نشطة (الحد الأقصى المسموح به). احذف أو أنهِ أحد إعلاناتك أولاً قبل نشر إعلان جديد.';
+    if (st.reason === 'max_active') {
+      return `لديك حالياً ${st.active_count} إعلانات نشطة (الحد الأقصى المسموح به ${st.max_active}). احذف أو أنهِ أحد إعلاناتك أولاً قبل نشر إعلان جديد.`;
     }
 
-    const { data: lastListing } = await paSb.from('listings')
-      .select('created_at').eq('user_id', paUser.id)
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-
-    if (lastListing?.created_at) {
-      const waitMs = (12 * 60 * 60 * 1000) - (Date.now() - new Date(lastListing.created_at).getTime());
+    if (st.reason === 'cooldown' && st.next_allowed_at) {
+      const waitMs = new Date(st.next_allowed_at).getTime() - Date.now();
       if (waitMs > 0) {
         const h = Math.floor(waitMs / 3600000);
         const m = Math.floor((waitMs % 3600000) / 60000);
-        return `يمكنك نشر إعلان جديد بعد مرور 12 ساعة من آخر إعلان قمت بنشره. الوقت المتبقي: ${h} ساعة و${m} دقيقة.`;
+        return `يمكنك نشر إعلان جديد بعد مرور ${st.cooldown_hours} ساعة من آخر إعلان قمت بنشره. الوقت المتبقي: ${h} ساعة و${m} دقيقة.`;
       }
     }
     return null;

@@ -24,6 +24,12 @@ export const R2_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
  * سجل مصادر الوسائط — خريطة مفاتيح R2 كما تُنتجها نقاط الرفع فعليًا.
  * `variants: 3` ⇒ media-handler.uploadImages() تكتب _c/_d/_f وتحفظ _f وحده.
  * `variants: 1` ⇒ uploadSingleImageToR2() تكتب ملفًا واحدًا بلا لواحق.
+ *
+ * `sweepable: false` ⇒ **مصدر معروف لا يُكنس أبدًا**، فئة ثالثة بين «معروف
+ * وقابل للحذف» و«مجهول». سببها أن فهرس المراجع يُبنى من أعمدة القاعدة وحدها،
+ * فمصدر مراجعه خارجها سيبدو يتيمًا 100% ويُحذف حيًّا. تركه مجهولًا كان يعمل
+ * بالمصادفة لكنه يضخّم عدّاد unknown_prefix للأبد فيُدرَّب الأدمن على تجاهل
+ * التحذير — وذاك التحذير هو شبكة الأمان للمفاتيح غير المتوقّعة فعلًا.
  */
 export const MEDIA_SOURCES = [
   { key: 'r2_sweep_official',     prefix: 'official-listings/', label: 'الإعلانات الرسمية',      variants: 3 },
@@ -32,10 +38,24 @@ export const MEDIA_SOURCES = [
   { key: 'r2_sweep_bazaars',      prefix: 'bazaars/',           label: 'البازارات',              variants: 1 },
   { key: 'r2_sweep_avatars',      prefix: 'avatars/',           label: 'صور الحسابات',           variants: 1 },
   { key: 'r2_sweep_covers',       prefix: 'covers/',            label: 'أغلفة الحسابات',         variants: 1 },
+  /* بطاقات هوية طلبات التوثيق — organizer_requests.id_front_path/id_back_path.
+     مفتاح الكنس هذا غير مسجَّل في retention_policies عمدًا، فيبقى enabled غير
+     معرَّف ⇒ لا يُكنس أبدًا. الحذف يتم عبر الطابور وحده عند حذف طلب التوثيق —
+     وهو المسار المضبوط لوثائق حسّاسة: لا حذف إلا بفقد المرجع صراحةً. */
+  { key: 'r2_sweep_id_cards',     prefix: 'id-cards/',          label: 'بطاقات هوية التوثيق',    variants: 1 },
+  /* صور المقالات: مراجعها ملفات Markdown في المستودع (content/articles/) يبنيها
+     build-content.js إلى صفحات ثابتة — لا صفّ قاعدة يشير إليها إطلاقًا. */
+  { key: 'r2_sweep_articles',     prefix: 'articles/',          label: 'صور المقالات',           variants: 3,
+    sweepable: false, sweepNote: 'مراجعها ملفات Markdown في المستودع لا صفوف قاعدة' },
   /* المشاريع: بلا بادئة اسمية — مجلد بـuuid المستخدم مباشرة على الجذر */
   { key: 'r2_sweep_listings',     prefix: null, match: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\//,
     label: 'المشاريع الجاهزة', variants: 3 },
 ];
+
+/** هل يجوز حذف ملفات هذا المصدر بالكنس أصلًا؟ الغياب يعني نعم (السلوك الأصلي). */
+export function isSweepable(src) {
+  return !!src && src.sweepable !== false;
+}
 
 /**
  * مصادر المراجع تُقرأ من `media_registry` في القاعدة، لا من مصفوفة هنا —

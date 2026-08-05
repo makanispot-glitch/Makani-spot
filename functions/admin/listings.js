@@ -1,3 +1,5 @@
+import { deleteMediaByUrls } from './_media.js';
+
 export async function onRequest(context) {
   try {
     const ADM_SECRET   = context.env.ADM_SECRET;
@@ -94,21 +96,11 @@ export async function onRequest(context) {
         listing = arr && arr[0];
       } catch {}
 
-      /* حذف الصور من R2 */
+      /* حذف الصور من R2 — عبر الوحدة المشتركة، نفس ما يفعله delete-listing.js
+         و delete-announcement.js. كانت هنا نسخة مضمَّنة من الحلقة عرضة للانحراف. */
       const bucket = context.env.BUCKET || context.env['BUCKET-1'];
-      if (bucket && listing) {
-        const R2_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev/';
-        const allUrls = [listing.cover_image, ...(listing.images || [])].filter(Boolean);
-        for (const url of allUrls) {
-          if (typeof url === 'string' && url.startsWith(R2_BASE)) {
-            const path = url.slice(R2_BASE.length);
-            try { await bucket.delete(path); } catch {}
-            if (path.endsWith('_f.webp')) {
-              try { await bucket.delete(path.replace('_f.webp', '_c.webp')); } catch {}
-              try { await bucket.delete(path.replace('_f.webp', '_d.webp')); } catch {}
-            }
-          }
-        }
+      if (listing) {
+        await deleteMediaByUrls(bucket, [listing.cover_image, ...(listing.images || [])], 3);
       }
 
       /* حذف السجل من Supabase */

@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>مكاني Spot — إدارة المحتوى</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../vendor/easymde/easymde.min.css?v=20260804230653">
+<link rel="stylesheet" href="../vendor/easymde/easymde.min.css?v=20260805124242">
 <style>
 /* التوكنات والقشرة منسوخة من admin/spaces-hub.html ليطابق شكل بقية لوحات الأدمن.
    التكرار مقصود — الصفحات الثماني كلها تكرّر الناف، ولا قشرة مشتركة في المنصة. */
@@ -341,9 +341,9 @@ code.k{background:var(--bg5);border-radius:4px;padding:1px 6px;font-family:'IBM 
 
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../vendor/easymde/easymde.min.js?v=20260804230653"></script>
-<script src="../media-handler.js?v=20260804230653"></script>
-<script src="../shared/sb-config.js?v=20260804230653"></script>
+<script src="../vendor/easymde/easymde.min.js?v=20260805124242"></script>
+<script src="../media-handler.js?v=20260805124242"></script>
+<script src="../shared/sb-config.js?v=20260805124242"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════
@@ -381,6 +381,13 @@ let fltStatus = '', fltSearch = '';
 async function doLogout() {
   await db.auth.signOut();
   window.location.replace('./admin-hub.html');
+}
+
+/* توكن الجلسة لرفع الصور — /upload لم يعد يقبل الـanon key: يتحقق من الجلسة
+   ثم من is_admin() قبل السماح بالكتابة تحت البادئات الإدارية مثل articles/ */
+async function upToken() {
+  const { data: { session } } = await db.auth.getSession();
+  return session?.access_token || '';
 }
 
 (async function () {
@@ -1195,7 +1202,7 @@ async function handleInlineImage(ev) {
   toast('جارٍ ضغط الصورة ورفعها…', 'i');
   try {
     const year = new Date().getFullYear();
-    const urls = await uploadImages([file], `articles/${year}/${slug}`, null, SB_KEY);
+    const urls = await uploadImages([file], `articles/${year}/${slug}`, null, await upToken());
     const alt = (file.name || 'صورة').replace(/\.[^.]+$/, '');
     insertAtCursor(`\n![${alt}](${urls[0]})\n`);
     toast('تم إدراج الصورة ✅', 's');
@@ -1337,14 +1344,15 @@ async function handleCoverUpload(ev) {
     const folder = `articles/${year}/${slug}`;
 
     /* ١) النسخ الثلاث WebP عبر المكتبة المشتركة (نفس ما تفعله المساحات والبازارات) */
-    const urls = await uploadImages([file], folder, null, SB_KEY);
+    const tok  = await upToken();
+    const urls = await uploadImages([file], folder, null, tok);
     coverUrl = urls[0];
 
     /* ٢) نسخة OG منفصلة بمقاس 1200×630 JPEG (uploadToR2 يُرجع الرابط كنص) */
     setSt('جارٍ تجهيز صورة المشاركة…');
     try {
       const jpg = await makeOgJpeg(file);
-      ogUrl = await uploadToR2(jpg, `${folder}/og.jpg`, SB_KEY);
+      ogUrl = await uploadToR2(jpg, `${folder}/og.jpg`, tok);
     } catch (e) {
       ogUrl = '';
       console.warn('OG image failed:', e);

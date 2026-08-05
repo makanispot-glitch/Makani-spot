@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="manifest" href="/manifest.json?v=20260804230653">
-<script src="/version.js?v=20260804230653"></script>
+<link rel="manifest" href="/manifest.json?v=20260805124242">
+<script src="/version.js?v=20260805124242"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -270,6 +270,27 @@ tr:hover td { background: #FAFAFA; }
 .adm-settings-row input { width:140px; padding:9px 12px; border:1.5px solid #E8E8E8; border-radius:8px; font-family:'Cairo',sans-serif; font-size:14px; outline:none; }
 .adm-settings-row small { display:block; color:#999; font-size:11.5px; margin-top:4px; }
 
+/* ── Publishing exemptions ── */
+.adm-exempt-intro { background:#FFF7ED; border:1px solid #FED7AA; border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.adm-exempt-intro strong { font-size:14px; display:block; margin-bottom:6px; color:#9A3412; }
+.adm-exempt-intro p { font-size:12.5px; color:#7C2D12; line-height:1.8; margin-bottom:6px; }
+.adm-exempt-scope { background:#fff; border:1px solid #FED7AA; border-radius:9px; padding:9px 12px; }
+.adm-exempt-limits { font-size:11.5px !important; color:#9A3412 !important; margin-bottom:0 !important; }
+.adm-exempt-add { background:#fff; border:1px solid #E8E8E8; border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.adm-exempt-add-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+.adm-exempt-add label { display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; color:#333; }
+.adm-exempt-add input, .adm-modal .adm-settings-row input[type=email], .adm-modal .adm-settings-row input[type=text] {
+  width:100%; padding:10px 12px; border:1.5px solid #E8E8E8; border-radius:8px;
+  font-family:'Cairo',sans-serif; font-size:13.5px; outline:none; transition:border .2s;
+}
+.adm-exempt-add input:focus, .adm-modal .adm-settings-row input:focus { border-color:#F36418; }
+.adm-exempt-msg { font-size:12.5px; font-weight:700; margin-top:10px; display:none; }
+.adm-exempt-msg.ok  { display:block; color:#15803D; }
+.adm-exempt-msg.err { display:block; color:#991B1B; }
+.adm-exempt-edit-err { font-size:12.5px; font-weight:700; color:#991B1B; display:none; margin-top:4px; }
+.adm-exempt-email { font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace; font-size:13px; font-weight:700; color:#1A1A1A; direction:ltr; display:inline-block; }
+.adm-exempt-note  { font-size:12.5px; color:#888; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .adm-nav, .adm-stats, .adm-toolbar, .adm-content, .adm-tabs { padding-left: 14px; padding-right: 14px; }
@@ -348,6 +369,7 @@ tr:hover td { background: #FAFAFA; }
     <button class="adm-tab" onclick="admSwitchTab('suspicious',this)">🚨 حسابات مشبوهة</button>
     <button class="adm-tab" onclick="admSwitchTab('reports',this)">🚩 البلاغات <span id="tab-reports-badge"></span></button>
     <button class="adm-tab" onclick="admSwitchTab('settings',this)">⚙️ الحذف التلقائي</button>
+    <button class="adm-tab" onclick="admSwitchTab('exemptions',this)">🎟️ استثناءات النشر</button>
   </div>
 
   <!-- ═══ صفحة: الإعلانات ═══ -->
@@ -381,7 +403,7 @@ tr:hover td { background: #FAFAFA; }
       <button class="adm-filter-btn" onclick="admSetFilter('',this)">الكل</button>
       <input class="adm-search" id="adm-search" type="text" placeholder="بحث بالاسم / البريد / الهاتف / رقم الإعلان / العنوان…" oninput="admFilterTable()">
       <button class="adm-refresh" onclick="admLoad()">🔄 تحديث</button>
-      <button class="adm-refresh" onclick="admAutoCleanup()" title="التنظيف التلقائي بيشتغل يوميًا عبر cron مستقل — الزرار ده لتنظيف فوري إضافي عند الحاجة">🧹 تنظيف الآن</button>
+      <button class="adm-refresh" onclick="admAutoCleanup(this)" title="يشغّل نفس صيانة الـcron اليومية فورًا: حذف الإعلانات المرفوضة/المنتهية/المحذوفة بالمدد المضبوطة في تبويب «الحذف التلقائي» + صورها من R2، وصرف طابور الوسائط، وكنس الصور اليتيمة">🧹 تنظيف الآن</button>
     </div>
 
     <!-- Table -->
@@ -449,6 +471,55 @@ tr:hover td { background: #FAFAFA; }
     </div>
   </div>
 
+  <!-- ═══ صفحة: الإيميلات المستثناة من قيود النشر ═══ -->
+  <div class="adm-page" id="page-exemptions">
+    <div class="adm-content">
+
+      <div class="adm-exempt-intro">
+        <strong>🎟️ الإيميلات المستثناة من قيود النشر</strong>
+        <p>
+          الحسابات المدرَجة هنا تنشر إعلانات <b>بلا حد أقصى وبلا فترة انتظار</b> — مخصّصة
+          لحسابات تعبئة السوق أثناء مرحلة تنشيط المنصة.
+        </p>
+        <p class="adm-exempt-scope">
+          🔒 الاستثناء يُلغي قيود النشر <b>فقط</b> (الحد الأقصى للإعلانات النشطة + فترة الانتظار
+          بين إعلان وآخر). لا يمنح أي صلاحية إدارية، ولا يتخطّى مراجعة الإعلانات، ولا يرفع
+          إيقاف حساب موقوف.
+        </p>
+        <p class="adm-exempt-limits" id="adm-exempt-limits"></p>
+      </div>
+
+      <div class="adm-exempt-add">
+        <div class="adm-exempt-add-row">
+          <div style="flex:1;min-width:220px">
+            <label>البريد الإلكتروني</label>
+            <input type="email" id="exempt-new-email" placeholder="example@gmail.com" autocomplete="off">
+          </div>
+          <div style="flex:1;min-width:220px">
+            <label>ملاحظة (اختياري)</label>
+            <input type="text" id="exempt-new-note" placeholder="مثال: حساب تعبئة السوق" autocomplete="off">
+          </div>
+          <button class="adm-btn adm-btn-approve" style="padding:11px 22px" onclick="admAddExemption()">➕ إضافة</button>
+        </div>
+        <div class="adm-exempt-msg" id="exempt-msg"></div>
+      </div>
+
+      <div class="adm-toolbar" style="padding:0 0 14px 0;border:none">
+        <input class="adm-search" id="exempt-search" type="text"
+               placeholder="بحث بالبريد أو الملاحظة…" oninput="admRenderExemptions()">
+        <button class="adm-refresh" onclick="admLoadExemptions()">🔄 تحديث</button>
+        <span id="exempt-count" style="font-size:12.5px;color:#888;align-self:center"></span>
+      </div>
+
+      <div class="adm-table-wrap">
+        <div id="exemptions-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div><!-- end #adm-main -->
 
 <!-- ── Reject Modal ── -->
@@ -501,6 +572,27 @@ tr:hover td { background: #FAFAFA; }
     <div class="adm-modal-btns">
       <button class="adm-btn adm-btn-preview" onclick="admCloseFeatureModal()">إلغاء</button>
       <button class="adm-btn adm-btn-approve" onclick="admConfirmFeature()" style="padding:10px 20px">✅ تفعيل التمييز</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Exemption Edit Modal ── -->
+<div class="adm-overlay" id="adm-exempt-modal">
+  <div class="adm-modal">
+    <h3>✏️ تعديل استثناء النشر</h3>
+    <input type="hidden" id="exempt-edit-original">
+    <div class="adm-settings-row">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="exempt-edit-email" style="width:100%" autocomplete="off">
+    </div>
+    <div class="adm-settings-row">
+      <label>ملاحظة</label>
+      <input type="text" id="exempt-edit-note" style="width:100%" autocomplete="off">
+    </div>
+    <div class="adm-exempt-edit-err" id="exempt-edit-err"></div>
+    <div class="adm-modal-btns">
+      <button class="adm-btn adm-btn-preview" onclick="admCloseExemptEdit()">إلغاء</button>
+      <button class="adm-btn adm-btn-approve" onclick="admSaveExemptEdit()" style="padding:10px 20px">💾 حفظ</button>
     </div>
   </div>
 </div>
@@ -881,36 +973,47 @@ async function admHardDelete(id) {
   admRender();
 }
 
-/* ── Auto-Cleanup: حذف الإعلانات المرفوضة أو المنتهية بعد 7 أيام ── */
-async function admAutoCleanup() {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 7);
+/* ── تشغيل فوري لصيانة التخزين ──
+   ينادي /admin/run-cleanup الذي يشغّل نفس منطق الـcron حرفيًا (functions/admin/_cleanup.js):
+   نفس المدد من الإعدادات، ونفس احترام علم protected، ونفس كنس الصور من R2.
+   سابقًا كان هذا الزر نسخة ثانية في المتصفح بـ٧ أيام مثبَّتة تتجاهل الإعدادات
+   وعلم protected ولا ترى إلا الصفوف المحمَّلة في الجدول وقتها. */
+async function admAutoCleanup(btn) {
+  const old = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التنظيف…'; }
 
-  const toDelete = admAll.filter(l => {
-    if (!['rejected', 'expired'].includes(l.status)) return false;
-    const ts = l.updated_at || l.created_at;
-    return ts && new Date(ts) < cutoff;
-  });
+  try {
+    const res = await fetch('/admin/run-cleanup', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+    });
 
-  for (const l of toDelete) {
-    const token = admGetToken();
-    try {
-      await fetch('/admin/listings', {
-        method:  'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body:    JSON.stringify({ id: l.id }),
-      });
-      admAll = admAll.filter(x => x.id !== l.id);
-    } catch {}
+    if (res.status === 401) { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); return; }
+
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok) { alert('⚠️ تعذّر التنظيف: ' + (r.error || res.statusText)); return; }
+
+    const by    = r.stale_by_status || {};
+    const bytes = r.orphan_bytes_deleted
+      ? ` (${(r.orphan_bytes_deleted / 1048576).toFixed(1)} MB)` : '';
+
+    const lines = [
+      `🗑️ إعلانات محذوفة نهائيًا: ${r.stale_deleted || 0}`
+        + ` — مرفوضة ${by.rejected || 0} · منتهية ${by.expired || 0} · محذوفة ${by.deleted || 0}`,
+      `📦 طابور الوسائط: صُرِف ${r.queue_deleted || 0} · مؤجَّل ${r.queue_skipped || 0}`,
+      `🧹 صور يتيمة: ${r.orphans_found || 0} مرشّحة · ${r.orphans_deleted || 0} محذوفة${bytes}`,
+    ];
+    if (r.unknown_prefix) lines.push(`❓ ${r.unknown_prefix} مفتاح مجهول البادئة — لم يُحذف منه شيء`);
+    if (r.aborted)        lines.push('⚠️ أُجهض الكنس: تعذّر بناء مجموعة المراجع كاملة — لم يُحذف أي ملف');
+    if (r.errors?.length) lines.push('\n⚠️ ' + r.errors.slice(0, 3).join('\n⚠️ '));
+
+    alert(lines.join('\n'));
+    admLoad();
+  } catch {
+    alert('⚠️ تعذّر الاتصال بالخادم');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = old; }
   }
-
-  if (toDelete.length > 0) {
-    admUpdateStats();
-    admRender();
-  }
-  alert(toDelete.length > 0
-    ? `✅ تم حذف ${toDelete.length} إعلان نهائيًا`
-    : 'لا توجد إعلانات مرفوضة/منتهية أقدم من 7 أيام حاليًا');
 }
 
 /* ── Tabs ── */
@@ -925,6 +1028,7 @@ function admSwitchTab(tab, el) {
   if (tab === 'suspicious')  admLoadSuspicious();
   if (tab === 'reports')     admLoadReports(null);
   if (tab === 'settings')    admLoadSettings();
+  if (tab === 'exemptions')  admLoadExemptions();
 }
 
 function admFilterBySeller(email) {
@@ -1111,6 +1215,11 @@ async function admLoadSettings() {
         <small>الإعلان الذي تنتهي مدة عرضه (60 يوماً) يُحذف نهائياً تلقائياً بعد هذه المدة.</small>
       </div>
       <div class="adm-settings-row">
+        <label>حذف الإعلانات التي حذفها أصحابها بعد (أيام)</label>
+        <input type="number" min="1" id="set-deleted-days" value="${s.deleted_retention_days ?? 7}">
+        <small>إعلان ضغط صاحبه «حذف» ولم يكتمل حذفه نهائياً وقتها (انقطاع شبكة أو خطأ خادم) — يُحذف هو وصوره بعد هذه المدة. بدون هذه السياسة كان يبقى مخفياً عن الجميع ومستهلكاً للتخزين للأبد.</small>
+      </div>
+      <div class="adm-settings-row">
         <label>مهلة صور الرفع غير المكتمل (ساعات)</label>
         <input type="number" min="1" id="set-orphan-hours" value="${s.orphan_image_grace_hours ?? 24}">
         <small>صور تُرفع أثناء تعبئة نموذج نشر إعلان ثم لا يُكمل المستخدم النشر — تُحذف من R2 بعد هذه المهلة.</small>
@@ -1127,6 +1236,7 @@ async function admSaveSettings() {
   const body = {
     reject_retention_days:    Number(document.getElementById('set-reject-days').value) || 5,
     expired_retention_days:   Number(document.getElementById('set-expired-days').value) || 7,
+    deleted_retention_days:   Number(document.getElementById('set-deleted-days').value) || 7,
     orphan_image_grace_hours: Number(document.getElementById('set-orphan-hours').value) || 24,
   };
   try {
@@ -1140,6 +1250,187 @@ async function admSaveSettings() {
     msg.style.display = 'inline';
     setTimeout(() => msg.style.display = 'none', 2500);
   } catch { alert('تعذّر الاتصال بالخادم'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   🎟️ الإيميلات المستثناة من قيود النشر
+   القائمة تعيش في جدول واحد بالقاعدة (listing_rate_limit_exempt) يقرأه
+   الـ trigger مباشرةً — فأي إضافة/حذف هنا تسري على النشر فورًا بلا نشر كود.
+   ══════════════════════════════════════════════════════════════════ */
+
+let admExemptions = [];
+
+async function admLoadExemptions() {
+  const cont = document.getElementById('exemptions-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+  try {
+    const res  = await fetch('/admin/listing-exemptions', { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const data = await res.json();
+    if (res.status === 401) { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); return; }
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(data.error || 'خطأ في التحميل')}</div>`; return; }
+
+    admExemptions = Array.isArray(data.rows) ? data.rows : [];
+
+    /* الأرقام تُعرض كما هي في القاعدة — لا تُكتب هنا حتى لا تفترق عن الـ trigger */
+    const lim = document.getElementById('adm-exempt-limits');
+    lim.textContent = (data.max_active != null && data.cooldown_hours != null)
+      ? `القيود السارية على باقي الحسابات: ${data.max_active} إعلانات نشطة كحد أقصى، وانتظار ${data.cooldown_hours} ساعة بين إعلان وآخر.`
+      : '';
+
+    admRenderExemptions();
+  } catch {
+    cont.innerHTML = '<div class="adm-empty-tab">⚠️ تعذّر الاتصال بالخادم</div>';
+  }
+}
+
+function admRenderExemptions() {
+  const cont = document.getElementById('exemptions-container');
+  const q    = (document.getElementById('exempt-search').value || '').trim().toLowerCase();
+
+  const rows = q
+    ? admExemptions.filter(e =>
+        String(e.email || '').toLowerCase().includes(q) ||
+        String(e.note  || '').toLowerCase().includes(q))
+    : admExemptions;
+
+  const activeCount = admExemptions.filter(e => e.is_active !== false).length;
+  document.getElementById('exempt-count').textContent =
+    `${admExemptions.length} بريد — ${activeCount} مفعّل` + (q ? ` (ظهر ${rows.length})` : '');
+
+  if (!admExemptions.length) {
+    cont.innerHTML = '<div class="adm-empty-tab">لا توجد إيميلات مستثناة — كل الحسابات تخضع لقيود النشر</div>';
+    return;
+  }
+  if (!rows.length) {
+    cont.innerHTML = '<div class="adm-empty-tab">لا نتائج مطابقة للبحث</div>';
+    return;
+  }
+
+  cont.innerHTML = `
+    <table class="adm-simple-table">
+      <thead><tr>
+        <th>البريد الإلكتروني</th><th>ملاحظة</th><th>تاريخ الإضافة</th><th>الحالة</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody>${rows.map(e => {
+        const email  = escHtml(e.email || '');
+        const attr   = escHtml(JSON.stringify(String(e.email || '')));
+        const active = e.is_active !== false;
+        const added  = e.created_at
+          ? new Date(e.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' })
+          : '—';
+        return `<tr>
+          <td><span class="adm-exempt-email">${email}</span></td>
+          <td><span class="adm-exempt-note">${escHtml(e.note || '—')}</span></td>
+          <td style="font-size:12.5px;color:#888">${escHtml(added)}</td>
+          <td><span class="adm-status ${active ? 'adm-status-approved' : 'adm-status-expired'}">${active ? 'مفعّل' : 'موقوف'}</span></td>
+          <td><div class="adm-actions">
+            <button class="adm-btn adm-btn-preview" onclick="admOpenExemptEdit(${attr})">✏️ تعديل</button>
+            <button class="adm-btn ${active ? 'adm-btn-delete' : 'adm-btn-approve'}" onclick="admToggleExemption(${attr}, ${active ? 'false' : 'true'})">${active ? '⏸ إيقاف' : '▶️ تفعيل'}</button>
+            <button class="adm-btn adm-btn-reject" onclick="admDeleteExemption(${attr})">🗑️ حذف</button>
+          </div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function admExemptMsg(text, kind) {
+  const el = document.getElementById('exempt-msg');
+  el.textContent = text;
+  el.className   = 'adm-exempt-msg ' + kind;
+  if (kind === 'ok') setTimeout(() => { el.className = 'adm-exempt-msg'; }, 3000);
+}
+
+async function admAddExemption() {
+  const emailEl = document.getElementById('exempt-new-email');
+  const noteEl  = document.getElementById('exempt-new-note');
+  const email   = emailEl.value.trim().toLowerCase();
+
+  if (!email) { admExemptMsg('اكتب البريد الإلكتروني أولاً', 'err'); return; }
+
+  try {
+    const res  = await fetch('/admin/listing-exemptions', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ email, note: noteEl.value.trim() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { admExemptMsg('⚠️ ' + (data.error || 'تعذّرت الإضافة'), 'err'); return; }
+
+    emailEl.value = '';
+    noteEl.value  = '';
+    admExemptMsg('✅ تمت إضافة ' + email + ' — الاستثناء ساري الآن', 'ok');
+    admLoadExemptions();
+  } catch { admExemptMsg('⚠️ تعذّر الاتصال بالخادم', 'err'); }
+}
+
+function admOpenExemptEdit(email) {
+  const row = admExemptions.find(e => e.email === email);
+  document.getElementById('exempt-edit-original').value = email;
+  document.getElementById('exempt-edit-email').value    = email;
+  document.getElementById('exempt-edit-note').value     = row?.note || '';
+  document.getElementById('exempt-edit-err').style.display = 'none';
+  document.getElementById('adm-exempt-modal').classList.add('open');
+}
+
+function admCloseExemptEdit() {
+  document.getElementById('adm-exempt-modal').classList.remove('open');
+}
+
+async function admSaveExemptEdit() {
+  const original = document.getElementById('exempt-edit-original').value;
+  const nextMail = document.getElementById('exempt-edit-email').value.trim().toLowerCase();
+  const note     = document.getElementById('exempt-edit-note').value.trim();
+  const errEl    = document.getElementById('exempt-edit-err');
+
+  if (!nextMail) { errEl.textContent = 'البريد الإلكتروني مطلوب'; errEl.style.display = 'block'; return; }
+
+  const body = { email: original, note };
+  if (nextMail !== original) body.new_email = nextMail;
+
+  try {
+    const res  = await fetch('/admin/listing-exemptions', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { errEl.textContent = data.error || 'تعذّر الحفظ'; errEl.style.display = 'block'; return; }
+
+    admCloseExemptEdit();
+    admExemptMsg('✅ تم تحديث الاستثناء', 'ok');
+    admLoadExemptions();
+  } catch { errEl.textContent = 'تعذّر الاتصال بالخادم'; errEl.style.display = 'block'; }
+}
+
+async function admToggleExemption(email, activate) {
+  try {
+    const res  = await fetch('/admin/listing-exemptions', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ email, is_active: activate }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { admExemptMsg('⚠️ ' + (data.error || 'تعذّر التغيير'), 'err'); return; }
+
+    admExemptMsg(activate ? '✅ تم تفعيل الاستثناء' : '⏸ تم إيقاف الاستثناء — الحساب يخضع لقيود النشر الآن', 'ok');
+    admLoadExemptions();
+  } catch { admExemptMsg('⚠️ تعذّر الاتصال بالخادم', 'err'); }
+}
+
+async function admDeleteExemption(email) {
+  if (!confirm(`حذف ${email} من قائمة الاستثناءات؟\n\nسيخضع هذا الحساب لقيود النشر العادية فوراً.`)) return;
+  try {
+    const res  = await fetch('/admin/listing-exemptions', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ email }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { admExemptMsg('⚠️ ' + (data.error || 'تعذّر الحذف'), 'err'); return; }
+
+    admExemptMsg('🗑️ تم حذف ' + email + ' من القائمة', 'ok');
+    admLoadExemptions();
+  } catch { admExemptMsg('⚠️ تعذّر الاتصال بالخادم', 'err'); }
 }
 
 /* ── بروفايل صاحب الإعلان + التعليق ── */

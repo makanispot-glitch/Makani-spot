@@ -1610,7 +1610,7 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260804230653"></script>
+<script src="../shared/sb-config.js?v=20260805124242"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -1671,8 +1671,10 @@ async function handleNbImgUpload(inputEl) {
   if (ico)      ico.style.display  = 'none';
 
   try {
-    /* الأدمن يستخدم الـ anon key مباشرة — لا حاجة لـ session */
-    const token = SUPABASE_KEY;
+    /* توكن الجلسة لا الـanon key — /upload يتحقق من is_admin() قبل السماح
+       بالكتابة تحت bazaars/ بلا uuid مالك (مسار إداري) */
+    const { data: { session } } = await db.auth.getSession();
+    const token = session?.access_token || '';
 
     const blob   = await _compressToWebP(file);
     const rand   = Math.random().toString(36).slice(2, 6);
@@ -4262,9 +4264,12 @@ async function handleSupNbImgUpload(inputEl) {
     form.append('file', new File([blob], 'image.webp', { type: 'image/webp' }));
     form.append('path', r2Path);
 
+    /* توكن الجلسة لا الـanon key — انظر التعليق في رفع صورة البازار أعلاه */
+    const { data: { session } } = await db.auth.getSession();
+
     const res  = await fetch('/upload', {
       method:  'POST',
-      headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      headers: { 'Authorization': `Bearer ${session?.access_token || ''}` },
       body:    form,
     });
     const data = await res.json().catch(() => ({}));

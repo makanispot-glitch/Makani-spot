@@ -1558,7 +1558,11 @@ function eqBuildMyCard(l) {
    ================================================================ */
 
 async function eqRenew(id) {
-  const { data: listing } = await eqSb.from('listings').select('renewal_count, expires_at').eq('id', id).single();
+  /* التقييد بـ user_id هنا وفي التحديث أدناه — بقية عمليات هذا الملف
+     (التعديل/الإيقاف/الحذف) تقيّده أصلًا، وكان التجديد وحده يعتمد على RLS فقط. */
+  const { data: listing } = await eqSb.from('listings')
+    .select('renewal_count, expires_at')
+    .eq('id', id).eq('user_id', eqUser.id).single();
   if (!listing) return;
 
   if ((listing.renewal_count || 0) >= MAX_RENEWALS) {
@@ -1575,7 +1579,7 @@ async function eqRenew(id) {
     expires_at:    newExpiry.toISOString(),
     renewal_count: (listing.renewal_count || 0) + 1,
     status:        'approved',
-  }).eq('id', id);
+  }).eq('id', id).eq('user_id', eqUser.id);
 
   if (error) { alert(t('renew.error')); return; }
 
