@@ -79,6 +79,16 @@ let mpCurrentSpaces  = [];   // مساحات الصفحة الحالية (من �
 let mpTotalCount     = 0;    // إجمالي المطابق فعليًا في القاعدة
 let annCurrentFiltered = []; // الإعلانات بعد الفلترة المحلية (مجموعة صغيرة، تُدار من الأدمن)
 
+/* هل اكتمل أول جلب فعلي؟ الحالة الفارغة **نتيجةُ بحثٍ تمّ**، لا حالةَ بدء — والفرق
+   ليس تجميليًا: mpCurrentSpaces تبدأ [] فأي رسم قبل أول جلب يقرأها كـ«صفر نتائج».
+   makani:locale-changed يُطلق مرة تلقائيًا في نهاية initI18n (shared/i18n.js)، وملفات
+   locales تأتي من كاش الـSW في أجزاء من الثانية بينما loadData تنتظر أربع رحلات
+   Supabase متسلسلة — فكان المستمع يمسح الـspinner ويضع «مش لاقيين مساحات» لأكثر من
+   ثانية قبل أن يبدأ البحث أصلًا. العلَم يفصل «لم نبحث بعد» عن «بحثنا فلم نجد».
+   ملاحظة: علَم لا فحصُ طولٍ (mpCurrentSpaces.length) — فحص الطول كان سيمنع إعادة
+   ترجمة الحالة الفارغة المشروعة عند تبديل اللغة بعد فلترة أعطت صفرًا. */
+let mpDataReady = false;
+
 const PLACE_TYPES = [
   { id: 'mall',            label: '🏬 مول تجاري' },
   { id: 'admin_mall',      label: '🏢 مول إداري' },
@@ -355,9 +365,24 @@ function subscribeSpacesRealtime() {
   setInterval(silentRefreshSpaces, 300000);
 }
 
+/* حارس تزامن شبكة المساحات — يضمن أن آخر طلب أُطلق هو وحده الذي يكتب
+   على الحالة والواجهة. مسار واحد ⇒ حارس واحد (shared/race-guard.js). */
+const _mpFilterRace = createRaceGuard();
+
 /* ── يطبّق الفلاتر الحالية عبر بحث خادمي موحّد (search_public_spaces) —
-   مشترك بين التحميل الأول وsilentRefresh والـ Realtime وتغيير الصفحة/الفلتر ── */
+   مشترك بين التحميل الأول وsilentRefresh والـ Realtime وتغيير الصفحة/الفلتر.
+
+   مبنية على ثلاث مراحل صريحة — لقطة ← حساب ← التزام — لأن الدالة تُستدعى
+   من مصادر متعددة قد تتداخل (تغيير فلتر سريع، حدث Realtime، polling كل ٥
+   دقائق، ترقيم). بلا هذا الفصل كانت تكتب على الحالة العامة قبل انتظار
+   الشبكة (annCurrentFiltered خاصةً)، فيسرّب طلبٌ متجاوَز نصفَ حالته:
+   إعلانات الطلب الجديد مع مساحات الطلب القديم في نفس الرسمة. ── */
 async function _applyCurrentFilters() {
+  const isLatest = _mpFilterRace.start();
+
+  // ── ١) لقطة المدخلات ───────────────────────────────────────────────
+  // تُقرأ مرة واحدة تزامنيًا: DOM وmpPage/mpContentFilter قد تتغيّر أثناء
+  // انتظار الشبكة، والطلب يجب أن يبقى متّسقًا مع الحالة التي أُطلق عليها.
   const region    = document.getElementById('mp-region')?.value    || '';
   const maxVal    = parseInt(document.getElementById('mp-slider-max')?.value) || 999999;
   const sort      = document.getElementById('mp-sort')?.value      || 'default';
@@ -365,25 +390,27 @@ async function _applyCurrentFilters() {
   const actFlt    = document.getElementById('mp-act-sel')?.value   || '';
   const annClsFlt = document.getElementById('mp-ann-class')?.value || '';
   const sliderMax = parseInt(document.getElementById('mp-slider-max')?.max || 50000);
+  const contentFlt = mpContentFilter;
+  const page       = mpPage;
 
-  // ── إعلانات (مناقصات + مزادات + إعلانات حكومية) — مجموعة صغيرة تُدار من
-  //    الأدمن، تبقى فلترة محلية كما هي (ليست جزءًا من مشكلة الحجم) ──
-  annCurrentFiltered = [];
-  if (mpContentFilter !== 'spaces') {
+  // ── ٢) الحساب في متغيّرات محلية — لا كتابة على أي حالة مشتركة هنا ──
+  // إعلانات (مناقصات + مزادات + إعلانات حكومية): مجموعة صغيرة تُدار من
+  // الأدمن، تبقى فلترة محلية كما هي (ليست جزءًا من مشكلة الحجم).
+  let nextAnns = [];
+  if (contentFlt !== 'spaces') {
     let annData = [...ANNOUNCEMENTS];
     if (region)    annData = annData.filter(a => a.governorate === region);
     if (placeFlt)  annData = annData.filter(a => a.placeType === placeFlt);
     if (actFlt)    annData = annData.filter(a => a.activityType === actFlt);
     if (annClsFlt) annData = annData.filter(a => a.classification === annClsFlt);
     annData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    annCurrentFiltered = annData;
+    nextAnns = annData;
   }
 
-  // ── مساحات: بحث/فلترة/ترتيب/ترقيم خادمي — نفس مصدر الرئيسية ──
-  if (mpContentFilter === 'announcements') {
-    mpCurrentSpaces = [];
-    mpTotalCount = 0;
-  } else {
+  // مساحات: بحث/فلترة/ترتيب/ترقيم خادمي — نفس مصدر الرئيسية
+  let nextSpaces = [];
+  let nextTotal  = 0;
+  if (contentFlt !== 'announcements') {
     try {
       const { items, totalCount } = await searchPublicSpaces(sbClient, {
         region:     region || null,
@@ -392,15 +419,49 @@ async function _applyCurrentFilters() {
         maxPrice:   maxVal < sliderMax ? maxVal : null,
         sort,
         limit:      MP_PER_PAGE,
-        offset:     (mpPage - 1) * MP_PER_PAGE,
+        offset:     (page - 1) * MP_PER_PAGE,
       });
-      mpCurrentSpaces = items;
-      mpTotalCount = totalCount;
+      nextSpaces = items;
+      nextTotal  = totalCount;
     } catch (err) {
+      /* حتى شاشة الخطأ تمرّ بالبوابة: فشلُ طلبٍ متجاوَز لا يصحّ أن يمحو
+         نتيجةً أحدث نجحت بالفعل. */
+      if (!isLatest()) return;
       showLoadingState('mp-grid', true, err.message || t('loading.errorSpaces'));
       return;
     }
   }
+
+  // ── ٣) بوابة الالتزام ──────────────────────────────────────────────
+  // تجاوزَنا طلبٌ أحدث ⇒ ننسحب بلا أثر: لا حالة تُكتب ولا شاشة تُرسم.
+  if (!isLatest()) return;
+
+  /* ── تصحيح صفحة خارج المدى ──────────────────────────────────────────
+     صفر مساحات مع page > 1 لا يعني «لا نتائج» بل «الصفحة لم تعد موجودة»:
+     تقلّص الإجمالي (حذف/إخفاء مساحة عبر Realtime أو polling، وهو المسار
+     الوحيد الذي لا يصفّر mpPage عمدًا لاحترام موضع المستخدم).
+
+     ولماذا لا نكتفي بحصر mpPage؟ لأن الحصر يحتاج الإجمالي الجديد، والـRPC
+     يحمل total_count على الصفوف — فصفر صفوف = لا إجمالي، وmpTotalCount
+     يصير 0 فتحسب renderMpPagination صفحةً واحدة وتمحو كل الأزرار: يعلق
+     المستخدم في فراغ بلا أي مخرج للتنقّل. لذلك التصحيح يلزمه جلب فعلي.
+
+     يقين الانتهاء: النداء التصحيحي يبدأ بـ mpPage = 1 فيقرأ page = 1،
+     والشرط يتطلّب page > 1 ⇒ يستحيل أن يتكرّر. جلب تصحيحي واحد كحد أقصى،
+     ولا يقع إلا في حالة غير صالحة أصلًا (لا كلفة على المسار الطبيعي).
+
+     وقوعه بعد بوابة الالتزام مقصود: طلبٌ متجاوَز لا يستحق جلبًا تصحيحيًا. */
+  if (contentFlt !== 'announcements' && page > 1 && nextSpaces.length === 0) {
+    mpPage = 1;
+    return _applyCurrentFilters();
+  }
+
+  annCurrentFiltered = nextAnns;
+  mpCurrentSpaces    = nextSpaces;
+  mpTotalCount       = nextTotal;
+  /* أول جلب ناجح اكتمل (بما فيه فرع «الإعلانات فقط» الذي يُفرّغ المساحات عمدًا).
+     خارج مسار catch: لو فشل الجلب تبقى شاشة الخطأ ولا تُستبدل بـ«لا نتائج». */
+  mpDataReady        = true;
 
   renderMarketplace();
   _updateResultsCounter();
@@ -414,6 +475,7 @@ async function _applyCurrentFilters() {
 function _updateResultsCounter() {
   const counter = document.getElementById('mp-count');
   if (!counter) return;
+  if (!mpDataReady) return;   // «0 مساحة» قبل أول بحث رقمٌ كاذب، لا حقيقة
   const annCnt = annCurrentFiltered.length;
   const spCnt  = mpTotalCount;
   if (annCnt && spCnt) counter.textContent = t('results.resultsCount', { count: spCnt + annCnt });
@@ -1242,10 +1304,14 @@ function updateMpChips() {
 function renderMarketplace() {
   const grid = document.getElementById('mp-grid');
   if (!grid) return;
+  /* الحارس هنا لا في المستمع وحده: هذه هي البوابة الوحيدة للحالة الفارغة، فوضعه
+     في المصدر يغطّي أي مستدعٍ لاحق تلقائيًا. الـspinner (showLoadingState من
+     loadData) يبقى هو المعروض حتى يصل أول جلب. */
+  if (!mpDataReady) return;
 
   // الإعلانات تُعرض فقط على آخر صفحة مساحات (أو لا مساحات إطلاقًا) — لا تتكرر
   // عبر الصفحات، ولا تحتاج ترقيمها الخاص لأنها مجموعة صغيرة مُدارة من الأدمن
-  const totalSpacesPages = Math.max(1, Math.ceil(mpTotalCount / MP_PER_PAGE));
+  const totalSpacesPages = totalPagesOf(mpTotalCount, MP_PER_PAGE);
   const annForThisPage = (mpPage >= totalSpacesPages) ? annCurrentFiltered : [];
   const pageData = [...mpCurrentSpaces, ...annForThisPage];
 
@@ -1517,7 +1583,7 @@ function renderMpPagination() {
   const cont = document.getElementById('mp-pagination');
   if (!cont) return;
 
-  const totalPages = Math.max(1, Math.ceil(mpTotalCount / MP_PER_PAGE));
+  const totalPages = totalPagesOf(mpTotalCount, MP_PER_PAGE);
   let html = '';
 
   if (totalPages > 1) {
@@ -1535,8 +1601,11 @@ function renderMpPagination() {
   cont.innerHTML = html;
 }
 
+/* الحصر وقائي: يمنع الخروج عن المدى ابتداءً بدل انتظار التصحيح بعد جلب
+   فاشل. الأزرار المرسومة لا تتجاوز المدى أصلًا، لكن الدالة عامة (onclick
+   في HTML مولَّد) ويجب أن تصمد لأي رقم يصلها. */
 function mpGoPage(n) {
-  mpPage = n;
+  mpPage = clampPage(n, mpTotalCount, MP_PER_PAGE);
   _applyCurrentFilters();
   document.getElementById('mp-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

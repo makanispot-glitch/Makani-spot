@@ -73,6 +73,12 @@ let eqUser           = null;
 let eqAvatarUrl      = null;
 let eqListings       = [];
 let eqFiltered       = [];
+/* هل اكتمل أول جلب فعلي؟ نفس علّة spaces/app.js: makani:locale-changed يُطلق مرة
+   عند اكتمال initI18n، وملفات locales تأتي من كاش الـSW قبل استعلام listings
+   بمئات المللي‑ثانية — فكان eqRenderGrid يقرأ eqFiltered=[] ويرسم الحالة الفارغة
+   فوق الـspinner. يُرفع في eqLoadListings وحدها (لا في eqApplyFilters) لأن الأخيرة
+   يستدعيها كل تفاعل فلترة وقد يسبق أول جلب. */
+let eqDataReady      = false;
 let eqOffset         = 0;     // offset للجلب التالي من الخادم
 let eqHasMore        = false; // هل يوجد المزيد على الخادم
 let eqActiveCategory = '';
@@ -477,6 +483,7 @@ async function eqLoadListings(append = false) {
     eqOffset += items.length;
 
     eqListings = append ? [...eqListings, ...items] : items;
+    eqDataReady = true;   // خارج catch: لو فشل الجلب تبقى شاشة الخطأ لا «لا نتائج»
     eqApplyFilters();
   } catch (e) {
     eqShowError(e.message);
@@ -1227,6 +1234,9 @@ function eqRenderGrid() {
   const more  = document.getElementById('eq-load-more');
 
   if (!grid) return;
+  /* الحارس في المصدر لا في المستمع: هذه البوابة الوحيدة للحالة الفارغة، فأي
+     مستدعٍ لاحق يصير مغطّى تلقائيًا. eqShowLoading يبقى معروضًا حتى أول جلب. */
+  if (!eqDataReady) return;
 
   if (eqFiltered.length === 0) {
     _eqRenderDynamicEmpty(grid);
