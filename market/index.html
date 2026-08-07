@@ -19,8 +19,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260806170401">
-<script src="/version.js?v=20260806170401"></script>
+<link rel="manifest" href="/manifest.json?v=20260807172912">
+<script src="/version.js?v=20260807172912"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,16 +36,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260806170401">
+<link rel="stylesheet" href="/style.css?v=20260807172912">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260806170401" defer></script>
-<script src="/pwa-install.js?v=20260806170401" defer></script>
+<script src="/shared/sb-config.js?v=20260807172912" defer></script>
+<script src="/pwa-install.js?v=20260807172912" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260806170401" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260806170401" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260806170401" defer></script>
-<script src="/shared/i18n.js?v=20260806170401" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260807172912" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260807172912" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260807172912" defer></script>
+<script src="/shared/i18n.js?v=20260807172912" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -222,60 +222,229 @@
    الظل يظهر فقط في حالة is-stuck (تُحدَّد بـ IntersectionObserver) عشان الشريط
    يبان جزء طبيعي من الصفحة في وضعه العادي، ويُعلن بصريًا لما يبقى "ملتصق" فعلاً */
 .eq-filters-bar {
-  background: var(--surface);
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--border);
   position: sticky; top: var(--eq-nav-h, 68px); z-index: 150;
   box-shadow: none;
-  transition: box-shadow var(--dur-fast) var(--ease-out);
+  transition: box-shadow var(--dur-base) var(--ease-out), padding var(--dur-base) var(--ease-out);
 }
 .eq-filters-bar.is-stuck {
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 6px 20px rgba(14,18,24,0.06);
 }
+/* عند الالتصاق يخف الشريط فلا يبتلع الشاشة أثناء التصفّح —
+   تغيير كثافة لا وظيفة: كل الشرائح تفضل ظاهرة وقابلة للضغط */
+.eq-filters-bar.is-stuck .eqf-cats { padding-top: 7px; gap: 5px; }
+.eq-filters-bar.is-stuck .eqf-chip { padding: 4px 12px; font-size: 12.5px; min-height: 28px; }
+.eq-filters-bar.is-stuck .eqf-chip-n { padding: 2px 5px; font-size: 10px; }
+.eq-filters-bar.is-stuck .eqf-controls { padding: 7px 0 8px; }
+.eq-filters-bar.is-stuck .eqf-select,
+.eq-filters-bar.is-stuck .eqf-pill { height: 34px; min-height: 34px; }
 .eq-filters-inner {
   max-width: 1400px; margin: 0 auto; padding: 0 32px;
 }
 
-/* ── Category Tabs ── */
-.eq-tabs-wrap {
-  display: flex; gap: 6px; overflow-x: auto;
-  padding: 12px 0 8px;
-  scrollbar-width: none;
+/* ══════════════════════════════════════════════════════════════
+   🎛️  مكوّنات الفلتر (.eqf-*) — مشتركة بين شريط الديسكتوب ودرج الموبايل
+   لغة بصرية واحدة: حواف دائرية بالكامل، حدود شعرية 1px، تعبئة دافئة
+   خفيفة بدل المربعات ذات الحدّ السميك، وظلال منخفضة الحدّة.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── شرائح التصنيف — تلتف على أسطر، فكلها ظاهرة بلا سكرول أفقي ── */
+.eqf-cats {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 0 0;
 }
-.eq-tabs-wrap::-webkit-scrollbar { display: none; }
-.eq-tab {
-  padding: 7px 18px; border-radius: var(--radius-pill);
-  border: 1.5px solid var(--border);
+/* min-height صريح لكل مكوّنات الفلتر: style.css المشترك بيفرض
+   button { min-height: 44px } لأجل أهداف اللمس، وده كان بيضخّم كل شريحة
+   لـ44px فيبقى صفّا الشرائح وحدهما 104px داخل شريط لاصق. أهداف اللمس
+   الأكبر محفوظة في الدرج (نسخة الموبايل) بقاعدة مستقلة تحت. */
+.eqf-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 32px;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
   background: var(--surface); color: var(--fg-2);
   font-family: var(--font-display); font-size: 13px; font-weight: 700;
-  cursor: pointer; white-space: nowrap;
-  transition: all var(--dur-fast) var(--ease-out);
+  cursor: pointer; white-space: nowrap; line-height: 1.35;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
-.eq-tab:hover {
-  border-color: var(--warm-300); color: var(--fg-1);
-  background: var(--bg-sunken);
-}
-.eq-tab.on {
-  border-color: transparent;
+.eqf-chip:hover { background: var(--bg-sunken); color: var(--fg-1); border-color: var(--warm-300); }
+.eqf-chip:active { transform: scale(0.97); }
+.eqf-chip:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.eqf-chip.on {
+  border-color: transparent; color: #fff;
   background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(243,100,24,0.28);
+  box-shadow: 0 3px 10px rgba(243,100,24,0.26);
+}
+/* تصنيف بلا نتائج حاليًا: باهت لكنه يفضل ظاهر وقابل للضغط */
+.eqf-chip.is-empty { opacity: 0.52; }
+.eqf-chip.is-empty.on { opacity: 1; }
+/* عدّاد النتائج داخل الشريحة — يعرف المستخدم فين النتائج قبل ما يضغط */
+.eqf-chip-n {
+  font-family: var(--font-latin, var(--font-body)); font-style: normal;
+  font-size: 10.5px; font-weight: 800; line-height: 1;
+  padding: 3px 6px; border-radius: var(--radius-pill);
+  background: var(--bg-sunken); color: var(--fg-3);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.eqf-chip.on .eqf-chip-n { background: rgba(255,255,255,0.24); color: #fff; }
+
+/* ── صف عناصر التحكّم ── */
+.eqf-controls {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 0 10px; flex-wrap: wrap;
+}
+.eqf-divider {
+  width: 1px; height: 20px; background: var(--border);
+  flex-shrink: 0; margin: 0 2px;
+  display: none;
+}
+.eqf-controls:has(.eqf-active.has-items) .eqf-divider { display: block; }
+
+/* قائمة منسدلة أصلية داخل غلاف ناعم (تبقى accessible وتعمل بلا JS) */
+.eqf-select {
+  position: relative; display: inline-flex; align-items: center; gap: 7px;
+  padding: 0 12px; height: 38px;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--fg-2);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+.eqf-select:hover { border-color: var(--warm-300); background: var(--bg-sunken); }
+.eqf-select:focus-within { border-color: var(--orange); box-shadow: var(--ring-focus); background: var(--surface); }
+.eqf-select > svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-3); }
+.eqf-select select {
+  appearance: none; -webkit-appearance: none;
+  border: none; background: none; outline: none;
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--fg-1); cursor: pointer;
+  padding: 0 2px; max-width: 200px;
+  text-overflow: ellipsis;
+}
+.eqf-select-block { display: flex; width: 100%; height: 42px; border-radius: var(--radius-lg); }
+.eqf-select-block select { flex: 1; width: 100%; max-width: none; font-size: 14px; }
+
+.eqf-caret {
+  width: 0; height: 0; flex-shrink: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid var(--fg-3);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* ── Sub Filters ── */
-.eq-sub-filters {
-  display: flex; align-items: center; gap: 14px;
-  padding: 10px 0 14px; flex-wrap: wrap;
+/* زر السعر — يفتح لوحة صغيرة بدل سلايدر بحد أقصى ثابت */
+.eqf-pop-wrap { position: relative; }
+.eqf-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 38px; min-height: 38px; padding: 0 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--fg-1);
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.eq-sub-filters select, .eq-sub-filters input[type=range] {
-  font-family: var(--font-body); font-size: 13px;
-  padding: 7px 12px; border: 1.5px solid var(--border);
-  border-radius: var(--radius-md); background: var(--surface);
-  color: var(--fg-1); cursor: pointer; outline: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+.eqf-pill:hover { border-color: var(--warm-300); background: var(--bg-sunken); }
+.eqf-pill:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.eqf-pill > svg { width: 16px; height: 16px; color: var(--fg-3); }
+.eqf-pill.on {
+  border-color: var(--orange-100); background: var(--orange-ultra); color: var(--orange);
 }
-.eq-sub-filters select:focus { border-color: var(--orange); box-shadow: var(--ring-focus); }
-.eq-price-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); }
-.eq-price-wrap input[type=range] { width: 120px; accent-color: var(--orange); }
+.eqf-pill.on > svg { color: var(--orange); }
+.eqf-pill.on .eqf-caret { border-top-color: var(--orange); }
+.eqf-pill[aria-expanded="true"] .eqf-caret { transform: rotate(180deg); }
+
+.eqf-pop {
+  position: absolute; top: calc(100% + 8px); inset-inline-start: 0; z-index: 60;
+  width: 290px; padding: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out),
+              visibility var(--dur-fast);
+}
+.eqf-pop.open { opacity: 1; visibility: visible; transform: translateY(0); }
+.eqf-pop-title {
+  font-size: 10.5px; font-weight: 800; color: var(--ink3);
+  letter-spacing: .06em; margin-bottom: 9px;
+}
+.eqf-pop-title + .eqf-tiers { margin-bottom: 14px; }
+.eqf-pop-apply {
+  width: 100%; margin-top: 12px; height: 38px; min-height: 38px;
+  border: none; border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff;
+  font-family: var(--font-display); font-size: 13px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 3px 12px rgba(243,100,24,0.24);
+  transition: filter var(--dur-fast) var(--ease-out);
+}
+.eqf-pop-apply:hover { filter: brightness(0.96); }
+
+/* شرائح نطاقات السعر */
+.eqf-tiers { display: flex; flex-wrap: wrap; gap: 6px; }
+.eqf-tier {
+  min-height: 30px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border); background: var(--surface);
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  color: var(--fg-2); cursor: pointer; white-space: nowrap;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.eqf-tier:hover { background: var(--bg-sunken); border-color: var(--warm-300); }
+.eqf-tier.on {
+  border-color: var(--orange-100); background: var(--orange-ultra); color: var(--orange);
+}
+
+/* حقلا من / إلى */
+.eqf-range { display: flex; align-items: center; gap: 8px; }
+.eqf-range input {
+  flex: 1; min-width: 0; height: 38px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg-sunken); color: var(--fg-1);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  outline: none; -moz-appearance: textfield;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.eqf-range input::-webkit-outer-spin-button,
+.eqf-range input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.eqf-range input:focus { border-color: var(--orange); background: var(--surface); box-shadow: var(--ring-focus); }
+.eqf-range-sep { color: var(--ink3); font-size: 13px; flex-shrink: 0; }
+
+/* ── شرائح الفلاتر المفعّلة ── */
+.eqf-active {
+  display: none; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.eqf-active.has-items { display: flex; }
+.eqf-active-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 28px;
+  padding: 5px 9px 5px 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--orange-100); background: var(--orange-ultra);
+  color: var(--orange); font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.eqf-active-chip:hover { background: var(--orange-pale); }
+.eqf-active-chip i {
+  font-style: normal; font-size: 11px; font-weight: 900;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(243,100,24,0.14);
+}
+.eqf-clear-all {
+  border: none; background: none; cursor: pointer; padding: 5px 8px;
+  min-height: 28px;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  color: var(--ink3); text-decoration: underline; text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.eqf-clear-all:hover { color: var(--orange); }
 
 /* ── Main Content ── */
 .eq-main { flex: 1; padding: 28px 32px; max-width: 1400px; margin: 0 auto; width: 100%; }
@@ -301,35 +470,122 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
+/* أثناء جلب نتيجة فلتر جديدة: تخفيت لا مسح — يمنع وميض الشبكة كل ضغطة */
+.eq-grid.is-busy { opacity: 0.45; pointer-events: none; }
 
-/* ── Card ── */
+/* ══════════════════════════════════════════════════════════════
+   🃏 الكرت — بنية واحدة تخدم ٣ حالات عرض بـCSS وحده:
+     • شبكة (ديسكتوب، افتراضي)   • قائمة (ديسكتوب، اختياري)
+     • عمود واحد بعرض الشاشة (موبايل)
+   ترتيب القراءة: صورة ← سعر ← عنوان ← موقع/حالة. السعر أول معلومة
+   نصية لأنه أسرع فرز ذهني للمشتري، والتصنيف اتنقل شريحة فوق الصورة
+   بدل ما يزاحم العنوان في المتن.
+   ══════════════════════════════════════════════════════════════ */
 .eq-card {
-  background: var(--surface); border-radius: var(--eq-radius);
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 18px;
   border: 1px solid var(--border); overflow: hidden;
-  cursor: pointer; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.eq-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--warm-300); }
-.eq-card-img {
-  position: relative; height: 200px;
-  background: var(--bg-sunken); overflow: hidden;
-}
-.eq-card-img img {
-  width: 100%; height: 100%;
-  object-fit: contain; object-position: center center;
-  display: block;
-}
-.eq-card-no-img {
-  height: 200px; display: flex; align-items: center; justify-content: center;
-  font-size: 48px; background: var(--surface2);
-}
-.eq-card-body { padding: 14px 16px 18px; }
-.eq-card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
-.eq-card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--fg-1); margin-bottom: 6px; line-height: 1.4; }
-.eq-card-price { font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--orange); margin-bottom: 5px; }
-.eq-card-loc { font-family: var(--font-body); font-size: 12px; color: var(--fg-3); }
+.eq-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--warm-300); }
+/* التركيز بلوحة المفاتيح بيقع على الرابط الممدود جوه الكرت — الحلقة
+   تترسم على الكرت كله عشان تبان */
+.eq-card:focus-within { box-shadow: var(--ring-focus); border-color: var(--orange); }
 
-/* ── Badges ── */
+.eq-card-media {
+  position: relative; overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-sunken);
+  flex-shrink: 0;
+}
+.eq-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eq-card-no-img {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; background: var(--surface2); opacity: 0.55;
+}
+
+/* الرابط الممدود: العنوان رابط حقيقي، و::after بيغطي الكرت كله فيبقى
+   أي ضغطة على الكرت = ضغطة على الرابط. الأزرار فوقه بـz-index أعلى. */
+.eq-card-link { color: inherit; text-decoration: none; }
+.eq-card-link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+.eq-card-link:focus-visible { outline: none; }
+
+/* ── طبقات فوق الصورة ── */
+/* شارة «مميز» في بداية السطر وزر المفضلة في نهايته: ما بيتلاقوش أبدًا،
+   وبيتبادلوا الجهة تلقائيًا في الإنجليزية لأنهم بخصائص منطقية */
+.eq-card-flag {
+  position: absolute; top: 10px; inset-inline-start: 10px; z-index: 3;
+  background: rgba(254,243,199,0.96); color: #92400E;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(14,18,24,0.12);
+}
+.eq-card-chip {
+  position: absolute; bottom: 10px; inset-inline-start: 10px; z-index: 3;
+  background: rgba(255,255,255,0.94); color: var(--fg-2);
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(14,18,24,0.10);
+  /* المساحة المحجوزة في نهاية السطر لنقاط الكاروسيل — بدونها كان تصنيف
+     طويل زي «بارتشن وجبات سريعة» يمتد تحت النقاط في عرض القائمة الضيّق */
+  max-width: calc(100% - 84px); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+/* بلا كاروسيل = بلا نقاط، فالشريحة تاخد السطر كله */
+.eq-card-media:not(:has(.eq-cn-dots)) .eq-card-chip { max-width: calc(100% - 20px); }
+
+/* ── متن الكرت ── */
+.eq-card-body {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 12px 14px 14px;
+  flex: 1; min-width: 0;
+}
+.eq-card-priceline { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.eq-card-price {
+  font-family: var(--font-display); font-size: 18px; font-weight: 900;
+  color: var(--fg-1); line-height: 1.2; letter-spacing: -0.01em;
+}
+.eq-card-nego {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  color: #15803d; background: var(--green-light);
+  padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap;
+}
+.eq-card-title {
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  color: var(--fg-2); line-height: 1.45; margin: 0;
+  /* قصّ على سطرين: يمنع الكروت من اختلاف الارتفاع فتبقى الصفوف مسنّنة */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.eq-card-desc {
+  display: none;   /* عرض القائمة وحده بيظهره */
+  font-family: var(--font-body); font-size: 12.5px; color: var(--fg-3);
+  line-height: 1.6; margin: 2px 0 0;
+}
+.eq-card-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: auto; padding-top: 6px;
+  font-family: var(--font-body); font-size: 12px; color: var(--fg-3);
+  min-width: 0;
+}
+.eq-card-loc {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eq-card-loc svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.eq-card-cond {
+  margin-inline-start: auto; flex-shrink: 0;
+  font-size: 11px; font-weight: 700; color: var(--ink2);
+  background: var(--bg-sunken); padding: 2px 9px; border-radius: var(--radius-pill);
+}
+
+/* ── Badges (تُستخدم في مودال التفاصيل) ── */
 .eq-badge {
   display: inline-block; padding: 3px 10px; border-radius: 50px;
   font-size: 11px; font-weight: 700;
@@ -337,7 +593,10 @@
 .eq-badge-cat  { background: var(--orange-pale); color: var(--orange); }
 .eq-badge-cond { background: var(--surface2); color: var(--ink2); border: 1px solid var(--border); }
 .eq-badge-nego { background: var(--green-light); color: #15803d; }
-.eq-badge-feat { background: #FEF3C7; color: #92400E; position: absolute; top: 10px; right: 10px; z-index: 2; }
+/* بلا position:absolute هنا: الكلاس ده بيتستخدم كمان داخل .eq-detail-badges
+   في المودال، وكان بيهرب من حاويته لأعلى المودال بـ266px. تموضع الكرت
+   بقى مسؤولية .eq-card-flag وحدها. */
+.eq-badge-feat { background: #FEF3C7; color: #92400E; }
 
 /* ── Load More ── */
 .eq-load-more-wrap { display: flex; justify-content: center; margin-top: 36px; }
@@ -501,19 +760,6 @@
 .eq-share-btn:hover { background: #F36418; border-color: #F36418; transform: scale(1.08); }
 .eq-share-btn svg { width: 17px; height: 17px; display: block; }
 
-/* Photo count badge على الكروت */
-.eq-photo-count {
-  position: absolute; bottom: 8px; right: 8px;
-  background: rgba(0,0,0,0.52);
-  backdrop-filter: blur(4px);
-  color: #fff; font-family: var(--font-display);
-  font-size: 10px; font-weight: 700;
-  padding: 2px 6px 2px 5px; border-radius: 6px;
-  display: flex; align-items: center; gap: 3px;
-  pointer-events: none;
-}
-.eq-photo-count svg { width: 11px; height: 11px; }
-
 /* ── Card Image Carousel ── */
 .eq-card-carousel {
   position: absolute; inset: 0; overflow: hidden;
@@ -558,11 +804,15 @@
 @media (max-width: 768px) { .eq-cn-btn { width: 32px; height: 32px; font-size: 22px; } }
 .eq-cn-prev { left: 8px; }
 .eq-cn-next { right: 8px; }
-/* Carousel dots */
+/* Carousel dots — في الجهة المقابلة لشريحة التصنيف على نفس السطر.
+   ملاحظة: النقاط جوه .eq-card-carousel اللي عليه direction:ltr إجباري،
+   فالخصائص المنطقية (inset-inline-*) بتتحسب على ltr وتوقعهم في نفس جهة
+   الشريحة بالظبط فيتراكبوا. لذلك التموضع هنا صريح حسب اتجاه الصفحة. */
 .eq-cn-dots {
-  position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 13px; left: 12px; right: auto;
   display: flex; gap: 4px; z-index: 5; pointer-events: none;
 }
+[dir="ltr"] .eq-cn-dots { left: auto; right: 12px; }
 .eq-cn-dot {
   width: 5px; height: 5px; border-radius: 50%;
   background: rgba(255,255,255,0.5); transition: background var(--dur-fast) var(--ease-out), transform .2s;
@@ -794,8 +1044,6 @@ body.lightbox-open { overflow: hidden; }
   .eq-filters-inner { padding: 0 16px; }
   .eq-main { padding: 20px 16px; }
   .eq-mobile-filter-btn { display: flex; }
-  .eq-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-  .eq-card-img, .eq-card-no-img { height: 150px; }
   .eq-detail-main-img { height: 220px; }
   .eq-fab {
     bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px);
@@ -805,10 +1053,6 @@ body.lightbox-open { overflow: hidden; }
   }
   .eq-fab-tooltip { display: none; }
 
-  .eq-sub-filters { gap: 8px; }
-  .eq-sub-filters select { flex: 1; min-width: 0; }
-  .eq-price-wrap { width: 100%; }
-  .eq-price-wrap input[type=range] { flex: 1; }
   .eq-account-dropdown { right: 0; left: auto; max-width: calc(100vw - 32px); }
 
   /* ── My Listings / Favorites / Edit modals — بطاقات ونماذج بأحجام مناسبة للموبايل ── */
@@ -829,84 +1073,6 @@ body.lightbox-open { overflow: hidden; }
     padding: 7px 10px; font-size: 12px; gap: 4px;
   }
 }
-
-/* ── Mobile Filter FAB — يظهر عند التمرير ── */
-.eq-filter-fab {
-  position: fixed;
-  top: 76px; right: 14px; z-index: 180;
-  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff; border: none;
-  border-radius: 50px; padding: 9px 16px 9px 14px;
-  font-family: var(--font-display); font-size: 13px; font-weight: 800;
-  cursor: pointer;
-  display: flex; align-items: center; gap: 7px;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 4px 18px rgba(243,100,24,0.40);
-  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-radius var(--dur-fast) var(--ease-out);
-  opacity: 0; pointer-events: none;
-  transform: translateY(-10px);
-}
-.eq-filter-fab.eq-fab-vis {
-  opacity: 1; pointer-events: all;
-  transform: translateY(0);
-}
-.eq-filter-fab.eq-fab-open { border-radius: 50px 50px 50px 50px; }
-.eq-filter-fab svg { flex-shrink: 0; }
-.eq-filter-fab-badge {
-  background: rgba(255,255,255,0.3);
-  border-radius: 50%; width: 18px; height: 18px;
-  font-size: 10px; font-weight: 900;
-  display: none; align-items: center; justify-content: center;
-}
-.eq-filter-fab-badge.show { display: flex; }
-.eq-fab-arrow { transition: transform .2s; }
-.eq-filter-fab.eq-fab-open .eq-fab-arrow { transform: rotate(180deg); }
-
-/* ── FAB Filter Dropdown Panel ── */
-.eq-fab-panel {
-  position: fixed;
-  top: 118px; left: 0; right: 0; z-index: 175;
-  background: var(--warm-50); border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  padding: 12px 16px 16px;
-  opacity: 0; pointer-events: none;
-  transform: translateY(-6px);
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
-}
-.eq-fab-panel.eq-fab-open {
-  opacity: 1; pointer-events: all;
-  transform: translateY(0);
-}
-.eq-fab-panel-tabs {
-  display: flex; gap: 6px; overflow-x: auto;
-  padding-bottom: 10px; margin-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  scrollbar-width: none;
-}
-.eq-fab-panel-tabs::-webkit-scrollbar { display: none; }
-.eq-fab-panel-row {
-  display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
-}
-.eq-fab-panel-row select {
-  flex: 1; min-width: 120px;
-  font-family: var(--font-body); font-size: 13px;
-  padding: 8px 10px; border: 1.5px solid var(--border);
-  border-radius: var(--radius-md); background: var(--surface); color: var(--fg-1);
-  outline: none; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-.eq-fab-panel-row select:focus { border-color: var(--orange); box-shadow: var(--ring-focus); }
-.eq-fab-price-row {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 12px; color: var(--ink2);
-}
-.eq-fab-price-row input[type=range] { flex: 1; accent-color: var(--orange); }
-.eq-fab-price-val { font-size: 12px; font-weight: 700; min-width: 65px; text-align: left; }
-
-/* Desktop — hide FAB */
-@media (min-width: 769px) {
-  .eq-filter-fab, .eq-fab-panel { display: none !important; }
-}
-
-/* ── Old FAB fully disabled (replaced by drawer) ── */
-.eq-filter-fab, .eq-fab-panel { display: none !important; }
 
 /* ── Mobile: fix nav + hide static filter bar ── */
 @media (max-width: 768px) {
@@ -1001,40 +1167,35 @@ body.filter-open { overflow: hidden; }
   margin-bottom: 10px;
 }
 
-/* Category tabs inside drawer */
+/* شرائح التصنيف داخل الدرج — نفس مكوّن .eqf-chip بكثافة أعلى قليلاً */
 .eq-drawer-tabs {
   display: flex; flex-wrap: wrap; gap: 6px;
 }
-.eq-drawer-tabs .eq-tab {
-  font-size: 12px; padding: 5px 12px;
-}
+/* أهداف لمس أريح داخل الدرج — الشريط اللاصق للديسكتوب هو وحده اللي
+   محتاج شرائح مضغوطة، والموبايل بيتعامل بالإصبع */
+.eq-drawer-tabs .eqf-chip { font-size: 12.5px; padding: 8px 13px; min-height: 38px; }
+.eq-drawer-tabs .eqf-chip-n { font-size: 10px; padding: 2px 5px; }
+#eq-drawer-price-tiers .eqf-tier { min-height: 38px; padding: 8px 13px; font-size: 12.5px; }
 
-/* Selects inside drawer */
-.eq-drawer-section select {
-  width: 100%; padding: 9px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md); background: var(--surface);
-  font-family: var(--font-body); font-size: 14px;
-  color: var(--fg-1); outline: none; cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-.eq-drawer-section select:focus { border-color: var(--orange); box-shadow: var(--ring-focus); }
-
-/* Price range row */
+/* ملخّص السعر أعلى قسم السعر */
 .eq-drawer-price-label {
   font-size: 13px; color: var(--ink2); margin-bottom: 10px;
 }
 .eq-drawer-price-label strong { color: var(--orange); }
-.eq-drawer-section input[type=range] {
-  width: 100%; accent-color: var(--orange); cursor: pointer;
-}
 
-/* Footer actions */
+/* Footer actions — align-items:center وارتفاع صريح: الافتراضي stretch كان
+   بيمدّ الزرّين لارتفاع سطر الفليكس (76px للواحد) فيبقى الفوتر 103px
+   ياكل من مساحة قائمة الفلاتر بلا فائدة */
 .eq-drawer-actions {
-  padding: 13px 16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
-  display: flex; gap: 8px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   background: var(--warm-50);
+}
+.eq-drawer-actions .eq-btn {
+  height: 46px; min-height: 46px; padding: 0 16px;
+  border-radius: var(--radius-pill);
+  justify-content: center; white-space: nowrap;
 }
 
 /* ── Sidebar toggle tab — FIXED independently (avoids transform click bug) ── */
@@ -1151,15 +1312,106 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   .eq-quick-links .nsb-text small { white-space: normal; }
 }
 
-/* ── Favorite Button on Card ── */
+/* ── زر المفضلة على الكرت ──
+   min-height صريحة إجبارية: style.css المشترك بيفرض button{min-height:44px}
+   فكان الزر بيطلع بيضاوي 32×44 بدل دائرة. راجع نفس الفخ في .eqf-chip. */
 .eq-fav-btn {
-  position: absolute; top: 8px; right: 8px; z-index: 2;
-  background: rgba(255,255,255,0.92); border: none; border-radius: 50%;
-  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-  font-size: 15px; cursor: pointer; transition: transform .15s, background .15s;
-  backdrop-filter: blur(4px);
+  position: absolute; top: 8px; inset-inline-end: 8px; z-index: 3;
+  width: 34px; height: 34px; min-height: 34px; min-width: 34px; padding: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.92); border: 1px solid rgba(14,18,24,0.06);
+  color: var(--fg-1);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(14,18,24,0.10);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
 }
-.eq-fav-btn:hover { transform: scale(1.18); background: #fff; }
+.eq-fav-btn svg { width: 17px; height: 17px; display: block; }
+.eq-fav-btn:hover { background: #fff; transform: scale(1.08); }
+.eq-fav-btn:active { transform: scale(0.94); }
+.eq-fav-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+/* مفعّل: نفس الأيقونة ممتلئة بلون الحبر — تباين واضح بلا لون صارخ */
+.eq-fav-btn.on { background: var(--fg-1); color: #fff; border-color: transparent; }
+.eq-fav-btn.on:hover { background: var(--fg-1); }
+
+/* ── مبدّل العرض شبكة/قائمة ── */
+.eq-count-actions { display: flex; align-items: center; gap: 10px; }
+.eq-view-switch {
+  display: inline-flex; padding: 3px; gap: 2px;
+  background: var(--bg-sunken); border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.eq-view-btn {
+  width: 34px; height: 30px; min-height: 30px; padding: 0;
+  border: none; background: none; border-radius: var(--radius-pill);
+  color: var(--fg-3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.eq-view-btn svg { width: 16px; height: 16px; display: block; }
+.eq-view-btn:hover { color: var(--fg-1); }
+.eq-view-btn.on {
+  background: var(--surface); color: var(--orange);
+  box-shadow: var(--shadow-xs);
+}
+.eq-view-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
+/* ── عرض القائمة (ديسكتوب) ── */
+@media (min-width: 769px) {
+  .eq-grid.is-list { grid-template-columns: 1fr; gap: 12px; }
+  .eq-grid.is-list .eq-card { flex-direction: row; align-items: stretch; }
+  .eq-grid.is-list .eq-card-media {
+    width: 260px; flex: 0 0 260px; aspect-ratio: auto; align-self: stretch;
+    min-height: 176px;
+  }
+  .eq-grid.is-list .eq-card-body { padding: 16px 18px; gap: 6px; }
+  .eq-grid.is-list .eq-card-price { font-size: 21px; }
+  .eq-grid.is-list .eq-card-title { font-size: 16px; -webkit-line-clamp: 1; }
+  /* الوصف هو المكسب الحقيقي من عرض القائمة: مساحة أفقية تكفي سطرين
+     يشرحوا المشروع قبل ما المستخدم يفتح التفاصيل */
+  .eq-grid.is-list .eq-card-desc {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .eq-grid.is-list .eq-card:hover { transform: none; box-shadow: var(--shadow); }
+
+  /* كروت «إعلانات ممكن تهمّك» جوه الحالة الفارغة بتترسم في شبكة ٣ أعمدة
+     خاصة بيها جوه #eq-grid — فكانت بتورث تخطيط القائمة (صورة 260px داخل
+     كرت 271px) وتطلع مهروسة. تفضل دايمًا بتخطيط الشبكة. */
+  .eq-grid.is-list .eq-empty .eq-card { flex-direction: column; }
+  .eq-grid.is-list .eq-empty .eq-card-media { width: auto; flex: 0 0 auto; aspect-ratio: 4/3; min-height: 0; }
+  .eq-grid.is-list .eq-empty .eq-card-body { padding: 12px 14px 14px; }
+  .eq-grid.is-list .eq-empty .eq-card-price { font-size: 18px; }
+  .eq-grid.is-list .eq-empty .eq-card-title { font-size: 14px; -webkit-line-clamp: 2; }
+  .eq-grid.is-list .eq-empty .eq-card-desc { display: none; }
+}
+
+/* ── الموبايل: كرت واحد بعرض الشاشة ── */
+@media (max-width: 768px) {
+  /* عمود واحد — التبديل بين العرضين ديسكتوب فقط */
+  .eq-grid, .eq-grid.is-list { grid-template-columns: 1fr; gap: 14px; }
+  .eq-view-switch { display: none; }
+
+  .eq-card { border-radius: 16px; }
+  /* 16:10 لا 4:3 — الكرت بقى بعرض الشاشة، ونسبة أقصر بتخلي عدد الكروت
+     في الشاشة الواحدة معقول بدل كرت ونص */
+  .eq-card-media { aspect-ratio: 16 / 10; }
+  .eq-card-body { padding: 13px 15px 15px; gap: 6px; }
+  .eq-card-price { font-size: 20px; }
+  .eq-card-title { font-size: 15px; line-height: 1.5; }
+  .eq-card-meta { font-size: 12.5px; padding-top: 8px; }
+  .eq-card-loc svg { width: 14px; height: 14px; }
+  .eq-card-cond { font-size: 11.5px; padding: 3px 10px; }
+  .eq-card-chip, .eq-card-flag { font-size: 11.5px; padding: 5px 11px; }
+  /* هدف لمس أكبر للمفضلة على الموبايل */
+  .eq-fav-btn { width: 38px; height: 38px; min-height: 38px; min-width: 38px; top: 10px; inset-inline-end: 10px; }
+  .eq-fav-btn svg { width: 19px; height: 19px; }
+  /* بلا رفع عند اللمس — الـhover مالوش معنى على الموبايل وكان بيسبب قفزة */
+  .eq-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
+  .eq-card:active { transform: scale(0.985); }
+}
 
 /* ── Favorites Nav Button — نفس أسلوب جرس الإشعارات (gn-bell) بالضبط ── */
 .eq-fav-nav-btn {
@@ -1271,23 +1523,6 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   .eq-free-bar-btn { display: none; }
 }
 
-/* ── Desktop filter label ── */
-.eq-filter-label {
-  display: flex; align-items: center; gap: 6px;
-  padding: 12px 0 0;
-  font-size: 11px; font-weight: 800; color: var(--ink3);
-  letter-spacing: .07em; text-transform: uppercase;
-  flex-shrink: 0;
-}
-.eq-filters-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 0 10px;
-}
-.eq-filters-row-label {
-  font-size: 11px; font-weight: 800; color: var(--ink3);
-  letter-spacing: .05em; white-space: nowrap; flex-shrink: 0;
-}
-
 /* ── Card arrows: شفاف على الديسكتوب، تظهر عند hover ── */
 @media (min-width: 769px) {
   .eq-cn-btn {
@@ -1307,7 +1542,7 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 /* ── Card image: object-fit cover للنظافة البصرية ── */
 .eq-card-slide img,
-.eq-card-img img {
+.eq-card-media img {
   object-fit: cover;
   /* تحسين حدة الصور عند العرض على شاشات Retina/HiDPI
      يقلل الـ blur الذي يحدث عند downscale من 384px إلى 160-200px */
@@ -1494,26 +1729,57 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   <a class="eq-free-bar-btn" href="/post-ad/" data-i18n="freeBar.postNow">انشر الآن ←</a>
 </div>
 
-<!-- ── Filters ── -->
+<!-- ── Filters (desktop) ──
+     شرائح التصنيف بتلتف على أسطر بدل شريط أفقي بسكرول مخفي: كل التصنيفات
+     ظاهرة في نفس اللحظة بضغطة واحدة، بلا أسهم ولا سحب ولا اكتشاف. -->
 <div id="eq-filters-sentinel" style="height:1px" aria-hidden="true"></div>
 <div class="eq-filters-bar" id="eq-filters-bar">
   <div class="eq-filters-inner">
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px">
-      <span class="eq-filters-row-label" data-i18n="filters.categoryLabel">التصنيف</span>
-      <div class="eq-tabs-wrap" id="eq-tabs" style="padding:0;flex:1"></div>
-    </div>
-    <div class="eq-sub-filters" style="padding:4px 0 12px">
-      <select id="eq-gov"></select>
-      <div class="eq-price-wrap">
-        <span data-i18n="filters.priceUpTo">السعر حتى:</span>
-        <input type="range" id="eq-price-max" min="0" max="100000" step="500" value="0">
-        <span id="eq-price-label" style="min-width:70px;font-weight:700;">بلا حد</span>
+
+    <div class="eqf-cats" id="eq-tabs" role="group" aria-label="التصنيف" data-i18n-attr="aria-label:filters.categoryLabel"></div>
+
+    <div class="eqf-controls">
+      <label class="eqf-select">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <select id="eq-gov" aria-label="المحافظة" data-i18n-attr="aria-label:filters.governorate"></select>
+        <i class="eqf-caret" aria-hidden="true"></i>
+      </label>
+
+      <div class="eqf-pop-wrap">
+        <button type="button" class="eqf-pill" id="eq-price-btn" onclick="eqTogglePricePop(event)" aria-expanded="false" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20"/><path d="M17 6.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span id="eq-price-label">أي سعر</span>
+          <i class="eqf-caret" aria-hidden="true"></i>
+        </button>
+        <div class="eqf-pop" id="eq-price-pop" role="dialog" aria-label="السعر" data-i18n-attr="aria-label:filters.price">
+          <div class="eqf-pop-title" data-i18n="filters.priceRanges">نطاقات جاهزة</div>
+          <div class="eqf-tiers" id="eq-price-tiers"></div>
+          <div class="eqf-pop-title" data-i18n="filters.priceCustom">أو حدّد نطاقك</div>
+          <div class="eqf-range">
+            <input type="number" id="eq-price-min-input" min="0" inputmode="numeric" data-i18n-attr="placeholder:filters.from" placeholder="من">
+            <span class="eqf-range-sep" aria-hidden="true">—</span>
+            <input type="number" id="eq-price-max-input" min="0" inputmode="numeric" data-i18n-attr="placeholder:filters.to" placeholder="إلى">
+          </div>
+          <button type="button" class="eqf-pop-apply" onclick="eqApplyCustomPrice()" data-i18n="filters.apply">تطبيق</button>
+        </div>
       </div>
-      <select id="eq-sort">
-        <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
-        <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
-        <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
-      </select>
+
+      <label class="eqf-select">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m17 15 3 3 3-3"/><path d="M20 18V7"/></svg>
+        <select id="eq-sort" aria-label="الترتيب" data-i18n-attr="aria-label:filters.sort">
+          <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
+          <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
+          <option value="priciest" data-i18n="filters.sortPriciest">الأغلى</option>
+          <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
+        </select>
+        <i class="eqf-caret" aria-hidden="true"></i>
+      </label>
+
+      <!-- الفلاتر المفعّلة — إزالة أي واحد بضغطة، بلا رجوع لمصدره.
+           داخل نفس صف التحكّم لا في سطر مستقل: الشريط لاصق تحت الناف،
+           وكل سطر إضافي بيقتطع من ارتفاع النتائج الظاهرة. -->
+      <span class="eqf-divider" aria-hidden="true"></span>
+      <div class="eqf-active" id="eq-active-chips"></div>
     </div>
   </div>
 </div>
@@ -1544,27 +1810,43 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
       </div>
       <div class="eq-drawer-section">
         <div class="eq-drawer-label" data-i18n="filters.governorate">المحافظة</div>
-        <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)">
-          <option value="" data-i18n="filters.allGovs">كل المحافظات</option>
-        </select>
+        <label class="eqf-select eqf-select-block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)">
+            <option value="" data-i18n="filters.allGovs">كل المحافظات</option>
+          </select>
+          <i class="eqf-caret" aria-hidden="true"></i>
+        </label>
+      </div>
+      <div class="eq-drawer-section">
+        <div class="eq-drawer-label"><span data-i18n="filters.price">السعر</span> · <strong id="eq-drawer-price-val" style="color:var(--orange)">أي سعر</strong></div>
+        <div class="eqf-tiers" id="eq-drawer-price-tiers"></div>
+        <div class="eqf-range" style="margin-top:10px">
+          <input type="number" id="eq-drawer-price-min" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" data-i18n-attr="placeholder:filters.from" placeholder="من">
+          <span class="eqf-range-sep" aria-hidden="true">—</span>
+          <input type="number" id="eq-drawer-price-max" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" data-i18n-attr="placeholder:filters.to" placeholder="إلى">
+        </div>
       </div>
       <div class="eq-drawer-section">
         <div class="eq-drawer-label" data-i18n="filters.sort">الترتيب</div>
-        <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)">
-          <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
-          <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
-          <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
-        </select>
-      </div>
-      <div class="eq-drawer-section">
-        <div class="eq-drawer-price-label"><span data-i18n="filters.maxPrice">السعر الأقصى:</span> <strong id="eq-drawer-price-val">بلا حد</strong></div>
-        <input type="range" id="eq-drawer-price" min="0" max="100000" step="500" value="0" oninput="eqDrawerPriceChange(this)">
+        <label class="eqf-select eqf-select-block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m17 15 3 3 3-3"/><path d="M20 18V7"/></svg>
+          <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)">
+            <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
+            <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
+            <option value="priciest" data-i18n="filters.sortPriciest">الأغلى</option>
+            <option value="views" data-i18n="filters.sortViews">الأكثر مشاهدة</option>
+          </select>
+          <i class="eqf-caret" aria-hidden="true"></i>
+        </label>
       </div>
     </div>
 
+    <!-- نص زر التطبيق مُدار من JS (بيعرض عدد النتائج الحيّ) — بلا data-i18n
+         عشان إعادة الترجمة متمسحش العدد وترجّعه للنص الثابت -->
     <div class="eq-drawer-actions">
       <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer()" style="flex:1" data-i18n="filters.reset">إعادة تعيين</button>
-      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters()" style="flex:2" data-i18n="filters.showResults">عرض النتائج</button>
+      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters()" style="flex:2">عرض النتائج</button>
     </div>
   </div>
 </div>
@@ -1591,7 +1873,21 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   </button>
   <div class="eq-count-row">
     <span id="eq-count">جاري التحميل…</span>
-    <a class="eq-btn eq-btn-primary" href="/post-ad/" data-i18n="filters.postAd">+ انشر إعلانك</a>
+    <div class="eq-count-actions">
+      <!-- مبدّل العرض جنب عدّاد النتائج: أقرب مكان للشيء اللي بيتحكّم فيه.
+           مخفي على الموبايل — هناك الكرت بعرض الشاشة دايمًا. -->
+      <div class="eq-view-switch" role="group" aria-label="طريقة العرض" data-i18n-attr="aria-label:view.label">
+        <button type="button" class="eq-view-btn on" data-view="grid" onclick="eqSetView('grid')"
+                aria-pressed="true" aria-label="عرض شبكي" data-i18n-attr="aria-label:view.grid" title="عرض شبكي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
+        </button>
+        <button type="button" class="eq-view-btn" data-view="list" onclick="eqSetView('list')"
+                aria-pressed="false" aria-label="عرض قائمة" data-i18n-attr="aria-label:view.list" title="عرض قائمة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>
+        </button>
+      </div>
+      <a class="eq-btn eq-btn-primary" href="/post-ad/" data-i18n="filters.postAd">+ انشر إعلانك</a>
+    </div>
   </div>
   <div class="eq-grid" id="eq-grid"></div>
   <div class="eq-load-more-wrap">
@@ -1821,8 +2117,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="/notifications.js?v=20260806170401" defer></script>
-<script src="app.js?v=20260806170401" defer></script>
+<script src="/notifications.js?v=20260807172912" defer></script>
+<script src="app.js?v=20260807172912" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">

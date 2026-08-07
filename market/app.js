@@ -29,6 +29,52 @@ const EQ_CATEGORIES = [
   { id: 'other',               label: 'أخرى' },
 ];
 
+/* تصنيفات قديمة من تسمية «سوق المعدات» قبل تحويل القسم لمشاريع كاملة.
+   إعلانات منشورة فعلًا لسه شايلة الـid القديم في DB، وكانت النتيجة إنها:
+   (١) متظهرش تحت أي تبويب تصنيف — مفيش زر بيطابقها أصلًا، فتبقى غير قابلة
+   للوصول بالفلتر، و(٢) بادج التصنيف في الكرت بيطبع الـid الخام بالإنجليزي
+   (food-cart) لأن eqCatLabel بترجع defaultValue وقت غياب الترجمة.
+   الخريطة دي بتطبّع القديم للحالي وقت القراءة فقط — من غير أي كتابة في DB،
+   فتفضل شغّالة كمان لو ظهر إعلان قديم تاني بعد تجديد. */
+const EQ_CATEGORY_ALIASES = {
+  'food-cart':  'food-juice-cart',
+  'partition':  'fast-food-partition',
+  'fridge':     'other',
+  'display':    'other',
+  'kitchen':    'other',
+  'coffee':     'other',
+  'pos':        'other',
+  'storage':    'other',
+  'lighting':   'other',
+};
+
+/* التصنيف المعياري للإعلان: يرجّع الـid الحالي مهما كان المخزَّن قديمًا */
+function eqNormCat(id) {
+  return EQ_CATEGORY_ALIASES[id] || id || '';
+}
+
+/* كل الـids اللي بتنتمي لتصنيف واحد (الحالي + أي قديم بيأشّر عليه) —
+   تُستخدم في استعلام الفلترة عشان يطلع القديم والجديد مع بعض */
+function eqCatIds(catId) {
+  const ids = [catId];
+  for (const [legacy, current] of Object.entries(EQ_CATEGORY_ALIASES)) {
+    if (current === catId) ids.push(legacy);
+  }
+  return ids;
+}
+
+/* شرائح السعر الجاهزة — أسرع طريق للمستخدم بدل ضبط قيمة بالمللي‑متر.
+   كان في السابق سلايدر واحد أقصاه 100,000 بينما أسعار المشاريع المنشورة
+   بتوصل 1,500,000 — يعني تحريكه لآخر اليمين كان *يستبعد* الإعلانات الأغلى
+   ومفيش طريقة أصلًا لضبط حد أعلى منه. */
+const EQ_PRICE_TIERS = [
+  { id: 'any', min: 0,      max: 0 },
+  { id: 't1',  min: 0,      max: 50000 },
+  { id: 't2',  min: 50000,  max: 150000 },
+  { id: 't3',  min: 150000, max: 500000 },
+  { id: 't4',  min: 500000, max: 0 },
+];
+
 const EQ_CONDITIONS = [
   { id: 'new',       label: 'جديد' },
   { id: 'like-new',  label: 'كالجديد' },
@@ -85,13 +131,23 @@ let eqActiveCategory = '';
 let eqSearch        = '';
 let eqSortBy        = 'newest';
 let eqGov           = '';
+let eqPriceMin      = 0;
 let eqPriceMax      = 0;
+let eqTotalCount    = 0;      // العدد الحقيقي للنتائج المطابقة على الخادم
 let eqFavorites     = new Set();
 let eqMyListings    = [];
+/* عدّادات لكل تصنيف/محافظة فوق *كل* الإعلانات الحية (لا الصفحة المحمَّلة) —
+   تُعرض على الشرائح فيعرف المستخدم فين النتائج قبل ما يضغط */
+let eqFacets        = { cats: new Map(), govs: new Map(), total: 0 };
+/* عيّنة من أول صفحة بلا فلاتر — تُستخدم في اقتراحات الحالة الفارغة بعد ما
+   بقت eqListings تحمل النتائج المفلترة وحدها */
+let eqSampleListings = [];
+let _eqSampleFetching = false;
 let eqDrawerDraft   = {
   category: '',
   gov: '',
   sortBy: 'newest',
+  priceMin: 0,
   priceMax: 0,
 };
 
@@ -182,11 +238,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     eqSb = supabase.createClient(EQ_SUPABASE_URL, EQ_SUPABASE_KEY);
     await eqInitAuth();
     await eqLoadFavorites();
+    eqReadUrlFilters();          // فلاتر جاية من رابط مُشارَك / رجوع المتصفح
+    eqInitView();                // شبكة/قائمة من الجلسة السابقة
+    await eqLoadFacets();        // العدّادات لازم تسبق بناء الشرائح
     eqBuildCategoryTabs();
-    document.getElementById('eq-price-label').textContent        = _eqFmtPrice(eqPriceMax);
-    document.getElementById('eq-drawer-price-val').textContent   = _eqFmtPrice(eqDrawerDraft.priceMax);
-    await eqLoadListings();
+    eqSyncDrawerFromActive();
     eqBindSearch();
+    await eqLoadListings();
     eqRunLifecycle();
 
     // الربط العميق للمشروع من الرابط الرئيسي
@@ -222,11 +280,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 document.addEventListener('makani:locale-changed', () => {
   eqRenderNavUser();   // منطقة المستخدم في الناف + bn-user (بالكامل JS-rendered، مفيش data-i18n)
   eqBuildCategoryTabs();
+  eqRenderDrawerDraft();
   eqRenderGrid();
-  const priceLbl = document.getElementById('eq-price-label');
-  if (priceLbl) priceLbl.textContent = _eqFmtPrice(eqPriceMax);
-  const drawerPriceLbl = document.getElementById('eq-drawer-price-val');
-  if (drawerPriceLbl) drawerPriceLbl.textContent = _eqFmtPrice(eqDrawerDraft.priceMax);
   if (eqCurrentDetailId) eqOpenDetail(eqCurrentDetailId);
   if (document.getElementById('eq-my-modal')?.classList.contains('open')) eqLoadMyListings();
   if (document.getElementById('eq-fav-modal')?.classList.contains('open')) eqOpenFavorites();
@@ -465,29 +520,135 @@ const _EQ_SELECT = `id, title, description, category, condition, price, negotiab
                view_count, contact_count, status,
                expires_at, created_at, user_id`;
 
-async function eqLoadListings(append = false) {
-  if (!append) { eqShowLoading(); eqOffset = 0; }
+/* الفلترة بقت على الخادم لا في الذاكرة.
+   قبلها كانت eqApplyFilters بتفلتر eqListings — وهي أول 24 إعلان فقط —
+   فأي تصنيف نتائجه بعد أول صفحة كان بيطلع «لا توجد إعلانات» وهو مليان،
+   والعدّاد كان بيقول «24+» من غير ما يعرف الإجمالي الحقيقي. */
+function _eqBuildQuery(opts = {}) {
+  let q = eqSb.from('listings')
+    .select(opts.select || _EQ_SELECT, opts.countOpts)
+    .eq('status', 'approved')
+    .gt('expires_at', new Date().toISOString());
+
+  const cat = opts.category !== undefined ? opts.category : eqActiveCategory;
+  const gov = opts.gov      !== undefined ? opts.gov      : eqGov;
+  const pMin = opts.priceMin !== undefined ? opts.priceMin : eqPriceMin;
+  const pMax = opts.priceMax !== undefined ? opts.priceMax : eqPriceMax;
+  const term = (opts.search !== undefined ? opts.search : eqSearch).trim();
+
+  if (cat)      q = q.in('category', eqCatIds(cat));
+  if (gov)      q = q.eq('region', gov);
+  if (pMin > 0) q = q.gte('price', pMin);
+  if (pMax > 0) q = q.lte('price', pMax);
+  if (term) {
+    /* الفاصلة والأقواس والنسبة لها معنى في صياغة or= الخاصة بـPostgREST،
+       فتنظَّف من نص المستخدم قبل الحقن وإلا انكسر الاستعلام كله */
+    const s = term.replace(/[%,()]/g, ' ').trim();
+    if (s) q = q.or(`title.ilike.%${s}%,region.ilike.%${s}%,area.ilike.%${s}%`);
+  }
+  return q;
+}
+
+function _eqApplySort(q, sortBy = eqSortBy) {
+  if (sortBy === 'cheapest')  return q.order('price', { ascending: true });
+  if (sortBy === 'priciest')  return q.order('price', { ascending: false });
+  if (sortBy === 'views')     return q.order('view_count', { ascending: false, nullsFirst: false });
+  return q.order('is_featured', { ascending: false })
+          .order('created_at',  { ascending: false });
+}
+
+/* جلب واحد خفيف (٣ أعمدة) فوق كل الإعلانات الحية — منه تتبني عدّادات
+   الشرائح وقائمة المحافظات، فتكون الأرقام إجمالية لا أرقام الصفحة */
+async function eqLoadFacets() {
   try {
     const { data, error } = await eqSb
       .from('listings')
-      .select(_EQ_SELECT)
+      .select('category, region')
       .eq('status', 'approved')
       .gt('expires_at', new Date().toISOString())
-      .order('is_featured', { ascending: false })
-      .order('created_at',  { ascending: false })
-      .range(eqOffset, eqOffset + FETCH_SIZE);   // +1 لكشف وجود المزيد
-
+      .limit(2000);
     if (error) throw error;
-    eqHasMore = (data || []).length > FETCH_SIZE;
-    const items = eqHasMore ? data.slice(0, FETCH_SIZE) : (data || []);
+
+    const cats = new Map(), govs = new Map();
+    (data || []).forEach(l => {
+      const c = eqNormCat(l.category);
+      if (c) cats.set(c, (cats.get(c) || 0) + 1);
+      if (l.region) govs.set(l.region, (govs.get(l.region) || 0) + 1);
+    });
+    eqFacets = { cats, govs, total: (data || []).length };
+  } catch (e) {
+    eqFacets = { cats: new Map(), govs: new Map(), total: 0 };
+  }
+}
+
+let _eqLoadSeq = 0;   // يمنع رد استعلام قديم من الكتابة فوق أحدث منه
+
+async function eqLoadListings(append = false) {
+  if (!append) {
+    eqOffset = 0;
+    /* السبينر الكامل لأول تحميل وحده. بعده أي تغيير فلتر بيخفّت الشبكة
+       الحالية بدل ما يمسحها — الوميض بين كل ضغطة والنتيجة كان بيخلي
+       الفلترة تبان أبطأ مما هي، والعدّاد كان بيفضل شايل رقم الفلتر السابق */
+    if (!eqDataReady) eqShowLoading(); else eqSetBusy(true);
+  }
+  const seq = ++_eqLoadSeq;
+  try {
+    const q = _eqApplySort(_eqBuildQuery({ countOpts: { count: 'exact' } }))
+      .range(eqOffset, eqOffset + FETCH_SIZE - 1);
+    const { data, error, count } = await q;
+    if (error) throw error;
+    if (seq !== _eqLoadSeq) return;   // نتيجة متأخرة لفلتر اتغيّر بعدها
+
+    const items = data || [];
     eqOffset += items.length;
+    eqTotalCount = count ?? items.length;
+    eqHasMore    = eqOffset < eqTotalCount;
 
     eqListings = append ? [...eqListings, ...items] : items;
+    if (!append && !eqHasActiveFilters() && items.length) eqSampleListings = items.slice(0, 6);
     eqDataReady = true;   // خارج catch: لو فشل الجلب تبقى شاشة الخطأ لا «لا نتائج»
-    eqApplyFilters();
+    eqFiltered = eqListings;
+    eqSetBusy(false);
+    eqRenderGrid();
+    eqRenderFilterState();
   } catch (e) {
-    eqShowError(e.message);
+    if (seq === _eqLoadSeq) { eqSetBusy(false); eqShowError(e.message); }
   }
+}
+
+/* ================================================================
+   🔲 تبديل العرض: شبكة / قائمة (ديسكتوب)
+   الاتنين بيستخدموا نفس الـHTML بالظبط، فالتبديل كلاس واحد على الحاوية:
+   بلا إعادة بناء للكروت، يعني الفلاتر والترتيب وموضع التمرير وحالة كل
+   كاروسيل بتفضل زي ما هي، والانتقال فوري بلا أي طلب شبكة.
+   ================================================================ */
+
+const EQ_VIEW_KEY = 'makani_market_view';
+
+function eqInitView() {
+  let saved = 'grid';
+  try { saved = localStorage.getItem(EQ_VIEW_KEY) || 'grid'; } catch (e) {}
+  eqSetView(saved === 'list' ? 'list' : 'grid', { persist: false });
+}
+
+function eqSetView(view, opts = {}) {
+  const grid = document.getElementById('eq-grid');
+  if (grid) grid.classList.toggle('is-list', view === 'list');
+  document.querySelectorAll('.eq-view-btn').forEach(b => {
+    const on = b.dataset.view === view;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  if (opts.persist !== false) {
+    try { localStorage.setItem(EQ_VIEW_KEY, view); } catch (e) {}
+  }
+}
+
+/* حالة «جارٍ التحديث» الخفيفة — الشبكة تفضل مكانها مخفوتة وغير قابلة للضغط */
+function eqSetBusy(on) {
+  document.getElementById('eq-grid')?.classList.toggle('is-busy', !!on);
+  const count = document.getElementById('eq-count');
+  if (count && on) count.textContent = t('grid.updating');
 }
 
 
@@ -495,239 +656,280 @@ async function eqLoadListings(append = false) {
    🔍 القسم 5: الفلترة والبحث
    ================================================================ */
 
+function eqHasActiveFilters() {
+  return !!(eqActiveCategory || eqGov || eqPriceMin > 0 || eqPriceMax > 0 || eqSearch.trim());
+}
+
+function eqActiveFilterCount() {
+  return (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) +
+         ((eqPriceMin > 0 || eqPriceMax > 0) ? 1 : 0) + (eqSearch.trim() ? 1 : 0);
+}
+
+/* نقطة الدخول الوحيدة لإعادة الفلترة — تُعيد الجلب من الصفر وتحدّث الواجهة.
+   التأجيل مكانه مستمع البحث وحده (300ms)؛ باقي الفلاتر ضغطة واحدة صريحة */
 function eqApplyFilters() {
-  let list = [...eqListings];
-
-  if (eqActiveCategory) {
-    list = list.filter(l => l.category === eqActiveCategory);
-  }
-  if (eqSearch.trim()) {
-    const q = eqSearch.trim().toLowerCase();
-    list = list.filter(l =>
-      l.title.toLowerCase().includes(q) ||
-      (l.region || '').toLowerCase().includes(q)
-    );
-  }
-  if (eqGov) {
-    list = list.filter(l => l.region === eqGov);
-  }
-  if (eqPriceMax > 0) {
-    list = list.filter(l => l.price <= eqPriceMax);
-  }
-
-  if (eqSortBy === 'newest') {
-    list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  } else if (eqSortBy === 'cheapest') {
-    list.sort((a, b) => a.price - b.price);
-  } else if (eqSortBy === 'views') {
-    list.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
-  }
-
-  eqFiltered = list;
-  eqRenderGrid();
+  eqSyncUrl();
+  eqLoadListings(false);
+  eqRenderFilterState();
 }
 
 function eqBindSearch() {
   const inp = document.getElementById('eq-search');
-  if (!inp) return;
-  let timer;
-  inp.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      eqSearch = inp.value;
-      eqApplyFilters();
-    }, 300);
-  });
+  if (inp && !inp.dataset.eqBound) {
+    inp.dataset.eqBound = '1';
+    let timer;
+    inp.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        eqSearch = inp.value;
+        eqApplyFilters();
+      }, 300);
+    });
+  }
 
   const govSel = document.getElementById('eq-gov');
-  if (govSel) govSel.addEventListener('change', () => {
-    eqGov = govSel.value;
-    eqSyncDrawerFromActive();
-    eqApplyFilters();
-    eqUpdateDrawerBadge();
-  });
+  if (govSel && !govSel.dataset.eqBound) {
+    govSel.dataset.eqBound = '1';
+    govSel.addEventListener('change', () => { eqGov = govSel.value; eqApplyFilters(); });
+  }
 
   const sortSel = document.getElementById('eq-sort');
-  if (sortSel) sortSel.addEventListener('change', () => {
-    eqSortBy = sortSel.value;
-    eqSyncDrawerFromActive();
-    eqApplyFilters();
-  });
-
-  const priceInp = document.getElementById('eq-price-max');
-  if (priceInp) priceInp.addEventListener('input', () => {
-    eqPriceMax = parseInt(priceInp.value) || 0;
-    const lbl = document.getElementById('eq-price-label');
-    if (lbl) lbl.textContent = _eqFmtPrice(eqPriceMax);
-    eqSyncDrawerFromActive();
-    eqApplyFilters();
-    eqUpdateDrawerBadge();
-  });
-}
-
-function eqSetCategory(cat, el) {
-  eqActiveCategory = cat;
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => t.classList.remove('on'));
-  if (el) el.classList.add('on');
-  eqSyncDrawerFromActive();
-  eqApplyFilters();
-  eqUpdateDrawerBadge();
-}
-
-function eqBuildCategoryTabs() {
-  const cont = document.getElementById('eq-tabs');
-  if (!cont) return;
-  const all = `<button class="eq-tab on" onclick="eqSetCategory('',this)">${t('filters.all')}</button>`;
-  const tabs = EQ_CATEGORIES.map(c =>
-    `<button class="eq-tab" onclick="eqSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
-  ).join('');
-  cont.innerHTML = all + tabs;
-
-  const govSel = document.getElementById('eq-gov');
-  if (govSel) {
-    govSel.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
-      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
+  if (sortSel && !sortSel.dataset.eqBound) {
+    sortSel.dataset.eqBound = '1';
+    sortSel.addEventListener('change', () => { eqSortBy = sortSel.value; eqApplyFilters(); });
   }
 
-  /* Build mobile drawer tabs + gov */
-  const drawerTabs = document.getElementById('eq-drawer-tabs');
-  if (drawerTabs) {
-    const drawerAll  = `<button class="eq-tab on" onclick="eqDrawerSetCategory('',this)">${t('filters.all')}</button>`;
-    const drawerCats = EQ_CATEGORIES.map(c =>
-      `<button class="eq-tab" data-cat="${c.id}" onclick="eqDrawerSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
-    ).join('');
-    drawerTabs.innerHTML = drawerAll + drawerCats;
+  /* لوحة السعر — تُغلق بالضغط خارجها أو بـEsc */
+  if (!document.body.dataset.eqPriceBound) {
+    document.body.dataset.eqPriceBound = '1';
+    document.addEventListener('click', e => {
+      const pop = document.getElementById('eq-price-pop');
+      const btn = document.getElementById('eq-price-btn');
+      if (!pop || !pop.classList.contains('open')) return;
+      if (!pop.contains(e.target) && !btn?.contains(e.target)) eqClosePricePop();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') eqClosePricePop();
+    });
   }
-  const drawerGov = document.getElementById('eq-drawer-gov');
-  if (drawerGov) {
-    drawerGov.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
-      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
-  }
-
-  eqInitFilterFab();
 }
 
 
 /* ================================================================
-   📱 زر الفلتر الطائر — Mobile Filter FAB
+   🎛️ القسم 5-ب: بناء عناصر الفلتر وعرض حالتها
    ================================================================ */
 
-function eqInitFilterFab() {
-  if (window.innerWidth > 768) return;
+function _eqNum(n) {
+  return Number(n || 0).toLocaleString(getLocale() === 'en' ? 'en-US' : 'ar-EG');
+}
 
-  const filtersBar = document.getElementById('eq-filters-bar');
-  const fab        = document.getElementById('eq-filter-fab');
-  if (!filtersBar || !fab) return;
+/* الملخّص المكتوب على زر السعر وشريحة الفلتر النشط */
+function _eqPriceSummary(min = eqPriceMin, max = eqPriceMax) {
+  if (min > 0 && max > 0) return `${_eqNum(min)} – ${_eqNum(max)} ${t('card.currency')}`;
+  if (max > 0)            return t('filters.priceUnder', { price: _eqNum(max) + ' ' + t('card.currency') });
+  if (min > 0)            return t('filters.priceOver',  { price: _eqNum(min) + ' ' + t('card.currency') });
+  return t('filters.anyPrice');
+}
 
-  /* بناء تابس الفئات داخل اللوحة */
-  const fabTabs = document.getElementById('eq-fab-panel-tabs');
-  if (fabTabs) {
-    const allBtn = `<button class="eq-tab on" id="eq-fab-all" onclick="eqFabSetCategory('',this)">${t('filters.all')}</button>`;
-    const catBtns = EQ_CATEGORIES.map(c =>
-      `<button class="eq-tab" onclick="eqFabSetCategory('${c.id}',this)">${eqCatLabel(c.id)}</button>`
-    ).join('');
-    fabTabs.innerHTML = allBtn + catBtns;
-  }
+function _eqTierLabel(tier) {
+  if (tier.id === 'any') return t('filters.anyPrice');
+  if (!tier.max)         return t('filters.priceOver',  { price: _eqNum(tier.min) });
+  if (!tier.min)         return t('filters.priceUnder', { price: _eqNum(tier.max) });
+  return `${_eqNum(tier.min)} – ${_eqNum(tier.max)}`;
+}
 
-  /* بناء قائمة المحافظات */
-  const fabGov = document.getElementById('eq-fab-gov');
-  if (fabGov) {
-    fabGov.innerHTML = `<option value="">${t('filters.allGovs')}</option>` +
-      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
-  }
+/* خيارات المحافظات: اللي فيها إعلانات أولًا وبعددها، والباقي في مجموعة
+   منفصلة — بدل 27 خيارًا متساويًا أغلبها طريق مسدود بلا نتائج */
+function _eqGovOptionsHtml(selected) {
+  const has = g => eqFacets.govs.get(g) || 0;
+  const withData = EQ_GOVS.filter(has);
+  const without  = EQ_GOVS.filter(g => !has(g));
+  const opt = g => `<option value="${g}"${g === selected ? ' selected' : ''}>${eqGovLabel(g)}${has(g) ? ` (${_eqNum(has(g))})` : ''}</option>`;
+  let html = `<option value=""${selected ? '' : ' selected'}>${t('filters.allGovs')}</option>`;
+  if (withData.length) html += `<optgroup label="${t('filters.govsWithAds')}">${withData.map(opt).join('')}</optgroup>`;
+  if (without.length)  html += `<optgroup label="${t('filters.govsOther')}">${without.map(opt).join('')}</optgroup>`;
+  return html;
+}
 
-  /* إظهار / إخفاء FAB عند التمرير */
-  const observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) {
-      fab.classList.add('eq-fab-vis');
-    } else {
-      fab.classList.remove('eq-fab-vis');
-      eqCloseFabPanel();
-    }
-  }, { threshold: 0, rootMargin: '-68px 0px 0px 0px' });
-  observer.observe(filtersBar);
+function _eqCatChipsHtml(handler, activeCat) {
+  const chip = (id, label, count) => {
+    const n = count === null ? '' : `<i class="eqf-chip-n">${_eqNum(count)}</i>`;
+    return `<button type="button" class="eqf-chip${id === activeCat ? ' on' : ''}${count === 0 ? ' is-empty' : ''}"
+      data-cat="${id}" onclick="${handler}('${id}')" aria-pressed="${id === activeCat}">${label}${n}</button>`;
+  };
+  /* لو فشل جلب العدّادات نخفيها كلها بدل ما نطبع «٠» على كل تصنيف —
+     صفر كاذب أسوأ من غياب الرقم: بيقول للمستخدم إن كل قسم فاضي وهو مش فاضي */
+  const hasFacets = eqFacets.total > 0;
+  return chip('', t('filters.all'), hasFacets ? eqFacets.total : null) +
+    EQ_CATEGORIES.map(c => chip(c.id, eqCatLabel(c.id), hasFacets ? (eqFacets.cats.get(c.id) || 0) : null)).join('');
+}
 
-  /* إغلاق اللوحة بالضغط خارجها */
-  document.addEventListener('click', (e) => {
-    const panel = document.getElementById('eq-fab-panel');
-    if (fab && panel && !fab.contains(e.target) && !panel.contains(e.target)) {
-      eqCloseFabPanel();
-    }
+function _eqTierChipsHtml(handler, min, max) {
+  return EQ_PRICE_TIERS.map(tr => {
+    const on = tr.min === min && tr.max === max;
+    return `<button type="button" class="eqf-tier${on ? ' on' : ''}"
+      onclick="${handler}(${tr.min},${tr.max})">${_eqTierLabel(tr)}</button>`;
+  }).join('');
+}
+
+function eqBuildCategoryTabs() {
+  const cont = document.getElementById('eq-tabs');
+  if (cont) cont.innerHTML = _eqCatChipsHtml('eqSetCategory', eqActiveCategory);
+
+  const govSel = document.getElementById('eq-gov');
+  if (govSel) govSel.innerHTML = _eqGovOptionsHtml(eqGov);
+
+  const tiers = document.getElementById('eq-price-tiers');
+  if (tiers) tiers.innerHTML = _eqTierChipsHtml('eqSetPrice', eqPriceMin, eqPriceMax);
+
+  /* نسخة الموبايل داخل الدرج — نفس المكوّنات بنفس العدّادات */
+  const drawerTabs = document.getElementById('eq-drawer-tabs');
+  if (drawerTabs) drawerTabs.innerHTML = _eqCatChipsHtml('eqDrawerSetCategory', eqDrawerDraft.category);
+
+  const drawerGov = document.getElementById('eq-drawer-gov');
+  if (drawerGov) drawerGov.innerHTML = _eqGovOptionsHtml(eqDrawerDraft.gov);
+
+  const drawerTiers = document.getElementById('eq-drawer-price-tiers');
+  if (drawerTiers) drawerTiers.innerHTML = _eqTierChipsHtml('eqDrawerSetPrice', eqDrawerDraft.priceMin, eqDrawerDraft.priceMax);
+
+  eqRenderFilterState();
+}
+
+/* المصدر الوحيد لعرض حالة الفلاتر على كل الأسطح (شرائح، قوائم، شارات،
+   شريط الفلاتر النشطة). أي تغيير في الحالة بيمرّ من هنا. */
+function eqRenderFilterState() {
+  document.querySelectorAll('#eq-tabs .eqf-chip').forEach(el => {
+    const on = (el.dataset.cat || '') === eqActiveCategory;
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', on);
   });
-}
 
-function eqToggleFabPanel(e) {
-  e.stopPropagation();
-  const panel = document.getElementById('eq-fab-panel');
-  const fab   = document.getElementById('eq-filter-fab');
-  if (!panel || !fab) return;
-  const isOpen = panel.classList.contains('eq-fab-open');
-  if (isOpen) {
-    eqCloseFabPanel();
-  } else {
-    panel.classList.add('eq-fab-open');
-    fab.classList.add('eq-fab-open');
-  }
-}
+  const govSel = document.getElementById('eq-gov');
+  if (govSel && govSel.value !== eqGov) govSel.value = eqGov;
+  const sortSel = document.getElementById('eq-sort');
+  if (sortSel && sortSel.value !== eqSortBy) sortSel.value = eqSortBy;
 
-function eqCloseFabPanel() {
-  document.getElementById('eq-fab-panel')?.classList.remove('eq-fab-open');
-  document.getElementById('eq-filter-fab')?.classList.remove('eq-fab-open');
-}
+  const priceLbl = document.getElementById('eq-price-label');
+  if (priceLbl) priceLbl.textContent = _eqPriceSummary();
+  document.getElementById('eq-price-btn')?.classList.toggle('on', eqPriceMin > 0 || eqPriceMax > 0);
 
-function eqUpdateFabBadge() {
-  const badge = document.getElementById('eq-fab-badge');
-  if (!badge) return;
-  const count = (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) + (eqPriceMax > 0 ? 1 : 0);
-  badge.textContent = count;
-  badge.classList.toggle('show', count > 0);
-}
-
-function eqFabSetCategory(cat, el) {
-  eqActiveCategory = cat;
-  /* تحديث تابس اللوحة */
-  document.querySelectorAll('#eq-fab-panel-tabs .eq-tab').forEach(t => t.classList.remove('on'));
-  if (el) el.classList.add('on');
-  /* مزامنة شريط الفئات الرئيسي — التطابق على onclick (لغة-مستقل)
-     مش على النص المعروض، عشان يفضل شغّال بعد ترجمة تبويب "الكل" */
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
-    const isMatch = cat === '' ? t.getAttribute('onclick')?.includes(`eqSetCategory('',`)
-      : t.getAttribute('onclick')?.includes(`'${cat}'`);
-    t.classList.toggle('on', isMatch);
+  document.querySelectorAll('#eq-price-tiers .eqf-tier').forEach(el => {
+    const on = el.getAttribute('onclick') === `eqSetPrice(${eqPriceMin},${eqPriceMax})`;
+    el.classList.toggle('on', on);
   });
-  eqApplyFilters();
-  eqUpdateFabBadge();
+  const pMinInp = document.getElementById('eq-price-min-input');
+  const pMaxInp = document.getElementById('eq-price-max-input');
+  if (pMinInp && document.activeElement !== pMinInp) pMinInp.value = eqPriceMin || '';
+  if (pMaxInp && document.activeElement !== pMaxInp) pMaxInp.value = eqPriceMax || '';
+
+  eqRenderActiveChips();
+  eqUpdateDrawerBadge();
 }
 
-function eqFabGovChange(sel) {
-  eqGov = sel.value;
-  const main = document.getElementById('eq-gov');
-  if (main) main.value = sel.value;
-  eqApplyFilters();
-  eqUpdateFabBadge();
+/* شريط الفلاتر النشطة — إزالة أي فلتر بضغطة واحدة بدل الرجوع لمصدره */
+function eqRenderActiveChips() {
+  const wrap = document.getElementById('eq-active-chips');
+  if (!wrap) return;
+  const chips = [];
+  const chip = (label, fn) =>
+    `<button type="button" class="eqf-active-chip" onclick="${fn}"><span>${label}</span><i aria-hidden="true">✕</i></button>`;
+
+  if (eqActiveCategory) chips.push(chip(eqCatLabel(eqActiveCategory), "eqSetCategory('')"));
+  if (eqGov)            chips.push(chip(eqGovLabel(eqGov), "eqSetGov('')"));
+  if (eqPriceMin > 0 || eqPriceMax > 0) chips.push(chip(_eqPriceSummary(), 'eqSetPrice(0,0)'));
+  if (eqSearch.trim())  chips.push(chip(`«${eqSearch.trim()}»`, 'eqClearSearch()'));
+
+  wrap.innerHTML = chips.length
+    ? chips.join('') + `<button type="button" class="eqf-clear-all" onclick="eqClearAllFilters()">${t('filters.clearAll')}</button>`
+    : '';
+  wrap.classList.toggle('has-items', chips.length > 0);
 }
 
-function eqFabSortChange(sel) {
-  eqSortBy = sel.value;
-  const main = document.getElementById('eq-sort');
-  if (main) main.value = sel.value;
+
+/* ── مُبدّلات الفلاتر (سطح المكتب) ── */
+
+function eqSetCategory(cat) {
+  eqActiveCategory = cat === eqActiveCategory ? '' : cat;   // إعادة الضغط = إلغاء
   eqApplyFilters();
 }
 
-function _eqFmtPrice(val) {
-  return val > 0 ? val.toLocaleString(getLocale() === 'en' ? 'en-US' : 'ar-EG') + ' ' + t('card.currency') : t('filters.noLimit');
+function eqSetGov(gov) {
+  eqGov = gov || '';
+  eqApplyFilters();
 }
 
-function eqFabPriceChange(inp) {
-  eqPriceMax = parseInt(inp.value) || 0;
-  const val = document.getElementById('eq-fab-price-val');
-  if (val) val.textContent = _eqFmtPrice(eqPriceMax);
-  const mainInp = document.getElementById('eq-price-max');
-  if (mainInp) mainInp.value = inp.value;
-  const mainLbl = document.getElementById('eq-price-label');
-  if (mainLbl) mainLbl.textContent = _eqFmtPrice(eqPriceMax);
+function eqSetPrice(min, max) {
+  eqPriceMin = Number(min) || 0;
+  eqPriceMax = Number(max) || 0;
+  eqClosePricePop();
   eqApplyFilters();
-  eqUpdateFabBadge();
+}
+
+function eqClearSearch() {
+  eqSearch = '';
+  const s = document.getElementById('eq-search');
+  if (s) s.value = '';
+  eqApplyFilters();
+}
+
+function eqApplyCustomPrice() {
+  const min = parseInt(document.getElementById('eq-price-min-input')?.value) || 0;
+  let   max = parseInt(document.getElementById('eq-price-max-input')?.value) || 0;
+  /* لو المستخدم عكس الحدّين نصلّحها بدل ما نرجّع صفر نتائج بلا سبب واضح */
+  if (min > 0 && max > 0 && max < min) { const tmp = max; max = min; eqPriceMin = tmp; }
+  else eqPriceMin = min;
+  eqPriceMax = max;
+  eqClosePricePop();
+  eqApplyFilters();
+}
+
+function eqTogglePricePop(e) {
+  e?.stopPropagation();
+  const pop = document.getElementById('eq-price-pop');
+  if (!pop) return;
+  const open = pop.classList.toggle('open');
+  document.getElementById('eq-price-btn')?.setAttribute('aria-expanded', open);
+}
+
+function eqClosePricePop() {
+  document.getElementById('eq-price-pop')?.classList.remove('open');
+  document.getElementById('eq-price-btn')?.setAttribute('aria-expanded', 'false');
+}
+
+
+/* ================================================================
+   🔗 مزامنة الفلاتر مع الرابط — رجوع المتصفح ومشاركة نتيجة مفلترة
+   ================================================================ */
+
+function eqSyncUrl() {
+  const p = new URLSearchParams(window.location.search);
+  const set = (k, v) => { if (v) p.set(k, v); else p.delete(k); };
+  set('cat',  eqActiveCategory);
+  set('gov',  eqGov);
+  set('min',  eqPriceMin > 0 ? eqPriceMin : '');
+  set('max',  eqPriceMax > 0 ? eqPriceMax : '');
+  set('sort', eqSortBy !== 'newest' ? eqSortBy : '');
+  set('q',    eqSearch.trim());
+  const qs = p.toString();
+  history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+}
+
+function eqReadUrlFilters() {
+  const p = new URLSearchParams(window.location.search);
+  const cat = p.get('cat') || '';
+  if (cat && EQ_CATEGORIES.some(c => c.id === cat)) eqActiveCategory = cat;
+  const gov = p.get('gov') || '';
+  if (gov && EQ_GOVS.includes(gov)) eqGov = gov;
+  eqPriceMin = Math.max(0, parseInt(p.get('min')) || 0);
+  eqPriceMax = Math.max(0, parseInt(p.get('max')) || 0);
+  const sort = p.get('sort') || '';
+  if (['cheapest', 'priciest', 'views'].includes(sort)) eqSortBy = sort;
+  const q = p.get('q') || '';
+  if (q) {
+    eqSearch = q;
+    const inp = document.getElementById('eq-search');
+    if (inp) inp.value = q;
+  }
 }
 
 
@@ -748,6 +950,11 @@ function eqInitFilterBarSticky() {
     document.documentElement.style.setProperty('--eq-nav-h', nav.offsetHeight + 'px');
   };
   syncNavHeight();
+  /* قياس ثانٍ بعد load: الناف بيتغيّر ارتفاعه لما الخطوط تخلص تحميل ومنطقة
+     المستخدم تتبني من JS، ولو فاتت اللحظة دي بيفضل الشريط اللاصق بفجوة
+     أو تراكب تحت الناف */
+  window.addEventListener('load', syncNavHeight);
+  document.fonts?.ready?.then(syncNavHeight);
   if (window.ResizeObserver) {
     new ResizeObserver(syncNavHeight).observe(nav);
   } else {
@@ -871,111 +1078,138 @@ function eqLightboxClose() {
   eqLbZoom = 1;
 }
 
-function eqDrawerSetCategory(cat, el) {
-  eqDrawerDraft.category = cat;
-  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => t.classList.remove('on'));
-  if (el) {
-    el.dataset.cat = cat || '';
-    el.classList.add('on');
-  }
-  eqUpdateDrawerBadge();
+/* بلا سلوك toggle هنا عمدًا: الشريحة دي بيوصلها الحدث ٣ مرات (inline onclick
+   + المستمع المفوَّض على pointerdown + نظيره على click في eqInstallMobileFilterControls)،
+   فأي عكس للحالة كان هيلغي نفسه فورًا. الإلغاء متاح بشريحة «الكل» وبزر إعادة التعيين. */
+function eqDrawerSetCategory(cat) {
+  eqDrawerDraft.category = cat || '';
+  eqRenderDrawerDraft();
 }
 
 function eqDrawerGovChange(sel) {
   eqDrawerDraft.gov = sel.value;
-  eqUpdateDrawerBadge();
+  eqRenderDrawerDraft();
 }
 
 function eqDrawerSortChange(sel) {
   eqDrawerDraft.sortBy = sel.value;
+  eqRenderDrawerDraft();
 }
 
-function eqDrawerPriceChange(inp) {
-  eqDrawerDraft.priceMax = parseInt(inp.value) || 0;
-  const label = _eqFmtPrice(eqDrawerDraft.priceMax);
-  const drawerVal = document.getElementById('eq-drawer-price-val');
-  if (drawerVal) drawerVal.textContent = label;
-  eqUpdateDrawerBadge();
+function eqDrawerSetPrice(min, max) {
+  eqDrawerDraft.priceMin = Number(min) || 0;
+  eqDrawerDraft.priceMax = Number(max) || 0;
+  eqRenderDrawerDraft();
 }
 
+function eqDrawerCustomPrice() {
+  const min = parseInt(document.getElementById('eq-drawer-price-min')?.value) || 0;
+  const max = parseInt(document.getElementById('eq-drawer-price-max')?.value) || 0;
+  eqDrawerDraft.priceMin = (min > 0 && max > 0 && max < min) ? max : min;
+  eqDrawerDraft.priceMax = (min > 0 && max > 0 && max < min) ? min : max;
+  eqRenderDrawerDraft({ keepInputs: true });
+}
+
+/* الشارة على زر/لسان الفلتر بتعكس الفلاتر *المطبَّقة* — لا مسوّدة الدرج */
 function eqUpdateDrawerBadge() {
-  const count = (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) + (eqPriceMax > 0 ? 1 : 0);
+  const count = eqActiveFilterCount();
   ['eq-drawer-badge', 'eq-mobile-filter-badge'].forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
-    badge.textContent = count;
+    badge.textContent = _eqNum(count);
     badge.classList.toggle('show', count > 0);
   });
 }
 
 function eqResetDrawer() {
-  eqDrawerDraft = {
-    category: '',
-    gov: '',
-    priceMax: 0,
-    sortBy: 'newest',
-  };
+  eqDrawerDraft = { category: '', gov: '', priceMin: 0, priceMax: 0, sortBy: 'newest' };
   eqRenderDrawerDraft();
 }
 
 function eqApplyDrawerFilters() {
   eqActiveCategory = eqDrawerDraft.category;
-  eqGov = eqDrawerDraft.gov;
+  eqGov      = eqDrawerDraft.gov;
+  eqPriceMin = eqDrawerDraft.priceMin;
   eqPriceMax = eqDrawerDraft.priceMax;
-  eqSortBy = eqDrawerDraft.sortBy;
+  eqSortBy   = eqDrawerDraft.sortBy;
 
-  eqSyncMainFiltersFromActive();
   eqApplyFilters();
-  eqUpdateDrawerBadge();
   eqCloseSidebar();
 }
 
 function eqSyncDrawerFromActive() {
   eqDrawerDraft = {
     category: eqActiveCategory,
-    gov: eqGov,
+    gov:      eqGov,
+    priceMin: eqPriceMin,
     priceMax: eqPriceMax,
-    sortBy: eqSortBy,
+    sortBy:   eqSortBy,
   };
   eqRenderDrawerDraft();
 }
 
-function eqRenderDrawerDraft() {
-  const drawerGov   = document.getElementById('eq-drawer-gov');
-  const drawerSort  = document.getElementById('eq-drawer-sort');
-  const drawerPrice = document.getElementById('eq-drawer-price');
-  const drawerVal   = document.getElementById('eq-drawer-price-val');
-  const label = _eqFmtPrice(eqDrawerDraft.priceMax);
+function eqRenderDrawerDraft(opts = {}) {
+  const drawerGov  = document.getElementById('eq-drawer-gov');
+  const drawerSort = document.getElementById('eq-drawer-sort');
+  if (drawerGov)  drawerGov.value  = eqDrawerDraft.gov;
+  if (drawerSort) drawerSort.value = eqDrawerDraft.sortBy;
 
-  if (drawerGov)   drawerGov.value   = eqDrawerDraft.gov;
-  if (drawerSort)  drawerSort.value  = eqDrawerDraft.sortBy;
-  if (drawerPrice) drawerPrice.value = eqDrawerDraft.priceMax;
-  if (drawerVal)   drawerVal.textContent = label;
-
-  document.querySelectorAll('#eq-drawer-tabs .eq-tab').forEach(t => {
-    const cat = t.dataset.cat ?? '';
-    t.classList.toggle('on', cat === eqDrawerDraft.category);
+  document.querySelectorAll('#eq-drawer-tabs .eqf-chip').forEach(el => {
+    const on = (el.dataset.cat || '') === eqDrawerDraft.category;
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', on);
   });
+  document.querySelectorAll('#eq-drawer-price-tiers .eqf-tier').forEach(el => {
+    el.classList.toggle('on',
+      el.getAttribute('onclick') === `eqDrawerSetPrice(${eqDrawerDraft.priceMin},${eqDrawerDraft.priceMax})`);
+  });
+
+  if (!opts.keepInputs) {
+    const minInp = document.getElementById('eq-drawer-price-min');
+    const maxInp = document.getElementById('eq-drawer-price-max');
+    if (minInp) minInp.value = eqDrawerDraft.priceMin || '';
+    if (maxInp) maxInp.value = eqDrawerDraft.priceMax || '';
+  }
+
+  const summary = document.getElementById('eq-drawer-price-val');
+  if (summary) summary.textContent = _eqPriceSummary(eqDrawerDraft.priceMin, eqDrawerDraft.priceMax);
+
+  eqQueueDrawerPreview();
 }
 
-function eqSyncMainFiltersFromActive() {
-  const mainGov   = document.getElementById('eq-gov');
-  const mainSort  = document.getElementById('eq-sort');
-  const mainPrice = document.getElementById('eq-price-max');
-  const mainLbl   = document.getElementById('eq-price-label');
-  const label = _eqFmtPrice(eqPriceMax);
+/* عدّاد حيّ على زر التطبيق: «عرض ٧ نتائج» قبل الإغلاق — استعلام count
+   بلا صفوف (head) فتكلفته لا تُذكر، ومؤجَّل عشان ميتكررش مع كل ضغطة */
+let _eqPreviewTimer = null;
+let _eqPreviewSeq   = 0;
+function eqQueueDrawerPreview() {
+  clearTimeout(_eqPreviewTimer);
+  _eqPreviewTimer = setTimeout(eqPreviewDrawerCount, 220);
+}
 
-  if (mainGov)   mainGov.value   = eqGov;
-  if (mainSort)  mainSort.value  = eqSortBy;
-  if (mainPrice) mainPrice.value = eqPriceMax;
-  if (mainLbl)   mainLbl.textContent = label;
-
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach(t => {
-    const onclick = t.getAttribute('onclick') || '';
-    const isAll = eqActiveCategory === '' && onclick.includes("eqSetCategory('',");
-    const isCat = eqActiveCategory && onclick.includes(`'${eqActiveCategory}'`);
-    t.classList.toggle('on', !!(isAll || isCat));
-  });
+async function eqPreviewDrawerCount() {
+  const btn = document.getElementById('eq-drawer-apply-btn');
+  if (!btn || !eqSb) return;
+  const seq = ++_eqPreviewSeq;
+  try {
+    const { count, error } = await _eqBuildQuery({
+      select: 'id',
+      countOpts: { count: 'exact', head: true },
+      category: eqDrawerDraft.category,
+      gov:      eqDrawerDraft.gov,
+      priceMin: eqDrawerDraft.priceMin,
+      priceMax: eqDrawerDraft.priceMax,
+    });
+    if (error) throw error;
+    if (seq !== _eqPreviewSeq) return;
+    /* count للجمع النحوي، n للعرض — i18next مبيحوّلش أرقام {{count}}
+       لأرقام عربية، فيبان الرقم لاتيني وسط واجهة أرقامها هندية */
+    btn.textContent = count > 0
+      ? t('filters.showNResults', { count: count, n: _eqNum(count) })
+      : t('filters.noResultsBtn');
+    btn.disabled = false;
+  } catch (e) {
+    if (seq === _eqPreviewSeq) btn.textContent = t('filters.showResults');
+  }
 }
 
 function eqStopFilterEvent(e) {
@@ -1046,10 +1280,10 @@ function eqInstallMobileFilterControls() {
   if (tabs && tabs.dataset.eqAppFilterBound !== '1') {
     tabs.dataset.eqAppFilterBound = '1';
     tabs.addEventListener('click', e => {
-      const btn = e.target.closest('.eq-tab');
+      const btn = e.target.closest('.eqf-chip');
       if (!btn) return;
       eqStopFilterEvent(e);
-      eqDrawerSetCategory(btn.dataset.cat || '', btn);
+      eqDrawerSetCategory(btn.dataset.cat || '');
     }, true);
   }
 
@@ -1065,7 +1299,7 @@ function eqInstallMobileFilterControls() {
       const closeTarget = pathHas('#eq-drawer-close-btn, #eq-sidebar-overlay') || target.closest?.('#eq-drawer-close-btn, #eq-sidebar-overlay');
       const resetTarget = pathHas('#eq-drawer-reset-btn') || target.closest?.('#eq-drawer-reset-btn');
       const applyTarget = pathHas('#eq-drawer-apply-btn') || target.closest?.('#eq-drawer-apply-btn');
-      const tabTarget = pathHas('#eq-drawer-tabs .eq-tab') || target.closest?.('#eq-drawer-tabs .eq-tab');
+      const tabTarget = pathHas('#eq-drawer-tabs .eqf-chip') || target.closest?.('#eq-drawer-tabs .eqf-chip');
 
       if (openBtn) {
         eqStopFilterEvent(e);
@@ -1081,7 +1315,7 @@ function eqInstallMobileFilterControls() {
         eqApplyDrawerFilters();
       } else if (tabTarget) {
         eqStopFilterEvent(e);
-        eqDrawerSetCategory(tabTarget.dataset.cat || '', tabTarget);
+        eqDrawerSetCategory(tabTarget.dataset.cat || '');
       }
     };
     window.addEventListener('pointerdown', delegatedFilterClick, true);
@@ -1099,53 +1333,94 @@ setTimeout(eqInstallMobileFilterControls, 300);
    🃏 القسم 6: بناء كروت الإعلانات
    ================================================================ */
 
+function _eqEsc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* أيقونة المفضلة: خط رفيع وهي مطفية، ممتلئة وهي مفعّلة — بديل الإيموجي
+   🤍/❤️ اللي كان شكله بيختلف من نظام لنظام ولونه بيصرخ وسط كرت هادئ */
+function _eqHeartSvg(on) {
+  return `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor"
+    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 20.7 3.9 12.6a5.2 5.2 0 0 1 7.4-7.3l.7.7.7-.7a5.2 5.2 0 0 1 7.4 7.3Z"/></svg>`;
+}
+
+/* ترتيب واحد للكرت في العرضين (شبكة/قائمة) وفي الموبايل — الاختلاف كله
+   في CSS، فالتبديل بين العرضين مجرد كلاس على الحاوية: بلا إعادة بناء،
+   وبالتالي الفلاتر والترتيب وموضع التمرير كلها بتفضل زي ما هي. */
 function eqBuildCard(listing) {
   const allImgs = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
   const cond    = eqCondLabel(listing.condition);
   const cat     = eqCatLabel(listing.category);
-  const price   = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
-  const nego    = listing.negotiable ? `<span class="eq-badge eq-badge-nego">${t('card.negotiable')}</span>` : '';
-  const feat    = listing.is_featured ? `<span class="eq-badge eq-badge-feat">${t('card.featured')}</span>` : '';
-  const favIcon = eqFavorites.has(listing.id) ? '❤️' : '🤍';
+  const price   = _eqNum(listing.price);
   const lid     = listing.id;
+  const title   = _eqEsc(listing.title);
+  const isFav   = eqFavorites.has(lid);
 
-  let imgAreaHtml;
+  const flag = listing.is_featured
+    ? `<span class="eq-card-flag">${t('card.featured')}</span>` : '';
+
+  let mediaInner;
   if (allImgs.length === 0) {
-    imgAreaHtml = `<div class="eq-card-no-img">📦</div>${feat}`;
+    mediaInner = `<div class="eq-card-no-img">📦</div>`;
   } else {
-    const slides = allImgs.map((u, i) =>
-      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${listing.title}"${_imgAttrs(true)}
+    const slides = allImgs.map(u =>
+      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${title}"${_imgAttrs(true)}
         onerror="this.parentNode.style.display='none'"></div>`
     ).join('');
     const navHtml = allImgs.length > 1 ? `
-      <button class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.stopPropagation()" aria-label="${t('card.prev')}">‹</button>
-      <button class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.stopPropagation()" aria-label="${t('card.next')}">›</button>
-      <div class="eq-cn-dots">${allImgs.map((_,i) => `<span class="eq-cn-dot${i===0?' active':''}"></span>`).join('')}</div>` : '';
-    imgAreaHtml = `
+      <button type="button" class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.preventDefault();event.stopPropagation()" aria-label="${t('card.prev')}">‹</button>
+      <button type="button" class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.preventDefault();event.stopPropagation()" aria-label="${t('card.next')}">›</button>
+      <div class="eq-cn-dots">${allImgs.map((_, i) => `<span class="eq-cn-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>` : '';
+    mediaInner = `
       <div class="eq-card-carousel${allImgs.length > 1 ? ' has-many' : ''}" id="eqc-${lid}" data-idx="0">
         <div class="eq-card-slides">${slides}</div>
         ${navHtml}
-      </div>
-      ${feat}`;
+      </div>`;
   }
 
+  const locText = [listing.region ? eqGovLabel(listing.region) : '', listing.area]
+    .filter(Boolean).map(_eqEsc).join(' — ');
+  const desc = listing.description
+    ? `<p class="eq-card-desc">${_eqEsc(listing.description)}</p>` : '';
+
   return `
-<div class="eq-card" data-category="${listing.category || ''}" data-region="${listing.region || ''}" data-price="${Number(listing.price) || 0}" onclick="eqOpenDetail('${lid}')">
-  <div class="eq-card-img" style="position:relative">
-    ${imgAreaHtml}
-    <button class="eq-fav-btn" data-fav="${lid}" onclick="eqToggleFavorite(event,'${lid}')" title="${t('card.favoriteTitle')}">${favIcon}</button>
+<article class="eq-card" data-category="${listing.category || ''}" data-region="${_eqEsc(listing.region)}" data-price="${Number(listing.price) || 0}">
+  <div class="eq-card-media">
+    ${mediaInner}
+    ${flag}
+    <button type="button" class="eq-fav-btn${isFav ? ' on' : ''}" data-fav="${lid}"
+            onclick="eqToggleFavorite(event,'${lid}')"
+            aria-pressed="${isFav}" aria-label="${t('card.favoriteTitle')}" title="${t('card.favoriteTitle')}">${_eqHeartSvg(isFav)}</button>
+    <span class="eq-card-chip">${cat}</span>
   </div>
   <div class="eq-card-body">
-    <div class="eq-card-meta">
-      <span class="eq-badge eq-badge-cat">${cat}</span>
-      <span class="eq-badge eq-badge-cond">${cond}</span>
-      ${nego}
+    <div class="eq-card-priceline">
+      <span class="eq-card-price">${price} ${t('card.currency')}</span>
+      ${listing.negotiable ? `<span class="eq-card-nego">${t('card.negotiable')}</span>` : ''}
     </div>
-    <div class="eq-card-title">${listing.title}</div>
-    <div class="eq-card-price">${price} ${t('card.currency')}</div>
-    <div class="eq-card-loc">📍 ${listing.region ? eqGovLabel(listing.region) : ''}${listing.area ? ' — ' + listing.area : ''}</div>
+    <h3 class="eq-card-title"><a class="eq-card-link" href="/market/?listing=${lid}"
+       onclick="return eqCardClick(event,'${lid}')">${title}</a></h3>
+    ${desc}
+    <div class="eq-card-meta">
+      <span class="eq-card-loc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${locText}</span>
+      <span class="eq-card-cond">${cond}</span>
+    </div>
   </div>
-</div>`;
+</article>`;
+}
+
+/* الكرت رابط حقيقي (stretched link) لا div بـonclick: فيه تركيز بلوحة
+   المفاتيح، وctrl/⌘+click بيفتح تبويب جديد، وزر الفأرة الأوسط والنسخ
+   شغّالين — من غير ما نضحّي بمودال التفاصيل السريع في الضغطة العادية */
+function eqCardClick(e, id) {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return true;
+  e.preventDefault();
+  eqOpenDetail(id);
+  return false;
 }
 
 
@@ -1159,48 +1434,53 @@ function _eqEmptyHeadline() {
   const parts = [];
   if (eqActiveCategory) parts.push(t('empty.dynFragCat',   { cat: eqCatLabel(eqActiveCategory) }));
   if (eqGov)            parts.push(t('empty.dynFragGov',   { gov: eqGovLabel(eqGov) }));
-  if (eqPriceMax > 0)   parts.push(t('empty.dynFragPrice', { price: _eqFmtPrice(eqPriceMax) }));
+  if (eqPriceMin > 0 || eqPriceMax > 0) parts.push(t('empty.dynFragPrice', { price: _eqPriceSummary() }));
   if (eqSearch.trim())  parts.push(t('empty.dynFragSearch',{ q: eqSearch.trim() }));
   if (!parts.length) return t('grid.empty');
   return t('empty.dynNoneCombo', { what: parts.join(' ') });
 }
 
 function eqClearAllFilters() {
-  eqActiveCategory = ''; eqSearch = ''; eqGov = ''; eqPriceMax = 0;
-  const s = document.getElementById('eq-search');     if (s) s.value = '';
-  const g = document.getElementById('eq-gov');        if (g) g.value = '';
-  const p = document.getElementById('eq-price-max');  if (p) p.value = p.min || 0;
-  const lbl = document.getElementById('eq-price-label'); if (lbl) lbl.textContent = _eqFmtPrice(0);
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach((tb, i) => tb.classList.toggle('on', i === 0));
-  if (typeof eqSyncDrawerFromActive === 'function') eqSyncDrawerFromActive();
-  if (typeof eqUpdateDrawerBadge   === 'function') eqUpdateDrawerBadge();
+  eqActiveCategory = ''; eqSearch = ''; eqGov = ''; eqPriceMin = 0; eqPriceMax = 0;
+  const s = document.getElementById('eq-search'); if (s) s.value = '';
   eqApplyFilters();
 }
 
 /* يمسح باقي الفلاتر حتى لا يقع المستخدم في فراغ ثانٍ فورًا */
 function eqJumpToGov(gov) {
-  eqActiveCategory = ''; eqSearch = ''; eqPriceMax = 0; eqGov = gov || '';
-  const s = document.getElementById('eq-search');    if (s) s.value = '';
-  const p = document.getElementById('eq-price-max'); if (p) p.value = p.min || 0;
-  const g = document.getElementById('eq-gov');       if (g) g.value = eqGov;
-  document.querySelectorAll('#eq-tabs .eq-tab').forEach((tb, i) => tb.classList.toggle('on', i === 0));
-  if (typeof eqSyncDrawerFromActive === 'function') eqSyncDrawerFromActive();
-  if (typeof eqUpdateDrawerBadge   === 'function') eqUpdateDrawerBadge();
+  eqActiveCategory = ''; eqSearch = ''; eqPriceMin = 0; eqPriceMax = 0; eqGov = gov || '';
+  const s = document.getElementById('eq-search'); if (s) s.value = '';
   eqApplyFilters();
   document.getElementById('eq-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function _eqRenderDynamicEmpty(grid) {
-  const anyFilter = !!(eqActiveCategory || eqGov || eqPriceMax > 0 || eqSearch.trim());
+  const anyFilter = eqHasActiveFilters();
 
-  const byGov = new Map();
-  eqListings.forEach(l => { if (l.region) byGov.set(l.region, (byGov.get(l.region) || 0) + 1); });
-  const govSoleFilter = !!eqGov && !eqActiveCategory && !eqPriceMax && !eqSearch.trim();
-  const govs = [...byGov.entries()]
+  /* المصدر بقى eqFacets/eqSampleListings لا eqListings — بعد نقل الفلترة
+     للخادم بقت eqListings هي *النتائج المفلترة* (فاضية هنا بالتعريف)، فكانت
+     الاقتراحات هتبقى فاضية كمان لو فضلنا نقرأ منها */
+  const govSoleFilter = !!eqGov && !eqActiveCategory && !eqPriceMin && !eqPriceMax && !eqSearch.trim();
+  const govs = [...eqFacets.govs.entries()]
     .filter(([g]) => !(govSoleFilter && g === eqGov))
     .sort((a, b) => b[1] - a[1]).slice(0, 6);
 
-  const alt = eqListings.filter(l => !(govSoleFilter && l.region === eqGov)).slice(0, 3);
+  /* eqSampleListings بتتعبّى من أول تحميل *بلا* فلاتر. لو المستخدم دخل
+     على رابط مفلتر جاهز (مشاركة أو رجوع) الكاش بيبقى فاضي وقسم
+     «إعلانات ممكن تهمّك» يختفي — نجيبها ساعتها ونعيد الرسم مرة واحدة. */
+  if (!eqSampleListings.length && !_eqSampleFetching) {
+    _eqSampleFetching = true;
+    eqSb.from('listings').select(_EQ_SELECT)
+      .eq('status', 'approved').gt('expires_at', new Date().toISOString())
+      .order('is_featured', { ascending: false }).order('created_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => {
+        _eqSampleFetching = false;
+        if (data?.length) { eqSampleListings = data; if (!eqFiltered.length) eqRenderGrid(); }
+      }, () => { _eqSampleFetching = false; });
+  }
+
+  const alt = eqSampleListings.filter(l => !(govSoleFilter && l.region === eqGov)).slice(0, 3);
 
   grid.innerHTML = `
     <div class="eq-empty" style="grid-column:1/-1;text-align:center">
@@ -1211,9 +1491,9 @@ function _eqRenderDynamicEmpty(grid) {
         <div style="font-size:12.5px;opacity:.7;margin-bottom:9px;font-weight:700">${t('empty.dynGovsLabel')}</div>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
           ${govs.map(([g, n]) => `
-            <button class="eq-btn eq-btn-outline" style="padding:7px 14px;font-size:12.5px"
+            <button class="eq-btn eq-btn-outline" style="padding:7px 14px;font-size:12.5px;border-radius:var(--radius-pill)"
                     onclick="eqJumpToGov('${String(g).replace(/'/g, "\\'")}')">
-              📍 ${eqGovLabel(g)} (${n})
+              📍 ${eqGovLabel(g)} (${_eqNum(n)})
             </button>`).join('')}
         </div>` : ''}
       ${anyFilter ? `<button class="eq-btn eq-btn-primary" onclick="eqClearAllFilters()">${t('empty.dynShowAll')}</button>` : ''}
@@ -1247,7 +1527,9 @@ function eqRenderGrid() {
 
   _eqImgCounter = 0; /* أعد العدّاد لتحصل أول 6 صور على fetchpriority=high */
   grid.innerHTML = eqFiltered.map(eqBuildCard).join('');
-  if (count) count.textContent = t(eqHasMore ? 'grid.countPlus' : 'grid.count', { count: eqFiltered.length });
+  /* العدد من count الحقيقي على الخادم لا من طول الصفحة المحمّلة */
+  const total = eqTotalCount || eqFiltered.length;
+  if (count) count.textContent = t('grid.count', { count: total, n: _eqNum(total) });
   if (more)  more.style.display = eqHasMore ? 'flex' : 'none';
 }
 
@@ -1287,8 +1569,20 @@ function eqShowError(msg) {
 
 let eqCurrentDetailId = null; // آخر إعلان مفتوح في المودال — لإعادة الرسم عند تبديل اللغة
 
+/* الإعلان قد لا يكون ضمن الصفحة المحمّلة حاليًا: رابط عميق ?listing=،
+   أو بطاقة من اقتراحات الحالة الفارغة، أو نتيجة استُبدلت بفلتر جديد —
+   ساعتها نجيبه بمفرده بدل ما المودال ميفتحش من غير أي رسالة */
+async function eqFetchListing(id) {
+  try {
+    const { data } = await eqSb.from('listings').select(_EQ_SELECT)
+      .eq('id', id).eq('status', 'approved').maybeSingle();
+    return data || null;
+  } catch (e) { return null; }
+}
+
 async function eqOpenDetail(id) {
-  const listing = eqListings.find(l => l.id === id);
+  let listing = eqListings.find(l => l.id === id) || eqSampleListings.find(l => l.id === id);
+  if (!listing) listing = await eqFetchListing(id);
   if (!listing) return;
   eqCurrentDetailId = id;
 
@@ -1668,7 +1962,7 @@ async function eqOpenEdit(id) {
 
   /* ملء قوائم الاختيار */
   document.getElementById('eq-edit-category').innerHTML =
-    EQ_CATEGORIES.map(c => `<option value="${c.id}"${l.category===c.id?' selected':''}>${eqCatLabel(c.id)}</option>`).join('');
+    EQ_CATEGORIES.map(c => `<option value="${c.id}"${eqNormCat(l.category)===c.id?' selected':''}>${eqCatLabel(c.id)}</option>`).join('');
 
   document.getElementById('eq-edit-condition').innerHTML =
     EQ_CONDITIONS.map(c => `<option value="${c.id}"${l.condition===c.id?' selected':''}>${eqCondLabel(c.id)}</option>`).join('');
@@ -1831,8 +2125,11 @@ function eqFmtDate(iso) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+/* التطبيع هنا لا عند كل مُستدعٍ: كرت، تفاصيل، عنوان الحالة الفارغة —
+   كلها بتاخد الاسم العربي الصحيح للإعلانات القديمة بدل الـid الخام */
 function eqCatLabel(id) {
-  return t('categories.' + id, { defaultValue: id });
+  const norm = eqNormCat(id);
+  return t('categories.' + norm, { defaultValue: norm });
 }
 
 function eqCondLabel(id) {
@@ -1881,9 +2178,29 @@ async function eqLoadFavorites() {
   eqUpdateFavBtn();
 }
 
+/* زر الكرت بقى SVG لا إيموجي، فالتحديث بيغيّر الرسمة والحالة معًا؛
+   أزرار المودال تفضل نصية زي ما هي */
+function _eqPaintFavBtn(btn, on) {
+  if (btn.classList.contains('eq-fav-btn')) {
+    btn.innerHTML = _eqHeartSvg(on);
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+  } else {
+    btn.textContent = on ? t('detail.inFavorite') : t('detail.addFavorite');
+  }
+}
+
 async function eqToggleFavorite(e, id) {
+  e.preventDefault();
   e.stopPropagation();
-  if (!eqUser) { window.location.href = '/'; return; }
+  /* الزائر كان بيتقذف للرئيسية بلا سبب ظاهر ولا طريق رجوع. دلوقتي بيروح
+     لصفحة الدخول ومعاه رابط العودة لنفس الإعلان — نفس سلوك زر التواصل
+     في مودال التفاصيل */
+  if (!eqUser) {
+    const back = encodeURIComponent('/market/?listing=' + id);
+    window.location.href = `/?p=login&next=${back}`;
+    return;
+  }
 
   const isFav = eqFavorites.has(id);
   const allBtns = document.querySelectorAll(`[data-fav="${id}"]`);
@@ -1892,15 +2209,11 @@ async function eqToggleFavorite(e, id) {
     await eqSb.from('favorites').delete()
       .eq('user_id', eqUser.id).eq('listing_id', id);
     eqFavorites.delete(id);
-    allBtns.forEach(b => {
-      b.textContent = b.classList.contains('eq-fav-btn') ? '🤍' : t('detail.addFavorite');
-    });
+    allBtns.forEach(b => _eqPaintFavBtn(b, false));
   } else {
     await eqSb.from('favorites').insert({ user_id: eqUser.id, listing_id: id });
     eqFavorites.add(id);
-    allBtns.forEach(b => {
-      b.textContent = b.classList.contains('eq-fav-btn') ? '❤️' : t('detail.inFavorite');
-    });
+    allBtns.forEach(b => _eqPaintFavBtn(b, true));
   }
   eqUpdateFavBtn();
 }

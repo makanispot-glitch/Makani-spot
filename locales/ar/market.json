@@ -39,10 +39,22 @@
     "categoryLabel": "التصنيف",
     "all": "الكل",
     "allGovs": "كل المحافظات",
+    "govsWithAds": "محافظات بها إعلانات",
+    "govsOther": "باقي المحافظات",
     "priceUpTo": "السعر حتى:",
     "noLimit": "بلا حد",
+    "price": "السعر",
+    "anyPrice": "أي سعر",
+    "priceUnder": "أقل من {{price}}",
+    "priceOver": "أكثر من {{price}}",
+    "priceRanges": "نطاقات جاهزة",
+    "priceCustom": "أو حدّد نطاقك",
+    "from": "من",
+    "to": "إلى",
+    "apply": "تطبيق",
     "sortNewest": "الأحدث",
     "sortCheapest": "الأرخص",
+    "sortPriciest": "الأغلى",
     "sortViews": "الأكثر مشاهدة",
     "searchTitle": "فلتر البحث",
     "governorate": "المحافظة",
@@ -50,6 +62,13 @@
     "maxPrice": "السعر الأقصى:",
     "reset": "إعادة تعيين",
     "showResults": "عرض النتائج",
+    "showNResults_one": "عرض نتيجة واحدة",
+    "showNResults_two": "عرض نتيجتين",
+    "showNResults_few": "عرض {{n}} نتائج",
+    "showNResults_many": "عرض {{n}} نتيجة",
+    "showNResults_other": "عرض {{n}} نتيجة",
+    "noResultsBtn": "لا نتائج مطابقة",
+    "clearAll": "مسح الكل",
     "filterBtn": "فلتر",
     "postAd": "+ انشر إعلانك"
   },
@@ -74,12 +93,13 @@
   },
   "grid": {
     "empty": "لا توجد إعلانات تطابق بحثك 🔍",
-    "countZero": "0 إعلان",
-    "count": "{{count}} إعلان",
-    "countPlus": "{{count}}+ إعلان",
+    "countZero": "لا توجد إعلانات",
+    "count": "{{n}} إعلان",
+    "countPlus": "{{n}}+ إعلان",
     "loadMore": "عرض المزيد",
     "loadingMore": "⏳ تحميل…",
-    "loading": "جاري تحميل الإعلانات…"
+    "loading": "جاري تحميل الإعلانات…",
+    "updating": "جاري التحديث…"
   },
   "error": {
     "loadError": "حدث خطأ، حاول مرة أخرى",
@@ -239,5 +259,10 @@
     "resetZoom": "إعادة الحجم",
     "prev": "السابقة",
     "next": "التالية"
+  },
+  "view": {
+    "label": "طريقة العرض",
+    "grid": "عرض شبكي",
+    "list": "عرض قائمة"
   }
 }
