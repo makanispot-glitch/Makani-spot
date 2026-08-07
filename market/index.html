@@ -19,8 +19,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260807172912">
-<script src="/version.js?v=20260807172912"></script>
+<link rel="manifest" href="/manifest.json?v=20260807193630">
+<script src="/version.js?v=20260807193630"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,16 +36,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260807172912">
+<link rel="stylesheet" href="/style.css?v=20260807193630">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260807172912" defer></script>
-<script src="/pwa-install.js?v=20260807172912" defer></script>
+<script src="/shared/sb-config.js?v=20260807193630" defer></script>
+<script src="/pwa-install.js?v=20260807193630" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260807172912" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260807172912" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260807172912" defer></script>
-<script src="/shared/i18n.js?v=20260807172912" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260807193630" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260807193630" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260807193630" defer></script>
+<script src="/shared/i18n.js?v=20260807193630" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -452,18 +452,6 @@
 /* ── Count row ── */
 .eq-count-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .eq-count-row span { font-size: 14px; font-weight: 700; color: var(--ink2); }
-.eq-mobile-filter-btn {
-  display: none;
-  align-items: center; justify-content: center; gap: 8px;
-  width: 100%; margin-bottom: 14px;
-  border: none; border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff;
-  font-family: var(--font-display); font-size: 14px; font-weight: 900;
-  padding: 13px 16px; cursor: pointer;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 4px 16px rgba(243,100,24,0.28);
-  touch-action: manipulation;
-  transition: all var(--dur-fast) var(--ease-out);
-}
 
 /* ── Grid ── */
 .eq-grid {
@@ -1043,7 +1031,6 @@ body.lightbox-open { overflow: hidden; }
   /* حشو الترويسة على الموبايل يأتي من .mp-header في style.css المشترك */
   .eq-filters-inner { padding: 0 16px; }
   .eq-main { padding: 20px 16px; }
-  .eq-mobile-filter-btn { display: flex; }
   .eq-detail-main-img { height: 220px; }
   .eq-fab {
     bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px);
@@ -1198,58 +1185,84 @@ body.filter-open { overflow: hidden; }
   justify-content: center; white-space: nowrap;
 }
 
-/* ── Sidebar toggle tab — FIXED independently (avoids transform click bug) ── */
+/* ══════════════════════════════════════════════════════════════
+   🔖 لسان الفلتر الجانبي — نقطة الدخول الوحيدة للفلتر على الموبايل
+   كان 44×113px (≈٤٩٥٠px²) بتدرّج برتقالي صلب وهالة برتقالية واسعة
+   في منتصف الشاشة تمامًا: بيغطي جزء من كرت، وبيشدّ العين أكتر من
+   الإعلانات نفسها. النسخة دي:
+     • أضيق وأقصر (≈نصف المساحة) بعد شيل السهم
+     • زجاجية شبه شفافة بـblur فتاخد لون اللي تحتها بدل ما تحجبه
+     • ملاصقة للحافة: ظل قصير للداخل بدل هالة منتشرة
+     • أوطى من المنتصف شوية → بره منطقة قراءة الكروت وأقرب للإبهام
+     • مساحة اللمس أوسع من المساحة المرئية عبر ::before شفاف
+   ══════════════════════════════════════════════════════════════ */
 .eq-sidebar-tab {
   position: fixed;
-  left: 0; top: 50%;
+  left: 0; top: 58%;
   transform: translateY(-50%);
-  width: 44px;
+  width: 32px; min-height: 0;
   z-index: 9999;
-  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff; border: none;
-  border-radius: 0 12px 12px 0;
-  padding: 20px 0 16px;
+  background: rgba(243,100,24,0.88);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  color: #fff;
+  border: none;
+  border-inline-end: 1px solid rgba(255,255,255,0.22);
+  border-radius: 0 13px 13px 0;
+  padding: 11px 0 10px;
   cursor: pointer;
   display: flex; flex-direction: column;
-  align-items: center; gap: 8px;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 5px 0 18px rgba(243,100,24,0.42);
+  align-items: center; gap: 6px;
+  box-shadow: 2px 0 10px rgba(14,18,24,0.16);
   font-family: var(--font-display);
-  transition: left 0.32s cubic-bezier(0.4,0,0.2,1), box-shadow var(--dur-fast) var(--ease-out);
+  transition: left 0.32s cubic-bezier(0.4,0,0.2,1), opacity var(--dur-base) var(--ease-out),
+              background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   pointer-events: auto;
   user-select: none;
 }
-.eq-sidebar-tab:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 7px 0 22px rgba(243,100,24,0.60); }
-.eq-sidebar-tab:active { opacity: 0.85; }
-body.filter-open .eq-sidebar-tab { left: min(340px, 92vw); }
-
-/* Active filter count badge */
-.eq-sidebar-tab-badge {
-  background: rgba(255,255,255,0.25);
-  border: 1.5px solid rgba(255,255,255,0.55);
-  border-radius: 50%;
-  width: 20px; height: 20px;
-  font-size: 10px; font-weight: 900;
-  display: none; align-items: center; justify-content: center;
-  line-height: 1;
+/* منطقة لمس أوسع من الشكل المرئي — الشكل 32px والهدف الفعلي 46px */
+.eq-sidebar-tab::before {
+  content: ''; position: absolute;
+  top: -7px; bottom: -7px; left: 0; right: -14px;
 }
-.eq-sidebar-tab-badge.show { display: flex; }
+.eq-sidebar-tab:active { background: rgba(214,86,18,0.94); box-shadow: 1px 0 6px rgba(14,18,24,0.20); }
+/* الدرج مفتوح = اللسان مالوش وظيفة (الإغلاق من ✕ أو من الخلفية)،
+   وكان بينزلق لحافة الدرج ويبان كأنه زر إغلاق وهو مش كده */
+body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 
-/* Rotated label text */
+.eq-sidebar-tab-icon { width: 16px; height: 16px; display: block; flex-shrink: 0; }
+
+/* نص «فلتر» رأسي — الدليل الصريح على وظيفة الزر */
 .eq-sidebar-tab-text {
-  font-size: 11px; font-weight: 800;
+  font-size: 10.5px; font-weight: 800;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
-  letter-spacing: .07em;
+  letter-spacing: .06em;
+  line-height: 1;
 }
 
-/* Chevron arrow */
-.eq-sidebar-tab-arrow {
-  font-size: 16px; font-weight: 900; line-height: 1;
-  transition: transform 0.32s;
+/* عدّاد الفلاتر المفعّلة — فوق الأيقونة لا في سطر مستقل: في السطر كان
+   بيزوّد ٢٣px لارتفاع اللسان أول ما يتفعّل فلتر، يعني الزر يكبر بالظبط
+   في اللحظة اللي المفروض يفضل فيها هادي. دلوقتي الارتفاع ثابت.
+   التموضع فيزيائي (right) لا منطقي: اللسان نفسه مثبّت بـleft:0 في
+   الاتجاهين، فالجهة الداخلية هي اليمين دايمًا — والمنطقي كان هيحطه
+   على حافة الشاشة في العربي فيتقص مع الحواف الدائرية. */
+.eq-sidebar-tab-badge {
+  position: absolute; top: 5px; right: 2px;
+  background: #fff; color: var(--orange);
+  border-radius: 50px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  font-size: 9.5px; font-weight: 900;
+  display: none; align-items: center; justify-content: center;
+  line-height: 1; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(14,18,24,0.28);
 }
-body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180deg); }
+.eq-sidebar-tab-badge.show { display: flex; }
+/* في وجود فلتر مفعّل يبقى اللسان معتم بالكامل — إشارة إن في حاجة شغّالة */
+.eq-sidebar-tab:has(.eq-sidebar-tab-badge.show) { background: rgba(243,100,24,0.97); }
 
 /* Hide drawer + tab on desktop */
 @media (min-width: 769px) {
@@ -1388,11 +1401,31 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   .eq-grid.is-list .eq-empty .eq-card-desc { display: none; }
 }
 
+/* شرائح الفلاتر المفعّلة داخل المتن — نسخة الموبايل وحدها
+   (نسخة الديسكتوب موجودة أصلاً داخل شريط الفلاتر العلوي).
+   لازم .has-items في المُحدِّد: العنصر شايل كلاس .eqf-active كمان،
+   و.eqf-active.has-items{display:flex} أقوى تخصيصًا من .eq-active-mobile
+   وحدها — فكان الصف بيظهر مكرّر على الديسكتوب أول ما يتفعّل فلتر. */
+.eq-active-mobile,
+.eq-active-mobile.has-items { display: none; }
+
 /* ── الموبايل: كرت واحد بعرض الشاشة ── */
 @media (max-width: 768px) {
   /* عمود واحد — التبديل بين العرضين ديسكتوب فقط */
   .eq-grid, .eq-grid.is-list { grid-template-columns: 1fr; gap: 14px; }
   .eq-view-switch { display: none; }
+
+  /* شريط أفقي قابل للتمرير: عدد الفلاتر ممكن يزيد عن عرض الشاشة،
+     والالتفاف كان هيدفع الشبكة لتحت بسطر زيادة كل مرة */
+  .eq-active-mobile.has-items {
+    display: flex; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    margin-bottom: 12px; padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .eq-active-mobile::-webkit-scrollbar { display: none; }
+  .eq-active-mobile .eqf-active-chip { flex-shrink: 0; min-height: 32px; font-size: 12.5px; }
+  .eq-active-mobile .eqf-clear-all { flex-shrink: 0; min-height: 32px; font-size: 12.5px; }
 
   .eq-card { border-radius: 16px; }
   /* 16:10 لا 4:3 — الكرت بقى بعرض الشاشة، ونسبة أقصر بتخلي عدد الكروت
@@ -1851,26 +1884,27 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
   </div>
 </div>
 
-<!-- ── Filter Toggle Tab (standalone fixed, events attached via JS) ── -->
+<!-- ── لسان الفلتر الجانبي — نقطة الدخول الوحيدة للفلتر على الموبايل ──
+     أيقونة المزالج (sliders) بدل الخطوط الثلاثة: الخطوط بتتقري «قائمة»
+     أكتر ما بتتقري «فلترة». والسهم القديم اتشال — كان بيزوّد ٢٠px
+     ارتفاع ويوحي بحركة مالهاش وظيفة. -->
 <button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar()" aria-label="فتح فلاتر البحث" data-i18n-attr="aria-label:filters.searchTitle">
-  <span>
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="4" y1="6" x2="20" y2="6"/>
-      <line x1="8" y1="12" x2="16" y2="12"/>
-      <line x1="11" y1="18" x2="13" y2="18"/>
-    </svg>
-  </span>
-  <span class="eq-sidebar-tab-badge" id="eq-drawer-badge">0</span>
+  <svg class="eq-sidebar-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <line x1="4" y1="8" x2="20" y2="8"/><circle cx="15" cy="8" r="2.4" fill="currentColor" stroke="none"/>
+    <line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="16" r="2.4" fill="currentColor" stroke="none"/>
+  </svg>
   <span class="eq-sidebar-tab-text" data-i18n="filters.filterBtn">فلتر</span>
-  <span class="eq-sidebar-tab-arrow">›</span>
+  <span class="eq-sidebar-tab-badge" id="eq-drawer-badge">0</span>
 </button>
 
 <!-- ── Main ── -->
 <main class="eq-main">
-  <button class="eq-mobile-filter-btn" id="eq-mobile-filter-btn" type="button" onclick="eqOpenSidebar()">
-    <span data-i18n="filters.searchTitle">فلتر البحث</span>
-    <span class="eq-sidebar-tab-badge" id="eq-mobile-filter-badge">0</span>
-  </button>
+  <!-- شرائح الفلاتر المفعّلة — نسخة الموبايل.
+       شريط الفلاتر العلوي مخفي على الموبايل، فمن غير الشرائح دي مكانش
+       فيه أي دليل بصري على إن في فلتر شغّال غير رقم صغير على اللسان
+       الجانبي. دلوقتي المستخدم بيشوف اللي مفلتر ويشيله بضغطة بلا ما
+       يفتح الدرج أصلاً. -->
+  <div class="eqf-active eq-active-mobile" id="eq-active-chips-m"></div>
   <div class="eq-count-row">
     <span id="eq-count">جاري التحميل…</span>
     <div class="eq-count-actions">
@@ -2117,8 +2151,8 @@ body.filter-open .eq-sidebar-tab .eq-sidebar-tab-arrow { transform: rotate(180de
 
 </nav>
 
-<script src="/notifications.js?v=20260807172912" defer></script>
-<script src="app.js?v=20260807172912" defer></script>
+<script src="/notifications.js?v=20260807193630" defer></script>
+<script src="app.js?v=20260807193630" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">

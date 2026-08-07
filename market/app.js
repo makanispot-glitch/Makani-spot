@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ── Sidebar events — attached first, before any early return ── */
   const _sidebarTab     = document.getElementById('eq-sidebar-tab');
-  const _mobileFilterBtn = document.getElementById('eq-mobile-filter-btn');
   const _sidebarOverlay = document.getElementById('eq-sidebar-overlay');
   const _drawerCloseBtn = document.getElementById('eq-drawer-close-btn');
   const _drawerResetBtn = document.getElementById('eq-drawer-reset-btn');
@@ -170,13 +169,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       eqOpenSidebar();
     });
     _sidebarTab.addEventListener('pointerup', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      eqOpenSidebar();
-    });
-  }
-  if (_mobileFilterBtn) {
-    _mobileFilterBtn.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       eqOpenSidebar();
@@ -826,10 +818,13 @@ function eqRenderFilterState() {
   eqUpdateDrawerBadge();
 }
 
-/* شريط الفلاتر النشطة — إزالة أي فلتر بضغطة واحدة بدل الرجوع لمصدره */
+/* شريط الفلاتر النشطة — إزالة أي فلتر بضغطة واحدة بدل الرجوع لمصدره.
+   نسختان بنفس المحتوى: واحدة في شريط الفلاتر (ديسكتوب) وواحدة داخل
+   المتن (موبايل)، لأن الشريط العلوي كله مخفي على الموبايل. */
 function eqRenderActiveChips() {
-  const wrap = document.getElementById('eq-active-chips');
-  if (!wrap) return;
+  const wraps = [document.getElementById('eq-active-chips'),
+                 document.getElementById('eq-active-chips-m')].filter(Boolean);
+  if (!wraps.length) return;
   const chips = [];
   const chip = (label, fn) =>
     `<button type="button" class="eqf-active-chip" onclick="${fn}"><span>${label}</span><i aria-hidden="true">✕</i></button>`;
@@ -839,10 +834,13 @@ function eqRenderActiveChips() {
   if (eqPriceMin > 0 || eqPriceMax > 0) chips.push(chip(_eqPriceSummary(), 'eqSetPrice(0,0)'));
   if (eqSearch.trim())  chips.push(chip(`«${eqSearch.trim()}»`, 'eqClearSearch()'));
 
-  wrap.innerHTML = chips.length
+  const html = chips.length
     ? chips.join('') + `<button type="button" class="eqf-clear-all" onclick="eqClearAllFilters()">${t('filters.clearAll')}</button>`
     : '';
-  wrap.classList.toggle('has-items', chips.length > 0);
+  wraps.forEach(w => {
+    w.innerHTML = html;
+    w.classList.toggle('has-items', chips.length > 0);
+  });
 }
 
 
@@ -990,7 +988,6 @@ function eqOpenSidebar() {
   }
   if (overlay) overlay.style.display = 'block';
   document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'true');
-  document.getElementById('eq-mobile-filter-btn')?.setAttribute('aria-expanded', 'true');
 }
 
 function eqCloseSidebar() {
@@ -1004,7 +1001,6 @@ function eqCloseSidebar() {
   }
   if (overlay) overlay.style.display = '';
   document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'false');
-  document.getElementById('eq-mobile-filter-btn')?.setAttribute('aria-expanded', 'false');
 }
 
 /* ── Card Carousel ── */
@@ -1113,7 +1109,7 @@ function eqDrawerCustomPrice() {
 /* الشارة على زر/لسان الفلتر بتعكس الفلاتر *المطبَّقة* — لا مسوّدة الدرج */
 function eqUpdateDrawerBadge() {
   const count = eqActiveFilterCount();
-  ['eq-drawer-badge', 'eq-mobile-filter-badge'].forEach(id => {
+  ['eq-drawer-badge'].forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
     badge.textContent = _eqNum(count);
@@ -1225,7 +1221,6 @@ function eqInstallMobileFilterControls() {
 
   const openers = [
     document.getElementById('eq-sidebar-tab'),
-    document.getElementById('eq-mobile-filter-btn'),
   ].filter(Boolean);
   const overlay = document.getElementById('eq-sidebar-overlay');
   const closeBtn = document.getElementById('eq-drawer-close-btn');
@@ -1295,7 +1290,7 @@ function eqInstallMobileFilterControls() {
       const rawTarget = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
       const target = rawTarget || path.find(node => node?.nodeType === 1);
       if (!target) return;
-      const openBtn = pathHas('#eq-mobile-filter-btn, #eq-sidebar-tab') || target.closest?.('#eq-mobile-filter-btn, #eq-sidebar-tab');
+      const openBtn = pathHas('#eq-sidebar-tab') || target.closest?.('#eq-sidebar-tab');
       const closeTarget = pathHas('#eq-drawer-close-btn, #eq-sidebar-overlay') || target.closest?.('#eq-drawer-close-btn, #eq-sidebar-overlay');
       const resetTarget = pathHas('#eq-drawer-reset-btn') || target.closest?.('#eq-drawer-reset-btn');
       const applyTarget = pathHas('#eq-drawer-apply-btn') || target.closest?.('#eq-drawer-apply-btn');
