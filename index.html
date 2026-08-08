@@ -8,8 +8,8 @@
     content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260807193630">
-  <script src="/version.js?v=20260807193630"></script>
+  <link rel="manifest" href="/manifest.json?v=20260808050959">
+  <script src="/version.js?v=20260808050959"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -94,16 +94,16 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=20260807193630">
+  <link rel="stylesheet" href="style.css?v=20260808050959">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260807193630" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260807193630" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260807193630" defer></script>
-  <script src="/shared/i18n.js?v=20260807193630" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260808050959" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260808050959" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260808050959" defer></script>
+  <script src="/shared/i18n.js?v=20260808050959" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -2621,12 +2621,19 @@
           </div>
         </div>
 
-        <!-- ══════════════════ الحجوزات ══════════════════ -->
+        <!-- ══════════════════ الطلبات والحجوزات ══════════════════
+             القسم بقى المرجع الموحّد لكل ما يقدّمه المستخدم للمنصة:
+             حجوزات مساحات + حجوزات بازارات + طلبات خدمات. العنوان يبدأ
+             بالكلمة العامة «طلباتك» عشان يستوعب أي نوع جديد بلا إعادة
+             تسمية، ويحتفظ بـ«حجوزاتك» عشان المستخدم الحالي ميتوهش. -->
         <div class="dash-section-card">
           <div class="dash-section-head">
-            <div class="dash-section-title" data-i18n="tenantDash.bookingsSectionTitle">حجوزاتك</div>
+            <div>
+              <div class="dash-section-title" data-i18n="tenantDash.bookingsSectionTitle">طلباتك وحجوزاتك</div>
+              <div class="dash-section-sub" data-i18n="tenantDash.bookingsSectionSub">كل ما قدّمته للمنصة في مكان واحد — مساحات وبازارات وخدمات</div>
+            </div>
             <button class="btn btn-primary" style="font-size:13px;padding:8px 18px"
-              onclick="window.location.href='/spaces/'" data-i18n="tenantDash.newBookingBtn">+ حجز جديد</button>
+              onclick="window.location.href='/spaces/'" data-i18n="tenantDash.newBookingBtn">+ طلب جديد</button>
           </div>
           <div id="dash-bookings">
             <div class="no-bookings" data-i18n="state.loading">جاري التحميل…</div>
@@ -3100,14 +3107,14 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=20260807193630" defer></script>
-  <script src="/pwa-install.js?v=20260807193630" defer></script>
-  <script src="shared/space-model.js?v=20260807193630" defer></script>
-  <script src="shared/booking.js?v=20260807193630" defer></script>
-  <script src="shared/account.js?v=20260807193630" defer></script>
-  <script src="shared/plan-badge.js?v=20260807193630" defer></script>
-  <script src="/notifications.js?v=20260807193630" defer></script>
-  <script src="app.js?v=20260807193630" defer></script>
+  <script src="shared/sb-config.js?v=20260808050959" defer></script>
+  <script src="/pwa-install.js?v=20260808050959" defer></script>
+  <script src="shared/space-model.js?v=20260808050959" defer></script>
+  <script src="shared/booking.js?v=20260808050959" defer></script>
+  <script src="shared/account.js?v=20260808050959" defer></script>
+  <script src="shared/plan-badge.js?v=20260808050959" defer></script>
+  <script src="/notifications.js?v=20260808050959" defer></script>
+  <script src="app.js?v=20260808050959" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -3388,12 +3395,25 @@
     });
   }
   function toggleMakaniLocale() {
-    setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && user ? { sbClient: sbClient, userId: user.id } : undefined).then(updateLangSwitcherLabel);
+    /* المتغيّر العام اسمه currentUser (app.js) — كان مكتوب user وهو غير
+       معرَّف إطلاقًا، فكان الشرط يرمي ReferenceError بمجرد جاهزية sbClient
+       ويكسر زر تبديل اللغة في الصفحة الرئيسية لكل الزوار. */
+    setLocale(getLocale() === 'en' ? 'ar' : 'en',
+      sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined
+    ).then(updateLangSwitcherLabel);
   }
   document.addEventListener('DOMContentLoaded', function () {
     initI18n(['home', 'common', 'spaces', 'market']).then(updateLangSwitcherLabel);
   });
 </script>
+
+<!-- 🚚 تفاصيل طلب خدمة شراء مشروع — يُفتح من بطاقة الطلب في «حجوزاتك» -->
+<div class="svc-detail-overlay" id="svc-detail-modal" onclick="if(event.target===this)closeServiceRequest()">
+  <div class="svc-detail-box" role="dialog" aria-modal="true">
+    <button class="svc-detail-close" type="button" onclick="closeServiceRequest()" aria-label="إغلاق">✕</button>
+    <div id="svc-detail-body"></div>
+  </div>
+</div>
 
 </body>
 

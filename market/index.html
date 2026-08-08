@@ -19,8 +19,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260807193630">
-<script src="/version.js?v=20260807193630"></script>
+<link rel="manifest" href="/manifest.json?v=20260808050959">
+<script src="/version.js?v=20260808050959"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,16 +36,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260807193630">
+<link rel="stylesheet" href="/style.css?v=20260808050959">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260807193630" defer></script>
-<script src="/pwa-install.js?v=20260807193630" defer></script>
+<script src="/shared/sb-config.js?v=20260808050959" defer></script>
+<script src="/pwa-install.js?v=20260808050959" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260807193630" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260807193630" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260807193630" defer></script>
-<script src="/shared/i18n.js?v=20260807193630" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20260808050959" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260808050959" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260808050959" defer></script>
+<script src="/shared/i18n.js?v=20260808050959" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -585,6 +585,251 @@
    في المودال، وكان بيهرب من حاويته لأعلى المودال بـ266px. تموضع الكرت
    بقى مسؤولية .eq-card-flag وحدها. */
 .eq-badge-feat { background: #FEF3C7; color: #92400E; }
+
+/* ══════════════════════════════════════════════════════════════
+   🚚 خدمة فحص ونقل المشروع
+   ══════════════════════════════════════════════════════════════ */
+
+/* بطاقة الدخول في مودال التفاصيل — بطاقة مؤطّرة لا زر صلب:
+   لازم تلفت النظر من غير ما تنافس زر واتساب الأساسي تحتها */
+.eq-svc-card {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin: 18px 0 4px; padding: 14px 16px; min-height: 0;
+  border: 1.5px solid var(--orange-100); border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--orange-ultra) 0%, rgba(243,100,24,0.05) 100%);
+  cursor: pointer; text-align: start;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.eq-svc-card:hover { border-color: var(--orange); transform: translateY(-2px); }
+.eq-svc-card:active { transform: scale(0.99); }
+.eq-svc-card-ico {
+  width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px;
+  background: #fff; color: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(243,100,24,0.16);
+}
+.eq-svc-card-ico svg { width: 23px; height: 23px; }
+.eq-svc-card-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.eq-svc-card-txt strong {
+  font-family: var(--font-display); font-size: 14.5px; font-weight: 800; color: var(--fg-1);
+}
+.eq-svc-card-txt small { font-family: var(--font-body); font-size: 12.5px; color: var(--fg-3); line-height: 1.5; }
+.eq-svc-card-arrow { color: var(--orange); font-size: 22px; font-weight: 900; flex-shrink: 0; }
+[dir="ltr"] .eq-svc-card-arrow { transform: rotate(180deg); }
+
+/* المودال */
+.eq-svc-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1200;
+  background: rgba(14,18,24,0.62);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.eq-svc-overlay.open { display: flex; }
+.eq-svc-box {
+  position: relative; background: var(--surface);
+  border-radius: var(--radius-2xl);
+  width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+  padding: 26px 24px 24px;
+  box-shadow: var(--shadow-xl);
+}
+.eq-svc-close {
+  position: absolute; top: 14px; inset-inline-end: 14px; z-index: 2;
+  width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 50%;
+  background: var(--bg-sunken); border: none; color: var(--fg-2);
+  font-size: 15px; cursor: pointer; font-family: sans-serif;
+  display: flex; align-items: center; justify-content: center;
+}
+.eq-svc-close:hover { background: var(--border); }
+
+.eq-svc-step { display: none; }
+.eq-svc-step.on { display: block; }
+
+/* الترويسة */
+.eq-svc-hero { text-align: center; margin-bottom: 22px; }
+.eq-svc-hero-ico {
+  width: 62px; height: 62px; margin: 0 auto 14px; border-radius: 18px;
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 22px rgba(243,100,24,0.30);
+}
+.eq-svc-hero-ico svg { width: 32px; height: 32px; }
+.eq-svc-hero h2 {
+  font-family: var(--font-display); font-size: 20px; font-weight: 900;
+  color: var(--fg-1); margin: 0 0 8px; line-height: 1.4;
+}
+.eq-svc-hero p {
+  font-family: var(--font-body); font-size: 13.5px; color: var(--fg-3);
+  line-height: 1.7; margin: 0; max-width: 42ch; margin-inline: auto;
+}
+
+/* الخط الزمني — أربع خطوات */
+.eq-svc-steps {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin-bottom: 18px;
+}
+.eq-svc-stepx {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+  padding: 14px 6px; border-radius: var(--radius-lg);
+  background: var(--bg-sunken); position: relative;
+}
+.eq-svc-stepx-ico {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface); color: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-xs);
+}
+.eq-svc-stepx-ico svg { width: 17px; height: 17px; }
+.eq-svc-stepx strong { font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--fg-1); line-height: 1.35; }
+.eq-svc-stepx small { font-family: var(--font-body); font-size: 10.5px; color: var(--fg-3); line-height: 1.4; }
+
+/* شريط الطمأنة — أهم سطر في الشاشة */
+.eq-svc-assure {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 13px 15px; margin-bottom: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--green-light); color: #15803d;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600; line-height: 1.65;
+}
+.eq-svc-assure svg { width: 19px; height: 19px; flex-shrink: 0; margin-top: 1px; }
+
+/* بنعمل / مش بنعمل — الالتزام القانوني كعنصر بصري */
+.eq-svc-scope {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;
+}
+.eq-svc-scope-col {
+  padding: 13px 14px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); background: var(--surface);
+}
+.eq-svc-scope-h {
+  font-family: var(--font-display); font-size: 12px; font-weight: 800;
+  margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--border);
+}
+.eq-svc-do   .eq-svc-scope-h { color: #15803d; }
+.eq-svc-dont .eq-svc-scope-h { color: #b91c1c; }
+.eq-svc-scope-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.eq-svc-scope-col li {
+  font-family: var(--font-body); font-size: 11.5px; color: var(--fg-2);
+  line-height: 1.5; padding-inline-start: 17px; position: relative;
+}
+.eq-svc-scope-col li::before {
+  position: absolute; inset-inline-start: 0; top: 0; font-weight: 900;
+}
+.eq-svc-do   li::before { content: '✓'; color: #15803d; }
+.eq-svc-dont li::before { content: '✕'; color: #b91c1c; }
+
+/* الأزرار */
+.eq-svc-cta {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 48px; min-height: 48px; padding: 0 18px;
+  border: none; border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #F47432 0%, #F36418 100%); color: #fff;
+  font-family: var(--font-display); font-size: 15px; font-weight: 800;
+  cursor: pointer; text-decoration: none;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 6px 18px rgba(243,100,24,0.28);
+  transition: filter var(--dur-fast) var(--ease-out);
+}
+.eq-svc-cta:hover { filter: brightness(0.96); }
+.eq-svc-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+.eq-svc-terms {
+  display: block; text-align: center; margin-top: 12px;
+  font-family: var(--font-body); font-size: 12.5px; color: var(--fg-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.eq-svc-terms:hover { color: var(--orange); }
+
+/* النموذج */
+.eq-svc-form-h { font-family: var(--font-display); font-size: 19px; font-weight: 900; color: var(--fg-1); margin: 4px 0 6px; }
+.eq-svc-form-sub { font-family: var(--font-body); font-size: 13px; color: var(--fg-3); margin: 0 0 20px; line-height: 1.6; }
+.eq-svc-lbl {
+  display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--fg-1); margin-bottom: 7px; line-height: 1.5;
+}
+.eq-svc-inp {
+  width: 100%; box-sizing: border-box; margin-bottom: 16px;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg-sunken); color: var(--fg-1);
+  font-family: var(--font-body); font-size: 14px; outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+select.eq-svc-inp { cursor: pointer; }
+textarea.eq-svc-inp { resize: vertical; min-height: 76px; line-height: 1.6; }
+.eq-svc-inp:focus { border-color: var(--orange); background: var(--surface); box-shadow: var(--ring-focus); }
+.eq-svc-check {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px;
+  font-family: var(--font-body); font-size: 13px; color: var(--fg-2); line-height: 1.6; cursor: pointer;
+}
+.eq-svc-check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--orange); flex-shrink: 0; cursor: pointer; }
+.eq-svc-check-req {
+  padding: 12px 14px; border-radius: var(--radius-lg);
+  background: var(--bg-sunken); border: 1px solid var(--border);
+}
+.eq-svc-err {
+  padding: 11px 14px; margin-bottom: 14px; border-radius: var(--radius-lg);
+  background: #FEE2E2; color: #991B1B;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600; line-height: 1.6;
+}
+.eq-svc-form-actions { display: flex; gap: 10px; align-items: center; }
+.eq-svc-back {
+  height: 48px; min-height: 48px; padding: 0 22px; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--fg-2);
+  font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.eq-svc-back:hover { background: var(--bg-sunken); }
+
+/* شاشة «ماذا سيحدث الآن؟» */
+.eq-svc-done-ico {
+  width: 58px; height: 58px; margin: 6px auto 16px; border-radius: 50%;
+  background: var(--green-light); color: #15803d;
+  display: flex; align-items: center; justify-content: center;
+}
+.eq-svc-done-ico svg { width: 30px; height: 30px; }
+.eq-svc-refbox {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 13px; margin-bottom: 22px; border-radius: var(--radius-lg);
+  background: var(--bg-sunken); border: 1px dashed var(--warm-300);
+}
+.eq-svc-refbox span { font-family: var(--font-body); font-size: 11.5px; color: var(--fg-3); }
+.eq-svc-refbox strong {
+  font-family: var(--font-latin, var(--font-display)); font-size: 20px; font-weight: 900;
+  color: var(--orange); letter-spacing: 0.08em; direction: ltr;
+}
+.eq-svc-done-h {
+  font-family: var(--font-display); font-size: 17px; font-weight: 900;
+  color: var(--fg-1); margin: 0 0 14px; text-align: center;
+}
+.eq-svc-next { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.eq-svc-next li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px; border-radius: var(--radius-lg);
+  font-family: var(--font-body); font-size: 13.5px; color: var(--fg-2); line-height: 1.6;
+}
+.eq-svc-next li:nth-child(odd) { background: var(--bg-sunken); }
+.eq-svc-next li > span:first-child {
+  width: 25px; height: 25px; flex-shrink: 0; border-radius: 50%;
+  background: var(--orange-pale); color: var(--orange);
+  font-family: var(--font-latin, var(--font-display)); font-size: 12px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+/* الخطوة الرابعة هي الوعد الأهم (مفيش رسوم قبلها) — تتميّز بصريًا */
+.eq-svc-next li:last-child { background: var(--orange-ultra); font-weight: 700; color: var(--fg-1); }
+.eq-svc-wa { background: linear-gradient(180deg, #34C759 0%, #25A244 100%); box-shadow: 0 6px 18px rgba(37,162,68,0.28); }
+
+@media (max-width: 768px) {
+  /* ورقة سفلية على الموبايل بدل مودال في المنتصف */
+  .eq-svc-overlay { padding: 0; align-items: flex-end; }
+  .eq-svc-box {
+    max-width: 100%; max-height: 94vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding: 24px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .eq-svc-steps { grid-template-columns: repeat(2, 1fr); }
+  .eq-svc-scope { grid-template-columns: 1fr; }
+  .eq-svc-hero h2 { font-size: 18px; }
+  .eq-svc-card { margin: 16px 0 2px; }
+}
 
 /* ── Load More ── */
 .eq-load-more-wrap { display: flex; justify-content: center; margin-top: 36px; }
@@ -1937,6 +2182,144 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     🚚 خدمة «افحص المشروع وانقله لباب بيتك»
+     ثلاث خطوات في مودال واحد: تعريف ← نموذج ← «ماذا سيحدث الآن؟»
+     ══════════════════════════════════════════════════════════════ -->
+<div class="eq-svc-overlay" id="eq-svc-modal">
+  <div class="eq-svc-box" role="dialog" aria-modal="true" aria-label="خدمة فحص ونقل المشروع">
+    <button class="eq-svc-close" type="button" onclick="eqCloseService()" aria-label="إغلاق">✕</button>
+
+    <!-- ═══ الخطوة ١: التعريف ═══ -->
+    <div class="eq-svc-step on" id="eq-svc-step-intro">
+      <div class="eq-svc-hero">
+        <div class="eq-svc-hero-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 7h11v9H1z"/><path d="M12 10h4.5l2.5 3v3h-7z"/>
+            <circle cx="5" cy="18.5" r="1.8"/><circle cx="16" cy="18.5" r="1.8"/>
+          </svg>
+        </div>
+        <h2 data-i18n="service.title">افحص المشروع وانقله لباب بيتك</h2>
+        <p data-i18n="service.subtitle">فريقنا يروح يشوف المشروع على الطبيعة، يصوّره بصور حديثة، ويوصّله لحد بابك.</p>
+      </div>
+
+      <!-- الخط الزمني: أربع خطوات -->
+      <div class="eq-svc-steps">
+        <div class="eq-svc-stepx">
+          <span class="eq-svc-stepx-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <strong data-i18n="service.step1">نتحقق من البائع</strong>
+          <small data-i18n="service.step1Sub">المشروع لسه متاح؟</small>
+        </div>
+        <div class="eq-svc-stepx">
+          <span class="eq-svc-stepx-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          <strong data-i18n="service.step2">نعاين ونصوّر</strong>
+          <small data-i18n="service.step2Sub">صور حديثة وقياسات</small>
+        </div>
+        <div class="eq-svc-stepx">
+          <span class="eq-svc-stepx-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></span>
+          <strong data-i18n="service.step3">توصلك بتقرير</strong>
+          <small data-i18n="service.step3Sub">تقرر بعده براحتك</small>
+        </div>
+        <div class="eq-svc-stepx">
+          <span class="eq-svc-stepx-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 7h11v9H1z"/><path d="M12 10h4.5l2.5 3v3h-7z"/><circle cx="5" cy="18.5" r="1.8"/><circle cx="16" cy="18.5" r="1.8"/></svg></span>
+          <strong data-i18n="service.step4">ننقله لو حبيت</strong>
+          <small data-i18n="service.step4Sub">خدمة منفصلة اختيارية</small>
+        </div>
+      </div>
+
+      <!-- الطمأنة: لا دفع قبل التحقق -->
+      <div class="eq-svc-assure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12Z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span data-i18n="service.assure">مش هتدفع دلوقتي. بنتحقق من البائع الأول — ولو رفض أو المشروع اتباع، الطلب بيتقفل بلا أي رسوم.</span>
+      </div>
+
+      <!-- الشروط صريحة ومرئية: صفّان متقابلان -->
+      <div class="eq-svc-scope">
+        <div class="eq-svc-scope-col eq-svc-do">
+          <div class="eq-svc-scope-h" data-i18n="service.doTitle">اللي بنعمله</div>
+          <ul>
+            <li data-i18n="service.do1">معاينة ظاهرية موثّقة بالصور</li>
+            <li data-i18n="service.do2">تسجيل الملاحظات الظاهرة كما هي</li>
+            <li data-i18n="service.do3">قياسات وحجم تقريبي</li>
+            <li data-i18n="service.do4">تحديد وسيلة النقل المناسبة</li>
+          </ul>
+        </div>
+        <div class="eq-svc-scope-col eq-svc-dont">
+          <div class="eq-svc-scope-h" data-i18n="service.dontTitle">اللي مش بنعمله</div>
+          <ul>
+            <li data-i18n="service.dont1">فحص فني متخصص للمعدات</li>
+            <li data-i18n="service.dont2">ضمان على المشروع أو حالته</li>
+            <li data-i18n="service.dont3">تقييم السعر أو التفاوض</li>
+            <li data-i18n="service.dont4">توصية بالشراء أو بعدمه</li>
+          </ul>
+        </div>
+      </div>
+
+      <button class="eq-svc-cta" type="button" onclick="eqSvcGoForm()" data-i18n="service.startBtn">اطلب الخدمة</button>
+      <a class="eq-svc-terms" href="/policies/#service-terms" target="_blank" rel="noopener" data-i18n="service.termsLink">الشروط الكاملة للخدمة</a>
+    </div>
+
+    <!-- ═══ الخطوة ٢: النموذج ═══ -->
+    <div class="eq-svc-step" id="eq-svc-step-form">
+      <h2 class="eq-svc-form-h" data-i18n="service.formTitle">بيانات سريعة وبس</h2>
+      <p class="eq-svc-form-sub" data-i18n="service.formSub">باقي التفاصيل عندنا من الإعلان — محتاجين منك ٣ حاجات.</p>
+
+      <label class="eq-svc-lbl" for="eq-svc-phone" data-i18n="service.phoneLabel">رقم للتواصل</label>
+      <input class="eq-svc-inp" id="eq-svc-phone" type="tel" inputmode="tel" data-i18n-attr="placeholder:service.phonePh" placeholder="01xxxxxxxxx">
+
+      <label class="eq-svc-lbl" for="eq-svc-region" data-i18n="service.regionLabel">توصيل إلى — المحافظة</label>
+      <select class="eq-svc-inp" id="eq-svc-region"></select>
+
+      <label class="eq-svc-lbl" for="eq-svc-area" data-i18n="service.areaLabel">المنطقة / الحي (اختياري)</label>
+      <input class="eq-svc-inp" id="eq-svc-area" type="text" data-i18n-attr="placeholder:service.areaPh" placeholder="مثال: مدينة نصر">
+
+      <!-- صياغة الحقل كسؤال موجّه: بتحوّله من فراغ محرج لقائمة تحقق للمندوب -->
+      <label class="eq-svc-lbl" for="eq-svc-notes" data-i18n="service.notesLabel">هل يوجد شيء تريد من المندوب التأكد منه أثناء المعاينة؟</label>
+      <textarea class="eq-svc-inp" id="eq-svc-notes" rows="3" data-i18n-attr="placeholder:service.notesPh" placeholder="مثال: اتأكد إن الموتور شغّال، وصوّر الثلاجة من جوه"></textarea>
+
+      <label class="eq-svc-check">
+        <input type="checkbox" id="eq-svc-video">
+        <span data-i18n="service.videoLabel">أحب أحضر المعاينة عبر مكالمة فيديو</span>
+      </label>
+
+      <label class="eq-svc-check eq-svc-check-req">
+        <input type="checkbox" id="eq-svc-agree">
+        <span data-i18n="service.agreeLabel">قرأت وأوافق على شروط الخدمة — معاينة ظاهرية موثّقة بلا فحص فني أو ضمان.</span>
+      </label>
+
+      <div class="eq-svc-err" id="eq-svc-error" style="display:none"></div>
+
+      <div class="eq-svc-form-actions">
+        <button class="eq-svc-back" type="button" onclick="eqSvcShowStep('intro')" data-i18n="service.backBtn">رجوع</button>
+        <button class="eq-svc-cta" id="eq-svc-submit" type="button" onclick="eqSvcSubmit()" data-i18n="service.submitBtn">إرسال الطلب</button>
+      </div>
+    </div>
+
+    <!-- ═══ الخطوة ٣: ماذا سيحدث الآن؟ ═══ -->
+    <div class="eq-svc-step" id="eq-svc-step-done">
+      <div class="eq-svc-done-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <div class="eq-svc-refbox">
+        <span data-i18n="service.refLabel">كود طلبك</span>
+        <strong id="eq-svc-ref">—</strong>
+      </div>
+
+      <h2 class="eq-svc-done-h" data-i18n="service.nextTitle">ماذا سيحدث الآن؟</h2>
+      <ol class="eq-svc-next">
+        <li><span>1</span><span data-i18n="service.next1">هنراجع طلبك</span></li>
+        <li><span>2</span><span data-i18n="service.next2">هنتواصل مع البائع</span></li>
+        <li><span>3</span><span data-i18n="service.next3">لو أكّد إن المشروع لسه متاح هنكلّمك</span></li>
+        <li><span>4</span><span data-i18n="service.next4">وبعدها بس هنبدأ إجراءات المعاينة</span></li>
+      </ol>
+
+      <a class="eq-svc-cta eq-svc-wa" id="eq-svc-wa" href="#" target="_blank" rel="noopener" data-i18n="service.waBtn">تابع طلبك على واتساب</a>
+      <a class="eq-svc-terms" href="/?p=dashboard" data-i18n="service.trackLink">أو تابعه من «حجوزاتك»</a>
+    </div>
+
+  </div>
+</div>
+
 <!-- ── Report Modal ── -->
 <div class="eq-report-overlay" id="eq-report-modal">
   <div class="eq-report-box">
@@ -2151,8 +2534,8 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 
 </nav>
 
-<script src="/notifications.js?v=20260807193630" defer></script>
-<script src="app.js?v=20260807193630" defer></script>
+<script src="/notifications.js?v=20260808050959" defer></script>
+<script src="app.js?v=20260808050959" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">

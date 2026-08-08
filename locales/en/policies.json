@@ -1,5 +1,7 @@
 {
-  "nav": { "back": "Back to Home" },
+  "nav": {
+    "back": "Back to Home"
+  },
   "hero": {
     "badge": "Official Legal Documents — Version 1.0",
     "title": "Official Policies of<em> Makani Spot</em>",
@@ -165,7 +167,34 @@
       "p": "In the event of any dispute, the company is committed to first attempting an amicable resolution. If that is not possible, the dispute will be settled before the competent Egyptian courts under Egyptian law, without prejudice to either party's right to arbitration under the rules of the Cairo Regional Centre for International Commercial Arbitration."
     },
     "contactLabel": "<strong>For inquiries about the Terms and Conditions:</strong>",
-    "contactTeam": "Legal Affairs Team — Kiosq SpotHub"
+    "contactTeam": "Legal Affairs Team — Kiosq SpotHub",
+    "s9": {
+      "title": "9 — Terms for business-purchase services (inspection & delivery)",
+      "intro": "The platform offers two optional services that are independent of the listing itself: a visual inspection service and a delivery service. Using either does not make the platform a party to the sale contract between buyer and seller, and creates no obligation on the platform regarding the sale itself.",
+      "scopeTitle": "9.1 — Scope of the inspection service",
+      "scopeP": "The inspection service is limited to a documented visual inspection, during which our representative does only the following:",
+      "do1": "Confirm the business exists at the stated location",
+      "do2": "Photograph it with fresh photos taken during the visit",
+      "do3": "Record visible observations descriptively, without evaluation",
+      "do4": "Measure dimensions and estimate volume approximately",
+      "do5": "Determine a suitable transport vehicle based on size and location",
+      "limitTitle": "9.2 — Limits of the service (what it does NOT include)",
+      "limitP": "The service does not include, and may not be interpreted as including, any of the following:",
+      "dont1": "Specialised technical or engineering testing of equipment, appliances or wiring",
+      "dont2": "Any warranty — express or implied — on the business, its condition or its fitness for purpose",
+      "dont3": "Price valuation, an opinion on its fairness, or negotiation on behalf of any party",
+      "dont4": "Any recommendation to buy or to refrain from buying",
+      "dont5": "Detection of hidden defects or anything not visible at the time of inspection",
+      "decision": "The purchase decision and full responsibility for it remain solely with the customer. The inspection report is supporting information only and creates no liability on the platform for the condition of the business or the outcome of the transaction.",
+      "feeTitle": "9.3 — Fees and prior verification",
+      "fee1": "No fees are collected when the request is submitted",
+      "fee2": "The platform contacts the seller first to confirm availability and willingness to host a visit",
+      "fee3": "If the seller declines, or the business turns out to be sold, the request is closed with no fees to the customer",
+      "fee4": "Inspection fees are requested only after this verification succeeds and the customer agrees",
+      "fee5": "If the inspection cannot be carried out after payment for a reason attributable to the seller, the inspection fee is refunded in full",
+      "transportTitle": "9.4 — The delivery service",
+      "transportP": "Delivery is an independent service that begins only on the explicit request of the customer, after receiving the inspection report, agreeing to the delivery offer and paying for it. A customer who stops at the inspection service alone is considered to have received full performance of the platform obligation. During delivery, the platform responsibility is limited to exercising ordinary care in moving the business from the seller location to the agreed address."
+    }
   },
   "ip": {
     "title": "Intellectual Property Policy",

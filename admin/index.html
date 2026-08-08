@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="manifest" href="/manifest.json?v=20260807193630">
-<script src="/version.js?v=20260807193630"></script>
+<link rel="manifest" href="/manifest.json?v=20260808050959">
+<script src="/version.js?v=20260808050959"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -249,6 +249,71 @@ tr:hover td { background: #FAFAFA; }
 .adm-flag-chip { background:#FEE2E2; color:#991B1B; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:700; margin:2px; display:inline-block; }
 .adm-empty-tab { text-align:center; padding:50px 20px; color:#aaa; }
 
+/* ── 🚚 طلبات الخدمات ── */
+.svc-adm-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.svc-adm-stat {
+  flex:1 1 130px; padding:12px 14px; border-radius:12px;
+  background:#fff; border:1px solid #E8E8E8;
+}
+.svc-adm-stat b { display:block; font-size:20px; font-weight:900; color:#333; line-height:1.2; }
+.svc-adm-stat span { font-size:11.5px; color:#888; }
+.svc-adm-stat.warn b { color:#B45309; }
+.svc-adm-reasons { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.svc-adm-reason {
+  padding:5px 11px; border-radius:999px; background:#F4F3EE;
+  font-size:11.5px; font-weight:700; color:#57544C;
+}
+.svc-adm-reason b { color:#333; }
+/* شارات حالة الإعلان المصدر — تحذير بصري فوري للموظف */
+.svc-adm-src { display:inline-flex; padding:2px 8px; border-radius:50px; font-size:10.5px; font-weight:800; margin-inline-start:6px; }
+.svc-adm-src.ok      { background:#DCFCE7; color:#15803d; }
+.svc-adm-src.warn    { background:#FEF3C7; color:#92400E; }
+.svc-adm-src.danger  { background:#FEE2E2; color:#991B1B; }
+.svc-adm-stale { display:inline-flex; padding:2px 8px; border-radius:50px; font-size:10.5px; font-weight:800; background:#FEE2E2; color:#991B1B; margin-inline-start:6px; }
+.svc-adm-ref { font-family:monospace; font-weight:900; color:#F36418; letter-spacing:.06em; direction:ltr; }
+.svc-adm-row { cursor:pointer; }
+.svc-adm-row:hover { background:#FAFAF7; }
+
+.svc-adm-overlay {
+  display:none; position:fixed; inset:0; z-index:2000;
+  background:rgba(14,18,24,.55); align-items:center; justify-content:center; padding:20px;
+}
+.svc-adm-overlay.open { display:flex; }
+.svc-adm-panel {
+  position:relative; background:#fff; border-radius:18px; width:100%; max-width:620px;
+  max-height:92vh; overflow-y:auto; padding:24px;
+}
+.svc-adm-close {
+  position:absolute; top:12px; inset-inline-end:12px; width:30px; height:30px; min-height:30px;
+  border:none; border-radius:50%; background:#F4F3EE; cursor:pointer; font-family:sans-serif;
+}
+.svc-adm-sec { margin-bottom:18px; }
+.svc-adm-sec-h { font-size:12px; font-weight:900; color:#888; margin-bottom:8px; letter-spacing:.04em; }
+.svc-adm-kv { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.svc-adm-kv > div { padding:9px 12px; background:#FAFAF7; border-radius:10px; }
+.svc-adm-kv span { display:block; font-size:10.5px; color:#999; margin-bottom:2px; }
+.svc-adm-kv strong { font-size:13px; color:#333; font-weight:800; }
+.svc-adm-sel {
+  width:100%; padding:9px 12px; border:1px solid #E8E8E8; border-radius:10px;
+  font-size:13px; margin-bottom:10px; background:#fff; cursor:pointer;
+}
+.svc-adm-ta {
+  width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #E8E8E8;
+  border-radius:10px; font-size:13px; font-family:inherit; resize:vertical; min-height:64px;
+}
+.svc-adm-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.svc-adm-btn {
+  padding:10px 18px; border:none; border-radius:10px; cursor:pointer;
+  font-size:13px; font-weight:800; background:#F36418; color:#fff;
+}
+.svc-adm-btn.ghost { background:#F4F3EE; color:#57544C; }
+.svc-adm-err { padding:10px 13px; border-radius:10px; background:#FEE2E2; color:#991B1B; font-size:12.5px; font-weight:700; margin-top:12px; }
+.svc-adm-tl { list-style:none; margin:0; padding:0; }
+.svc-adm-tl li { display:flex; gap:10px; padding-bottom:12px; font-size:12.5px; color:#555; }
+.svc-adm-tl b { color:#333; }
+.svc-adm-tl .int { color:#B45309; }
+@media (max-width:768px){ .svc-adm-kv { grid-template-columns:1fr; } }
+
 /* ── Seller detail modal ── */
 .adm-seller-modal { background:#fff; border-radius:16px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:24px; }
 .adm-seller-head { display:flex; gap:14px; align-items:center; margin-bottom:18px; }
@@ -370,6 +435,7 @@ tr:hover td { background: #FAFAFA; }
     <button class="adm-tab" onclick="admSwitchTab('reports',this)">🚩 البلاغات <span id="tab-reports-badge"></span></button>
     <button class="adm-tab" onclick="admSwitchTab('settings',this)">⚙️ الحذف التلقائي</button>
     <button class="adm-tab" onclick="admSwitchTab('exemptions',this)">🎟️ استثناءات النشر</button>
+    <button class="adm-tab" onclick="admSwitchTab('services',this)">🚚 طلبات الخدمات <span id="tab-services-badge"></span></button>
   </div>
 
   <!-- ═══ صفحة: الإعلانات ═══ -->
@@ -459,6 +525,37 @@ tr:hover td { background: #FAFAFA; }
           <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ صفحة: طلبات خدمات شراء المشاريع ═══ -->
+  <div class="adm-page" id="page-services">
+    <div class="adm-content">
+      <!-- إحصائيات أسباب الإغلاق: هي اللي بتحوّل توثيق السبب لقيمة فعلية -->
+      <div class="svc-adm-stats" id="svc-adm-stats"></div>
+
+      <div class="adm-toolbar" style="padding:0 0 14px 0;border:none;gap:8px;flex-wrap:wrap">
+        <button class="adm-filter-btn on" onclick="admLoadServices('active',this)">نشط</button>
+        <button class="adm-filter-btn" onclick="admLoadServices('archived',this)">الأرشيف</button>
+        <button class="adm-filter-btn" onclick="admLoadServices('all',this)">الكل</button>
+        <input id="svc-adm-search" placeholder="بحث بالكود أو الاسم أو الهاتف…"
+               style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #E8E8E8;border-radius:10px;font-size:13px"
+               onkeydown="if(event.key==='Enter')admLoadServices()">
+      </div>
+
+      <div class="adm-table-wrap">
+        <div id="svc-adm-container">
+          <div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- لوحة تفاصيل الطلب -->
+  <div class="svc-adm-overlay" id="svc-adm-modal" onclick="if(event.target===this)admCloseService()">
+    <div class="svc-adm-panel">
+      <button class="svc-adm-close" onclick="admCloseService()" aria-label="إغلاق">✕</button>
+      <div id="svc-adm-detail"></div>
     </div>
   </div>
 
@@ -1029,6 +1126,257 @@ function admSwitchTab(tab, el) {
   if (tab === 'reports')     admLoadReports(null);
   if (tab === 'settings')    admLoadSettings();
   if (tab === 'exemptions')  admLoadExemptions();
+  if (tab === 'services')    admLoadServices();
+}
+
+
+/* ================================================================
+   🚚 طلبات خدمات شراء المشاريع
+   الحالات الثلاث (طلب/معاينة/نقل) بتتعرض كقوائم منسدلة، وقواعد الترتيب
+   مفروضة في القاعدة — فالواجهة بتعرض الرفض بدل ما تكرّر المنطق.
+   ================================================================ */
+
+let admServices = [];
+let admSvcScope = 'active';
+
+const SVC_STATUS = {
+  new: 'طلب جديد', verifying: 'جاري التحقق الأولي',
+  awaiting_inspection_payment: 'بانتظار سداد رسوم المعاينة',
+  in_progress: 'جاري تنفيذ الخدمة', completed: 'مكتمل', cancelled: 'ملغي',
+};
+const SVC_INSP = {
+  not_started: 'لم تبدأ', scheduled: 'تم تحديد الموعد',
+  in_progress: 'جاري المعاينة', report_ready: 'التقرير جاهز', done: 'انتهت',
+};
+const SVC_TRANS = {
+  not_started: 'لم تبدأ', awaiting_customer: 'بانتظار موافقة العميل',
+  awaiting_payment: 'بانتظار الدفع', in_transit: 'جاري النقل',
+  delivered: 'تم التسليم', cancelled: 'ألغيت',
+};
+const SVC_REASONS = {
+  seller_sold: 'البائع باع المشروع', seller_refused: 'البائع رفض المعاينة',
+  customer_cancelled: 'العميل ألغى', expired_no_response: 'انتهت المهلة بلا رد',
+  refunded: 'تعذّر التنفيذ — تم رد الرسوم', other: 'سبب آخر',
+};
+const SVC_SRC = {
+  approved: ['ok', 'الإعلان منشور'], expired: ['warn', 'الإعلان منتهي'],
+  paused: ['warn', 'الإعلان موقوف'], rejected: ['danger', 'الإعلان مرفوض'],
+  pending: ['warn', 'الإعلان قيد المراجعة'], deleted: ['danger', 'الإعلان اتحذف'],
+};
+
+const _svcErr = {
+  inspection_before_payment: 'مينفعش تبدأ المعاينة قبل ما الطلب يبقى «جاري تنفيذ الخدمة» (أي بعد السداد).',
+  transport_before_inspection: 'مينفعش تبدأ النقل قبل ما المعاينة تخلص («انتهت»).',
+  cancel_reason_required: 'لازم تختار سبب الإلغاء.',
+  complete_before_inspection_done: 'مينفعش تقفل الطلب كمكتمل قبل ما المعاينة تخلص.',
+  not_found: 'الطلب مش موجود.',
+};
+
+async function admLoadServices(scope, el) {
+  if (scope) admSvcScope = scope;
+  if (el) {
+    el.parentElement.querySelectorAll('.adm-filter-btn').forEach(b => b.classList.remove('on'));
+    el.classList.add('on');
+  }
+  const cont = document.getElementById('svc-adm-container');
+  cont.innerHTML = '<div class="adm-loading"><div class="adm-spinner"></div><p>جاري التحميل…</p></div>';
+
+  const search = document.getElementById('svc-adm-search')?.value.trim() || '';
+  try {
+    const res = await fetch(`/admin/service-requests?scope=${admSvcScope}&search=${encodeURIComponent(search)}`,
+      { headers: { 'Authorization': 'Bearer ' + admGetToken() } });
+    const data = await res.json();
+    if (res.status === 401) { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); return; }
+    if (!res.ok) { cont.innerHTML = `<div class="adm-empty-tab">⚠️ ${escHtml(data.error || 'خطأ في التحميل')}</div>`; return; }
+
+    admServices = Array.isArray(data.rows) ? data.rows : [];
+    admRenderSvcStats(data.stats || {});
+    admRenderServices();
+  } catch {
+    cont.innerHTML = '<div class="adm-empty-tab">⚠️ تعذّر الاتصال بالخادم</div>';
+  }
+}
+
+function admRenderSvcStats(st) {
+  const reasons = st.by_reason || {};
+  const reasonChips = Object.keys(reasons).length
+    ? `<div class="svc-adm-reasons">${Object.entries(reasons)
+        .map(([k, n]) => `<span class="svc-adm-reason">${escHtml(SVC_REASONS[k] || k)} <b>${n}</b></span>`).join('')}</div>`
+    : '';
+  document.getElementById('svc-adm-stats').innerHTML = `
+    <div class="svc-adm-stat"><b>${st.new || 0}</b><span>طلبات جديدة</span></div>
+    <div class="svc-adm-stat"><b>${st.open || 0}</b><span>مفتوحة الآن</span></div>
+    <div class="svc-adm-stat"><b>${st.completed || 0}</b><span>مكتملة</span></div>
+    <div class="svc-adm-stat warn"><b>${st.cancelled || 0}</b><span>ملغاة</span></div>` + reasonChips;
+
+  const badge = document.getElementById('tab-services-badge');
+  if (badge) badge.textContent = st.new ? `(${st.new})` : '';
+}
+
+function admRenderServices() {
+  const cont = document.getElementById('svc-adm-container');
+  if (!admServices.length) {
+    cont.innerHTML = '<div class="adm-empty-tab">لا توجد طلبات في هذا العرض</div>';
+    return;
+  }
+  cont.innerHTML = `
+    <table class="adm-table">
+      <thead><tr>
+        <th>الكود</th><th>العميل</th><th>الإعلان</th><th>المرحلة</th><th>آخر تحديث</th>
+      </tr></thead>
+      <tbody>${admServices.map(r => {
+        const src = SVC_SRC[r.live_listing_status] || ['warn', r.live_listing_status || '—'];
+        const stale = String(r.is_stale) === 'true';
+        return `
+        <tr class="svc-adm-row" onclick="admOpenService('${r.id}')">
+          <td><span class="svc-adm-ref">${escHtml(r.ref)}</span></td>
+          <td>${escHtml(r.customer_name || '—')}<br><small style="color:#999" dir="ltr">${escHtml(r.contact_phone || '')}</small></td>
+          <td>${escHtml(r.listing_title || '—')}
+              <span class="svc-adm-src ${src[0]}">${escHtml(src[1])}</span></td>
+          <td>${escHtml(SVC_STATUS[r.status] || r.status)}
+              ${stale ? '<span class="svc-adm-stale">راكد +٣ أيام</span>' : ''}</td>
+          <td><small>${new Date(r.updated_at).toLocaleDateString('ar-EG')}</small>
+              ${r.archived_at ? '<br><small style="color:#999">مؤرشف</small>' : ''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function admOpenService(id) {
+  const r = admServices.find(x => x.id === id);
+  if (!r) return;
+  const opt = (map, cur) => Object.entries(map)
+    .map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${escHtml(v)}</option>`).join('');
+  const rep = r.inspection_report || {};
+  const src = SVC_SRC[r.live_listing_status] || ['warn', r.live_listing_status || '—'];
+
+  document.getElementById('svc-adm-detail').innerHTML = `
+    <div class="svc-adm-sec">
+      <span class="svc-adm-ref" style="font-size:16px">${escHtml(r.ref)}</span>
+      <span class="svc-adm-src ${src[0]}">${escHtml(src[1])}</span>
+      ${r.archived_at ? '<span class="svc-adm-src warn">مؤرشف</span>' : ''}
+      <h3 style="margin:8px 0 0;font-size:16px">${escHtml(r.listing_title || '—')}</h3>
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">العميل والتوصيل</div>
+      <div class="svc-adm-kv">
+        <div><span>الاسم</span><strong>${escHtml(r.customer_name || '—')}</strong></div>
+        <div><span>هاتف العميل</span><strong dir="ltr">${escHtml(r.contact_phone || '—')}</strong></div>
+        <div><span>هاتف البائع</span><strong dir="ltr">${escHtml(r.seller_phone || '—')}</strong></div>
+        <div><span>التوصيل إلى</span><strong>${escHtml(r.deliver_region || '—')}${r.deliver_area ? ' — ' + escHtml(r.deliver_area) : ''}</strong></div>
+        <div><span>سعر الإعلان</span><strong>${r.listing_price ? Number(r.listing_price).toLocaleString('ar-EG') + ' ج' : '—'}</strong></div>
+        <div><span>مكالمة فيديو</span><strong>${r.wants_video_call ? 'نعم' : 'لا'}</strong></div>
+      </div>
+      ${r.notes ? `<div style="margin-top:10px;padding:10px 12px;background:#FEF3C7;border-radius:10px;font-size:12.5px;line-height:1.7">
+        <b>طلب العميل من المندوب:</b><br>${escHtml(r.notes)}</div>` : ''}
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">الحالات الثلاث</div>
+      <select class="svc-adm-sel" id="svc-f-status">${opt(SVC_STATUS, r.status)}</select>
+      <select class="svc-adm-sel" id="svc-f-insp">${opt(SVC_INSP, r.inspection_status)}</select>
+      <select class="svc-adm-sel" id="svc-f-trans">${opt(SVC_TRANS, r.transport_status)}</select>
+      <select class="svc-adm-sel" id="svc-f-reason">
+        <option value="">— سبب الإلغاء (إلزامي عند الإلغاء) —</option>
+        ${opt(SVC_REASONS, r.cancel_reason || '')}
+      </select>
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">تقرير المعاينة</div>
+      <div class="svc-adm-kv" style="margin-bottom:8px">
+        <div><span>الأبعاد</span><strong><input id="svc-r-dim" value="${escHtml(rep.dimensions || '')}" style="width:100%;border:none;background:none;font-size:13px;font-weight:800"></strong></div>
+        <div><span>الحجم التقريبي</span><strong><input id="svc-r-vol" value="${escHtml(rep.volume || '')}" style="width:100%;border:none;background:none;font-size:13px;font-weight:800"></strong></div>
+        <div><span>وسيلة النقل</span><strong><input id="svc-r-veh" value="${escHtml(rep.vehicle || '')}" style="width:100%;border:none;background:none;font-size:13px;font-weight:800"></strong></div>
+        <div><span>اختلافات عن الإعلان</span><strong><input id="svc-r-diff" value="${escHtml((rep.discrepancies || []).join('، '))}" style="width:100%;border:none;background:none;font-size:13px;font-weight:800"></strong></div>
+      </div>
+      <textarea class="svc-adm-ta" id="svc-r-notes" placeholder="ملاحظات المعاينة الظاهرة (وصفية فقط — بلا حكم على الجودة أو توصية بالشراء)">${escHtml(rep.notes || '')}</textarea>
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">عرض النقل (نص وصفي — بلا مبالغ)</div>
+      <textarea class="svc-adm-ta" id="svc-q-note" placeholder="مثال: سيارة نصف نقل — تم إبلاغ العميل بالتكلفة عبر واتساب">${escHtml(r.transport_quote_note || '')}</textarea>
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">ملاحظة على الطلب</div>
+      <textarea class="svc-adm-ta" id="svc-note" placeholder="اكتب ملاحظة…"></textarea>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;cursor:pointer">
+        <input type="checkbox" id="svc-note-public" style="width:16px;height:16px;accent-color:#F36418">
+        <span>يشوفها العميل في «حجوزاتك» (لو مش مختارة تفضل داخلية للفريق)</span>
+      </label>
+    </div>
+
+    <div class="svc-adm-sec">
+      <div class="svc-adm-sec-h">مسار الطلب</div>
+      <ol class="svc-adm-tl">
+        ${(r.events || []).length ? '' : '<li>—</li>'}
+      </ol>
+      <div id="svc-adm-tl-note" style="font-size:12px;color:#999">السجل الكامل محفوظ في القاعدة ويظهر للعميل في صفحته.</div>
+    </div>
+
+    <div class="svc-adm-err" id="svc-adm-error" style="display:none"></div>
+    <div class="svc-adm-actions">
+      <button class="svc-adm-btn" onclick="admSaveService('${r.id}')">حفظ التغييرات</button>
+      <button class="svc-adm-btn ghost" onclick="admSaveService('${r.id}', ${r.archived_at ? 'false' : 'true'})">
+        ${r.archived_at ? 'إلغاء الأرشفة' : 'أرشفة'}</button>
+      <button class="svc-adm-btn ghost" onclick="admCloseService()">إغلاق</button>
+    </div>`;
+
+  document.getElementById('svc-adm-modal').classList.add('open');
+}
+
+function admCloseService() {
+  document.getElementById('svc-adm-modal').classList.remove('open');
+}
+
+async function admSaveService(id, archive) {
+  const errEl = document.getElementById('svc-adm-error');
+  errEl.style.display = 'none';
+
+  const diffRaw = document.getElementById('svc-r-diff')?.value.trim() || '';
+  const report = {
+    dimensions:    document.getElementById('svc-r-dim')?.value.trim() || null,
+    volume:        document.getElementById('svc-r-vol')?.value.trim() || null,
+    vehicle:       document.getElementById('svc-r-veh')?.value.trim() || null,
+    notes:         document.getElementById('svc-r-notes')?.value.trim() || null,
+    discrepancies: diffRaw ? diffRaw.split(/[،,]/).map(s => s.trim()).filter(Boolean) : [],
+  };
+  const hasReport = Object.values(report).some(v => Array.isArray(v) ? v.length : v);
+
+  const body = {
+    id,
+    status:            document.getElementById('svc-f-status')?.value,
+    inspection_status: document.getElementById('svc-f-insp')?.value,
+    transport_status:  document.getElementById('svc-f-trans')?.value,
+    cancel_reason:     document.getElementById('svc-f-reason')?.value || null,
+    note:              document.getElementById('svc-note')?.value.trim() || null,
+    note_public:       !!document.getElementById('svc-note-public')?.checked,
+    inspection_report: hasReport ? report : null,
+    transport_quote:   document.getElementById('svc-q-note')?.value.trim() || null,
+  };
+  if (typeof archive === 'boolean') body.archive = archive;
+
+  try {
+    const res = await fetch('/admin/service-requests', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + admGetToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.status === 401) { sessionStorage.removeItem(ADM_TOKEN_KEY); location.reload(); return; }
+    if (!res.ok || data?.ok === false) {
+      errEl.textContent = _svcErr[data?.error] || data?.error || 'تعذّر الحفظ';
+      errEl.style.display = 'block';
+      return;
+    }
+    admCloseService();
+    admLoadServices();
+  } catch {
+    errEl.textContent = 'تعذّر الاتصال بالخادم';
+    errEl.style.display = 'block';
+  }
 }
 
 function admFilterBySeller(email) {

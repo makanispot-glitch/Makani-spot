@@ -1639,6 +1639,7 @@ async function eqOpenDetail(id) {
       <div class="eq-detail-loc">📍 ${listing.region ? eqGovLabel(listing.region) : ''}${listing.area ? ' — ' + listing.area : ''}</div>
       <div class="eq-detail-date">${t('detail.published', { date })}</div>
       <div class="eq-detail-stats">${t('detail.views', { count: listing.view_count || 0 })}</div>
+      ${eqServiceCardHtml(id)}
       <div class="eq-detail-actions">
         ${contactHtml}
         ${favBtn}
@@ -2267,3 +2268,152 @@ function eqCloseFavorites() {
    🔔 القسم 22: الإشعارات — موحّدة عبر وحدة GN
    ================================================================ */
 /* تم نقل نظام الإشعارات إلى notifications.js (وحدة GN الموحّدة) */
+
+
+/* ================================================================================
+   🚚 القسم 23: خدمة «افحص المشروع وانقله لباب بيتك»
+   ================================================================================
+   منتج مستقل فوق الإعلان: معاينة ظاهرية موثّقة، وبعدها اختياريًا نقل.
+   التدفّق: بطاقة في مودال التفاصيل ← شاشة تعريف ← نموذج ٣ حقول ←
+   إنشاء الطلب في النظام ← شاشة «ماذا سيحدث الآن؟».
+   واتساب بيظهر *بعد* إنشاء الطلب وللمتابعة فقط — مش لإنشائه.
+   ================================================================================ */
+
+/* رقم فريق المنصة — نفس الرقم المستخدم في صفحات المقالات */
+const EQ_SERVICE_WA = '201103467711';
+
+let eqSvcListingId = null;   // الإعلان اللي بنطلب الخدمة عليه
+let eqSvcRef       = null;   // كود الطلب بعد الإنشاء
+
+/* بطاقة الدخول داخل مودال التفاصيل — فوق أزرار التواصل (أعلى لحظة نية)
+   لكن كبطاقة مؤطّرة لا كزر برتقالي ينافس زر واتساب الأساسي */
+function eqServiceCardHtml(listingId) {
+  return `
+  <button type="button" class="eq-svc-card" onclick="eqOpenService('${listingId}')">
+    <span class="eq-svc-card-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 7h11v9H1z"/><path d="M12 10h4.5l2.5 3v3h-7z"/>
+        <circle cx="5" cy="18.5" r="1.8"/><circle cx="16" cy="18.5" r="1.8"/>
+      </svg>
+    </span>
+    <span class="eq-svc-card-txt">
+      <strong>${t('service.cardTitle')}</strong>
+      <small>${t('service.cardSub')}</small>
+    </span>
+    <span class="eq-svc-card-arrow" aria-hidden="true">‹</span>
+  </button>`;
+}
+
+function eqOpenService(listingId) {
+  eqSvcListingId = listingId;
+  eqSvcRef = null;
+  const modal = document.getElementById('eq-svc-modal');
+  if (!modal) return;
+  eqSvcShowStep('intro');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function eqCloseService() {
+  document.getElementById('eq-svc-modal')?.classList.remove('open');
+  /* مودال التفاصيل ممكن يكون لسه مفتوح تحته — منرجّعش التمرير غير لو اتقفل هو كمان */
+  if (!document.getElementById('eq-modal')?.classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
+}
+
+function eqSvcShowStep(step) {
+  ['intro', 'form', 'done'].forEach(s => {
+    document.getElementById('eq-svc-step-' + s)?.classList.toggle('on', s === step);
+  });
+  document.getElementById('eq-svc-modal')?.scrollTo?.({ top: 0 });
+  const box = document.querySelector('.eq-svc-box');
+  if (box) box.scrollTop = 0;
+}
+
+/* الانتقال للنموذج — يملأ ما نعرفه مسبقًا حتى لا يكتبه المستخدم من جديد */
+async function eqSvcGoForm() {
+  if (!eqUser) {
+    const back = encodeURIComponent('/market/?listing=' + eqSvcListingId);
+    window.location.href = `/?p=login&next=${back}`;
+    return;
+  }
+
+  const govSel = document.getElementById('eq-svc-region');
+  if (govSel && !govSel.options.length) {
+    govSel.innerHTML = `<option value="">${t('service.pickRegion')}</option>` +
+      EQ_GOVS.map(g => `<option value="${g}">${eqGovLabel(g)}</option>`).join('');
+  }
+
+  /* الهاتف من الملف الشخصي — أكثر من نصف المستخدمين مش فاكرين يكتبوه صح */
+  const phoneInp = document.getElementById('eq-svc-phone');
+  if (phoneInp && !phoneInp.value) {
+    try {
+      const { data } = await eqSb.from('profiles').select('phone').eq('id', eqUser.id).maybeSingle();
+      if (data?.phone) phoneInp.value = data.phone;
+    } catch (e) { /* الحقل يفضل فاضي ويكتبه بنفسه */ }
+  }
+
+  eqSvcShowStep('form');
+}
+
+async function eqSvcSubmit() {
+  const btn     = document.getElementById('eq-svc-submit');
+  const errEl   = document.getElementById('eq-svc-error');
+  const phone   = document.getElementById('eq-svc-phone')?.value.trim() || '';
+  const region  = document.getElementById('eq-svc-region')?.value || '';
+  const area    = document.getElementById('eq-svc-area')?.value.trim() || '';
+  const notes   = document.getElementById('eq-svc-notes')?.value.trim() || '';
+  const video   = !!document.getElementById('eq-svc-video')?.checked;
+  const agreed  = !!document.getElementById('eq-svc-agree')?.checked;
+
+  const fail = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } };
+  if (errEl) errEl.style.display = 'none';
+
+  if (!phone)  return fail(t('service.errPhone'));
+  if (!region) return fail(t('service.errRegion'));
+  if (!agreed) return fail(t('service.errAgree'));
+
+  if (btn) { btn.disabled = true; btn.textContent = t('service.submitting'); }
+  try {
+    const { data, error } = await eqSb.rpc('create_service_request', {
+      p_listing_id:     eqSvcListingId,
+      p_contact_phone:  phone,
+      p_deliver_region: region,
+      p_deliver_area:   area || null,
+      p_notes:          notes || null,
+      p_video_call:     video,
+    });
+    if (error) throw error;
+
+    if (!data?.ok) {
+      /* رسائل مفهومة بدل أكواد الخادم */
+      const map = {
+        auth_required:          t('service.errAuth'),
+        account_suspended:      t('service.errSuspended'),
+        listing_not_found:      t('service.errListingGone'),
+        listing_unavailable:    t('service.errListingGone'),
+        own_listing:            t('service.errOwnListing'),
+        duplicate_open_request: t('service.errDuplicate'),
+        missing_fields:         t('service.errPhone'),
+      };
+      fail(map[data?.error] || t('service.errGeneric'));
+      return;
+    }
+
+    eqSvcRef = data.ref;
+    const refEl = document.getElementById('eq-svc-ref');
+    if (refEl) refEl.textContent = data.ref;
+    const waBtn = document.getElementById('eq-svc-wa');
+    if (waBtn) {
+      waBtn.href = `https://wa.me/${EQ_SERVICE_WA}?text=` +
+        encodeURIComponent(t('service.waMsg', { ref: data.ref }));
+    }
+    trackEvent('service_request_created', { listing_id: eqSvcListingId, ref: data.ref });
+    eqSvcShowStep('done');
+  } catch (e) {
+    fail(t('service.errGeneric'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = t('service.submitBtn'); }
+  }
+}

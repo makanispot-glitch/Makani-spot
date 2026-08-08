@@ -293,23 +293,84 @@
         "bazaars": "Bazaars"
       },
       "rows": {
-        "listing": { "label": "Space Listings", "starter": "2 spaces / 16m²", "growth": "8 spaces / 16m²" },
-        "priority": { "label": "Search Priority", "starter": "Normal", "growth": "High", "pro": "Maximum (always top 3)" },
-        "featured": { "label": "Featured on Homepage", "pro": "Weekly" },
-        "badge": { "label": "Partnership Badge", "growth": "⭐ Growth Partner", "pro": "Certified Partner" },
-        "tenantSourcing": { "label": "Tenant Sourcing", "growth": "3/month", "pro": "Targeted by activity" },
-        "marketingPosts": { "label": "Marketing Posts", "growth": "2 posts/month", "pro": "4 + Email/WhatsApp campaign" },
-        "aiPhoto": { "label": "AI Photography", "pro": "3 photos per new space" },
-        "bookingReq": { "label": "Booking Request Handling", "starter": "No management", "proExtra": "+ inspection follow-up" },
-        "contracts": { "label": "Contract Management", "proExtra": "+ auto-renewal" },
-        "payments": { "label": "Payment Tracking" },
-        "expiryAlerts": { "label": "Contract Expiry Alerts", "proExtra": "Automatic WhatsApp" },
-        "violations": { "label": "Violation Tracking" },
-        "tenantRating": { "label": "Tenant Rating", "starter": "View only", "growth": "Full history + violations", "pro": "Score + smart recommendation" },
-        "monthlyReport": { "label": "Monthly Report", "growth": "Basic", "pro": "Full AI + monthly forecasts" },
-        "supportChannel": { "label": "Support Channel", "starter": "Email", "growth": "WhatsApp during business hours", "pro": "Dedicated WhatsApp 9am–11pm" },
-        "accountManager": { "label": "Dedicated Account Manager", "proExtra": "Account manager + monthly 30-min call" },
-        "bazaarSupport": { "label": "Bazaar Organizing Support", "pro": "Vendor lists + booking management" }
+        "listing": {
+          "label": "Space Listings",
+          "starter": "2 spaces / 16m²",
+          "growth": "8 spaces / 16m²"
+        },
+        "priority": {
+          "label": "Search Priority",
+          "starter": "Normal",
+          "growth": "High",
+          "pro": "Maximum (always top 3)"
+        },
+        "featured": {
+          "label": "Featured on Homepage",
+          "pro": "Weekly"
+        },
+        "badge": {
+          "label": "Partnership Badge",
+          "growth": "⭐ Growth Partner",
+          "pro": "Certified Partner"
+        },
+        "tenantSourcing": {
+          "label": "Tenant Sourcing",
+          "growth": "3/month",
+          "pro": "Targeted by activity"
+        },
+        "marketingPosts": {
+          "label": "Marketing Posts",
+          "growth": "2 posts/month",
+          "pro": "4 + Email/WhatsApp campaign"
+        },
+        "aiPhoto": {
+          "label": "AI Photography",
+          "pro": "3 photos per new space"
+        },
+        "bookingReq": {
+          "label": "Booking Request Handling",
+          "starter": "No management",
+          "proExtra": "+ inspection follow-up"
+        },
+        "contracts": {
+          "label": "Contract Management",
+          "proExtra": "+ auto-renewal"
+        },
+        "payments": {
+          "label": "Payment Tracking"
+        },
+        "expiryAlerts": {
+          "label": "Contract Expiry Alerts",
+          "proExtra": "Automatic WhatsApp"
+        },
+        "violations": {
+          "label": "Violation Tracking"
+        },
+        "tenantRating": {
+          "label": "Tenant Rating",
+          "starter": "View only",
+          "growth": "Full history + violations",
+          "pro": "Score + smart recommendation"
+        },
+        "monthlyReport": {
+          "label": "Monthly Report",
+          "growth": "Basic",
+          "pro": "Full AI + monthly forecasts"
+        },
+        "supportChannel": {
+          "label": "Support Channel",
+          "starter": "Email",
+          "growth": "WhatsApp during business hours",
+          "pro": "Dedicated WhatsApp 9am–11pm"
+        },
+        "accountManager": {
+          "label": "Dedicated Account Manager",
+          "proExtra": "Account manager + monthly 30-min call"
+        },
+        "bazaarSupport": {
+          "label": "Bazaar Organizing Support",
+          "pro": "Vendor lists + booking management"
+        }
       }
     },
     "addons": {
@@ -402,12 +463,12 @@
   "tenantDash": {
     "welcomePill": "Welcome to Makani Spot",
     "helloPrefix": "Hi,",
-    "helloSub": "From your dashboard you can view your bookings and bazaars, and navigate the platform.",
-    "statBookingsLbl": "Booking Requests",
-    "statBookingsSub": "Total Requests",
+    "helloSub": "From your dashboard you can follow every request and booking, and move between sections of the platform.",
+    "statBookingsLbl": "Your requests",
+    "statBookingsSub": "Total",
     "statRepLbl": "Your Reputation",
-    "bookingsSectionTitle": "Your Bookings",
-    "newBookingBtn": "+ New Booking",
+    "bookingsSectionTitle": "Your requests & bookings",
+    "newBookingBtn": "+ New request",
     "ratingsSectionTitle": "Your Reputation & Ratings",
     "ratingsIntro": "These are the ratings you've received from space owners and bazaar organizers you've worked with. The more reliable and easy to work with you are, the higher your reputation — and the better your chances of getting booked.",
     "exploreSectionTitle": "Explore the Platform",
@@ -465,14 +526,81 @@
       "bazaarBookingDefault": "Bazaar Booking",
       "perSlot": "EGP / spot",
       "withdrawBtn": "↩ Withdraw Request",
-      "showAllBtn": "↓ Show All Bookings ({{count}})",
-      "hideOldBtn": "↑ Hide Older Bookings",
+      "showAllBtn": "Show all ({{count}})",
+      "hideOldBtn": "Hide finished",
       "withdrawConfirm": "Do you want to withdraw this booking request?\nOnce withdrawn, it will no longer appear in the space owner's review list.",
       "withdrawing": "Withdrawing…",
       "withdrawFailed": "Couldn't withdraw the request: {{msg}}",
       "unknownError": "Unknown error",
       "loginRequiredFirst": "You must log in first",
-      "loadFailed": "Couldn't load your bookings"
+      "loadFailed": "Couldn't load your bookings",
+      "kindService": "🚚 Buying service",
+      "serviceDefault": "Service request",
+      "serviceActivity": "Inspection & delivery",
+      "serviceDetailsBtn": "Request details",
+      "currency": "EGP",
+      "svcVerifying": "Verifying with seller",
+      "svcAwaitingPay": "Awaiting inspection fee",
+      "svcScheduled": "Inspection scheduled",
+      "svcInspecting": "Inspection under way",
+      "svcReport": "Report ready",
+      "svcTransport": "Delivery in progress",
+      "svcDelivered": "Delivered",
+      "svcStage_pending": "New request — under review",
+      "svcStage_svc_verifying": "We are verifying with the seller",
+      "svcStage_svc_awaiting_pay": "Awaiting the inspection fee",
+      "svcStage_svc_scheduled": "Inspection date set",
+      "svcStage_svc_inspecting": "Our rep is inspecting the business right now",
+      "svcStage_svc_report": "Inspection report is ready",
+      "svcStage_svc_transport": "Arranging delivery",
+      "svcStage_svc_delivered": "Your business has been delivered",
+      "svcStage_completed": "Request completed",
+      "svcStage_cancelled": "Request closed",
+      "svcInsp_scheduled": "Inspection date set",
+      "svcInsp_in_progress": "Inspection started",
+      "svcInsp_report_ready": "Inspection report ready",
+      "svcInsp_done": "Inspection service finished",
+      "svcTrans_awaiting_customer": "Awaiting your go-ahead for delivery",
+      "svcTrans_awaiting_payment": "Awaiting the delivery fee",
+      "svcTrans_in_transit": "Your business is on the way",
+      "svcTrans_delivered": "Delivered",
+      "svcTrans_cancelled": "Delivery service cancelled",
+      "svcEvCreated": "We received your request",
+      "svcEvReport": "Inspection report ready",
+      "svcDeliverTo": "Deliver to",
+      "svcPhone": "Contact number",
+      "svcCreated": "Requested on",
+      "svcUpdated": "Last update",
+      "svcYourNotes": "Your notes for our rep",
+      "svcClosedReason": "Why this request closed",
+      "svcReportTitle": "Inspection report",
+      "svcDiffs": "Differences from the listing",
+      "svcQuote": "Delivery offer",
+      "svcTimeline": "Request timeline",
+      "svcReason_seller_sold": "The seller told us the business has been sold",
+      "svcReason_seller_refused": "The seller did not agree to host an inspection visit",
+      "svcReason_customer_cancelled": "Cancelled at your request",
+      "svcReason_expired_no_response": "Closed because we could not complete contact",
+      "svcReason_refunded": "The service could not be carried out and the fee was fully refunded",
+      "svcReason_other": "Operational reasons",
+      "svcReq_new": "We received your request",
+      "svcReq_verifying": "Verification with the seller started",
+      "svcReq_awaiting_inspection_payment": "Awaiting the inspection fee",
+      "svcReq_in_progress": "Service execution started",
+      "svcReq_completed": "Request completed",
+      "svcReq_cancelled": "Request closed",
+      "groupActive": "In progress",
+      "groupDone": "Finished",
+      "svcPaid": "Fee received",
+      "svcInspDone": "Inspection finished",
+      "svcTransportOk": "Awaiting your go-ahead",
+      "svcTransportPay": "Awaiting delivery fee",
+      "svcInTransit": "On the way to you",
+      "svcStage_svc_paid": "Fee received — we are setting the inspection date",
+      "svcStage_svc_insp_done": "The inspection service is complete",
+      "svcStage_svc_transport_ok": "We sent you the delivery offer — awaiting your go-ahead",
+      "svcStage_svc_transport_pay": "Awaiting the delivery fee so we can start",
+      "svcStage_svc_in_transit": "Your business is on the way to you"
     },
     "ratings": {
       "statCountSuffix": "{{count}} ratings",
@@ -480,7 +608,8 @@
       "emptyTitle": "No ratings on your account yet",
       "emptySub": "As you deal with space owners and bazaar organizers on the platform, their ratings of you will appear here and build your reputation.",
       "loadFailed": "Couldn't load your ratings"
-    }
+    },
+    "bookingsSectionSub": "Everything you have submitted, in one place — spaces, bazaars and services"
   },
   "bookingModal": {
     "title": "Book Your Space",

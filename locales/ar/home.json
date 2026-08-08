@@ -293,23 +293,84 @@
         "bazaars": "البازارات"
       },
       "rows": {
-        "listing": { "label": "إدراج المساحات", "starter": "2 مساحة / 16م²", "growth": "8 مساحات / 16م²" },
-        "priority": { "label": "أولوية الظهور", "starter": "عادي", "growth": "مرتفعة", "pro": "قصوى (أول 3 دائماً)" },
-        "featured": { "label": "Featured في الهوم", "pro": "أسبوعياً" },
-        "badge": { "label": "Badge الشراكة", "growth": "⭐ شريك Growth", "pro": "شريك معتمد" },
-        "tenantSourcing": { "label": "إيجاد مستأجرين", "growth": "3 شهرياً", "pro": "محدد بالنشاط المطلوب" },
-        "marketingPosts": { "label": "منشورات تسويقية", "growth": "2 منشور/شهر", "pro": "4 + Email/WhatsApp Campaign" },
-        "aiPhoto": { "label": "تصوير AI", "pro": "3 صور لكل مساحة جديدة" },
-        "bookingReq": { "label": "استقبال طلبات الحجز", "starter": "بدون إدارة", "proExtra": "+ متابعة المعاينة" },
-        "contracts": { "label": "إدارة العقود", "proExtra": "+ تجديد تلقائي" },
-        "payments": { "label": "تسجيل المدفوعات" },
-        "expiryAlerts": { "label": "تنبيهات انتهاء العقد", "proExtra": "واتساب تلقائي" },
-        "violations": { "label": "تسجيل المخالفات" },
-        "tenantRating": { "label": "تقييم المستأجر", "starter": "عرض فقط", "growth": "تاريخ كامل + مخالفات", "pro": "درجة + توصية ذكية" },
-        "monthlyReport": { "label": "تقرير شهري", "growth": "أساسي", "pro": "AI كامل + توقعات الشهر" },
-        "supportChannel": { "label": "قناة الدعم", "starter": "إيميل", "growth": "واتساب ساعات العمل", "pro": "واتساب مخصص 9ص–11م" },
-        "accountManager": { "label": "مدير حساب مخصص", "proExtra": "مدير حساب + Call شهري 30 دقيقة" },
-        "bazaarSupport": { "label": "دعم تنظيم البازار", "pro": "قوائم موردين + إدارة حجوزات" }
+        "listing": {
+          "label": "إدراج المساحات",
+          "starter": "2 مساحة / 16م²",
+          "growth": "8 مساحات / 16م²"
+        },
+        "priority": {
+          "label": "أولوية الظهور",
+          "starter": "عادي",
+          "growth": "مرتفعة",
+          "pro": "قصوى (أول 3 دائماً)"
+        },
+        "featured": {
+          "label": "Featured في الهوم",
+          "pro": "أسبوعياً"
+        },
+        "badge": {
+          "label": "Badge الشراكة",
+          "growth": "⭐ شريك Growth",
+          "pro": "شريك معتمد"
+        },
+        "tenantSourcing": {
+          "label": "إيجاد مستأجرين",
+          "growth": "3 شهرياً",
+          "pro": "محدد بالنشاط المطلوب"
+        },
+        "marketingPosts": {
+          "label": "منشورات تسويقية",
+          "growth": "2 منشور/شهر",
+          "pro": "4 + Email/WhatsApp Campaign"
+        },
+        "aiPhoto": {
+          "label": "تصوير AI",
+          "pro": "3 صور لكل مساحة جديدة"
+        },
+        "bookingReq": {
+          "label": "استقبال طلبات الحجز",
+          "starter": "بدون إدارة",
+          "proExtra": "+ متابعة المعاينة"
+        },
+        "contracts": {
+          "label": "إدارة العقود",
+          "proExtra": "+ تجديد تلقائي"
+        },
+        "payments": {
+          "label": "تسجيل المدفوعات"
+        },
+        "expiryAlerts": {
+          "label": "تنبيهات انتهاء العقد",
+          "proExtra": "واتساب تلقائي"
+        },
+        "violations": {
+          "label": "تسجيل المخالفات"
+        },
+        "tenantRating": {
+          "label": "تقييم المستأجر",
+          "starter": "عرض فقط",
+          "growth": "تاريخ كامل + مخالفات",
+          "pro": "درجة + توصية ذكية"
+        },
+        "monthlyReport": {
+          "label": "تقرير شهري",
+          "growth": "أساسي",
+          "pro": "AI كامل + توقعات الشهر"
+        },
+        "supportChannel": {
+          "label": "قناة الدعم",
+          "starter": "إيميل",
+          "growth": "واتساب ساعات العمل",
+          "pro": "واتساب مخصص 9ص–11م"
+        },
+        "accountManager": {
+          "label": "مدير حساب مخصص",
+          "proExtra": "مدير حساب + Call شهري 30 دقيقة"
+        },
+        "bazaarSupport": {
+          "label": "دعم تنظيم البازار",
+          "pro": "قوائم موردين + إدارة حجوزات"
+        }
       }
     },
     "addons": {
@@ -400,12 +461,12 @@
   "tenantDash": {
     "welcomePill": "مرحباً بك في مكاني Spot",
     "helloPrefix": "أهلاً،",
-    "helloSub": "من لوحة التحكم تقدر تشوف حجوزاتك وبزاراتك وتتنقل بين أقسام المنصة.",
-    "statBookingsLbl": "طلبات الحجز",
-    "statBookingsSub": "إجمالي الطلبات",
+    "helloSub": "من لوحة التحكم تقدر تتابع كل طلباتك وحجوزاتك وتتنقل بين أقسام المنصة.",
+    "statBookingsLbl": "طلباتك",
+    "statBookingsSub": "الإجمالي",
     "statRepLbl": "سمعتك",
-    "bookingsSectionTitle": "حجوزاتك",
-    "newBookingBtn": "+ حجز جديد",
+    "bookingsSectionTitle": "طلباتك وحجوزاتك",
+    "newBookingBtn": "+ طلب جديد",
     "ratingsSectionTitle": "سمعتك وتقييماتك",
     "ratingsIntro": "دي التقييمات اللي وصلتك من أصحاب المساحات ومنظّمي البازارات اللي اتعاملت معاهم. كل ما تلتزم وتتعامل كويس، سمعتك بتزيد وفرصتك في الحجز بتكبر.",
     "exploreSectionTitle": "استكشف المنصة",
@@ -466,14 +527,81 @@
       "bazaarBookingDefault": "حجز بازار",
       "perSlot": "ج / مكان",
       "withdrawBtn": "↩ سحب الطلب",
-      "showAllBtn": "↓ عرض جميع الحجوزات ({{count}})",
-      "hideOldBtn": "↑ إخفاء الحجوزات القديمة",
+      "showAllBtn": "عرض الكل ({{count}})",
+      "hideOldBtn": "إخفاء المنتهية",
       "withdrawConfirm": "هل تريد سحب طلب الحجز هذا؟\nبعد السحب لن يظهر الطلب في قائمة المراجعة لصاحب المساحة.",
       "withdrawing": "جاري السحب…",
       "withdrawFailed": "تعذّر سحب الطلب: {{msg}}",
       "unknownError": "خطأ غير معروف",
       "loginRequiredFirst": "يجب تسجيل الدخول أولاً",
-      "loadFailed": "تعذّر تحميل الحجوزات"
+      "loadFailed": "تعذّر تحميل الحجوزات",
+      "kindService": "🚚 خدمة شراء مشروع",
+      "serviceDefault": "طلب خدمة",
+      "serviceActivity": "معاينة ونقل",
+      "serviceDetailsBtn": "تفاصيل الطلب",
+      "currency": "ج",
+      "svcVerifying": "جاري التحقق الأولي",
+      "svcAwaitingPay": "بانتظار سداد رسوم المعاينة",
+      "svcScheduled": "تم تحديد موعد المعاينة",
+      "svcInspecting": "المعاينة جارية",
+      "svcReport": "التقرير جاهز",
+      "svcTransport": "جاري النقل",
+      "svcDelivered": "تم التسليم",
+      "svcStage_pending": "طلب جديد — بنراجعه",
+      "svcStage_svc_verifying": "بنتحقق من البائع",
+      "svcStage_svc_awaiting_pay": "بانتظار سداد رسوم المعاينة",
+      "svcStage_svc_scheduled": "تم تحديد موعد المعاينة",
+      "svcStage_svc_inspecting": "المندوب بيعاين المشروع دلوقتي",
+      "svcStage_svc_report": "تقرير المعاينة جاهز",
+      "svcStage_svc_transport": "جاري ترتيب النقل",
+      "svcStage_svc_delivered": "تم تسليم المشروع",
+      "svcStage_completed": "تم إنهاء الطلب",
+      "svcStage_cancelled": "الطلب مقفول",
+      "svcInsp_scheduled": "تم تحديد موعد المعاينة",
+      "svcInsp_in_progress": "بدأت المعاينة",
+      "svcInsp_report_ready": "تقرير المعاينة جاهز",
+      "svcInsp_done": "انتهت خدمة المعاينة",
+      "svcTrans_awaiting_customer": "بانتظار موافقتك على النقل",
+      "svcTrans_awaiting_payment": "بانتظار سداد رسوم النقل",
+      "svcTrans_in_transit": "المشروع في الطريق إليك",
+      "svcTrans_delivered": "تم التسليم",
+      "svcTrans_cancelled": "أُلغيت خدمة النقل",
+      "svcEvCreated": "تم استلام طلبك",
+      "svcEvReport": "تقرير المعاينة جاهز",
+      "svcDeliverTo": "التوصيل إلى",
+      "svcPhone": "رقم التواصل",
+      "svcCreated": "تاريخ الطلب",
+      "svcUpdated": "آخر تحديث",
+      "svcYourNotes": "ملاحظاتك للمندوب",
+      "svcClosedReason": "سبب إغلاق الطلب",
+      "svcReportTitle": "تقرير المعاينة",
+      "svcDiffs": "اختلافات عن الإعلان",
+      "svcQuote": "عرض النقل",
+      "svcTimeline": "مسار الطلب",
+      "svcReason_seller_sold": "البائع أفاد بأن المشروع تم بيعه",
+      "svcReason_seller_refused": "البائع لم يوافق على استقبال مندوب المعاينة",
+      "svcReason_customer_cancelled": "تم الإلغاء بناءً على طلبك",
+      "svcReason_expired_no_response": "أُغلق الطلب لعدم اكتمال التواصل",
+      "svcReason_refunded": "تعذّر تنفيذ الخدمة وتم رد الرسوم بالكامل",
+      "svcReason_other": "أسباب تشغيلية",
+      "svcReq_new": "تم استلام طلبك",
+      "svcReq_verifying": "بدأ التحقق من البائع",
+      "svcReq_awaiting_inspection_payment": "بانتظار سداد رسوم المعاينة",
+      "svcReq_in_progress": "بدأ تنفيذ الخدمة",
+      "svcReq_completed": "تم إنهاء الطلب",
+      "svcReq_cancelled": "تم إغلاق الطلب",
+      "groupActive": "قيد التنفيذ",
+      "groupDone": "منتهية",
+      "svcPaid": "تم استلام الرسوم",
+      "svcInspDone": "المعاينة خلصت",
+      "svcTransportOk": "مستنيين موافقتك",
+      "svcTransportPay": "مستنيين سداد رسوم النقل",
+      "svcInTransit": "في الطريق إليك",
+      "svcStage_svc_paid": "تم استلام الرسوم — بنحدّد موعد المعاينة",
+      "svcStage_svc_insp_done": "خدمة المعاينة اكتملت",
+      "svcStage_svc_transport_ok": "بعتنالك عرض النقل — مستنيين موافقتك",
+      "svcStage_svc_transport_pay": "مستنيين سداد رسوم النقل عشان نبدأ",
+      "svcStage_svc_in_transit": "المشروع في الطريق إليك"
     },
     "ratings": {
       "statCountSuffix": "{{count}} تقييم",
@@ -481,7 +609,8 @@
       "emptyTitle": "لا توجد تقييمات على حسابك بعد",
       "emptySub": "عند تعاملك مع أصحاب المساحات أو منظمي البازارات عبر المنصة، تظهر تقييماتهم لك هنا وتبني سمعتك.",
       "loadFailed": "تعذّر تحميل التقييمات"
-    }
+    },
+    "bookingsSectionSub": "كل ما قدّمته للمنصة في مكان واحد — مساحات وبازارات وخدمات"
   },
   "bookingModal": {
     "title": "احجز مساحتك",
