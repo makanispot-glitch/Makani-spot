@@ -174,8 +174,23 @@
     "linkCopied": "✅ Link copied!",
     "linkFallback": "📋 Link: {{url}}"
   },
+  "discovery": {
+    "familyFixed": "Fixed space",
+    "familyBazaar": "Bazaar / event",
+    "switchToBazaars": "Try bazaars with the same filters",
+    "switchToSpaces": "Try fixed spaces with the same filters",
+    "carriedFilters": "Your filters carried over ×",
+    "regionUnavailable": "\"{{region}}\" isn't a fixed-space area ×",
+    "actRankOnly": "Activity: {{act}} — ranking only ×"
+  },
   "onboarding": {
     "dismiss": "Dismiss",
+    "home": {
+      "discoveryIntent": {
+        "title": "Not sure which to pick?",
+        "body": "Tap \"Help me choose\" — one question and we'll point you the right way."
+      }
+    },
     "spaces": {
       "search": {
         "title": "Start with the area",

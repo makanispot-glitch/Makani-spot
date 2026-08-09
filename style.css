@@ -33,6 +33,14 @@ html.sb-authed #nav-guest     { display: none !important; }
 html.sb-authed #nav-logged    { display: flex !important; }
 html.sb-authed #langSwitchBtn { display: none !important; }
 
+/* خاصية hidden لازم تغلب أي display في كلاس.
+   قاعدة [hidden]{display:none} بتاعة المتصفح خصوصيتها (0,1,0) — نفس أي كلاس —
+   وستايل الصفحة بيغلب ستايل المتصفح، فأي عنصر بكلاس فيه display:flex/grid/block
+   بيفضل ظاهر وهو hidden ويسيب مساحة فاضية. حصل فعليًا مع #disc-reco (28px شبح
+   في صندوق البحث على كل تحميل). القاعدة دي بتقفل الباب على كل الحالات الحالية
+   والمستقبلية بدل ما نطارد كل عنصر لوحده. */
+[hidden] { display: none !important; }
+
 /* ============================================================
    🎨 القسم الأول: الألوان والمتغيرات العامة (Makan Spot Design System)
    ============================================================ */
@@ -2211,6 +2219,844 @@ body {
   color: #fff;
   font-weight: 700;
   box-shadow: var(--shadow-orange);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   🧭 Smart Discovery — الفلتر الرئيسي
+   ────────────────────────────────────────────────────────────────
+   بلا لغة بصرية جديدة: اختيار النية ورقائق المساعدة بيعيدوا استخدام
+   .tabs-row/.tab-btn فوق. المضاف هنا هو التخطيط فقط + شريط البازارات.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ⚠️ فخّ hidden: قاعدة display في author stylesheet بتغلب display:none
+   بتاعة الـUA للـ[hidden]. أي عنصر بنخفيه بـel.hidden وله كلاس فيه display
+   (.fg / .cards-grid / .section-head / .disc-help-*) لازم يتحطّ هنا صراحةً —
+   وإلا بيفضل ظاهر رغم إن el.hidden === true (والاختبار بالخاصية بيقول إنه اختفى).
+   نُبقيها مُحدَّدة بدل [hidden]{display:none !important} عام تفاديًا لأي أثر
+   جانبي في ملف CSS ضخم لم يُصمَّم على القاعدة دي. */
+#fg-type[hidden],
+#spaces-grid[hidden],
+#spaces-section-head[hidden],
+#spaces-results[hidden],
+#bazaars-results[hidden],
+#disc-also-see[hidden],
+.disc-help-row[hidden],
+.disc-help-panel[hidden],
+.price-slider-wrap[hidden] {
+  display: none !important;
+}
+
+/* أيقونات Smart Discovery — currentColor فبتاخد لون الزر في كل حالاته */
+.disc-ico {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: block;
+  color: inherit;
+}
+
+/* العنوان نفسه هو مفتاح الشرح — لا أيقونة ⓘ منفصلة.
+   (والقاعدة العامة "button,.btn{min-height:44px}" كانت بتنفخ زر الـ22px القديم) */
+.disc-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+
+.disc-head .search-title {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.disc-head:hover .search-title,
+.disc-head[aria-expanded="true"] .search-title {
+  color: var(--orange);
+}
+
+.disc-head-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--ink3);
+  transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.disc-head:hover .disc-head-chevron,
+.disc-head[aria-expanded="true"] .disc-head-chevron {
+  color: var(--orange);
+}
+
+.disc-head[aria-expanded="true"] .disc-head-chevron {
+  transform: rotate(180deg);
+}
+
+.disc-intent {
+  margin: 14px 0;
+}
+
+.disc-intent .tab-btn,
+.disc-chips .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* لوحة الشرح — خفيفة ومرتبطة بالعنوان، لا مودال ولا بوب أب مزعج */
+.disc-help-panel {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: discFadeIn .18s var(--ease-out);
+}
+
+.disc-help-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink2);
+}
+
+.disc-help-item .disc-ico {
+  margin-top: 3px;
+  color: var(--ink3);
+}
+
+.disc-help-item b {
+  display: block;
+  color: var(--ink);
+  font-weight: 800;
+  font-family: var(--font-display);
+  margin-bottom: 2px;
+}
+
+@keyframes discFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* سطر المساعدة — سؤال واحد، مش استبيان */
+.disc-help-row {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--orange-pale);
+  border-radius: var(--radius);
+  background: var(--orange-ultra);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.disc-help-lead {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.disc-chips {
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+
+.disc-chips .tab-btn {
+  flex: 1 1 auto;
+}
+
+.disc-also-see {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--orange);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.disc-foot {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--ink3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.disc-foot .disc-ico {
+  width: 14px;
+  height: 14px;
+}
+
+/* نية البازار: نوع المكان مالوش معنى، فالصف بيرجع ٣ أعمدة.
+   ⚠️ محصورة بالديسكتوب: خصوصية المُحدِّد (0,2,0) بتغلب قواعد الموبايل/التابلت
+   (0,1,0) فبدون الحصر ده كانت بتسحق الصف لـ٣ أعمدة ضيقة على ٣٩٠px. */
+@media (min-width: 1025px) {
+  .search-box[data-intent="bazaar"] .filter-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+
+/* نتائج البازارات — جوّه منطقة النتائج الموحّدة، مش شريطًا داخل صندوق البحث */
+.disc-bz-strip-all {
+  margin-inline-start: auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--orange);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.disc-bz-strip-all:hover {
+  text-decoration: underline;
+}
+
+.disc-bz-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.disc-bz-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  cursor: pointer;
+  text-align: start;
+  transition: all var(--dur-fast) var(--ease-out);
+  min-width: 0;
+}
+
+.disc-bz-item:hover {
+  border-color: var(--orange-pale);
+  background: var(--surface);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.disc-bz-thumb {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface3, var(--surface2));
+}
+
+.disc-bz-ph {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--orange-ultra);
+  color: var(--orange);
+}
+
+.disc-bz-ph .disc-ico {
+  width: 24px;
+  height: 24px;
+}
+
+.disc-bz-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.disc-bz-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  font-family: var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.disc-bz-meta {
+  font-size: 11.5px;
+  color: var(--ink3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.disc-bz-price {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  margin-top: 3px;
+}
+
+.disc-bz-slots {
+  font-weight: 600;
+  color: var(--ink3);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   🧭 مساعد بداية المشروع — لوحة «ساعدني»
+   ────────────────────────────────────────────────────────────────
+   القشرة والهيدر متوارثين من .modal-overlay/.modal/.modal-header.
+   المضاف هنا: رفع الطبقة فوق #bottom-nav، bottom-sheet من 768px،
+   نقاط التقدّم، وكروت الاختيار الكبيرة.
+   ════════════════════════════════════════════════════════════════ */
+
+/* z-index 1200 زي .svc-detail-overlay: #bottom-nav عنده 500 وبيرسم فوق
+   حواف الشيت على الموبايل لو فضلنا على 500 زي باقي المودالات.
+   ⚠️ لازم .modal-overlay.hlp-overlay (0,2,0): .modal-overlay{z-index:500}
+   معرَّفة بعد الكتلة دي في الملف، وبالتساوي في الخصوصية الترتيب بيفوز. */
+.modal-overlay.hlp-overlay {
+  z-index: 1200;
+}
+
+/* قفل التمرير بكلاس لا بـstyle.overflow المباشر — كده يقدر يتعايش مع
+   مودال تاني مفتوح بدل ما أول قفل يفكّ القفل للاتنين. */
+body.hlp-open {
+  overflow: hidden;
+}
+
+.hlp-modal {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hlp-body {
+  padding: 18px 24px 6px;
+}
+
+/* ── منطقة التقدّم ────────────────────────────────────────────────
+   شريط متّصل لا نقاط: التدفّق تكيّفي (٤ أو ٥ أسئلة) فالنقاط بعدد ثابت
+   بتكذب على جزء من المستخدمين. مفصولة عن الهيدر بخط + هامش حقيقي
+   (النسخة القديمة كانت margin-top سالب فبتلزق بالنص فوقها). */
+.hlp-progress {
+  padding: 14px 24px 0;
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.hlp-prog-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hlp-prog-msg {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--orange);
+  line-height: 1.4;
+}
+
+.hlp-prog-left {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hlp-prog-track {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.hlp-prog-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--orange-400, #FA7A37), var(--orange));
+  transition: width .42s var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hlp-prog-fill { transition-duration: 1ms; }
+}
+
+.hlp-q {
+  font-size: 17px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.hlp-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* كارت اختيار كبير — على نمط .insp-date-card لكن بتوكنات فاتحة
+   (الأصل مكتوب بألوان داكنة hardcoded تخصّ مودال المعاينة). */
+.hlp-choice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  min-height: 52px;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.hlp-choice:hover {
+  border-color: var(--orange-pale);
+  background: var(--orange-ultra);
+}
+
+.hlp-choice.on {
+  border-color: var(--orange);
+  background: var(--orange-ultra);
+  font-weight: 700;
+}
+
+.hlp-choice svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  color: var(--ink3);
+}
+
+.hlp-choice.on svg,
+.hlp-choice:hover svg {
+  color: var(--orange);
+}
+
+.hlp-nav {
+  padding: 10px 24px 20px;
+}
+
+.hlp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink3);
+  cursor: pointer;
+}
+
+.hlp-back:hover {
+  color: var(--orange);
+}
+
+/* شاشة «بنشوفلك…» — النبضة دي بتُقرأ تفكيرًا، وبنصرفها فعليًا على سبر
+   المخزون قبل ما نرسم أي CTA. ممنوع كارت بـCTA ما تحقّقناش منه. */
+.hlp-thinking {
+  text-align: center;
+  padding: 34px 10px 30px;
+  color: var(--ink3);
+  font-size: 14px;
+}
+
+.hlp-spinner {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 14px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+/* تأكيد الاختيار قبل الانتقال */
+.hlp-choice.picked {
+  position: relative;
+  border-color: var(--orange);
+  background: var(--orange-ultra);
+}
+
+.hlp-pick-check {
+  width: 17px;
+  height: 17px;
+  margin-inline-start: auto;
+  color: var(--orange);
+  animation: hlpPop .18s var(--ease-spring);
+}
+
+@keyframes hlpPop {
+  from { opacity: 0; transform: scale(.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── شاشة النتيجة ────────────────────────────────────────────────
+   لازم تبقى أقوى بصريًا من الأسئلة — دي الـpayoff بعد ما خلّص. */
+.hlp-result {
+  animation: hlpResultIn .28s var(--ease-out);
+}
+
+@keyframes hlpResultIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* القرار: أكبر حاجة في الشاشة — هو السؤال اللي المستخدم دخل عشانه */
+.hlp-decision {
+  margin: 4px 0 16px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--orange-ultra);
+  border: 1.5px solid var(--orange-pale);
+  text-align: center;
+}
+
+.hlp-decision-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink3);
+  margin-bottom: 7px;
+}
+
+.hlp-decision-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 23px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  color: var(--orange);
+  line-height: 1.3;
+}
+
+.hlp-decision-value svg {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+/* «لسه بدري» مش قرار برتقالي — لونه محايد عشان ما يتقريش كأنه دفع لمنتج */
+.hlp-decision-value.hlp-dec-later {
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.hlp-decision-hint {
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--ink3);
+}
+
+.hlp-result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--orange);
+  background: var(--orange-ultra);
+  border: 1px solid var(--orange-pale);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 12px;
+}
+
+.hlp-result-title {
+  font-size: 20px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.hlp-result-why {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink2);
+  margin-bottom: 12px;
+}
+
+.hlp-note {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--orange-pale);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.hlp-ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.hlp-cta-secondary {
+  background: none;
+  border: none;
+  padding: 10px 2px;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hlp-cta-secondary:hover {
+  color: var(--orange);
+}
+
+/* رأس قسم البازارات — صف واحد بدل فقرة + شريط عنوان */
+.bz-home-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.bz-home-head-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--orange-ultra);
+  color: var(--orange);
+}
+
+.bz-home-head-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.bz-home-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.bz-home-head-text strong {
+  font-size: 14.5px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.bz-home-head-text span {
+  font-size: 12px;
+  color: var(--ink3);
+  line-height: 1.4;
+}
+
+.disc-widen-note {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 13px;
+  margin-bottom: 14px;
+}
+
+/* شريط التوصية الدائم فوق النتائج — بيفضل بعد قفل اللوحة لأنه نصيحة لا فلتر */
+.disc-reco {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: var(--radius-lg);
+  background: var(--orange-ultra);
+  border: 1px solid var(--orange-pale);
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.disc-reco-ico {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--orange);
+}
+
+.disc-reco-txt {
+  flex: 1;
+  min-width: 180px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink2);
+}
+
+.disc-reco-txt b {
+  display: block;
+  color: var(--ink);
+  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+}
+
+.disc-reco-edit {
+  background: none;
+  border: none;
+  padding: 8px 2px;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--orange);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+/* Bottom sheet من 768px (لا 480) + احترام منطقة الأمان — نفس وصفة
+   .svc-detail-overlay، أحدث نمط شيت في المستودع. */
+@media (max-width: 768px) {
+  .modal-overlay.hlp-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal.hlp-modal {
+    max-width: 100%;
+    max-height: 94vh;
+    margin: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+  }
+
+  .hlp-body {
+    padding: 16px 18px 6px;
+  }
+
+  .hlp-progress {
+    padding: 12px 18px 0;
+    margin-top: 12px;
+  }
+
+  .hlp-nav {
+    padding: 8px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .hlp-choice {
+    min-height: 56px;
+  }
+
+  .disc-reco {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .disc-reco-edit {
+    text-align: start;
+  }
+}
+
+/* زر «بدّل العائلة واحتفظ بفلاتري» — مشترك بين /spaces/ (هيدر داكن)
+   و/bazaars/ (شريط فاتح). البرتقالي الشفّاف يقرأ على الخلفيتين، ولذلك
+   ما نستخدمش .mp-filter-toggle: دي display:none فوق 900px (زر الدرج). */
+.disc-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 42px;
+  white-space: nowrap;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.disc-switch-btn:hover {
+  background: var(--orange);
+  color: #fff;
+}
+
+/* حالة فاضية مضغوطة — مستويان: «مفيش نتائج بالفلتر» ≠ «مفيش بازارات أصلًا» */
+.disc-bz-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 18px 14px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--ink3);
+  font-size: 13px;
+}
+
+.disc-bz-empty-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.disc-bz-empty-btn {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--orange);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* البانر الترويجي */
@@ -5741,6 +6587,15 @@ body {
     width: 100%;
     justify-content: center;
   }
+
+  /* نية البازار على التابلت: الصف ٣ أعمدة، فزر البحث يمتدّ على السطر التاني */
+  .search-box[data-intent="bazaar"] .filter-row>.fg:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .disc-bz-list {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ── 768px: Navbar + Bottom Nav ── */
@@ -6036,6 +6891,60 @@ body {
     font-size: 9px;
   }
 
+  /* Smart Discovery — .tabs-row الأساسية nowrap+scroll، والتمرير الأفقي
+     بيخفي اختيارًا من التلاتة. جريد ٢+١: «ساعدني» خيار مساعد لا خيار ثالث
+     مكافئ، فصفّه المستقل قراءة صحيحة له بصريًا — والتلاتة في صف واحد على
+     360px كانوا هيجبرونا نضغط الخط والـpadding، وده عكس هدف «مريح وسريع». */
+  #disc-intent {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    overflow: visible;
+  }
+
+  #disc-intent .tab-btn {
+    padding: 9px 8px;
+    font-size: 12.5px;
+    white-space: normal;
+    line-height: 1.3;
+    min-height: 44px;
+  }
+
+  #disc-intent .tab-btn:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .disc-chips .tab-btn {
+    flex: 1 1 140px;
+    white-space: normal;
+    min-height: 44px;
+  }
+
+  .disc-bz-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* رأس قسم البازارات: الصف كان بيلفّ لـ١٢٤px على ٣٩٠px. الوصف الفرعي
+     بيتشال — نفس المعلومة موجودة في لوحة ⓘ بتاعة الفلتر — فيرجع صفًّا واحدًا. */
+  .bz-home-head-text span {
+    display: none;
+  }
+
+  .bz-home-head {
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+
+  .bz-home-head-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .bz-home-see-all {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   /* الكروت */
   .section {
     padding: 24px 14px;
@@ -6323,12 +7232,12 @@ body {
   }
 
   .filter-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
   .filter-row>.fg:last-child {
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   .fg select,
@@ -6756,11 +7665,18 @@ select {
     padding: 18px;
   }
 
-  /* FIX FILTER ROW (يرجع Grid مش Flex) */
+  /* FIX FILTER ROW (يرجع Grid مش Flex)
+     عمودان لا عمود: أربع حقول مكدّسة كانت بتاخد ٣٠٧px على ٣٩٠px — يعني
+     الفلتر لوحده ٧٩٪ من الشاشة والمستخدم بيتمرّج شاشتين ونص قبل أول نتيجة. */
   .filter-row {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
+  }
+
+  /* زر البحث نصّه طويل ومتغيّر حسب النية — يفضل على سطر كامل عشان ما يتقصّش */
+  .filter-row>.fg:last-child {
+    grid-column: 1 / -1;
   }
 
   /* CARDS */
@@ -8977,7 +9893,19 @@ footer {
   flex-wrap: wrap;
 }
 
-.bz-home-section+.search-wrap {
+/* المُحدِّد المجاور (+) يفضل مطابقًا حتى لو القسم display:none — لأن المُحدِّدات
+   المجاورة بتتجاهل الـdisplay. من غير :not([hidden]) القسم بيختفي بس الـ22px
+   بتفضل، فتظهر فجوة ~74px مكانه. بـ:not([hidden]) لما القسم يتخفي بترجع
+   .search-wrap لهامشها الأصلي (-52px ديسكتوب / -36px موبايل) اللي مصمَّم
+   يتداخل مع padding-bottom بتاع .hv2 — يعني تخطيط ما قبل إضافة قسم البازارات. */
+.bz-home-section[hidden] {
+  display: none;
+}
+
+/* ~ لا + : sprite أيقونات Smart Discovery اتحطّ بين القسم و.search-wrap،
+   فالمُحدِّد المجاور بطل يطابق وصندوق البحث بقى يتداخل مع القسم بـ٢٤px لما
+   يبقى في بازار. الشقيق العام بيشتغل مهما اتحط بينهم عناصر. */
+.bz-home-section:not([hidden])~.search-wrap {
   margin-top: 22px;
 }
 
@@ -14762,6 +15690,18 @@ footer {
 
   .bz-featured-img-container {
     height: 200px;
+  }
+}
+
+/* ⚠️ لازم تيجي بعد بلوك الـ980 فوق: نفس الخصوصية والترتيب هو اللي بيفصل.
+   على ٣٩٠px صورة ٢٠٠px بتاخد نص ارتفاع الكارت — ١٦٥px بتفضل واضحة
+   وبتوفّر ٣٥px من ارتفاع قسم البازارات على الموبايل. */
+@media (max-width: 640px) {
+
+  .bz-featured-img-container,
+  .bz-home-single .bz-featured-img-container {
+    height: 165px;
+    min-height: 165px;
   }
 }
 

@@ -8,8 +8,8 @@
     content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260808050959">
-  <script src="/version.js?v=20260808050959"></script>
+  <link rel="manifest" href="/manifest.json?v=20260809181844">
+  <script src="/version.js?v=20260809181844"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -94,16 +94,22 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=20260808050959">
+  <link rel="stylesheet" href="style.css?v=20260809181844">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260808050959" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260808050959" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260808050959" defer></script>
-  <script src="/shared/i18n.js?v=20260808050959" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260809181844" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260809181844" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260809181844" defer></script>
+  <script src="/shared/i18n.js?v=20260809181844" defer></script>
+
+  <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
+       shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20260809181844">
+  <script src="/shared/onboarding.js?v=20260809181844" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20260809181844" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -653,13 +659,19 @@
     <!-- ============================================================
        ثلاثة مسارات سريعة + بازارات — فوق الفلتر
        ============================================================ -->
-    <section class="bz-home-section reveal-on-scroll">
+    <!-- يبدأ مخفيًا عمدًا: الإظهار قرار بيانات وحيد من loadHomeFeaturedBazaar().
+         لو ما فيش بازار (أو فشل الجلب) يفضل مخفيًا فلا مساحة فارغة ولا layout shift. -->
+    <section class="bz-home-section reveal-on-scroll" id="bz-home-section" hidden>
       <div class="bz-home-section-bg"></div>
       <div class="bz-home-section-inner">
 
-        <!-- ── شرح البازارات ── -->
-        <div class="bz-home-intro">
-          <div class="bz-home-intro-icon">
+        <!-- ── رأس واحد مضغوط ──────────────────────────────────────────
+             كان قبل كده صفّين: فقرة تعريفية (٨٣px) + شريط عنوان (٤٤px) =
+             ١٢٧px قبل أول كارت. الشرح نفسه بقى موجود في لوحة ⓘ بتاعة الفلتر
+             («🎪 بازار — مساحة مؤقتة تقدر تجرّب فيها مشروعك…») فتكراره هنا
+             كان بياخد مساحة بلا معلومة جديدة. دلوقتي صف واحد ~٤٤px. -->
+        <div class="bz-home-head">
+          <div class="bz-home-head-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
               <path d="M2 7h20" />
@@ -671,17 +683,12 @@
               <rect x="9" y="14" width="6" height="7" />
             </svg>
           </div>
-          <div class="bz-home-intro-text">
-            <strong data-i18n="bazaarTeaser.title">البازارات — فعاليات حية في أرقى المواقع التجارية</strong>
-            <p data-i18n="bazaarTeaser.desc">احجز مكانك في فعالية قادمة، جرّب منتجك أمام جمهور حقيقي، وابدأ البيع بدون التزامات طويلة أو تعقيدات
-              إدارية.</p>
+          <div class="bz-home-head-text">
+            <strong data-i18n="bazaarTeaser.upcomingPill">البازارات القادمة</strong>
+            <span data-i18n="bazaarTeaser.descShort">احجز مكانك بدون التزام طويل</span>
           </div>
-        </div>
-
-        <!-- ── قسم البازارات القادمة ── -->
-        <div class="qp-bz-head">
-          <div class="bz-home-pill" data-i18n="bazaarTeaser.upcomingPill">البازارات القادمة</div>
-          <button class="bz-home-see-all" onclick="window.location.href='/bazaars/'" data-i18n="bazaarTeaser.seeAllBtn">عرض جميع البزارات ←</button>
+          <button class="bz-home-see-all" onclick="goToBazaarsWithFilters()"
+            data-i18n="bazaarTeaser.seeAllBtn">عرض الكل ←</button>
         </div>
 
         <div class="bz-home-scroll" id="bz-home-scroll">
@@ -692,12 +699,135 @@
     </section>
 
 
+    <!-- ════════════════════════════════════════════════════════════
+         أيقونات Smart Discovery — sprite واحد بدل تكرار الـSVG ٨ مرات.
+         أحادية اللون بـcurrentColor فبتاخد لون الزر في كل حالاته
+         (رمادي / برتقالي نشط / أبيض على خلفية برتقالية) بلا أي قاعدة إضافية.
+         نفس لغة أيقونات المنصة: 24×24، fill:none، stroke:currentColor، مستديرة الأطراف.
+         ════════════════════════════════════════════════════════════ -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <g id="ico-fixed" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9.5 5.4 4.5h13.2L20 9.5"/>
+          <path d="M4 9.5h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-10Z"/>
+          <path d="M9.5 20.5v-5.5h5v5.5"/>
+        </g>
+        <g id="ico-bazaar" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8h18"/>
+          <path d="M6 8 7.6 3.5h8.8L18 8"/>
+          <path d="M3 8a2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0"/>
+          <path d="M5.5 11.5v9M18.5 11.5v9M5.5 20.5h13"/>
+        </g>
+        <g id="ico-help" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M9.4 9.2a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.4-2.6 3.9"/>
+          <path d="M12 17.3h.01"/>
+        </g>
+        <g id="ico-test" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3h6"/>
+          <path d="M10 3v6.2L5 18.4A2 2 0 0 0 6.7 21.5h10.6A2 2 0 0 0 19 18.4L14 9.2V3"/>
+          <path d="M7.4 15h9.2"/>
+        </g>
+        <g id="ico-tag" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.6 3.4H20a.6.6 0 0 1 .6.6v7.4a1 1 0 0 1-.3.7l-8.2 8.2a1 1 0 0 1-1.4 0l-7.3-7.3a1 1 0 0 1 0-1.4l8.2-8.2a1 1 0 0 1 .7-.3Z"/>
+          <path d="M16.6 7.4h.01"/>
+        </g>
+        <g id="ico-bulb" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 18.5h5"/>
+          <path d="M10.5 21.5h3"/>
+          <path d="M15.1 14.3c.2-1 .7-1.8 1.4-2.5A4.9 4.9 0 0 0 18 8.2a6 6 0 0 0-12 0c0 1.4.5 2.7 1.5 3.6.7.7 1.2 1.5 1.4 2.5"/>
+        </g>
+        <g id="ico-chevron" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9.5 12 15.5l6-6"/>
+        </g>
+        <!-- بوابة المساعد: خمس حالات مختلفة تمامًا، لكل واحدة أيقونتها -->
+        <g id="ico-shop" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 9.5h17v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-10Z"/>
+          <path d="M3.5 9.5 5 4.5h14l1.5 5"/>
+          <path d="M8 20.5v-6h4v6"/>
+          <path d="M15.5 13.5h2.5v3h-2.5z"/>
+        </g>
+        <g id="ico-box" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3 8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z"/>
+          <path d="M4 7.2 12 11.5l8-4.3M12 11.5V21"/>
+        </g>
+        <g id="ico-tools" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.4 6.3a3.6 3.6 0 0 0 4.8 4.8l2 2a1.4 1.4 0 0 1-2 2l-2-2a3.6 3.6 0 0 0-4.8-4.8Z"/>
+          <path d="m9.6 9.6-6 6a1.9 1.9 0 0 0 2.7 2.7l6-6"/>
+          <path d="M3.5 5.5 6 3l4.5 4.5L8 10 3.5 5.5Z"/>
+        </g>
+        <g id="ico-compass" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>
+        </g>
+        <g id="ico-check" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m5 12.5 4.5 4.5L19 7.5"/>
+        </g>
+        <g id="ico-back" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 6 8.5 12l6 6"/>
+        </g>
+      </defs>
+    </svg>
+
     <!-- صندوق البحث والفلترة -->
     <div class="search-wrap reveal-on-scroll" id="search-anchor">
-      <div class="search-box">
-        <div class="search-title" data-i18n="search.title">ابحث عن مساحتك · بالمنطقة والنشاط والميزانية</div>
+      <!-- data-intent هو مفتاح إظهار/إخفاء الحقول حسب النية — يضبطه _syncDiscoveryFields() -->
+      <div class="search-box" id="search-box" data-intent="fixed">
 
-        <!-- صف الفلاتر الرئيسية -->
+        <!-- ① العنوان نفسه هو مفتاح الشرح — لا أيقونة ⓘ منفصلة.
+             الأيقونات SVG أحادية اللون بـcurrentColor: الإيموجي بيختلف شكله
+             بين الأجهزة وده غير مقبول على منصة تجارية. لاحظ إن كل <svg>
+             **خارج** العنصر اللي عليه data-i18n — applyDomTranslations بتكتب
+             textContent فبتمسح أي عنصر جوّه المترجَم. -->
+        <button type="button" class="disc-head" id="disc-help-btn"
+          aria-expanded="false" aria-controls="disc-help-panel" onclick="toggleDiscoveryHelp()">
+          <span class="search-title" data-i18n="search.discovery.headline">بتدور على إيه؟</span>
+          <svg class="disc-head-chevron" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-chevron"/></svg>
+        </button>
+        <div class="disc-help-panel" id="disc-help-panel" role="region" hidden>
+          <div class="disc-help-item">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-fixed"/></svg>
+            <div><b data-i18n="search.discovery.intentFixed">مكان ثابت</b>
+              <span data-i18n="search.discovery.helpPanelFixed">مساحة صغيرة جوّه مول أو نادي أو مدرسة، مناسبة لو عايز وجود مستمر لمشروعك.</span></div>
+          </div>
+          <div class="disc-help-item">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bazaar"/></svg>
+            <div><b data-i18n="search.discovery.intentBazaar">بازار</b>
+              <span data-i18n="search.discovery.helpPanelBazaar">مساحة مؤقتة تقدر تجرّب فيها مشروعك وتوصل لعملاء جدد بدون التزام طويل.</span></div>
+          </div>
+          <div class="disc-help-item">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-help"/></svg>
+            <div><b data-i18n="search.discovery.intentHelp">ساعدني</b>
+              <span data-i18n="search.discovery.helpPanelHelp">أسئلة بسيطة، وإحنا نساعدك نحدد الخيار الأنسب لمشروعك.</span></div>
+          </div>
+          <div class="disc-help-item">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-tag"/></svg>
+            <div><b data-i18n="search.discovery.actLabel">نشاط مشروعك</b>
+              <span data-i18n="search.discovery.helpPanelAct">اختار نشاط مشروعك عشان نعرض لك الأماكن والبازارات الأقرب لاحتياجك.</span></div>
+          </div>
+        </div>
+
+        <!-- ② اختيار النية — ضغطة واحدة تغيّر الفلتر والنتايج -->
+        <div class="tabs-row disc-intent" id="disc-intent" role="tablist"
+          data-i18n-attr="aria-label:search.discovery.headline" aria-label="بتدور على إيه؟">
+          <button type="button" class="tab-btn active" role="tab" aria-selected="true"
+            onclick="setDiscoveryIntent('fixed',this)">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-fixed"/></svg>
+            <span data-i18n="search.discovery.intentFixed">مكان ثابت</span></button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false"
+            onclick="setDiscoveryIntent('bazaar',this)">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bazaar"/></svg>
+            <span data-i18n="search.discovery.intentBazaar">بازار</span></button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false"
+            onclick="setDiscoveryIntent('help',this)">
+            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-help"/></svg>
+            <span data-i18n="search.discovery.intentHelp">ساعدني</span></button>
+        </div>
+
+        <!-- ③ شريط التوصية — بيفضل بعد قفل المساعد: نصيحة لا فلتر -->
+        <div class="disc-reco" id="disc-reco" role="status" hidden></div>
+
+        <!-- ④ صف الفلاتر — ٤ أبناء بالظبط (كل قواعد الاستجابة الحالية مبنية على العدد ده) -->
         <div class="filter-row">
           <div class="fg">
             <label id="lbl-mp-region" for="f-region" data-i18n="search.regionLabel">المنطقة</label>
@@ -705,18 +835,13 @@
               <option value="" data-i18n="search.regionAll">كل المناطق</option>
             </select>
           </div>
-          <div class="fg">
-            <label for="f-dur" data-i18n="search.durationLabel">مدة الإيجار</label>
-            <select id="f-dur">
-              <option value="" data-i18n="search.durationAny">أي مدة</option>
-              <option data-i18n="search.durationDaily">يومي</option>
-              <option data-i18n="search.durationWeekly">أسبوعي</option>
-              <option data-i18n="search.durationMonthly">شهري</option>
-              <option data-i18n="search.durationSeasonal">موسمي (3 شهور)</option>
-              <option data-i18n="search.durationYearly">سنوي</option>
+          <div class="fg" id="fg-act">
+            <label for="f-act" id="act-filter-lbl" data-i18n="search.discovery.actLabel">نشاط مشروعك</label>
+            <select id="f-act" onchange="onActDropdown(this.value)">
+              <option value="" data-i18n="search.activityPick">— اختر النشاط —</option>
             </select>
           </div>
-          <div class="fg">
+          <div class="fg" id="fg-type">
             <label for="f-type" data-i18n="search.typeLabel">نوع المكان</label>
             <select id="f-type">
               <option value="" data-i18n="search.typeAll">الكل</option>
@@ -727,7 +852,8 @@
           </div>
           <div class="fg">
             <label aria-hidden="true">&nbsp;</label>
-            <button class="btn btn-primary" onclick="doSearch()" style="height:45px;padding:0 26px" data-i18n="search.searchBtn">بحث</button>
+            <button class="btn btn-primary" id="disc-search-btn" onclick="doSearch()" style="height:45px;padding:0 26px"
+              data-i18n="search.discovery.searchBtnFixed">شوف الأماكن المناسبة</button>
           </div>
         </div>
 
@@ -749,20 +875,14 @@
           </div>
         </div>
 
-        <!-- فلتر النشاط التجاري (يُملأ تلقائياً من الشيت) -->
-        <div class="act-filter-section">
-          <div class="act-filter-lbl" id="act-filter-lbl" data-i18n="search.activityLabel">فلتر بالنشاط التجاري</div>
-          <div class="fg" style="max-width:320px">
-            <select id="f-act" aria-labelledby="act-filter-lbl" onchange="onActDropdown(this.value)" style="padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);
-                         background:var(--surface2);font-size:14px;color:var(--ink);
-                         font-family:'Cairo',sans-serif;outline:none;transition:all 0.15s;cursor:pointer;">
-              <option value="" data-i18n="search.activityPick">— اختر النشاط —</option>
-            </select>
-          </div>
-        </div>
-
         <!-- Chips الفلاتر المحددة -->
         <div class="active-chips" id="active-chips"></div>
+
+        <!-- سطر طمأنة واحد — بديل أي شرح طويل -->
+        <div class="disc-foot">
+          <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bulb"/></svg>
+          <span data-i18n="search.discovery.foot">بنرشّح لك الخيارات على أساس اختيارك</span>
+        </div>
 
       </div>
     </div><!-- end search-wrap -->
@@ -784,25 +904,56 @@
         </div>
       </div>
 
-      <!-- رأس قسم الكروت -->
-      <div class="section-head reveal-on-scroll">
-        <div>
-          <div class="section-title" data-i18n="sectionHead.title">المساحات المتاحة حالياً</div>
-          <div class="section-sub" data-i18n="sectionHead.sub">اختار مساحتك المفضلة، عاين على الطبيعة وابدأ مشروعك فوراً</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <span class="result-badge" id="res-count" data-i18n="sectionHead.loading">جاري تحميل البيانات…</span>
-          <div class="tabs-row">
-            <button class="tab-btn active" onclick="setTab(this,'')" data-i18n="sectionHead.tabAll">الكل</button>
-            <button class="tab-btn" onclick="setTab(this,'mall')" data-i18n="sectionHead.tabMalls">مولات</button>
-            <button class="tab-btn" onclick="setTab(this,'club')" data-i18n="sectionHead.tabClubs">نوادي</button>
-            <button class="tab-btn" onclick="setTab(this,'school')" data-i18n="sectionHead.tabSchools">مدارس</button>
-          </div>
-        </div>
-      </div>
+      <!-- ════════════════════════════════════════════════════════════
+           منطقة النتائج الموحّدة — الفلتر فوقها مباشرةً وهي اللي بتتغيّر.
+           الفلتر ما بيفتحش قسمًا جديدًا في مكان تاني: نية «ثابت» بتعرض
+           كتلة المساحات، ونية «بازار» بتستبدلها بكتلة البازارات، و«ساعدني»
+           بتعرض الاتنين مرتَّبتين. التبديل في _syncDiscoveryFields().
+           ════════════════════════════════════════════════════════════ -->
+      <div id="disc-results">
 
-      <!-- شبكة الكروت — تُملأ تلقائياً من Google Sheets -->
-      <div class="cards-grid reveal-on-scroll" id="spaces-grid"></div>
+        <!-- ① نتائج المساحات الثابتة -->
+        <div id="spaces-results">
+          <div class="section-head reveal-on-scroll" id="spaces-section-head">
+            <div>
+              <div class="section-title" data-i18n="sectionHead.title">المساحات المتاحة حالياً</div>
+              <div class="section-sub" data-i18n="sectionHead.sub">اختار مساحتك المفضلة، عاين على الطبيعة وابدأ مشروعك فوراً</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="result-badge" id="res-count" data-i18n="sectionHead.loading">جاري تحميل البيانات…</span>
+              <div class="tabs-row">
+                <button class="tab-btn active" onclick="setTab(this,'')" data-i18n="sectionHead.tabAll">الكل</button>
+                <button class="tab-btn" onclick="setTab(this,'mall')" data-i18n="sectionHead.tabMalls">مولات</button>
+                <button class="tab-btn" onclick="setTab(this,'club')" data-i18n="sectionHead.tabClubs">نوادي</button>
+                <button class="tab-btn" onclick="setTab(this,'school')" data-i18n="sectionHead.tabSchools">مدارس</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- شبكة الكروت — تُملأ من search_public_spaces -->
+          <!-- سطر التوسيع التلقائي — بيوضّح إننا وسّعنا البحث، فالنتايج ما تبانش
+             وكأنها تجاهلت اختيار المستخدم -->
+        <div class="disc-widen-note" id="spaces-widen-note" hidden></div>
+        <div class="cards-grid reveal-on-scroll" id="spaces-grid"></div>
+        </div>
+
+        <!-- ② نتائج البازارات — نفس المكان، بلا reveal-on-scroll لأنها تبدأ مخفية -->
+        <div id="bazaars-results" hidden>
+          <div class="section-head">
+            <div>
+              <div class="section-title" data-i18n="search.discovery.bzStripTitle">بازارات تناسبك</div>
+              <div class="section-sub" data-i18n="search.discovery.bzResultsSub">فرص قصيرة المدة — احجز مكانك وابدأ البيع في أيام</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="result-badge" id="disc-bz-count">—</span>
+              <a class="disc-bz-strip-all" id="disc-bz-viewall" href="/bazaars/"
+                data-i18n="search.discovery.bzViewAll">عرض الكل ←</a>
+            </div>
+          </div>
+          <div class="disc-bz-list" id="disc-bz-list"></div>
+        </div>
+
+      </div>
 
     </div><!-- end section -->
 
@@ -2742,6 +2893,59 @@
   <!-- ================================================================
      📋 مودال الحجز
      ================================================================ -->
+  <!-- ============================================================
+       🧭 مساعد بداية المشروع — «ساعدني»
+       بيعيد استخدام قشرة .modal-overlay/.modal بس بـz-index 1200 (زي
+       .svc-detail-overlay) عشان #bottom-nav (z-500) ما يغطّيهوش على الموبايل،
+       و bottom-sheet من 768px لا 480px ومعاه env(safe-area-inset-bottom).
+       وبنسدّ ثغرات مودال الحجز: role/aria-modal، Escape، تركيز أوّلي،
+       حبس تركيز، وقفل تمرير بكلاس على body بدل style.overflow المباشر.
+       ============================================================ -->
+  <div class="modal-overlay hlp-overlay" id="hlp-modal" role="dialog" aria-modal="true"
+    aria-labelledby="hlp-title" onclick="closeAssistantOnBg(event)">
+    <div class="modal hlp-modal">
+      <div class="modal-header">
+        <div class="modal-header-inner">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><use href="#ico-compass"/></svg>
+          </div>
+          <div>
+            <div class="modal-title" id="hlp-title" data-i18n="assistant:panel.title">خلينا نحدد أنسب بداية لمشروعك</div>
+            <!-- الـValue Proposition من أول شاشة: المستخدم يعرف ليه بيجاوب -->
+            <div class="modal-sub" data-i18n-html="assistant:panel.sub">كام سؤال بسيط، وفي الآخر نقولك: تبدأ بالبازارات ولا تدوّر على مساحة ثابتة؟</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAssistant()"
+          data-i18n-attr="aria-label:assistant:panel.close" aria-label="إغلاق">✕</button>
+      </div>
+
+      <!-- ── منطقة التقدّم ──────────────────────────────────────────
+           مفصولة عن الهيدر بخط وهامش (كانت ملاصقة له بـmargin سالب).
+           شريط متّصل لا نقاط: التدفّق تكيّفي (٤ أو ٥ أسئلة) والنقاط بتوحي
+           بعدد ثابت للكل. الرسالة يمين والمتبقّي شمال والشريط تحتيهم —
+           فالمستخدم يعرف بنظرة: أنا فين وفاضل كام. -->
+      <div class="hlp-progress" id="hlp-progress">
+        <div class="hlp-prog-head">
+          <span class="hlp-prog-msg" id="hlp-prog-msg"></span>
+          <span class="hlp-prog-left" id="hlp-prog-left"></span>
+        </div>
+        <div class="hlp-prog-track" id="hlp-prog-track" role="progressbar"
+          aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="hlp-prog-fill" id="hlp-prog-fill"></div>
+        </div>
+      </div>
+
+      <div class="modal-body hlp-body" id="hlp-step"></div>
+
+      <div class="hlp-nav" id="hlp-nav" hidden>
+        <button type="button" class="hlp-back" onclick="assistantBack()">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><use href="#ico-back"/></svg>
+          <span data-i18n="assistant:panel.back">رجوع</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="booking-modal" onclick="closeModalOnBg(event)">
     <div class="modal">
       <div id="modal-form-wrap">
@@ -3107,14 +3311,18 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=20260808050959" defer></script>
-  <script src="/pwa-install.js?v=20260808050959" defer></script>
-  <script src="shared/space-model.js?v=20260808050959" defer></script>
-  <script src="shared/booking.js?v=20260808050959" defer></script>
-  <script src="shared/account.js?v=20260808050959" defer></script>
-  <script src="shared/plan-badge.js?v=20260808050959" defer></script>
-  <script src="/notifications.js?v=20260808050959" defer></script>
-  <script src="app.js?v=20260808050959" defer></script>
+  <script src="shared/sb-config.js?v=20260809181844" defer></script>
+  <script src="/pwa-install.js?v=20260809181844" defer></script>
+  <script src="shared/space-model.js?v=20260809181844" defer></script>
+  <!-- طبقة الاكتشاف المشتركة — لازم تسبق app.js (buildDiscoveryUrl/getDiscoveryBazaars) -->
+  <script src="shared/discovery.js?v=20260809181844" defer></script>
+  <!-- شجرة أسئلة «ساعدني» وسلّم التوصيات — الرئيسية فقط -->
+  <script src="shared/discovery-assistant.js?v=20260809181844" defer></script>
+  <script src="shared/booking.js?v=20260809181844" defer></script>
+  <script src="shared/account.js?v=20260809181844" defer></script>
+  <script src="shared/plan-badge.js?v=20260809181844" defer></script>
+  <script src="/notifications.js?v=20260809181844" defer></script>
+  <script src="app.js?v=20260809181844" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -3403,7 +3611,7 @@
     ).then(updateLangSwitcherLabel);
   }
   document.addEventListener('DOMContentLoaded', function () {
-    initI18n(['home', 'common', 'spaces', 'market']).then(updateLangSwitcherLabel);
+    initI18n(['home', 'common', 'spaces', 'market', 'assistant']).then(updateLangSwitcherLabel);
   });
 </script>
 

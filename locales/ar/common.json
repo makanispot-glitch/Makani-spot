@@ -174,8 +174,23 @@
     "linkCopied": "✅ تم نسخ الرابط!",
     "linkFallback": "📋 الرابط: {{url}}"
   },
+  "discovery": {
+    "familyFixed": "مساحة ثابتة",
+    "familyBazaar": "بازار / فعالية",
+    "switchToBazaars": "جرّب البازارات بنفس الفلاتر",
+    "switchToSpaces": "جرّب المساحات الثابتة بنفس الفلاتر",
+    "carriedFilters": "فلاترك اتنقلت معاك ×",
+    "regionUnavailable": "«{{region}}» مش من مناطق المساحات الثابتة ×",
+    "actRankOnly": "النشاط: {{act}} — للترتيب فقط ×"
+  },
   "onboarding": {
     "dismiss": "إغلاق",
+    "home": {
+      "discoveryIntent": {
+        "title": "مش عارف تختار؟",
+        "body": "اضغط «ساعدني» — سؤال واحد بس وإحنا نوجّهك."
+      }
+    },
     "spaces": {
       "search": {
         "title": "ابدأ بالمنطقة",

@@ -43,6 +43,13 @@ let _bzStatsDebounce    = null; // مؤقّت تهدئة إعادة جلب إح�
 let _dlmLinks           = [];   // روابط التوثيق داخل نافذة الإضافة السريعة (Doc Links Modal)
 let _dlmBazaarId        = null; // id البازار المفتوح حالياً في نافذة الإضافة السريعة
 
+/* 🧭 نشاط قادم من الاكتشاف — **ترتيب فقط، لا فلترة** (shared/discovery.js).
+   بازار واحد ممكن يضم ١٢ نوع نشاط بينما category عنده «بازار خيري»، فالفلترة
+   النصية هتخفي بازارات مناسبة فعلًا. ولذلك لا نكتب النشاط في #bz-search أبدًا:
+   المطابق يتقدّم في الترتيب، وغير المطابق يفضل ظاهر بنفس العدد. */
+let _bzDiscoveryActId  = null;  // id النشاط (للرقاقة وللرابط العائد)
+let _bzDiscoveryActKw  = [];    // كلمات المطابقة المطبَّعة
+
 /* "اليوم" بتوقيت القاهرة — نفس المنطقة الزمنية التي يعتمدها الكرون في قاعدة البيانات
    (update_bazaar_statuses/auto_archive_expired_bazaars) لتفادي أي تعارض قرب منتصف الليل
    بين حالة البازار المعروضة هنا وحالته الفعلية في القاعدة */
@@ -102,8 +109,16 @@ document.addEventListener('DOMContentLoaded', async function () {
   // GN: تهيئة نظام الإشعارات الموحّد
   if (currentUser) GN.init(sbClient, currentUser.id);
 
+  // 🧭 توحيد قائمة المناطق مع كتالوج space_areas + استقبال فلاتر الاكتشاف
+  await _bzAugmentRegionOptions();
+  await _bzApplyIncomingDiscovery();
+
   // التنقل عبر URL parameter: /bazaars/?bazaar=ID (و book=1 للانتقال مباشرة لخريطة الأماكن — رابط الحجز المباشر)
   const urlParams = new URLSearchParams(window.location.search);
+
+  /* /bazaars/?dir=1 — يفتح دليل البازارات مباشرة. مساعد «ساعدني» بيوجّه هنا
+     لما مفيش بازار منشور للحجز: الدليل بيرصد فعاليات السوق المصري كلها. */
+  if (urlParams.get('dir') === '1') openBazaarDirectory();
   const bazaarId  = urlParams.get('bazaar');
   if (bazaarId) {
     await openBazaarDetail(bazaarId, { scrollToBooking: urlParams.get('book') === '1' });
@@ -842,7 +857,8 @@ function applyBzFilters() {
   if (sort === 'slots-desc') data.sort((a, b) => (b.available_slots||0) - (a.available_slots||0));
 
   /* ترتيب حسب حالة الوقت: الجارية الآن أولاً، ثم القادمة/العادية، والمنتهية دائماً في الأسفل —
-     بغض النظر عن الفرز المختار (فرز مستقر يحافظ على ترتيب كل مجموعة داخلياً) */
+     بغض النظر عن الفرز المختار (فرز مستقر يحافظ على ترتيب كل مجموعة داخلياً).
+     مفتاح ثانوي: نشاط الاكتشاف — بيرجّع 0 للكل لما مفيش نشاط، فالسلوك الحالي محفوظ بالحرف. */
   { const _td = _cairoTodayStr();
     const _timeRank = (b) => {
       const end = b.date_end || b.date_start || '';
@@ -850,7 +866,11 @@ function applyBzFilters() {
       const isOngoing = b.date_start && b.date_start <= _td && (!b.date_end || b.date_end >= _td);
       return isOngoing ? 0 : 1; // جارٍ الآن أولاً، ثم البقية
     };
-    data.sort((x, y) => _timeRank(x) - _timeRank(y));
+    const _actRank = (b) => {
+      if (!_bzDiscoveryActKw.length || typeof bazaarMatchesActivity !== 'function') return 0;
+      return bazaarMatchesActivity(b, _bzDiscoveryActKw) ? 0 : 1;
+    };
+    data.sort((x, y) => (_timeRank(x) - _timeRank(y)) || (_actRank(x) - _actRank(y)));
   }
 
   bzFiltered = data;
@@ -866,7 +886,103 @@ function applyBzFilters() {
   }
 }
 
+/* ================================================================
+   🧭 جسر الاكتشاف — استقبال الفلاتر من الرئيسية / صفحة المساحات
+   ================================================================ */
+
+/** يعبّي الفلاتر من الرابط ويعيد الرسم. محروس بالكامل: لو discovery.js
+    مش محمّل (نشر ناقص / SW cache) الصفحة تفضل شغّالة بالكامل. */
+async function _bzApplyIncomingDiscovery() {
+  if (typeof readDiscoveryParams !== 'function') return;
+  const p = readDiscoveryParams();
+  if (!hasAnyDiscoveryParam(p)) return;
+
+  const res = applyDiscoveryParamsToBazaars(p);
+
+  /* النشاط: ترتيب لا فلترة. ⛔ ما بنكتبوش في #bz-search — ده اللي بينتج
+     «لا توجد بازارات» بينما فيه بازار مناسب فعلًا (category نص حر). */
+  if (res.actId && typeof bazaarActivityKeywords === 'function') {
+    _bzDiscoveryActId = res.actId;
+    /* التسمية العربية الحيّة بتدخل ككلمة مطابقة احتياطية، فنشاط جديد يضيفه
+       الأدمن يفضل بيطابق على اسمه بدون أي تعديل في shared/discovery.js */
+    await _bzLoadActivityLabel(res.actId);
+    _bzDiscoveryActKw = bazaarActivityKeywords(res.actId, _bzActivityLabel(res.actId));
+  }
+
+  updateBzSlider();
+  applyBzFilters();
+  _bzRenderDiscoveryChips();
+}
+
+/* الصفحة دي ما بتحمّلش كتالوج الأنشطة أصلًا — فنجيب الصف الواحد المطلوب فقط. */
+const _bzActCatalog = {};
+async function _bzLoadActivityLabel(actId) {
+  if (!sbClient || !actId || _bzActCatalog[actId]) return;
+  try {
+    const { data } = await sbClient
+      .from('space_activities').select('emoji,name_ar').eq('id', actId).maybeSingle();
+    if (data && data.name_ar) _bzActCatalog[actId] = `${data.emoji || ''} ${data.name_ar}`.trim();
+  } catch (_) { /* الاسم تحسين — الترتيب بيشتغل بالمرادفات لوحدها */ }
+}
+
+/** تسمية النشاط للعرض — من الكتالوج المجلوب إن وُجد، وإلا الـid كما هو. */
+function _bzActivityLabel(actId) {
+  return _bzActCatalog[actId] || actId || '';
+}
+
+/** رقائق توضّح إن الفلاتر اتنقلت وإن النشاط للترتيب فقط — الشفافية هنا
+    هي اللي بتمنع المستخدم يفسّر ضيق النتائج على إنه عطل. */
+function _bzRenderDiscoveryChips() {
+  const bar = document.querySelector('.bz-chips-list');
+  if (!bar) return;
+  bar.querySelectorAll('.bz-chip[data-disc]').forEach(el => el.remove());
+
+  const add = (html) => bar.insertAdjacentHTML('beforeend', html);
+  add(`<button class="bz-chip active" data-disc="carried" onclick="clearBzFilters()">${t('discovery.carriedFilters')}</button>`);
+  if (_bzDiscoveryActId) {
+    add(`<button class="bz-chip" data-disc="act" onclick="_bzClearDiscoveryAct()">${t('discovery.actRankOnly', { act: _bzActivityLabel(_bzDiscoveryActId) })}</button>`);
+  }
+}
+
+function _bzClearDiscoveryAct() {
+  _bzDiscoveryActId = null;
+  _bzDiscoveryActKw = [];
+  document.querySelector('.bz-chip[data-disc="act"]')?.remove();
+  applyBzFilters();
+}
+
+/** «جرّب المساحات الثابتة بنفس الفلاتر» — نفس مفردات الاكتشاف، صفحة تانية. */
+function goToSpacesWithFilters() {
+  window.location.href = (typeof buildDiscoveryUrl === 'function')
+    ? buildDiscoveryUrl('spaces', discoveryStateFromBazaarsDom(_bzDiscoveryActId))
+    : '/spaces/';
+}
+
+/** يضيف مناطق space_areas الحيّة لقائمة المناطق — إضافة لا استبدال:
+    الخيارات السبعة الحالية شايلة data-i18n وليها ترجمات إنجليزية حقيقية،
+    و space_areas مالهاش عمود name_en، فإعادة البناء كانت هتُرجِّع الأسماء للعربي
+    في الوضع الإنجليزي. */
+async function _bzAugmentRegionOptions() {
+  const sel = document.getElementById('bz-region');
+  if (!sel || typeof fetchAreasCatalog !== 'function') return;
+  try {
+    const areas = await fetchAreasCatalog(sbClient);
+    const existing = new Set(Array.prototype.map.call(sel.options, o => (o.textContent || '').trim()));
+    const keep = sel.value;
+    areas.forEach(name => {
+      if (!name || existing.has(name.trim())) return;
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    if (keep) sel.value = keep;
+  } catch (_) { /* الفلتر بيشتغل بالخيارات الموجودة — الإضافة تحسين لا شرط */ }
+}
+
 function clearBzFilters() {
+  _bzDiscoveryActId = null;
+  _bzDiscoveryActKw = [];
+  document.querySelectorAll('.bz-chip[data-disc]').forEach(el => el.remove());
   ['bz-region','bz-date-from','bz-date-to','bz-search'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });

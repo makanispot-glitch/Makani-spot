@@ -1,0 +1,215 @@
+{
+  "panel": {
+    "title": "Let's find the right start for your project",
+    "sub": "A few quick questions, then we'll tell you: start with bazaars, or look for a fixed space?",
+    "close": "Close the assistant",
+    "back": "Back",
+    "thinking": "One moment — analysing your answers",
+    "doneBadge": "All done 👌",
+    "restart": "Start over",
+    "recoBar": "This is the step we suggest based on your answers.",
+    "editAnswers": "Change my answers"
+  },
+  "q": {
+    "have": {
+      "t": "What do you have right now?",
+      "opts": {
+        "running": "A business that's already running",
+        "product": "A product or service that's ready",
+        "idea": "An idea for a business",
+        "skill": "A skill or experience I want to turn into a business",
+        "explore": "Still exploring"
+      }
+    },
+    "act": {
+      "t": "What's your line of work?",
+      "byBranch": {
+        "running": "What's your business in?",
+        "product": "What's your product or service?",
+        "idea": "What's your idea about?",
+        "skill": "What's your experience in?",
+        "explore": "Which field appeals to you?"
+      }
+    },
+    "sellHow": {
+      "t": "How do you sell today?",
+      "opts": {
+        "shop": "I have a shop or a fixed spot",
+        "onlineReg": "Online, with steady orders",
+        "homeEvents": "From home or at pop-up events",
+        "onlineFew": "Online, but orders are still few",
+        "notYet": "I haven't really started selling"
+      }
+    },
+    "soldBefore": {
+      "t": "Have you sold any of it before?",
+      "opts": {
+        "customers": "Yes, and I have repeat customers",
+        "aLittle": "A little",
+        "friends": "Only to friends and family",
+        "never": "No, not yet"
+      }
+    },
+    "fieldExp": {
+      "t": "Do you have experience in this field?",
+      "opts": {
+        "worked": "Yes, I've worked in it",
+        "some": "A little experience",
+        "learning": "I'm learning it now",
+        "none": "No, this is my first try"
+      }
+    },
+    "skillSrc": {
+      "t": "Where does your experience come from?",
+      "opts": {
+        "years": "I worked in it for years",
+        "self": "Self-taught and I practise it",
+        "recent": "I learned it recently"
+      }
+    },
+    "pastWork": {
+      "t": "Have you worked in a particular field before?",
+      "opts": {
+        "years": "Yes, for years",
+        "short": "For a short while",
+        "none": "No"
+      }
+    },
+    "goal": {
+      "t": "What do you want to achieve now?",
+      "opts": {
+        "fixedPlace": "Open a fixed spot",
+        "grow": "Grow the business",
+        "moreCustomers": "Reach more customers",
+        "newAudience": "Test a new area or audience"
+      }
+    },
+    "readyNow": {
+      "t": "Is it ready to sell right now?",
+      "opts": {
+        "yes": "Yes, I can sell today",
+        "almost": "Almost — needs a bit of work",
+        "testing": "I'm still testing it"
+      }
+    },
+    "canBuild": {
+      "t": "Can you build the idea yourself?",
+      "opts": {
+        "yes": "Yes, I can",
+        "canLearn": "I can learn how",
+        "needHelp": "I'd need someone to help"
+      }
+    },
+    "soldSkill": {
+      "t": "Have you sold this skill before?",
+      "opts": {
+        "customers": "Yes, and I have customers",
+        "aLittle": "A little",
+        "never": "No, not yet"
+      }
+    },
+    "haveNow": {
+      "t": "What do you have to start with?",
+      "opts": {
+        "experience": "Experience in a particular field",
+        "time": "Time and effort",
+        "nothing": "Still getting myself together"
+      }
+    },
+    "budget": {
+      "t": "Last one — if you found the right place, where do you stand financially?",
+      "opts": {
+        "ready": "I have the budget and I'm ready to commit monthly",
+        "validate": "I have the budget, but I'd rather test first",
+        "limited": "My budget is tight — I'd start with the lowest cost",
+        "unsure": "Still working it out"
+      }
+    }
+  },
+  "rec": {
+    "expandFixed": {
+      "title": "A fixed space suits you",
+      "why": "You're already selling ({{sell}}), and your goal now is to {{goal}} — the next step is a place where people see you every day."
+    },
+    "provenTester": {
+      "budget": {
+        "title": "Put your money into stock, not rent",
+        "why": "You're already selling ({{sell}}), but your available capital is limited relative to a monthly commitment. A bazaar lets you sell and grow without loading a fixed monthly cost onto the business."
+      },
+      "weak": {
+        "title": "Steady the demand first",
+        "why": "You're already selling ({{sell}}), but demand is still occasional. A bazaar puts you in front of new customers so you can see how the product performs before committing to monthly rent."
+      },
+      "audience": {
+        "title": "Test the new audience first",
+        "why": "You're already selling ({{sell}}) and your goal now is to {{goal}} — a bazaar reaches new audiences and areas without tying you to one location."
+      },
+      "validate": {
+        "title": "Your instinct is right — confirm first",
+        "why": "You can afford the commitment, but you chose to confirm the product sells first. Try a bazaar, see your real numbers, and then a fixed space becomes a calculated decision rather than a gamble."
+      }
+    },
+    "firstProof": {
+      "plain": {
+        "title": "Test before you commit",
+        "why": "Your {{act}} is ready but hasn't sold yet — the cheapest way to learn whether people will buy is a few days at a bazaar, before you pay a month's rent."
+      },
+      "budget": {
+        "title": "Test at the lowest possible cost",
+        "why": "Your {{act}} is ready but hasn't sold yet, and your budget is tight. A bazaar lets you test it for a small one-off cost instead of a monthly commitment on an unproven product."
+      }
+    },
+    "skillToOffer": {
+      "title": "Turn your skill into something sellable",
+      "why": "You have real experience in {{act}} ({{exp}}) but it isn't packaged as an offer yet — define the service and its price first, then test it in front of an audience."
+    },
+    "notYet": {
+      "a": {
+        "title": "It's early for rent — and that's fine",
+        "why": "There's nothing to sell yet, and any rent would be a cost on a business that hasn't started. Get your first sellable product ready, then come back to us."
+      },
+      "b": {
+        "title": "You've started — but it's early for rent",
+        "why": "You have sold ({{sell}}), but sales are still occasional. Steady the demand first, and then rent becomes an investment rather than a burden."
+      },
+      "c": {
+        "title": "Your experience is your biggest asset",
+        "why": "You've actually worked in {{act}} — not many people have that. Start from it: decide what you could offer yourself tomorrow, and test it with your first customers before any commitment."
+      }
+    }
+  },
+  "cta": {
+    "showSpaces": "See the {{count}} spaces",
+    "showBazaars": "See the {{count}} bazaars",
+    "openDirectory": "Browse the Egypt bazaar directory",
+    "notifyMe": "Message me when something opens",
+    "seeFixedInstead": "Or see fixed spaces",
+    "seeBazaarsInstead": "Or see bazaars",
+    "tryBazaarFirst": "Or try a bazaar first"
+  },
+  "note": {
+    "infra": "Your line of work ({{act}}) needs power, water and permits — ask about those anywhere before you book.",
+    "noBazaars": "The advice stands — but there's no bazaar open for booking on Makani Spot right now.",
+    "directoryExternal": "These are events we track across the Egyptian market; booking happens directly with the organiser, not through us.",
+    "noSpaces": "No spaces are available to book right now — leave your number and we'll message you when one fits your activity."
+  },
+  "decision": {
+    "label": "What suits you right now:",
+    "fixed": "A fixed space",
+    "bazaar": "Start with bazaars",
+    "later": "Get ready first",
+    "laterHint": "then we'll decide together: bazaar or fixed space?"
+  },
+  "step": {
+    "start": "Let's understand your project first",
+    "mid": "Good — the picture is taking shape",
+    "near": "Almost there — narrowing it down",
+    "almost": "Nearly done — one more piece",
+    "last": "Last question, then your result"
+  },
+  "prog": {
+    "lastOne": "Last question",
+    "left": "{{n}} questions left",
+    "left_one": "1 question left"
+  }
+}

@@ -273,13 +273,66 @@ async function loadData() {
     buildMpActivityFilters();
     buildRegionFilterOptions();
 
+    /* 🧭 فلاتر قادمة من الرئيسية أو من صفحة البازارات (shared/discovery.js).
+       الموضع دقيق: **بعد** بناء الـ<option>s — ضبط .value قبل وجود الخيار
+       بيفشل بصمت — و**قبل** _applyCurrentFilters فما فيش رندر إضافي. */
+    _applyIncomingDiscoveryFilters();
+
     // المساحات المنشورة تُجلب خادميًا (بحث/فلترة/ترتيب/ترقيم — shared/space-model.js)
     await _applyCurrentFilters();
+    // الرقائق مش بتتحدّث من _applyCurrentFilters — لازم تتنادى صراحةً بعد أي تعبئة واردة
+    if (_discIncoming) updateMpChips();
     setTimeout(() => csInitAll(), 120);
 
   } catch (err) {
     showLoadingState('mp-grid', true, err.message || 'خطأ في تحميل البيانات');
   }
+}
+
+/* ================================================================
+   🧭 جسر الاكتشاف — استقبال الفلاتر من الرئيسية / البازارات
+   ================================================================ */
+
+let _discIncoming = null;   // نتيجة التعبئة (applied/dropped) لرسم الرقائق
+
+/** يعبّي فلاتر الصفحة من بارامترات الرابط. محروس بالكامل: لو discovery.js
+    مش محمّل (نشر ناقص / SW cache) الصفحة تفضل شغّالة بالكامل بلا فلاتر واردة. */
+function _applyIncomingDiscoveryFilters() {
+  if (typeof readDiscoveryParams !== 'function') return;
+  const p = readDiscoveryParams();
+  if (!hasAnyDiscoveryParam(p)) return;
+
+  _discIncoming = applyDiscoveryParamsToSpaces(p);
+  _discIncoming.params = p;
+  if (typeof updateMpSlider === 'function') updateMpSlider();
+}
+
+/** رقائق توضّح إن الفلاتر اتنقلت — بدونها المستخدم بيهبط على صفحة مفلترة
+    بلا تفسير لضيق النتائج، وده أسوأ من عدم نقل الفلاتر أصلًا. */
+function _discoveryCarriedChipsHtml() {
+  if (!_discIncoming || !_discIncoming.applied.length && !_discIncoming.dropped.length) return '';
+  const chips = [];
+  if (_discIncoming.applied.length) {
+    chips.push(`<span class="mp-chip" onclick="clearMpFilters()">${t('discovery.carriedFilters')}</span>`);
+  }
+  /* منطقة مش موجودة في space_areas: تُسقَط ولا تُحقن — p_region مطابقة تامّة
+     وحقنها كان هيدّي صفرًا محيّرًا. لكن نقولها للمستخدم بدل ما نبتلعها. */
+  if (_discIncoming.dropped.indexOf('region') > -1 && _discIncoming.params?.region) {
+    chips.push(`<span class="mp-chip" onclick="_dismissDiscoveryNotice()">${t('discovery.regionUnavailable', { region: _discIncoming.params.region })}</span>`);
+  }
+  return chips.join('');
+}
+
+function _dismissDiscoveryNotice() {
+  _discIncoming = null;
+  if (typeof updateMpChips === 'function') updateMpChips();
+}
+
+/** «جرّب البازارات بنفس الفلاتر» — نفس المفردات، صفحة تانية. */
+function goToBazaarsWithFilters() {
+  window.location.href = (typeof buildDiscoveryUrl === 'function')
+    ? buildDiscoveryUrl('bazaars', discoveryStateFromSpacesDom())
+    : '/bazaars/';
 }
 
 /* mapSupabaseToSpaceObject انتقلت إلى shared/space-model.js باسم mapSpaceRow */
@@ -1279,6 +1332,8 @@ function updateMpChips() {
   const cont = document.getElementById('mp-active-chips');
   if (!cont) return;
   const chips = [];
+  const carried = _discoveryCarriedChipsHtml();
+  if (carried) chips.push(carried);
   const contentMap = {
     spaces:        t('chips.spacesOnly'),
     announcements: t('chips.announcementsOnly'),

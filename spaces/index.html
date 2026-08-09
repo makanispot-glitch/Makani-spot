@@ -8,8 +8,8 @@
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260808050959">
-  <script src="/version.js?v=20260808050959"></script>
+  <link rel="manifest" href="/manifest.json?v=20260809181844">
+  <script src="/version.js?v=20260809181844"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -75,31 +75,33 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20260808050959">
+  <link rel="stylesheet" href="/style.css?v=20260809181844">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20260808050959" defer></script>
-  <script src="/pwa-install.js?v=20260808050959" defer></script>
+  <script src="/shared/sb-config.js?v=20260809181844" defer></script>
+  <script src="/pwa-install.js?v=20260809181844" defer></script>
   <!-- createRaceGuard: يجب أن يسبق app.js لأن _mpFilterRace يُنشأ وقت التحميل -->
-  <script src="/shared/race-guard.js?v=20260808050959" defer></script>
-  <script src="/shared/pagination.js?v=20260808050959" defer></script>
-  <script src="/shared/space-model.js?v=20260808050959" defer></script>
-  <script src="/shared/booking.js?v=20260808050959" defer></script>
-  <script src="/shared/account.js?v=20260808050959" defer></script>
-  <script src="/shared/plan-badge.js?v=20260808050959" defer></script>
+  <script src="/shared/race-guard.js?v=20260809181844" defer></script>
+  <script src="/shared/pagination.js?v=20260809181844" defer></script>
+  <script src="/shared/space-model.js?v=20260809181844" defer></script>
+  <!-- طبقة الاكتشاف المشتركة — قراءة بارامترات الفلاتر القادمة من الرئيسية/البازارات -->
+  <script src="/shared/discovery.js?v=20260809181844" defer></script>
+  <script src="/shared/booking.js?v=20260809181844" defer></script>
+  <script src="/shared/account.js?v=20260809181844" defer></script>
+  <script src="/shared/plan-badge.js?v=20260809181844" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260808050959" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260808050959" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260808050959" defer></script>
-  <script src="/shared/i18n.js?v=20260808050959" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260809181844" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260809181844" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260809181844" defer></script>
+  <script src="/shared/i18n.js?v=20260809181844" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20260808050959">
-  <script src="/shared/onboarding.js?v=20260808050959" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20260808050959" defer></script>
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20260809181844">
+  <script src="/shared/onboarding.js?v=20260809181844" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20260809181844" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -979,6 +981,15 @@
               <option value="price-asc" data-i18n="market.sortPriceAsc">السعر: من الأرخص</option>
               <option value="price-desc" data-i18n="market.sortPriceDesc">السعر: من الأغلى</option>
             </select>
+            <!-- بدّل العائلة واحتفظ بالفلاتر — نفس مفردات الاكتشاف على الصفحتين -->
+            <button class="disc-switch-btn" onclick="goToBazaarsWithFilters()">
+              <svg class="disc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 8h18"/><path d="M6 8 7.6 3.5h8.8L18 8"/>
+                <path d="M3 8a2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0 2.4 2.4 0 0 0 4.5 0"/>
+                <path d="M5.5 11.5v9M18.5 11.5v9M5.5 20.5h13"/>
+              </svg>
+              <span data-i18n="discovery.switchToBazaars">جرّب البازارات بنفس الفلاتر</span></button>
             <button class="mp-filter-toggle" onclick="toggleMpSidebar()" data-i18n="market.filtersBtn">الفلاتر</button>
           </div>
         </div>
@@ -1754,8 +1765,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260808050959" defer></script>
-  <script src="app.js?v=20260808050959" defer></script>
+  <script src="/notifications.js?v=20260809181844" defer></script>
+  <script src="app.js?v=20260809181844" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
