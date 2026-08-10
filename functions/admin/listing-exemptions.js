@@ -2,10 +2,11 @@
  * Cloudflare Pages Function — /admin/listing-exemptions
  * إدارة الإيميلات المستثناة من قيود نشر الإعلانات (feature: استثناءات النشر)
  *
- *   GET    ?search=…              → قائمة الاستثناءات
+ *   GET    ?search=…              → قائمة الاستثناءات + سياسات النشر السارية
  *   POST   { email, note }        → إضافة بريد
  *   PATCH  { email, new_email?, note?, is_active? } → تعديل صفّ قائم
  *   DELETE { email }              → حذف بريد
+ *   PUT    { max_active?, cooldown_hours? } → تعديل سياسات النشر نفسها
  *
  * الجدول public.listing_rate_limit_exempt مقفول بـ RLS بلا أي policy — لا anon
  * ولا authenticated يصله. المنفذ الوحيد للكتابة هو هذا الملف عبر service key،
@@ -147,6 +148,62 @@ export async function onRequestPatch(context) {
   if (Array.isArray(rows) && rows.length === 0) return json({ error: 'البريد غير موجود في القائمة' }, 404);
 
   return new Response(text, { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
+
+/* ── PUT: تعديل سياسات النشر نفسها ──
+   الأرقام تعيش في صفّ واحد (listing_publishing_settings) تقرأه
+   listing_limit_config() — نفس المصدر الذي يقرأ منه الـ trigger — فالتعديل
+   هنا يسري على النشر فورًا بلا نشر كود. cooldown_hours = 0 يعني إلغاء
+   فترة الانتظار كليًا (الحد الأقصى للنشطة يظل ساريًا دائمًا). */
+export async function onRequestPut(context) {
+  const ctx = await requireAdmin(context);
+  if (ctx.error) return ctx.error;
+
+  const { body, error } = await readJson(context.request);
+  if (error) return error;
+
+  const updates = {};
+  if (body.max_active != null) {
+    const n = clampInt(body.max_active, 1, 100);
+    if (n === null) return json({ error: 'الحد الأقصى للإعلانات النشطة يجب أن يكون رقمًا بين 1 و100' }, 400);
+    updates.max_active = n;
+  }
+  if (body.cooldown_hours != null) {
+    const n = clampInt(body.cooldown_hours, 0, 720);
+    if (n === null) return json({ error: 'مدة الانتظار يجب أن تكون رقمًا بين 0 و720 ساعة' }, 400);
+    updates.cooldown_hours = n;
+  }
+  if (!Object.keys(updates).length) return json({ error: 'لا يوجد حقل للتعديل' }, 400);
+
+  updates.updated_at = new Date().toISOString();
+
+  const res = await fetch(`${ctx.SUPABASE_URL}/rest/v1/listing_publishing_settings?id=eq.1`, {
+    method:  'PATCH',
+    headers: { ...ctx.sbHeaders, Prefer: 'return=representation' },
+    body:    JSON.stringify(updates),
+  });
+
+  const text = await res.text();
+  if (!res.ok) return json({ error: text }, res.status);
+
+  /* [] يعني أن صفّ الإعدادات غير موجود — نُبلّغ صراحةً بدل نجاح كاذب */
+  let rows;
+  try { rows = JSON.parse(text); } catch { rows = null; }
+  if (Array.isArray(rows) && rows.length === 0) {
+    return json({ error: 'صفّ إعدادات النشر غير موجود — طبّق supabase_listing_publishing_limits.sql أولاً' }, 409);
+  }
+
+  return json(Array.isArray(rows) ? (rows[0] || { ok: true }) : { ok: true }, 200);
+}
+
+/* رقم صحيح داخل مدى — يرفض غير الأرقام بدل تحويلها صامتًا إلى الحد الأدنى،
+   حتى لا يتحوّل خطأ كتابة إلى سياسة سارية بلا أن يلاحظ الأدمن. */
+function clampInt(v, min, max) {
+  /* '' و'  ' يحوّلهما Number إلى 0 صامتًا — فيتحوّل حقل فارغ إلى سياسة سارية */
+  if (typeof v === 'string' && v.trim() === '') return null;
+  const n = Math.floor(Number(v));
+  if (!Number.isFinite(n)) return null;
+  return Math.min(max, Math.max(min, n));
 }
 
 /* ── DELETE: حذف بريد من القائمة ── */

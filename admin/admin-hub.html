@@ -1813,7 +1813,7 @@ body {
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20260810145536"></script>
+<script src="../shared/sb-config.js?v=20260810200547"></script>
 <script>
 const ADMIN_EMAIL = 'makanispot@gmail.com';
 const MAX_TRIES = 5;
@@ -3019,10 +3019,39 @@ function mtMediaCard() {
           </div>
           <div class="mt-item-n" style="color:${o.count>0?'var(--yw)':'var(--gr)'}">${o.count||0}</div>
           <div style="font-size:11px;color:var(--mu)">${fmtBytes(o.bytes)}</div>
-        </div>`).join('') }` : '' }
+        </div>
+        ${ (o.samples||[]).length ? `<details style="margin:-4px 0 10px 0;padding-inline-start:10px">
+             <summary style="cursor:pointer;font-size:11.5px;color:var(--mu)">
+               ${ o.enabled ? 'عيّنة مما حُذف/سيُحذف' : `محاكاة: ما سيُحذف لو فُعِّل (${o.samples.length} من ${o.count})` }
+             </summary>
+             <div style="margin-top:5px;max-height:200px;overflow:auto">
+               ${ o.samples.map(s => `<div style="display:flex;gap:8px;align-items:baseline;padding:2px 0;font-size:11px">
+                    <code style="flex:1;word-break:break-all;direction:ltr;text-align:left">${esc(s.key)}</code>
+                    <span style="color:var(--mu);white-space:nowrap">${fmtBytes(s.bytes)}</span>
+                    <span style="color:var(--mu);white-space:nowrap">${s.uploaded ? esc(String(s.uploaded).slice(0,10)) : '—'}</span>
+                  </div>`).join('') }
+             </div>
+           </details>` : '' }`).join('') }` : '' }
     ${ (st.unknown_prefix||0) > 0 ? `<div class="mt-note" style="color:var(--yw)">
         ❓ <b>${st.unknown_prefix}</b> مفتاح لا يطابق أي مصدر معروف — يُعرض للمراجعة اليدوية
-        <b>ولا يُحذف منه شيء</b>. المجهول لا يُحذف بالخطأ.</div>` : '' }
+        <b>ولا يُحذف منه شيء</b>. المجهول لا يُحذف بالخطأ.
+        ${ (st.unknown_samples||[]).length ? `
+          <details style="margin-top:8px">
+            <summary style="cursor:pointer;font-weight:700">عرض المفاتيح (${st.unknown_samples.length}${st.unknown_sample_capped ? ' من ' + st.unknown_prefix : ''})</summary>
+            <div style="margin-top:6px;max-height:260px;overflow:auto">
+              ${ st.unknown_samples.map(u => `<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:11.5px">
+                   <code style="flex:1;word-break:break-all;direction:ltr;text-align:left">${esc(u.key)}</code>
+                   <span style="color:var(--mu);white-space:nowrap">${fmtBytes(u.bytes)}</span>
+                   <span style="color:var(--mu);white-space:nowrap">${u.uploaded ? esc(String(u.uploaded).slice(0,10)) : '—'}</span>
+                   <span style="white-space:nowrap;color:${u.referenced?'var(--gr)':'var(--yw)'}">${u.referenced ? 'مرجوع' : 'غير مرجوع'}</span>
+                 </div>`).join('') }
+            </div>
+            <div style="margin-top:6px;color:var(--mu);font-size:11px">
+              «مرجوع» = يشير إليه سجل في القاعدة رغم أن بادئته غير مسجَّلة — سجّل بادئته في
+              <code>MEDIA_SOURCES</code> و<code>media_registry</code> بدل حذفه.
+            </div>
+          </details>` : '' }
+        </div>` : '' }
     <div class="mt-note">
       🛡️ لا يُحذف ملف إلا بعد التأكد أنه غير مرجوع من أي سجل في القاعدة — طابور الحذف اقتراح لا أمر.
     </div>

@@ -7,7 +7,7 @@
  *   SUPABASE_URL, SUPABASE_SERVICE_KEY, BUCKET (R2 binding)
  */
 
-import { deleteMediaByUrls } from './admin/_media.js';
+import { deleteMediaByUrls, urlsSafeToDelete } from './admin/_media.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -71,9 +71,13 @@ export async function onRequestDelete(context) {
   if (!listing) return fail(404, 'الإعلان غير موجود');
   if (listing.user_id !== userId) return fail(403, 'ليس لديك صلاحية حذف هذا الإعلان');
 
-  /* حذف الصور من R2 — عبر الوحدة المشتركة (كانت هذه الحلقة مكرَّرة في 3 ملفات) */
+  /* حذف الصور من R2 — عبر الوحدة المشتركة (كانت هذه الحلقة مكرَّرة في 3 ملفات).
+     ما يبقى مرجوعًا من جدول ناسخ (لقطة غلاف في طلب خدمة) يُستثنى من الحذف
+     المباشر ويُترك للطابور/الكنس اللذين يريان كل المراجع. */
   const bucket = env.BUCKET || env['BUCKET-1'];
-  await deleteMediaByUrls(bucket, [listing.cover_image, ...(listing.images || [])], 3);
+  const safeUrls = await urlsSafeToDelete(
+    SUPABASE_URL, sbHeaders, [listing.cover_image, ...(listing.images || [])]);
+  await deleteMediaByUrls(bucket, safeUrls, 3);
 
   /* حذف السجل من Supabase */
   const delRes = await fetch(

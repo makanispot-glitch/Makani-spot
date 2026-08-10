@@ -24,7 +24,7 @@
 
 import {
   MEDIA_SOURCES, urlToKey, baseOf, sourceOfKey, isSweepable,
-  buildReferenceIndex, deleteMediaByKey, deleteMediaByUrls,
+  buildReferenceIndex, deleteMediaByKey, deleteMediaByUrls, urlsSafeToDelete,
 } from './_media.js';
 
 /* قيم احتياطية فقط لو تعذّر جلب الإعدادات لأي سبب */
@@ -116,7 +116,10 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
 
       let n = 0;
       for (const l of stale) {
-        await deleteMediaByUrls(bucket, [l.cover_image, ...(l.images || [])], 3);
+        /* لقطة الغلاف داخل طلب خدمة تُبقي الملف حيًّا حتى بعد حذف الإعلان */
+        const safeUrls = await urlsSafeToDelete(
+          SUPABASE_URL, sbHeaders, [l.cover_image, ...(l.images || [])]);
+        await deleteMediaByUrls(bucket, safeUrls, 3);
         const delRes = await fetch(
           `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(l.id)}`,
           { method: 'DELETE', headers: { ...sbHeaders, 'Prefer': 'return=minimal' } }
@@ -190,6 +193,19 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
       const stats = new Map();   // sweepKey → { objects, bytes, orphans, orphanBytes }
       let unknownBytes = 0, unknownObjects = 0, totalBytes = 0, totalObjects = 0;
 
+      /* المجهول لا يُحذف أبدًا — وهذه القاعدة تعني أنه يبقى للأبد ما لم يفحصه
+         إنسان. تسجيل العدد وحده لا يكفي للفحص: نسجّل عيّنة بمفاتيحها وأحجامها
+         وتواريخها ليمكن تحديد مصدرها. عيّنة لا قائمة كاملة، حتى لا تنتفخ
+         اللقطة لو تراكمت آلاف المفاتيح. */
+      const UNKNOWN_SAMPLE_MAX = 25;
+      const unknownSamples = [];
+
+      /* عيّنة من اليتامى لكل مصدر — هذه هي «المحاكاة قبل التفعيل»: المصادر
+         المعطَّلة تُحصى ولا تُحذف، فتسجيل مفاتيحها يجعل قرار التفعيل قائمًا
+         على ملفات محدَّدة يمكن فتحها ومعاينتها، لا على عدد مجرَّد. */
+      const ORPHAN_SAMPLE_MAX = 10;
+      const orphanSamples = new Map();   // sweepKey → [{key, bytes, uploaded}]
+
       const graceOf = k => (sweepCfg?.[k]?.grace_hours ?? settings.orphan_image_grace_hours ?? 24) * 3600000;
       const now = Date.now();
       let cursor;
@@ -203,6 +219,17 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
           if (!src) {                       // المجهول لا يُحذف أبدًا
             unknownObjects++; unknownBytes += obj.size || 0;
             result.unknown_prefix++;
+            if (unknownSamples.length < UNKNOWN_SAMPLE_MAX) {
+              unknownSamples.push({
+                key:      obj.key,
+                bytes:    obj.size || 0,
+                uploaded: obj.uploaded ? new Date(obj.uploaded).toISOString() : null,
+                /* الجزء الأول من المفتاح هو ما يُفترض أن يطابق بادئة معروفة —
+                   عرضه وحده يكشف نمط المصدر بلا حاجة لقراءة القائمة كلها */
+                segment:  String(obj.key).split('/')[0].slice(0, 60),
+                referenced: isReferenced(obj.key),
+              });
+            }
             continue;
           }
 
@@ -215,6 +242,14 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
           if (!fresh && !isReferenced(obj.key)) {
             s.orphans++; s.orphanBytes += obj.size || 0;
             result.orphans_found++;
+
+            const sample = orphanSamples.get(src.key) || [];
+            if (sample.length < ORPHAN_SAMPLE_MAX) {
+              sample.push({ key: obj.key, bytes: obj.size || 0,
+                            uploaded: obj.uploaded ? new Date(obj.uploaded).toISOString() : null });
+              orphanSamples.set(src.key, sample);
+            }
+
             /* sweepable:false يسبق العلم: مراجع هذا المصدر خارج القاعدة أصلًا
                فـ«يتيم» هنا لا تعني «غير مستخدم». */
             if (!isSweepable(src)) {
@@ -240,6 +275,8 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
         refs_scanned: refIndex.scanned,
         unknown_prefix: unknownObjects,
         unknown_bytes: unknownBytes,
+        unknown_samples: unknownSamples,
+        unknown_sample_capped: unknownObjects > unknownSamples.length,
         by_prefix: MEDIA_SOURCES.map(s => {
           const st = stats.get(s.key) || { objects: 0, bytes: 0 };
           return { prefix: s.prefix || '<uuid>/', label: s.label, objects: st.objects, bytes: st.bytes };
@@ -249,7 +286,9 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
           return { prefix: s.prefix || '<uuid>/', label: s.label, key: s.key,
                    count: st.orphans, bytes: st.orphanBytes,
                    enabled: isSweepable(s) && !!sweepCfg?.[s.key]?.enabled,
-                   sweepable: isSweepable(s), note: s.sweepNote || null };
+                   sweepable: isSweepable(s), note: s.sweepNote || null,
+                   /* ما كان سيُحذف لو فُعِّل هذا المصدر — عيّنة للمعاينة قبل القرار */
+                   samples: orphanSamples.get(s.key) || [] };
         }),
       };
       const snapRes = await rpc('record_storage_snapshot', { p_snapshot: snapshot });

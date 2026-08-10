@@ -184,6 +184,50 @@ export async function deleteMediaByKey(bucket, key, variants = 3) {
   return n;
 }
 
+/**
+ * جداول تحمل **نسخة** من رابط يملكه جدول آخر، فتبقى بعد حذف المالك عمدًا.
+ * الحذف المباشر يعرف صاحب الملف وحده، فبدون هذا الفحص يمحو ملفًا ما زال
+ * سجلّ آخر يعرضه. كنس اليتامى محصَّن أصلًا (فهرس المراجع يضم كل الجداول)،
+ * فهذا يسدّ الفارق بين المسارين لا أكثر.
+ *
+ * أي عمود جديد ينسخ رابطًا يملكه غيره يُضاف هنا **وفي media_registry** معًا.
+ */
+const CROSS_REF_COLUMNS = [
+  /* لقطة غلاف الإعلان داخل طلب الخدمة — listing_id هناك ON DELETE SET NULL
+     حتى ينجو الطلب من حذف الإعلان، فيجب أن تنجو صورته معه. */
+  { table: 'service_requests', col: 'listing_cover' },
+];
+
+/**
+ * يُرجع الروابط الآمنة للحذف المباشر — أي غير المرجوعة من أي جدول ناسخ.
+ * **يفشل نحو الإبقاء**: أي خطأ في الفحص يعني إبقاء الرابط كله، لأن ترك ملف
+ * للكنس أرخص بما لا يُقاس من محو صورة سجلّ حيّ.
+ */
+export async function urlsSafeToDelete(SUPABASE_URL, sbHeaders, urls) {
+  const list = [...new Set((urls || []).filter(Boolean))];
+  if (!list.length || !SUPABASE_URL) return list;
+
+  const held = new Set();
+  for (const { table, col } of CROSS_REF_COLUMNS) {
+    try {
+      const inList = list.map(u => `"${String(u).replace(/"/g, '\\"')}"`).join(',');
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${table}?${col}=in.(${encodeURIComponent(inList)})&select=${col}`,
+        { headers: sbHeaders }
+      );
+      const rows = await res.json().catch(() => null);
+      if (!res.ok || !Array.isArray(rows)) {
+        list.forEach(u => held.add(u));   // فحص فاشل ⇒ لا حذف مباشر لأي منها
+        continue;
+      }
+      for (const r of rows) if (r?.[col]) held.add(r[col]);
+    } catch {
+      list.forEach(u => held.add(u));
+    }
+  }
+  return list.filter(u => !held.has(u));
+}
+
 /** نفس الشيء انطلاقًا من روابط كاملة — يستخدمها كل مسار حذف في المنصة. */
 export async function deleteMediaByUrls(bucket, urls, variantsHint = null) {
   if (!bucket) return 0;

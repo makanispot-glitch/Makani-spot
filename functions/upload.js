@@ -19,13 +19,13 @@
  *   • anon key وحده → مرفوض
  */
 
-import { sourceOfKey } from './admin/_media.js';
+import { sourceOfKey, urlToKey, deleteMediaByKey } from './admin/_media.js';
 
 const R2_PUBLIC_BASE = 'https://pub-df88163958eb4109a8f8f3b9c62a2d3e.r2.dev';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
 };
 
@@ -124,6 +124,77 @@ export async function onRequestPost(context) {
   } catch (e) {
     return fail(500, e.message || 'فشل رفع الصورة');
   }
+}
+
+/* ── حذف مباشر لملف رفعه صاحب الجلسة ولم يُربط بأي سجل ──
+   الغرض الوحيد: الصورة التي يحذفها المستخدم من محرّر الصور قبل نشر الإعلان.
+   بدونه كان الملف ينتظر ٢٤–٤٨ ساعة حتى يكنسه الـcron. الكنس يبقى شبكة الأمان
+   لكل ما يفشل هنا (إغلاق الصفحة، انقطاع الشبكة، خطأ R2).
+
+   ثلاثة قيود تجعل هذا المسار غير قابل لإساءة الاستخدام:
+     1) جلسة حقيقية — نفس تحقق الرفع، والـanon key مرفوض.
+     2) scope === 'own' حصرًا — لا بادئات إدارية ولا مجلد مستخدم آخر مهما كان
+        المنادي أدمن. هذا المسار للملفات غير المرتبطة فقط.
+     3) **مرجوع في القاعدة ⇒ رفض.** لولاها لأمكن حذف صور إعلان منشور فعلًا
+        فيبقى الصف يشير إلى ملفات غير موجودة. */
+export async function onRequestDelete(context) {
+  const { request, env } = context;
+
+  const bucket       = env.BUCKET || env['BUCKET-1'];
+  const SUPABASE_URL = env.SUPABASE_URL;
+  const SERVICE_KEY  = env.SUPABASE_SERVICE_KEY;
+  if (!bucket || !SUPABASE_URL || !SERVICE_KEY) return fail(503, 'Server misconfigured');
+
+  const auth  = request.headers.get('Authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!token) return fail(401, 'غير مصرّح — يجب تسجيل الدخول');
+
+  const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${token}` },
+  });
+  if (!userRes.ok) return fail(401, 'جلسة غير صالحة');
+  let uid = null;
+  try { uid = (await userRes.json())?.id || null; } catch {}
+  if (!uid) return fail(401, 'تعذر التحقق من هويتك');
+
+  let body;
+  try { body = await request.json(); } catch { return fail(400, 'بيانات غير صالحة'); }
+
+  const key = urlToKey(String(body?.url || ''));
+  if (!key) return fail(400, 'رابط غير صالح — ليس من باكيت المنصة');
+
+  if (pathScope(key, uid) !== 'own') {
+    return fail(403, 'لا يمكنك حذف ملف لا تملكه');
+  }
+
+  const src = sourceOfKey(key);
+  if (!src) return fail(400, 'مسار غير مسجَّل في منظومات الوسائط');
+
+  /* الجداول التي تُخزِّن ملفات على جذر الباكيت (بادئة = uuid المستخدم) هي
+     الوحيدة التي يمكن أن تشير إلى هذا المفتاح، لأن scope === 'own' يحصر
+     المسار في `<uid>/…`. مصدرها get_media_registry حيث prefix = null. */
+  const refTables = [
+    { table: 'listings',              cols: ['cover_image', 'images'] },
+    { table: 'space_bazaar_requests', cols: ['image_url'] },
+  ];
+  for (const t of refTables) {
+    const or = t.cols
+      .map(c => (c === 'images' ? `images.cs.{"${body.url}"}` : `${c}.eq.${encodeURIComponent(body.url)}`))
+      .join(',');
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${t.table}?or=(${or})&select=id&limit=1`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    const rows = await res.json().catch(() => null);
+    /* فشل الفحص لا يُترجم إلى حذف — الكنس سيتولاها لاحقًا بأمان */
+    if (!res.ok || !Array.isArray(rows)) {
+      return fail(409, 'تعذّر التحقق من ارتباط الصورة — لن تُحذف الآن');
+    }
+    if (rows.length) return fail(409, 'الصورة مرتبطة بسجل قائم — لا تُحذف من هنا');
+  }
+
+  const n = await deleteMediaByKey(bucket, key, src.variants);
+  return ok({ ok: true, deleted_variants: n });
 }
 
 /**

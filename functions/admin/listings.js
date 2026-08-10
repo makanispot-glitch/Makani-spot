@@ -1,4 +1,4 @@
-import { deleteMediaByUrls } from './_media.js';
+import { deleteMediaByUrls, urlsSafeToDelete } from './_media.js';
 
 export async function onRequest(context) {
   try {
@@ -100,7 +100,10 @@ export async function onRequest(context) {
          و delete-announcement.js. كانت هنا نسخة مضمَّنة من الحلقة عرضة للانحراف. */
       const bucket = context.env.BUCKET || context.env['BUCKET-1'];
       if (listing) {
-        await deleteMediaByUrls(bucket, [listing.cover_image, ...(listing.images || [])], 3);
+        /* ما ينسخه جدول آخر (لقطة غلاف في طلب خدمة) لا يُحذف مباشرةً */
+        const safeUrls = await urlsSafeToDelete(
+          SUPABASE_URL, sbHeaders, [listing.cover_image, ...(listing.images || [])]);
+        await deleteMediaByUrls(bucket, safeUrls, 3);
       }
 
       /* حذف السجل من Supabase */

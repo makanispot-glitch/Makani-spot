@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="manifest" href="/manifest.json?v=20260810145536">
-<script src="/version.js?v=20260810145536"></script>
+<link rel="manifest" href="/manifest.json?v=20260810200547">
+<script src="/version.js?v=20260810200547"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,9 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260810145536">
+<link rel="stylesheet" href="../style.css?v=20260810200547">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../media-handler.js?v=20260810145536"></script>
+<script src="../media-handler.js?v=20260810200547"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -492,8 +492,8 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
-<script src="../shared/sb-config.js?v=20260810145536"></script>
-<script src="/pwa-install.js?v=20260810145536" defer></script>
+<script src="../shared/sb-config.js?v=20260810200547"></script>
+<script src="/pwa-install.js?v=20260810200547" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;
@@ -506,8 +506,14 @@ let paSb   = null;
 let paUser = null;
 let paStep = 1;
 let paFiles = [];     // File[]
-let paUrls  = [];     // uploaded URLs
+let paUrls  = [];     // روابط R2 مرتّبة بترتيب paFiles — يبنيها paSyncUrls()
 let paCoverIndex = 0;
+let paFileUrls = new Map();  // File → blob: URL ثابتة طوال عمر الملف
+/* File → رابط R2 بعد رفعه. كان الكود يصفّر paUrls عند أي تعديل على الصور
+   فيُعاد رفع المجموعة كاملة: تعديل واحد على ٥ صور = ١٥ ملفًا جديدًا على R2
+   و١٥ ملفًا يتيمًا ينتظر الكنس. الخريطة تجعل الرفع للجديد وحده. */
+let paUploaded = new Map();
+let paBusy = false;      // رفع أو إرسال جارٍ — يمنع تشغيل عملية ثانية فوق الأولى
 
 /* ── Init ── */
 window.addEventListener('DOMContentLoaded', async () => {
@@ -653,18 +659,46 @@ function paValidateStep3() {
 }
 
 async function paNextStep(from) {
+  /* نقرتان سريعتان على «التالي» كانتا تُطلقان رفعين متوازيين يتقاسمان نفس
+     AbortController في media-handler — الثاني يُلغي إشارة الأول ويُضاعف
+     الملفات على R2. الحارس يمنع أي عملية ثانية فوق جارية. */
+  if (paBusy) return;
+
   if (from === 1 && !paValidateStep1()) return;
+
   if (from === 2) {
     if (!paValidateStep2()) return;
-    if (paFiles.length > 0 && paUrls.length === 0) {
-      await paUploadImages();
+
+    if (!paAllUploaded()) {
+      /* الفحص قبل الرفع لا بعده: الرفع يستهلك بيانات المستخدم ويترك ملفات
+         على R2 بلا إعلان يشير إليها لو رفض الحارس الإدراج لاحقًا. */
+      const blocked = await paCheckListingLimit();
+      if (blocked) { paShowLimitGuard(blocked); return; }
+
+      paBusy = true;
+      try { await paUploadImages(); }
+      catch { return; }              // paUploadImages أظهرت الخطأ وأخفت الشريط
+      finally { paBusy = false; }
     }
-    if (paUrls.length === 0) return;
+    /* لا انتقال بمجموعة روابط ناقصة — الفهرس يجب أن يطابق paFiles تمامًا */
+    if (paUrls.length !== paFiles.length) return;
   }
+
   if (from === 3 && !paValidateStep3()) return;
 
   if (from === 3) paBuildReview();
   paGoStep(from + 1);
+}
+
+/* شاشة «لا يمكنك النشر الآن» — نفس الشاشة التي يعرضها الفحص عند فتح الصفحة،
+   تُستدعى أيضًا من منتصف المسار ومن فشل الإرسال حتى لا يبقى المستخدم عالقًا
+   أمام زر لا يعمل بلا سبب ظاهر. */
+function paShowLimitGuard(reason) {
+  document.getElementById('pa-wizard').style.display  = 'none';
+  document.getElementById('pa-success').style.display = 'none';
+  document.getElementById('pa-limit-reason').textContent = reason;
+  document.getElementById('pa-limit-guard').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── Image Handling ── */
@@ -685,8 +719,19 @@ function paHandleFiles(fileList) {
     return;
   }
   paFiles.push(...newFiles);
-  paUrls = [];
+  /* الصور المرفوعة سابقًا تحتفظ بروابطها — الجديدة وحدها بلا رابط فتُرفع */
+  paSyncUrls();
   paRenderPreviews();
+}
+
+/* paUrls مرآة لـ paFiles بالترتيب — paSubmit يعتمد على تطابق الفهرس مع
+   paCoverIndex لاختيار الغلاف، فأي انزياح هنا يجعل غلاف الإعلان صورة أخرى. */
+function paSyncUrls() {
+  paUrls = paFiles.map(f => paUploaded.get(f)).filter(Boolean);
+}
+
+function paAllUploaded() {
+  return paFiles.length > 0 && paFiles.every(f => paUploaded.has(f));
 }
 
 function paHandleDrop(event) {
@@ -728,12 +773,27 @@ document.addEventListener('paste', (event) => {
   paHandlePaste(event);
 });
 
+/* رابط معاينة واحد ثابت لكل ملف.
+   كل إعادة رسم كانت تُنشئ blob: جديدة لكل ملف بلا إبطال القديمة — تسريب
+   يتراكم مع كل إضافة/حذف/تغيير غلاف. والإبطال عند كل رسم ليس بديلًا: تغيير
+   الغلاف وحده كان سيُبطِل روابط صور ما زال تحميلها جاريًا فيفشل عرضها. */
+function paPreviewUrl(f) {
+  let u = paFileUrls.get(f);
+  if (!u) { u = URL.createObjectURL(f); paFileUrls.set(f, u); }
+  return u;
+}
+
+function paRevokePreviewUrls() {
+  paFileUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+  paFileUrls.clear();
+}
+
 function paRenderPreviews() {
   const cont = document.getElementById('pa-previews');
   if (paFiles.length === 0) { cont.innerHTML = ''; return; }
 
   cont.innerHTML = paFiles.map((f, i) => {
-    const url = URL.createObjectURL(f);
+    const url = paPreviewUrl(f);
     return `
       <div class="pa-preview-item${i === paCoverIndex ? ' cover-item' : ''}" id="preview-item-${i}">
         <img src="${url}" alt="صورة ${i+1}">
@@ -746,10 +806,33 @@ function paRenderPreviews() {
 }
 
 function paRemoveFile(i) {
-  paFiles.splice(i, 1);
-  paUrls = [];
+  const [gone] = paFiles.splice(i, 1);
+
+  const blobUrl = paFileUrls.get(gone);
+  if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch {} paFileUrls.delete(gone); }
+
+  /* رُفعت فعلًا ثم حُذفت قبل النشر ⇒ لا سجلّ سيشير إليها أبدًا. تُحذف من R2
+     الآن بدل انتظار الكنس ٢٤–٤٨ ساعة. الفشل مقبول: الكنس شبكة الأمان. */
+  const r2Url = paUploaded.get(gone);
+  if (r2Url) { paUploaded.delete(gone); paDeleteUploaded(r2Url); }
+
+  paSyncUrls();
   if (paCoverIndex >= paFiles.length) paCoverIndex = Math.max(0, paFiles.length - 1);
   paRenderPreviews();
+}
+
+/* حذف فوري لملف مرفوع غير مرتبط بأي سجل — /upload يرفض الحذف إن كان مرجوعًا */
+async function paDeleteUploaded(url) {
+  try {
+    const { data: { session } } = await paSb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    await fetch('/upload', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ url }),
+    });
+  } catch { /* الكنس الدوري يتكفّل بها */ }
 }
 
 function paSetCover(i) {
@@ -758,7 +841,12 @@ function paSetCover(i) {
 }
 
 async function paUploadImages() {
-  if (!paUser || paFiles.length === 0) return;
+  if (!paUser) return;
+
+  /* الجديد وحده — الصور التي رُفعت في مرور سابق تحتفظ بروابطها */
+  const pending = paFiles.filter(f => !paUploaded.has(f));
+  if (pending.length === 0) { paSyncUrls(); return; }
+
   const prog = document.getElementById('pa-upload-progress');
   const bar  = document.getElementById('pa-upload-bar');
   const txt  = document.getElementById('pa-upload-text');
@@ -767,12 +855,14 @@ async function paUploadImages() {
   try {
     const { data: { session } } = await paSb.auth.getSession();
     const authToken = session?.access_token;
-    const urls = await uploadImages(paFiles, paUser.id, (done, total) => {
+    const urls = await uploadImages(pending, paUser.id, (done, total) => {
       const pct = Math.round((done / total) * 100);
       bar.style.width = pct + '%';
       txt.textContent = `جاري رفع ${done} من ${total} صور…`;
     }, authToken);
-    paUrls = urls;
+    /* uploadImages تُرجع الروابط بترتيب المدخلات (Promise.all) */
+    pending.forEach((f, i) => { if (urls[i]) paUploaded.set(f, urls[i]); });
+    paSyncUrls();
     txt.textContent = 'تم رفع الصور بنجاح ✅';
   } catch (e) {
     prog.style.display = 'none';
@@ -822,6 +912,8 @@ function paBuildReview() {
 
 /* ── Submit ── */
 async function paSubmit() {
+  if (paBusy) return;
+
   const termsEl = document.getElementById('pa-terms-agree');
   if (!termsEl.checked) {
     paShowErr('err-terms', true);
@@ -830,6 +922,7 @@ async function paSubmit() {
   paShowErr('err-terms', false);
 
   const btn = document.getElementById('pa-submit-btn');
+  paBusy = true;
   btn.disabled = true;
   btn.textContent = '⏳ جاري الإرسال…';
 
@@ -871,23 +964,55 @@ async function paSubmit() {
     window.mkPwaInstall?.signalSuccess();
 
   } catch (e) {
-    /* P0001 = رسالة مقصودة من trigger القيود (الحد الأقصى / فترة الانتظار) — تُعرض كما هي */
-    alert(e.code === 'P0001' ? e.message : ('حدث خطأ: ' + e.message));
+    /* P0001 = رسالة مقصودة من trigger القيود (الحد الأقصى / فترة الانتظار).
+       لا تُعرض في alert وحدها ثم يُترك المستخدم أمام زر يرفض العمل بلا سبب
+       ظاهر — تُعرض في شاشة القيود نفسها مع نص الحارس حرفيًا. */
+    if (e.code === 'P0001') {
+      paShowLimitGuard(e.message);
+    } else {
+      alert('حدث خطأ: ' + (e.message || 'تعذّر إرسال الإعلان — حاول مرة أخرى'));
+    }
     btn.disabled = false;
     btn.textContent = '🚀 إرسال الإعلان';
+  } finally {
+    paBusy = false;
   }
 }
 
-/* ── Reset ── */
-function paReset() {
+/* ── Reset ──
+   «+ نشر إعلان آخر» يجب أن يبدأ من حالة نظيفة تمامًا. ما كان ناقصًا وأدّى
+   إلى شكوى «الإعلان السابق يظهر / الصفحة تعلّق»:
+     • قيمة <input type=file> لم تكن تُصفَّر — فاختيار **نفس** الصور مرة أخرى
+       لا يُطلق حدث change أصلًا (القيمة لم تتغيّر)، فلا معاينات ولا رفع،
+       والمستخدم يرى صفحة لا تستجيب.
+     • blob: الخاصة بمعاينات الإعلان السابق تبقى حيّة بلا إبطال.
+     • محتوى المراجعة وشريط الرفع ورسائل الخطأ تبقى من الإعلان السابق.
+     • الفحص المسبق للقيود كان يعمل مرة واحدة عند فتح الصفحة فقط — فبعد
+       النشر يُملأ نموذج كامل وتُرفع صور ثم يُرفض الإدراج في آخر خطوة. */
+async function paReset() {
   paStep = 1;
   paFiles = [];
   paUrls  = [];
   paCoverIndex = 0;
+  paBusy  = false;
+  /* تُمسح بلا حذف من R2: paReset لا تُستدعى إلا بعد نشر ناجح، فهذه الروابط
+     صارت مملوكة للإعلان المنشور. حذفها هنا كان سيمسح صور إعلان حيّ. */
+  paUploaded.clear();
+
   document.getElementById('pa-success').style.display = 'none';
   document.getElementById('pa-wizard').style.display = 'block';
   document.getElementById('pa-previews').innerHTML = '';
-  document.getElementById('pa-upload-progress').style.display = 'none';
+  document.getElementById('pa-review-content').innerHTML = '';
+  paRevokePreviewUrls();   // بعد إزالة العناصر التي تشير إليها
+
+  const prog = document.getElementById('pa-upload-progress');
+  prog.style.display = 'none';
+  document.getElementById('pa-upload-bar').style.width = '0%';
+  document.getElementById('pa-upload-text').textContent = 'جاري رفع الصور…';
+
+  /* بدونه: إعادة اختيار نفس الملف لا تُطلق onchange إطلاقًا */
+  document.getElementById('pa-file-input').value = '';
+
   document.getElementById('pa-category').value = '';
   document.getElementById('pa-title').value = '';
   document.getElementById('pa-description').value = '';
@@ -897,8 +1022,22 @@ function paReset() {
   document.getElementById('pa-governorate').value = '';
   document.getElementById('pa-area').value = '';
   document.getElementById('pa-phone').value = '';
+  document.getElementById('pa-contact-method').value = 'both';
   document.getElementById('pa-terms-agree').checked = false;
+
+  ['err-category','err-title','err-description','err-condition','err-price',
+   'err-images','err-gov','err-phone','err-terms'].forEach(id => paShowErr(id, false));
+
+  const btn = document.getElementById('pa-submit-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '🚀 إرسال الإعلان'; }
+
   paGoStep(1);
+
+  /* الحد الأقصى يُحسب من الإعلانات النشطة، والإعلان الذي نُشر للتوّ ما زال
+     قيد المراجعة — فقد لا يظهر أثره الآن. الفحص هنا يمسك الحالة التي يكون
+     فيها المستخدم قد بلغ الحد فعلًا، قبل أن يملأ نموذجًا كاملًا بلا طائل. */
+  const blocked = await paCheckListingLimit();
+  if (blocked) paShowLimitGuard(blocked);
 }
 </script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">

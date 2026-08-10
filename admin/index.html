@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="manifest" href="/manifest.json?v=20260810145536">
-<script src="/version.js?v=20260810145536"></script>
+<link rel="manifest" href="/manifest.json?v=20260810200547">
+<script src="/version.js?v=20260810200547"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -586,6 +586,27 @@ tr:hover td { background: #FAFAFA; }
           إيقاف حساب موقوف.
         </p>
         <p class="adm-exempt-limits" id="adm-exempt-limits"></p>
+      </div>
+
+      <!-- ── سياسات النشر السارية على كل الحسابات غير المستثناة ── -->
+      <div class="adm-exempt-add" style="border-color:#BFDBFE;background:#F0F9FF">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">⚙️ سياسات النشر</div>
+        <p style="font-size:12.5px;color:#475569;margin:0 0 12px">
+          تسري على كل الحسابات <b>عدا</b> المستثناة أدناه. التعديل يُطبَّق فورًا على قاعدة
+          البيانات — لا يحتاج نشر كود. <b>مدة انتظار = 0</b> تعني إلغاء الانتظار تمامًا.
+        </p>
+        <div class="adm-exempt-add-row">
+          <div style="flex:1;min-width:200px">
+            <label>الحد الأقصى للإعلانات النشطة لكل حساب</label>
+            <input type="number" id="pol-max-active" min="1" max="100" step="1" inputmode="numeric">
+          </div>
+          <div style="flex:1;min-width:200px">
+            <label>مدة الانتظار بين إعلان وآخر (ساعة)</label>
+            <input type="number" id="pol-cooldown" min="0" max="720" step="1" inputmode="numeric">
+          </div>
+          <button class="adm-btn adm-btn-approve" style="padding:11px 22px" onclick="admSavePolicies()">💾 حفظ</button>
+        </div>
+        <div class="adm-exempt-msg" id="pol-msg"></div>
       </div>
 
       <div class="adm-exempt-add">
@@ -1667,8 +1688,16 @@ async function admLoadExemptions() {
     /* الأرقام تُعرض كما هي في القاعدة — لا تُكتب هنا حتى لا تفترق عن الـ trigger */
     const lim = document.getElementById('adm-exempt-limits');
     lim.textContent = (data.max_active != null && data.cooldown_hours != null)
-      ? `القيود السارية على باقي الحسابات: ${data.max_active} إعلانات نشطة كحد أقصى، وانتظار ${data.cooldown_hours} ساعة بين إعلان وآخر.`
+      ? `القيود السارية على باقي الحسابات: ${data.max_active} إعلانات نشطة كحد أقصى، و`
+        + (Number(data.cooldown_hours) > 0
+            ? `انتظار ${data.cooldown_hours} ساعة بين إعلان وآخر.`
+            : 'بلا أي فترة انتظار بين إعلان وآخر.')
       : '';
+
+    /* حقول السياسات تُملأ من نفس الاستجابة — لا رقم افتراضي في الواجهة يمكن
+       أن يفترق عمّا في القاعدة، ولا تُلمس الحقول إن تعذّرت القراءة. */
+    if (data.max_active != null)     document.getElementById('pol-max-active').value = data.max_active;
+    if (data.cooldown_hours != null) document.getElementById('pol-cooldown').value   = data.cooldown_hours;
 
     admRenderExemptions();
   } catch {
@@ -1724,6 +1753,46 @@ function admRenderExemptions() {
         </tr>`;
       }).join('')}</tbody>
     </table>`;
+}
+
+/* ── حفظ سياسات النشر ──
+   القيم تُرسل كما هي والقاعدة هي الحكم (CHECK على المدى + clamp في الدالة).
+   بعد الحفظ نعيد التحميل من القاعدة لا من ردّ الحفظ وحده، حتى يرى الأدمن
+   القيمة السارية فعلًا لو صحّحها الخادم. */
+async function admSavePolicies() {
+  const maxEl = document.getElementById('pol-max-active');
+  const cdEl  = document.getElementById('pol-cooldown');
+  const max   = maxEl.value.trim();
+  const cd    = cdEl.value.trim();
+
+  if (max === '' || cd === '') { admPolMsg('املأ الحقلين قبل الحفظ', 'err'); return; }
+  if (!Number.isFinite(Number(max)) || !Number.isFinite(Number(cd))) {
+    admPolMsg('القيم يجب أن تكون أرقامًا', 'err'); return;
+  }
+
+  admPolMsg('جاري الحفظ…', '');
+  try {
+    const res = await fetch('/admin/listing-exemptions', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + admGetToken() },
+      body:    JSON.stringify({ max_active: Number(max), cooldown_hours: Number(cd) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { admPolMsg('⚠️ ' + (data.error || 'تعذّر الحفظ'), 'err'); return; }
+
+    admPolMsg(
+      `✅ تم الحفظ — ${data.max_active} إعلانات نشطة كحد أقصى، `
+      + (Number(data.cooldown_hours) > 0 ? `وانتظار ${data.cooldown_hours} ساعة.` : 'وبلا فترة انتظار.'),
+      'ok');
+    admLoadExemptions();
+  } catch { admPolMsg('⚠️ تعذّر الاتصال بالخادم', 'err'); }
+}
+
+function admPolMsg(text, kind) {
+  const el = document.getElementById('pol-msg');
+  el.textContent = text;
+  el.className   = 'adm-exempt-msg ' + kind;
+  if (kind === 'ok') setTimeout(() => { el.className = 'adm-exempt-msg'; }, 4000);
 }
 
 function admExemptMsg(text, kind) {
