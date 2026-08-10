@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="manifest" href="/manifest.json?v=20260809181844">
-<script src="/version.js?v=20260809181844"></script>
+<link rel="manifest" href="/manifest.json?v=20260810145536">
+<script src="/version.js?v=20260810145536"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,9 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260809181844">
+<link rel="stylesheet" href="../style.css?v=20260810145536">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../media-handler.js?v=20260809181844"></script>
+<script src="../media-handler.js?v=20260810145536"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -106,9 +106,10 @@ body { background: var(--surface2); }
   padding: 32px; text-align: center; cursor: pointer;
   transition: border-color .2s, background .2s;
 }
-.pa-upload-area:hover, .pa-upload-area.drag-over {
+.pa-upload-area:hover, .pa-upload-area.drag-over, .pa-upload-area:focus-visible {
   border-color: var(--orange); background: var(--orange-ultra);
 }
+.pa-upload-area:focus-visible { outline: none; }
 .pa-upload-icon { font-size: 40px; margin-bottom: 10px; }
 .pa-upload-text { font-size: 14px; font-weight: 700; color: var(--ink2); }
 .pa-upload-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; }
@@ -391,15 +392,17 @@ body { background: var(--surface2); }
 
     <!-- ── Step 2: الصور ── -->
     <div class="pa-card" id="pa-step-2" style="display:none">
-      <div class="pa-card-title">📸 صور المعدة</div>
+      <div class="pa-card-title">📸 صور المشروع</div>
 
-      <div class="pa-upload-area" id="pa-upload-area" onclick="document.getElementById('pa-file-input').click()"
+      <div class="pa-upload-area" id="pa-upload-area" tabindex="0"
+           onclick="document.getElementById('pa-file-input').click()"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('pa-file-input').click()}"
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="paHandleDrop(event)">
         <div class="pa-upload-icon">📷</div>
         <div class="pa-upload-text">اضغط لاختيار الصور أو اسحبها هنا</div>
-        <div class="pa-upload-hint">حتى 8 صور — JPG أو PNG أو WebP — تُضغط وتُحوَّل تلقائياً لـ WebP · الحد الأقصى 20 MB للصورة</div>
+        <div class="pa-upload-hint">يمكنك أيضاً لصق صورة مباشرة (Ctrl + V) · حتى 8 صور</div>
       </div>
       <input type="file" id="pa-file-input" accept="image/*" multiple onchange="paHandleFiles(this.files)">
 
@@ -489,8 +492,8 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
-<script src="../shared/sb-config.js?v=20260809181844"></script>
-<script src="/pwa-install.js?v=20260809181844" defer></script>
+<script src="../shared/sb-config.js?v=20260810145536"></script>
+<script src="/pwa-install.js?v=20260810145536" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;
@@ -691,6 +694,39 @@ function paHandleDrop(event) {
   document.getElementById('pa-upload-area').classList.remove('drag-over');
   paHandleFiles(event.dataTransfer.files);
 }
+
+/* لصق صورة من الحافظة (Ctrl + V) — تمرّ بنفس مسار المعالجة والرفع */
+function paHandlePaste(event) {
+  const items = event.clipboardData?.items;
+  if (!items) return;
+
+  const pasted = [];
+  for (const item of items) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      const f = item.getAsFile();
+      if (f) pasted.push(f);
+    }
+  }
+  if (pasted.length === 0) return;   // نص عادي أو محتوى غير صورة — نتركه للسلوك الافتراضي
+
+  event.preventDefault();
+  paHandleFiles(pasted);
+
+  /* وميض بسيط يؤكد للمستخدم أن اللصق تم */
+  const area = document.getElementById('pa-upload-area');
+  if (area) {
+    area.classList.add('drag-over');
+    setTimeout(() => area.classList.remove('drag-over'), 500);
+  }
+}
+
+/* Ctrl + V في أي مكان داخل خطوة الصور — بدون الحاجة لتركيز منطقة الرفع */
+document.addEventListener('paste', (event) => {
+  if (paStep !== 2) return;
+  const t = event.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  paHandlePaste(event);
+});
 
 function paRenderPreviews() {
   const cont = document.getElementById('pa-previews');

@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="manifest" href="/manifest.json?v=20260809181844">
-<script src="/version.js?v=20260809181844"></script>
+<link rel="manifest" href="/manifest.json?v=20260810145536">
+<script src="/version.js?v=20260810145536"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -237,6 +237,8 @@ tr:hover td { background: #FAFAFA; }
 /* ── Featured badge ── */
 .adm-badge-featured { display:inline-flex; align-items:center; gap:3px; background:#FEF3C7; color:#92400E; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:800; margin-inline-start:6px; }
 .adm-badge-suspended { display:inline-flex; align-items:center; gap:3px; background:#FEE2E2; color:#991B1B; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:800; margin-inline-start:6px; }
+/* نُشر تلقائياً بعد انتهاء مهلة المراجعة — تمييز عن قبول الأدمن */
+.adm-badge-auto { display:inline-flex; align-items:center; gap:3px; background:#E0F2FE; color:#075985; border-radius:50px; padding:3px 10px; font-size:11px; font-weight:800; margin-inline-start:6px; }
 
 /* ── Seller cell in listings table ── */
 .adm-seller-cell { font-size:12.5px; cursor:pointer; }
@@ -892,11 +894,13 @@ function admBuildTable(list) {
 
     const featuredBadge   = l.is_featured ? `<span class="adm-badge-featured">⭐ مميز</span>` : '';
     const suspendedBadge  = l.seller_is_suspended ? `<span class="adm-badge-suspended">🚫 موقوف</span>` : '';
+    const autoBadge       = l.auto_published_at
+      ? `<span class="adm-badge-auto" title="نُشر تلقائياً بلا مراجعة — ${escHtml(new Date(l.auto_published_at).toLocaleString('ar-EG'))}">⚡ تلقائي</span>` : '';
 
     return `<tr>
       <td>${imgHtml}</td>
       <td class="adm-title-cell">
-        <strong>${escHtml(l.title)}${featuredBadge}${suspendedBadge}</strong>
+        <strong>${escHtml(l.title)}${featuredBadge}${suspendedBadge}${autoBadge}</strong>
         <span>${cat} — ${COND_LABELS[l.condition] || escHtml(l.condition)}</span>
       </td>
       <td class="adm-seller-cell" onclick="${safeUserId ? `admOpenSeller('${safeUserId}')` : ''}">
@@ -991,6 +995,42 @@ async function admConfirmReject() {
   admRender();
 }
 
+/* ── سطر النشر التلقائي في المعاينة ──
+   لا توجد مهلة على عمر الإعلان: أي إعلان بحالة pending يُنشر في أول تشغيل
+   للمهمة. المهلة الوحيدة أمام الأدمن هي ما تبقّى حتى التشغيل التالي.
+   يعكس جدولة cron: كل 12 ساعة عند 00:15 و12:15 بتوقيت UTC — لو غُيّرت
+   الجدولة في القاعدة غيّر الثابتين أدناه. */
+const ADM_AUTO_PUBLISH_UTC_HOURS = [0, 12];
+const ADM_AUTO_PUBLISH_UTC_MIN   = 15;
+
+function admNextAutoPublishRun(from = new Date()) {
+  for (let d = 0; d <= 1; d++) {
+    for (const h of ADM_AUTO_PUBLISH_UTC_HOURS) {
+      const t = new Date(Date.UTC(
+        from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate() + d,
+        h, ADM_AUTO_PUBLISH_UTC_MIN, 0, 0));
+      if (t > from) return t;
+    }
+  }
+  return null;
+}
+
+function admAutoPublishRow(l) {
+  if (l.auto_published_at) {
+    const when = new Date(l.auto_published_at).toLocaleString('ar-EG');
+    return `<div class="adm-preview-row"><strong style="color:#075985">النشر</strong>
+      <span style="color:#075985">⚡ نُشر تلقائياً بلا مراجعة — ${escHtml(when)}</span></div>`;
+  }
+  if (l.status !== 'pending') return '';
+
+  const next = admNextAutoPublishRun();
+  const mins = Math.max(0, Math.round((next - Date.now()) / 60000));
+  const left = mins < 60 ? `${mins} دقيقة` : `${Math.floor(mins / 60)} ساعة و${mins % 60} دقيقة`;
+  return `<div class="adm-preview-row"><strong style="color:#075985">نشر تلقائي</strong>
+    <span style="color:#075985">⏱ يُنشر في التشغيل التالي — بعد ${left}
+    (${escHtml(next.toLocaleString('ar-EG'))})</span></div>`;
+}
+
 /* ── Preview ── */
 function admShowPreview(id) {
   const l = admAll.find(x => x.id === id);
@@ -1004,6 +1044,10 @@ function admShowPreview(id) {
   const date   = new Date(l.created_at).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
   const expiry = l.expires_at ? new Date(l.expires_at).toLocaleDateString('ar-EG') : '—';
   const safeId = escHtml(l.id);
+
+  /* سطر النشر التلقائي — نفس حساب auto_publish_stale_listings():
+     المهلة تُقاس من آخر تغيير (GREATEST) لا من الإنشاء وحده */
+  const autoRow = admAutoPublishRow(l);
 
   document.getElementById('adm-preview-body').innerHTML = `
     ${imgsHtml}
@@ -1019,6 +1063,7 @@ function admShowPreview(id) {
     <div class="adm-preview-row"><strong>مشاهدات / تواصل</strong><span>👁 ${Number(l.view_count)||0} — 📞 ${Number(l.contact_count)||0}</span></div>
     <div class="adm-preview-row"><strong>تاريخ النشر</strong><span>${date}</span></div>
     <div class="adm-preview-row"><strong>تنتهي في</strong><span>${expiry}</span></div>
+    ${autoRow}
     ${l.reject_reason ? `<div class="adm-preview-row"><strong style="color:#DC2626">سبب الرفض</strong><span style="color:#DC2626">${escHtml(l.reject_reason)}</span></div>` : ''}
   `;
 
