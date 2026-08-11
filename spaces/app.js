@@ -141,7 +141,7 @@ function trackEvent(eventName, params = {}) {
 document.addEventListener('DOMContentLoaded', function () {
 
   try {
-    sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
   } catch (e) {
     console.warn('⚠️ Supabase غير محمّل بعد');
   }
@@ -2231,11 +2231,17 @@ function goToOwnerDashboard() {
    أعد جلب البروفايل وأعد رسم الناف بلا reload. مسجَّل مرة واحدة فقط. */
 window.addEventListener('gn:permission-changed', async () => {
   if (!currentUser || !sbClient) return;
-  const { data: profile } = await sbClient.from('profiles').select('*').eq('id', currentUser.id).single();
+  const { data: profile } = await sbClient.from('profiles').select(SPACES_PROFILE_COLS).eq('id', currentUser.id).single();
   currentProfile = profile;
   currentAvatarUrl = profile?.avatar_url || null;
   setNavUser(currentUser, profile);
 });
+
+/* أعمدة البروفايل التي تستهلكها هذه الصفحة فعليًا — بديل select('*'):
+   الأربعة الأولى للناف ونماذج الحجز، والباقي مدخلات getAccountCapabilities().
+   ثابت واحد لموضعَي النداء (initAuth وonAuthStateChange) حتى لا يفترقا. */
+const SPACES_PROFILE_COLS =
+  'id, full_name, email, phone, avatar_url, role, roles, is_verified, plan_tier, subscription_status, is_suspended';
 
 async function initAuth() {
   if (!sbClient) return;
@@ -2245,7 +2251,7 @@ async function initAuth() {
 
     if (session?.user) {
       currentUser = session.user;
-      const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profile } = await sbClient.from('profiles').select(SPACES_PROFILE_COLS).eq('id', session.user.id).single();
       currentProfile = profile;
       currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
@@ -2260,7 +2266,7 @@ async function initAuth() {
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
-      const { data: profile } = await sbClient.from('profiles').select('*').eq('id', session.user.id).single();
+      const { data: profile } = await sbClient.from('profiles').select(SPACES_PROFILE_COLS).eq('id', session.user.id).single();
       currentProfile = profile;
       currentAvatarUrl = profile?.avatar_url || null;   // 🪪 المصدر الموحّد
       setNavUser(session.user, profile);
@@ -2303,6 +2309,7 @@ function setNavUser(user, profile) {
   }
 
   if (!user) {
+    clearNavIdentity();   // لا جلسة ⇒ لا كاش عرض
     guestEl.style.display  = 'flex';
     loggedEl.style.display = 'none';
   } else {
@@ -2316,14 +2323,7 @@ function setNavUser(user, profile) {
     loggedEl.style.display = 'flex';
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    const circleEl = document.getElementById('nav-av-circle');
-    if (circleEl) {
-      if (currentAvatarUrl) {
-        circleEl.innerHTML = `<img src="${currentAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.outerHTML='${initial}'">`;
-      } else {
-        circleEl.textContent = initial;
-      }
-    }
+    paintNavAvatar(document.getElementById('nav-av-circle'), currentAvatarUrl, initial);
     set('nav-av-name',   name);
     set('nav-av-email',  email);
     set('dd-name',       name);
@@ -2332,6 +2332,16 @@ function setNavUser(user, profile) {
 
     const ownerBtn = document.getElementById('dd-owner-dash-btn');
     if (ownerBtn) ownerBtn.style.display = caps.isOwner ? 'flex' : 'none';
+
+    /* كاش العرض للتحميل التالي — مشترك بين الصفحات الثلاث، فتُكتب فيه
+       isOrganizer هنا أيضًا رغم أن ناف هذه الصفحة لا يعرض CTA المنظّم
+       (البازارات تعرضه، وتقرأ ما كتبناه). عرض فقط لا صلاحية. */
+    cacheNavIdentity({
+      userId:      user.id,
+      name, email,
+      avatar:      currentAvatarUrl,
+      isOrganizer: caps.isOrganizer
+    });
 
     updateBnUser(user, profile);
 

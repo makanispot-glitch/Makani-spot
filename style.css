@@ -33,6 +33,29 @@ html.sb-authed #nav-guest     { display: none !important; }
 html.sb-authed #nav-logged    { display: flex !important; }
 html.sb-authed #langSwitchBtn { display: none !important; }
 
+/* نفس المبدأ لصفحتَي البازارات والمشاريع. كانتا بلا أي إشارة مصادقة قبل
+   الرسم: /bazaars/ ترسم زر «دخول» ثابتًا في الـHTML لكل مستخدم مسجّل،
+   و/market/ ترسم منطقة فارغة ثم تحقنها بالـJS (إزاحة تصيب الزائر كذلك).
+   الافتراضي هنا هو حالة الزائر — لا inline style على هذه العناصر، فلا
+   حاجة لـ!important في قاعدة الافتراض نفسها. */
+#bz-nav-logged,
+#eq-nav-logged                 { display: none; align-items: center; gap: var(--nav-gap); }
+html.sb-authed #bz-nav-guest,
+html.sb-authed #eq-nav-guest   { display: none !important; }
+html.sb-authed #bz-nav-logged,
+html.sb-authed #eq-nav-logged  { display: flex !important; }
+
+/* صورة الأفاتار داخل الدائرة. كانت تُكتب كـstyle مضمّن في كل قالب JS
+   (spaces/app.js وbazaars/app.js وmarket/app.js) — نُقلت هنا لأن سكربت
+   التمهيد يبني الصورة بإسناد خصائص (img.src) لا ببناء وسم بنص، فلا
+   يستطيع حمل style مضمّن. القيم مطابقة حرفيًا لما كانت عليه. */
+.nav-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 /* خاصية hidden لازم تغلب أي display في كلاس.
    قاعدة [hidden]{display:none} بتاعة المتصفح خصوصيتها (0,1,0) — نفس أي كلاس —
    وستايل الصفحة بيغلب ستايل المتصفح، فأي عنصر بكلاس فيه display:flex/grid/block
@@ -617,14 +640,10 @@ body {
     font-size: 12px;
   }
 
-  /* الأفاتار: دائرة فقط على الموبايل — الاسم والإيميل والكاريت مخفيين لتوفير المساحة */
-  .nav-avatar-info, .nav-avatar-caret {
-    display: none;
-  }
-
-  .nav-avatar-btn {
-    border-radius: 50%;
-  }
+  /* الأفاتار: دائرة فقط على الموبايل — القواعد نفسها موجودة في كتلة
+     «الأفاتار — تجاوزات الموبايل» أسفل تعريفات .nav-avatar-* الأساسية.
+     لا تُعِدها هنا: محدِّداتها بنفس الأولوية (0,1,0) للقواعد الأساسية،
+     والأساسية تأتي لاحقاً في هذا الملف — فالترتيب وحده هو ما يحسم. */
 }
 
 /* شاشات ضيقة جداً */
@@ -801,6 +820,26 @@ body {
 
 .nav-avatar-btn.open .nav-avatar-caret {
   transform: rotate(180deg);
+}
+
+/* ── الأفاتار — تجاوزات الموبايل (≤640px): دائرة فقط ──────────────────────
+   الاسم والإيميل والكاريت مخفيون، وزر الأفاتار يصير دائرة كاملة، توفيراً
+   لمساحة الناف على الهواتف.
+
+   موضعها هنا — بعد القواعد الأساسية أعلاه، لا داخل كتلة الموبايل في أعلى
+   الملف — مقصود: هذه المحدِّدات بنفس أولوية القواعد الأساسية (0,1,0)،
+   فالترتيب وحده هو ما يحسم. حين كانت أعلى الملف كانت القواعد الأساسية
+   تغلبها فعلياً: يبقى .nav-avatar-info ظاهراً و.nav-avatar-btn بنصف قطر
+   40px رغم وجود قاعدة الموبايل. */
+@media (max-width: 640px) {
+  .nav-avatar-info,
+  .nav-avatar-caret {
+    display: none;
+  }
+
+  .nav-avatar-btn {
+    border-radius: 50%;
+  }
 }
 
 /* القائمة المنسدلة */

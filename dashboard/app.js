@@ -819,7 +819,7 @@ let sbClient = null;
 
 function getSB() {
   if (!sbClient && window.supabase) {
-    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
   }
   return sbClient;
 }

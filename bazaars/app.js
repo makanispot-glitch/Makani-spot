@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // تهيئة Supabase
   try {
-    sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
   } catch (e) {
     console.warn('⚠️ Supabase غير محمّل بعد');
   }
@@ -148,7 +148,13 @@ async function bzInitAuth() {
     bzRenderNavUser();
     if (document.getElementById('bz-opp-cards')) _bzInitOpportunitiesPage();
 
-    sbClient.auth.onAuthStateChange(async (_e, sess) => {
+    sbClient.auth.onAuthStateChange(async (event, sess) => {
+      /* بلا فلترة كان أي TOKEN_REFRESHED (كل ساعة) أو INITIAL_SESSION يعيد جلب
+         البروفايل ويعيد رسم الناف — أي وميض أثناء الجلوس على الصفحة نفسها، لا
+         عند التنقل فقط. نتفاعل مع تغيّر الهوية الفعلي وحده. */
+      if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+      if ((sess?.user?.id || null) === (currentUser?.id || null)) return;
+
       currentUser = sess?.user || null;
       currentProfile = null;
       currentCapabilities = null;
@@ -196,9 +202,19 @@ async function _loadBzProfile() {
   } catch (_) {}
 }
 
+/* الشريحة المرئية للناف ثابتة في bazaars/index.html — هذه الدالة تملأ نصوصها
+   ولا تعيد بناءها. استبدال innerHTML للمنطقة كلها (كما كان) يعني هدم DOM +
+   إعادة حساب layout + إعادة ربط مستمعين في لحظة واحدة مرئية، وكان بذاته أحد
+   أسباب القفز البصري. القائمة المنسدلة وحدها تبقى مبنيّة هنا: هي
+   position:absolute وopacity:0 وpointer-events:none حتى تُفتح بـ.open
+   (راجع .nav-dropdown في style.css)، فلا تشارك في أول رسمة ولا في الـlayout. */
 function bzRenderNavUser() {
   const area = document.getElementById('bz-nav-user');
   if (!area) return;
+
+  /* يزامن الكلاس مع الحالة النهائية بعد تأكيد getSession — قاعدة .sb-authed
+     في style.css هي التي تبدّل بين #bz-nav-guest و#bz-nav-logged. */
+  document.documentElement.classList.toggle('sb-authed', !!currentUser);
 
   // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
   // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
@@ -213,37 +229,26 @@ function bzRenderNavUser() {
     const name      = currentProfile?.full_name || currentUser.email || '';
     const initial   = (name[0] || '?').toUpperCase();
     const email     = currentUser.email || '';
-    const avatarUrl = currentProfile?.avatar_url || '';
-    const avatarHtml = avatarUrl
-      ? `<img src="${_toDirectImgUrl(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-      : initial;
+    const rawAvatar = currentProfile?.avatar_url || '';
+    const avatarUrl = rawAvatar ? _toDirectImgUrl(rawAvatar) : '';
 
-    area.innerHTML = `
-      ${_bzIsOrganizer() ? `
-      <a class="bz-cta-organize" href="/bazaars/organize.html" title="${t('userNav.createBazaarTooltip')}">
-        <svg class="bz-cta-organize-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        <span class="bz-cta-organize-full">${t('userNav.createBazaar')}</span><span class="bz-cta-organize-short">${t('userNav.createBazaarShort')}</span>
-      </a>` : ''}
+    // ── الشريحة المرئية: ملء فقط ──
+    const shown = name || t('userNav.defaultAccountName');
+    document.querySelectorAll('#bz-nav-logged [data-nav-name]').forEach(el => { el.textContent = shown; });
+    document.querySelectorAll('#bz-nav-logged [data-nav-email]').forEach(el => { el.textContent = email; });
+    paintNavAvatar(document.querySelector('#bz-nav-logged [data-nav-avatar]'), avatarUrl, initial);
+    /* هنا المصدر الموثوق لإظهار CTA المنظّم (من القاعدة عبر
+       currentCapabilities)، بخلاف التخمين المبدئي من كاش العرض قبل الرسم. */
+    document.querySelectorAll('[data-nav-organizer-only]').forEach(el => { el.hidden = !_bzIsOrganizer(); });
 
-      <div class="bz-nav-user-wrap">
-        <!-- جرس الإشعارات الموحد -->
-        <div id="gn-bell" class="gn-bell" role="button" aria-label="الإشعارات">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <span id="gn-badge" class="gn-badge"></span>
-        </div>
+    cacheNavIdentity({
+      userId: currentUser.id, name: shown, email,
+      avatar: avatarUrl, isOrganizer: _bzIsOrganizer()
+    });
 
-        <div class="nav-avatar-btn" id="bz-avatar-btn" onclick="bzToggleAccountMenu(event)">
-          <div class="nav-avatar-circle">${avatarHtml}</div>
-          <div class="nav-avatar-info">
-            <div class="nav-avatar-name">${name || t('userNav.defaultAccountName')}</div>
-            <div class="nav-avatar-email">${email}</div>
-          </div>
-          <div class="nav-avatar-caret">▼</div>
-
-          <div class="nav-dropdown" id="bz-dropdown">
+    // ── القائمة المنسدلة: شفافة وخارج الـlayout حتى تُفتح، فبناؤها لا يُرى ──
+    const dd = document.getElementById('bz-dropdown');
+    if (dd) dd.innerHTML = `
             <div class="nav-dropdown-header">
               <div class="nav-dropdown-name">${name || t('userNav.defaultAccountName')}</div>
               <div class="nav-dropdown-email">${email}</div>
@@ -308,26 +313,14 @@ function bzRenderNavUser() {
             <button class="nav-dropdown-item danger" onclick="bzSignOut()">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
               ${t('userNav.signOut')}
-            </button>
-          </div>
-        </div>
-
-      </div>`;
+            </button>`;
   } else {
-    area.innerHTML = `
-      <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
-        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"/>
-          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
-        </svg>
-        <span>${t('nav.loginBtn')}</span>
-        <span class="btn-login-sep">|</span>
-        <span>${t('nav.signupBtn')}</span>
-      </button>`;
+    /* لا جلسة ⇒ لا كاش عرض. زر الدخول نفسه ثابت في #bz-nav-guest ولا يُبنى
+       هنا — قاعدة .sb-authed أظهرته بالفعل. */
+    clearNavIdentity();
   }
   bzUpdateBnUser();
-  // جرس الإشعارات الموحّد
+  // جرس الإشعارات الموحّد — GN.mount يعيد استخدام #gn-bell الثابت
   if (currentUser) GN.mount(
     document.querySelector('#bz-nav-user .bz-nav-user-wrap') ||
     document.getElementById('bz-nav-user')

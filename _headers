@@ -46,11 +46,24 @@
   Pragma: no-cache
   Link: </policies/#policy-terms>; rel="terms-of-service", </policies/#policy-privacy>; rel="privacy-policy"
 
+# الأقسام الثلاثة الرئيسية — max-age=0 لا no-store.
+# الفرق عملي لا تجميلي: no-store يمنع المتصفح من الاحتفاظ بالاستجابة أصلًا،
+# فيُسقط أهلية bfcache (زر رجوع/تقدّم يعيد التهيئة كاملة: HTML→JS→Supabase→
+# Render بدل استعادة فورية) ويُسقط كذلك أهلية prefetch في قواعد التخمين
+# المضافة لهذه الصفحات. وmax-age=0, must-revalidate يبقي التحقّق الشرطي في كل
+# انتقال، فضمانة رؤية ?v= الجديدة لا تتأثر — وهي نفس الصيغة والمنطق المعتمدين
+# بالفعل لـ /articles/* أدناه.
+# ملاحظة: هذا لا يعني أن Cloudflare سيبدأ تخزين الـHTML على الحافة — max-age=0
+# يوجب إعادة تحقّق، وسلوك كاش الحافة يحكمه إعداد Cloudflare نفسه. المكسب
+# المقصود هنا هو bfcache وprefetch تحديدًا.
+/spaces/
+  Cache-Control: public, max-age=0, must-revalidate
+
 /bazaars/
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: public, max-age=0, must-revalidate
 
 /market/
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: public, max-age=0, must-revalidate
 
 /admin/
   Cache-Control: no-cache, no-store, must-revalidate

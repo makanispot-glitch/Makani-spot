@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    eqSb = supabase.createClient(EQ_SUPABASE_URL, EQ_SUPABASE_KEY);
+    eqSb = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
     await eqInitAuth();
     await eqLoadFavorites();
     eqReadUrlFilters();          // فلاتر جاية من رابط مُشارَك / رجوع المتصفح
@@ -306,7 +306,13 @@ async function eqInitAuth() {
   eqRenderNavUser();
   if (eqUser) GN.init(eqSb, eqUser.id);
 
-  eqSb.auth.onAuthStateChange(async (_e, sess) => {
+  eqSb.auth.onAuthStateChange(async (event, sess) => {
+    /* بلا فلترة كان أي TOKEN_REFRESHED (كل ساعة) أو INITIAL_SESSION يعيد جلب
+       البروفايل ويعيد رسم الناف — أي وميض أثناء الجلوس على الصفحة نفسها، لا
+       عند التنقل فقط. نتفاعل مع تغيّر الهوية الفعلي وحده. */
+    if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+    if ((sess?.user?.id || null) === (eqUser?.id || null)) return;
+
     eqUser = sess?.user || null;
     if (eqUser) {
       const { data: prof } = await eqSb.from('profiles')
@@ -326,9 +332,19 @@ async function eqInitAuth() {
   });
 }
 
+/* الشريحة المرئية للناف ثابتة في market/index.html — هذه الدالة تملأ نصوصها
+   ولا تعيد بناءها. الحاوية كانت فارغة تمامًا في الـHTML فيُحقن كل شيء هنا بعد
+   رحلتَي شبكة — إزاحة مرئية كانت تصيب الزائر أيضًا. القائمة المنسدلة وحدها
+   تبقى مبنيّة هنا: هي position:absolute وopacity:0 وpointer-events:none حتى
+   تُفتح بـ.open (راجع .nav-dropdown في style.css)، فلا تشارك في أول رسمة
+   ولا في الـlayout. */
 function eqRenderNavUser() {
   const area = document.getElementById('eq-nav-user');
   if (!area) return;
+
+  /* يزامن الكلاس مع الحالة النهائية بعد تأكيد getSession — قاعدة .sb-authed
+     في style.css هي التي تبدّل بين #eq-nav-guest و#eq-nav-logged. */
+  document.documentElement.classList.toggle('sb-authed', !!eqUser);
 
   // زر تبديل اللغة المستقل يفضل ظاهر للزائر غير المسجّل فقط — المستخدم
   // المسجّل بيغيّر اللغة من داخل القائمة المنسدلة بدل ما يزدحم الناف.
@@ -343,37 +359,24 @@ function eqRenderNavUser() {
     const initial   = (eqUser.user_metadata?.full_name || eqUser.email || '?')[0].toUpperCase();
     const email     = eqUser.email || '';
     const name      = eqUser.user_metadata?.full_name || eqUser.email || '';
-    const circleHtml = eqAvatarUrl
-      ? `<img src="${eqAvatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.outerHTML='${initial}'">`
-      : initial;
 
-    area.innerHTML = `
-      <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()" title="${t('card.favoriteTitle')}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.4 5.4 0 0 0-7.6 0L12 6.1l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.5a5.4 5.4 0 0 0 0-7.6Z"/></svg>
-        <span class="eq-fav-badge" id="eq-fav-badge"></span>
-      </button>
-      <button class="eq-fav-nav-btn" id="eq-mylistings-nav-btn" onclick="eqOpenMyListings()" title="${t('navUser.myListings')}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
-      </button>
-      
-      <!-- جرس الإشعارات الموحد -->
-      <div id="gn-bell" class="gn-bell" role="button" aria-label="الإشعارات">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-        <span id="gn-badge" class="gn-badge"></span>
-      </div>
+    // ── الشريحة المرئية: ملء فقط ──
+    const shown = name || t('navUser.defaultName');
+    document.querySelectorAll('#eq-nav-logged [data-nav-name]').forEach(el => { el.textContent = shown; });
+    document.querySelectorAll('#eq-nav-logged [data-nav-email]').forEach(el => { el.textContent = email; });
+    paintNavAvatar(document.querySelector('#eq-nav-logged [data-nav-avatar]'), eqAvatarUrl, initial);
 
-      <div class="nav-avatar-btn" id="eq-avatar-btn" onclick="eqToggleAccountMenu(event)">
-        <div class="nav-avatar-circle">${circleHtml}</div>
-        <div class="nav-avatar-info">
-          <div class="nav-avatar-name">${name || t('navUser.defaultName')}</div>
-          <div class="nav-avatar-email">${email}</div>
-        </div>
-        <div class="nav-avatar-caret">▼</div>
+    /* isOrganizer يُمرَّر كما هو ولا يُحسب هنا: هذه الصفحة لا تجلب profiles.roles
+       أصلًا، فكتابة false ستمحو ما كتبته صفحة البازارات وتُخفي اختصار المنظّم
+       عندها في التحميل التالي. */
+    cacheNavIdentity({
+      userId: eqUser.id, name: shown, email,
+      avatar: eqAvatarUrl, isOrganizer: window.__MK_NAV?.isOrganizer
+    });
 
-        <div class="nav-dropdown" id="eq-dropdown">
+    // ── القائمة المنسدلة: شفافة وخارج الـlayout حتى تُفتح، فبناؤها لا يُرى ──
+    const dd = document.getElementById('eq-dropdown');
+    if (dd) dd.innerHTML = `
           <div class="nav-dropdown-header">
             <div class="nav-dropdown-name">${name || t('navUser.defaultName')}</div>
             <div class="nav-dropdown-email">${email}</div>
@@ -424,22 +427,13 @@ function eqRenderNavUser() {
           <button class="nav-dropdown-item danger" onclick="eqSignOut()">
             <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
             ${t('navUser.logout')}
-          </button>
-        </div>
-      </div>`;
+          </button>`;
+    // GN.mount يعيد استخدام #gn-bell الثابت بدل حقن واحد جديد
     GN.mount(area);
   } else {
-    area.innerHTML = `
-      <button class="btn-login-nav" onclick="window.location.href='/?p=login'">
-        <svg class="btn-login-nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"/>
-          <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7"/>
-        </svg>
-        <span>${t('nav.loginBtn')}</span>
-        <span class="btn-login-sep">|</span>
-        <span>${t('nav.signupBtn')}</span>
-      </button>`;
+    /* لا جلسة ⇒ لا كاش عرض. زر الدخول نفسه ثابت في #eq-nav-guest ولا يُبنى
+       هنا — قاعدة .sb-authed أظهرته بالفعل. */
+    clearNavIdentity();
   }
   eqUpdateBnUser();
 }

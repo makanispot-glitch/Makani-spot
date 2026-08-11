@@ -175,10 +175,15 @@
 
   if (PWA_CONFIG.triggers.authSignInEnabled) {
     try {
-      if (typeof supabase !== 'undefined' &&
-          typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_KEY !== 'undefined') {
-        var _pwaSb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        _pwaSb.auth.onAuthStateChange(function (event) {
+      /* عميل الصفحة نفسه — لا عميل ثانٍ.
+         هذا الملف لا يحتاج جلسة أصلاً: كل ما يريده هو معرفة أن تسجيل دخول
+         حدث ليُظهر بانر التثبيت (لا يقرأ session ولا user ولا يستعلم القاعدة).
+         لكنه كان ينشئ supabase.createClient() خاصًا به، فتتنازع نسختا GoTrue
+         على تدوير refresh_token وقد تُخرج المستخدم فعليًا — راجع التعليق في
+         shared/sb-config.js. createMakaniClient() الآن Singleton فينادي هنا
+         وفي الصفحة ويرجع نفس الكائن مهما كان ترتيب النداء. */
+      if (typeof createMakaniClient === 'function' && typeof supabase !== 'undefined') {
+        createMakaniClient().auth.onAuthStateChange(function (event) {
           if (event === PWA_CONFIG.triggers.authSignInEventName) triggerEngagement();
         });
       }

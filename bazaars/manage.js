@@ -254,7 +254,7 @@ document.addEventListener('makani:locale-changed', () => {
    INIT
 ════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sb = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
 
   /* رجوع ذكي حسب المصدر — قبل الحراسة حتى يعمل على شاشة الحراسة أيضاً */
   resolveBackNav();

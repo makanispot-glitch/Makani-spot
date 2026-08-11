@@ -8,8 +8,11 @@
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260810200547">
-  <script src="/version.js?v=20260810200547"></script>
+  <link rel="manifest" href="/manifest.json?v=20260811035341">
+  <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
+       build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
+       في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
+  <script src="/version.js?v=20260811035341" defer></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -44,21 +47,81 @@
   <!-- روابط الخطوط من Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- كلاهما على المسار الحرج للمصادقة: SDK من jsDelivr ثم أول نداء
+       getSession إلى Supabase. الـpreconnect يوفّر DNS+TLS منهما. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://rxqkpjuvudweyovekvvx.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <!-- Auth Flicker Prevention: يقرأ الجلسة من localStorage قبل أول رسمة -->
+  <!-- Auth + Nav Boot — راجع shared/nav-boot-snippet.html (النسخة المرجعية) -->
   <script>
     (function () {
+      var SB_KEY = 'sb-rxqkpjuvudweyovekvvx-auth-token';
+      var ID_KEY = 'makani_nav_identity';
+      var sess = null, uid = null;
+
       try {
-        var raw = localStorage.getItem('sb-rxqkpjuvudweyovekvvx-auth-token');
+        var raw = localStorage.getItem(SB_KEY);
         if (raw) {
           var s = JSON.parse(raw);
-          if (s && s.expires_at && Math.floor(Date.now() / 1000) < s.expires_at) {
+          /* refresh_token لا expires_at: عمر access token ساعة واحدة بينما
+             الجلسة تظل صالحة بالتجديد الصامت — الشرط القديم كان يرسم زائرًا
+             لكل عائد بعد ساعة ثم يصحّح، وهو أحد أسباب الوميض. */
+          if (s && s.refresh_token) {
+            sess = s;
+            uid  = (s.user && s.user.id) || null;
             document.documentElement.classList.add('sb-authed');
           }
         }
       } catch (e) {}
+
+      /* الكاش يُقبل لصاحبه فقط — عدم التطابق = بيانات مستخدم سابق على نفس
+         المتصفح، تُمسح فورًا ولا تُرسم أبدًا. */
+      var cache = null;
+      try {
+        var c = JSON.parse(localStorage.getItem(ID_KEY) || 'null');
+        if (c && uid && c.userId === uid) cache = c;
+        else if (c) localStorage.removeItem(ID_KEY);
+      } catch (e) {}
+
+      var u  = (sess && sess.user) || null;
+      var md = (u && u.user_metadata) || {};
+      window.__MK_NAV = !uid ? null : {
+        userId:      uid,
+        name:        (cache && cache.name) || md.full_name || (u && u.email ? u.email.split('@')[0] : ''),
+        email:       (u && u.email) || (cache && cache.email) || '',
+        avatar:      (cache && cache.avatar) || md.avatar_url || '',
+        isOrganizer: !!(cache && cache.isOrganizer)
+      };
+
+      window.__mkPaintNav = function () {
+        var id = window.__MK_NAV;
+        if (!id) return;
+        var initial = (id.name || '؟').trim().charAt(0) || '؟';
+
+        /* textContent حصرًا — قيم localStorage غير موثوقة (أي XSS على النطاق
+           يصل إليها)، فلا innerHTML ولا template strings هنا. */
+        document.querySelectorAll('[data-nav-name]').forEach(function (el) { el.textContent = id.name; });
+        document.querySelectorAll('[data-nav-email]').forEach(function (el) { el.textContent = id.email; });
+
+        document.querySelectorAll('[data-nav-avatar]').forEach(function (el) {
+          el.textContent = initial;
+          if (!/^(https:\/\/|data:image\/)/.test(id.avatar)) return;
+          var img = new Image();
+          img.alt = '';
+          img.onerror = function () { el.textContent = initial; };
+          img.src = id.avatar;
+          el.textContent = '';
+          el.appendChild(img);
+        });
+
+        /* عرض فقط — لا قرار صلاحية. القرار من getAccountCapabilities() فوق
+           بيانات القاعدة، وRLS هو الحارس الفعلي. */
+        if (id.isOrganizer) {
+          document.querySelectorAll('[data-nav-organizer-only]').forEach(function (el) { el.hidden = false; });
+        }
+      };
     })();
   </script>
 
@@ -75,33 +138,38 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20260810200547">
+  <link rel="stylesheet" href="/style.css?v=20260811035341">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20260810200547" defer></script>
-  <script src="/pwa-install.js?v=20260810200547" defer></script>
+  <script src="/shared/sb-config.js?v=20260811035341" defer></script>
+  <script src="/pwa-install.js?v=20260811035341" defer></script>
   <!-- createRaceGuard: يجب أن يسبق app.js لأن _mpFilterRace يُنشأ وقت التحميل -->
-  <script src="/shared/race-guard.js?v=20260810200547" defer></script>
-  <script src="/shared/pagination.js?v=20260810200547" defer></script>
-  <script src="/shared/space-model.js?v=20260810200547" defer></script>
+  <script src="/shared/race-guard.js?v=20260811035341" defer></script>
+  <script src="/shared/pagination.js?v=20260811035341" defer></script>
+  <script src="/shared/space-model.js?v=20260811035341" defer></script>
   <!-- طبقة الاكتشاف المشتركة — قراءة بارامترات الفلاتر القادمة من الرئيسية/البازارات -->
-  <script src="/shared/discovery.js?v=20260810200547" defer></script>
-  <script src="/shared/booking.js?v=20260810200547" defer></script>
-  <script src="/shared/account.js?v=20260810200547" defer></script>
-  <script src="/shared/plan-badge.js?v=20260810200547" defer></script>
+  <script src="/shared/discovery.js?v=20260811035341" defer></script>
+  <script src="/shared/booking.js?v=20260811035341" defer></script>
+  <script src="/shared/account.js?v=20260811035341" defer></script>
+  <script src="/shared/plan-badge.js?v=20260811035341" defer></script>
+  <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
+  <script src="/shared/nav-identity.js?v=20260811035341" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260810200547" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260810200547" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260810200547" defer></script>
-  <script src="/shared/i18n.js?v=20260810200547" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260811035341" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260811035341" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260811035341" defer></script>
+  <script src="/shared/i18n.js?v=20260811035341" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20260810200547">
-  <script src="/shared/onboarding.js?v=20260810200547" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20260810200547" defer></script>
+  <!-- انتقال بين المستندات للأقسام الثلاثة — مربوط منها وحدها عمدًا -->
+  <link rel="stylesheet" href="/shared/nav-transition.css?v=20260811035341">
+
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20260811035341">
+  <script src="/shared/onboarding.js?v=20260811035341" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20260811035341" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -759,13 +827,21 @@
   <script
     src="https://browser.sentry-cdn.com/7.99.0/bundle.min.js"
     crossorigin="anonymous"
+    defer
   ></script>
   <script>
-    Sentry.init({
-      dsn: "https://ed7c17027f844e3d8fec0e62c8913c8a@app.glitchtip.com/24757",
-      environment: "production",
-      tracesSampleRate: 0.01,
-      autoSessionTracking: false,
+    /* defer أخرج هذا الطلب الخارجي من طريق أول رسمة — كان يحجب الـparser
+       قبل الناف في كل تحميل. السكربتات المؤجَّلة تنتهي قبل DOMContentLoaded
+       فترتيب التنفيذ مضمون. والحارس ضروري: مانعات الإعلانات تحجب هذا الـCDN،
+       وكان النداء المباشر يرمي ReferenceError غير ملتقَط عند حجبه. */
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof Sentry === 'undefined') return;
+      Sentry.init({
+        dsn: "https://ed7c17027f844e3d8fec0e62c8913c8a@app.glitchtip.com/24757",
+        environment: "production",
+        tracesSampleRate: 0.01,
+        autoSessionTracking: false,
+      });
     });
   </script>
 
@@ -887,17 +963,17 @@
         </div>
 
         <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleUserDropdown()">
-          <div class="nav-avatar-circle" id="nav-av-circle">م</div>
+          <div class="nav-avatar-circle" id="nav-av-circle" data-nav-avatar>م</div>
           <div class="nav-avatar-info">
-            <div class="nav-avatar-name" id="nav-av-name">—</div>
-            <div class="nav-avatar-email" id="nav-av-email">—</div>
+            <div class="nav-avatar-name" id="nav-av-name" data-nav-name>—</div>
+            <div class="nav-avatar-email" id="nav-av-email" data-nav-email>—</div>
           </div>
           <div class="nav-avatar-caret">▼</div>
 
           <div class="nav-dropdown" id="nav-dropdown">
             <div class="nav-dropdown-header">
-              <div class="nav-dropdown-name" id="dd-name">—</div>
-              <div class="nav-dropdown-email" id="dd-email">—</div>
+              <div class="nav-dropdown-name" id="dd-name" data-nav-name>—</div>
+              <div class="nav-dropdown-email" id="dd-email" data-nav-email>—</div>
               <div class="nav-dropdown-role" id="dd-role" data-i18n="userMenu.defaultRole">مستخدم</div>
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
@@ -959,6 +1035,24 @@
     </div>
 
   </nav>
+
+  <!-- يملأ الناف من كاش العرض أثناء الـparse — قبل أول رسمة، لا بعدها.
+       (سكربت مؤجَّل قد يُنفَّذ بعد الرسمة الأولى فيفوت الغرض) -->
+  <script>__mkPaintNav()</script>
+
+  <!-- تحميل مستند القسم التالي مسبقًا عند نية الانتقال (hover/pointerdown).
+       prefetch لا يُنفِّذ JS — فلا عدّادات مشاهدات تُضخَّم ولا حصة Supabase
+       تُستهلك لصفحة قد لا تُفتح (بخلاف prerender، وهو سبب استبعاده).
+       المتصفحات التي لا تدعم القاعدة تتجاهلها بلا أثر. -->
+  <script type="speculationrules">
+  {
+    "prefetch": [{
+      "source": "document",
+      "where": { "href_matches": ["/bazaars/", "/market/"] },
+      "eagerness": "moderate"
+    }]
+  }
+  </script>
 
 
   <!-- ================================================================
@@ -1765,8 +1859,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260810200547" defer></script>
-  <script src="app.js?v=20260810200547" defer></script>
+  <script src="/notifications.js?v=20260811035341" defer></script>
+  <script src="app.js?v=20260811035341" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -1797,8 +1891,9 @@
       <span class="bn-desc" data-i18n="bottomNav.spacesDesc">ثابتة وتجارية</span>
     </button>
 
-    <!-- البازارات -->
-    <button class="bn-item" id="bn-bazaars" onclick="window.location.href='/bazaars/'">
+    <!-- البازارات — رابط حقيقي لا button: قواعد التخمين (speculation rules)
+         تعمل على href_matches، فزر بـonclick=location.href غير مرئي لها. -->
+    <a class="bn-item" id="bn-bazaars" href="/bazaars/">
       <span class="bn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
@@ -1808,7 +1903,7 @@
       </span>
       <span class="bn-label" data-i18n="bottomNav.bazaars">بازارات</span>
       <span class="bn-desc" data-i18n="bottomNav.bazaarsDesc">أحداث وبازارات</span>
-    </button>
+    </a>
 
     <!-- مشاريع للبيع -->
     <a class="bn-item" id="bn-projects" href="/market/">

@@ -52,7 +52,7 @@ function _bzRateCriteria() {
    ================================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
     const { data: { session } } = await sbClient.auth.getSession();
     currentUser = session?.user || null;
   } catch (e) {

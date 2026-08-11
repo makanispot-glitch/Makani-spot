@@ -1,0 +1,118 @@
+<!--
+  ════════════════════════════════════════════════════════════════════════
+  nav-boot-snippet.html — النسخة المرجعية لسكربت تمهيد الناف
+  ════════════════════════════════════════════════════════════════════════
+
+  ⚠️ هذا الملف **لا يُحمَّل**. هو المصدر الذي تُنسخ منه الكتلتان أدناه حرفيًا
+     إلى كل صفحة تعرض ناف المستخدم — نفس أسلوب shared/locale-flicker-snippet.html.
+     عدّلت هنا؟ انشر التعديل على كل الصفحات المدرجة في «أين هو مستخدم» تحت.
+
+  ── لماذا inline ولا ملف خارجي؟ ──
+  الهدف أن تحمل **أول رسمة** الحالة الصحيحة. أي <script src> حاجب في <head>
+  يوقف الـparser حتى يصل الملف (ينقل التكلفة ولا يلغيها)، وأي <script defer>
+  قد يُنفَّذ **بعد** أول رسمة فيفوت الغرض أصلًا. السكربت الـinline وحده يضمن
+  التنفيذ أثناء الـparse بلا طلب شبكة.
+
+  ── ما يحلّه ──
+  ١) المستخدم المسجَّل كان يرى ناف الزائر لحظيًا في /bazaars/ (زر «دخول» ثابت
+     في الـHTML) و/market/ (منطقة فارغة) لأن أيًّا منهما لم يكن لديه إشارة
+     مصادقة قبل الرسم أصلًا.
+  ٢) الحارس القديم في /spaces/ كان يشترط expires_at > now. لكن عمر access
+     token ساعة واحدة افتراضيًا بينما الجلسة تظل صالحة بالتجديد الصامت عبر
+     refresh_token — فكل عائد بعد ساعة كان يُرسم زائرًا ثم يُصحَّح.
+     الشرط الصحيح هو وجود refresh_token.
+  ٣) الاسم/الصورة/الإيميل كانت تنتظر getSession() + استعلام profiles، فتظهر
+     «م / — / —» في كل تحميل.
+
+  ── حدود الثقة (مهم) ──
+  localStorage هنا **كاش عرض فقط (Optimistic UI)، لا مصدر حقيقة**. تحديد «هل هو
+  مسجَّل فعلًا؟» يبقى من getSession()، وتحديد الصلاحيات يبقى من
+  getAccountCapabilities() فوق بيانات profiles/organizer_profiles، وRLS هو
+  الحارس الفعلي على القاعدة. أسوأ ما يفعله خطأ في هذا الكاش هو رسم اسم خاطئ
+  لجزء من الثانية — لا منح صلاحية.
+
+  ── أين هو مستخدم ──
+  spaces/index.html · bazaars/index.html · market/index.html
+════════════════════════════════════════════════════════════════════════ -->
+
+
+<!-- ═══ الكتلة ١ — في <head>، قبل style.css ═══════════════════════════ -->
+
+<!-- Auth + Nav Boot — راجع shared/nav-boot-snippet.html (النسخة المرجعية) -->
+<script>
+  (function () {
+    var SB_KEY = 'sb-rxqkpjuvudweyovekvvx-auth-token';
+    var ID_KEY = 'makani_nav_identity';
+    var sess = null, uid = null;
+
+    try {
+      var raw = localStorage.getItem(SB_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        /* refresh_token لا expires_at — راجع السبب (٢) في ترويسة الملف */
+        if (s && s.refresh_token) {
+          sess = s;
+          uid  = (s.user && s.user.id) || null;
+          document.documentElement.classList.add('sb-authed');
+        }
+      }
+    } catch (e) {}
+
+    /* الكاش يُقبل لصاحبه فقط. عدم التطابق = بيانات مستخدم سابق على نفس
+       المتصفح (دخول ← خروج ← دخول بحساب آخر) — تُمسح فورًا ولا تُرسم أبدًا. */
+    var cache = null;
+    try {
+      var c = JSON.parse(localStorage.getItem(ID_KEY) || 'null');
+      if (c && uid && c.userId === uid) cache = c;
+      else if (c) localStorage.removeItem(ID_KEY);
+    } catch (e) {}
+
+    /* الإيميل والاسم الاحتياطي من الجلسة نفسها — موجودة محليًا أصلًا داخل
+       التوكن، فلا داعي لانتظار الشبكة ولا لتحمّل مخاطر تقادم كاش منفصل.
+       النتيجة: حتى مع كاش بارد (أول دخول على الجهاز) يُرسم اسم حقيقي. */
+    var u  = (sess && sess.user) || null;
+    var md = (u && u.user_metadata) || {};
+    window.__MK_NAV = !uid ? null : {
+      userId:      uid,
+      name:        (cache && cache.name) || md.full_name || (u && u.email ? u.email.split('@')[0] : ''),
+      email:       (u && u.email) || (cache && cache.email) || '',
+      avatar:      (cache && cache.avatar) || md.avatar_url || '',
+      isOrganizer: !!(cache && cache.isOrganizer)
+    };
+
+    /* يُستدعى بسطر inline مباشرة بعد </nav> — أثناء الـparse، قبل أول رسمة. */
+    window.__mkPaintNav = function () {
+      var id = window.__MK_NAV;
+      if (!id) return;
+      var initial = (id.name || '؟').trim().charAt(0) || '؟';
+
+      /* textContent حصرًا — قيم localStorage تُعامَل كغير موثوقة (أي XSS
+         على النطاق يصل إليها)، فلا innerHTML ولا template strings هنا. */
+      document.querySelectorAll('[data-nav-name]').forEach(function (el) { el.textContent = id.name; });
+      document.querySelectorAll('[data-nav-email]').forEach(function (el) { el.textContent = id.email; });
+
+      document.querySelectorAll('[data-nav-avatar]').forEach(function (el) {
+        el.textContent = initial;
+        /* مخططات مسموحة فقط — إسناد خاصية src لا بناء وسم بنص */
+        if (!/^(https:\/\/|data:image\/)/.test(id.avatar)) return;
+        var img = new Image();
+        img.alt = '';
+        img.onerror = function () { el.textContent = initial; };
+        img.src = id.avatar;
+        el.textContent = '';
+        el.appendChild(img);
+      });
+
+      /* عرض فقط — لا يُتخذ به أي قرار صلاحية (راجع «حدود الثقة» أعلاه).
+         العناصر تبدأ hidden في الـHTML، فالافتراضي الآمن هو الإخفاء. */
+      if (id.isOrganizer) {
+        document.querySelectorAll('[data-nav-organizer-only]').forEach(function (el) { el.hidden = false; });
+      }
+    };
+  })();
+</script>
+
+
+<!-- ═══ الكتلة ٢ — سطر واحد مباشرة بعد </nav> ═══════════════════════ -->
+
+<script>__mkPaintNav()</script>
