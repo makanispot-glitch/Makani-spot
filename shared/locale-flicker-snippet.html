@@ -1,7 +1,7 @@
 ﻿<!--
   Locale Flicker Prevention — انسخ هذا الكتلة (block) بالكامل في <head> كل صفحة،
   فورًا بعد "Auth Flicker Prevention" (أو بنفس مكانها لو مفيش auth-flicker في الصفحة دي)،
-  وقبل <link rel="stylesheet" href=".../style.css?v=20260811035341"> مباشرة — لازم يشتغل قبل أول رسمة
+  وقبل <link rel="stylesheet" href=".../style.css?v=20260901140951"> مباشرة — لازم يشتغل قبل أول رسمة
   عشان يمنع وميض الاتجاه (RTL يتحول LTR بعد ما الصفحة اتترسمت).
   هذا الملف مرجع للنسخ فقط، مش بيتحمّل كـ <script src="..."> من أي صفحة.
   راجع shared/i18n.js لمنطق تبديل اللغة الفعلي بعد التحميل.
@@ -12,6 +12,55 @@
       if (localStorage.getItem('makani_locale') === 'en') {
         document.documentElement.lang = 'en';
         document.documentElement.dir = 'ltr';
+        var raw = localStorage.getItem('makani_i18n_cache_en');
+        if (raw) {
+          var dict = JSON.parse(raw);
+          function resolve(path) {
+            if (!dict || !path) return null;
+            var p = path.indexOf(':') !== -1 ? path.split(':')[1] : path;
+            var segs = p.split('.');
+            for (var ns in dict) {
+              if (dict.hasOwnProperty(ns)) {
+                var cur = dict[ns];
+                for (var i = 0; i < segs.length && cur; i++) cur = cur[segs[i]];
+                if (typeof cur === 'string') return cur;
+              }
+            }
+            return null;
+          }
+          function translate(el) {
+            var k = el.getAttribute('data-i18n');
+            if (k) { var v = resolve(k); if (v !== null) el.textContent = v; }
+            var kh = el.getAttribute('data-i18n-html');
+            if (kh) { var v = resolve(kh); if (v !== null) el.innerHTML = v; }
+            var ka = el.getAttribute('data-i18n-attr');
+            if (ka) {
+              ka.split(',').forEach(function (pair) {
+                var pts = pair.split(':');
+                var attr = pts[0] && pts[0].trim();
+                var akey = pts[1] && pts[1].trim();
+                if (attr && akey) { var v = resolve(akey); if (v !== null) el.setAttribute(attr, v); }
+              });
+            }
+          }
+          if (window.MutationObserver) {
+            var obs = new MutationObserver(function (mutations) {
+              for (var i = 0; i < mutations.length; i++) {
+                var added = mutations[i].addedNodes;
+                for (var j = 0; j < added.length; j++) {
+                  var n = added[j];
+                  if (n.nodeType === 1) {
+                    if (n.hasAttribute('data-i18n') || n.hasAttribute('data-i18n-html') || n.hasAttribute('data-i18n-attr')) translate(n);
+                    var ch = n.querySelectorAll ? n.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-attr]') : [];
+                    for (var c = 0; c < ch.length; c++) translate(ch[c]);
+                  }
+                }
+              }
+            });
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+            window.__mkI18nObserver = obs;
+          }
+        }
       }
     } catch (e) {}
   })();

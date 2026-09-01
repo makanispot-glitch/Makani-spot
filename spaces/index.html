@@ -8,11 +8,11 @@
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20260811035341">
+  <link rel="manifest" href="/manifest.json?v=20260901140951">
   <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
        build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
        في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
-  <script src="/version.js?v=20260811035341" defer></script>
+  <script src="/version.js?v=20260901140951" defer></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -132,44 +132,93 @@
         if (localStorage.getItem('makani_locale') === 'en') {
           document.documentElement.lang = 'en';
           document.documentElement.dir = 'ltr';
+          var raw = localStorage.getItem('makani_i18n_cache_en');
+          if (raw) {
+            var dict = JSON.parse(raw);
+            function resolve(path) {
+              if (!dict || !path) return null;
+              var p = path.indexOf(':') !== -1 ? path.split(':')[1] : path;
+              var segs = p.split('.');
+              for (var ns in dict) {
+                if (dict.hasOwnProperty(ns)) {
+                  var cur = dict[ns];
+                  for (var i = 0; i < segs.length && cur; i++) cur = cur[segs[i]];
+                  if (typeof cur === 'string') return cur;
+                }
+              }
+              return null;
+            }
+            function translate(el) {
+              var k = el.getAttribute('data-i18n');
+              if (k) { var v = resolve(k); if (v !== null) el.textContent = v; }
+              var kh = el.getAttribute('data-i18n-html');
+              if (kh) { var v = resolve(kh); if (v !== null) el.innerHTML = v; }
+              var ka = el.getAttribute('data-i18n-attr');
+              if (ka) {
+                ka.split(',').forEach(function (pair) {
+                  var pts = pair.split(':');
+                  var attr = pts[0] && pts[0].trim();
+                  var akey = pts[1] && pts[1].trim();
+                  if (attr && akey) { var v = resolve(akey); if (v !== null) el.setAttribute(attr, v); }
+                });
+              }
+            }
+            if (window.MutationObserver) {
+              var obs = new MutationObserver(function (mutations) {
+                for (var i = 0; i < mutations.length; i++) {
+                  var added = mutations[i].addedNodes;
+                  for (var j = 0; j < added.length; j++) {
+                    var n = added[j];
+                    if (n.nodeType === 1) {
+                      if (n.hasAttribute('data-i18n') || n.hasAttribute('data-i18n-html') || n.hasAttribute('data-i18n-attr')) translate(n);
+                      var ch = n.querySelectorAll ? n.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-attr]') : [];
+                      for (var c = 0; c < ch.length; c++) translate(ch[c]);
+                    }
+                  }
+                }
+              });
+              obs.observe(document.documentElement, { childList: true, subtree: true });
+              window.__mkI18nObserver = obs;
+            }
+          }
         }
       } catch (e) {}
     })();
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20260811035341">
+  <link rel="stylesheet" href="/style.css?v=20260901140951">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20260811035341" defer></script>
-  <script src="/pwa-install.js?v=20260811035341" defer></script>
+  <script src="/shared/sb-config.js?v=20260901140951" defer></script>
+  <script src="/pwa-install.js?v=20260901140951" defer></script>
   <!-- createRaceGuard: يجب أن يسبق app.js لأن _mpFilterRace يُنشأ وقت التحميل -->
-  <script src="/shared/race-guard.js?v=20260811035341" defer></script>
-  <script src="/shared/pagination.js?v=20260811035341" defer></script>
-  <script src="/shared/space-model.js?v=20260811035341" defer></script>
+  <script src="/shared/race-guard.js?v=20260901140951" defer></script>
+  <script src="/shared/pagination.js?v=20260901140951" defer></script>
+  <script src="/shared/space-model.js?v=20260901140951" defer></script>
   <!-- طبقة الاكتشاف المشتركة — قراءة بارامترات الفلاتر القادمة من الرئيسية/البازارات -->
-  <script src="/shared/discovery.js?v=20260811035341" defer></script>
-  <script src="/shared/booking.js?v=20260811035341" defer></script>
-  <script src="/shared/account.js?v=20260811035341" defer></script>
-  <script src="/shared/plan-badge.js?v=20260811035341" defer></script>
+  <script src="/shared/discovery.js?v=20260901140951" defer></script>
+  <script src="/shared/booking.js?v=20260901140951" defer></script>
+  <script src="/shared/account.js?v=20260901140951" defer></script>
+  <script src="/shared/plan-badge.js?v=20260901140951" defer></script>
   <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
-  <script src="/shared/nav-identity.js?v=20260811035341" defer></script>
+  <script src="/shared/nav-identity.js?v=20260901140951" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20260811035341" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260811035341" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260811035341" defer></script>
-  <script src="/shared/i18n.js?v=20260811035341" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20260901140951" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260901140951" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260901140951" defer></script>
+  <script src="/shared/i18n.js?v=20260901140951" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
   <!-- انتقال بين المستندات للأقسام الثلاثة — مربوط منها وحدها عمدًا -->
-  <link rel="stylesheet" href="/shared/nav-transition.css?v=20260811035341">
+  <link rel="stylesheet" href="/shared/nav-transition.css?v=20260901140951">
 
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20260811035341">
-  <script src="/shared/onboarding.js?v=20260811035341" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20260811035341" defer></script>
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20260901140951">
+  <script src="/shared/onboarding.js?v=20260901140951" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20260901140951" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -1859,8 +1908,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20260811035341" defer></script>
-  <script src="app.js?v=20260811035341" defer></script>
+  <script src="/notifications.js?v=20260901140951" defer></script>
+  <script src="app.js?v=20260901140951" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

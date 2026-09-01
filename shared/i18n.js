@@ -57,6 +57,21 @@ function applyLocaleToDocument(locale) {
   document.documentElement.dir = locale === 'en' ? 'ltr' : 'rtl';
 }
 
+const ALL_PLATFORM_NAMESPACES = ['common', 'spaces', 'bazaars', 'market', 'home', 'policies', 'assistant'];
+
+/** يحفظ قواميس الترجمة المحمّلة في localStorage لتفادي وميض النص عند التنقل بين الصفحات */
+function _saveI18nCache() {
+  try {
+    const enData = i18next.store?.data?.en || i18next.services?.resourceStore?.data?.en;
+    if (enData && Object.keys(enData).length > 0) {
+      let existing = {};
+      try { existing = JSON.parse(localStorage.getItem('makani_i18n_cache_en') || '{}'); } catch (e) {}
+      const merged = Object.assign({}, existing, enData);
+      localStorage.setItem('makani_i18n_cache_en', JSON.stringify(merged));
+    }
+  } catch (e) {}
+}
+
 /**
  * تهيئة i18next لصفحة معيّنة.
  * @param {string[]|string} namespaces - أسماء ملفات الترجمة المطلوبة لهذه الصفحة
@@ -66,12 +81,21 @@ function applyLocaleToDocument(locale) {
  */
 async function initI18n(namespaces) {
   const ns = Array.isArray(namespaces) ? namespaces : [namespaces || 'common'];
+  let cachedResources = undefined;
+  try {
+    const raw = localStorage.getItem('makani_i18n_cache_en');
+    if (raw) {
+      cachedResources = { en: JSON.parse(raw) };
+    }
+  } catch (e) {}
+
   await i18next
     .use(i18nextHttpBackend)
     .use(i18nextBrowserLanguageDetector)
     .init({
       fallbackLng: 'ar',
       supportedLngs: MAKANI_SUPPORTED_LOCALES,
+      resources: cachedResources,
       ns,
       defaultNS: ns[0],
       // common.json فيها مفاتيح مشتركة (nav, userMenu, auth, footer...) تُستخدم
@@ -95,6 +119,13 @@ async function initI18n(namespaces) {
       interpolation: { escapeValue: false }, // مش بنطبع HTML خام عبر الترجمة، ماينفعش نحتاج escaping زيادة عن اللزوم
       returnEmptyString: false,
     });
+  _saveI18nCache();
+  if (i18next.language === 'en') {
+    i18next.loadNamespaces(ALL_PLATFORM_NAMESPACES).then(_saveI18nCache, () => {});
+  }
+  if (window.__mkI18nObserver) {
+    try { window.__mkI18nObserver.disconnect(); } catch (e) {}
+  }
   applyLocaleToDocument(i18next.language);
   document.addEventListener('makani:locale-changed', () => {
     applyDomTranslations(document);
@@ -147,6 +178,10 @@ async function setLocale(locale, opts) {
   if (!MAKANI_SUPPORTED_LOCALES.includes(locale)) return;
   await i18next.changeLanguage(locale);
   try { localStorage.setItem(MAKANI_LOCALE_KEY, locale); } catch (e) {}
+  if (locale === 'en') {
+    await i18next.loadNamespaces(ALL_PLATFORM_NAMESPACES);
+  }
+  _saveI18nCache();
   applyLocaleToDocument(locale);
   document.dispatchEvent(new CustomEvent('makani:locale-changed', { detail: { locale } }));
 

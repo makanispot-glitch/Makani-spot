@@ -686,18 +686,18 @@ body {
 /* ── ديسكتوب/لابتوب: عندما يحمل الناف زر المنظم يضيق المحتوى تدريجياً
      (مقيّد بـ :has حتى لا يتأثر المستخدم العادي) ── */
 @media (max-width: 1460px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize) .nsb-text small {
+  .nav:has(.bz-cta-organize:not([hidden])) .nsb-text small {
     display: none;
   }
 
-  .nav:has(.bz-cta-organize) .nav-section-btn {
+  .nav:has(.bz-cta-organize:not([hidden])) .nav-section-btn {
     padding: 8px 12px;
   }
 }
 
 @media (max-width: 1360px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize) .nav-links > a:not(.nav-section-btn),
-  .nav:has(.bz-cta-organize) .nav-divider {
+  .nav:has(.bz-cta-organize:not([hidden])) .nav-links > a:not(.nav-section-btn),
+  .nav:has(.bz-cta-organize:not([hidden])) .nav-divider {
     display: none;
   }
 }
@@ -724,22 +724,22 @@ body {
 }
 
 @media (max-width: 1024px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize) .nav-avatar-info {
+  .nav:has(.bz-cta-organize:not([hidden])) .nav-avatar-info {
     display: none;
   }
 
-  .nav:has(.bz-cta-organize) .bz-cta-organize {
+  .nav:has(.bz-cta-organize:not([hidden])) .bz-cta-organize {
     font-size: 12px;
     padding: 8px 16px;
   }
 }
 
 @media (max-width: 880px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize) .nsb-icon {
+  .nav:has(.bz-cta-organize:not([hidden])) .nsb-icon {
     display: none;
   }
 
-  .nav:has(.bz-cta-organize) .nav-section-btn {
+  .nav:has(.bz-cta-organize:not([hidden])) .nav-section-btn {
     padding: 7px 9px;
   }
 }
