@@ -95,6 +95,7 @@ async function initI18n(namespaces) {
     .init({
       fallbackLng: 'ar',
       supportedLngs: MAKANI_SUPPORTED_LOCALES,
+      partialBundledLanguages: true,
       resources: cachedResources,
       ns,
       defaultNS: ns[0],
