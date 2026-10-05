@@ -118,19 +118,19 @@
   },
   "marketShowcase": {
     "pill": "Prime Investment Opportunities",
-    "title": "Complete Businesses for Sale",
-    "sub": "Assets and equipment ready to run from day one — deal directly with the seller, no middleman or commissions.",
-    "loading": "Loading businesses for sale...",
-    "ctaBtn": "Browse All Businesses for Sale →",
+    "title": "Businesses & Equipment for Sale or Rent",
+    "sub": "Ready businesses, equipment and event supplies. Deal directly with the advertiser, with no middleman or commission.",
+    "loading": "Loading businesses and equipment...",
+    "ctaBtn": "Browse All Businesses & Equipment →",
     "genericCategoryFallback": "Business Activity",
     "dbConnectFailed": "Couldn't connect to the database to load businesses.",
-    "emptyTitle": "No Businesses for Sale Right Now",
+    "emptyTitle": "No Businesses or Equipment Available Right Now",
     "emptySub": "Follow us to see new opportunities soon!",
     "priceOnRequest": "Price upon inquiry",
-    "titleFallback": "Business for Sale",
+    "titleFallback": "Business or Equipment",
     "descFallback": "No description available for this business yet.",
     "regionFallback": "Egypt",
-    "loadFailed": "Couldn't load businesses for sale right now — please try again later."
+    "loadFailed": "Couldn't load businesses and equipment right now. Please try again later."
   },
   "paths": {
     "title": "Whatever your ambition — <span>your path to success starts here</span>",

@@ -1,4 +1,6 @@
 {
+  "listingTypes": { "sale": "للبيع", "rent": "للإيجار" },
+  "rentalPeriods": { "day": "يوم", "week": "أسبوع", "month": "شهر" },
   "categories": {
     "food-juice-cart": "عربية أكل / عصير",
     "fast-food-partition": "بارتشن وجبات سريعة",
@@ -9,6 +11,7 @@
     "gifts": "هدايا وديكور",
     "corner-space": "كورنر سبيس",
     "vending": "آلات بيع ذاتي",
+    "event-supplies": "مستلزمات الفعاليات",
     "other": "أخرى"
   },
   "conditions": {
@@ -18,10 +21,10 @@
     "fair": "مقبول"
   },
   "hero": {
-    "titlePre": "ابدأ بمشروع",
-    "titleSpan": "جاهز للبيع",
-    "subtitle": "تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية",
-    "searchPlaceholder": "ابحث عن مشروع أو منطقة…"
+    "titlePre": "مشاريع ومعدات",
+    "titleSpan": "للبيع والإيجار",
+    "subtitle": "مشاريع جاهزة، بارتشنات ومستلزمات فعاليات — تواصل مباشرة مع المعلن بدون عمولة أو رسوم خفية",
+    "searchPlaceholder": "ابحث عن مشروع، معدة أو منطقة…"
   },
   "quickLinks": {
     "spacesTitle": "تصفح المساحات التجارية",
@@ -30,12 +33,22 @@
     "bazaarsDesc": "اشترك في بازار قريب منك"
   },
   "freeBar": {
-    "text": "اعرض مشروعك للبيع",
+    "text": "اعرض مشروعك أو معدتك للبيع أو للإيجار",
     "textStrong": "مجاناً 100%",
     "textSuffix": "— بدون عمولة أو رسوم خفية",
     "postNow": "انشر الآن ←"
   },
   "filters": {
+    "listingType": "نوع الإعلان",
+    "typeShort": "النوع",
+    "rentalPeriod": "دورية الإيجار",
+    "allPeriods": "كل المدد",
+    "priceContextRequired": "مقارنة السعر تتطلب نوعًا واحدًا ودورية إيجار محددة",
+    "filterSort": "فلتر وترتيب",
+    "browseActions": "أدوات التصفح",
+    "location": "المحافظة",
+    "priceFrom": "السعر من",
+    "priceTo": "السعر إلى",
     "categoryLabel": "التصنيف",
     "all": "الكل",
     "allGovs": "كل المحافظات",
@@ -76,11 +89,16 @@
     "negotiable": "قابل للتفاوض",
     "featured": "⭐ مميز",
     "favoriteTitle": "المفضلة",
+    "featuredLabel": "مميز",
+    "noImage": "لا توجد صورة متاحة",
+    "photos": "{{count}} صور",
+    "published": "نُشر في {{date}}",
     "currency": "ج",
     "prev": "السابقة",
     "next": "التالية"
   },
   "empty": {
+    "dynFragPeriod": "بسعر لكل {{period}}",
     "dynNoneCombo": "لسه مفيش إعلانات {{what}}",
     "dynFragCat": "في قسم {{cat}}",
     "dynFragGov": "في {{gov}}",
@@ -115,11 +133,12 @@
     "removeFavorite": "إزالة من المفضلة",
     "loginToContact": "🔒 سجّل الدخول لعرض معلومات التواصل",
     "whatsappContact": "💬 تواصل عبر واتساب",
-    "callSeller": "📞 اتصل بالبائع",
+    "callSeller": "📞 اتصل بالمعلن",
     "published": "📅 نُشر {{date}}",
     "views": "👁 {{count}} مشاهدة",
     "reportBtn": "🚩 إبلاغ عن إعلان",
-    "shareText": "🔖 *{{title}}*\n💰 السعر: {{price}} ج\n📍 {{region}}\n\n🛒 شاهد الإعلان: {{url}}",
+    "shareText": "{{title}} — {{type}}\nالسعر: {{price}}\n{{region}}\nشاهد الإعلان: {{url}}",
+    "whatsappRentMsg": "مرحبًا، مهتم بإيجار {{title}} المعروض بسعر {{price}} على مكاني Spot. هل متاح للإيجار؟",
     "whatsappMsg": "مرحبا، شايف إعلانك عن {{title}} في مكاني Spot"
   },
   "myListings": {
@@ -174,6 +193,9 @@
     "descPlaceholder": "اكتب تفاصيل المشروع أو القطعة…",
     "conditionLabel": "الحالة",
     "priceLabel": "السعر (جنيه)",
+    "rentPriceLabel": "قيمة الإيجار (جنيه)",
+    "pickPeriod": "اختر الدورية",
+    "periodRequired": "من فضلك اختر دورية الإيجار",
     "negotiableLabel": "قابل للتفاوض",
     "regionLabel": "المحافظة",
     "areaLabel": "المنطقة / الحي (اختياري)",
@@ -243,7 +265,7 @@
     "findSpace": "دور على مساحة",
     "language": "اللغة",
     "logout": "تسجيل الخروج",
-    "roleLabel": "مشاريع للبيع",
+    "roleLabel": "مشاريع ومعدات",
     "defaultName": "حسابي"
   },
   "fab": {
@@ -313,6 +335,7 @@
     "errSuspended": "حسابك موقوف مؤقتًا، تواصل مع الدعم",
     "errListingGone": "الإعلان ده مابقاش متاح — يمكن اتباع أو انتهت مدته",
     "errOwnListing": "ده إعلانك — الخدمة للمشترين",
+    "errRental": "خدمة المعاينة والنقل متاحة لإعلانات البيع فقط",
     "errDuplicate": "عندك طلب مفتوح على نفس الإعلان بالفعل. تابعه من «حجوزاتك».",
     "errGeneric": "حصل خطأ، حاول تاني",
     "refLabel": "كود طلبك",

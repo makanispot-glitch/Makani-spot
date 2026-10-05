@@ -153,7 +153,7 @@ async function _loadMyProfile() {
       sbClient.from('bazaars').select('id,name,date_start,date_end,status')
               .eq('organizer_id', currentUser.id).eq('is_deleted', false),
       sbClient.from('listings')
-              .select('id,title,category,price,cover_image,status,expires_at,created_at,phone,region')
+              .select('id,title,category,price,cover_image,status,expires_at,created_at,phone,region,listing_type,rental_period')
               .eq('user_id', currentUser.id)
               .neq('status', 'deleted')
               .order('created_at', { ascending: false })
@@ -986,7 +986,8 @@ function _renderListingsGrid(listings) {
           <div class="op-listing-info">
             <div class="op-listing-title">${l.title || t('profile.listingsSection.untitled')}</div>
             <div class="op-listing-meta">
-              <span class="op-listing-price">${l.price ? Number(l.price).toLocaleString(_profLocale()) + ' ' + t('card.currency') : '—'}</span>
+              <span class="op-listing-price">${listingPriceText(l, getLocale())}</span>
+              <span style="font-size:11px">${listingTypeLabel(l, getLocale())}</span>
               <span class="op-listing-status ${sc}">${sl}</span>
             </div>
           </div>

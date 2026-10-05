@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="manifest" href="/manifest.json?v=20260901161610">
-<script src="/version.js?v=20260901161610"></script>
+<link rel="manifest" href="/manifest.json?v=20261005145929">
+<script src="/version.js?v=20261005145929"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,13 +12,13 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <meta name="robots" content="noindex">
-<title>انشر إعلانك — سوق المعدات | مكاني Spot</title>
+<title>انشر إعلان بيع أو إيجار — مشاريع ومعدات | مكاني Spot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260901161610">
+<link rel="stylesheet" href="../style.css?v=20261005145929">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../media-handler.js?v=20260901161610"></script>
+<script src="../media-handler.js?v=20261005145929"></script>
 
 <style>
 /* ── Page Layout ── */
@@ -94,6 +94,11 @@ body { background: var(--surface2); }
 .pa-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pa-hint { font-size: 11px; color: var(--ink3); margin-top: 5px; }
 .pa-error-msg { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
+[hidden] { display: none !important; }
+.pa-type-segments { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+.pa-type-btn { min-width: 110px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 5px; background: transparent; color: var(--ink2); font: 700 14px 'Cairo', sans-serif; cursor: pointer; touch-action: manipulation; }
+.pa-type-btn.on { background: #fff; color: #0f766e; box-shadow: 0 1px 3px #00000018; }
+.pa-type-btn:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
 
 /* ── Checkbox ── */
 .pa-check-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
@@ -266,7 +271,7 @@ body { background: var(--surface2); }
   <div id="pa-login-guard">
     <div class="guard-icon">🔐</div>
     <h2>يجب تسجيل الدخول أولاً</h2>
-    <p>لنشر إعلان في سوق المعدات، سجّل دخولك من المنصة الرئيسية أولاً</p>
+    <p>لنشر مشروع أو معدة للبيع أو للإيجار، سجّل دخولك أولاً</p>
     <a href="/?p=login" class="pa-btn pa-btn-primary" style="text-decoration:none;display:inline-block;padding:13px 36px;border-radius:12px">تسجيل الدخول</a>
   </div>
 
@@ -274,7 +279,7 @@ body { background: var(--surface2); }
   <div id="pa-suspended-guard">
     <div class="guard-icon">🚫</div>
     <h2>تم إيقاف صلاحية نشر الإعلانات مؤقتاً</h2>
-    <p>لا يمكنك نشر أو تعديل إعلانات في قسم مشاريع كاملة للبيع حالياً.</p>
+    <p>لا يمكنك نشر أو تعديل إعلانات المشاريع والمعدات حالياً.</p>
     <div class="reason-box" id="pa-suspend-reason"></div>
     <p style="font-size:12.5px">إذا كنت تعتقد أن هذا خطأ، تواصل معنا عبر واتساب لمراجعة الأمر.</p>
   </div>
@@ -306,7 +311,7 @@ body { background: var(--surface2); }
       <div class="pa-progress-steps">
         <div class="pa-step active" id="step-indicator-1">
           <div class="pa-step-circle">1</div>
-          <div class="pa-step-label">بيانات المعدة</div>
+          <div class="pa-step-label">بيانات الإعلان</div>
         </div>
         <div class="pa-step" id="step-indicator-2">
           <div class="pa-step-circle">2</div>
@@ -326,7 +331,15 @@ body { background: var(--surface2); }
 
     <!-- ── Step 1: بيانات المعدة ── -->
     <div class="pa-card" id="pa-step-1">
-      <div class="pa-card-title">📦 بيانات المعدة</div>
+      <div class="pa-card-title">بيانات المشروع أو المعدة</div>
+
+      <div class="pa-field">
+        <div class="pa-label" id="pa-type-label">نوع الإعلان <span>*</span></div>
+        <div class="pa-type-segments" role="group" aria-labelledby="pa-type-label">
+          <button type="button" class="pa-type-btn on" data-pa-type="sale" aria-pressed="true" onclick="paSetListingType('sale')">للبيع</button>
+          <button type="button" class="pa-type-btn" data-pa-type="rent" aria-pressed="false" onclick="paSetListingType('rent')">للإيجار</button>
+        </div>
+      </div>
 
       <div class="pa-field">
         <label for="pa-category" class="pa-label">التصنيف <span>*</span></label>
@@ -341,6 +354,7 @@ body { background: var(--surface2); }
           <option value="gifts">هدايا وديكور</option>
           <option value="corner-space">كورنر سبيس</option>
           <option value="vending">آلات بيع ذاتي</option>
+          <option value="event-supplies">مستلزمات الفعاليات</option>
           <option value="other">أخرى</option>
         </select>
         <div class="pa-error-msg" id="err-category">من فضلك اختر التصنيف</div>
@@ -349,12 +363,11 @@ body { background: var(--surface2); }
       <div class="pa-field">
         <label for="pa-title" class="pa-label">عنوان الإعلان <span>*</span></label>
         <input class="pa-input" type="text" id="pa-title" placeholder="مثال: ثلاجة عرض Liebherr 4 أبواب نظيفة" maxlength="100">
-        <div class="pa-hint">وصف موجز ومحدد — يساعد المشترين في العثور على إعلانك</div>
         <div class="pa-error-msg" id="err-title">من فضلك اكتب عنوان الإعلان (10 أحرف على الأقل)</div>
       </div>
 
       <div class="pa-field">
-        <label for="pa-description" class="pa-label">وصف المعدة <span>*</span></label>
+        <label for="pa-description" class="pa-label">وصف المشروع أو المعدة <span>*</span></label>
         <textarea class="pa-textarea" id="pa-description" placeholder="اذكر الحالة، العمر، المشكلات إن وجدت، سبب البيع…" maxlength="1000"></textarea>
         <div class="pa-error-msg" id="err-description">من فضلك اكتب وصفاً (20 حرف على الأقل)</div>
       </div>
@@ -372,10 +385,21 @@ body { background: var(--surface2); }
           <div class="pa-error-msg" id="err-condition">من فضلك اختر الحالة</div>
         </div>
         <div class="pa-field">
-          <label class="pa-label">السعر المطلوب (ج) <span>*</span></label>
-          <input class="pa-input" type="number" id="pa-price" placeholder="0" min="0" max="9999999">
+          <label class="pa-label" id="pa-price-label" for="pa-price">السعر المطلوب (ج) <span>*</span></label>
+          <input class="pa-input" type="number" id="pa-price" placeholder="0" min="0" max="2147483647" step="1" inputmode="numeric">
           <div class="pa-error-msg" id="err-price">من فضلك أدخل سعراً صحيحاً</div>
         </div>
+      </div>
+
+      <div class="pa-field" id="pa-rental-period-field" hidden>
+        <label class="pa-label" for="pa-rental-period">دورية الإيجار <span>*</span></label>
+        <select class="pa-select" id="pa-rental-period">
+          <option value="">— اختر الدورية —</option>
+          <option value="day">يوم</option>
+          <option value="week">أسبوع</option>
+          <option value="month">شهر</option>
+        </select>
+        <div class="pa-error-msg" id="err-rental-period">من فضلك اختر دورية الإيجار</div>
       </div>
 
       <div class="pa-field">
@@ -492,14 +516,15 @@ body { background: var(--surface2); }
   </div><!-- end #pa-wizard -->
 </div><!-- end .pa-wrapper -->
 
-<script src="../shared/sb-config.js?v=20260901161610"></script>
-<script src="/pwa-install.js?v=20260901161610" defer></script>
+<script src="../shared/sb-config.js?v=20261005145929"></script>
+<script src="../shared/listing-model.js?v=20261005145929"></script>
+<script src="/pwa-install.js?v=20261005145929" defer></script>
 <script>
 /* ── Config (SUPABASE_URL/KEY من shared/sb-config.js) ── */
 const PA_SB_URL  = SUPABASE_URL;
 const PA_SB_KEY  = SUPABASE_KEY;
 const PA_GOVS = ['القاهرة','الجيزة','الإسكندرية','الشرقية','الدقهلية','المنوفية','القليوبية','البحيرة','كفر الشيخ','الغربية','سوهاج','المنيا','أسيوط','قنا','الأقصر','أسوان','بورسعيد','السويس','الإسماعيلية','دمياط','الفيوم','بني سويف','مطروح','شمال سيناء','جنوب سيناء','الوادي الجديد','البحر الأحمر'];
-const CAT_LABELS = {'food-juice-cart':'عربية أكل / عصير','fast-food-partition':'بارتشن وجبات سريعة','beauty-partition':'بارتشن عناية شخصية','clothing-partition':'بارتشن ملابس / بوتيك',handmade:'هاند ميد',phones:'تليفونات وإكسسوار',gifts:'هدايا وديكور','corner-space':'كورنر سبيس',vending:'آلات بيع ذاتي',other:'أخرى'};
+const CAT_LABELS = {'food-juice-cart':'عربية أكل / عصير','fast-food-partition':'بارتشن وجبات سريعة','beauty-partition':'بارتشن عناية شخصية','clothing-partition':'بارتشن ملابس / بوتيك',handmade:'هاند ميد',phones:'تليفونات وإكسسوار',gifts:'هدايا وديكور','corner-space':'كورنر سبيس',vending:'آلات بيع ذاتي','event-supplies':'مستلزمات الفعاليات',other:'أخرى'};
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 
 let paSb   = null;
@@ -514,6 +539,28 @@ let paFileUrls = new Map();  // File → blob: URL ثابتة طوال عمر ا
    و١٥ ملفًا يتيمًا ينتظر الكنس. الخريطة تجعل الرفع للجديد وحده. */
 let paUploaded = new Map();
 let paBusy = false;      // رفع أو إرسال جارٍ — يمنع تشغيل عملية ثانية فوق الأولى
+let paListingType = 'sale';
+
+function paSetListingType(type) {
+  if (paBusy || type === paListingType) return;
+  paListingType = type === 'rent' ? 'rent' : 'sale';
+  document.getElementById('pa-price').value = '';
+  document.getElementById('pa-rental-period').value = '';
+  const rent = paListingType === 'rent';
+  document.getElementById('pa-rental-period-field').hidden = !rent;
+  document.getElementById('pa-price').min = rent ? '1' : '0';
+  document.getElementById('pa-price-label').innerHTML = `${rent ? 'قيمة الإيجار' : 'السعر المطلوب'} (ج) <span>*</span>`;
+  document.getElementById('pa-description').placeholder = rent
+    ? 'الحالة، المواصفات، التأمين، الحد الأدنى للمدة وشروط التسليم…'
+    : 'الحالة، المواصفات، العمر والمشكلات إن وجدت…';
+  document.querySelectorAll('[data-pa-type]').forEach(btn => {
+    const on = btn.dataset.paType === paListingType;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+  });
+  paShowErr('err-price', false);
+  paShowErr('err-rental-period', false);
+}
 
 /* ── Init ── */
 window.addEventListener('DOMContentLoaded', async () => {
@@ -627,15 +674,18 @@ function paValidateStep1() {
   const title = document.getElementById('pa-title').value.trim();
   const desc  = document.getElementById('pa-description').value.trim();
   const cond  = document.getElementById('pa-condition').value;
-  const price = parseFloat(document.getElementById('pa-price').value);
+  const price = document.getElementById('pa-price').value;
+  const validPrice = listingPriceValid(price, paListingType);
+  const validPeriod = paListingType !== 'rent' || RENTAL_PERIODS.includes(document.getElementById('pa-rental-period').value);
 
   paShowErr('err-category',   !cat);
   paShowErr('err-title',      title.length < 10);
   paShowErr('err-description',desc.length < 20);
   paShowErr('err-condition',  !cond);
-  paShowErr('err-price',      isNaN(price) || price < 0);
+  paShowErr('err-price',      !validPrice);
+  paShowErr('err-rental-period', !validPeriod);
 
-  if (!cat || title.length < 10 || desc.length < 20 || !cond || isNaN(price) || price < 0) ok = false;
+  if (!cat || title.length < 10 || desc.length < 20 || !cond || !validPrice || !validPeriod) ok = false;
   return ok;
 }
 
@@ -884,7 +934,7 @@ function paBuildReview() {
   const title  = document.getElementById('pa-title').value;
   const desc   = document.getElementById('pa-description').value;
   const cond   = COND_LABELS[document.getElementById('pa-condition').value]  || '—';
-  const price  = Number(document.getElementById('pa-price').value).toLocaleString('ar-EG');
+  const price = listingPriceText({ price: document.getElementById('pa-price').value, listing_type: paListingType, rental_period: document.getElementById('pa-rental-period').value });
   const nego   = document.getElementById('pa-negotiable').checked ? 'نعم' : 'لا';
   const gov    = document.getElementById('pa-governorate').value;
   const area   = document.getElementById('pa-area').value;
@@ -896,11 +946,12 @@ function paBuildReview() {
     : '<span style="color:var(--ink3)">لا توجد صور</span>';
 
   document.getElementById('pa-review-content').innerHTML = `
+    <div class="pa-review-row"><strong>نوع الإعلان</strong><span>${listingTypeLabel({ listing_type: paListingType })}</span></div>
     <div class="pa-review-row"><strong>التصنيف</strong><span>${cat}</span></div>
     <div class="pa-review-row"><strong>العنوان</strong><span>${title}</span></div>
     <div class="pa-review-row"><strong>الوصف</strong><span style="color:var(--ink2)">${desc}</span></div>
     <div class="pa-review-row"><strong>الحالة</strong><span>${cond}</span></div>
-    <div class="pa-review-row"><strong>السعر</strong><span style="color:var(--orange);font-weight:800">${price} ج</span></div>
+    <div class="pa-review-row"><strong>${paListingType === 'rent' ? 'قيمة الإيجار' : 'السعر'}</strong><span style="color:var(--orange);font-weight:800">${price}</span></div>
     <div class="pa-review-row"><strong>قابل للتفاوض</strong><span>${nego}</span></div>
     <div class="pa-review-row"><strong>المحافظة</strong><span>${gov}</span></div>
     <div class="pa-review-row"><strong>المنطقة</strong><span>${area || '—'}</span></div>
@@ -913,6 +964,9 @@ function paBuildReview() {
 /* ── Submit ── */
 async function paSubmit() {
   if (paBusy) return;
+  if (!paValidateStep1()) { paGoStep(1); return; }
+  if (!paValidateStep2()) { paGoStep(2); return; }
+  if (!paValidateStep3()) { paGoStep(3); return; }
 
   const termsEl = document.getElementById('pa-terms-agree');
   if (!termsEl.checked) {
@@ -939,7 +993,9 @@ async function paSubmit() {
       title:          document.getElementById('pa-title').value.trim(),
       description:    document.getElementById('pa-description').value.trim(),
       condition:      document.getElementById('pa-condition').value,
-      price:          parseInt(document.getElementById('pa-price').value),
+      price:          Number(document.getElementById('pa-price').value),
+      listing_type:   paListingType,
+      rental_period:  paListingType === 'rent' ? document.getElementById('pa-rental-period').value : null,
       negotiable:     document.getElementById('pa-negotiable').checked,
       region:         document.getElementById('pa-governorate').value,
       area:           document.getElementById('pa-area').value.trim() || null,
@@ -1018,6 +1074,8 @@ async function paReset() {
   document.getElementById('pa-description').value = '';
   document.getElementById('pa-condition').value = '';
   document.getElementById('pa-price').value = '';
+  paSetListingType('sale');
+  document.getElementById('pa-rental-period').value = '';
   document.getElementById('pa-negotiable').checked = false;
   document.getElementById('pa-governorate').value = '';
   document.getElementById('pa-area').value = '';
@@ -1070,4 +1128,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-

@@ -39,6 +39,7 @@
 
 const MAKANI_LOCALE_KEY = 'makani_locale';
 const MAKANI_SUPPORTED_LOCALES = ['ar', 'en'];
+const MAKANI_I18N_VERSION = window.APP_VERSION || 'v20261005-rentals-1';
 
 /** يقرأ اللغة الحالية — من i18next لو مهيّأ، وإلا من localStorage، وإلا 'ar' */
 function getLocale() {
@@ -65,9 +66,14 @@ function _saveI18nCache() {
     const enData = i18next.store?.data?.en || i18next.services?.resourceStore?.data?.en;
     if (enData && Object.keys(enData).length > 0) {
       let existing = {};
-      try { existing = JSON.parse(localStorage.getItem('makani_i18n_cache_en') || '{}'); } catch (e) {}
+      try {
+        if (localStorage.getItem('makani_i18n_cache_version') === MAKANI_I18N_VERSION) {
+          existing = JSON.parse(localStorage.getItem('makani_i18n_cache_en') || '{}');
+        }
+      } catch (e) {}
       const merged = Object.assign({}, existing, enData);
       localStorage.setItem('makani_i18n_cache_en', JSON.stringify(merged));
+      localStorage.setItem('makani_i18n_cache_version', MAKANI_I18N_VERSION);
     }
   } catch (e) {}
 }
@@ -84,8 +90,10 @@ async function initI18n(namespaces) {
   let cachedResources = undefined;
   try {
     const raw = localStorage.getItem('makani_i18n_cache_en');
-    if (raw) {
+    if (raw && localStorage.getItem('makani_i18n_cache_version') === MAKANI_I18N_VERSION) {
       cachedResources = { en: JSON.parse(raw) };
+    } else {
+      localStorage.removeItem('makani_i18n_cache_en');
     }
   } catch (e) {}
 
@@ -105,7 +113,7 @@ async function initI18n(namespaces) {
       // الافتراضي بتاع الصفحة (spaces/market/bazaars/...).
       fallbackNS: 'common',
       backend: {
-        loadPath: '/locales/{{lng}}/{{ns}}.json',
+        loadPath: '/locales/{{lng}}/{{ns}}.json?v=' + encodeURIComponent(MAKANI_I18N_VERSION),
       },
       detection: {
         // بدون 'navigator' عمدًا: العربية هي اللغة الافتراضية لكل زائر جديد

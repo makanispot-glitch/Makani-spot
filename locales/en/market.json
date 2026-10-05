@@ -1,4 +1,6 @@
 {
+  "listingTypes": { "sale": "For sale", "rent": "For rent" },
+  "rentalPeriods": { "day": "Day", "week": "Week", "month": "Month" },
   "categories": {
     "food-juice-cart": "Food & Juice Cart",
     "fast-food-partition": "Fast Food Kiosk",
@@ -9,6 +11,7 @@
     "gifts": "Gifts & Decor",
     "corner-space": "Corner Space",
     "vending": "Vending Machines",
+    "event-supplies": "Event Supplies",
     "other": "Other"
   },
   "conditions": {
@@ -47,10 +50,10 @@
     "البحر الأحمر": "Red Sea"
   },
   "hero": {
-    "titlePre": "Start With a Business",
-    "titleSpan": "Ready to Run",
-    "subtitle": "Browse ready-to-run businesses and start selling from day one — no commission, no hidden fees",
-    "searchPlaceholder": "Search by business or area…"
+    "titlePre": "Businesses & Equipment",
+    "titleSpan": "For Sale & Rent",
+    "subtitle": "Ready businesses, kiosks and event supplies. Contact the advertiser directly with no commission or hidden fees.",
+    "searchPlaceholder": "Search businesses, equipment or areas…"
   },
   "quickLinks": {
     "spacesTitle": "Browse Commercial Spaces",
@@ -59,12 +62,22 @@
     "bazaarsDesc": "Join a bazaar near you"
   },
   "freeBar": {
-    "text": "List your business for sale",
+    "text": "List your business or equipment for sale or rent",
     "textStrong": "100% free",
     "textSuffix": "— no commission, no hidden fees",
     "postNow": "Post Now →"
   },
   "filters": {
+    "listingType": "Listing type",
+    "typeShort": "Type",
+    "rentalPeriod": "Rental period",
+    "allPeriods": "All periods",
+    "priceContextRequired": "Price comparison requires one listing type and a specific rental period",
+    "filterSort": "Filter & Sort",
+    "browseActions": "Browse actions",
+    "location": "Location",
+    "priceFrom": "Minimum price",
+    "priceTo": "Maximum price",
     "categoryLabel": "Category",
     "all": "All",
     "allGovs": "All Governorates",
@@ -102,11 +115,16 @@
     "negotiable": "Negotiable",
     "featured": "⭐ Featured",
     "favoriteTitle": "Favorites",
+    "featuredLabel": "Featured",
+    "noImage": "No image available",
+    "photos": "{{count}} photos",
+    "published": "Published on {{date}}",
     "currency": "EGP",
     "prev": "Previous",
     "next": "Next"
   },
   "empty": {
+    "dynFragPeriod": "priced per {{period}}",
     "dynNoneCombo": "No listings {{what}} yet",
     "dynFragCat": "in {{cat}}",
     "dynFragGov": "in {{gov}}",
@@ -143,12 +161,13 @@
     "removeFavorite": "Remove from favorites",
     "loginToContact": "🔒 Log in to view contact info",
     "whatsappContact": "💬 Contact via WhatsApp",
-    "callSeller": "📞 Call the Seller",
+    "callSeller": "📞 Call the Advertiser",
     "published": "📅 Published {{date}}",
     "views_one": "👁 {{count}} view",
     "views_other": "👁 {{count}} views",
     "reportBtn": "🚩 Report Listing",
-    "shareText": "🔖 *{{title}}*\n💰 Price: {{price}} EGP\n📍 {{region}}\n\n🛒 View listing: {{url}}",
+    "shareText": "{{title}} - {{type}}\nPrice: {{price}}\n{{region}}\nView listing: {{url}}",
+    "whatsappRentMsg": "Hi, I am interested in renting {{title}} listed at {{price}} on Makani Spot. Is it available for rent?",
     "whatsappMsg": "Hi, I saw your listing for {{title}} on Makani Spot"
   },
   "myListings": {
@@ -200,6 +219,9 @@
     "descPlaceholder": "Describe the business or item in detail…",
     "conditionLabel": "Condition",
     "priceLabel": "Price (EGP)",
+    "rentPriceLabel": "Rental price (EGP)",
+    "pickPeriod": "Choose a period",
+    "periodRequired": "Please choose a rental period",
     "negotiableLabel": "Negotiable",
     "regionLabel": "Governorate",
     "areaLabel": "Area / District (optional)",
@@ -269,7 +291,7 @@
     "findSpace": "Find a Space",
     "language": "Language",
     "logout": "Log Out",
-    "roleLabel": "Businesses for Sale",
+    "roleLabel": "Businesses & Equipment",
     "defaultName": "My Account"
   },
   "fab": {
@@ -339,6 +361,7 @@
     "errSuspended": "Your account is temporarily suspended — please contact support",
     "errListingGone": "This listing is no longer available — it may be sold or expired",
     "errOwnListing": "This is your own listing — the service is for buyers",
+    "errRental": "Inspection and transport are available for sale listings only",
     "errDuplicate": "You already have an open request on this listing. Track it from your dashboard.",
     "errGeneric": "Something went wrong, please try again",
     "refLabel": "Your request code",

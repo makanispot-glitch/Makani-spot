@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#F36418">
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="manifest" href="/manifest.json?v=20260901161610">
-<script src="/version.js?v=20260901161610"></script>
+<link rel="manifest" href="/manifest.json?v=20261005145929">
+<script src="/version.js?v=20261005145929"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -717,10 +717,17 @@ tr:hover td { background: #FAFAFA; }
   </div>
 </div>
 
+<script src="/shared/listing-model.js?v=20261005145929"></script>
 <script>
 const ADM_TOKEN_KEY = 'makani_admin_token';
 
 const CAT_LABELS  = {partition:'بارتشن وأثاث','food-cart':'عربات طعام',fridge:'ثلاجات وتبريد',display:'ڤيترينات وعرض',kitchen:'معدات مطبخ',coffee:'معدات كافيه',pos:'كاشير وPOS',vending:'أجهزة بيع ذاتي',storage:'رفوف وتخزين',lighting:'إضاءة تجارية',other:'أخرى'};
+Object.assign(CAT_LABELS, {
+  'food-juice-cart': 'عربية أكل / عصير', 'fast-food-partition': 'بارتشن وجبات سريعة',
+  'beauty-partition': 'بارتشن عناية شخصية', 'clothing-partition': 'بارتشن ملابس / بوتيك',
+  handmade: 'هاند ميد', phones: 'تليفونات وإكسسوار', gifts: 'هدايا وديكور',
+  'corner-space': 'كورنر سبيس', 'event-supplies': 'مستلزمات الفعاليات',
+});
 const COND_LABELS = {new:'جديد','like-new':'كالجديد',good:'جيد',fair:'مقبول'};
 const CONTACT_LABELS = {both:'واتساب + اتصال',whatsapp:'واتساب فقط',call:'اتصال فقط'};
 
@@ -928,7 +935,7 @@ function admBuildTable(list) {
         <strong>${escHtml(l.seller_name || '—')}</strong>
         <span>${escHtml(l.seller_email || '')}</span>
       </td>
-      <td style="font-weight:800;color:#F36418">${Number(l.price).toLocaleString('ar-EG')} ج</td>
+      <td style="font-weight:800;color:#F36418">${listingPriceText(l)}<div style="font-size:11px;color:#555">${listingTypeLabel(l)}</div></td>
       <td><span class="adm-status ${statusMap[l.status] || ''}">${statusLabel[l.status] || escHtml(l.status)}</span></td>
       <td style="color:#666">${escHtml(l.region) || '—'}</td>
       <td style="color:#999;font-size:12px">${date}</td>
@@ -1074,9 +1081,10 @@ function admShowPreview(id) {
     ${imgsHtml}
     <div class="adm-preview-row"><strong>صاحب الإعلان</strong><span>${escHtml(l.seller_name || '—')} — ${escHtml(l.seller_email || '')} ${l.seller_is_suspended ? '<span class=\"adm-badge-suspended\">🚫 موقوف</span>' : ''}</span></div>
     <div class="adm-preview-row"><strong>العنوان</strong><span style="font-weight:800">${escHtml(l.title)}</span></div>
+    <div class="adm-preview-row"><strong>نوع الإعلان</strong><span>${listingTypeLabel(l)}</span></div>
     <div class="adm-preview-row"><strong>التصنيف</strong><span>${CAT_LABELS[l.category] || escHtml(l.category)}</span></div>
     <div class="adm-preview-row"><strong>الحالة</strong><span>${COND_LABELS[l.condition] || escHtml(l.condition)}</span></div>
-    <div class="adm-preview-row"><strong>السعر</strong><span style="color:#F36418;font-weight:800">${Number(l.price).toLocaleString('ar-EG')} ج ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
+    <div class="adm-preview-row"><strong>السعر</strong><span style="color:#F36418;font-weight:800">${listingPriceText(l)} ${l.negotiable ? '(قابل للتفاوض)' : ''}</span></div>
     <div class="adm-preview-row"><strong>الوصف</strong><span style="color:#555">${escHtml(l.description) || '—'}</span></div>
     <div class="adm-preview-row"><strong>المحافظة / المنطقة</strong><span>${escHtml(l.region) || '—'}${l.area ? ' — ' + escHtml(l.area) : ''}</span></div>
     <div class="adm-preview-row"><strong>التليفون</strong><span dir="ltr">${escHtml(l.phone) || '—'}</span></div>

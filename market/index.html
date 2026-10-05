@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="مشاريع كاملة للبيع — مكاني Spot. تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار.">
-<title>مشاريع كاملة للبيع — مكاني Spot</title>
+<meta name="description" content="مشاريع ومعدات للبيع والإيجار — مكاني Spot. تصفح المشاريع الجاهزة والبارتشنات ومستلزمات الفعاليات في مصر.">
+<title>مشاريع ومعدات للبيع والإيجار — مكاني Spot</title>
 
 <!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
 <script>
@@ -68,11 +68,11 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20260901161610">
+<link rel="manifest" href="/manifest.json?v=20261005145929">
 <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
      build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
      في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
-<script src="/version.js?v=20260901161610" defer></script>
+<script src="/version.js?v=20261005145929" defer></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -82,8 +82,8 @@
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="مشاريع كاملة للبيع — مكاني Spot">
-<meta property="og:description" content="تصفح وبيع المشاريع التجارية الجاهزة في مصر بأفضل الأسعار">
+<meta property="og:title" content="مشاريع ومعدات للبيع والإيجار — مكاني Spot">
+<meta property="og:description" content="تصفح المشاريع الجاهزة والمعدات ومستلزمات الفعاليات للبيع والإيجار في مصر">
 <meta property="og:image" content="/favicon.jpg">
 <!-- Auth + Nav Boot — راجع shared/nav-boot-snippet.html (النسخة المرجعية) -->
 <script>
@@ -161,20 +161,21 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://rxqkpjuvudweyovekvvx.supabase.co" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20260901161610">
+<link rel="stylesheet" href="/style.css?v=20261005145929">
 <!-- انتقال بين المستندات للأقسام الثلاثة — مربوط منها وحدها عمدًا -->
-<link rel="stylesheet" href="/shared/nav-transition.css?v=20260901161610">
+<link rel="stylesheet" href="/shared/nav-transition.css?v=20261005145929">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20260901161610" defer></script>
-<script src="/pwa-install.js?v=20260901161610" defer></script>
+<script src="/shared/sb-config.js?v=20261005145929" defer></script>
+<script src="/shared/listing-model.js?v=20261005145929" defer></script>
+<script src="/pwa-install.js?v=20261005145929" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20260901161610" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20260901161610" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20260901161610" defer></script>
-<script src="/shared/i18n.js?v=20260901161610" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20261005145929" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261005145929" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261005145929" defer></script>
+<script src="/shared/i18n.js?v=20261005145929" defer></script>
 <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
-<script src="/shared/nav-identity.js?v=20260901161610" defer></script>
+<script src="/shared/nav-identity.js?v=20261005145929" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -183,7 +184,10 @@
 }
 
 /* ── Layout ── */
-.eq-page { min-height: 100vh; display: flex; flex-direction: column; }
+.eq-page {
+  min-height: 100vh; height: auto; display: flex; flex-direction: column;
+  overflow-x: clip;
+}
 
 /* ── Navbar ── */
 .eq-nav {
@@ -579,35 +583,31 @@
 .eq-main { flex: 1; padding: 28px 32px; max-width: 1400px; margin: 0 auto; width: 100%; }
 
 /* ── Count row ── */
-.eq-count-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.eq-count-row span { font-size: 14px; font-weight: 700; color: var(--ink2); }
+.eq-count-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+#eq-count { min-width: 0; font-size: 14px; font-weight: 700; color: var(--ink2); overflow-wrap: anywhere; }
 
 /* ── Grid ── */
 .eq-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  gap: 16px;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 /* أثناء جلب نتيجة فلتر جديدة: تخفيت لا مسح — يمنع وميض الشبكة كل ضغطة */
 .eq-grid.is-busy { opacity: 0.45; pointer-events: none; }
 
 /* ══════════════════════════════════════════════════════════════
-   🃏 الكرت — بنية واحدة تخدم ٣ حالات عرض بـCSS وحده:
-     • شبكة (ديسكتوب، افتراضي)   • قائمة (ديسكتوب، اختياري)
-     • عمود واحد بعرض الشاشة (موبايل)
-   ترتيب القراءة: صورة ← سعر ← عنوان ← موقع/حالة. السعر أول معلومة
-   نصية لأنه أسرع فرز ذهني للمشتري، والتصنيف اتنقل شريحة فوق الصورة
-   بدل ما يزاحم العنوان في المتن.
+   One card structure for the responsive grid and horizontal list.
    ══════════════════════════════════════════════════════════════ */
 .eq-card {
   position: relative;
   display: flex; flex-direction: column;
-  background: var(--surface); border-radius: 18px;
+  min-width: 0;
+  background: var(--surface); border-radius: 8px;
   border: 1px solid var(--border); overflow: hidden;
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.eq-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--warm-300); }
+.eq-card:hover { box-shadow: var(--shadow); border-color: var(--warm-300); }
 /* التركيز بلوحة المفاتيح بيقع على الرابط الممدود جوه الكرت — الحلقة
    تترسم على الكرت كله عشان تبان */
 .eq-card:focus-within { box-shadow: var(--ring-focus); border-color: var(--orange); }
@@ -615,15 +615,22 @@
 .eq-card-media {
   position: relative; overflow: hidden;
   aspect-ratio: 4 / 3;
-  background: var(--bg-sunken);
+  background: #f1f4f5;
   flex-shrink: 0;
 }
-.eq-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eq-card-media img {
+  width: 100%; height: 100%; object-fit: contain; object-position: center; display: block;
+  user-select: none; -webkit-user-drag: none;
+}
+.eq-card-media img[hidden] { display: none; }
+.eq-card-cover { position: absolute; inset: 0; }
 .eq-card-no-img {
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 40px; background: var(--surface2); opacity: 0.55;
+  display: none; align-items: center; justify-content: center;
+  color: #87959d; background: #f1f4f5;
 }
+.eq-card-no-img svg { width: 32px; height: 32px; }
+.eq-card-media.is-image-missing .eq-card-no-img { display: flex; }
 
 /* الرابط الممدود: العنوان رابط حقيقي، و::after بيغطي الكرت كله فيبقى
    أي ضغطة على الكرت = ضغطة على الرابط. الأزرار فوقه بـz-index أعلى. */
@@ -635,27 +642,12 @@
 /* شارة «مميز» في بداية السطر وزر المفضلة في نهايته: ما بيتلاقوش أبدًا،
    وبيتبادلوا الجهة تلقائيًا في الإنجليزية لأنهم بخصائص منطقية */
 .eq-card-flag {
-  position: absolute; top: 10px; inset-inline-start: 10px; z-index: 3;
-  background: rgba(254,243,199,0.96); color: #92400E;
-  padding: 4px 10px; border-radius: var(--radius-pill);
+  position: absolute; top: 8px; inset-inline-start: 8px; z-index: 3;
+  max-width: calc(100% - 64px); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  background: #087f8c; color: #fff;
+  padding: 4px 8px; border-radius: 4px;
   font-family: var(--font-display); font-size: 11px; font-weight: 800;
-  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(14,18,24,0.12);
 }
-.eq-card-chip {
-  position: absolute; bottom: 10px; inset-inline-start: 10px; z-index: 3;
-  background: rgba(255,255,255,0.94); color: var(--fg-2);
-  padding: 4px 10px; border-radius: var(--radius-pill);
-  font-family: var(--font-display); font-size: 11px; font-weight: 700;
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(14,18,24,0.10);
-  /* المساحة المحجوزة في نهاية السطر لنقاط الكاروسيل — بدونها كان تصنيف
-     طويل زي «بارتشن وجبات سريعة» يمتد تحت النقاط في عرض القائمة الضيّق */
-  max-width: calc(100% - 84px); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-}
-/* بلا كاروسيل = بلا نقاط، فالشريحة تاخد السطر كله */
-.eq-card-media:not(:has(.eq-cn-dots)) .eq-card-chip { max-width: calc(100% - 20px); }
 
 /* ── متن الكرت ── */
 .eq-card-body {
@@ -666,19 +658,21 @@
 .eq-card-priceline { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .eq-card-price {
   font-family: var(--font-display); font-size: 18px; font-weight: 900;
-  color: var(--fg-1); line-height: 1.2; letter-spacing: -0.01em;
+  max-width: 100%; overflow-wrap: anywhere;
+  color: var(--fg-1); line-height: 1.4; letter-spacing: 0;
 }
+.eq-card-price small { font-size: 0.72em; font-weight: 700; white-space: nowrap; }
 .eq-card-nego {
   font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
   color: #15803d; background: var(--green-light);
-  padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap;
+  padding: 1px 5px; border-radius: 4px; max-width: 100%;
 }
 .eq-card-title {
   font-family: var(--font-display); font-size: 14px; font-weight: 700;
   color: var(--fg-2); line-height: 1.45; margin: 0;
   /* قصّ على سطرين: يمنع الكروت من اختلاف الارتفاع فتبقى الصفوف مسنّنة */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow: hidden; overflow-wrap: anywhere; min-height: 2.9em;
 }
 .eq-card-desc {
   display: none;   /* عرض القائمة وحده بيظهره */
@@ -686,7 +680,7 @@
   line-height: 1.6; margin: 2px 0 0;
 }
 .eq-card-meta {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
   margin-top: auto; padding-top: 6px;
   font-family: var(--font-body); font-size: 12px; color: var(--fg-3);
   min-width: 0;
@@ -695,11 +689,23 @@
   display: inline-flex; align-items: center; gap: 4px;
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.eq-card-loc > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .eq-card-loc svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.eq-card-foot { display: flex; align-items: center; gap: 5px 8px; flex-wrap: wrap; min-width: 0; }
+.eq-card-category { display: none; }
+.eq-card-type { font-size: 11px; font-weight: 700; color: var(--ink2); }
+.eq-card-type.is-rental, .eq-badge-type { color: #0f766e; }
+.eq-my-price { font-weight: 800; margin: 6px 0; overflow-wrap: anywhere; }
+.eq-my-price .eq-card-type { margin-inline-start: 8px; }
+.eq-card-date { font-size: 11px; margin-inline-start: auto; white-space: nowrap; }
 .eq-card-cond {
-  margin-inline-start: auto; flex-shrink: 0;
+  min-width: 0; max-width: 100%;
   font-size: 11px; font-weight: 700; color: var(--ink2);
-  background: var(--bg-sunken); padding: 2px 9px; border-radius: var(--radius-pill);
+  background: var(--bg-sunken); padding: 2px 6px; border-radius: 4px;
+}
+.eq-suggested-grid {
+  display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  max-width: 840px; margin: 0 auto; text-align: initial;
 }
 
 /* ── Badges (تُستخدم في مودال التفاصيل) ── */
@@ -1122,66 +1128,6 @@ textarea.eq-svc-inp { resize: vertical; min-height: 76px; line-height: 1.6; }
 .eq-share-btn:hover { background: #F36418; border-color: #F36418; transform: scale(1.08); }
 .eq-share-btn svg { width: 17px; height: 17px; display: block; }
 
-/* ── Card Image Carousel ── */
-.eq-card-carousel {
-  position: absolute; inset: 0; overflow: hidden;
-  direction: ltr;
-  background:
-    radial-gradient(circle at center, rgba(255,255,255,0.92), rgba(243,244,246,0.92));
-}
-.eq-card-slides {
-  display: flex; height: 100%;
-  transition: transform var(--dur-base) var(--ease-out);
-  will-change: transform;
-  direction: ltr;
-}
-.eq-card-slide {
-  flex: 0 0 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  direction: ltr;
-}
-.eq-card-slide img {
-  width: 100%; height: 100%;
-  object-fit: contain; object-position: center center;
-  display: block;
-  user-select: none; -webkit-user-drag: none;
-}
-/* Carousel nav arrows */
-.eq-cn-btn {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  z-index: 8; background: rgba(17,24,39,0.72); color: #fff;
-  border: 1px solid rgba(255,255,255,0.55);
-  width: 34px; height: 34px; border-radius: 50%;
-  font-size: 24px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0.92; transition: background var(--dur-fast) var(--ease-out), transform .2s, opacity .2s;
-  padding: 0; line-height: 1;
-  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.28);
-}
-.eq-cn-btn:hover {
-  background: rgba(243,100,24,0.94);
-  transform: translateY(-50%) scale(1.05);
-}
-@media (max-width: 768px) { .eq-cn-btn { width: 32px; height: 32px; font-size: 22px; } }
-.eq-cn-prev { left: 8px; }
-.eq-cn-next { right: 8px; }
-/* Carousel dots — في الجهة المقابلة لشريحة التصنيف على نفس السطر.
-   ملاحظة: النقاط جوه .eq-card-carousel اللي عليه direction:ltr إجباري،
-   فالخصائص المنطقية (inset-inline-*) بتتحسب على ltr وتوقعهم في نفس جهة
-   الشريحة بالظبط فيتراكبوا. لذلك التموضع هنا صريح حسب اتجاه الصفحة. */
-.eq-cn-dots {
-  position: absolute; bottom: 13px; left: 12px; right: auto;
-  display: flex; gap: 4px; z-index: 5; pointer-events: none;
-}
-[dir="ltr"] .eq-cn-dots { left: auto; right: 12px; }
-.eq-cn-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: rgba(255,255,255,0.5); transition: background var(--dur-fast) var(--ease-out), transform .2s;
-  flex-shrink: 0;
-}
-.eq-cn-dot.active { background: #fff; transform: scale(1.35); }
-
 /* ── Lightbox ── */
 .eq-lightbox {
   display: none; position: fixed; inset: 0; z-index: 10000;
@@ -1463,7 +1409,7 @@ body.filter-open .eq-sidebar-overlay { display: block; }
 /* Drawer wrapper — slides in from the left */
 .eq-filter-drawer {
   position: fixed;
-  top: 68px; left: 0; bottom: 0;
+  top: var(--eq-nav-h, 60px); left: 0; bottom: 0;
   width: min(340px, 92vw);
   z-index: 10001;
   transform: translateX(-100%);
@@ -1482,7 +1428,15 @@ body.filter-open .eq-filter-drawer {
   visibility: visible !important;
   display: block !important;
 }
-body.filter-open { overflow: hidden; }
+body.filter-open {
+  overflow: hidden;
+  position: fixed;
+  top: var(--eq-filter-scroll, 0px);
+  width: 100%;
+}
+body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
+.eq-drawer-body { overscroll-behavior: contain; }
+.eq-drawer-actions button, .eq-drawer-tabs button, #eq-drawer-price-tiers button { touch-action: manipulation; }
 
 /* Scrollable inner panel */
 .eq-drawer-panel {
@@ -1559,88 +1513,88 @@ body.filter-open { overflow: hidden; }
   justify-content: center; white-space: nowrap;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   🔖 لسان الفلتر الجانبي — نقطة الدخول الوحيدة للفلتر على الموبايل
-   كان 44×113px (≈٤٩٥٠px²) بتدرّج برتقالي صلب وهالة برتقالية واسعة
-   في منتصف الشاشة تمامًا: بيغطي جزء من كرت، وبيشدّ العين أكتر من
-   الإعلانات نفسها. النسخة دي:
-     • أضيق وأقصر (≈نصف المساحة) بعد شيل السهم
-     • زجاجية شبه شفافة بـblur فتاخد لون اللي تحتها بدل ما تحجبه
-     • ملاصقة للحافة: ظل قصير للداخل بدل هالة منتشرة
-     • أوطى من المنتصف شوية → بره منطقة قراءة الكروت وأقرب للإبهام
-     • مساحة اللمس أوسع من المساحة المرئية عبر ::before شفاف
-   ══════════════════════════════════════════════════════════════ */
-.eq-sidebar-tab {
-  position: fixed;
-  left: 0; top: 58%;
-  transform: translateY(-50%);
-  width: 32px; min-height: 0;
-  z-index: 9999;
-  background: rgba(243,100,24,0.88);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  color: #fff;
-  border: none;
-  border-inline-end: 1px solid rgba(255,255,255,0.22);
-  border-radius: 0 13px 13px 0;
-  padding: 11px 0 10px;
-  cursor: pointer;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 6px;
-  box-shadow: 2px 0 10px rgba(14,18,24,0.16);
-  font-family: var(--font-display);
-  transition: left 0.32s cubic-bezier(0.4,0,0.2,1), opacity var(--dur-base) var(--ease-out),
-              background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  pointer-events: auto;
-  user-select: none;
-}
-/* منطقة لمس أوسع من الشكل المرئي — الشكل 32px والهدف الفعلي 46px */
-.eq-sidebar-tab::before {
-  content: ''; position: absolute;
-  top: -7px; bottom: -7px; left: 0; right: -14px;
-}
-.eq-sidebar-tab:active { background: rgba(214,86,18,0.94); box-shadow: 1px 0 6px rgba(14,18,24,0.20); }
-/* الدرج مفتوح = اللسان مالوش وظيفة (الإغلاق من ✕ أو من الخلفية)،
-   وكان بينزلق لحافة الدرج ويبان كأنه زر إغلاق وهو مش كده */
-body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
-
-.eq-sidebar-tab-icon { width: 16px; height: 16px; display: block; flex-shrink: 0; }
-
-/* نص «فلتر» رأسي — الدليل الصريح على وظيفة الزر */
-.eq-sidebar-tab-text {
-  font-size: 10.5px; font-weight: 800;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-  letter-spacing: .06em;
-  line-height: 1;
+[hidden] { display: none !important; }
+.eq-type-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.eq-type-segments { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); max-width: 100%; }
+.eq-type-btn { min-height: 44px; min-width: 76px; padding: 0 12px; border: 0; border-radius: 5px; background: transparent; color: var(--ink2); font: 700 13px var(--font-display); cursor: pointer; touch-action: manipulation; }
+.eq-type-btn.on { background: #fff; color: #0f766e; box-shadow: 0 1px 3px #00000018; }
+.eq-type-btn:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+.eq-type-period { display: flex; align-items: center; gap: 8px; max-width: 100%; font-size: 12px; font-weight: 700; }
+.eq-type-period select { min-height: 44px; min-width: 130px; max-width: 100%; border: 1px solid var(--border); border-radius: 6px; background: #fff; padding: 0 10px; color: var(--ink); font: inherit; }
+.eq-drawer-section .eq-type-controls, #eq-edit-type-controls { margin-bottom: 12px; }
+.eq-price-unit { font-size: 12px; font-weight: 600; color: var(--ink2); }
+#eq-price-btn:disabled, .eqf-range input:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .eq-type-period { flex-wrap: wrap; }
 }
 
-/* عدّاد الفلاتر المفعّلة — فوق الأيقونة لا في سطر مستقل: في السطر كان
-   بيزوّد ٢٣px لارتفاع اللسان أول ما يتفعّل فلتر، يعني الزر يكبر بالظبط
-   في اللحظة اللي المفروض يفضل فيها هادي. دلوقتي الارتفاع ثابت.
-   التموضع فيزيائي (right) لا منطقي: اللسان نفسه مثبّت بـleft:0 في
-   الاتجاهين، فالجهة الداخلية هي اليمين دايمًا — والمنطقي كان هيحطه
-   على حافة الشاشة في العربي فيتقص مع الحواف الدائرية. */
-.eq-sidebar-tab-badge {
-  position: absolute; top: 5px; right: 2px;
-  background: #fff; color: var(--orange);
-  border-radius: 50px;
-  min-width: 16px; height: 16px; padding: 0 4px;
-  font-size: 9.5px; font-weight: 900;
+/* Mobile browsing controls share the same applied filter state as desktop. */
+.eq-mobile-filter-strip, .eq-mobile-actions { display: none; }
+.eq-mobile-icon { width: 18px; height: 18px; flex-shrink: 0; }
+.eq-mobile-badge {
   display: none; align-items: center; justify-content: center;
-  line-height: 1; flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(14,18,24,0.28);
+  min-width: 19px; height: 19px; padding: 0 4px;
+  border-radius: 50%; background: var(--orange); color: #fff;
+  font-size: 10px; font-weight: 800; line-height: 1;
 }
-.eq-sidebar-tab-badge.show { display: flex; }
-/* في وجود فلتر مفعّل يبقى اللسان معتم بالكامل — إشارة إن في حاجة شغّالة */
-.eq-sidebar-tab:has(.eq-sidebar-tab-badge.show) { background: rgba(243,100,24,0.97); }
+.eq-mobile-badge.show { display: inline-flex; }
+@media (max-width: 768px) {
+  .eq-mobile-filter-strip {
+    display: flex; gap: 8px; align-items: center;
+    position: sticky; top: var(--eq-nav-h, 60px); z-index: 190;
+    padding: 8px 12px; background: #fff;
+    border-bottom: 1px solid var(--border);
+    transition: transform 180ms ease-out, opacity 180ms ease-out, visibility 180ms;
+  }
+  .eq-mobile-filter-chip {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    flex: 1; min-width: 0; min-height: 44px; padding: 0 8px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: #fff; color: var(--ink2);
+    font-family: var(--font-display); font-size: 12px; font-weight: 700;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .eq-mobile-filter-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .eq-mobile-filter-chip .eq-mobile-icon { width: 12px; height: 12px; }
+  .eq-mobile-filter-chip.on { border-color: var(--orange); color: var(--orange); background: #fff7f2; }
+  .eq-mobile-filter-strip.is-scroll-hidden { transform: translateY(-8px); opacity: 0; visibility: hidden; pointer-events: none; }
+  .eq-mobile-actions {
+    display: flex; align-items: center;
+    position: fixed; bottom: calc(var(--eq-bottom-nav-h, 60px) + 12px);
+    left: 50%; transform: translateX(-50%); z-index: 510;
+    width: min(310px, calc(100% - 32px)); padding: 4px;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(14,18,24,0.16);
+    transition: transform 180ms ease-out, opacity 180ms ease-out, visibility 180ms;
+  }
+  .eq-mobile-action {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    flex: 1; min-width: 0; height: 46px; padding: 0 8px;
+    color: var(--dark); background: transparent; border: none; border-radius: 4px;
+    font-family: var(--font-display); font-size: 13px; font-weight: 800;
+    cursor: pointer; touch-action: manipulation; white-space: nowrap;
+  }
+  .eq-mobile-action:first-child { border-inline-end: 1px solid var(--border); border-radius: 0; }
+  .eq-mobile-action span[data-i18n] { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .eq-mobile-action .eq-mobile-badge { flex-shrink: 0; }
+  .eq-mobile-action:first-child .eq-mobile-icon { color: var(--orange); }
+  .eq-mobile-action:active, .eq-mobile-filter-chip:active { background: var(--surface2); }
+  .eq-mobile-action:focus-visible, .eq-mobile-filter-chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .eq-mobile-actions.is-scroll-hidden { transform: translate(-50%, 8px); opacity: 0; visibility: hidden; pointer-events: none; }
+  body.filter-open .eq-mobile-actions, body.filter-open .eq-mobile-filter-strip { visibility: hidden; pointer-events: none; }
+  .eq-drawer-close { width: 44px; height: 44px; }
+  .eq-drawer-tabs .eqf-chip, #eq-drawer-price-tiers .eqf-tier { min-height: 44px; }
+  .eq-drawer-body select, .eq-drawer-body input { font-size: 16px; }
+  .eq-drawer-actions .eq-btn { min-width: 0; padding-inline: 10px; font-size: 12px; }
+  .eq-main { padding-bottom: 76px; }
+  .eq-fab, .eq-fab-tooltip { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eq-mobile-filter-strip, .eq-mobile-actions, .eq-filter-drawer { transition: none; }
+}
 
-/* Hide drawer + tab on desktop */
 @media (min-width: 769px) {
-  .eq-filter-drawer, .eq-sidebar-overlay, .eq-sidebar-tab { display: none !important; }
+  .eq-filter-drawer, .eq-sidebar-overlay, .eq-mobile-filter-strip, .eq-mobile-actions { display: none !important; }
 }
 
 /* ── Account dropdown: fix RTL overflow on mobile ── */
@@ -1699,46 +1653,45 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
   .eq-quick-links .nsb-text small { white-space: normal; }
 }
 
-/* ── زر المفضلة على الكرت ──
-   min-height صريحة إجبارية: style.css المشترك بيفرض button{min-height:44px}
-   فكان الزر بيطلع بيضاوي 32×44 بدل دائرة. راجع نفس الفخ في .eqf-chip. */
+/* A compact visible heart inside a transparent, touch-friendly target. */
 .eq-fav-btn {
-  position: absolute; top: 8px; inset-inline-end: 8px; z-index: 3;
-  width: 34px; height: 34px; min-height: 34px; min-width: 34px; padding: 0;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.92); border: 1px solid rgba(14,18,24,0.06);
-  color: var(--fg-1);
+  position: absolute; top: 2px; inset-inline-end: 2px; z-index: 3;
+  width: 44px; height: 44px; min-height: 44px; min-width: 44px; padding: 0;
+  border-radius: 6px;
+  background: transparent; border: none; box-shadow: none;
+  color: #202a34;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgba(14,18,24,0.10);
-  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out);
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.eq-fav-btn svg { width: 17px; height: 17px; display: block; }
-.eq-fav-btn:hover { background: #fff; transform: scale(1.08); }
-.eq-fav-btn:active { transform: scale(0.94); }
-.eq-fav-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
-/* مفعّل: نفس الأيقونة ممتلئة بلون الحبر — تباين واضح بلا لون صارخ */
-.eq-fav-btn.on { background: var(--fg-1); color: #fff; border-color: transparent; }
-.eq-fav-btn.on:hover { background: var(--fg-1); }
+.eq-fav-btn svg {
+  width: 18px; height: 18px; display: block;
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.eq-fav-btn:hover, .eq-fav-btn.on { color: #d72d55; }
+.eq-fav-btn:hover svg { transform: scale(1.1); }
+.eq-fav-btn:active svg { transform: scale(0.9); }
+.eq-fav-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: -4px; }
 
 /* ── مبدّل العرض شبكة/قائمة ── */
-.eq-count-actions { display: flex; align-items: center; gap: 10px; }
+.eq-count-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.eq-post-action { border-radius: 8px; }
+.eq-post-action > svg { display: none; width: 20px; height: 20px; }
 .eq-view-switch {
-  display: inline-flex; padding: 3px; gap: 2px;
+  display: inline-flex; padding: 2px; gap: 2px; flex-shrink: 0;
   background: var(--bg-sunken); border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: 8px;
 }
 .eq-view-btn {
-  width: 34px; height: 30px; min-height: 30px; padding: 0;
-  border: none; background: none; border-radius: var(--radius-pill);
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0;
+  border: none; background: none; border-radius: 5px;
   color: var(--fg-3); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
               box-shadow var(--dur-fast) var(--ease-out);
 }
-.eq-view-btn svg { width: 16px; height: 16px; display: block; }
+.eq-view-btn svg { width: 20px; height: 20px; display: block; }
 .eq-view-btn:hover { color: var(--fg-1); }
 .eq-view-btn.on {
   background: var(--surface); color: var(--orange);
@@ -1746,34 +1699,21 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 }
 .eq-view-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
 
-/* ── عرض القائمة (ديسكتوب) ── */
-@media (min-width: 769px) {
-  .eq-grid.is-list { grid-template-columns: 1fr; gap: 12px; }
-  .eq-grid.is-list .eq-card { flex-direction: row; align-items: stretch; }
-  .eq-grid.is-list .eq-card-media {
-    width: 260px; flex: 0 0 260px; aspect-ratio: auto; align-self: stretch;
-    min-height: 176px;
-  }
-  .eq-grid.is-list .eq-card-body { padding: 16px 18px; gap: 6px; }
-  .eq-grid.is-list .eq-card-price { font-size: 21px; }
-  .eq-grid.is-list .eq-card-title { font-size: 16px; -webkit-line-clamp: 1; }
-  /* الوصف هو المكسب الحقيقي من عرض القائمة: مساحة أفقية تكفي سطرين
-     يشرحوا المشروع قبل ما المستخدم يفتح التفاصيل */
-  .eq-grid.is-list .eq-card-desc {
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
-  .eq-grid.is-list .eq-card:hover { transform: none; box-shadow: var(--shadow); }
-
-  /* كروت «إعلانات ممكن تهمّك» جوه الحالة الفارغة بتترسم في شبكة ٣ أعمدة
-     خاصة بيها جوه #eq-grid — فكانت بتورث تخطيط القائمة (صورة 260px داخل
-     كرت 271px) وتطلع مهروسة. تفضل دايمًا بتخطيط الشبكة. */
-  .eq-grid.is-list .eq-empty .eq-card { flex-direction: column; }
-  .eq-grid.is-list .eq-empty .eq-card-media { width: auto; flex: 0 0 auto; aspect-ratio: 4/3; min-height: 0; }
-  .eq-grid.is-list .eq-empty .eq-card-body { padding: 12px 14px 14px; }
-  .eq-grid.is-list .eq-empty .eq-card-price { font-size: 18px; }
-  .eq-grid.is-list .eq-empty .eq-card-title { font-size: 14px; -webkit-line-clamp: 2; }
-  .eq-grid.is-list .eq-empty .eq-card-desc { display: none; }
+/* Direct children only: suggested cards in an empty state remain a grid. */
+.eq-grid.is-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.eq-grid.is-list > .eq-card { flex-direction: row; align-items: stretch; }
+.eq-grid.is-list > .eq-card .eq-card-media {
+  width: min(32%, 240px); flex: 0 0 min(32%, 240px); aspect-ratio: 1;
+  align-self: center;
 }
+.eq-grid.is-list > .eq-card .eq-card-flag { max-width: calc(100% - 16px); }
+.eq-grid.is-list > .eq-card .eq-card-body { padding: 16px; gap: 6px; }
+.eq-grid.is-list > .eq-card .eq-card-priceline { padding-inline-end: 44px; min-height: 44px; align-content: flex-start; }
+.eq-grid.is-list > .eq-card .eq-card-title { font-size: 16px; }
+.eq-grid.is-list > .eq-card .eq-card-desc {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.eq-grid.is-list > .eq-card .eq-card-category { display: inline; overflow-wrap: anywhere; }
 
 /* شرائح الفلاتر المفعّلة داخل المتن — نسخة الموبايل وحدها
    (نسخة الديسكتوب موجودة أصلاً داخل شريط الفلاتر العلوي).
@@ -1783,11 +1723,19 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 .eq-active-mobile,
 .eq-active-mobile.has-items { display: none; }
 
-/* ── الموبايل: كرت واحد بعرض الشاشة ── */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .eq-grid:not(.is-list), .eq-suggested-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .eq-main { padding-inline: 20px; }
+}
+
+/* Compact, image-first grid on phones; the list keeps its reading order. */
 @media (max-width: 768px) {
-  /* عمود واحد — التبديل بين العرضين ديسكتوب فقط */
-  .eq-grid, .eq-grid.is-list { grid-template-columns: 1fr; gap: 14px; }
-  .eq-view-switch { display: none; }
+  .eq-count-row { gap: 8px; }
+  #eq-count { font-size: 13px; }
+  .eq-count-actions { gap: 8px; }
+  .eq-post-action { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+  .eq-post-action > span { display: none; }
+  .eq-post-action > svg { display: block; }
 
   /* شريط أفقي قابل للتمرير: عدد الفلاتر ممكن يزيد عن عرض الشاشة،
      والالتفاف كان هيدفع الشبكة لتحت بسطر زيادة كل مرة */
@@ -1801,23 +1749,27 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
   .eq-active-mobile .eqf-active-chip { flex-shrink: 0; min-height: 32px; font-size: 12.5px; }
   .eq-active-mobile .eqf-clear-all { flex-shrink: 0; min-height: 32px; font-size: 12.5px; }
 
-  .eq-card { border-radius: 16px; }
-  /* 16:10 لا 4:3 — الكرت بقى بعرض الشاشة، ونسبة أقصر بتخلي عدد الكروت
-     في الشاشة الواحدة معقول بدل كرت ونص */
-  .eq-card-media { aspect-ratio: 16 / 10; }
-  .eq-card-body { padding: 13px 15px 15px; gap: 6px; }
-  .eq-card-price { font-size: 20px; }
-  .eq-card-title { font-size: 15px; line-height: 1.5; }
-  .eq-card-meta { font-size: 12.5px; padding-top: 8px; }
-  .eq-card-loc svg { width: 14px; height: 14px; }
-  .eq-card-cond { font-size: 11.5px; padding: 3px 10px; }
-  .eq-card-chip, .eq-card-flag { font-size: 11.5px; padding: 5px 11px; }
-  /* هدف لمس أكبر للمفضلة على الموبايل */
-  .eq-fav-btn { width: 38px; height: 38px; min-height: 38px; min-width: 38px; top: 10px; inset-inline-end: 10px; }
-  .eq-fav-btn svg { width: 19px; height: 19px; }
-  /* بلا رفع عند اللمس — الـhover مالوش معنى على الموبايل وكان بيسبب قفزة */
-  .eq-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
-  .eq-card:active { transform: scale(0.985); }
+  .eq-card-media { aspect-ratio: 1; }
+  .eq-card-body { padding: 10px; gap: 4px; }
+  .eq-card-price { font-size: 16px; }
+  .eq-card-priceline { gap: 2px 6px; }
+  .eq-card-title { font-size: 13px; line-height: 1.5; min-height: 3em; }
+  .eq-card-meta { font-size: 11px; padding-top: 4px; }
+  .eq-card-cond, .eq-card-date, .eq-card-nego { font-size: 10px; }
+  .eq-card-flag { font-size: 10px; padding: 4px 6px; }
+  .eq-grid.is-list > .eq-card .eq-card-body { padding: 10px; gap: 4px; }
+  .eq-grid.is-list > .eq-card .eq-card-title { font-size: 14px; }
+  .eq-grid.is-list > .eq-card .eq-card-desc { display: none; }
+  .eq-grid.is-list > .eq-card .eq-card-priceline { padding-inline-end: 48px; }
+  .eq-card:hover { box-shadow: none; border-color: var(--border); }
+}
+@media (max-width: 599px) {
+  .eq-grid:not(.is-list), .eq-suggested-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .eq-main { padding-inline: 12px; }
+  .eq-card-body { padding: 9px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eq-card, .eq-view-btn, .eq-fav-btn, .eq-fav-btn svg { transition: none; }
 }
 
 /* ── Favorites Nav Button — نفس أسلوب جرس الإشعارات (gn-bell) بالضبط ── */
@@ -1930,32 +1882,6 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
   .eq-free-bar-btn { display: none; }
 }
 
-/* ── Card arrows: شفاف على الديسكتوب، تظهر عند hover ── */
-@media (min-width: 769px) {
-  .eq-cn-btn {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.88);
-    transition: opacity .2s var(--ease-out), transform .2s var(--ease-out), background var(--dur-fast) var(--ease-out);
-  }
-  .eq-card:hover .eq-cn-btn {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  .eq-cn-btn:hover {
-    background: rgba(243,100,24,0.92);
-    transform: translateY(-50%) scale(1.06) !important;
-  }
-}
-
-/* ── Card image: object-fit cover للنظافة البصرية ── */
-.eq-card-slide img,
-.eq-card-media img {
-  object-fit: cover;
-  /* تحسين حدة الصور عند العرض على شاشات Retina/HiDPI
-     يقلل الـ blur الذي يحدث عند downscale من 384px إلى 160-200px */
-  image-rendering: -webkit-optimize-contrast;
-}
-
 /* ── Load more button — تحسين ── */
 #eq-load-more {
   padding: 13px 52px;
@@ -2065,7 +1991,7 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
         </svg>
       </span>
       <span class="nsb-text">
-        <strong data-i18n="nav.projects">مشاريع للبيع</strong>
+        <strong data-i18n="nav.projects">المشاريع والمعدات</strong>
         <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
       </span>
     </a>
@@ -2172,7 +2098,7 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 <section class="mp-header">
   <div class="mp-header-inner">
     <div>
-      <h1 class="mp-header-title"><span data-i18n="hero.titlePre">ابدأ بمشروع</span> <span data-i18n="hero.titleSpan">جاهز للبيع</span></h1>
+<h1 class="mp-header-title"><span data-i18n="hero.titlePre">مشاريع ومعدات</span> <span data-i18n="hero.titleSpan">للبيع والإيجار</span></h1>
       <div class="mp-header-sub" data-i18n="hero.subtitle">تصفح المشاريع التجارية الجاهزة وابدأ البيع من أول يوم — بدون عمولة أو رسوم خفية</div>
     </div>
     <div class="mp-header-actions">
@@ -2217,8 +2143,27 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
   <div class="eq-free-bar-icon">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-12V4l-8-2-8 2v6c0 8 8 12 8 12Z"/><path d="m9 12 2 2 4-4"/></svg>
   </div>
-  <span class="eq-free-bar-text"><span data-i18n="freeBar.text">اعرض مشروعك للبيع</span> <strong data-i18n="freeBar.textStrong">مجاناً 100%</strong> <span data-i18n="freeBar.textSuffix">— بدون عمولة أو رسوم خفية</span></span>
+  <span class="eq-free-bar-text"><span data-i18n="freeBar.text">اعرض مشروعك أو معدتك للبيع أو للإيجار</span> <strong data-i18n="freeBar.textStrong">مجاناً 100%</strong> <span data-i18n="freeBar.textSuffix">— بدون عمولة أو رسوم خفية</span></span>
   <a class="eq-free-bar-btn" href="/post-ad/" data-i18n="freeBar.postNow">انشر الآن ←</a>
+</div>
+
+<div class="eq-mobile-filter-strip" id="eq-mobile-filter-strip" role="group" aria-label="فلتر البحث" data-i18n-attr="aria-label:filters.searchTitle">
+  <button type="button" class="eq-mobile-filter-chip" data-eq-filter-action="open" data-eq-filter-section="type" aria-controls="eq-filter-drawer" aria-expanded="false">
+    <span id="eq-mobile-type-label">النوع</span>
+    <span aria-hidden="true">⌄</span>
+  </button>
+  <button type="button" class="eq-mobile-filter-chip" data-eq-filter-action="open" data-eq-filter-section="category" aria-controls="eq-filter-drawer" aria-expanded="false">
+    <span id="eq-mobile-category-label">التصنيف</span>
+    <svg class="eq-mobile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <button type="button" class="eq-mobile-filter-chip" data-eq-filter-action="open" data-eq-filter-section="price" aria-controls="eq-filter-drawer" aria-expanded="false">
+    <span id="eq-mobile-price-label">السعر</span>
+    <svg class="eq-mobile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <button type="button" class="eq-mobile-filter-chip" data-eq-filter-action="open" data-eq-filter-section="gov" aria-controls="eq-filter-drawer" aria-expanded="false">
+    <span id="eq-mobile-gov-label">المحافظة</span>
+    <svg class="eq-mobile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
 </div>
 
 <!-- ── Filters (desktop) ──
@@ -2232,6 +2177,24 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 
     <div class="eqf-controls">
       <label class="eqf-select">
+        <span data-i18n="filters.listingType">نوع الإعلان</span>
+        <select id="eq-type" onchange="eqSetListingType(this.value)" aria-label="نوع الإعلان" data-i18n-attr="aria-label:filters.listingType">
+          <option value="" data-i18n="filters.all">الكل</option>
+          <option value="sale" data-i18n="listingTypes.sale">للبيع</option>
+          <option value="rent" data-i18n="listingTypes.rent">للإيجار</option>
+        </select>
+        <i class="eqf-caret" aria-hidden="true"></i>
+      </label>
+      <label class="eqf-select" id="eq-period-field" hidden>
+        <select id="eq-period" onchange="eqSetRentalPeriod(this.value)" aria-label="دورية الإيجار" data-i18n-attr="aria-label:filters.rentalPeriod">
+          <option value="" data-i18n="filters.allPeriods">كل المدد</option>
+          <option value="day" data-i18n="rentalPeriods.day">يوم</option>
+          <option value="week" data-i18n="rentalPeriods.week">أسبوع</option>
+          <option value="month" data-i18n="rentalPeriods.month">شهر</option>
+        </select>
+        <i class="eqf-caret" aria-hidden="true"></i>
+      </label>
+      <label class="eqf-select">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <select id="eq-gov" aria-label="المحافظة" data-i18n-attr="aria-label:filters.governorate"></select>
         <i class="eqf-caret" aria-hidden="true"></i>
@@ -2244,9 +2207,10 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
           <i class="eqf-caret" aria-hidden="true"></i>
         </button>
         <div class="eqf-pop" id="eq-price-pop" role="dialog" aria-label="السعر" data-i18n-attr="aria-label:filters.price">
-          <div class="eqf-pop-title" data-i18n="filters.priceRanges">نطاقات جاهزة</div>
+          <div class="eqf-pop-title" id="eq-price-tiers-title" data-i18n="filters.priceRanges">نطاقات جاهزة</div>
           <div class="eqf-tiers" id="eq-price-tiers"></div>
           <div class="eqf-pop-title" data-i18n="filters.priceCustom">أو حدّد نطاقك</div>
+          <div class="eq-price-unit" id="eq-price-unit">ج</div>
           <div class="eqf-range">
             <input type="number" id="eq-price-min-input" min="0" inputmode="numeric" data-i18n-attr="placeholder:filters.from" placeholder="من">
             <span class="eqf-range-sep" aria-hidden="true">—</span>
@@ -2277,10 +2241,10 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 </div>
 
 <!-- ── Sidebar Overlay ── -->
-<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" onclick="eqCloseSidebar()"></div>
+<div class="eq-sidebar-overlay" id="eq-sidebar-overlay" data-eq-filter-action="close" aria-hidden="true"></div>
 
 <!-- ── Filter Sidebar Drawer (mobile only) ── -->
-<div class="eq-filter-drawer" id="eq-filter-drawer">
+<div class="eq-filter-drawer" id="eq-filter-drawer" role="dialog" aria-modal="true" aria-labelledby="eq-drawer-title" aria-hidden="true" inert>
   <div class="eq-drawer-panel">
 
     <div class="eq-drawer-header">
@@ -2290,40 +2254,60 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
           <line x1="8" y1="12" x2="16" y2="12"/>
           <line x1="11" y1="18" x2="13" y2="18"/>
         </svg>
-        <span data-i18n="filters.searchTitle">فلتر البحث</span>
+        <span id="eq-drawer-title" data-i18n="filters.searchTitle">فلتر البحث</span>
       </h3>
-      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" onclick="eqCloseSidebar()">✕</button>
+      <button class="eq-drawer-close" id="eq-drawer-close-btn" type="button" data-eq-filter-action="close" aria-label="إغلاق" data-i18n-attr="aria-label:lightbox.close">✕</button>
     </div>
 
     <div class="eq-drawer-body">
-      <div class="eq-drawer-section">
+      <div class="eq-drawer-section" id="eq-drawer-type-section">
+        <div class="eq-drawer-label" data-i18n="filters.listingType">نوع الإعلان</div>
+        <div class="eq-type-controls" id="eq-drawer-type-controls">
+          <div class="eq-type-segments" role="group" aria-label="نوع الإعلان" data-i18n-attr="aria-label:filters.listingType">
+            <button type="button" class="eq-type-btn" data-listing-type="" data-eq-filter-action="type" aria-pressed="true" data-i18n="filters.all">الكل</button>
+            <button type="button" class="eq-type-btn" data-listing-type="sale" data-eq-filter-action="type" aria-pressed="false" data-i18n="listingTypes.sale">للبيع</button>
+            <button type="button" class="eq-type-btn" data-listing-type="rent" data-eq-filter-action="type" aria-pressed="false" data-i18n="listingTypes.rent">للإيجار</button>
+          </div>
+          <label class="eq-type-period" data-rental-period-field hidden>
+            <span data-i18n="filters.rentalPeriod">دورية الإيجار</span>
+            <select id="eq-drawer-period" onchange="eqDrawerSetPeriod(this.value)">
+              <option value="" data-i18n="filters.allPeriods">كل المدد</option>
+              <option value="day" data-i18n="rentalPeriods.day">يوم</option>
+              <option value="week" data-i18n="rentalPeriods.week">أسبوع</option>
+              <option value="month" data-i18n="rentalPeriods.month">شهر</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="eq-drawer-section" id="eq-drawer-category-section">
         <div class="eq-drawer-label" data-i18n="filters.categoryLabel">التصنيف</div>
         <div class="eq-drawer-tabs" id="eq-drawer-tabs"></div>
       </div>
-      <div class="eq-drawer-section">
+      <div class="eq-drawer-section" id="eq-drawer-gov-section">
         <div class="eq-drawer-label" data-i18n="filters.governorate">المحافظة</div>
         <label class="eqf-select eqf-select-block">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)">
+          <select id="eq-drawer-gov" onchange="eqDrawerGovChange(this)" aria-label="المحافظة" data-i18n-attr="aria-label:filters.governorate">
             <option value="" data-i18n="filters.allGovs">كل المحافظات</option>
           </select>
           <i class="eqf-caret" aria-hidden="true"></i>
         </label>
       </div>
-      <div class="eq-drawer-section">
+      <div class="eq-drawer-section" id="eq-drawer-price-section">
         <div class="eq-drawer-label"><span data-i18n="filters.price">السعر</span> · <strong id="eq-drawer-price-val" style="color:var(--orange)">أي سعر</strong></div>
         <div class="eqf-tiers" id="eq-drawer-price-tiers"></div>
+        <div class="eq-price-unit" id="eq-drawer-price-unit">ج</div>
         <div class="eqf-range" style="margin-top:10px">
-          <input type="number" id="eq-drawer-price-min" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" data-i18n-attr="placeholder:filters.from" placeholder="من">
+          <input type="number" id="eq-drawer-price-min" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" aria-label="السعر من" data-i18n-attr="placeholder:filters.from,aria-label:filters.priceFrom" placeholder="من">
           <span class="eqf-range-sep" aria-hidden="true">—</span>
-          <input type="number" id="eq-drawer-price-max" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" data-i18n-attr="placeholder:filters.to" placeholder="إلى">
+          <input type="number" id="eq-drawer-price-max" min="0" inputmode="numeric" oninput="eqDrawerCustomPrice()" aria-label="السعر إلى" data-i18n-attr="placeholder:filters.to,aria-label:filters.priceTo" placeholder="إلى">
         </div>
       </div>
-      <div class="eq-drawer-section">
+      <div class="eq-drawer-section" id="eq-drawer-sort-section">
         <div class="eq-drawer-label" data-i18n="filters.sort">الترتيب</div>
         <label class="eqf-select eqf-select-block">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m17 15 3 3 3-3"/><path d="M20 18V7"/></svg>
-          <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)">
+          <select id="eq-drawer-sort" onchange="eqDrawerSortChange(this)" aria-label="الترتيب" data-i18n-attr="aria-label:filters.sort">
             <option value="newest" data-i18n="filters.sortNewest">الأحدث</option>
             <option value="cheapest" data-i18n="filters.sortCheapest">الأرخص</option>
             <option value="priciest" data-i18n="filters.sortPriciest">الأغلى</option>
@@ -2337,49 +2321,47 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
     <!-- نص زر التطبيق مُدار من JS (بيعرض عدد النتائج الحيّ) — بلا data-i18n
          عشان إعادة الترجمة متمسحش العدد وترجّعه للنص الثابت -->
     <div class="eq-drawer-actions">
-      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" onclick="eqResetDrawer()" style="flex:1" data-i18n="filters.reset">إعادة تعيين</button>
-      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" onclick="eqApplyDrawerFilters()" style="flex:2">عرض النتائج</button>
+      <button class="eq-btn eq-btn-ghost" id="eq-drawer-reset-btn" type="button" data-eq-filter-action="reset" style="flex:1" data-i18n="filters.reset">إعادة تعيين</button>
+      <button class="eq-btn eq-btn-primary" id="eq-drawer-apply-btn" type="button" data-eq-filter-action="apply" style="flex:2">عرض النتائج</button>
     </div>
   </div>
 </div>
 
-<!-- ── لسان الفلتر الجانبي — نقطة الدخول الوحيدة للفلتر على الموبايل ──
-     أيقونة المزالج (sliders) بدل الخطوط الثلاثة: الخطوط بتتقري «قائمة»
-     أكتر ما بتتقري «فلترة». والسهم القديم اتشال — كان بيزوّد ٢٠px
-     ارتفاع ويوحي بحركة مالهاش وظيفة. -->
-<button class="eq-sidebar-tab" id="eq-sidebar-tab" type="button" onclick="eqOpenSidebar()" aria-label="فتح فلاتر البحث" data-i18n-attr="aria-label:filters.searchTitle">
-  <svg class="eq-sidebar-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-    <line x1="4" y1="8" x2="20" y2="8"/><circle cx="15" cy="8" r="2.4" fill="currentColor" stroke="none"/>
-    <line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="16" r="2.4" fill="currentColor" stroke="none"/>
-  </svg>
-  <span class="eq-sidebar-tab-text" data-i18n="filters.filterBtn">فلتر</span>
-  <span class="eq-sidebar-tab-badge" id="eq-drawer-badge">0</span>
-</button>
+<div class="eq-mobile-actions" id="eq-mobile-actions" role="group" aria-label="أدوات التصفح" data-i18n-attr="aria-label:filters.browseActions">
+  <button type="button" class="eq-mobile-action" id="eq-mobile-filter-btn" data-eq-filter-action="open" aria-controls="eq-filter-drawer" aria-expanded="false">
+    <svg class="eq-mobile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
+    <span data-i18n="filters.filterSort">فلتر وترتيب</span>
+    <span class="eq-mobile-badge" id="eq-mobile-filter-badge">0</span>
+  </button>
+  <button type="button" class="eq-mobile-action" id="eq-mobile-favorites-btn" data-eq-filter-action="favorites">
+    <svg class="eq-mobile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <span data-i18n="favorites.title">المفضلة</span>
+    <span class="eq-mobile-badge" id="eq-mobile-fav-badge">0</span>
+  </button>
+</div>
 
 <!-- ── Main ── -->
 <main class="eq-main">
-  <!-- شرائح الفلاتر المفعّلة — نسخة الموبايل.
-       شريط الفلاتر العلوي مخفي على الموبايل، فمن غير الشرائح دي مكانش
-       فيه أي دليل بصري على إن في فلتر شغّال غير رقم صغير على اللسان
-       الجانبي. دلوقتي المستخدم بيشوف اللي مفلتر ويشيله بضغطة بلا ما
-       يفتح الدرج أصلاً. -->
+   <!-- Applied filters can also be cleared directly from the results. -->
   <div class="eqf-active eq-active-mobile" id="eq-active-chips-m"></div>
   <div class="eq-count-row">
     <span id="eq-count">جاري التحميل…</span>
     <div class="eq-count-actions">
-      <!-- مبدّل العرض جنب عدّاد النتائج: أقرب مكان للشيء اللي بيتحكّم فيه.
-           مخفي على الموبايل — هناك الكرت بعرض الشاشة دايمًا. -->
+      <!-- The same view controls are available at every screen size. -->
       <div class="eq-view-switch" role="group" aria-label="طريقة العرض" data-i18n-attr="aria-label:view.label">
         <button type="button" class="eq-view-btn on" data-view="grid" onclick="eqSetView('grid')"
-                aria-pressed="true" aria-label="عرض شبكي" data-i18n-attr="aria-label:view.grid" title="عرض شبكي">
+                aria-pressed="true" aria-label="عرض شبكي" data-i18n-attr="aria-label:view.grid,title:view.grid" title="عرض شبكي">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
         </button>
         <button type="button" class="eq-view-btn" data-view="list" onclick="eqSetView('list')"
-                aria-pressed="false" aria-label="عرض قائمة" data-i18n-attr="aria-label:view.list" title="عرض قائمة">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>
+                aria-pressed="false" aria-label="عرض قائمة" data-i18n-attr="aria-label:view.list,title:view.list" title="عرض قائمة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="5" rx="1"/><path d="M12 5h9M12 8h9"/><rect x="3" y="15" width="5" height="5" rx="1"/><path d="M12 16h9M12 19h9"/></svg>
         </button>
       </div>
-      <a class="eq-btn eq-btn-primary" href="/post-ad/" data-i18n="filters.postAd">+ انشر إعلانك</a>
+      <a class="eq-btn eq-btn-primary eq-post-action" href="/post-ad/" aria-label="انشر إعلانك" title="انشر إعلانك" data-i18n-attr="aria-label:filters.postAd,title:filters.postAd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-i18n="filters.postAd">+ انشر إعلانك</span>
+      </a>
     </div>
   </div>
   <div class="eq-grid" id="eq-grid"></div>
@@ -2604,6 +2586,21 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
       <input type="hidden" id="eq-edit-id">
       <input type="hidden" id="eq-edit-orig-status">
       <div id="eq-edit-note" class="eq-edit-note eq-edit-note-info"></div>
+      <div class="eq-type-controls" id="eq-edit-type-controls">
+        <div class="eq-type-segments" role="group" aria-label="نوع الإعلان" data-i18n-attr="aria-label:filters.listingType">
+          <button type="button" class="eq-type-btn" data-listing-type="sale" onclick="eqSetEditType('sale')" aria-pressed="true" data-i18n="listingTypes.sale">للبيع</button>
+          <button type="button" class="eq-type-btn" data-listing-type="rent" onclick="eqSetEditType('rent')" aria-pressed="false" data-i18n="listingTypes.rent">للإيجار</button>
+        </div>
+        <label class="eq-type-period" data-rental-period-field hidden>
+          <span data-i18n="filters.rentalPeriod">دورية الإيجار</span>
+          <select id="eq-edit-period">
+            <option value="" data-i18n="edit.pickPeriod">اختر الدورية</option>
+            <option value="day" data-i18n="rentalPeriods.day">يوم</option>
+            <option value="week" data-i18n="rentalPeriods.week">أسبوع</option>
+            <option value="month" data-i18n="rentalPeriods.month">شهر</option>
+          </select>
+        </label>
+      </div>
 
       <div class="eq-edit-field">
         <label for="eq-edit-category" data-i18n="edit.categoryLabel">التصنيف</label>
@@ -2623,8 +2620,8 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
           <select id="eq-edit-condition"></select>
         </div>
         <div class="eq-edit-field">
-          <label data-i18n="edit.priceLabel">السعر (جنيه)</label>
-          <input type="number" id="eq-edit-price" min="1" placeholder="0">
+          <label id="eq-edit-price-label" for="eq-edit-price">السعر (جنيه)</label>
+          <input type="number" id="eq-edit-price" min="0" max="2147483647" step="1" inputmode="numeric" placeholder="0">
         </div>
       </div>
       <div class="eq-edit-field eq-edit-check">
@@ -2749,8 +2746,8 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
 
 </nav>
 
-<script src="/notifications.js?v=20260901161610" defer></script>
-<script src="app.js?v=20260901161610" defer></script>
+<script src="/notifications.js?v=20261005145929" defer></script>
+<script src="app.js?v=20261005145929" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">
@@ -2764,7 +2761,7 @@ body.filter-open .eq-sidebar-tab { opacity: 0; pointer-events: none; }
       <div class="sf-paths">
         <span class="sf-path" data-i18n="footer.pathSpaces">مساحات تجارية</span>
         <span class="sf-path" data-i18n="footer.pathBazaars">بازارات ومعارض</span>
-        <span class="sf-path" data-i18n="footer.pathProjects">مشاريع للبيع</span>
+          <span class="sf-path" data-i18n="footer.pathProjects">مشاريع ومعدات</span>
       </div>
     </div>
     <div class="sf-col sf-col--links">
@@ -2846,5 +2843,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-

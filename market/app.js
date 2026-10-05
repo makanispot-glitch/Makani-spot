@@ -26,6 +26,7 @@ const EQ_CATEGORIES = [
   { id: 'gifts',               label: 'هدايا وديكور' },
   { id: 'corner-space',        label: 'كورنر سبيس' },
   { id: 'vending',             label: 'آلات بيع ذاتي' },
+  { id: 'event-supplies',      label: 'مستلزمات الفعاليات' },
   { id: 'other',               label: 'أخرى' },
 ];
 
@@ -100,13 +101,11 @@ const LISTING_DAYS = 60;
 function _cardUrl(u)   { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_c.webp') : u; }
 function _detailUrl(u) { return (u && u.includes('_f.webp')) ? u.replace('_f.webp', '_d.webp') : u; }
 
-/* عدّاد عام لتحديد fetchpriority للصور الأولى (above-the-fold)
-   أول 6 صور = high priority (LCP)، الباقي = lazy + low priority */
+/* Prioritize the first visible covers. */
 let _eqImgCounter = 0;
-function _imgAttrs(isLazy = true) {
-  const idx = _eqImgCounter++;
-  if (idx < 6) return ' decoding="async" fetchpriority="high"';
-  return (isLazy ? ' loading="lazy"' : '') + ' decoding="async" fetchpriority="low"';
+function _imgAttrs() {
+  if (_eqImgCounter++ < 4) return ' decoding="async" fetchpriority="high"';
+  return ' loading="lazy" decoding="async" fetchpriority="low"';
 }
 
 
@@ -133,6 +132,8 @@ let eqSortBy        = 'newest';
 let eqGov           = '';
 let eqPriceMin      = 0;
 let eqPriceMax      = 0;
+let eqListingType   = '';
+let eqRentalPeriod  = '';
 let eqTotalCount    = 0;      // العدد الحقيقي للنتائج المطابقة على الخادم
 let eqFavorites     = new Set();
 let eqMyListings    = [];
@@ -143,7 +144,13 @@ let eqFacets        = { cats: new Map(), govs: new Map(), total: 0 };
    بقت eqListings تحمل النتائج المفلترة وحدها */
 let eqSampleListings = [];
 let _eqSampleFetching = false;
+let _eqSampleScope = '';
+let _eqSampleSeq = 0;
+let _eqFacetScope = '';
+let _eqFacetSeq = 0;
 let eqDrawerDraft   = {
+  listingType: '',
+  rentalPeriod: '',
   category: '',
   gov: '',
   sortBy: 'newest',
@@ -154,45 +161,9 @@ let eqDrawerDraft   = {
 document.addEventListener('DOMContentLoaded', async () => {
 
   eqInitFilterBarSticky();
-
-  /* ── Sidebar events — attached first, before any early return ── */
-  const _sidebarTab     = document.getElementById('eq-sidebar-tab');
-  const _sidebarOverlay = document.getElementById('eq-sidebar-overlay');
-  const _drawerCloseBtn = document.getElementById('eq-drawer-close-btn');
-  const _drawerResetBtn = document.getElementById('eq-drawer-reset-btn');
-  const _drawerApplyBtn = document.getElementById('eq-drawer-apply-btn');
+  eqInstallMobileFilterControls();
+  eqInitMobileBrowseControls();
   const _lightbox       = document.getElementById('eq-lightbox');
-  if (_sidebarTab) {
-    _sidebarTab.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      eqOpenSidebar();
-    });
-    _sidebarTab.addEventListener('pointerup', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      eqOpenSidebar();
-    });
-  }
-  if (_sidebarOverlay) _sidebarOverlay.addEventListener('click', eqCloseSidebar);
-  if (_drawerCloseBtn) {
-    _drawerCloseBtn.addEventListener('click', e => {
-      e.preventDefault();
-      eqCloseSidebar();
-    });
-  }
-  if (_drawerResetBtn) {
-    _drawerResetBtn.addEventListener('click', e => {
-      e.preventDefault();
-      eqResetDrawer();
-    });
-  }
-  if (_drawerApplyBtn) {
-    _drawerApplyBtn.addEventListener('click', e => {
-      e.preventDefault();
-      eqApplyDrawerFilters();
-    });
-  }
 
   /* ── Lightbox keyboard + swipe ── */
   document.addEventListener('keydown', e => {
@@ -271,8 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
    Supabase جديد، عشان التبديل يفضل سريع وسلس) */
 document.addEventListener('makani:locale-changed', () => {
   eqRenderNavUser();   // منطقة المستخدم في الناف + bn-user (بالكامل JS-rendered، مفيش data-i18n)
+  eqUpdateFavBtn();
   eqBuildCategoryTabs();
   eqRenderDrawerDraft();
+  eqRenderEditPricing();
   eqRenderGrid();
   if (eqCurrentDetailId) eqOpenDetail(eqCurrentDetailId);
   if (document.getElementById('eq-my-modal')?.classList.contains('open')) eqLoadMyListings();
@@ -327,6 +300,7 @@ async function eqInitAuth() {
       GN.init(eqSb, eqUser.id);
     } else {
       eqFavorites.clear();
+      eqUpdateFavBtn();
       GN.destroy();
     }
   });
@@ -504,7 +478,7 @@ const _EQ_SELECT = `id, title, description, category, condition, price, negotiab
                region, area, phone, contact_pref,
                cover_image, images, is_featured,
                view_count, contact_count, status,
-               expires_at, created_at, user_id`;
+               expires_at, created_at, user_id, listing_type, rental_period`;
 
 /* الفلترة بقت على الخادم لا في الذاكرة.
    قبلها كانت eqApplyFilters بتفلتر eqListings — وهي أول 24 إعلان فقط —
@@ -521,11 +495,17 @@ function _eqBuildQuery(opts = {}) {
   const pMin = opts.priceMin !== undefined ? opts.priceMin : eqPriceMin;
   const pMax = opts.priceMax !== undefined ? opts.priceMax : eqPriceMax;
   const term = (opts.search !== undefined ? opts.search : eqSearch).trim();
+  const type = opts.listingType !== undefined ? opts.listingType : eqListingType;
+  const period = opts.rentalPeriod !== undefined ? opts.rentalPeriod : eqRentalPeriod;
 
+  if (type) q = q.eq('listing_type', type);
+  if (type === 'rent' && RENTAL_PERIODS.includes(period)) q = q.eq('rental_period', period);
   if (cat)      q = q.in('category', eqCatIds(cat));
   if (gov)      q = q.eq('region', gov);
-  if (pMin > 0) q = q.gte('price', pMin);
-  if (pMax > 0) q = q.lte('price', pMax);
+  if (listingCanComparePrice(type, period)) {
+    if (pMin > 0) q = q.gte('price', pMin);
+    if (pMax > 0) q = q.lte('price', pMax);
+  }
   if (term) {
     /* الفاصلة والأقواس والنسبة لها معنى في صياغة or= الخاصة بـPostgREST،
        فتنظَّف من نص المستخدم قبل الحقن وإلا انكسر الاستعلام كله */
@@ -536,8 +516,10 @@ function _eqBuildQuery(opts = {}) {
 }
 
 function _eqApplySort(q, sortBy = eqSortBy) {
-  if (sortBy === 'cheapest')  return q.order('price', { ascending: true });
-  if (sortBy === 'priciest')  return q.order('price', { ascending: false });
+  if (listingCanComparePrice(eqListingType, eqRentalPeriod)) {
+    if (sortBy === 'cheapest') return q.order('price', { ascending: true }).order('id');
+    if (sortBy === 'priciest') return q.order('price', { ascending: false }).order('id');
+  }
   if (sortBy === 'views')     return q.order('view_count', { ascending: false, nullsFirst: false });
   return q.order('is_featured', { ascending: false })
           .order('created_at',  { ascending: false });
@@ -546,14 +528,15 @@ function _eqApplySort(q, sortBy = eqSortBy) {
 /* جلب واحد خفيف (٣ أعمدة) فوق كل الإعلانات الحية — منه تتبني عدّادات
    الشرائح وقائمة المحافظات، فتكون الأرقام إجمالية لا أرقام الصفحة */
 async function eqLoadFacets() {
+  const seq = ++_eqFacetSeq;
+  _eqFacetScope = eqBrowseScopeKey();
+  eqFacets = { cats: new Map(), govs: new Map(), total: 0 };
   try {
-    const { data, error } = await eqSb
-      .from('listings')
-      .select('category, region')
-      .eq('status', 'approved')
-      .gt('expires_at', new Date().toISOString())
-      .limit(2000);
+    const { data, error } = await _eqBuildQuery({
+      select: 'category, region', category: '', gov: '', priceMin: 0, priceMax: 0, search: '',
+    }).limit(2000);
     if (error) throw error;
+    if (seq !== _eqFacetSeq) return;
 
     const cats = new Map(), govs = new Map();
     (data || []).forEach(l => {
@@ -563,8 +546,10 @@ async function eqLoadFacets() {
     });
     eqFacets = { cats, govs, total: (data || []).length };
   } catch (e) {
+    if (seq !== _eqFacetSeq) return;
     eqFacets = { cats: new Map(), govs: new Map(), total: 0 };
   }
+  eqBuildCategoryTabs();
 }
 
 let _eqLoadSeq = 0;   // يمنع رد استعلام قديم من الكتابة فوق أحدث منه
@@ -591,7 +576,10 @@ async function eqLoadListings(append = false) {
     eqHasMore    = eqOffset < eqTotalCount;
 
     eqListings = append ? [...eqListings, ...items] : items;
-    if (!append && !eqHasActiveFilters() && items.length) eqSampleListings = items.slice(0, 6);
+    if (!append && !eqHasActiveFilters() && items.length) {
+      eqSampleListings = items.slice(0, 6);
+      _eqSampleScope = eqBrowseScopeKey();
+    }
     eqDataReady = true;   // خارج catch: لو فشل الجلب تبقى شاشة الخطأ لا «لا نتائج»
     eqFiltered = eqListings;
     eqSetBusy(false);
@@ -603,10 +591,10 @@ async function eqLoadListings(append = false) {
 }
 
 /* ================================================================
-   🔲 تبديل العرض: شبكة / قائمة (ديسكتوب)
+   🔲 تبديل العرض: شبكة / قائمة
    الاتنين بيستخدموا نفس الـHTML بالظبط، فالتبديل كلاس واحد على الحاوية:
    بلا إعادة بناء للكروت، يعني الفلاتر والترتيب وموضع التمرير وحالة كل
-   كاروسيل بتفضل زي ما هي، والانتقال فوري بلا أي طلب شبكة.
+   إعلان بتفضل زي ما هي، والانتقال فوري بلا أي طلب شبكة.
    ================================================================ */
 
 const EQ_VIEW_KEY = 'makani_market_view';
@@ -618,6 +606,7 @@ function eqInitView() {
 }
 
 function eqSetView(view, opts = {}) {
+  view = view === 'list' ? 'list' : 'grid';
   const grid = document.getElementById('eq-grid');
   if (grid) grid.classList.toggle('is-list', view === 'list');
   document.querySelectorAll('.eq-view-btn').forEach(b => {
@@ -643,17 +632,22 @@ function eqSetBusy(on) {
    ================================================================ */
 
 function eqHasActiveFilters() {
-  return !!(eqActiveCategory || eqGov || eqPriceMin > 0 || eqPriceMax > 0 || eqSearch.trim());
+  return !!(eqListingType || eqRentalPeriod || eqActiveCategory || eqGov || eqPriceMin > 0 || eqPriceMax > 0 || eqSearch.trim());
 }
 
 function eqActiveFilterCount() {
-  return (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) +
+  return (eqListingType ? 1 : 0) + (eqRentalPeriod ? 1 : 0) + (eqActiveCategory ? 1 : 0) + (eqGov ? 1 : 0) +
          ((eqPriceMin > 0 || eqPriceMax > 0) ? 1 : 0) + (eqSearch.trim() ? 1 : 0);
 }
 
 /* نقطة الدخول الوحيدة لإعادة الفلترة — تُعيد الجلب من الصفر وتحدّث الواجهة.
    التأجيل مكانه مستمع البحث وحده (300ms)؛ باقي الفلاتر ضغطة واحدة صريحة */
 function eqApplyFilters() {
+  if (!listingCanComparePrice(eqListingType, eqRentalPeriod)) {
+    eqPriceMin = eqPriceMax = 0;
+    if (['cheapest', 'priciest'].includes(eqSortBy)) eqSortBy = 'newest';
+  }
+  if (_eqFacetScope !== eqBrowseScopeKey()) eqLoadFacets();
   eqSyncUrl();
   eqLoadListings(false);
   eqRenderFilterState();
@@ -710,10 +704,11 @@ function _eqNum(n) {
 }
 
 /* الملخّص المكتوب على زر السعر وشريحة الفلتر النشط */
-function _eqPriceSummary(min = eqPriceMin, max = eqPriceMax) {
-  if (min > 0 && max > 0) return `${_eqNum(min)} – ${_eqNum(max)} ${t('card.currency')}`;
-  if (max > 0)            return t('filters.priceUnder', { price: _eqNum(max) + ' ' + t('card.currency') });
-  if (min > 0)            return t('filters.priceOver',  { price: _eqNum(min) + ' ' + t('card.currency') });
+function _eqPriceSummary(min = eqPriceMin, max = eqPriceMax, type = eqListingType, period = eqRentalPeriod) {
+  const unit = t('card.currency') + (type === 'rent' && period ? ' / ' + listingPeriodLabel(period, getLocale()) : '');
+  if (min > 0 && max > 0) return `${_eqNum(min)} – ${_eqNum(max)} ${unit}`;
+  if (max > 0)            return t('filters.priceUnder', { price: _eqNum(max) + ' ' + unit });
+  if (min > 0)            return t('filters.priceOver',  { price: _eqNum(min) + ' ' + unit });
   return t('filters.anyPrice');
 }
 
@@ -726,8 +721,8 @@ function _eqTierLabel(tier) {
 
 /* خيارات المحافظات: اللي فيها إعلانات أولًا وبعددها، والباقي في مجموعة
    منفصلة — بدل 27 خيارًا متساويًا أغلبها طريق مسدود بلا نتائج */
-function _eqGovOptionsHtml(selected) {
-  const has = g => eqFacets.govs.get(g) || 0;
+function _eqGovOptionsHtml(selected, scope = eqBrowseScopeKey()) {
+  const has = g => scope === _eqFacetScope ? eqFacets.govs.get(g) || 0 : 0;
   const withData = EQ_GOVS.filter(has);
   const without  = EQ_GOVS.filter(g => !has(g));
   const opt = g => `<option value="${g}"${g === selected ? ' selected' : ''}>${eqGovLabel(g)}${has(g) ? ` (${_eqNum(has(g))})` : ''}</option>`;
@@ -740,12 +735,15 @@ function _eqGovOptionsHtml(selected) {
 function _eqCatChipsHtml(handler, activeCat) {
   const chip = (id, label, count) => {
     const n = count === null ? '' : `<i class="eqf-chip-n">${_eqNum(count)}</i>`;
+    const action = handler === 'eqDrawerSetCategory'
+      ? 'data-eq-filter-action="category"' : `onclick="${handler}('${id}')"`;
     return `<button type="button" class="eqf-chip${id === activeCat ? ' on' : ''}${count === 0 ? ' is-empty' : ''}"
-      data-cat="${id}" onclick="${handler}('${id}')" aria-pressed="${id === activeCat}">${label}${n}</button>`;
+      data-cat="${id}" ${action} aria-pressed="${id === activeCat}">${label}${n}</button>`;
   };
   /* لو فشل جلب العدّادات نخفيها كلها بدل ما نطبع «٠» على كل تصنيف —
      صفر كاذب أسوأ من غياب الرقم: بيقول للمستخدم إن كل قسم فاضي وهو مش فاضي */
-  const hasFacets = eqFacets.total > 0;
+  const scope = handler === 'eqDrawerSetCategory' ? eqBrowseScopeKey(eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod) : eqBrowseScopeKey();
+  const hasFacets = scope === _eqFacetScope && eqFacets.total > 0;
   return chip('', t('filters.all'), hasFacets ? eqFacets.total : null) +
     EQ_CATEGORIES.map(c => chip(c.id, eqCatLabel(c.id), hasFacets ? (eqFacets.cats.get(c.id) || 0) : null)).join('');
 }
@@ -753,8 +751,10 @@ function _eqCatChipsHtml(handler, activeCat) {
 function _eqTierChipsHtml(handler, min, max) {
   return EQ_PRICE_TIERS.map(tr => {
     const on = tr.min === min && tr.max === max;
-    return `<button type="button" class="eqf-tier${on ? ' on' : ''}"
-      onclick="${handler}(${tr.min},${tr.max})">${_eqTierLabel(tr)}</button>`;
+    const action = handler === 'eqDrawerSetPrice'
+      ? `data-eq-filter-action="price" data-min="${tr.min}" data-max="${tr.max}"`
+      : `onclick="${handler}(${tr.min},${tr.max})"`;
+    return `<button type="button" class="eqf-tier${on ? ' on' : ''}" ${action}>${_eqTierLabel(tr)}</button>`;
   }).join('');
 }
 
@@ -773,7 +773,7 @@ function eqBuildCategoryTabs() {
   if (drawerTabs) drawerTabs.innerHTML = _eqCatChipsHtml('eqDrawerSetCategory', eqDrawerDraft.category);
 
   const drawerGov = document.getElementById('eq-drawer-gov');
-  if (drawerGov) drawerGov.innerHTML = _eqGovOptionsHtml(eqDrawerDraft.gov);
+  if (drawerGov) drawerGov.innerHTML = _eqGovOptionsHtml(eqDrawerDraft.gov, eqBrowseScopeKey(eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod));
 
   const drawerTiers = document.getElementById('eq-drawer-price-tiers');
   if (drawerTiers) drawerTiers.innerHTML = _eqTierChipsHtml('eqDrawerSetPrice', eqDrawerDraft.priceMin, eqDrawerDraft.priceMax);
@@ -784,6 +784,13 @@ function eqBuildCategoryTabs() {
 /* المصدر الوحيد لعرض حالة الفلاتر على كل الأسطح (شرائح، قوائم، شارات،
    شريط الفلاتر النشطة). أي تغيير في الحالة بيمرّ من هنا. */
 function eqRenderFilterState() {
+  const typeSel = document.getElementById('eq-type');
+  if (typeSel) typeSel.value = eqListingType;
+  const periodField = document.getElementById('eq-period-field');
+  if (periodField) periodField.hidden = eqListingType !== 'rent';
+  const periodSel = document.getElementById('eq-period');
+  if (periodSel) periodSel.value = eqRentalPeriod;
+  eqRenderPriceAvailability(false);
   document.querySelectorAll('#eq-tabs .eqf-chip').forEach(el => {
     const on = (el.dataset.cat || '') === eqActiveCategory;
     el.classList.toggle('on', on);
@@ -810,6 +817,7 @@ function eqRenderFilterState() {
 
   eqRenderActiveChips();
   eqUpdateDrawerBadge();
+  eqRenderMobileFilterSummary();
 }
 
 /* شريط الفلاتر النشطة — إزالة أي فلتر بضغطة واحدة بدل الرجوع لمصدره.
@@ -823,6 +831,8 @@ function eqRenderActiveChips() {
   const chip = (label, fn) =>
     `<button type="button" class="eqf-active-chip" onclick="${fn}"><span>${label}</span><i aria-hidden="true">✕</i></button>`;
 
+  if (eqListingType) chips.push(chip(listingTypeLabel({ listing_type: eqListingType }, getLocale()), "eqSetListingType('')"));
+  if (eqRentalPeriod) chips.push(chip(listingPeriodLabel(eqRentalPeriod, getLocale()), "eqSetRentalPeriod('')"));
   if (eqActiveCategory) chips.push(chip(eqCatLabel(eqActiveCategory), "eqSetCategory('')"));
   if (eqGov)            chips.push(chip(eqGovLabel(eqGov), "eqSetGov('')"));
   if (eqPriceMin > 0 || eqPriceMax > 0) chips.push(chip(_eqPriceSummary(), 'eqSetPrice(0,0)'));
@@ -851,6 +861,7 @@ function eqSetGov(gov) {
 }
 
 function eqSetPrice(min, max) {
+  if (!listingCanComparePrice(eqListingType, eqRentalPeriod)) return;
   eqPriceMin = Number(min) || 0;
   eqPriceMax = Number(max) || 0;
   eqClosePricePop();
@@ -865,8 +876,9 @@ function eqClearSearch() {
 }
 
 function eqApplyCustomPrice() {
-  const min = parseInt(document.getElementById('eq-price-min-input')?.value) || 0;
-  let   max = parseInt(document.getElementById('eq-price-max-input')?.value) || 0;
+  if (!listingCanComparePrice(eqListingType, eqRentalPeriod)) return;
+  const min = Math.max(0, parseInt(document.getElementById('eq-price-min-input')?.value) || 0);
+  let   max = Math.max(0, parseInt(document.getElementById('eq-price-max-input')?.value) || 0);
   /* لو المستخدم عكس الحدّين نصلّحها بدل ما نرجّع صفر نتائج بلا سبب واضح */
   if (min > 0 && max > 0 && max < min) { const tmp = max; max = min; eqPriceMin = tmp; }
   else eqPriceMin = min;
@@ -877,6 +889,7 @@ function eqApplyCustomPrice() {
 
 function eqTogglePricePop(e) {
   e?.stopPropagation();
+  if (!listingCanComparePrice(eqListingType, eqRentalPeriod)) return;
   const pop = document.getElementById('eq-price-pop');
   if (!pop) return;
   const open = pop.classList.toggle('open');
@@ -898,6 +911,8 @@ function eqSyncUrl() {
   const set = (k, v) => { if (v) p.set(k, v); else p.delete(k); };
   set('cat',  eqActiveCategory);
   set('gov',  eqGov);
+  set('type', eqListingType);
+  set('period', eqListingType === 'rent' ? eqRentalPeriod : '');
   set('min',  eqPriceMin > 0 ? eqPriceMin : '');
   set('max',  eqPriceMax > 0 ? eqPriceMax : '');
   set('sort', eqSortBy !== 'newest' ? eqSortBy : '');
@@ -909,19 +924,98 @@ function eqSyncUrl() {
 function eqReadUrlFilters() {
   const p = new URLSearchParams(window.location.search);
   const cat = p.get('cat') || '';
-  if (cat && EQ_CATEGORIES.some(c => c.id === cat)) eqActiveCategory = cat;
+  eqActiveCategory = EQ_CATEGORIES.some(c => c.id === cat) ? cat : '';
   const gov = p.get('gov') || '';
-  if (gov && EQ_GOVS.includes(gov)) eqGov = gov;
+  eqGov = EQ_GOVS.includes(gov) ? gov : '';
   eqPriceMin = Math.max(0, parseInt(p.get('min')) || 0);
   eqPriceMax = Math.max(0, parseInt(p.get('max')) || 0);
-  const sort = p.get('sort') || '';
-  if (['cheapest', 'priciest', 'views'].includes(sort)) eqSortBy = sort;
-  const q = p.get('q') || '';
-  if (q) {
-    eqSearch = q;
-    const inp = document.getElementById('eq-search');
-    if (inp) inp.value = q;
+  const sort = p.get('sort') || 'newest';
+  eqSortBy = ['cheapest', 'priciest', 'views'].includes(sort) ? sort : 'newest';
+  eqListingType = ['sale', 'rent'].includes(p.get('type')) ? p.get('type') : '';
+  // Old price links describe sales; explicit invalid types must not acquire that meaning.
+  if (!p.has('type') && (eqPriceMin || eqPriceMax || ['cheapest', 'priciest'].includes(eqSortBy))) eqListingType = 'sale';
+  eqRentalPeriod = eqListingType === 'rent' && RENTAL_PERIODS.includes(p.get('period')) ? p.get('period') : '';
+  if (!listingCanComparePrice(eqListingType, eqRentalPeriod)) {
+    eqPriceMin = eqPriceMax = 0;
+    if (['cheapest', 'priciest'].includes(eqSortBy)) eqSortBy = 'newest';
   }
+  if (eqPriceMax > 0 && eqPriceMin > eqPriceMax) [eqPriceMin, eqPriceMax] = [eqPriceMax, eqPriceMin];
+  eqSearch = p.get('q') || '';
+  const inp = document.getElementById('eq-search');
+  if (inp) inp.value = eqSearch;
+}
+
+window.addEventListener('popstate', () => {
+  if (!eqSb || !eqDataReady) return;
+  eqReadUrlFilters();
+  eqSyncDrawerFromActive();
+  eqApplyFilters();
+});
+
+function eqBrowseScopeKey(type = eqListingType, period = eqRentalPeriod) {
+  return `${type || ''}:${type === 'rent' ? period || '' : ''}`;
+}
+
+function eqSetListingType(type) {
+  type = ['sale', 'rent'].includes(type) ? type : '';
+  if (type === eqListingType) return;
+  eqListingType = type;
+  eqRentalPeriod = '';
+  eqResetPriceContext();
+  eqApplyFilters();
+}
+
+function eqSetRentalPeriod(period) {
+  period = eqListingType === 'rent' && RENTAL_PERIODS.includes(period) ? period : '';
+  if (period === eqRentalPeriod) return;
+  eqRentalPeriod = period;
+  eqResetPriceContext();
+  eqApplyFilters();
+}
+
+function eqResetPriceContext() {
+  eqPriceMin = eqPriceMax = 0;
+  if (['cheapest', 'priciest'].includes(eqSortBy)) eqSortBy = 'newest';
+  eqClosePricePop();
+}
+
+function eqRenderTypeControls(id, type, period) {
+  const root = document.getElementById(id);
+  if (!root) return;
+  root.querySelectorAll('[data-listing-type]').forEach(btn => {
+    const on = btn.dataset.listingType === type;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+  });
+  const field = root.querySelector('[data-rental-period-field]');
+  if (field) field.hidden = type !== 'rent';
+  const select = root.querySelector('select');
+  if (select) select.value = period || '';
+}
+
+function eqRenderPriceAvailability(draft) {
+  const type = draft ? eqDrawerDraft.listingType : eqListingType;
+  const period = draft ? eqDrawerDraft.rentalPeriod : eqRentalPeriod;
+  const comparable = listingCanComparePrice(type, period);
+  const reason = comparable ? '' : t('filters.priceContextRequired');
+  const ids = draft ? ['eq-drawer-price-min', 'eq-drawer-price-max'] : ['eq-price-btn', 'eq-price-min-input', 'eq-price-max-input'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = !comparable; el.title = reason; }
+  });
+  const tiers = document.getElementById(draft ? 'eq-drawer-price-tiers' : 'eq-price-tiers');
+  if (tiers) {
+    tiers.hidden = type !== 'sale';
+    tiers.querySelectorAll('button').forEach(btn => btn.disabled = !comparable);
+  }
+  const title = document.getElementById('eq-price-tiers-title');
+  if (!draft && title) title.hidden = type !== 'sale';
+  const sort = document.getElementById(draft ? 'eq-drawer-sort' : 'eq-sort');
+  sort?.querySelectorAll('option').forEach(opt => {
+    opt.disabled = !comparable && ['cheapest', 'priciest'].includes(opt.value);
+  });
+  const unit = document.getElementById(draft ? 'eq-drawer-price-unit' : 'eq-price-unit');
+  if (unit) unit.textContent = type === 'rent' && period ? `${t('card.currency')} / ${listingPeriodLabel(period, getLocale())}` : t('card.currency');
 }
 
 
@@ -970,44 +1064,59 @@ function eqToggleSidebar() {
   }
 }
 
-function eqOpenSidebar() {
+let _eqFilterReturnFocus = null;
+let _eqFilterScrollY = 0;
+let _eqRevealMobileBrowseControls = null;
+
+function eqOpenSidebar(section = '') {
+  if (document.body.classList.contains('filter-open')) return;
+  _eqFilterReturnFocus = document.activeElement;
+  _eqFilterScrollY = window.scrollY;
   eqSyncDrawerFromActive();
+  if (section === 'price' && !listingCanComparePrice(eqListingType, eqRentalPeriod)) section = 'type';
   const drawer = document.getElementById('eq-filter-drawer');
-  const overlay = document.getElementById('eq-sidebar-overlay');
+  document.body.style.setProperty('--eq-filter-scroll', `-${_eqFilterScrollY}px`);
   document.body.classList.add('filter-open');
   if (drawer) {
-    drawer.classList.add('is-open');
-    drawer.style.transform = 'translateX(0)';
-    drawer.style.pointerEvents = 'auto';
+    drawer.inert = false;
+    drawer.setAttribute('aria-hidden', 'false');
+    const target = document.getElementById(`eq-drawer-${section}-section`);
+    const scroller = drawer.querySelector('.eq-drawer-body');
+    if (scroller) scroller.scrollTop = target ? target.offsetTop - scroller.offsetTop : 0;
+    const focus = target?.querySelector('button:not(:disabled), select:not(:disabled), input:not(:disabled)') || document.getElementById('eq-drawer-close-btn');
+    focus?.focus({ preventScroll: true });
   }
-  if (overlay) overlay.style.display = 'block';
-  document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'true');
+  document.querySelectorAll('[data-eq-filter-action="open"]').forEach(btn => btn.setAttribute('aria-expanded', 'true'));
 }
 
 function eqCloseSidebar() {
+  if (!document.body.classList.contains('filter-open')) return;
   const drawer = document.getElementById('eq-filter-drawer');
-  const overlay = document.getElementById('eq-sidebar-overlay');
+  clearTimeout(_eqPreviewTimer);
+  ++_eqPreviewSeq;
+  document.activeElement?.blur();
   document.body.classList.remove('filter-open');
+  document.body.style.removeProperty('--eq-filter-scroll');
   if (drawer) {
-    drawer.classList.remove('is-open');
-    drawer.style.transform = '';
-    drawer.style.pointerEvents = '';
+    drawer.inert = true;
+    drawer.setAttribute('aria-hidden', 'true');
   }
-  if (overlay) overlay.style.display = '';
-  document.getElementById('eq-sidebar-tab')?.setAttribute('aria-expanded', 'false');
+  window.scrollTo({ top: _eqFilterScrollY, behavior: 'instant' });
+  document.querySelectorAll('[data-eq-filter-action="open"]').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+  _eqRevealMobileBrowseControls?.();
+  _eqFilterReturnFocus?.focus({ preventScroll: true });
 }
 
-/* ── Card Carousel ── */
-function eqCardNav(carouselId, dir) {
-  const wrap = document.getElementById(carouselId);
-  if (!wrap) return;
-  const slides = wrap.querySelector('.eq-card-slides');
-  const dots   = wrap.querySelectorAll('.eq-cn-dot');
-  const total  = wrap.querySelectorAll('.eq-card-slide').length;
-  const idx    = (parseInt(wrap.dataset.idx || '0') + dir + total) % total;
-  wrap.dataset.idx = idx;
-  slides.style.transform = `translateX(${-idx * 100}%)`;
-  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+function eqCardImageError(img) {
+  const original = img.dataset.original;
+  img.removeAttribute('srcset');
+  if (original && img.getAttribute('src') !== original) {
+    img.src = original;
+    return;
+  }
+  img.onerror = null;
+  img.hidden = true;
+  img.parentElement.classList.add('is-image-missing');
 }
 
 /* ── Image Lightbox ── */
@@ -1016,7 +1125,7 @@ let eqLbIndex  = 0;
 let eqLbZoom   = 1;
 
 function eqOpenLightbox(listingId, startIdx) {
-  const listing = eqListings.find(l => l.id === listingId);
+  const listing = eqListings.find(l => l.id === listingId) || (eqCurrentDetailListing?.id === listingId ? eqCurrentDetailListing : null);
   if (!listing) return;
   eqLbImages = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
   if (!eqLbImages.length) return;
@@ -1068,9 +1177,6 @@ function eqLightboxClose() {
   eqLbZoom = 1;
 }
 
-/* بلا سلوك toggle هنا عمدًا: الشريحة دي بيوصلها الحدث ٣ مرات (inline onclick
-   + المستمع المفوَّض على pointerdown + نظيره على click في eqInstallMobileFilterControls)،
-   فأي عكس للحالة كان هيلغي نفسه فورًا. الإلغاء متاح بشريحة «الكل» وبزر إعادة التعيين. */
 function eqDrawerSetCategory(cat) {
   eqDrawerDraft.category = cat || '';
   eqRenderDrawerDraft();
@@ -1087,23 +1193,26 @@ function eqDrawerSortChange(sel) {
 }
 
 function eqDrawerSetPrice(min, max) {
+  if (!listingCanComparePrice(eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod)) return;
   eqDrawerDraft.priceMin = Number(min) || 0;
   eqDrawerDraft.priceMax = Number(max) || 0;
   eqRenderDrawerDraft();
 }
 
 function eqDrawerCustomPrice() {
-  const min = parseInt(document.getElementById('eq-drawer-price-min')?.value) || 0;
-  const max = parseInt(document.getElementById('eq-drawer-price-max')?.value) || 0;
-  eqDrawerDraft.priceMin = (min > 0 && max > 0 && max < min) ? max : min;
-  eqDrawerDraft.priceMax = (min > 0 && max > 0 && max < min) ? min : max;
+  if (!listingCanComparePrice(eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod)) {
+    eqDrawerDraft.priceMin = eqDrawerDraft.priceMax = 0;
+    return;
+  }
+  eqDrawerDraft.priceMin = Math.max(0, parseInt(document.getElementById('eq-drawer-price-min')?.value) || 0);
+  eqDrawerDraft.priceMax = Math.max(0, parseInt(document.getElementById('eq-drawer-price-max')?.value) || 0);
   eqRenderDrawerDraft({ keepInputs: true });
 }
 
 /* الشارة على زر/لسان الفلتر بتعكس الفلاتر *المطبَّقة* — لا مسوّدة الدرج */
 function eqUpdateDrawerBadge() {
   const count = eqActiveFilterCount();
-  ['eq-drawer-badge'].forEach(id => {
+  ['eq-mobile-filter-badge'].forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
     badge.textContent = _eqNum(count);
@@ -1112,12 +1221,19 @@ function eqUpdateDrawerBadge() {
 }
 
 function eqResetDrawer() {
-  eqDrawerDraft = { category: '', gov: '', priceMin: 0, priceMax: 0, sortBy: 'newest' };
+  eqDrawerDraft = { listingType: '', rentalPeriod: '', category: '', gov: '', priceMin: 0, priceMax: 0, sortBy: 'newest' };
   eqRenderDrawerDraft();
 }
 
 function eqApplyDrawerFilters() {
+  if (!document.body.classList.contains('filter-open')) return;
+  eqDrawerCustomPrice();
+  if (eqDrawerDraft.priceMax > 0 && eqDrawerDraft.priceMin > eqDrawerDraft.priceMax) {
+    [eqDrawerDraft.priceMin, eqDrawerDraft.priceMax] = [eqDrawerDraft.priceMax, eqDrawerDraft.priceMin];
+  }
   eqActiveCategory = eqDrawerDraft.category;
+  eqListingType = eqDrawerDraft.listingType;
+  eqRentalPeriod = eqDrawerDraft.rentalPeriod;
   eqGov      = eqDrawerDraft.gov;
   eqPriceMin = eqDrawerDraft.priceMin;
   eqPriceMax = eqDrawerDraft.priceMax;
@@ -1129,6 +1245,8 @@ function eqApplyDrawerFilters() {
 
 function eqSyncDrawerFromActive() {
   eqDrawerDraft = {
+    listingType: eqListingType,
+    rentalPeriod: eqRentalPeriod,
     category: eqActiveCategory,
     gov:      eqGov,
     priceMin: eqPriceMin,
@@ -1139,6 +1257,8 @@ function eqSyncDrawerFromActive() {
 }
 
 function eqRenderDrawerDraft(opts = {}) {
+  eqRenderTypeControls('eq-drawer-type-controls', eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod);
+  eqRenderPriceAvailability(true);
   const drawerGov  = document.getElementById('eq-drawer-gov');
   const drawerSort = document.getElementById('eq-drawer-sort');
   if (drawerGov)  drawerGov.value  = eqDrawerDraft.gov;
@@ -1151,7 +1271,7 @@ function eqRenderDrawerDraft(opts = {}) {
   });
   document.querySelectorAll('#eq-drawer-price-tiers .eqf-tier').forEach(el => {
     el.classList.toggle('on',
-      el.getAttribute('onclick') === `eqDrawerSetPrice(${eqDrawerDraft.priceMin},${eqDrawerDraft.priceMax})`);
+      Number(el.dataset.min) === eqDrawerDraft.priceMin && Number(el.dataset.max) === eqDrawerDraft.priceMax);
   });
 
   if (!opts.keepInputs) {
@@ -1162,9 +1282,32 @@ function eqRenderDrawerDraft(opts = {}) {
   }
 
   const summary = document.getElementById('eq-drawer-price-val');
-  if (summary) summary.textContent = _eqPriceSummary(eqDrawerDraft.priceMin, eqDrawerDraft.priceMax);
+  if (summary) summary.textContent = _eqPriceSummary(eqDrawerDraft.priceMin, eqDrawerDraft.priceMax, eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod);
 
   eqQueueDrawerPreview();
+}
+
+function eqDrawerSetType(type) {
+  if (eqDrawerDraft.listingType === type) return;
+  eqDrawerDraft.listingType = ['sale', 'rent'].includes(type) ? type : '';
+  eqDrawerDraft.rentalPeriod = '';
+  eqDrawerResetPriceContext();
+}
+
+function eqDrawerSetPeriod(period) {
+  if (eqDrawerDraft.rentalPeriod === period) return;
+  eqDrawerDraft.rentalPeriod = eqDrawerDraft.listingType === 'rent' && RENTAL_PERIODS.includes(period) ? period : '';
+  eqDrawerResetPriceContext();
+}
+
+function eqDrawerResetPriceContext() {
+  eqDrawerDraft.priceMin = eqDrawerDraft.priceMax = 0;
+  if (['cheapest', 'priciest'].includes(eqDrawerDraft.sortBy)) eqDrawerDraft.sortBy = 'newest';
+  const tabs = document.getElementById('eq-drawer-tabs');
+  if (tabs) tabs.innerHTML = _eqCatChipsHtml('eqDrawerSetCategory', eqDrawerDraft.category);
+  const gov = document.getElementById('eq-drawer-gov');
+  if (gov) gov.innerHTML = _eqGovOptionsHtml(eqDrawerDraft.gov, eqBrowseScopeKey(eqDrawerDraft.listingType, eqDrawerDraft.rentalPeriod));
+  eqRenderDrawerDraft();
 }
 
 /* عدّاد حيّ على زر التطبيق: «عرض ٧ نتائج» قبل الإغلاق — استعلام count
@@ -1173,21 +1316,28 @@ let _eqPreviewTimer = null;
 let _eqPreviewSeq   = 0;
 function eqQueueDrawerPreview() {
   clearTimeout(_eqPreviewTimer);
-  _eqPreviewTimer = setTimeout(eqPreviewDrawerCount, 220);
+  const seq = ++_eqPreviewSeq;
+  const btn = document.getElementById('eq-drawer-apply-btn');
+  if (btn) btn.textContent = t('filters.showResults');
+  _eqPreviewTimer = setTimeout(() => eqPreviewDrawerCount(seq), 220);
 }
 
-async function eqPreviewDrawerCount() {
+async function eqPreviewDrawerCount(seq) {
   const btn = document.getElementById('eq-drawer-apply-btn');
-  if (!btn || !eqSb) return;
-  const seq = ++_eqPreviewSeq;
+  if (!btn || !eqSb || seq !== _eqPreviewSeq || !document.body.classList.contains('filter-open')) return;
+  const min = eqDrawerDraft.priceMin;
+  const max = eqDrawerDraft.priceMax;
+  const reversed = max > 0 && min > max;
   try {
     const { count, error } = await _eqBuildQuery({
       select: 'id',
       countOpts: { count: 'exact', head: true },
       category: eqDrawerDraft.category,
+      listingType: eqDrawerDraft.listingType,
+      rentalPeriod: eqDrawerDraft.rentalPeriod,
       gov:      eqDrawerDraft.gov,
-      priceMin: eqDrawerDraft.priceMin,
-      priceMax: eqDrawerDraft.priceMax,
+      priceMin: reversed ? max : min,
+      priceMax: reversed ? min : max,
     });
     if (error) throw error;
     if (seq !== _eqPreviewSeq) return;
@@ -1211,111 +1361,140 @@ function eqStopFilterEvent(e) {
 
 function eqInstallMobileFilterControls() {
   const drawer = document.getElementById('eq-filter-drawer');
-  if (!drawer) return;
+  if (!drawer || drawer.dataset.eqBound) return;
+  drawer.dataset.eqBound = '1';
 
-  const openers = [
-    document.getElementById('eq-sidebar-tab'),
-  ].filter(Boolean);
-  const overlay = document.getElementById('eq-sidebar-overlay');
-  const closeBtn = document.getElementById('eq-drawer-close-btn');
-  const resetBtn = document.getElementById('eq-drawer-reset-btn');
-  const applyBtn = document.getElementById('eq-drawer-apply-btn');
-  const tabs = document.getElementById('eq-drawer-tabs');
-
-  window.__forceMarketFilterOpen = function (e) {
+  // Act only on a completed click: removing the drawer on pointerdown exposes links below it.
+  document.addEventListener('click', e => {
+    const btn = e.target.closest?.('[data-eq-filter-action]');
+    if (!btn || btn.disabled) return;
     eqStopFilterEvent(e);
-    eqOpenSidebar();
-    return false;
-  };
-  window.__forceMarketFilterClose = function (e) {
-    eqStopFilterEvent(e);
-    eqCloseSidebar();
-    return false;
-  };
-  window.__forceMarketFilterReset = function (e) {
-    eqStopFilterEvent(e);
-    eqResetDrawer();
-    return false;
-  };
-  window.__forceMarketFilterApply = function (e) {
-    eqStopFilterEvent(e);
-    eqApplyDrawerFilters();
-    return false;
-  };
+    switch (btn.dataset.eqFilterAction) {
+      case 'open': eqOpenSidebar(btn.dataset.eqFilterSection); break;
+      case 'close': eqCloseSidebar(); break;
+      case 'reset': eqResetDrawer(); break;
+      case 'apply': eqApplyDrawerFilters(); break;
+      case 'category': eqDrawerSetCategory(btn.dataset.cat); break;
+      case 'type': eqDrawerSetType(btn.dataset.listingType); break;
+      case 'price': eqDrawerSetPrice(btn.dataset.min, btn.dataset.max); break;
+      case 'favorites': eqOpenFavorites(); break;
+    }
+  }, true);
 
-  openers.forEach(btn => {
-    if (btn.dataset.eqAppFilterBound === '1') return;
-    btn.dataset.eqAppFilterBound = '1';
-    btn.addEventListener('click', window.__forceMarketFilterOpen, true);
-  });
-
-  if (overlay && overlay.dataset.eqAppFilterBound !== '1') {
-    overlay.dataset.eqAppFilterBound = '1';
-    overlay.addEventListener('click', window.__forceMarketFilterClose, true);
-  }
-  if (closeBtn && closeBtn.dataset.eqAppFilterBound !== '1') {
-    closeBtn.dataset.eqAppFilterBound = '1';
-    closeBtn.addEventListener('click', window.__forceMarketFilterClose, true);
-  }
-  if (resetBtn && resetBtn.dataset.eqAppFilterBound !== '1') {
-    resetBtn.dataset.eqAppFilterBound = '1';
-    resetBtn.addEventListener('click', window.__forceMarketFilterReset, true);
-  }
-  if (applyBtn && applyBtn.dataset.eqAppFilterBound !== '1') {
-    applyBtn.dataset.eqAppFilterBound = '1';
-    applyBtn.addEventListener('click', window.__forceMarketFilterApply, true);
-  }
-
-  if (tabs && tabs.dataset.eqAppFilterBound !== '1') {
-    tabs.dataset.eqAppFilterBound = '1';
-    tabs.addEventListener('click', e => {
-      const btn = e.target.closest('.eqf-chip');
-      if (!btn) return;
+  document.addEventListener('keydown', e => {
+    if (!document.body.classList.contains('filter-open')) return;
+    if (e.key === 'Escape') {
       eqStopFilterEvent(e);
-      eqDrawerSetCategory(btn.dataset.cat || '');
-    }, true);
-  }
-
-  if (document.body.dataset.eqMobileFilterDelegated !== '1') {
-    document.body.dataset.eqMobileFilterDelegated = '1';
-    const delegatedFilterClick = e => {
-      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
-      const pathHas = selector => path.find(node => node?.matches?.(selector));
-      const rawTarget = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
-      const target = rawTarget || path.find(node => node?.nodeType === 1);
-      if (!target) return;
-      const openBtn = pathHas('#eq-sidebar-tab') || target.closest?.('#eq-sidebar-tab');
-      const closeTarget = pathHas('#eq-drawer-close-btn, #eq-sidebar-overlay') || target.closest?.('#eq-drawer-close-btn, #eq-sidebar-overlay');
-      const resetTarget = pathHas('#eq-drawer-reset-btn') || target.closest?.('#eq-drawer-reset-btn');
-      const applyTarget = pathHas('#eq-drawer-apply-btn') || target.closest?.('#eq-drawer-apply-btn');
-      const tabTarget = pathHas('#eq-drawer-tabs .eqf-chip') || target.closest?.('#eq-drawer-tabs .eqf-chip');
-
-      if (openBtn) {
-        eqStopFilterEvent(e);
-        eqOpenSidebar();
-      } else if (closeTarget) {
-        eqStopFilterEvent(e);
-        eqCloseSidebar();
-      } else if (resetTarget) {
-        eqStopFilterEvent(e);
-        eqResetDrawer();
-      } else if (applyTarget) {
-        eqStopFilterEvent(e);
-        eqApplyDrawerFilters();
-      } else if (tabTarget) {
-        eqStopFilterEvent(e);
-        eqDrawerSetCategory(tabTarget.dataset.cat || '');
+      eqCloseSidebar();
+    } else if (e.key === 'Tab') {
+      const focusable = [...drawer.querySelectorAll('button, select, input, [tabindex="0"]')]
+        .filter(el => !el.disabled && el.getClientRects().length);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
       }
-    };
-    window.addEventListener('pointerdown', delegatedFilterClick, true);
-    window.addEventListener('click', delegatedFilterClick, true);
-  }
+    }
+  });
 }
 
 eqInstallMobileFilterControls();
 document.addEventListener('DOMContentLoaded', eqInstallMobileFilterControls);
-window.addEventListener('load', eqInstallMobileFilterControls);
-setTimeout(eqInstallMobileFilterControls, 300);
+
+function eqRenderMobileFilterSummary() {
+  const labels = {
+    'eq-mobile-type-label': eqListingType ? listingTypeLabel({ listing_type: eqListingType }, getLocale()) : t('filters.typeShort'),
+    'eq-mobile-category-label': eqActiveCategory ? eqCatLabel(eqActiveCategory) : t('filters.categoryLabel'),
+    'eq-mobile-price-label': eqPriceMin > 0 || eqPriceMax > 0 ? _eqPriceSummary() : t('filters.price'),
+    'eq-mobile-gov-label': eqGov ? eqGovLabel(eqGov) : t('filters.location'),
+  };
+  Object.entries(labels).forEach(([id, label]) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = label; el.parentElement.title = label; }
+  });
+  document.querySelector('[data-eq-filter-section="category"]')?.classList.toggle('on', !!eqActiveCategory);
+  document.querySelector('[data-eq-filter-section="type"]')?.classList.toggle('on', !!eqListingType);
+  document.querySelector('[data-eq-filter-section="price"]')?.classList.toggle('on', eqPriceMin > 0 || eqPriceMax > 0);
+  document.querySelector('[data-eq-filter-section="gov"]')?.classList.toggle('on', !!eqGov);
+}
+
+function eqInitMobileBrowseControls() {
+  const strip = document.getElementById('eq-mobile-filter-strip');
+  const actions = document.getElementById('eq-mobile-actions');
+  if (!strip || !actions || actions.dataset.eqBound) return;
+  actions.dataset.eqBound = '1';
+  const mobile = window.matchMedia('(max-width: 768px)');
+  const nav = document.querySelector('.nav');
+  const bottomNav = document.getElementById('bottom-nav');
+  let lastY = Math.max(0, window.scrollY);
+  let travel = 0;
+  let shown = true;
+  let frame = 0;
+
+  const render = () => {
+    const blocked = document.body.classList.contains('filter-open') ||
+      document.body.classList.contains('lightbox-open') ||
+      document.body.style.overflow === 'hidden' ||
+      !!document.querySelector('.eq-modal-overlay.open') ||
+      !!(window.visualViewport && window.visualViewport.height < window.innerHeight - 150);
+    const hidden = !mobile.matches || !shown || blocked;
+    [strip, actions].forEach(el => {
+      el.classList.toggle('is-scroll-hidden', hidden);
+      el.inert = hidden;
+      el.setAttribute('aria-hidden', String(hidden));
+    });
+  };
+  const measure = () => {
+    document.documentElement.style.setProperty('--eq-nav-h', `${nav?.offsetHeight || 60}px`);
+    document.documentElement.style.setProperty('--eq-bottom-nav-h', `${bottomNav?.offsetHeight || 60}px`);
+    render();
+  };
+  _eqRevealMobileBrowseControls = () => {
+    lastY = Math.max(0, window.scrollY);
+    travel = 0;
+    shown = true;
+    render();
+  };
+  const onScroll = () => {
+    frame = 0;
+    if (document.body.classList.contains('filter-open') || document.body.style.overflow === 'hidden') return;
+    // Clamp iOS overscroll so a bounce at the bottom does not look like an upward gesture.
+    const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const y = Math.max(0, Math.min(window.scrollY, maxY));
+    const delta = y - lastY;
+    lastY = y;
+    if (!delta) return;
+    travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
+    if (y <= 24) shown = true;
+    else if (travel >= 8) shown = false;
+    else if (travel <= -4) shown = true;
+    render();
+  };
+  window.addEventListener('scroll', () => {
+    if (!frame) frame = requestAnimationFrame(onScroll);
+  }, { passive: true });
+  window.addEventListener('resize', measure);
+  window.visualViewport?.addEventListener('resize', render);
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(measure);
+    if (nav) observer.observe(nav);
+    if (bottomNav) observer.observe(bottomNav);
+  }
+  const modalObserver = new MutationObserver(render);
+  modalObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+  document.querySelectorAll('.eq-modal-overlay').forEach(el => {
+    modalObserver.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+  mobile.addEventListener('change', () => {
+    if (!mobile.matches) eqCloseSidebar();
+    _eqRevealMobileBrowseControls();
+  });
+  measure();
+}
 
 
 /* ================================================================
@@ -1339,64 +1518,75 @@ function _eqHeartSvg(on) {
    في CSS، فالتبديل بين العرضين مجرد كلاس على الحاوية: بلا إعادة بناء،
    وبالتالي الفلاتر والترتيب وموضع التمرير كلها بتفضل زي ما هي. */
 function eqBuildCard(listing) {
-  const allImgs = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
+  const cover = listing.cover_image || (listing.images || []).find(Boolean) || '';
   const cond    = eqCondLabel(listing.condition);
   const cat     = eqCatLabel(listing.category);
   const price   = _eqNum(listing.price);
+  const rentalUnit = listingType(listing) === 'rent' ? listingPeriodLabel(listing.rental_period, getLocale()) : '';
   const lid     = listing.id;
   const title   = _eqEsc(listing.title);
   const isFav   = eqFavorites.has(lid);
 
   const flag = listing.is_featured
-    ? `<span class="eq-card-flag">${t('card.featured')}</span>` : '';
+    ? `<span class="eq-card-flag">${t('card.featuredLabel')}</span>` : '';
+  const noImage = `<div class="eq-card-no-img" role="img" aria-label="${_eqEsc(t('card.noImage'))}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>`;
 
-  let mediaInner;
-  if (allImgs.length === 0) {
-    mediaInner = `<div class="eq-card-no-img">📦</div>`;
-  } else {
-    const slides = allImgs.map(u =>
-      `<div class="eq-card-slide"><img src="${_cardUrl(u)}" alt="${title}"${_imgAttrs(true)}
-        onerror="this.parentNode.style.display='none'"></div>`
-    ).join('');
-    const navHtml = allImgs.length > 1 ? `
-      <button type="button" class="eq-cn-btn eq-cn-prev" onclick="eqCardNav('eqc-${lid}',-1);event.preventDefault();event.stopPropagation()" aria-label="${t('card.prev')}">‹</button>
-      <button type="button" class="eq-cn-btn eq-cn-next" onclick="eqCardNav('eqc-${lid}',1);event.preventDefault();event.stopPropagation()" aria-label="${t('card.next')}">›</button>
-      <div class="eq-cn-dots">${allImgs.map((_, i) => `<span class="eq-cn-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>` : '';
-    mediaInner = `
-      <div class="eq-card-carousel${allImgs.length > 1 ? ' has-many' : ''}" id="eqc-${lid}" data-idx="0">
-        <div class="eq-card-slides">${slides}</div>
-        ${navHtml}
-      </div>`;
+  let mediaInner = noImage;
+  if (cover) {
+    const cardUrl = _cardUrl(cover);
+    const detailUrl = _detailUrl(cover);
+    const srcset = cardUrl !== detailUrl
+      ? ` srcset="${_eqEsc(cardUrl)} 1x, ${_eqEsc(detailUrl)} 2x"` : '';
+    mediaInner += `<img class="eq-card-cover" src="${_eqEsc(cardUrl)}"${srcset}
+      data-original="${_eqEsc(cover)}" alt="${title}"${_imgAttrs()}
+      onerror="eqCardImageError(this)">`;
   }
 
   const locText = [listing.region ? eqGovLabel(listing.region) : '', listing.area]
-    .filter(Boolean).map(_eqEsc).join(' — ');
+    .filter(Boolean).join(' · ');
   const desc = listing.description
     ? `<p class="eq-card-desc">${_eqEsc(listing.description)}</p>` : '';
+  const published = listing.created_at ? new Date(listing.created_at) : null;
+  let date = '';
+  if (published && Number.isFinite(published.getTime())) {
+    const locale = getLocale() === 'en' ? 'en-GB' : 'ar-EG';
+    const shortDate = published.toLocaleDateString(locale, {
+      day: 'numeric', month: 'short',
+      ...(published.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}),
+    });
+    const fullDate = published.toLocaleDateString(locale, { dateStyle: 'long' });
+    date = `<time class="eq-card-date" datetime="${published.toISOString()}"
+      title="${_eqEsc(t('card.published', { date: fullDate }))}">${_eqEsc(shortDate)}</time>`;
+  }
 
   return `
 <article class="eq-card" data-category="${listing.category || ''}" data-region="${_eqEsc(listing.region)}" data-price="${Number(listing.price) || 0}">
-  <div class="eq-card-media">
+  <div class="eq-card-media${cover ? '' : ' is-image-missing'}">
     ${mediaInner}
     ${flag}
-    <button type="button" class="eq-fav-btn${isFav ? ' on' : ''}" data-fav="${lid}"
-            onclick="eqToggleFavorite(event,'${lid}')"
-            aria-pressed="${isFav}" aria-label="${t('card.favoriteTitle')}" title="${t('card.favoriteTitle')}">${_eqHeartSvg(isFav)}</button>
-    <span class="eq-card-chip">${cat}</span>
   </div>
+  <button type="button" class="eq-fav-btn${isFav ? ' on' : ''}" data-fav="${lid}"
+          onclick="eqToggleFavorite(event,'${lid}')"
+          aria-pressed="${isFav}" aria-label="${t('card.favoriteTitle')}" title="${t('card.favoriteTitle')}">${_eqHeartSvg(isFav)}</button>
   <div class="eq-card-body">
     <div class="eq-card-priceline">
-      <span class="eq-card-price">${price} ${t('card.currency')}</span>
+      <span class="eq-card-price" aria-label="${_eqEsc(listingPriceText(listing, getLocale()))}"><bdi>${price}</bdi> <small>${t('card.currency')}${rentalUnit ? ' / ' + rentalUnit : ''}</small></span>
       ${listing.negotiable ? `<span class="eq-card-nego">${t('card.negotiable')}</span>` : ''}
     </div>
     <h3 class="eq-card-title"><a class="eq-card-link" href="/market/?listing=${lid}"
        onclick="return eqCardClick(event,'${lid}')">${title}</a></h3>
     ${desc}
     <div class="eq-card-meta">
-      <span class="eq-card-loc">
+      ${locText ? `<span class="eq-card-loc" title="${_eqEsc(locText)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        ${locText}</span>
-      <span class="eq-card-cond">${cond}</span>
+        <span>${_eqEsc(locText)}</span></span>` : ''}
+      <div class="eq-card-foot">
+        <span class="eq-card-type${listingType(listing) === 'rent' ? ' is-rental' : ''}">${listingTypeLabel(listing, getLocale())}</span>
+        <span class="eq-card-category">${_eqEsc(cat)}</span>
+        ${listing.condition ? `<span class="eq-card-cond">${_eqEsc(cond)}</span>` : ''}
+        ${date}
+      </div>
     </div>
   </div>
 </article>`;
@@ -1421,6 +1611,8 @@ function eqCardClick(e, id) {
    لأن الفلترة هنا محلية فوق eqListings المحمَّلة أصلًا ── */
 function _eqEmptyHeadline() {
   const parts = [];
+  if (eqListingType) parts.push(listingTypeLabel({ listing_type: eqListingType }, getLocale()));
+  if (eqRentalPeriod) parts.push(t('empty.dynFragPeriod', { period: listingPeriodLabel(eqRentalPeriod, getLocale()) }));
   if (eqActiveCategory) parts.push(t('empty.dynFragCat',   { cat: eqCatLabel(eqActiveCategory) }));
   if (eqGov)            parts.push(t('empty.dynFragGov',   { gov: eqGovLabel(eqGov) }));
   if (eqPriceMin > 0 || eqPriceMax > 0) parts.push(t('empty.dynFragPrice', { price: _eqPriceSummary() }));
@@ -1430,6 +1622,7 @@ function _eqEmptyHeadline() {
 }
 
 function eqClearAllFilters() {
+  eqListingType = ''; eqRentalPeriod = ''; eqSortBy = 'newest';
   eqActiveCategory = ''; eqSearch = ''; eqGov = ''; eqPriceMin = 0; eqPriceMax = 0;
   const s = document.getElementById('eq-search'); if (s) s.value = '';
   eqApplyFilters();
@@ -1445,6 +1638,13 @@ function eqJumpToGov(gov) {
 
 function _eqRenderDynamicEmpty(grid) {
   const anyFilter = eqHasActiveFilters();
+  const scope = eqBrowseScopeKey();
+  if (_eqSampleScope !== scope) {
+    eqSampleListings = [];
+    _eqSampleScope = scope;
+    _eqSampleFetching = false;
+    ++_eqSampleSeq;
+  }
 
   /* المصدر بقى eqFacets/eqSampleListings لا eqListings — بعد نقل الفلترة
      للخادم بقت eqListings هي *النتائج المفلترة* (فاضية هنا بالتعريف)، فكانت
@@ -1459,14 +1659,15 @@ function _eqRenderDynamicEmpty(grid) {
      «إعلانات ممكن تهمّك» يختفي — نجيبها ساعتها ونعيد الرسم مرة واحدة. */
   if (!eqSampleListings.length && !_eqSampleFetching) {
     _eqSampleFetching = true;
-    eqSb.from('listings').select(_EQ_SELECT)
-      .eq('status', 'approved').gt('expires_at', new Date().toISOString())
+    const seq = ++_eqSampleSeq;
+    _eqBuildQuery({ category: '', gov: '', priceMin: 0, priceMax: 0, search: '' })
       .order('is_featured', { ascending: false }).order('created_at', { ascending: false })
       .limit(6)
       .then(({ data }) => {
+        if (seq !== _eqSampleSeq || scope !== eqBrowseScopeKey()) return;
         _eqSampleFetching = false;
         if (data?.length) { eqSampleListings = data; if (!eqFiltered.length) eqRenderGrid(); }
-      }, () => { _eqSampleFetching = false; });
+      }, () => { if (seq === _eqSampleSeq) _eqSampleFetching = false; });
   }
 
   const alt = eqSampleListings.filter(l => !(govSoleFilter && l.region === eqGov)).slice(0, 3);
@@ -1489,8 +1690,7 @@ function _eqRenderDynamicEmpty(grid) {
       ${alt.length ? `
         <div style="margin-top:30px">
           <div style="font-size:13.5px;font-weight:800;margin-bottom:14px">${t('empty.dynAltTitle')}</div>
-          <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));
-                      max-width:840px;margin:0 auto;text-align:initial">
+          <div class="eq-suggested-grid">
             ${alt.map(eqBuildCard).join('')}
           </div>
         </div>` : ''}
@@ -1507,6 +1707,7 @@ function eqRenderGrid() {
      مستدعٍ لاحق يصير مغطّى تلقائيًا. eqShowLoading يبقى معروضًا حتى أول جلب. */
   if (!eqDataReady) return;
 
+  _eqImgCounter = 0;
   if (eqFiltered.length === 0) {
     _eqRenderDynamicEmpty(grid);
     if (count) count.textContent = t('grid.countZero');
@@ -1514,7 +1715,6 @@ function eqRenderGrid() {
     return;
   }
 
-  _eqImgCounter = 0; /* أعد العدّاد لتحصل أول 6 صور على fetchpriority=high */
   grid.innerHTML = eqFiltered.map(eqBuildCard).join('');
   /* العدد من count الحقيقي على الخادم لا من طول الصفحة المحمّلة */
   const total = eqTotalCount || eqFiltered.length;
@@ -1557,6 +1757,7 @@ function eqShowError(msg) {
    ================================================================ */
 
 let eqCurrentDetailId = null; // آخر إعلان مفتوح في المودال — لإعادة الرسم عند تبديل اللغة
+let eqCurrentDetailListing = null;
 
 /* الإعلان قد لا يكون ضمن الصفحة المحمّلة حاليًا: رابط عميق ?listing=،
    أو بطاقة من اقتراحات الحالة الفارغة، أو نتيجة استُبدلت بفلتر جديد —
@@ -1574,14 +1775,15 @@ async function eqOpenDetail(id) {
   if (!listing) listing = await eqFetchListing(id);
   if (!listing) return;
   eqCurrentDetailId = id;
+  eqCurrentDetailListing = listing;
 
-  trackEvent('listing_viewed', { listing_id: id, category: listing.category });
+  trackEvent('listing_viewed', { listing_id: id, category: listing.category, listing_type: listingType(listing), rental_period: listing.rental_period || undefined });
   eqIncrementView(id);
 
   const imgs   = [...new Set([listing.cover_image, ...(listing.images || [])].filter(Boolean))];
   const cond   = eqCondLabel(listing.condition);
   const cat    = eqCatLabel(listing.category);
-  const price  = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
+  const price  = listingPriceText(listing, getLocale());
   const nego   = listing.negotiable ? ` (${t('card.negotiable')})` : '';
   const date   = new Date(listing.created_at).toLocaleDateString(getLocale()==='en'?'en-US':'ar-EG');
 
@@ -1612,7 +1814,7 @@ async function eqOpenDetail(id) {
 
   const contactHtml = eqUser
     ? `${listing.contact_pref !== 'call'
-        ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent(t('detail.whatsappMsg', { title: listing.title }))}" target="_blank" onclick="eqIncrementContact('${id}')">${t('detail.whatsappContact')}</a>`
+        ? `<a class="eq-btn eq-btn-primary eq-btn-full" href="https://wa.me/2${listing.phone}?text=${encodeURIComponent(t(listingType(listing) === 'rent' ? 'detail.whatsappRentMsg' : 'detail.whatsappMsg', { title: listing.title, price }))}" target="_blank" onclick="eqIncrementContact('${id}')">${t('detail.whatsappContact')}</a>`
         : ''}
        ${listing.contact_pref !== 'whatsapp'
         ? `<a class="eq-btn eq-btn-outline eq-btn-full" href="tel:${listing.phone}" onclick="eqIncrementContact('${id}')">${t('detail.callSeller')}</a>`
@@ -1623,17 +1825,18 @@ async function eqOpenDetail(id) {
     ${galleryHtml}
     <div class="eq-detail-info">
       <div class="eq-detail-badges">
+        <span class="eq-badge eq-badge-type">${listingTypeLabel(listing, getLocale())}</span>
         <span class="eq-badge eq-badge-cat">${cat}</span>
         <span class="eq-badge eq-badge-cond">${cond}</span>
         ${listing.is_featured ? `<span class="eq-badge eq-badge-feat">${t('detail.featured')}</span>` : ''}
       </div>
       <h2 class="eq-detail-title">${listing.title}</h2>
-      <div class="eq-detail-price">${price} ${t('card.currency')}${nego}</div>
+      <div class="eq-detail-price">${price}${nego}</div>
       ${listing.description ? `<div class="eq-detail-desc">${listing.description}</div>` : ''}
       <div class="eq-detail-loc">📍 ${listing.region ? eqGovLabel(listing.region) : ''}${listing.area ? ' — ' + listing.area : ''}</div>
       <div class="eq-detail-date">${t('detail.published', { date })}</div>
       <div class="eq-detail-stats">${t('detail.views', { count: listing.view_count || 0 })}</div>
-      ${eqServiceCardHtml(id)}
+      ${listingType(listing) === 'sale' ? eqServiceCardHtml(id) : ''}
       <div class="eq-detail-actions">
         ${contactHtml}
         ${favBtn}
@@ -1661,6 +1864,7 @@ function eqCloseModal() {
   document.getElementById('eq-modal').classList.remove('open');
   document.body.style.overflow = '';
   eqCurrentDetailId = null;
+  eqCurrentDetailListing = null;
 }
 
 function eqSwiperNav(swiperId, dir) {
@@ -1671,11 +1875,11 @@ function eqSwiperNav(swiperId, dir) {
 
 /* زر مشاركة الإعلان — Web Share API أو واتساب */
 function eqShare(id) {
-  const listing = eqListings.find(l => l.id === id);
+  const listing = eqListings.find(l => l.id === id) || (eqCurrentDetailListing?.id === id ? eqCurrentDetailListing : null);
   if (!listing) return;
-  const price = Number(listing.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
+  const price = listingPriceText(listing, getLocale());
   const pageUrl = `${window.location.origin}${window.location.pathname}?listing=${id}`;
-  const text  = t('detail.shareText', { title: listing.title, price, region: listing.region ? eqGovLabel(listing.region) : '', url: pageUrl });
+  const text  = t('detail.shareText', { title: listing.title, type: listingTypeLabel(listing, getLocale()), price, region: listing.region ? eqGovLabel(listing.region) : '', url: pageUrl });
 
   if (navigator.share) {
     navigator.share({ title: listing.title, text, url: pageUrl }).catch(() => {});
@@ -1827,6 +2031,7 @@ function eqBuildMyCard(l) {
   </div>
   <div class="eq-my-card-body">
     <div class="eq-my-card-title">${l.title}</div>
+    <div class="eq-my-price">${listingPriceText(l, getLocale())} <span class="eq-card-type">${listingTypeLabel(l, getLocale())}</span></div>
     <span class="eq-status ${st.cls}">${st.label}</span>
     ${l.status === 'rejected' && l.reject_reason ? `<div class="eq-rejection-reason">${t('myCard.rejectReason', { reason: l.reject_reason })}</div>` : ''}
     ${l.status === 'approved'
@@ -1932,6 +2137,24 @@ async function eqDeleteListing(id, status) {
    ✏️ القسم 23: تعديل الإعلان
    ================================================================ */
 
+let eqEditType = 'sale';
+
+function eqSetEditType(type) {
+  if (document.getElementById('eq-edit-save-btn').disabled || type === eqEditType) return;
+  eqEditType = type === 'rent' ? 'rent' : 'sale';
+  document.getElementById('eq-edit-price').value = '';
+  document.getElementById('eq-edit-period').value = '';
+  eqRenderEditPricing();
+}
+
+function eqRenderEditPricing() {
+  eqRenderTypeControls('eq-edit-type-controls', eqEditType, document.getElementById('eq-edit-period')?.value);
+  const label = document.getElementById('eq-edit-price-label');
+  if (label) label.textContent = t(eqEditType === 'rent' ? 'edit.rentPriceLabel' : 'edit.priceLabel');
+  const price = document.getElementById('eq-edit-price');
+  if (price) price.min = eqEditType === 'rent' ? '1' : '0';
+}
+
 async function eqOpenEdit(id) {
   const l = eqMyListings.find(x => x.id === id);
   if (!l) return;
@@ -1963,7 +2186,10 @@ async function eqOpenEdit(id) {
   /* ملء الحقول */
   document.getElementById('eq-edit-title').value       = l.title        || '';
   document.getElementById('eq-edit-desc').value        = l.description  || '';
-  document.getElementById('eq-edit-price').value       = l.price        || '';
+  document.getElementById('eq-edit-price').value       = l.price        ?? '';
+  eqEditType = listingType(l);
+  document.getElementById('eq-edit-period').value = l.rental_period || '';
+  eqRenderEditPricing();
   document.getElementById('eq-edit-negotiable').checked= !!l.negotiable;
   document.getElementById('eq-edit-area').value        = l.area         || '';
   document.getElementById('eq-edit-phone').value       = l.phone        || '';
@@ -1992,16 +2218,20 @@ function eqCloseEdit() {
 }
 
 async function eqSubmitEdit() {
+  if (document.getElementById('eq-edit-save-btn').disabled) return;
   const id         = document.getElementById('eq-edit-id').value;
   const origStatus = document.getElementById('eq-edit-orig-status').value;
   const title      = document.getElementById('eq-edit-title').value.trim();
   const desc       = document.getElementById('eq-edit-desc').value.trim();
-  const price      = parseInt(document.getElementById('eq-edit-price').value) || 0;
+  const rawPrice   = document.getElementById('eq-edit-price').value;
+  const price      = Number(rawPrice);
+  const period     = eqEditType === 'rent' ? document.getElementById('eq-edit-period').value : null;
   const phone      = document.getElementById('eq-edit-phone').value.trim();
 
   if (!title)         { alert(t('edit.titleRequired'));  return; }
   if (!phone)         { alert(t('edit.phoneRequired'));   return; }
-  if (!price || price <= 0) { alert(t('edit.priceRequired')); return; }
+  if (!listingPriceValid(rawPrice, eqEditType)) { alert(t('edit.priceRequired')); return; }
+  if (!listingPricingValid({ listing_type: eqEditType, rental_period: period, price })) { alert(t('edit.periodRequired')); return; }
 
   /* الإعلانات المرفوضة تعود للمراجعة بعد التعديل */
   const newStatus = origStatus === 'rejected' ? 'pending' : origStatus;
@@ -2016,6 +2246,8 @@ async function eqSubmitEdit() {
     description:  desc,
     condition:    document.getElementById('eq-edit-condition').value,
     price,
+    listing_type: eqEditType,
+    rental_period: period,
     negotiable:   document.getElementById('eq-edit-negotiable').checked,
     region:       document.getElementById('eq-edit-region').value,
     area:         document.getElementById('eq-edit-area').value.trim() || null,
@@ -2148,14 +2380,16 @@ document.addEventListener('click', e => {
 
 function eqUpdateFavBtn() {
   const btn = document.getElementById('eq-fav-nav-btn');
-  if (!btn) return;
   const count = eqFavorites.size;
-  const badge = document.getElementById('eq-fav-badge');
-  if (badge) {
-    badge.textContent = count > 9 ? '9+' : String(count);
+  ['eq-fav-badge', 'eq-mobile-fav-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = count > 9 ? '9+' : _eqNum(count);
     badge.classList.toggle('show', count > 0);
-  }
-  btn.title = count > 0 ? t('favorites.titleWithCount', { count }) : t('favorites.title');
+  });
+  const label = count > 0 ? t('favorites.titleWithCount', { count }) : t('favorites.title');
+  if (btn) btn.title = label;
+  document.getElementById('eq-mobile-favorites-btn')?.setAttribute('aria-label', label);
 }
 
 async function eqLoadFavorites() {
@@ -2223,7 +2457,7 @@ async function eqOpenFavorites() {
 
   const { data } = await eqSb
     .from('listings')
-    .select('id, title, cover_image, price, region, status, category')
+    .select('id, title, cover_image, price, region, status, category, listing_type, rental_period')
     .in('id', [...eqFavorites]);
 
   if (!data || data.length === 0) {
@@ -2235,14 +2469,15 @@ async function eqOpenFavorites() {
     const img = l.cover_image
       ? `<img src="${_cardUrl(l.cover_image)}" alt="${l.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`
       : `<div style="width:60px;height:60px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📦</div>`;
-    const price = Number(l.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG');
+    const price = listingPriceText(l, getLocale());
     return `
     <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #F0F0F0">
       <div style="cursor:pointer;display:flex;gap:12px;align-items:center;flex:1;min-width:0" onclick="eqCloseFavorites();eqOpenDetail('${l.id}')">
         ${img}
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:14px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
-          <div style="color:var(--orange);font-weight:800;font-size:14px">${price} ${t('card.currency')}</div>
+          <div style="color:var(--orange);font-weight:800;font-size:14px">${price}</div>
+          <div class="eq-card-type">${listingTypeLabel(l, getLocale())}</div>
           <div style="font-size:12px;color:#999">📍 ${l.region ? eqGovLabel(l.region) : ''}</div>
         </div>
       </div>
@@ -2299,6 +2534,8 @@ function eqServiceCardHtml(listingId) {
 }
 
 function eqOpenService(listingId) {
+  const listing = eqListings.find(l => l.id === listingId) || (eqCurrentDetailListing?.id === listingId ? eqCurrentDetailListing : null);
+  if (listing && listingType(listing) !== 'sale') return;
   eqSvcListingId = listingId;
   eqSvcRef = null;
   const modal = document.getElementById('eq-svc-modal');
@@ -2388,6 +2625,7 @@ async function eqSvcSubmit() {
         listing_not_found:      t('service.errListingGone'),
         listing_unavailable:    t('service.errListingGone'),
         own_listing:            t('service.errOwnListing'),
+        rental_not_supported:   t('service.errRental'),
         duplicate_open_request: t('service.errDuplicate'),
         missing_fields:         t('service.errPhone'),
       };
