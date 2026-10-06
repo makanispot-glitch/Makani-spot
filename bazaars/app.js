@@ -612,7 +612,13 @@ function buildBazaarCard(b) {
            onerror="this.outerHTML='${_esc(orgInitial)}'">`
     : orgInitial;
 
-  const orgHtml = orgName ? `
+  const orgHtml = managed ? `
+  <div class="bz-card-organizer bz-managed-organizer">
+    <div class="bz-org-info">
+      ${orgName ? `<div class="bz-org-name">${_esc(orgName)}</div>` : ''}
+      <div class="bz-org-sub">${orgSubText}</div>
+    </div>
+  </div>` : orgName ? `
   <div class="bz-card-organizer" ${orgProfileHref ? `style="cursor:pointer" onclick="event.stopPropagation();window.location.href='${orgProfileHref}'"` : ''}>
     <div class="bz-org-avatar" data-org-id="${b.organizer_id || ''}" data-initial="${_esc(orgInitial)}">${orgAvatarInner}</div>
     <div class="bz-org-info">
@@ -661,7 +667,7 @@ function buildBazaarCard(b) {
     <div class="bz-card-content">
 
       <!-- الاسم والموقع -->
-      <div class="bz-card-name" title="${b.name}">${b.name}</div>
+      <div class="bz-card-name" title="${_esc(b.name)}">${_esc(b.name)}</div>
       ${(b.location || b.region) ? `
       <div class="bz-card-location">
         <span>📍</span> ${[b.location, b.region].filter(Boolean).join(' — ')}
@@ -703,7 +709,7 @@ function buildBazaarCard(b) {
           </button>
           <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;white-space:nowrap"
                   onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
-            ${managed ? MakaniManaged.tr('طلب حجز مكان','Request a place') : t('card.detailsBtn')}
+            ${t('card.detailsBtn')}
           </button>
         </div>
       </div>
@@ -1275,6 +1281,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
 }
 
 function _renderBazaarInfo(b, isMyBazaar) {
+  const managed = b.booking_mode === 'managed_request';
   const infoEl = document.getElementById('bzd-info');
   if (!infoEl) return;
 
@@ -1361,14 +1368,14 @@ function _renderBazaarInfo(b, isMyBazaar) {
           ${b.time_start ? `<div class="sd-extra-row"><span>${t('info.timeLabel')}</span><span>${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}</span></div>` : ''}
           ${b.category   ? `<div class="sd-extra-row"><span>${t('info.categoryLabel')}</span><span class="bz-detail-cat-badge" style="font-size:11px">${b.category}</span></div>` : ''}
           ${b.organizer  ? `
-          <div class="sd-extra-row" ${b.organizer_id ? `style="cursor:pointer" onclick="openOrganizerProfile('${b.organizer_id}')"` : ''}>
-            <span>${t('info.organizerLabel')}</span>
+          <div class="sd-extra-row" ${!managed && b.organizer_id ? `style="cursor:pointer" onclick="openOrganizerProfile('${b.organizer_id}')"` : ''}>
+            <span>${managed ? MakaniManaged.tr('المنظّم','Organizer') : t('info.organizerLabel')}</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span style="font-weight:700">${b.organizer}</span>
+              <span style="font-weight:700">${_esc(b.organizer)}</span>
               ${b.booking_mode === 'managed_request' ? MakaniManaged.badge() : b.is_organizer_verified
                 ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>`
                 : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">${t('info.notVerifiedYet')}</span>`}
-              ${b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">${t('info.viewProfileArrow')}</span>` : ''}
+              ${!managed && b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">${t('info.viewProfileArrow')}</span>` : ''}
             </div>
           </div>` : ''}
         </div>

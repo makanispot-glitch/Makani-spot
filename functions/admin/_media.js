@@ -170,7 +170,7 @@ export async function buildReferenceIndex(SUPABASE_URL, sbHeaders) {
 }
 
 /** حذف ملف بكل أحجامه. المسارات ذات الحجم الواحد لا تشتقّ لواحق. */
-export async function deleteMediaByKey(bucket, key, variants = 3) {
+export async function deleteMediaByKey(bucket, key, variants = 3, strict = false) {
   if (!bucket || !key) return 0;
   let n = 0;
   const targets = new Set([key]);
@@ -179,7 +179,7 @@ export async function deleteMediaByKey(bucket, key, variants = 3) {
     for (const v of ['_c.webp', '_d.webp', '_f.webp']) targets.add(base + v);
   }
   for (const t of targets) {
-    try { await bucket.delete(t); n++; } catch { /* ملف غير موجود = لا مشكلة */ }
+    try { await bucket.delete(t); n++; } catch (error) { if(strict)throw error; }
   }
   return n;
 }

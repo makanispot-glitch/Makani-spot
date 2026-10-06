@@ -222,7 +222,11 @@ async function uploadToR2(blob, path, authToken, signal) {
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'فشل رفع الصورة');
+  if (!res.ok || !data.url) {
+    const error=new Error(data.error || 'فشل رفع الصورة');
+    error.retryable=!(res.status>=400&&res.status<500&&res.status!==429);
+    throw error;
+  }
   return data.url;
 }
 
@@ -232,7 +236,7 @@ async function uploadWithRetry(blob, path, authToken, signal, retries = 2) {
     try {
       return await uploadToR2(blob, path, authToken, signal);
     } catch (e) {
-      if (e.name === 'AbortError') throw e;
+      if (e.name === 'AbortError' || e.retryable===false) throw e;
       if (attempt === retries) throw e;
       await new Promise(r => setTimeout(r, 900 * (attempt + 1))); // 0.9s ثم 1.8s
     }
@@ -295,7 +299,7 @@ function cancelUpload() {
    @param {number} quality  — جودة WebP 0-1   افتراضي 0.85
    @returns {Promise<Blob>}
    ────────────────────────────────────────────────────────────── */
-async function compressToWebP(file, maxW = 1280, maxH = 1280, quality = 0.85) {
+async function compressToWebP(file, maxW = 1280, maxH = 1280, quality = 0.85, targetBytes = 0) {
   if (file.size > MAX_FILE_BYTES) {
     return Promise.reject(
       new Error(`حجم الصورة كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB) — الحد الأقصى 20 MB`)
@@ -309,6 +313,7 @@ async function compressToWebP(file, maxW = 1280, maxH = 1280, quality = 0.85) {
     const url = URL.createObjectURL(file);
 
     img.onload = () => {
+      try {
       URL.revokeObjectURL(url);
 
       let fw = img.naturalWidth, fh = img.naturalHeight;
@@ -333,16 +338,26 @@ async function compressToWebP(file, maxW = 1280, maxH = 1280, quality = 0.85) {
         case 7: ctx.transform( 0, -1, -1,  0, fh, fw); break;
         case 8: ctx.transform( 0, -1,  1,  0,  0, fw); break;
       }
-      ctx.drawImage(img, 0, 0, fw, fh);
-
-      canvas.toBlob(
-        blob => (blob ? resolve(blob) : reject(new Error('فشل ضغط الصورة'))),
-        'image/webp',
-        quality
-      );
+      // Reduce large posters in stages, then encode from the same canvas.
+      let source = img, sw = img.naturalWidth, sh = img.naturalHeight;
+      while (sw > fw * 2 || sh > fh * 2) {
+        const step = document.createElement('canvas');
+        step.width = Math.max(fw, Math.round(sw / 2));
+        step.height = Math.max(fh, Math.round(sh / 2));
+        step.getContext('2d').drawImage(source, 0, 0, step.width, step.height);
+        source = step; sw = step.width; sh = step.height;
+      }
+      ctx.drawImage(source, 0, 0, fw, fh);
+      const encode = q => canvas.toBlob(blob => {
+        if (!blob || blob.type !== 'image/webp') { reject(new Error('فشل تحويل الصورة إلى WebP')); return; }
+        if (targetBytes && blob.size > targetBytes && q > 0.66) encode(Math.max(0.66, q - 0.08));
+        else resolve(blob);
+      }, 'image/webp', q);
+      encode(quality);
+      } catch (error) { reject(error); }
     };
 
-    img.onerror = () => reject(new Error('فشل قراءة الصورة'));
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('فشل قراءة الصورة')); };
     img.src = url;
   });
 }

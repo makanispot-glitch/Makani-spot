@@ -10118,7 +10118,8 @@ footer {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  height: 230px; /* ارتفاع ثابت وموحد بصرياً على الديسكتوب */
+  min-height: 230px;
+  height: auto; /* لا نضغط العنوان عند زيادة محتوى المنظّم أو التفاف الشارة */
   position: relative;
 }
 
@@ -10137,13 +10138,15 @@ footer {
   position: relative;
   width: 38%;
   min-width: 38%;
-  height: 100%;
+  height: auto;
   flex-shrink: 0;
   overflow: hidden;
   background: var(--surface2);
 }
 
 .bz-card-img img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -10469,6 +10472,7 @@ footer {
   padding: 16px 18px 14px;
   gap: 6px;
 }
+.bz-card-content > :not(.bz-card-desc) { flex-shrink: 0; }
 
 /* رأس الكارد */
 .bz-card-name {
@@ -10476,7 +10480,8 @@ footer {
   font-weight: 900;
   font-family: var(--font-display);
   color: var(--dark);
-  line-height: 1.3;
+  line-height: 1.65;
+  padding-block: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

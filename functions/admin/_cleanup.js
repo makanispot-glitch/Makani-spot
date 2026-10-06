@@ -26,6 +26,7 @@ import {
   MEDIA_SOURCES, urlToKey, baseOf, sourceOfKey, isSweepable,
   buildReferenceIndex, deleteMediaByKey, deleteMediaByUrls, urlsSafeToDelete,
 } from './_media.js';
+import { cleanupManagedConsents } from './_managed-consents.js';
 
 /* قيم احتياطية فقط لو تعذّر جلب الإعدادات لأي سبب */
 export const FALLBACK_SETTINGS = {
@@ -65,7 +66,13 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
     orphans_found: 0, orphans_deleted: 0, orphan_bytes_deleted: 0,
     unknown_prefix: 0, not_sweepable: 0,
     errors: [],
+    managed_consents_deleted: 0,
   };
+
+  try{const purged=await rpc('process_unused_managed_bazaars');if(!purged.ok)throw Error('HTTP '+purged.status);result.managed_bazaars_deleted=await purged.json();}
+  catch(e){result.errors.push('managed-bazaar-retention: '+msg(e));}
+  try{result.managed_consents_deleted=await cleanupManagedConsents(SUPABASE_URL,sbHeaders);}
+  catch(e){result.errors.push('managed-consent-cleanup: '+msg(e));}
 
   /* ── 0) الإعدادات ── */
   let settings = FALLBACK_SETTINGS;
@@ -165,7 +172,7 @@ export async function runCleanup({ SUPABASE_URL, sbHeaders, bucket, trigger = 'w
         const src = sourceOfKey(key);
         if (!src)              { skipped.push(row.id); result.unknown_prefix++; continue; }
         if (!isSweepable(src)) { skipped.push(row.id); result.not_sweepable++;  continue; }
-        await deleteMediaByKey(bucket, key, src.variants);
+        await deleteMediaByKey(bucket, key, src.variants, true);
         done.push(row.id);
       }
 
