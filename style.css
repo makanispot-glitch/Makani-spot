@@ -672,7 +672,6 @@ body {
    قِيس فعليًا: النسخة الكاملة بأيقونة تفيض ~20px عند 320px مع بقية عناصر الناف — إخفاء
    الأيقونة هنا فقط (تبقى ظاهرة على كل ما هو أوسع من 340px) يكفي لإزالة الفيض بالكامل. */
 @media (max-width: 340px) {
-  .nav:has(.bz-nav-user-wrap) .logo-en,
   .bz-standalone-nav:has(.bz-nav-user-wrap) .logo-en {
     display: none;
   }
@@ -681,25 +680,6 @@ body {
   .bz-nav-user-wrap .bz-cta-organize-short { display: inline; }
   .bz-nav-user-wrap .bz-cta-organize-ico { display: none; }
   .bz-nav-user-wrap .bz-cta-organize { padding: 7px 12px; gap: 0; }
-}
-
-/* ── ديسكتوب/لابتوب: عندما يحمل الناف زر المنظم يضيق المحتوى تدريجياً
-     (مقيّد بـ :has حتى لا يتأثر المستخدم العادي) ── */
-@media (max-width: 1460px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize:not([hidden])) .nsb-text small {
-    display: none;
-  }
-
-  .nav:has(.bz-cta-organize:not([hidden])) .nav-section-btn {
-    padding: 8px 12px;
-  }
-}
-
-@media (max-width: 1360px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize:not([hidden])) .nav-links > a:not(.nav-section-btn),
-  .nav:has(.bz-cta-organize:not([hidden])) .nav-divider {
-    display: none;
-  }
 }
 
 /* ── الإنجليزية أطول من العربية دائماً في نفس هذا الشريط (حتى بدون زر
@@ -720,27 +700,6 @@ body {
   [dir="ltr"] .nav-links > a:not(.nav-section-btn),
   [dir="ltr"] .nav-divider {
     display: none;
-  }
-}
-
-@media (max-width: 1024px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize:not([hidden])) .nav-avatar-info {
-    display: none;
-  }
-
-  .nav:has(.bz-cta-organize:not([hidden])) .bz-cta-organize {
-    font-size: 12px;
-    padding: 8px 16px;
-  }
-}
-
-@media (max-width: 880px) and (min-width: 769px) {
-  .nav:has(.bz-cta-organize:not([hidden])) .nsb-icon {
-    display: none;
-  }
-
-  .nav:has(.bz-cta-organize:not([hidden])) .nav-section-btn {
-    padding: 7px 9px;
   }
 }
 

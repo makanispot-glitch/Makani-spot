@@ -28,6 +28,7 @@ let currentProfile  = null;     // بيانات الـ profile
 let currentCapabilities = null; // getAccountCapabilities(profile, organizerProfile) — مصدر واحد لقرارات الصلاحيات
 
 let BAZAARS        = [];       // قائمة البازارات المحمّلة
+let bzDataReady    = false;    // Do not replace initial loading with a premature empty state.
 let bzFiltered     = [];       // البازارات بعد تطبيق الفلاتر
 let currentBazaar  = null;     // البازار المعروض في صفحة التفاصيل
 let bzPage         = 1;        // رقم الصفحة الحالية
@@ -96,11 +97,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.warn('⚠️ Supabase غير محمّل بعد');
   }
 
-  // تحقق من حالة تسجيل الدخول
-  await bzInitAuth();
-
-  // تحميل البازارات
-  await loadBazaars();
+  // Public cards do not wait for account/profile requests. Incoming filters
+  // still settle before the first render, with catalogs fetched alongside cards.
+  const authReady = bzInitAuth();
+  const hasIncomingFilters = typeof readDiscoveryParams === 'function' &&
+    hasAnyDiscoveryParam(readDiscoveryParams());
+  const filtersReady = _bzAugmentRegionOptions().then(_bzApplyIncomingDiscovery);
+  await Promise.all([loadBazaars(hasIncomingFilters ? filtersReady : null), authReady]);
 
 
   // M9: تحميل تنبيهات التأجيل للمستخدم المسجّل
@@ -110,8 +113,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (currentUser) GN.init(sbClient, currentUser.id);
 
   // 🧭 توحيد قائمة المناطق مع كتالوج space_areas + استقبال فلاتر الاكتشاف
-  await _bzAugmentRegionOptions();
-  await _bzApplyIncomingDiscovery();
+  await filtersReady;
 
   // التنقل عبر URL parameter: /bazaars/?bazaar=ID (و book=1 للانتقال مباشرة لخريطة الأماكن — رابط الحجز المباشر)
   const urlParams = new URLSearchParams(window.location.search);
@@ -325,7 +327,7 @@ function bzRenderNavUser() {
     document.querySelector('#bz-nav-user .bz-nav-user-wrap') ||
     document.getElementById('bz-nav-user')
   );
-  // أيقونة إدارة البازارات — بجوار الجرس
+  // العنصر ثابت في HTML؛ تحديث الترجمة فقط بلا تغيير في هندسة الشريط.
   if (currentUser) bzMountManageIcon();
 }
 
@@ -333,36 +335,10 @@ function bzRenderNavUser() {
    تفتح دائماً /bazaars/manage.html، والصفحة نفسها تقرر: تسجيل دخول ناقص /
    ليس منظم بازارات بعد / لوحة الإدارة الكاملة — راجع الحارس في manage.js */
 function bzMountManageIcon() {
-  const wrap = document.querySelector('#bz-nav-user .bz-nav-user-wrap');
-  if (!wrap) return;
-
-  wrap.querySelector('#bz-manage-icon')?.remove();
-
-  const btn = document.createElement('div');
-  btn.id        = 'bz-manage-icon';
-  btn.className = 'gn-bell';
-  btn.setAttribute('role', 'button');
+  const btn = document.getElementById('bz-manage-icon');
+  if (!btn) return;
   btn.setAttribute('aria-label', t('userNav.manageIconTooltip'));
   btn.title = t('userNav.manageIconTooltip');
-  btn.innerHTML =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-    '     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
-    '     width="20" height="20" aria-hidden="true">' +
-    '  <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/>' +
-    '  <line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/>' +
-    '  <line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="18" r="2" fill="currentColor" stroke="none"/>' +
-    '</svg>';
-  btn.addEventListener('click', () => { window.location.href = '/bazaars/manage.html'; });
-
-  /* الترتيب الثابت المعتمد في كل صفحات المنصة: الأدوات الخاصة بالصفحة ← الإشعارات ← حساب المستخدم،
-     بحيث تكون أدوات الصفحة (مثل أيقونة إدارة البازارات) قبل الجرس (باتجاه داخل الصفحة). */
-  const bell = wrap.querySelector('#gn-bell');
-  if (bell) bell.insertAdjacentElement('beforebegin', btn);
-  else {
-    const av = wrap.querySelector('.nav-avatar-btn');
-    if (av) av.insertAdjacentElement('beforebegin', btn);
-    else wrap.insertBefore(btn, wrap.firstChild);
-  }
 }
 
 function bzToggleAccountMenu(e) {
@@ -487,7 +463,8 @@ function _esc(str) {
    📥 القسم 7: تحميل البازارات من Supabase
    ================================================================ */
 
-async function loadBazaars() {
+async function loadBazaars(filtersReady) {
+  if (!bzDataReady && typeof MakaniLoading !== 'undefined') MakaniLoading.show('bz-grid');
   try {
     if (!sbClient) {
       _renderBazaarsEmpty(t('grid.connectionError'));
@@ -496,7 +473,7 @@ async function loadBazaars() {
 
     const { data, error } = await sbClient
       .from('bazaars')
-      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,extra_images,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,shared_slots_allowed,shared_slots_count,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads')
+      .select('id,name,venue_name,region,date_start,date_end,time_start,time_end,price_per_slot,available_slots,total_slots,image,extra_images,description,category,venue_type,organizer,organizer_id,organizer_avatar_url,is_organizer_verified,venue_address,address,maps_link,sketch_url,event_image_url,status,is_featured,is_archived,premium_slots,premium_price,shared_slots_allowed,shared_slots_count,event_links,included_amenities,chair_count,other_amenities_note,ad_budget_tier,will_have_photography,will_have_social_coverage,will_have_paid_ads,booking_mode,booking_paused,managed_payment_mode,managed_deposit_percent,managed_cancellation_terms')
       .in('status', ['published', 'live', 'completed'])
       .eq('is_archived', false)
       .eq('is_deleted', false)
@@ -505,12 +482,20 @@ async function loadBazaars() {
     if (error) throw new Error(error.message);
 
     if (!data || !data.length) {
+      if (filtersReady) await filtersReady;
+      BAZAARS = [];
+      bzDataReady = true;
       _renderBazaarsEmpty();
       return;
     }
 
     BAZAARS = data.map(b => ({
       id:                   String(b.id),
+      booking_mode:         b.booking_mode || 'slots',
+      booking_paused:       !!b.booking_paused,
+      managed_payment_mode: b.managed_payment_mode,
+      managed_deposit_percent: Number(b.managed_deposit_percent),
+      managed_cancellation_terms: b.managed_cancellation_terms || '',
       name:                 b.name || '—',
       location:             b.venue_name || b.location || '',
       region:               b.region || '',
@@ -546,6 +531,8 @@ async function loadBazaars() {
       shared_slots_count:         Number(b.shared_slots_count) || 0,
     }));
 
+    if (filtersReady) await filtersReady;
+    bzDataReady = true;
     applyBzFilters();
 
   } catch (err) {
@@ -578,6 +565,7 @@ function _renderBazaarsEmpty(hint) {
    ================================================================ */
 
 function buildBazaarCard(b) {
+  const managed = b.booking_mode === 'managed_request';
   /* ── التاريخ ── */
   let dayNum = '', monthStr = '', dateLabel = '—', endLabel = '';
   if (b.date_start) {
@@ -610,10 +598,10 @@ function buildBazaarCard(b) {
   /* ── المنظّم ── */
   const orgName     = b.organizer || '';
   const orgInitial  = orgName ? orgName[0].toUpperCase() : '🎪';
-  const orgVerified = b.is_organizer_verified;
-  const orgSubText  = t('card.organizerFallback');
+  const orgVerified = !managed && b.is_organizer_verified;
+  const orgSubText  = managed ? MakaniManaged.badge() : MakaniManaged.tr('منشور بواسطة المنظّم','Published by organizer');
 
-  const orgProfileHref = b.organizer_id
+  const orgProfileHref = !managed && b.organizer_id
     ? `/bazaars/profile.html?organizer=${b.organizer_id}`
     : null;
 
@@ -646,9 +634,10 @@ function buildBazaarCard(b) {
 
   /* ── HTML ── */
   return `
-  <div class="bz-card${isSoldOut ? ' soldout-card' : ''}${isExpired ? ' bz-card-expired' : ''}" onclick="openBazaarDetail('${b.id}')">
+  <div class="bz-card${managed ? ' bz-card-managed' : ''}${isSoldOut ? ' soldout-card' : ''}${isExpired ? ' bz-card-expired' : ''}" onclick="openBazaarDetail('${b.id}')">
 
     ${orgVerified ? '<div class="bz-verified-org-bar"></div>' : ''}
+    ${managed ? '<div class="bz-managed-bar"></div>' : ''}
 
     <!-- صورة البازار (يمين) -->
     <div class="bz-card-img">
@@ -714,7 +703,7 @@ function buildBazaarCard(b) {
           </button>
           <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;white-space:nowrap"
                   onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
-            ${t('card.detailsBtn')}
+            ${managed ? MakaniManaged.tr('طلب حجز مكان','Request a place') : t('card.detailsBtn')}
           </button>
         </div>
       </div>
@@ -731,7 +720,7 @@ function buildBazaarCard(b) {
 function renderBazaarCards() {
   const grid    = document.getElementById('bz-grid');
   const countEl = document.getElementById('bz-count');
-  if (!grid) return;
+  if (!grid || !bzDataReady) return;
 
   if (countEl) countEl.textContent = t('grid.count', { count: bzFiltered.length });
 
@@ -1243,6 +1232,12 @@ async function openBazaarDetail(bazaarId, opts = {}) {
     return;
   }
 
+  if (b.booking_mode === 'managed_request') {
+    MakaniManaged.renderRequestForm(b, sbClient, currentUser, slotmapEl);
+    if (opts.scrollToBooking) _scrollToBazaarBookingSection();
+    return;
+  }
+
   try {
     const { data: slots, error } = await sbClient
       .from('bazaar_slots')
@@ -1370,7 +1365,7 @@ function _renderBazaarInfo(b, isMyBazaar) {
             <span>${t('info.organizerLabel')}</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <span style="font-weight:700">${b.organizer}</span>
-              ${b.is_organizer_verified
+              ${b.booking_mode === 'managed_request' ? MakaniManaged.badge() : b.is_organizer_verified
                 ? `<span class="bz-verified-badge">${t('card.verifiedBadge')}</span>`
                 : `<span style="font-size:10px;color:var(--ink3);background:var(--surface2);border-radius:50px;padding:2px 7px;">${t('info.notVerifiedYet')}</span>`}
               ${b.organizer_id ? `<span style="font-size:11px;color:var(--orange);font-weight:700">${t('info.viewProfileArrow')}</span>` : ''}
@@ -4688,4 +4683,3 @@ function _dirInitSwipe(el) {
     }
   }, { passive: true });
 }
-

@@ -3,16 +3,18 @@
 
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="/shared/loading-state.css?v=20261006044304">
+  <script src="/shared/loading-state.js?v=20261006044304" defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description"
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20261005145929">
+  <link rel="manifest" href="/manifest.json?v=20261006044304">
   <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
        build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
        في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
-  <script src="/version.js?v=20261005145929" defer></script>
+  <script src="/version.js?v=20261006044304" defer></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -187,38 +189,38 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20261005145929">
+  <link rel="stylesheet" href="/style.css?v=20261006044304">
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20261005145929" defer></script>
-  <script src="/pwa-install.js?v=20261005145929" defer></script>
+  <script src="/shared/sb-config.js?v=20261006044304" defer></script>
+  <script src="/pwa-install.js?v=20261006044304" defer></script>
   <!-- createRaceGuard: يجب أن يسبق app.js لأن _mpFilterRace يُنشأ وقت التحميل -->
-  <script src="/shared/race-guard.js?v=20261005145929" defer></script>
-  <script src="/shared/pagination.js?v=20261005145929" defer></script>
-  <script src="/shared/space-model.js?v=20261005145929" defer></script>
+  <script src="/shared/race-guard.js?v=20261006044304" defer></script>
+  <script src="/shared/pagination.js?v=20261006044304" defer></script>
+  <script src="/shared/space-model.js?v=20261006044304" defer></script>
   <!-- طبقة الاكتشاف المشتركة — قراءة بارامترات الفلاتر القادمة من الرئيسية/البازارات -->
-  <script src="/shared/discovery.js?v=20261005145929" defer></script>
-  <script src="/shared/booking.js?v=20261005145929" defer></script>
-  <script src="/shared/account.js?v=20261005145929" defer></script>
-  <script src="/shared/plan-badge.js?v=20261005145929" defer></script>
+  <script src="/shared/discovery.js?v=20261006044304" defer></script>
+  <script src="/shared/booking.js?v=20261006044304" defer></script>
+  <script src="/shared/account.js?v=20261006044304" defer></script>
+  <script src="/shared/plan-badge.js?v=20261006044304" defer></script>
   <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
-  <script src="/shared/nav-identity.js?v=20261005145929" defer></script>
+  <script src="/shared/nav-identity.js?v=20261006044304" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20261005145929" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261005145929" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261005145929" defer></script>
-  <script src="/shared/i18n.js?v=20261005145929" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20261006044304" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261006044304" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261006044304" defer></script>
+  <script src="/shared/i18n.js?v=20261006044304" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
-  <!-- انتقال بين المستندات للأقسام الثلاثة — مربوط منها وحدها عمدًا -->
-  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261005145929">
+  <!-- سياسة انتقال مشتركة: الشريط متاح فورًا بلا طبقة تلاشي فوقه -->
+  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261006044304">
 
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20261005145929">
-  <script src="/shared/onboarding.js?v=20261005145929" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20261005145929" defer></script>
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20261006044304">
+  <script src="/shared/onboarding.js?v=20261006044304" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20261006044304" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -902,6 +904,8 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
   </script>
+  <link rel="stylesheet" href="/shared/nav-shell.css?v=20261006044304">
+  <script src="/shared/nav-shell.js?v=20261006044304" defer></script>
 </head>
 
 <body>
@@ -909,7 +913,7 @@
   <!-- ================================================================
      🧭 شريط التنقل العلوي (Navbar)
      ================================================================ -->
-  <nav class="nav">
+  <nav class="nav platform-nav">
 
     <!-- اللوجو — الضغط عليه يرجع للمنصة الرئيسية -->
     <a class="logo" href="/">
@@ -922,11 +926,13 @@
     <!-- روابط التنقل -->
     <div class="nav-links">
 
+      <div class="nav-primary-links">
       <a href="/" data-i18n="nav.home">الرئيسية</a>
       <a href="/?p=how" data-i18n="nav.how">كيف تعمل المنصة؟</a>
       <a href="/?p=owner" data-i18n="nav.owner">عندك مساحة؟</a>
 
-      <div class="nav-divider"></div>
+      </div>
+      <div class="nav-section-links">
 
       <!-- الأقسام الثلاثة الرئيسية -->
       <a class="nav-section-btn active" id="nsb-spaces" href="/spaces/"
@@ -968,13 +974,15 @@
           </svg>
         </span>
         <span class="nsb-text">
-          <strong data-i18n="nav.projects">مشاريع للبيع</strong>
-          <small data-i18n="nav.projectsDesc">ابحث عن مشروع جاهز</small>
+          <strong data-i18n="nav.projects">مشاريع</strong>
+          <small data-i18n="nav.projectsDesc">مشاريع ومعدات للبيع والإيجار</small>
         </span>
       </a>
 
+      </div>
     </div>
 
+    <div class="nav-page-actions"></div>
     <!-- منطقة المستخدم -->
     <div class="nav-user-area" id="nav-user-area">
 
@@ -1264,7 +1272,7 @@
 
         <!-- شبكة المساحات -->
         <div class="mp-main">
-          <div class="cards-grid mp-cards-grid" id="mp-grid"></div>
+          <div class="cards-grid mp-cards-grid" id="mp-grid"><div class="mk-loading" role="status" aria-live="polite"><span class="mk-loading-spinner" aria-hidden="true"></span><span class="mk-label-ar">جاري التحميل…</span><span class="mk-label-en" lang="en">Loading…</span></div></div>
           <div class="mp-pagination" id="mp-pagination"></div>
         </div>
 
@@ -1908,8 +1916,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20261005145929" defer></script>
-  <script src="app.js?v=20261005145929" defer></script>
+  <script src="/notifications.js?v=20261006044304" defer></script>
+  <script src="app.js?v=20261006044304" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -2048,4 +2056,3 @@
 
 </body>
 </html>
-

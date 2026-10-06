@@ -246,27 +246,24 @@ async function findOrFetchSpace(spaceId) {
 async function loadData() {
   showLoadingState('mp-grid');
   try {
-    // تحميل الأنشطة (مصدر مشترك — shared/space-model.js)
-    const activitiesCatalog = await fetchActivitiesCatalog(sbClient);
+    // Independent catalogs load together; none requires another catalog's result.
+    const [activitiesCatalog, areasResult, announcementsResult] = await Promise.all([
+      fetchActivitiesCatalog(sbClient),
+      sbClient.from('space_areas').select('name').eq('is_active', true).order('sort_order'),
+      sbClient.from('official_announcements').select('*').eq('is_active', true)
+        .order('created_at', { ascending: false }),
+    ]);
     ACTIVITIES = activitiesCatalog.map(a => ({
       id:    a.id,
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
 
     // تحميل المناطق المعتمدة (space_areas) — نفس مصدر لوحة الأدمن ولوحة المالك
-    const { data: areasData } = await sbClient
-      .from('space_areas')
-      .select('name')
-      .eq('is_active', true)
-      .order('sort_order');
+    const { data: areasData } = areasResult;
     AREAS = (areasData || []).map(a => a.name);
 
     // تحميل الإعلانات الرسمية النشطة (بدون فلتر الموعد — الإخفاء يدوي من الأدمن)
-    const { data: annData } = await sbClient
-      .from('official_announcements')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+    const { data: annData } = announcementsResult;
     ANNOUNCEMENTS = (annData || []).map(mapAnnouncementObject);
 
     buildModalActivityPicker();
@@ -379,12 +376,7 @@ function showLoadingState(gridId, isError, msg) {
       </div>`;
     return;
   }
-  grid.innerHTML = `
-    <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
-      <div style="font-size:52px;margin-bottom:18px;display:inline-block;animation:spin 1.2s linear infinite">⏳</div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink2);margin-bottom:6px">${t('loading.spinner')}</div>
-      <div style="font-size:13px;color:var(--ink3)">${t('loading.wait')}</div>
-    </div>`;
+  MakaniLoading.show(grid);
 }
 
 

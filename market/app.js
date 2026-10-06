@@ -199,17 +199,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     eqSb = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
-    await eqInitAuth();
-    await eqLoadFavorites();
+    // Account data and favorites enhance cards; they do not gate public results.
+    const authReady = eqInitAuth().then(async () => {
+      await eqLoadFavorites();
+      eqRenderGrid();
+    }).catch(error => console.warn('Account initialization:', error.message));
     eqReadUrlFilters();          // فلاتر جاية من رابط مُشارَك / رجوع المتصفح
     eqInitView();                // شبكة/قائمة من الجلسة السابقة
-    await eqLoadFacets();        // العدّادات لازم تسبق بناء الشرائح
+    eqLoadFacets();              // Update counts when ready, alongside the first page.
     eqBuildCategoryTabs();
     eqSyncDrawerFromActive();
     eqBindSearch();
     await eqLoadListings();
     eqRunLifecycle();
 
+    // Private deep links still wait for the checked session and account data.
+    await authReady;
     // الربط العميق للمشروع من الرابط الرئيسي
     const urlParams = new URLSearchParams(window.location.search);
     const listingId = urlParams.get('listing');
@@ -1734,12 +1739,7 @@ async function eqLoadMore() {
 }
 
 function eqShowLoading() {
-  const grid = document.getElementById('eq-grid');
-  if (grid) grid.innerHTML = `
-    <div class="eq-loading">
-      <div class="eq-spinner"></div>
-      <p>${t('grid.loading')}</p>
-    </div>`;
+  MakaniLoading.show('eq-grid');
 }
 
 function eqShowError(msg) {

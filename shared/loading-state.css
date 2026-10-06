@@ -1,0 +1,40 @@
+/* Shared status across discovery grids, independent of translation download. */
+.mk-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 200px;
+  padding: 48px 20px;
+  color: var(--ink2, #64748b);
+  font-family: var(--font-body, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.mk-loading-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 2px solid #e2e6ea;
+  border-inline-start-color: currentColor;
+  border-radius: 50%;
+  animation: mk-loading-spin .75s linear infinite;
+}
+.mk-label-en { display: none; }
+html[lang="en"] .mk-label-en { display: inline; }
+html[lang="en"] .mk-label-ar { display: none; }
+@keyframes mk-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .mk-loading-spinner { animation: none; }
+}
+
+/* A dashboard deep link owns the first paint while the session is checked. */
+#dashboard-route-loading { display: none; }
+html[data-initial-route="dashboard"] .page { display: none !important; }
+html[data-initial-route="dashboard"] #pg-dashboard { display: block !important; }
+html[data-initial-route="dashboard"] #pg-dashboard > .dash-page { display: none; }
+html[data-initial-route="dashboard"] #dashboard-route-loading { display: block; }
+.mk-route-title { margin: 36px 24px 0; text-align: center; font-size: 22px; }

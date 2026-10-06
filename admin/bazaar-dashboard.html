@@ -340,6 +340,7 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('bz')"><span class="ic">🛍️</span>البازارات<span class="nb" id="nb-bz">0</span></div>
     <div class="ni" onclick="gp('sl')"><span class="ic">📦</span>الوحدات<span class="nb" id="nb-sl">0</span></div>
     <div class="ni" onclick="gp('bk')"><span class="ic">🧾</span>الحجوزات<span class="nb" id="nb-bk">0</span></div>
+    <div class="ni" onclick="gp('managed-bk')"><span class="ic">📋</span>متابعة طلبات مكاني</div>
     <div class="ni" onclick="gp('cs')"><span class="ic">💰</span>التكاليف<span class="nb" id="nb-cs">0</span></div>
 
     <div class="nl">الإدارة</div>
@@ -360,7 +361,8 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="ni" onclick="gp('archive')" id="ni-archive"><span class="ic">📦</span>الأرشيف<span class="nb" id="nb-archive" style="display:none;background:var(--mu);color:#fff">0</span></div>
     <div class="ni" onclick="gp('trash')" id="ni-trash"><span class="ic">🗑️</span>المحذوفة<span class="nb r" id="nb-trash" style="display:none">0</span></div>
 
-    <div class="nl">📅 دليل البازارات</div>
+    <div class="nl">📅 الدليل والبازارات المُدارة</div>
+    <div class="ni" onclick="gp('managed-dir')"><span class="ic">🤝</span>الرصد والتفعيل والمنظّمون</div>
     <div class="ni" onclick="gp('dir-list')" id="ni-dir-list"><span class="ic">🗓️</span>البازارات الخارجية<span class="nb" id="nb-dir-list" style="display:none">0</span></div>
     <div class="ni" onclick="gp('dir-add')"><span class="ic">➕</span>إضافة بازار خارجي</div>
     <div class="ni" onclick="gp('dir-interests')" id="ni-dir-interests"><span class="ic">👥</span>المهتمون بالبازارات<span class="nb g" id="nb-dir-interests" style="display:none">0</span></div>
@@ -566,6 +568,7 @@ tbody tr:hover .row-acts{opacity:1}
 
   <!-- ═══ FINANCIAL REPORT ═══ -->
   <div class="pg" id="pg-fin">
+    <div class="mb-admin-note" style="margin-bottom:14px">سعر الحجز المُدار يتضمن حصة المنظّم، لذلك لا يُحتسب كدخل لمكاني في هذا التقرير. تفاصيل الاستلام والعمولة والرد والتحويل تظهر في متابعة الطلب.</div>
     <div class="sh"><div class="st">📈 التقرير <span>المالي الشامل</span></div></div>
     <div class="sg sg-4" id="fin-kpi">
       <div class="scard"><div class="sc-ico">💵</div><div class="sc-lbl">الإيراد المتوقع</div><div class="sc-val" id="fin-exp" style="color:var(--bl)">—</div></div>
@@ -1029,7 +1032,8 @@ tbody tr:hover .row-acts{opacity:1}
     <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;color:var(--tx);line-height:1.7">
       <strong style="color:#60a5fa">📅 دليل البازارات في مصر</strong> — بازارات يرصدها الفريق من خارج المنصة ويضيفها يدوياً.
       تظهر تلقائياً في تقويم الدليل داخل صفحة البازارات إلى جانب بازارات المنصة.
-      <br>الأرشفة تلقائية بعد <strong>3 شهور</strong> من انتهاء البازار، والحذف النهائي بعد <strong>4 شهور</strong>.
+      <br>الرصد المعلوماتي يُؤرشف بعد <strong>3 شهور</strong> ويُحذف بعد <strong>4 شهور</strong>. المسودات والبازارات المُدارة وسجل الطلبات والأموال محفوظة.
+      <div class="mb-actions"><button class="btn btn-or btn-sm" onclick="gp('managed-dir')">الرصد والمسودات والبازارات المُفعّلة</button></div>
     </div>
 
     <div class="sc" style="margin-bottom:14px">
@@ -1054,7 +1058,7 @@ tbody tr:hover .row-acts{opacity:1}
     </div>
 
     <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--mu);line-height:1.7">
-      بيانات مختصرة فقط — الاسم والمنطقة والتاريخ. لا تُرفع صور ولا رابط مصدر؛ مصادر الرصد لا تُعرض للجمهور إطلاقاً.
+      سجّل الاسم والمنطقة والمكان والتواريخ أولًا. بعد الحفظ يمكنك تجهيز الصور والسعر والتوافر واتفاق المنظّم لتفعيل طلب الحجز بمتابعة مكاني، أو إبقاء البازار معلوماتيًا.
     </div>
 
     <div class="fgrid">
@@ -1360,6 +1364,8 @@ tbody tr:hover .row-acts{opacity:1}
     <div class="pag" id="mkt-log-pag"></div>
   </div>
 
+<div class="pg" id="pg-managed-dir"><div id="mb-admin-directory"></div></div>
+<div class="pg" id="pg-managed-bk"><div id="mb-admin-bookings"></div></div>
 </main>
 
 <!-- ═══ MODALS ═══ -->
@@ -1610,7 +1616,9 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<script src="../shared/sb-config.js?v=20261005145929"></script>
+<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261006044304">
+<script src="../shared/managed-bazaars.js?v=20261006044304"></script>
+<script src="../shared/sb-config.js?v=20261006044304"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -1720,7 +1728,7 @@ async function loadData() {
     const [bzRes, slRes, bkRes, orgVerRes] = await Promise.all([
       db.from('bazaars').select('*').eq('is_archived', false).eq('is_deleted', false).order('created_at', { ascending: false }),
       db.from('bazaar_slots').select('id,bazaar_id,row_label,slot_number,row,col,price,status,is_featured,is_shareable,trader_name,booked_by,activity,notes').limit(6000),
-      db.from('bazaar_bookings').select('id,bazaar_id,slot_id,user_name,user_phone,user_email,business_name,activity,amount,pay_status,status,booking_kind,created_at').order('created_at', { ascending: false }).limit(3000),
+      db.from('bazaar_bookings').select('id,bazaar_id,slot_id,user_name,user_phone,user_email,business_name,activity,amount,pay_status,status,booking_kind,created_at,booking_mode,managed_stage').order('created_at', { ascending: false }).limit(3000),
       db.from('organizer_requests').select('id').eq('status', 'pending')
     ]);
     if (bzRes.error) throw bzRes.error;
@@ -1796,6 +1804,7 @@ function mapBazaar(b) {
   return {
     id:           b.id,
     _dbId:        b.id,
+    bookingMode:  b.booking_mode || 'slots',
     name:         b.name,
     description:  b.description || '',
     venueType:    b.venue_type || '',
@@ -1856,6 +1865,8 @@ function mapBooking(b) {
     amount:     Number(b.amount) || 0,
     payStatus:  b.pay_status || 'pending',
     bookStatus: b.status || 'pending',
+    bookingMode: b.booking_mode || 'slots',
+    managedStage: b.managed_stage,
     bookingKind: b.booking_kind || 'full',
     bookDate:   b.created_at?.split('T')[0] || '',
   };
@@ -1867,8 +1878,8 @@ function mapBooking(b) {
 function updateAll() {
   const av  = SLOTS.filter(s=>s.status==='available').length;
   const bkd = SLOTS.filter(s=>s.status==='booked').length;
-  const coll= BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
-  const pend= BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
+  const coll= BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const pend= BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
   const cost= COSTS.reduce((s,c)=>s+Number(c.total||0),0);
 
   document.getElementById('nb-bz').textContent=BAZAARS.length;
@@ -2212,6 +2223,7 @@ function renderBookings() {
   bkPg=1;
   const pg=fBk.slice(0,PER);
   document.getElementById('bk-tb').innerHTML=pg.length?pg.map(b=>{
+    if(b.bookingMode==='managed_request') return `<tr onclick="ManagedAdmin.openRequest('${b.bookingId}')" style="cursor:pointer"><td><code>${dirEsc(b.bookingId.slice(0,8))}</code></td><td>${dirEsc(b.vendorName)}</td><td>${dirEsc(b.phone)}</td><td>${dirEsc(b.bazaarName)}</td><td>دون رقم</td><td>${dirEsc(b.activity)}</td><td>${fmt(b.amount)} ج</td><td colspan="2">${MakaniManaged.stage(b.managedStage)}</td><td>${dirEsc(b.bookDate)}</td><td><button class="btn btn-or btn-sm" onclick="event.stopPropagation();ManagedAdmin.openRequest('${b.bookingId}')">متابعة الطلب</button></td></tr>`;
     const psl={paid:'ba-pa',pending:'ba-pd',cancelled:'ba-ca'};
     const bsl={confirmed:'ba-cf',cancelled:'ba-ca'};
     return `<tr style="cursor:pointer" onclick="openBkDetail('${b.bookingId}')">
@@ -2295,8 +2307,8 @@ function renderCosts() {
    FINANCIAL REPORT
 ══════════════════════════════════════════ */
 function renderFinancial() {
-  const exp=BAZAARS.reduce((s,b)=>s+((b.price||0)*(b.totalSlots||0)),0);
-  const coll=BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const exp=BAZAARS.filter(b=>b.bookingMode!=='managed_request').reduce((s,b)=>s+((b.price||0)*(b.totalSlots||0)),0);
+  const coll=BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
   const totalCost=COSTS.reduce((s,c)=>s+Number(c.total||0),0);
   const net=coll-totalCost;
   document.getElementById('fin-exp').textContent=fmt(exp)+' ج';
@@ -2308,11 +2320,11 @@ function renderFinancial() {
 
   document.getElementById('fin-tb').innerHTML=BAZAARS.map(bz=>{
     const slBz=SLOTS.filter(s=>s.bazaarId===bz.id);
-    const bkBz=BOOKINGS.filter(b=>b.bazaarId===bz.id&&b.bookStatus!=='cancelled');
+    const bkBz=BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.bazaarId===bz.id&&b.bookStatus!=='cancelled');
     const bkPaid=bkBz.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
     const bkPend=bkBz.filter(b=>b.payStatus==='pending').reduce((s,b)=>s+Number(b.amount),0);
     const cBz=COSTS.filter(c=>c.bazaarId===bz.id).reduce((s,c)=>s+Number(c.total||0),0);
-    const expBz=(bz.price||0)*(bz.totalSlots||0);
+    const expBz=bz.bookingMode==='managed_request'?0:(bz.price||0)*(bz.totalSlots||0);
     const netBz=bkPaid-cBz;
     const occ=slBz.length?Math.round((bz.bookedSlots||0)/slBz.length*100):0;
     return `<tr>
@@ -2441,6 +2453,7 @@ function deleteCost(i){if(confirm('حذف هذا البند؟')){COSTS.splice(i,
 async function deleteBooking(bookingId) {
   const b = BOOKINGS.find(x => x.bookingId === bookingId);
   if (!b) return;
+  if(b.bookingMode==='managed_request'){ManagedAdmin.openRequest(bookingId);return;}
   if (!confirm(`حذف نهائي للحجز؟\nالتاجر: ${b.vendorName}\nالوحدة: ${b.slotId?.slice(0,8)}…\n\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
   const { data, error } = await db.rpc('admin_delete_bazaar_booking', { p_booking_id: b._dbId });
   if (error) { toast('خطأ في الحذف: ' + error.message, 'e'); return; }
@@ -2459,8 +2472,8 @@ async function deleteBooking(bookingId) {
   toast('🗑️ تم حذف الحجز نهائياً', 'i');
 }
 function updateStats(){
-  const coll=BOOKINGS.filter(b=>b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
-  const pend=BOOKINGS.filter(b=>b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
+  const coll=BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.payStatus==='paid').reduce((s,b)=>s+Number(b.amount),0);
+  const pend=BOOKINGS.filter(b=>b.bookingMode!=='managed_request'&&b.payStatus==='pending'&&b.bookStatus!=='cancelled').reduce((s,b)=>s+Number(b.amount),0);
   document.getElementById('ov-coll').textContent=fmt(coll);
   document.getElementById('ov-pend').textContent=fmt(pend);
 }
@@ -2469,6 +2482,7 @@ function updateStats(){
    BAZAAR EDIT MODAL
 ══════════════════════════════════════════ */
 function openBzEdit(id){
+  if(BAZAARS.find(b=>b.id===id)?.bookingMode==='managed_request'){ManagedAdmin.prepareBazaar(id);return;}
   const bz=BAZAARS.find(x=>x.id===id); if(!bz) return;
   document.getElementById('mebz-name').textContent=bz.name;
   document.getElementById('mebz-nm').value=bz.name||'';
@@ -2557,6 +2571,7 @@ async function saveBazaarEdit(){
    SLOT MAP MODAL
 ══════════════════════════════════════════ */
 function openSlotMap(bzId){
+  if(BAZAARS.find(b=>b.id===bzId)?.bookingMode==='managed_request'){ManagedAdmin.prepareBazaar(bzId);return;}
   const bz=BAZAARS.find(x=>x.id===bzId); if(!bz) return;
   document.getElementById('msm-name').textContent=bz.name;
   const slBz=SLOTS.filter(s=>s.bazaarId===bzId);
@@ -2627,6 +2642,7 @@ function quickEditSlot(slotId, event){
    BOOKING DETAIL
 ══════════════════════════════════════════ */
 function openBkDetail(id){
+  if(BOOKINGS.find(b=>b.bookingId===id)?.bookingMode==='managed_request'){ManagedAdmin.openRequest(id);return;}
   const b=BOOKINGS.find(x=>x.bookingId===id); if(!b) return;
   const psl={paid:'ba-pa',pending:'ba-pd',cancelled:'ba-ca'};
   const bsl={confirmed:'ba-cf',cancelled:'ba-ca'};
@@ -3455,6 +3471,7 @@ function gp(tab){
   if(tab==='dir-list')      loadDirList();
   if(tab==='dir-add')       dirInitForm();
   if(tab==='dir-interests') { _dintPage=1; loadDirInterests(); }
+  if(tab==='managed-dir' || tab==='managed-bk') ManagedAdmin.load(tab);
 }
 
 /* ══════════════════════════════════════════
@@ -3462,6 +3479,7 @@ function gp(tab){
 ══════════════════════════════════════════ */
 
 async function archiveBazaar(id, name) {
+  if(BAZAARS.find(b=>b.id===id)?.bookingMode==='managed_request'){ManagedAdmin.prepareBazaar(id);return;}
   const confirmed = confirm(
     `📦 أرشفة: "${name}"\n\nسيُخفى البازار من لوحة التحكم الرئيسية.\nجميع البيانات محفوظة ويمكن استعادته لاحقاً من قسم الأرشيف.\n\nمتابعة؟`
   );
@@ -5624,6 +5642,7 @@ async function saveDirBazaar(force) {
     toast(wasEdit ? '✅ تم تعديل البازار الخارجي' : '✅ تمت إضافة البازار للدليل', 's');
     clearDirForm();
     _refreshDirBadges();
+    res.innerHTML += `<div class="mb-actions"><button class="btn btn-or" onclick="ManagedAdmin.prepare('${data.id}')">تجهيز هذا البازار للحجز بمتابعة مكاني</button></div>`;
     if (wasEdit) gp('dir-list');
   } catch (e) {
     res.innerHTML = `<div class="rer">❌ ${dirEsc(e.message)}</div>`;
@@ -5699,6 +5718,7 @@ function renderDirList(list) {
             <td>
               <div class="row-acts">
                 <button class="btn btn-sm btn-gh" onclick="editDirBazaar('${r.id}')">✏️ تعديل</button>
+                <button class="btn btn-sm btn-or" onclick="ManagedAdmin.prepare('${r.id}')">🤝 تجهيز وإدارة الحجز</button>
                 ${_dirScope === 'archived'
                   ? `<button class="btn btn-sm" style="background:rgba(34,197,94,.12);color:var(--gr);border:1px solid rgba(34,197,94,.3)" onclick="restoreDirBazaar('${r.id}')">♻️ استعادة</button>`
                   : `<button class="btn btn-sm" style="background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.28)" onclick="archiveDirBazaar('${r.id}')">📦 أرشفة</button>`}
@@ -5711,7 +5731,8 @@ function renderDirList(list) {
     </table>`;
 }
 
-function editDirBazaar(id) {
+async function editDirBazaar(id) {
+  if(await ManagedAdmin.routeManagedExternal(id))return;
   const r = _dirRows.find(x => x.id === id);
   if (!r) { toast('البازار غير موجود في القائمة الحالية', 'e'); return; }
   gp('dir-add');
@@ -5730,16 +5751,19 @@ function editDirBazaar(id) {
 }
 
 async function archiveDirBazaar(id) {
+  if(await ManagedAdmin.routeManagedExternal(id))return;
   const r = _dirRows.find(x => x.id === id);
   if (!confirm(`📦 أرشفة "${r?.name || ''}"؟\n\nهيختفي من تقويم الدليل، وتقدر تستعيده من تبويب "المؤرشفة".`)) return;
   await _dirMutate('admin_delete_external_bazaar', { p_id: id, p_permanent: false }, '📦 تمت الأرشفة');
 }
 
 async function restoreDirBazaar(id) {
+  if(await ManagedAdmin.routeManagedExternal(id))return;
   await _dirMutate('admin_restore_external_bazaar', { p_id: id }, '♻️ تمت الاستعادة');
 }
 
 async function purgeDirBazaar(id) {
+  if(await ManagedAdmin.routeManagedExternal(id))return;
   const r = _dirRows.find(x => x.id === id);
   const n = r?.interest_count || 0;
   if (!confirm(
@@ -5876,6 +5900,7 @@ async function mkLogout() {
   _refreshDirBadges();
 })();
 </script>
+<script src="managed-bazaars.js?v=20261006044304"></script>
 </body>
 </html>
 
