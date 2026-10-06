@@ -1,0 +1,381 @@
+/* Public bazaar details only; space details and booking controls keep their styles. */
+#pg-bazaar-detail .sd-page {
+  padding-bottom: 40px;
+}
+
+.bzd-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--ink3);
+}
+
+#pg-bazaar-detail .sd-back-row {
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+#pg-bazaar-detail .sd-breadcrumb {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#pg-bazaar-detail .sd-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px;
+  padding: 16px 0 28px;
+  border: 0;
+  margin-bottom: 0;
+}
+
+.bzd-heading {
+  min-width: 0;
+}
+
+#pg-bazaar-detail .sd-name {
+  font-size: clamp(24px, 2.5vw, 32px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+#pg-bazaar-detail .bz-detail-cat-badge {
+  background: var(--orange-ultra);
+  color: var(--orange);
+  border-color: var(--orange-pale);
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+#pg-bazaar-detail .sd-meta {
+  column-gap: 18px;
+  row-gap: 8px;
+  line-height: 1.65;
+}
+
+#pg-bazaar-detail .sd-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bzd-price-summary {
+  min-width: 0;
+  max-width: 100%;
+  text-align: end;
+}
+
+.bzd-price {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 7px;
+  color: var(--orange);
+  line-height: 1.25;
+}
+
+.bzd-price strong {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.bzd-price > span,
+.bzd-price-unit {
+  font-size: 12px;
+  color: var(--ink3);
+}
+
+.bzd-price-unit {
+  margin-top: 3px;
+}
+
+#pg-bazaar-detail .bzd-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+#pg-bazaar-detail .bzd-quick-action {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink2);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  transform: none;
+}
+
+#pg-bazaar-detail .bzd-quick-action svg {
+  stroke-width: 1.7;
+}
+
+#pg-bazaar-detail .bzd-quick-action:hover,
+#pg-bazaar-detail .bzd-quick-action--done {
+  background: var(--surface);
+  border-color: var(--ink3);
+  color: var(--ink);
+}
+
+#pg-bazaar-detail .sd-info-title,
+#pg-bazaar-detail .bz-perk-group-title,
+.bzd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+#pg-bazaar-detail .sd-info-title {
+  font-size: 14px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  margin-bottom: 12px;
+}
+
+#pg-bazaar-detail .sd-info-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#pg-bazaar-detail .sd-info-card:hover {
+  box-shadow: none;
+  border-color: var(--border);
+}
+
+#pg-bazaar-detail .sd-extra-row {
+  gap: 16px;
+  align-items: baseline;
+  border-bottom: 0;
+  line-height: 1.7;
+}
+
+#pg-bazaar-detail .sd-extra-row > :last-child {
+  min-width: 0;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
+#pg-bazaar-detail .bz-maps-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink2);
+  font-size: 12px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+#pg-bazaar-detail .bz-maps-btn:hover {
+  background: var(--surface2);
+  border-color: var(--ink3);
+  color: var(--ink);
+}
+
+#pg-bazaar-detail .bz-amenity-pill,
+#pg-bazaar-detail .bz-shared-info-badge {
+  color: var(--ink2);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+
+#bzd-activity-stats .sd-subspaces-header {
+  flex-wrap: nowrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bzd-stats-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bzd-stats-info-btn:hover,
+.bzd-stats-info-btn[aria-expanded="true"] {
+  background: var(--surface);
+}
+
+.bzd-history {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.bzd-history > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.bzd-history > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bzd-history > summary:hover {
+  background: var(--surface2);
+}
+
+.bzd-history-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.bzd-history-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface2);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.bzd-history-chevron {
+  display: inline-flex;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.bzd-history[open] .bzd-history-chevron {
+  transform: rotate(180deg);
+}
+
+.bzd-history-items {
+  padding: 0 16px;
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.bzd-history-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.bzd-history-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface2);
+}
+
+.bzd-history-note {
+  font-size: 11px;
+  color: var(--ink3);
+  margin-top: 5px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--surface2);
+}
+
+#pg-bazaar-detail .bzd-report {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.bzd-report-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink3);
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bzd-report-btn:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.bzd-history > summary:focus-visible,
+.bzd-stats-info-btn:focus-visible,
+.bzd-report-btn:focus-visible,
+#pg-bazaar-detail .bz-maps-btn:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  #pg-bazaar-detail .sd-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #pg-bazaar-detail .sd-title-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding-bottom: 24px;
+  }
+
+  .bzd-price-summary {
+    text-align: start;
+  }
+
+  .bzd-price,
+  #pg-bazaar-detail .bzd-quick-actions {
+    justify-content: flex-start;
+  }
+
+  .bzd-price strong {
+    font-size: 30px;
+  }
+
+  #pg-bazaar-detail .sd-info-card {
+    padding: 16px;
+  }
+
+  #pg-bazaar-detail .bzd-quick-action {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bzd-history-chevron {
+    transition: none;
+  }
+}
+
+@media (max-width: 560px) {
+  /* The desktop flex basis would otherwise become an empty 260px-tall list. */
+  #pg-bazaar-detail .bz-stats-list {
+    flex: 0 1 auto;
+  }
+}

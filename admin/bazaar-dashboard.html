@@ -1616,10 +1616,10 @@ tbody tr:hover .row-acts{opacity:1}
 
 <div id="toasts"></div>
 
-<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261006233427">
-<script src="../shared/managed-bazaars.js?v=20261006233427"></script>
-<script src="../shared/sb-config.js?v=20261006233427"></script>
-<script src="../media-handler.js?v=20261006233427"></script>
+<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261007012551">
+<script src="../shared/managed-bazaars.js?v=20261007012551"></script>
+<script src="../shared/sb-config.js?v=20261007012551"></script>
+<script src="../media-handler.js?v=20261007012551"></script>
 <script>
 /* ══════════════════════════════════════════
    SUPABASE CONFIG (SUPABASE_URL/KEY من shared/sb-config.js)
@@ -1989,7 +1989,7 @@ function renderBazaars() {
       <td><span class="pr">${fmt(bz.price||0)} ج</span></td>
       <td><span class="pr">${fmt(rev)} ج</span><div style="font-size:10px;color:var(--mu)">من ${fmt((bz.price||0)*(bz.totalSlots||0))} متوقع</div></td>
       <td>
-        <select class="ie-sel" onchange="changeBzStatus('${bz.id}',this.value)" onclick="event.stopPropagation()">
+        <select class="ie-sel" onchange="changeBzStatus('${bz.id}',this.value,this)" onclick="event.stopPropagation()">
           <option value="draft"          ${bz.status==='draft'          ?'selected':''}>📝 مسودة</option>
           <option value="pending_review" ${bz.status==='pending_review' ?'selected':''}>⏳ قيد المراجعة</option>
           <option value="published"      ${bz.status==='published'     ?'selected':''}>✅ منشور</option>
@@ -2325,8 +2325,22 @@ function renderFinancial() {
    DB UPDATE HELPERS — Supabase
 ══════════════════════════════════════════ */
 async function dbUpdateBazaarStatus(dbId, status) {
-  const { error } = await db.from('bazaars').update({ status }).eq('id', dbId);
-  if (error) toast('خطأ: ' + error.message, 'e');
+  try {
+    if(await _isManagedBazaar(dbId))await ManagedAdmin.lifecycle(dbId,'status',status);
+    else {
+      const {data,error}=await db.from('bazaars').update({status}).eq('id',dbId).select('id');
+      if(error)throw error;
+      if(!data?.length)throw Error('لم يتم تحديث البازار — أعد تحميل الصفحة وتحقق من صلاحياتك');
+    }
+    return true;
+  }catch(error){toast(MakaniManaged.errorText(error),'e');return false;}
+}
+async function _isManagedBazaar(id){
+  const known=BAZAARS.find(b=>b.id===id||b._dbId===id);
+  if(known)return known.bookingMode==='managed_request';
+  const {data,error}=await db.from('bazaars').select('booking_mode').eq('id',id).maybeSingle();
+  if(error)throw error;
+  return data?.booking_mode==='managed_request';
 }
 /* سجلّ تدقيق — نفس جدول bazaar_change_log الذي تكتب فيه إجراءات المنظم (cancel_bazaar)،
    عبر RPC لأن الجدول ليس له INSERT policy مباشرة (SECURITY DEFINER فقط) */
@@ -2368,7 +2382,20 @@ async function dbUpdateBookingStatus(dbId, field, value) {
 /* ══════════════════════════════════════════
    INLINE EDITS
 ══════════════════════════════════════════ */
-function changeBzStatus(id,val){const b=BAZAARS.find(x=>x.id===id);if(b){const oldStatus=b.status;b.status=val;dbUpdateBazaarStatus(b._dbId,val);_logBzChange(b._dbId,'status_change',{before:oldStatus,after:val});renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');}}
+const _bazaarStatusWrites=new Set();
+async function changeBzStatus(id,val,control){
+  const b=BAZAARS.find(x=>x.id===id);if(!b)return;
+  if(_bazaarStatusWrites.has(id)){if(control)control.value=b.status;return;}
+  const oldStatus=b.status;if(val===oldStatus)return;
+  if(b.bookingMode==='managed_request'&&val==='cancelled'&&!confirm('إلغاء هذا البازار؟ سيتم إغلاق الطلبات غير المدفوعة وتحويل الطلبات المدفوعة إلى متابعة المبلغ، مع إشعار أصحابها.')){if(control)control.value=oldStatus;return;}
+  _bazaarStatusWrites.add(id);if(control)control.disabled=true;
+  try{
+    if(!await dbUpdateBazaarStatus(b._dbId||id,val)){if(control)control.value=oldStatus;return;}
+    b.status=val;
+    if(b.bookingMode!=='managed_request')await _logBzChange(b._dbId||id,'status_change',{before:oldStatus,after:val});
+    renderBazaars();renderOv();toast('تم تحديث حالة البازار','s');
+  }finally{_bazaarStatusWrites.delete(id);if(control)control.disabled=false;}
+}
 async function changeSlotStatus(id, val) {
   const s = SLOTS.find(x => x.slotId === id);
   if (!s) return;
@@ -3036,8 +3063,7 @@ async function reinstateFromAbuse(id, name) {
   if (!confirm(`♻️ استعادة "${name}" من قائمة المراجعة وإعادة نشره؟\n\nسيظهر للمستخدمين مجدداً.`)) return;
   toast('جارٍ الاستعادة...', 'i');
   try {
-    const { error } = await db.from('bazaars').update({ status: 'published' }).eq('id', id);
-    if (error) throw error;
+    if(!await dbUpdateBazaarStatus(id,'published'))return;
     toast(`♻️ تمت استعادة "${name}"`, 's');
     loadAbusePage();
   } catch(e) {
@@ -3461,7 +3487,6 @@ function gp(tab){
 ══════════════════════════════════════════ */
 
 async function archiveBazaar(id, name) {
-  if(BAZAARS.find(b=>b.id===id)?.bookingMode==='managed_request'){ManagedAdmin.prepareBazaar(id);return;}
   const confirmed = confirm(
     `📦 أرشفة: "${name}"\n\nسيُخفى البازار من لوحة التحكم الرئيسية.\nجميع البيانات محفوظة ويمكن استعادته لاحقاً من قسم الأرشيف.\n\nمتابعة؟`
   );
@@ -3469,6 +3494,9 @@ async function archiveBazaar(id, name) {
 
   toast('جارٍ الأرشفة...', 'i');
   try {
+    if(await _isManagedBazaar(id)){
+      await ManagedAdmin.lifecycle(id,'archive');await loadData();_refreshArchiveBadge();toast('تمت أرشفة البازار','s');return;
+    }
     const { error } = await db.from('bazaars').update({ is_archived: true, is_featured: false }).eq('id', id);
     if (error) throw error;
     _logBzChange(id, 'archive', {}, null);
@@ -3647,6 +3675,9 @@ async function restoreBazaar(id, name) {
   if (!confirm(`♻️ استعادة "${name}" إلى لوحة التحكم الرئيسية؟`)) return;
   toast('جارٍ الاستعادة...', 'i');
   try {
+    if(await _isManagedBazaar(id)){
+      await ManagedAdmin.lifecycle(id,'restore');await loadData();loadArchivePage();toast('تمت استعادة البازار','s');return;
+    }
     const { error } = await db.from('bazaars').update({ is_archived: false }).eq('id', id);
     if (error) throw error;
     _logBzChange(id, 'restore', {}, null);
@@ -3705,6 +3736,11 @@ async function moveBazaarToTrash(id, name) {
 
   toast('جارٍ النقل للمحذوفات...', 'i');
   try {
+    if(await _isManagedBazaar(id)){
+      await ManagedAdmin.lifecycle(id,'trash');await loadData();
+      if(document.getElementById('pg-archive')?.classList.contains('active'))loadArchivePage();
+      _refreshTrashBadge();toast('تم نقل البازار إلى المحذوفات مع حفظ الطلبات','s');return;
+    }
     const adminId = (await db.auth.getUser())?.data?.user?.id || null;
     const { error } = await db.from('bazaars').update({
       is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: adminId,
@@ -3727,6 +3763,9 @@ async function restoreFromTrash(id, name) {
   if (!confirm(`♻️ استعادة "${name}" إلى الأرشيف؟`)) return;
   toast('جارٍ الاستعادة...', 'i');
   try {
+    if(await _isManagedBazaar(id)){
+      await ManagedAdmin.lifecycle(id,'restore_trash');loadTrashPage();_refreshArchiveBadge();toast('تمت الاستعادة إلى الأرشيف','s');return;
+    }
     const { error } = await db.from('bazaars').update({ is_deleted: false }).eq('id', id);
     if (error) throw error;
     _logBzChange(id, 'restore_from_trash', {}, null);
@@ -3739,6 +3778,9 @@ async function restoreFromTrash(id, name) {
 }
 
 async function permanentlyDeleteBazaar(id, name) {
+  try{
+    if(await _isManagedBazaar(id)){await ManagedAdmin.purgeBazaar(id,name);return;}
+  }catch(error){toast(MakaniManaged.errorText(error),'e');return;}
   const confirmed = confirm(
     `⚠️ حذف نهائي: "${name}"\n\nسيتم حذف البازار + جميع وحداته + جميع حجوزاته من قاعدة البيانات.\nهذا الإجراء لا يمكن التراجع عنه أبداً.\n\nهل أنت متأكد؟`
   );
@@ -3848,8 +3890,11 @@ async function _archiveAllEnded(bazaars) {
   toast('جارٍ الأرشفة...', 'i');
   let done = 0;
   for (const b of bazaars) {
-    const { error } = await db.from('bazaars').update({ is_archived: true, is_featured: false }).eq('id', b.id);
-    if (!error) done++;
+    try{
+      if(await _isManagedBazaar(b.id))await ManagedAdmin.lifecycle(b.id,'archive');
+      else{const {error}=await db.from('bazaars').update({is_archived:true,is_featured:false}).eq('id',b.id);if(error)throw error;}
+      done++;
+    }catch(error){toast(MakaniManaged.errorText(error),'e');}
   }
   toast(`📦 تمت أرشفة ${done} بازار`, 's');
   await loadData();
@@ -5233,8 +5278,12 @@ async function adminReactivateBazaar() {
   if (!bazaarId) { toast('اختر بازاراً أولاً', 'e'); return; }
   const bzName    = sel.options[sel.selectedIndex].text;
   const newStatus = document.getElementById('ov-reactivate-status').value;
-  if (!confirm(`إعادة تفعيل "${bzName}" كـ "${newStatus}"؟\nسيُزال سبب الإلغاء وعلامة الإخفاء.`)) return;
   try {
+    const managed=await _isManagedBazaar(bazaarId);
+    if (!confirm(`إعادة تفعيل "${bzName}" كـ "${newStatus}"؟\n${managed?'سيُحدّث النشر مع حفظ تاريخ الطلبات؛ الطلبات المغلقة لا تُفتح مجددًا.':'سيُزال سبب الإلغاء وعلامة الإخفاء.'}`)) return;
+    if(managed){
+      await ManagedAdmin.lifecycle(bazaarId,'status',newStatus);await loadData();_setOvRes('reactivate','تم تحديث حالة البازار؛ الطلبات المغلقة تبقى محفوظة.','ok');toast('تمت إعادة التفعيل','s');return;
+    }
     const { error } = await db.from('bazaars').update({
       status:              newStatus,
       cancelled_at:        null,
@@ -5253,8 +5302,8 @@ async function adminReactivateBazaar() {
     // refresh cancelled list if open
     if (document.getElementById('pg-cancelled')?.classList.contains('active')) loadCancelledBazaars();
   } catch(e) {
-    _setOvRes('reactivate', '❌ ' + e.message, 'err');
-    toast('❌ ' + e.message, 'e');
+    _setOvRes('reactivate', '❌ ' + MakaniManaged.errorText(e), 'err');
+    toast('❌ ' + MakaniManaged.errorText(e), 'e');
   }
 }
 
@@ -5277,8 +5326,7 @@ async function adminForceClose() {
   const b        = BAZAARS.find(x => x.id === bazaarId);
   if (!confirm(`إجبار "${bzName}" على الإغلاق الفوري؟\nسيتحول إلى "منتهي" بدون إشعارات.`)) return;
   try {
-    const { error } = await db.from('bazaars').update({ status: 'closed' }).eq('id', bazaarId);
-    if (error) throw error;
+    if(!await dbUpdateBazaarStatus(bazaarId,'closed'))return;
     await _logOverride(bazaarId, 'admin_force_close', { prev_status: b?.status || '?' }, 'إغلاق قسري إداري');
     if (b) b.status = 'closed';
     updateAll();
@@ -5733,19 +5781,17 @@ async function editDirBazaar(id) {
 }
 
 async function archiveDirBazaar(id) {
-  if(await ManagedAdmin.routeManagedExternal(id))return;
   const r = _dirRows.find(x => x.id === id);
   if (!confirm(`📦 أرشفة "${r?.name || ''}"؟\n\nهيختفي من تقويم الدليل، وتقدر تستعيده من تبويب "المؤرشفة".`)) return;
   await _dirMutate('admin_delete_external_bazaar', { p_id: id, p_permanent: false }, '📦 تمت الأرشفة');
 }
 
 async function restoreDirBazaar(id) {
-  if(await ManagedAdmin.routeManagedExternal(id))return;
   await _dirMutate('admin_restore_external_bazaar', { p_id: id }, '♻️ تمت الاستعادة');
 }
 
 async function purgeDirBazaar(id) {
-  if(await ManagedAdmin.routeManagedExternal(id))return;
+  if(await ManagedAdmin.routeManagedExternal(id,'purge'))return;
   const r = _dirRows.find(x => x.id === id);
   const n = r?.interest_count || 0;
   if (!confirm(
@@ -5761,6 +5807,7 @@ async function _dirMutate(fn, params, okMsg) {
     const { data, error } = await db.rpc(fn, params);
     if (error) throw error;
     if (!data?.success) throw new Error(data?.error === 'not_found' ? 'البازار غير موجود' : (data?.error || 'فشلت العملية'));
+    if(data.bazaar_id){ManagedAdmin.invalidate();await ManagedAdmin.refreshLegacyIfNeeded();}
     toast(okMsg, 's');
     loadDirList();
   } catch (e) {
@@ -5882,8 +5929,8 @@ async function mkLogout() {
   _refreshDirBadges();
 })();
 </script>
-<script src="managed-bazaar-forms.js?v=20261006233427"></script>
-<script src="managed-bazaars.js?v=20261006233427"></script>
+<script src="managed-bazaar-forms.js?v=20261007012551"></script>
+<script src="managed-bazaars.js?v=20261007012551"></script>
 </body>
 </html>
 

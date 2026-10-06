@@ -14,6 +14,9 @@ window.MakaniManaged = (() => {
   };
   const badge = () => `<span class="mb-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3v4m8-4v4M4 10h16M5 5h14v15H5zM8 14l3 3 5-5"/></svg>${tr('بمتابعة مكاني Spot','Coordinated by Makani Spot')}</span>`;
   const errors = {
+    invalid_bazaar_status:['اختر حالة نشر صحيحة للبازار.','Choose a valid bazaar publication status.'],
+    bazaar_in_trash:['استعد البازار من المحذوفات أولًا قبل تعديل نشره.','Restore the bazaar from trash before changing publication.'],
+    managed_update_failed:['لم يُحفظ تغيير البازار. حدّث الصفحة وحاول مجددًا.','The bazaar change was not saved. Refresh and retry.'],
     reason_required:['أدخل سبب الإغلاق أو الرد.','Enter the closure or refund reason.'],
     invalid_retention_days:['مدة الاحتفاظ من يوم إلى ٣٦٥٠ يومًا.','Retention must be between 1 and 3650 days.'],
     managed_history_requires_archiving:['لهذا البازار طلبات؛ استخدم الأرشفة للحفاظ على سجلها.','This bazaar has requests; archive it to retain its history.'],

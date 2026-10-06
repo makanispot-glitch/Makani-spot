@@ -1103,17 +1103,39 @@ function setBzTimeNav(nav) {
    ================================================================ */
 
 
+/* Shared outline icons for the public detail page. Decorative; labels carry meaning. */
+function _bzdIcon(name) {
+  const paths = {
+    pin: '<path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+    wallet: '<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 8h18M16 12h5v4h-5a2 2 0 0 1 0-4Z"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    chart: '<path d="M4 3v17h17M9 16v-5M14 16V7M19 16V4"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+    camera: '<path d="M14.5 5h-5L8 8H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-4Z"/><circle cx="12" cy="14" r="4"/>',
+    megaphone: '<path d="m3 10 14-5v14L3 14Zm14-1 4-2v10l-4-2M5 15l2 6h4l-2-5"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l2-2"/>',
+    edit: '<path d="m16 3 5 5-12 12-6 1 1-6ZM14 5l5 5"/>',
+    flag: '<path d="M5 21V3M5 4c4-3 8 3 14 0v10c-6 3-10-3-14 0"/>',
+    history: '<path d="M3 11a9 9 0 1 1 3 8M3 4v7h7M12 7v5l3 2"/>',
+    chevron: '<path d="m6 9 6 6 6-6"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+    lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+    unlock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/>',
+    cancel: '<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
+  };
+  return `<svg class="bzd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || paths.file}</svg>`;
+}
+
 async function openBazaarDetail(bazaarId, opts = {}) {
   const b = BAZAARS.find(x => String(x.id) === String(bazaarId));
   if (!b) return;
 
   currentBazaar  = b;
   selectedSlotId = null;
-
-  const allList = bzFiltered.length ? bzFiltered : BAZAARS;
-  const idx     = allList.findIndex(x => String(x.id) === String(bazaarId));
-  const prevB   = idx > 0                    ? allList[idx - 1] : null;
-  const nextB   = idx < allList.length - 1   ? allList[idx + 1] : null;
+  _closeBazaarActivityInfo();
 
   const dateStr = b.date_start
     ? _bzFmtDateLong(b.date_start, { weekday:'long', year:'numeric', month:'long', day:'numeric' })
@@ -1122,7 +1144,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
     ? ' — ' + _bzFmtDateLong(b.date_end, { month:'long', day:'numeric' })
     : '';
   const timeRange = b.time_start
-    ? `🕐 ${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}`
+    ? `${b.time_start}${b.time_end ? ' — ' + b.time_end : ''}`
     : '';
 
   const isMyBazaar = currentUser && b.organizer_id && String(currentUser.id) === String(b.organizer_id);
@@ -1137,7 +1159,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
           <a href="/bazaars/manage.html?id=${b.id}"
              style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-pill);border:1.5px solid var(--orange);background:var(--orange);color:#fff;font-family:var(--font-display);font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap;transition:opacity .15s;flex-shrink:0"
              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-            ${t('detail.editBtn')}
+            ${_bzdIcon('edit')}${t('detail.editBtn')}
           </a>` : ''}
           <div class="sd-breadcrumb" style="${isMyBazaar ? 'margin-inline-start:auto' : ''}">
             <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
@@ -1149,24 +1171,23 @@ async function openBazaarDetail(bazaarId, opts = {}) {
           </div>
         </div>
         <div class="sd-title-row">
-          <div style="flex:1">
+          <div class="bzd-heading">
             ${b.category ? `<span class="bz-detail-cat-badge">${b.category}</span>` : ''}
             <h1 class="sd-name" style="margin-top:8px">${b.name}</h1>
             <div class="sd-meta">
-              <span>📍 ${b.location || '—'}</span>
-              <span class="sd-meta-sep">·</span>
-              <span>📅 ${dateStr}${endStr}</span>
-              ${timeRange ? `<span class="sd-meta-sep">·</span><span>${timeRange}</span>` : ''}
+              <span>${_bzdIcon('pin')}${b.location || '—'}</span>
+              <span>${_bzdIcon('calendar')}${dateStr}${endStr}</span>
+              ${timeRange ? `<span>${_bzdIcon('clock')}<bdi dir="ltr">${timeRange}</bdi></span>` : ''}
             </div>
           </div>
-          <div class="sd-price-box">
-            <div class="sd-price-val">${_bzFmtNum(b.price_per_slot)} ${t('card.currency')}</div>
-            <div class="sd-price-lbl">${t('detail.priceUnit')}</div>
+          <div class="bzd-price-summary">
+            <div class="bzd-price"><strong>${_bzFmtNum(b.price_per_slot)}</strong><span>${t('card.currency')}</span></div>
+            <div class="bzd-price-unit">${t('detail.priceUnit')}</div>
             <div class="bzd-quick-actions">
               <button type="button" class="bzd-quick-action" id="bzd-copy-link-btn"
                       onclick="copyBazaarBookingLink()" title="${t('detail.copyLinkTooltip')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true" focusable="false">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
@@ -1175,7 +1196,7 @@ async function openBazaarDetail(bazaarId, opts = {}) {
               <button type="button" class="bzd-quick-action"
                       onclick="shareCard('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" title="${t('detail.shareTooltip')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true" focusable="false">
                   <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                   <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
@@ -1184,19 +1205,12 @@ async function openBazaarDetail(bazaarId, opts = {}) {
             </div>
           </div>
         </div>
-        <div class="bz-detail-nav">
-          ${prevB
-            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${prevB.id}')">${t('nav.prevBazaar', { name: prevB.name })}</button>`
-            : '<span></span>'}
-          <span class="bz-detail-nav-count">${t('detail.navCount', { current: idx + 1, total: allList.length })}</span>
-          ${nextB
-            ? `<button class="bz-detail-nav-btn" onclick="openBazaarDetail('${nextB.id}')">${t('nav.nextBazaar', { name: nextB.name })}</button>`
-            : '<span></span>'}
-        </div>
       </div>`;
   }
 
   _renderBazaarInfo(b, isMyBazaar);
+  const reportEl = document.getElementById('bzd-report');
+  if (reportEl) reportEl.innerHTML = `<button type="button" class="bzd-report-btn" onclick="openReportAbuseDialog('${b.id}')">${_bzdIcon('flag')}${t('info.reportBtn')}</button>`;
 
   /* ── تحقق من حالة البازار: منتهي / جارٍ الآن (توقّف استقبال الحجوزات) / متاح للحجز ── */
   const _todayStr  = _cairoTodayStr();
@@ -1319,12 +1333,12 @@ function _renderBazaarInfo(b, isMyBazaar) {
 
   const perksHtml = _hasPerks ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">${t('info.perksTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('check')}${t('info.perksTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:16px">
 
           ${(_amenities.length || b.other_amenities_note) ? `
           <div>
-            <div class="bz-perk-group-title">${t('info.facilitiesTitle')}</div>
+            <div class="bz-perk-group-title">${_bzdIcon('grid')}${t('info.facilitiesTitle')}</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               ${_amenities.map(a => `<span class="bz-amenity-pill">✔ ${a === 'كرسي' && b.chair_count > 1 ? `${t('amenities.' + a, { defaultValue: a })}${t('info.chairCountSuffix', { count: b.chair_count })}` : t('amenities.' + a, { defaultValue: a })}</span>`).join('')}
               ${b.other_amenities_note ? `<span class="bz-amenity-pill">✔ ${b.other_amenities_note}</span>` : ''}
@@ -1333,13 +1347,13 @@ function _renderBazaarInfo(b, isMyBazaar) {
 
           ${b.ad_budget_tier ? `
           <div>
-            <div class="bz-perk-group-title">${t('info.adBudgetTitle')}</div>
+            <div class="bz-perk-group-title">${_bzdIcon('megaphone')}${t('info.adBudgetTitle')}</div>
             <div class="sd-extra-row"><span>${t('info.adBudgetLabel')}</span><span style="font-weight:700">${_adBudgetLabels[b.ad_budget_tier] || b.ad_budget_tier}</span></div>
           </div>` : ''}
 
           ${_hasCoverage ? `
           <div>
-            <div class="bz-perk-group-title">${t('info.coverageTitle')}</div>
+            <div class="bz-perk-group-title">${_bzdIcon('camera')}${t('info.coverageTitle')}</div>
             <div style="display:flex;flex-direction:column;gap:6px">
               ${b.will_have_photography     ? `<div style="font-size:13px">${t('info.photography')}</div>` : ''}
               ${b.will_have_social_coverage ? `<div style="font-size:13px">${t('info.socialCoverage')}</div>` : ''}
@@ -1356,12 +1370,12 @@ function _renderBazaarInfo(b, isMyBazaar) {
 
       ${b.description ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">${t('info.aboutTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('file')}${t('info.aboutTitle')}</div>
         <p class="sd-description">${b.description}</p>
       </div>` : ''}
 
       <div class="sd-info-card">
-        <div class="sd-info-title">${t('info.eventDetailsTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('calendar')}${t('info.eventDetailsTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px">
           <div class="sd-extra-row"><span>${t('info.startDate')}</span><span style="font-weight:700">${dateStr}</span></div>
           ${endStr ? `<div class="sd-extra-row"><span>${t('info.endDate')}</span><span style="font-weight:700">${endStr}</span></div>` : ''}
@@ -1382,7 +1396,7 @@ function _renderBazaarInfo(b, isMyBazaar) {
       </div>
 
       <div class="sd-info-card">
-        <div class="sd-info-title">${t('info.pricingTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('wallet')}${t('info.pricingTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px">
           <div class="sd-extra-row">
             <span>${t('info.pricePerSlot')}</span>
@@ -1403,7 +1417,7 @@ function _renderBazaarInfo(b, isMyBazaar) {
 
       ${(b.venue_address || b.location) ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">${t('info.locationTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('pin')}${t('info.locationTitle')}</div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
           <div class="sd-extra-row">
             <span>${t('info.venueName')}</span>
@@ -1415,17 +1429,17 @@ function _renderBazaarInfo(b, isMyBazaar) {
             ${mapsHref ? `
             <a href="${mapsHref}" target="_blank" rel="noopener"
                class="bz-maps-btn">
-              ${t('info.openMaps')}
+              ${_bzdIcon('pin')}${t('info.openMaps')}
             </a>` : ''}
             ${b.sketch_url ? `
             <button onclick="openBazaarMap('sketch')"
-                    class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
-              ${t('info.sketchMap')}
+                    class="bz-maps-btn">
+              ${_bzdIcon('grid')}${t('info.sketchMap')}
             </button>` : ''}
             ${(b.image || b.event_image_url) ? `
             <button onclick="openBzPhotoGallery(0)"
-                    class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
-              ${t('info.realPhoto')}
+                    class="bz-maps-btn">
+              ${_bzdIcon('camera')}${t('info.realPhoto')}
             </button>` : ''}
           </div>
         </div>
@@ -1433,17 +1447,17 @@ function _renderBazaarInfo(b, isMyBazaar) {
 
       ${(!b.venue_address && !b.location && (b.sketch_url || b.event_image_url)) ? `
       <div class="sd-info-card sd-info-full">
-        <div class="sd-info-title">${t('info.mediaTitle')}</div>
+        <div class="sd-info-title">${_bzdIcon('camera')}${t('info.mediaTitle')}</div>
         <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px">
           ${b.sketch_url ? `
           <button onclick="openBazaarMap('sketch')"
-                  class="bz-maps-btn" style="background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#6366f1;cursor:pointer">
-            ${t('info.sketchMap')}
+                  class="bz-maps-btn">
+            ${_bzdIcon('grid')}${t('info.sketchMap')}
           </button>` : ''}
           ${(b.image || b.event_image_url) ? `
           <button onclick="openBzPhotoGallery(0)"
-                  class="bz-maps-btn" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.28);color:#059669;cursor:pointer">
-            ${t('info.realPhoto')}
+                  class="bz-maps-btn">
+            ${_bzdIcon('camera')}${t('info.realPhoto')}
           </button>` : ''}
         </div>
       </div>` : ''}
@@ -1462,7 +1476,7 @@ function _renderBazaarInfo(b, isMyBazaar) {
                 <span style="font-size:10px;font-weight:400;color:#059669;background:#dcfce7;border:1px solid #86efac;border-radius:50px;padding:2px 8px" title="${t('info.linksAddedNoteTitle')}">
                   ${t('info.linksAddedNote')}
                 </span>
-                ${isMyBazaar ? `<button type="button" class="bzd-doclink-edit-btn" onclick="openDocLinksModal('${b.id}')" title="${t('info.docLinksModal.editTooltip')}">✏️</button>` : ''}
+                ${isMyBazaar ? `<button type="button" class="bzd-doclink-edit-btn" onclick="openDocLinksModal('${b.id}')" title="${t('info.docLinksModal.editTooltip')}">${_bzdIcon('edit')}</button>` : ''}
               </span>
             </div>
             <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
@@ -1471,7 +1485,7 @@ function _renderBazaarInfo(b, isMyBazaar) {
                 if (!safeHref) return '';
                 const meta = _eventLinkMeta(u);
                 return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="bz-doclink-btn">
-                  <span class="bz-doclink-ico">${meta.icon}</span>
+                  <span class="bz-doclink-ico">${_bzdIcon('link')}</span>
                   <span class="bz-doclink-label">${meta.label}</span>
                   <span class="bz-doclink-arrow">↗</span>
                 </a>`;
@@ -1490,15 +1504,6 @@ function _renderBazaarInfo(b, isMyBazaar) {
           : '';
       })()}
 
-    </div>
-
-    <!-- زر الإبلاغ -->
-    <div style="text-align:center;margin-top:10px">
-      <button onclick="openReportAbuseDialog('${b.id}')"
-        style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--ink3);font-family:inherit;padding:4px 8px;border-radius:6px;transition:color .18s"
-        onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='var(--ink3)'">
-        ${t('info.reportBtn')}
-      </button>
     </div>
 
     <!-- ═══ مربع المنظّم ═══ -->
@@ -1571,6 +1576,7 @@ async function _loadOrgPastBazaars(organizerId, currentBazaarId) {
 function closeBazaarDetail() {
   _unsubscribeSlotMap();
   _unsubscribeBazaarStats();
+  _closeBazaarActivityInfo();
   currentBazaar  = null;
   selectedSlotId = null;
   showBzPage('bazaars');
@@ -1607,7 +1613,7 @@ async function _loadBazaarActivityStats(bazaarId, b, isExpired) {
 
   sectionEl.style.display = 'block';
   el.innerHTML = `
-    <div class="sd-subspaces-header"><h2 class="sd-section-title">${t('activityStats.title')}</h2></div>
+    <div class="sd-subspaces-header"><h2 class="sd-section-title bzd-section-title">${_bzdIcon('chart')}${t('activityStats.title')}</h2></div>
     <div style="text-align:center;padding:30px 20px;color:var(--ink3)">
       <div style="font-size:28px;margin-bottom:8px;display:inline-block;animation:spin 1s linear infinite">⏳</div>
       <div style="font-size:13px">${t('activityStats.loading')}</div>
@@ -1631,9 +1637,10 @@ function _renderBazaarActivityStats(data, b) {
   const total      = Number(data.total_confirmed) || 0;
   const activities = Array.isArray(data.activities) ? data.activities : [];
   const headerHtml = `<div class="sd-subspaces-header">
-    <h2 class="sd-section-title bz-stats-title-clickable" onclick="toggleActivityStatsInfo(event)">
-      <span>${t('activityStats.title')}</span><span class="bz-info-ico">ⓘ</span>
+    <h2 class="sd-section-title bzd-section-title">
+      ${_bzdIcon('chart')}<span>${t('activityStats.title')}</span>
     </h2>
+    <button type="button" class="bzd-stats-info-btn" onclick="toggleActivityStatsInfo(event)" aria-label="${t('activityStats.infoLabel')}" aria-expanded="false" aria-controls="bz-activity-info-tooltip">${_bzdIcon('info')}</button>
   </div>`;
 
   /* لا بيانات كافية → العنوان فقط، بلا صندوق "لا توجد بيانات" (قرار UX متعمَّد: لا نعرض
@@ -1672,7 +1679,7 @@ function _renderBazaarActivityStats(data, b) {
       <div class="bz-stats-row" style="--bz-stat-color:${s.color}">
         <div class="bz-stats-row-fill" style="width:${pct}%"></div>
         <span class="bz-stats-swatch"></span>
-        <span class="bz-stats-row-label">${s.icon} ${_escBz(s.label)}</span>
+        <span class="bz-stats-row-label">${_escBz(s.label)}</span>
         <span class="bz-stats-row-count">${t('activityStats.participant', { count: s.count })}</span>
         <span class="bz-stats-row-pct">${pct}%</span>
       </div>`;
@@ -1728,18 +1735,26 @@ const _BZ_INFO_EXAMPLE_KEYS = ['ملابس', 'إكسسوارات', 'أكل وم�
 /* التول تيب التوضيحية لعنوان قسم إحصائيات الأنشطة — نفس فكرة/آلية toggleLegendTooltip
    (خريطة الأماكن) لكن بمحتوى ثابت واحد (لا حالات متعددة)، ومُكرَّرة عمداً بمعرّفات مستقلة
    لتفادي أي تعارض مع نظام تول تيب الخريطة الآخر الذي يعمل بشكل مستقل تماماً */
+function _closeBazaarActivityInfo() {
+  document.getElementById('bz-activity-info-tooltip')?.remove();
+  document.getElementById('bz-activity-info-tooltip-arrow-adjust')?.remove();
+  document.querySelector('.bzd-stats-info-btn')?.setAttribute('aria-expanded', 'false');
+}
+
 function toggleActivityStatsInfo(event) {
   event.stopPropagation();
   const trigger  = event.currentTarget;
   const existing = document.getElementById('bz-activity-info-tooltip');
-  if (existing) { existing.remove(); return; }
+  if (existing) { _closeBazaarActivityInfo(); return; }
+  trigger.setAttribute('aria-expanded', 'true');
 
   const tooltip = document.createElement('div');
   tooltip.id = 'bz-activity-info-tooltip';
+  tooltip.setAttribute('role', 'note');
   if (getLocale() === 'en') tooltip.classList.add('ltr');
 
   const examplesHtml = _BZ_INFO_EXAMPLE_KEYS
-    .map(k => `<li>${BZ_ACTIVITY_ICONS[k] || '🏷️'} ${t('activities.' + k)}</li>`)
+    .map(k => `<li>${t('activities.' + k)}</li>`)
     .join('') + `<li>${t('activityStats.infoTooltipMore')}</li>`;
 
   tooltip.innerHTML = `
@@ -1798,10 +1813,12 @@ if (!window._bzActivityInfoTooltipInitialized) {
   window._bzActivityInfoTooltipInitialized = true;
   document.addEventListener('click', function (e) {
     const tooltip = document.getElementById('bz-activity-info-tooltip');
-    if (tooltip && !tooltip.contains(e.target) && !e.target.closest('.bz-stats-title-clickable')) {
-      tooltip.remove();
-      document.getElementById('bz-activity-info-tooltip-arrow-adjust')?.remove();
+    if (tooltip && !tooltip.contains(e.target) && !e.target.closest('.bzd-stats-info-btn')) {
+      _closeBazaarActivityInfo();
     }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') _closeBazaarActivityInfo();
   });
 }
 
@@ -3749,12 +3766,12 @@ function _bzEsc(str) {
 
 /* دالة بدل const ثابت — لازم تُستدعى وقت الرسم (بعد جاهزية i18next) لا وقت تحميل الملف */
 const _BZ_CHANGE_ICONS = {
-  cancel: '🚫', postpone: '📅', edit_info: '✏️',
-  edit_slots_count: '🔢', reserve_slot: '🔒', unreserve_slot: '🔓',
+  cancel: 'cancel', postpone: 'calendar', edit_info: 'edit',
+  edit_slots_count: 'grid', reserve_slot: 'lock', unreserve_slot: 'unlock',
 };
 function _bzChangeLabel(changeType) {
   return {
-    ico:   _BZ_CHANGE_ICONS[changeType] || '📝',
+    ico:   _bzdIcon(_BZ_CHANGE_ICONS[changeType] || 'file'),
     label: t('timeline.changeTypes.' + changeType, { defaultValue: changeType }),
   };
 }
@@ -3781,6 +3798,7 @@ async function _loadBazaarTimeline(bazaarId) {
   const postpones   = postponeRes.data || [];
   const timelineEl  = document.getElementById('bzd-timeline');
   if (!timelineEl) return;
+  if (String(currentBazaar?.id) !== String(bazaarId)) return;
 
   // دمج السجلَّين في timeline موحّدة مرتّبة زمنياً
   const events = [
@@ -3795,10 +3813,8 @@ async function _loadBazaarTimeline(bazaarId) {
 
     if (ev._type === 'postpone') {
       return `
-<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-  <div style="flex-shrink:0;margin-top:2px">
-    <div style="width:32px;height:32px;border-radius:50%;background:#fff7ed;border:2px solid #fdba74;display:flex;align-items:center;justify-content:center;font-size:15px">📅</div>
-  </div>
+<div class="bzd-history-item">
+  <div class="bzd-history-icon">${_bzdIcon('calendar')}</div>
   <div style="flex:1;min-width:0">
     <div style="font-size:13px;font-weight:800;color:var(--dark)">${t('timeline.postponeLabel')}</div>
     <div style="font-size:12px;color:var(--ink3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -3806,7 +3822,7 @@ async function _loadBazaarTimeline(bazaarId) {
       <span>→</span>
       <span style="color:#047857;font-weight:700">${_bzFmtDate(ev.new_start_date)} — ${_bzFmtDate(ev.new_end_date)}</span>
     </div>
-    ${ev.reason ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-inline-start:2px solid #fdba74">${_bzEsc(ev.reason)}</div>` : ''}
+    ${ev.reason ? `<div class="bzd-history-note">${_bzEsc(ev.reason)}</div>` : ''}
     <div style="font-size:10px;color:var(--ink3);margin-top:4px">${timeAgo}</div>
   </div>
 </div>`;
@@ -3826,14 +3842,12 @@ async function _loadBazaarTimeline(bazaarId) {
     }
 
     const noteHtml = ev.note
-      ? `<div style="font-size:11px;color:var(--ink3);margin-top:4px;background:var(--surface2);padding:5px 9px;border-radius:6px;border-inline-start:2px solid var(--orange)">${_bzEsc(ev.note)}</div>`
+      ? `<div class="bzd-history-note">${_bzEsc(ev.note)}</div>`
       : '';
 
     return `
-<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-  <div style="flex-shrink:0;margin-top:2px">
-    <div style="width:32px;height:32px;border-radius:50%;background:var(--orange-ultra);border:2px solid rgba(243,100,24,.25);display:flex;align-items:center;justify-content:center;font-size:15px">${meta.ico}</div>
-  </div>
+<div class="bzd-history-item">
+  <div class="bzd-history-icon">${meta.ico}</div>
   <div style="flex:1;min-width:0">
     <div style="font-size:13px;font-weight:800;color:var(--dark)">${meta.label}</div>
     ${detail}
@@ -3844,13 +3858,14 @@ async function _loadBazaarTimeline(bazaarId) {
   }).join('');
 
   timelineEl.innerHTML = `
-<div style="background:var(--surface);border-radius:var(--radius-xl);border:1px solid var(--border);padding:18px 20px;margin-top:16px">
-  <div style="font-size:14px;font-weight:900;color:var(--dark);margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:8px">
-    ${t('timeline.title')}
-    <span style="font-size:11px;font-weight:700;background:var(--orange-ultra);color:var(--orange);padding:2px 8px;border-radius:50px">${events.length}</span>
-  </div>
-  <div>${itemsHtml}</div>
-</div>`;
+<details class="bzd-history">
+  <summary>
+    ${_bzdIcon('history')}<span class="bzd-history-label">${t('timeline.title')}</span>
+    <span class="bzd-history-count">${_bzFmtNum(events.length)}</span>
+    <span class="bzd-history-chevron">${_bzdIcon('chevron')}</span>
+  </summary>
+  <div class="bzd-history-items">${itemsHtml}</div>
+</details>`;
   timelineEl.style.display = 'block';
 }
 

@@ -2849,9 +2849,10 @@ body.hlp-open {
   color: var(--orange);
 }
 
-/* رأس قسم البازارات — صف واحد بدل فقرة + شريط عنوان */
+/* رأس قسم البازارات — صف مرن يتمدد ويلتف عند ضيق المساحة */
 .bz-home-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 11px;
   margin-bottom: 14px;
@@ -2875,8 +2876,10 @@ body.hlp-open {
 }
 
 .bz-home-head-text {
-  flex: 1;
+  /* Reserve readable title space before the action wraps onto another line. */
+  flex: 1 1 12ch;
   min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -6938,11 +6941,6 @@ body.hlp-open {
     height: 30px;
   }
 
-  .bz-home-see-all {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
   /* الكروت */
   .section {
     padding: 24px 14px;
@@ -9521,6 +9519,8 @@ footer {
 }
 
 .bz-home-see-all {
+  /* Keep the action in the header flow; let the header wrap when space is tight. */
+  flex: 0 0 auto;
   background: linear-gradient(180deg, #F47432 0%, #F36418 100%);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.20) inset, 0 4px 18px rgba(243, 100, 24, 0.26);
   border: none;
@@ -11913,10 +11913,6 @@ footer {
     align-items: flex-start;
   }
 
-  .bz-home-see-all {
-    align-self: flex-start;
-  }
-
   .bz-mini-card {
     width: 100%;
     grid-template-columns: 132px 1fr;
@@ -12018,11 +12014,6 @@ footer {
     min-height: 150px;
   }
 
-  .bz-home-see-all {
-    width: 100%;
-    justify-content: center;
-    text-align: center;
-  }
 }
 
 

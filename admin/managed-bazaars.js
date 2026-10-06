@@ -45,6 +45,24 @@ window.ManagedAdmin = (() => {
   }
   function saveOrganizer(o){if(!o)return;const i=state.organizers.findIndex(x=>x.id===o.id);if(i<0)state.organizers.push(o);else state.organizers[i]=o;}
   async function savedListing(){legacyDirty=true;await refresh('directory');if(tab==='managed-dir')render();toast(T('تم حفظ البازار','Bazaar saved'),'s');}
+  function invalidate(){legacyDirty=true;directoryLoadedAt=0;}
+  async function lifecycle(id,action,status=null,reason=null){
+    const result=await rpc('admin_update_managed_bazaar',{p_id:id,p_action:action,p_status:status,p_reason:reason});
+    if(!result?.ok)throw Error('managed_update_failed');
+    invalidate();
+    const row=state.listings.find(l=>l.id===result.external_id);
+    if(row){row.is_archived=result.is_archived||result.is_deleted||!['published','live','completed'].includes(result.status);if(row.bazaar)Object.assign(row.bazaar,result);}
+    return result;
+  }
+  async function purgeBazaar(id,name=''){
+    await refresh('directory');const l=state.listings.find(x=>x.linked_bazaar_id===id||x.id===id);
+    if(!l)throw Error('not_found');
+    if(Number(l.requests)>0)throw Error('managed_history_requires_archiving');
+    if(!confirm(T('حذف البازار نهائيًا وصوره غير المستخدمة؟ لا يمكن التراجع: ','Delete this bazaar and unused images permanently? This cannot be undone: ')+(name||l.name)))return;
+    await purge(l.id);directoryLoadedAt=0;legacyDirty=false;
+    await loadData();if(typeof loadTrashPage==='function')loadTrashPage();if(typeof loadDirList==='function')loadDirList();
+    toast(T('تم حذف البازار غير المستخدم','Unused bazaar deleted'),'s');
+  }
   async function purge(id){
     const {data:{session}}=await db.auth.getSession();if(!session)throw Error('login_required');
     const response=await fetch('/managed-bazaar-delete',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({external_id:id})});
@@ -93,7 +111,7 @@ window.ManagedAdmin = (() => {
   document.addEventListener('DOMContentLoaded',initialize);
   async function prepare(id){gp('managed-dir');if(Date.now()-directoryLoadedAt>15000)await refresh('directory');openListing(id);}
   async function prepareBazaar(id){if(Date.now()-directoryLoadedAt>15000)await refresh('directory');const listing=state.listings.find(l=>l.linked_bazaar_id===id);if(listing)await prepare(listing.id);}
-  async function routeManagedExternal(id){try{if(Date.now()-directoryLoadedAt>15000)await refresh('directory');if(state.listings.find(l=>l.id===id)?.agreement){await prepare(id);return true;}return false;}catch(e){fail(e);return true;}}
+  async function routeManagedExternal(id,action='edit'){try{if(Date.now()-directoryLoadedAt>15000)await refresh('directory');if(state.listings.find(l=>l.id===id)?.agreement){if(action==='purge')await purgeBazaar(id);else await prepare(id);return true;}return false;}catch(e){fail(e);return true;}}
   async function refreshLegacyIfNeeded(){if(legacyDirty){legacyDirty=false;try{await loadData();}catch(e){legacyDirty=true;fail(e);}}}
-  return {load,openListing,openRequest,prepare,prepareBazaar,routeManagedExternal,refreshLegacyIfNeeded};
+  return {load,openListing,openRequest,prepare,prepareBazaar,routeManagedExternal,refreshLegacyIfNeeded,lifecycle,purgeBazaar,invalidate};
 })();
