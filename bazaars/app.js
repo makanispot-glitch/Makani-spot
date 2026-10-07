@@ -589,6 +589,10 @@ function buildBazaarCard(b) {
   const availSlots = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
   const isSoldOut  = availSlots === 0 && (b.total_slots || 0) > 0;
 
+  // Every main card uses the same CTA; the existing booking surface enforces availability.
+  const cardAction = `<button type="button" class="mk-flow-button"
+        onclick="event.stopPropagation();openBazaarDetail('${b.id}',{scrollToBooking:true})">${MakaniFlowButton.content(t('card.bookPlace'))}</button>`;
+
   /* ── الصورة ── */
   const imgHtml = b.image
     ? `<img src="${b.image}" alt="${b.name}" loading="lazy"
@@ -707,10 +711,7 @@ function buildBazaarCard(b) {
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
           </button>
-          <button class="btn btn-primary" style="font-size:12px;padding:8px 16px;white-space:nowrap"
-                  onclick="event.stopPropagation();openBazaarDetail('${b.id}')">
-            ${t('card.detailsBtn')}
-          </button>
+          ${cardAction}
         </div>
       </div>
 

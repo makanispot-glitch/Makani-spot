@@ -156,8 +156,8 @@
   "detail": {
     "featured": "⭐ Featured",
     "shareTitle": "Share this listing",
-    "addFavorite": "🤍 Add to Favorites",
-    "inFavorite": "❤️ In Favorites",
+    "addFavorite": "Add to Favorites",
+    "inFavorite": "In Favorites",
     "removeFavorite": "Remove from favorites",
     "loginToContact": "🔒 Log in to view contact info",
     "whatsappContact": "💬 Contact via WhatsApp",
@@ -278,6 +278,7 @@
   "favorites": {
     "title": "Favorites",
     "titleWithCount": "Favorites ({{count}})",
+    "updateError": "Could not update favorites. Please try again.",
     "empty": "No favorite listings yet",
     "browseProjects": "Browse Listings",
     "emptyListings": "No favorite listings found",

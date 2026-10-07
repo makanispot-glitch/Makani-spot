@@ -671,10 +671,10 @@ function buildCardHtml(s, fromPage) {
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
         <div class="price-main">${Number(defaultPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_currency} <span>${_perMonthLabel}</span></div>
-        <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <div class="card-booking-actions">
           ${detailsBtnHtml}
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 16px"
-                  onclick="openBooking('${s.id}')">${t('card.bookNow')}</button>
+          <button type="button" class="mk-flow-button"
+                  onclick="openBooking('${s.id}')">${MakaniFlowButton.content(t('card.bookPlace'))}</button>
         </div>
       </div>
       ${(s.season || s.insight) ? `

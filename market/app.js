@@ -136,6 +136,7 @@ let eqListingType   = '';
 let eqRentalPeriod  = '';
 let eqTotalCount    = 0;      // العدد الحقيقي للنتائج المطابقة على الخادم
 let eqFavorites     = new Set();
+const _eqFavPending = new Set();
 let eqMyListings    = [];
 /* عدّادات لكل تصنيف/محافظة فوق *كل* الإعلانات الحية (لا الصفحة المحمَّلة) —
    تُعرض على الشرائح فيعرف المستخدم فين النتائج قبل ما يضغط */
@@ -1511,12 +1512,22 @@ function _eqEsc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-/* أيقونة المفضلة: خط رفيع وهي مطفية، ممتلئة وهي مفعّلة — بديل الإيموجي
-   🤍/❤️ اللي كان شكله بيختلف من نظام لنظام ولونه بيصرخ وسط كرت هادئ */
-function _eqHeartSvg(on) {
+/* Bookmark toggle from the supplied reference; shared by every market surface. */
+function _eqBookmarkSvg(on) {
   return `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor"
-    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M12 20.7 3.9 12.6a5.2 5.2 0 0 1 7.4-7.3l.7.7.7-.7a5.2 5.2 0 0 1 7.4 7.3Z"/></svg>`;
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+}
+
+function _eqSaveButtonHtml(id, on, variant = 'card') {
+  const label = _eqEsc(t(on ? 'detail.removeFavorite' : 'detail.addFavorite'));
+  const busy = _eqFavPending.has(id);
+  const modifier = variant === 'card' ? ' eq-fav-btn' : variant === 'detail' ? ' eq-save-toggle--label' : '';
+  return `<button type="button" class="eq-save-toggle${modifier}${on ? ' on' : ''}"
+    data-fav="${_eqEsc(id)}" data-state="${on ? 'on' : 'off'}" aria-pressed="${on}"
+    aria-label="${label}" title="${label}" aria-busy="${busy}"${busy ? ' disabled' : ''}
+    onclick="eqToggleFavorite(event,'${_eqEsc(id)}')">${_eqBookmarkSvg(on)}${variant === 'detail'
+      ? `<span data-save-label>${_eqEsc(t(on ? 'detail.inFavorite' : 'detail.addFavorite'))}</span>` : ''}</button>`;
 }
 
 /* ترتيب واحد للكرت في العرضين (شبكة/قائمة) وفي الموبايل — الاختلاف كله
@@ -1571,9 +1582,7 @@ function eqBuildCard(listing) {
     ${mediaInner}
     ${flag}
   </div>
-  <button type="button" class="eq-fav-btn${isFav ? ' on' : ''}" data-fav="${lid}"
-          onclick="eqToggleFavorite(event,'${lid}')"
-          aria-pressed="${isFav}" aria-label="${t('card.favoriteTitle')}" title="${t('card.favoriteTitle')}">${_eqHeartSvg(isFav)}</button>
+  ${_eqSaveButtonHtml(lid, isFav)}
   <div class="eq-card-body">
     <div class="eq-card-priceline">
       <span class="eq-card-price" aria-label="${_eqEsc(listingPriceText(listing, getLocale()))}"><bdi>${price}</bdi> <small>${t('card.currency')}${rentalUnit ? ' / ' + rentalUnit : ''}</small></span>
@@ -1810,7 +1819,7 @@ async function eqOpenDetail(id) {
     : `<div class="eq-detail-no-img">📦</div>`;
 
   const isFav   = eqFavorites.has(id);
-  const favBtn  = `<button class="eq-btn eq-btn-ghost" data-fav="${id}" onclick="eqToggleFavorite(event,'${id}')">${isFav ? t('detail.inFavorite') : t('detail.addFavorite')}</button>`;
+  const favBtn  = _eqSaveButtonHtml(id, isFav, 'detail');
 
   const contactHtml = eqUser
     ? `${listing.contact_pref !== 'call'
@@ -2388,7 +2397,7 @@ function eqUpdateFavBtn() {
     badge.classList.toggle('show', count > 0);
   });
   const label = count > 0 ? t('favorites.titleWithCount', { count }) : t('favorites.title');
-  if (btn) btn.title = label;
+  if (btn) { btn.title = label; btn.setAttribute('aria-label', label); }
   document.getElementById('eq-mobile-favorites-btn')?.setAttribute('aria-label', label);
 }
 
@@ -2402,21 +2411,31 @@ async function eqLoadFavorites() {
   eqUpdateFavBtn();
 }
 
-/* زر الكرت بقى SVG لا إيموجي، فالتحديث بيغيّر الرسمة والحالة معًا؛
-   أزرار المودال تفضل نصية زي ما هي */
-function _eqPaintFavBtn(btn, on) {
-  if (btn.classList.contains('eq-fav-btn')) {
-    btn.innerHTML = _eqHeartSvg(on);
-    btn.classList.toggle('on', on);
-    btn.setAttribute('aria-pressed', String(on));
-  } else {
-    btn.textContent = on ? t('detail.inFavorite') : t('detail.addFavorite');
+function _eqPaintFavBtn(btn, on, animate = false) {
+  const label = t(on ? 'detail.removeFavorite' : 'detail.addFavorite');
+  btn.querySelector('svg')?.setAttribute('fill', on ? 'currentColor' : 'none');
+  btn.classList.toggle('on', on);
+  btn.setAttribute('data-state', on ? 'on' : 'off');
+  btn.setAttribute('aria-pressed', String(on));
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  const text = btn.querySelector('[data-save-label]');
+  if (text) text.textContent = t(on ? 'detail.inFavorite' : 'detail.addFavorite');
+  const busy = _eqFavPending.has(btn.dataset.fav);
+  btn.disabled = busy;
+  btn.setAttribute('aria-busy', String(busy));
+  if (animate) {
+    btn.classList.remove('is-animating');
+    void btn.offsetWidth;
+    btn.classList.add('is-animating');
+    setTimeout(() => btn.classList.remove('is-animating'), 340);
   }
 }
 
 async function eqToggleFavorite(e, id) {
   e.preventDefault();
   e.stopPropagation();
+  if (_eqFavPending.has(id)) return;
   /* الزائر كان بيتقذف للرئيسية بلا سبب ظاهر ولا طريق رجوع. دلوقتي بيروح
      لصفحة الدخول ومعاه رابط العودة لنفس الإعلان — نفس سلوك زر التواصل
      في مودال التفاصيل */
@@ -2427,19 +2446,34 @@ async function eqToggleFavorite(e, id) {
   }
 
   const isFav = eqFavorites.has(id);
-  const allBtns = document.querySelectorAll(`[data-fav="${id}"]`);
-
-  if (isFav) {
-    await eqSb.from('favorites').delete()
-      .eq('user_id', eqUser.id).eq('listing_id', id);
-    eqFavorites.delete(id);
-    allBtns.forEach(b => _eqPaintFavBtn(b, false));
-  } else {
-    await eqSb.from('favorites').insert({ user_id: eqUser.id, listing_id: id });
-    eqFavorites.add(id);
-    allBtns.forEach(b => _eqPaintFavBtn(b, true));
+  const userId = eqUser.id;
+  const buttons = () => [...document.querySelectorAll('[data-fav]')].filter(b => b.dataset.fav === id);
+  _eqFavPending.add(id);
+  buttons().forEach(b => _eqPaintFavBtn(b, isFav));
+  let changed = false;
+  try {
+    const { error } = isFav
+      ? await eqSb.from('favorites').delete().eq('user_id', userId).eq('listing_id', id)
+      : await eqSb.from('favorites').insert({ user_id: userId, listing_id: id });
+    if (error) throw error;
+    // Do not apply another account's result if auth changed during the request.
+    if (eqUser?.id !== userId) return;
+    if (isFav) eqFavorites.delete(id); else eqFavorites.add(id);
+    changed = true;
+    eqUpdateFavBtn();
+    if (isFav) {
+      buttons().forEach(b => b.closest('.eq-favorite-row')?.remove());
+      const cont = document.getElementById('eq-fav-body');
+      if (cont && !eqFavorites.size && document.getElementById('eq-fav-modal')?.classList.contains('open')) {
+        cont.innerHTML = `<div class="eq-empty"><p>${t('favorites.empty')}</p><a class="eq-btn eq-btn-primary" href="/market/">${t('favorites.browseProjects')}</a></div>`;
+      }
+    }
+  } catch (error) {
+    if (eqUser?.id === userId) alert(t('favorites.updateError'));
+  } finally {
+    _eqFavPending.delete(id);
+    buttons().forEach(b => _eqPaintFavBtn(b, eqFavorites.has(id), changed));
   }
-  eqUpdateFavBtn();
 }
 
 async function eqOpenFavorites() {
@@ -2471,7 +2505,7 @@ async function eqOpenFavorites() {
       : `<div style="width:60px;height:60px;background:#F3F4F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📦</div>`;
     const price = listingPriceText(l, getLocale());
     return `
-    <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #F0F0F0">
+    <div class="eq-favorite-row">
       <div style="cursor:pointer;display:flex;gap:12px;align-items:center;flex:1;min-width:0" onclick="eqCloseFavorites();eqOpenDetail('${l.id}')">
         ${img}
         <div style="flex:1;min-width:0">
@@ -2481,8 +2515,7 @@ async function eqOpenFavorites() {
           <div style="font-size:12px;color:#999">📍 ${l.region ? eqGovLabel(l.region) : ''}</div>
         </div>
       </div>
-      <button data-fav="${l.id}" onclick="eqToggleFavorite(event,'${l.id}');this.closest('div[style]').remove()"
-        style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0" title="${t('detail.removeFavorite')}">❤️</button>
+      ${_eqSaveButtonHtml(l.id, true, 'favorites')}
     </div>`;
   }).join('');
 }

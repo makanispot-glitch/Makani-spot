@@ -1,0 +1,66 @@
+/* Booking CTA adapted from the supplied FlowButton, scoped to this component. */
+.mk-flow-button {
+  --flow-text-rest: -8px;
+  --flow-text-hover: 8px;
+  position: relative; isolation: isolate;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; min-width: 140px; max-width: 100%; padding: 10px 28px;
+  overflow: hidden; border: 1.5px solid var(--orange-200, #ffbf99); border-radius: 100px;
+  background: var(--orange-50, #fff4ed); color: var(--orange-700, #b33f05);
+  font-family: var(--font-display, Cairo, sans-serif); font-size: 13px; font-weight: 700; line-height: 1.5;
+  white-space: nowrap; text-decoration: none; cursor: pointer;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: border-color 600ms cubic-bezier(.23,1,.32,1), border-radius 600ms cubic-bezier(.23,1,.32,1),
+    color 600ms cubic-bezier(.23,1,.32,1), transform 160ms var(--ease-out, ease-out);
+}
+.mk-flow-button::before {
+  content: ''; position: absolute; z-index: 0;
+  top: 50%; left: 50%; width: 120%; aspect-ratio: 1;
+  background: var(--orange-700, #b33f05); border-radius: 50%; opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 800ms cubic-bezier(.19,1,.22,1), opacity 800ms cubic-bezier(.19,1,.22,1);
+}
+.mk-flow-label {
+  position: relative; z-index: 1; transform: translateX(var(--flow-text-rest));
+  transition: transform 800ms ease-out;
+}
+.mk-flow-arrow {
+  position: absolute; top: 50%; z-index: 1; display: flex;
+  width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none;
+  transition: inset-inline-start 800ms cubic-bezier(.34,1.56,.64,1),
+    inset-inline-end 800ms cubic-bezier(.34,1.56,.64,1), opacity 600ms ease-out;
+}
+.mk-flow-arrow svg { display: block; width: 16px; height: 16px; }
+.mk-flow-arrow--in { inset-inline-start: -24px; opacity: 0; }
+.mk-flow-arrow--out { inset-inline-end: 14px; }
+.mk-flow-button:dir(rtl) { --flow-text-rest: 8px; --flow-text-hover: -8px; }
+.mk-flow-button:dir(rtl) .mk-flow-arrow svg { transform: rotate(180deg); }
+.mk-flow-button:focus-visible {
+  outline: 3px solid var(--orange, #f36418); outline-offset: 3px;
+  border-color: transparent; border-radius: 12px; color: #fff;
+}
+.mk-flow-button:focus-visible::before { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.mk-flow-button:focus-visible .mk-flow-label { transform: translateX(var(--flow-text-hover)); }
+.mk-flow-button:focus-visible .mk-flow-arrow--in { inset-inline-start: 14px; opacity: 1; }
+.mk-flow-button:focus-visible .mk-flow-arrow--out { inset-inline-end: -24px; opacity: 0; }
+@media (hover: hover) {
+  .mk-flow-button:not(:disabled):hover { border-color: transparent; border-radius: 12px; color: #fff; }
+  .mk-flow-button:not(:disabled):hover::before { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .mk-flow-button:not(:disabled):hover .mk-flow-label { transform: translateX(var(--flow-text-hover)); }
+  .mk-flow-button:not(:disabled):hover .mk-flow-arrow--in { inset-inline-start: 14px; opacity: 1; }
+  .mk-flow-button:not(:disabled):hover .mk-flow-arrow--out { inset-inline-end: -24px; opacity: 0; }
+}
+.mk-flow-button:not(:disabled):active { transform: scale(.97); }
+.mk-flow-button:disabled { opacity: .55; cursor: not-allowed; }
+/* Keep both space-card actions reachable at narrow widths, in their existing order. */
+.space-card .card-footer { flex-wrap: wrap; }
+.space-card .card-booking-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+@media (max-width: 600px) {
+  .space-card .card-booking-actions { flex: 1 0 100%; }
+  .space-card .card-booking-actions .mk-flow-button { flex: 1; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Override the shared stylesheet's important 0.01ms motion fallback. */
+  .mk-flow-button, .mk-flow-button::before, .mk-flow-label, .mk-flow-arrow { transition: none !important; }
+  .mk-flow-button:not(:disabled):active { transform: none; }
+}

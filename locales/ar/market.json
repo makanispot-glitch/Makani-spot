@@ -128,8 +128,8 @@
   "detail": {
     "featured": "⭐ مميز",
     "shareTitle": "مشاركة الإعلان",
-    "addFavorite": "🤍 أضف للمفضلة",
-    "inFavorite": "❤️ في المفضلة",
+    "addFavorite": "أضف للمفضلة",
+    "inFavorite": "في المفضلة",
     "removeFavorite": "إزالة من المفضلة",
     "loginToContact": "🔒 سجّل الدخول لعرض معلومات التواصل",
     "whatsappContact": "💬 تواصل عبر واتساب",
@@ -252,6 +252,7 @@
   "favorites": {
     "title": "المفضلة",
     "titleWithCount": "المفضلة ({{count}})",
+    "updateError": "تعذّر تحديث المفضلة. حاول مرة أخرى.",
     "empty": "لا توجد مشاريع مفضلة",
     "browseProjects": "تصفح المشاريع",
     "emptyListings": "لا توجد إعلانات مفضلة",

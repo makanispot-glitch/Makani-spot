@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-  <link rel="stylesheet" href="/shared/loading-state.css?v=20261007012551">
-  <script src="/shared/loading-state.js?v=20261007012551" defer></script>
+  <link rel="stylesheet" href="/shared/loading-state.css?v=20261007141114">
+  <script src="/shared/loading-state.js?v=20261007141114" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="مشاريع ومعدات للبيع والإيجار — مكاني Spot. تصفح المشاريع الجاهزة والبارتشنات ومستلزمات الفعاليات في مصر.">
 <title>مشاريع ومعدات للبيع والإيجار — مكاني Spot</title>
@@ -70,11 +70,11 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20261007012551">
+<link rel="manifest" href="/manifest.json?v=20261007141114">
 <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
      build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
      في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
-<script src="/version.js?v=20261007012551" defer></script>
+<script src="/version.js?v=20261007141114" defer></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -163,21 +163,21 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://rxqkpjuvudweyovekvvx.supabase.co" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=20261007012551">
+<link rel="stylesheet" href="/style.css?v=20261007141114">
 <!-- سياسة انتقال مشتركة: الشريط متاح فورًا بلا طبقة تلاشي فوقه -->
-<link rel="stylesheet" href="/shared/nav-transition.css?v=20261007012551">
+<link rel="stylesheet" href="/shared/nav-transition.css?v=20261007141114">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="/shared/sb-config.js?v=20261007012551" defer></script>
-<script src="/shared/listing-model.js?v=20261007012551" defer></script>
-<script src="/pwa-install.js?v=20261007012551" defer></script>
+<script src="/shared/sb-config.js?v=20261007141114" defer></script>
+<script src="/shared/listing-model.js?v=20261007141114" defer></script>
+<script src="/pwa-install.js?v=20261007141114" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20261007012551" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261007012551" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261007012551" defer></script>
-<script src="/shared/i18n.js?v=20261007012551" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20261007141114" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261007141114" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261007141114" defer></script>
+<script src="/shared/i18n.js?v=20261007141114" defer></script>
 <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
-<script src="/shared/nav-identity.js?v=20261007012551" defer></script>
+<script src="/shared/nav-identity.js?v=20261007141114" defer></script>
 
 <style>
 /* ── Variables (shared with style.css) ── */
@@ -1649,26 +1649,7 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
   .eq-quick-links .nsb-text small { white-space: normal; }
 }
 
-/* A compact visible heart inside a transparent, touch-friendly target. */
-.eq-fav-btn {
-  position: absolute; top: 2px; inset-inline-end: 2px; z-index: 3;
-  width: 44px; height: 44px; min-height: 44px; min-width: 44px; padding: 0;
-  border-radius: 6px;
-  background: transparent; border: none; box-shadow: none;
-  color: #202a34;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.eq-fav-btn svg {
-  width: 18px; height: 18px; display: block;
-  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.eq-fav-btn:hover, .eq-fav-btn.on { color: #d72d55; }
-.eq-fav-btn:hover svg { transform: scale(1.1); }
-.eq-fav-btn:active svg { transform: scale(0.9); }
-.eq-fav-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: -4px; }
+/* Save toggle styles live in market/bookmark.css (shared across market surfaces). */
 
 /* ── مبدّل العرض شبكة/قائمة ── */
 .eq-count-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -1765,7 +1746,7 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
   .eq-card-body { padding: 9px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .eq-card, .eq-view-btn, .eq-fav-btn, .eq-fav-btn svg { transition: none; }
+  .eq-card, .eq-view-btn { transition: none; }
 }
 
 /* ── Favorites Nav Button — نفس أسلوب جرس الإشعارات (gn-bell) بالضبط ── */
@@ -1889,6 +1870,7 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
   opacity: 0.6; cursor: not-allowed; transform: none !important;
 }
 </style>
+<link rel="stylesheet" href="/market/bookmark.css?v=20261007141114">
 
 <!-- Google Analytics 4 — Makani Spot -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -1929,8 +1911,8 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
-<link rel="stylesheet" href="/shared/nav-shell.css?v=20261007012551">
-  <script src="/shared/nav-shell.js?v=20261007012551" defer></script>
+<link rel="stylesheet" href="/shared/nav-shell.css?v=20261007141114">
+  <script src="/shared/nav-shell.js?v=20261007141114" defer></script>
 </head>
 <body class="eq-page">
 
@@ -2000,8 +1982,8 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
 
   <div class="nav-page-actions">
     <button class="eq-fav-nav-btn" id="eq-fav-nav-btn" onclick="eqOpenFavorites()"
-            title="المفضلة" data-i18n-attr="title:card.favoriteTitle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.4 5.4 0 0 0-7.6 0L12 6.1l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.5a5.4 5.4 0 0 0 0-7.6Z"/></svg>
+            title="المفضلة" aria-label="المفضلة" data-i18n-attr="title:favorites.title,aria-label:favorites.title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
       <span class="eq-fav-badge" id="eq-fav-badge"></span>
     </button>
     <button class="eq-fav-nav-btn" id="eq-mylistings-nav-btn" onclick="eqOpenMyListings()"
@@ -2748,8 +2730,8 @@ body.filter-open #bottom-nav { visibility: hidden; pointer-events: none; }
 
 </nav>
 
-<script src="/notifications.js?v=20261007012551" defer></script>
-<script src="app.js?v=20261007012551" defer></script>
+<script src="/notifications.js?v=20261007141114" defer></script>
+<script src="app.js?v=20261007141114" defer></script>
 <!-- 🦶 الفوتر -->
 <footer class="site-footer">
   <div class="sf-inner">

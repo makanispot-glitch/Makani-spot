@@ -1,0 +1,57 @@
+/* Market save toggle: bookmark reference adapted to Makani Spot's brand. */
+.eq-save-toggle {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  flex-shrink: 0;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0;
+  border: 0; border-radius: 8px; background: transparent; box-shadow: none;
+  color: var(--navy-700, #212833); font: inherit;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast, 160ms) var(--ease-out, ease-out);
+}
+.eq-save-toggle::before {
+  content: ''; position: absolute; inset: 4px; z-index: 0;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent;
+  transition: background var(--dur-fast, 160ms) var(--ease-out, ease-out),
+    border-color var(--dur-fast, 160ms) var(--ease-out, ease-out);
+}
+.eq-save-toggle > svg, .eq-save-toggle > span { position: relative; z-index: 1; }
+.eq-save-toggle > svg {
+  display: block; width: 18px; height: 18px; flex-shrink: 0;
+  transform-origin: 50% 45%;
+  transition: transform var(--dur-fast, 160ms) var(--ease-out, ease-out);
+}
+.eq-save-toggle.on { color: var(--orange, #f36418); }
+.eq-save-toggle.on::before {
+  background: #fff; border-color: var(--border, #e8e6df);
+}
+@media (hover: hover) {
+  .eq-save-toggle:hover { color: var(--orange, #f36418); }
+  .eq-save-toggle:not(.on):hover::before { border-color: var(--orange-100, #ffe3d0); }
+}
+.eq-save-toggle:active > svg { transform: scale(.88); }
+.eq-save-toggle:focus-visible { outline: 3px solid var(--orange, #f36418); outline-offset: -1px; }
+.eq-save-toggle:disabled { cursor: progress; }
+.eq-save-toggle[aria-busy="true"] > svg { opacity: .55; }
+.eq-save-toggle.is-animating > svg { animation: eq-bookmark-settle 320ms var(--ease-out, ease-out); }
+@keyframes eq-bookmark-settle {
+  0% { transform: translateY(2px) scale(.82); }
+  45% { transform: translateY(-2px) scale(1.12); }
+  100% { transform: translateY(0) scale(1); }
+}
+.eq-fav-btn { position: absolute; top: 2px; inset-inline-end: 2px; z-index: 3; }
+.eq-save-toggle--label {
+  width: 100%; height: auto; padding: 11px 18px;
+  font-family: var(--font-display, Cairo, sans-serif); font-size: 14px; font-weight: 700;
+  border-radius: var(--radius, 12px);
+}
+.eq-save-toggle--label::before { inset: 0; border-radius: inherit; }
+.eq-save-toggle--label > span { color: var(--fg-2, #475569); }
+.eq-save-toggle--label.on > span { color: var(--orange-700, #b33f05); }
+.eq-favorite-row { display: flex; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border, #e8e6df); }
+@media (prefers-reduced-motion: reduce) {
+  .eq-save-toggle, .eq-save-toggle::before, .eq-save-toggle > svg { transition: none; }
+  .eq-save-toggle.is-animating > svg { animation: none; }
+  .eq-save-toggle:active > svg { transform: none; }
+}
