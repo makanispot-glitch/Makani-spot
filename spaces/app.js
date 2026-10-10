@@ -623,7 +623,6 @@ function buildCardHtml(s, fromPage) {
     thumbHtml = `<img src="${s.image || ''}" alt="${s.name}" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-placeholder\\'>🏪</div>'">`;
   }
 
-  const actsHtml = s.allActs ? `<span class="act-tag act-tag-all">${t('card.allActivities')}</span>` : (s.acts || []).slice(0, 3).map(id => `<span class="act-tag">${_resolveActLabel(id)}</span>`).join('');
   const sizePrices = {};
   const sizesClean = [];
   (s.sizes || []).forEach(sz => {
@@ -672,7 +671,6 @@ function buildCardHtml(s, fromPage) {
     <div class="card-body">
       <div class="card-name">${s.name}</div>
       <div class="card-loc">📍 ${s.loc}</div>
-      <div class="card-acts">${actsHtml}</div>
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
         <div class="price-main">${MakaniSpacePricing.render(s,defaultPrice,true)}</div>

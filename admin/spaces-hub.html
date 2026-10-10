@@ -184,6 +184,12 @@ textarea.fc{resize:vertical;min-height:72px}
 .upload-zone-ico{font-size:24px;margin-bottom:4px}
 .upload-zone-lbl{font-size:11px;color:var(--or);font-weight:600}
 .upload-status{font-size:11px;margin-top:4px}
+.space-image-zone:focus-visible,.space-image-zone.is-dragging{outline:2px solid var(--or);outline-offset:3px;border-color:var(--or)}
+.space-image-zone svg{width:24px;height:24px;color:var(--or);margin-bottom:6px}
+.space-image-hint{font-size:11px;color:var(--tx2);margin-top:7px;line-height:1.7}
+.space-image-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.space-image-actions .btn{min-height:36px;font-size:11px}
+#f-save-space:disabled{opacity:.6;cursor:wait}
 .chip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:6px}
 .pick-chip{display:flex;align-items:center;gap:6px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;user-select:none;transition:all .18s}
 .pick-chip:hover{border-color:var(--or);color:var(--tx)}
@@ -439,11 +445,11 @@ textarea.fc{resize:vertical;min-height:72px}
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/shared/space-location.js?v=20261010150737" defer></script>
-<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010150737">
-<script src="/shared/space-pricing.js?v=20261010150737"></script>
-<script src="/shared/brand-profile.js?v=20261010150737"></script>
-<script src="/shared/space-commerce-form.js?v=20261010150737"></script>
+<script src="/shared/space-location.js?v=20261010163547" defer></script>
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010163547">
+<script src="/shared/space-pricing.js?v=20261010163547"></script>
+<script src="/shared/brand-profile.js?v=20261010163547"></script>
+<script src="/shared/space-commerce-form.js?v=20261010163547"></script>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -609,8 +615,8 @@ textarea.fc{resize:vertical;min-height:72px}
 </div>
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../media-handler.js?v=20261010150737"></script>
-<script src="../shared/sb-config.js?v=20261010150737"></script>
+<script src="../media-handler.js?v=20261010163547"></script>
+<script src="../shared/sb-config.js?v=20261010163547"></script>
 <script>
 /* ═══════════════════════════════
    CONFIG
@@ -656,6 +662,9 @@ let _gotoApplied = false;
 let editingId   = null;
 let fMainImgUrl   = null;
 let fExtraImgUrls = [];
+let fImageUploads = 0;
+let fExtraPending = new Set();
+let fImageFormVersion = 0;
 let fUnitImgUrls  = {};
 let fUnitCounter  = 0;
 
@@ -3625,6 +3634,9 @@ async function editSpace(id) {
 }
 
 function renderFormPage(sp, units) {
+  fImageFormVersion++;
+  fImageUploads = 0;
+  fExtraPending = new Set();
   sp    = sp    || {};
   units = units || [];
   const isEdit = !!editingId;
@@ -3764,12 +3776,9 @@ function renderFormPage(sp, units) {
     <div class="fg2">
       <div>
         <div class="fl" style="margin-bottom:6px">الصورة الرئيسية</div>
-        <div class="upload-zone" onclick="document.getElementById('f-main-img').click()">
-          <div class="upload-zone-ico">📤</div>
-          <div class="upload-zone-lbl">اختر صورة رئيسية</div>
-        </div>
+        ${spaceImageZoneHtml('main', 'الصورة الرئيسية')}
         <input type="file" id="f-main-img" accept="image/*" style="display:none" onchange="handleMainImg(this)">
-        <div id="f-main-status" class="upload-status" style="color:var(--mu)">
+        <div id="f-main-status" class="upload-status" style="color:var(--mu)" role="status" aria-live="polite">
           ${fMainImgUrl?`<span style="color:var(--gr)">✅ صورة محفوظة</span>`:'لم تُرفع'}
         </div>
         <div id="f-main-preview" style="margin-top:8px">
@@ -3778,13 +3787,11 @@ function renderFormPage(sp, units) {
       </div>
       <div>
         <div class="fl" style="margin-bottom:6px">صور إضافية (حتى 5)</div>
-        <div class="upload-zone" onclick="document.getElementById('f-extra-imgs').click()">
-          <div class="upload-zone-ico">📷</div>
-          <div class="upload-zone-lbl">إضافة صور إضافية</div>
-        </div>
+        ${spaceImageZoneHtml('extra', 'الصور الإضافية')}
         <input type="file" id="f-extra-imgs" accept="image/*" multiple style="display:none" onchange="handleExtraImgs(this)">
+        <div id="f-extra-status" class="upload-status" role="status" aria-live="polite"></div>
         <div id="f-extra-preview" class="extra-imgs-grid">
-          ${fExtraImgUrls.filter(Boolean).map((u,i)=>extraImgHtml(u,i)).join('')}
+          ${fExtraImgUrls.map((u,i)=>u?extraImgHtml(u,i):'').join('')}
         </div>
       </div>
     </div>
@@ -3802,7 +3809,7 @@ function renderFormPage(sp, units) {
   </div>
 
   <div style="display:flex;gap:10px;margin-top:4px;margin-bottom:32px">
-    <button class="btn btn-or" style="padding:12px 28px;font-size:14px;border-radius:var(--r)" onclick="submitSpaceForm()">
+    <button id="f-save-space" class="btn btn-or" style="padding:12px 28px;font-size:14px;border-radius:var(--r)" onclick="submitSpaceForm()">
       💾 ${isEdit?'حفظ التعديلات':'إضافة المساحة'}
     </button>
     <button class="btn btn-neu" style="padding:12px 20px;font-size:13px;border-radius:var(--r)" onclick="cancelForm()">إلغاء</button>
@@ -3811,6 +3818,7 @@ function renderFormPage(sp, units) {
   </div>`;
 
   setPageContent('form', html);
+  bindSpaceImageZones();
   document.getElementById('f-price').closest('.form-sec').insertAdjacentHTML('beforebegin',MakaniSpaceCommerceForm.html('f',sp)+MakaniSpaceCommerceForm.venueHtml('f',sp));
   MakaniSpaceCommerceForm.sync('f');
   fUnitCounter = units.length;
@@ -3937,64 +3945,189 @@ function cancelForm() {
 /* ═══════════════════════════════
    IMAGE UPLOAD
 ═══════════════════════════════ */
+
+function spaceImageZoneHtml(kind, label) {
+  const inputId = kind === 'main' ? 'f-main-img' : 'f-extra-imgs';
+  return `<div id="f-${kind}-zone" class="upload-zone space-image-zone" tabindex="0" role="group" aria-label="${label}: رفع أو لصق صورة" aria-describedby="f-${kind}-hint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m21 15-5-5L6 21"/></svg>
+    <div class="upload-zone-lbl">الصق الصورة هنا أو اسحبها إلى المربع</div>
+    <div id="f-${kind}-hint" class="space-image-hint">انسخ الصورة نفسها، ثم اضغط هنا والصق باستخدام <bdi>Ctrl + V</bdi> أو <bdi>⌘ + V</bdi></div>
+    <div class="space-image-actions">
+      <button type="button" class="btn btn-neu" onclick="document.getElementById('${inputId}').click()">اختيار من الجهاز</button>
+      <button type="button" class="btn btn-or" onclick="pasteSpaceImage('${kind}')">لصق صورة</button>
+    </div>
+  </div>`;
+}
+function spaceImageStatus(kind, message, error = false) {
+  const el = document.getElementById(`f-${kind}-status`);
+  if (el) { el.textContent = message; el.style.color = error ? 'var(--rd)' : 'var(--tx2)'; }
+}
+function setSpaceImageBusy() {
+  const btn = document.getElementById('f-save-space');
+  if (btn) btn.disabled = fImageUploads > 0;
+}
+function isCurrentImageForm(version, container) {
+  return version === fImageFormVersion && container?.isConnected;
+}
+function imageFiles(files) {
+  return Array.from(files || []).filter(file => /^image\//i.test(file.type));
+}
+function receiveSpaceImages(kind, files) {
+  const images = imageFiles(files);
+  if (!images.length) {
+    spaceImageStatus(kind, 'لم نجد صورة. انسخ الصورة نفسها، ثم الصقها داخل المربع.', true);
+    return;
+  }
+  return kind === 'main' ? uploadSpaceMainImage(images[0]) : uploadSpaceExtraImages(images);
+}
+function bindSpaceImageZones() {
+  for (const kind of ['main', 'extra']) {
+    const zone = document.getElementById(`f-${kind}-zone`);
+    zone.addEventListener('click', event => { if (!event.target.closest('button')) zone.focus(); });
+    zone.addEventListener('paste', event => {
+      event.preventDefault();
+      const files = Array.from(event.clipboardData?.items || [])
+        .filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean);
+      receiveSpaceImages(kind, files.length ? files : event.clipboardData?.files);
+    });
+    zone.addEventListener('dragover', event => { event.preventDefault(); zone.classList.add('is-dragging'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('is-dragging'));
+    zone.addEventListener('drop', event => {
+      event.preventDefault(); zone.classList.remove('is-dragging');
+      receiveSpaceImages(kind, event.dataTransfer?.files);
+    });
+  }
+}
+async function pasteSpaceImage(kind) {
+  const zone = document.getElementById(`f-${kind}-zone`);
+  const version = fImageFormVersion;
+  zone?.focus();
+  if (!navigator.clipboard?.read) {
+    spaceImageStatus(kind, 'اضغط داخل المربع والصق باستخدام Ctrl + V أو ⌘ + V.');
+    return;
+  }
+  try {
+    const items = await navigator.clipboard.read();
+    const files = [];
+    for (const item of items) {
+      const type = item.types.find(type => /^image\//i.test(type));
+      if (type) {
+        const blob = await item.getType(type);
+        files.push(new File([blob], `pasted-${Date.now()}.${type.split('/')[1] || 'png'}`, { type }));
+      }
+    }
+    if (isCurrentImageForm(version, zone)) await receiveSpaceImages(kind, files);
+  } catch {
+    if (isCurrentImageForm(version, zone))
+      spaceImageStatus(kind, 'تعذر قراءة الحافظة. اضغط داخل المربع والصق باستخدام Ctrl + V أو ⌘ + V.', true);
+  }
+}
+function mainSpaceImageHtml(url) {
+  if (!url) return '';
+  return `<div style="position:relative"><img src="${esc(url.replace('_f.webp','_d.webp'))}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.35)"><button type="button" onclick="clearMainImg()" aria-label="حذف الصورة الرئيسية" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button></div>`;
+}
 async function handleMainImg(input) {
   const file = input.files?.[0];
-  if (!file) return;
+  input.value = '';
+  if (file) await receiveSpaceImages('main', [file]);
+}
+async function uploadSpaceMainImage(file) {
+  if (fImageUploads && document.getElementById('f-main-zone')?.getAttribute('aria-busy') === 'true') {
+    spaceImageStatus('main', 'انتظر اكتمال رفع الصورة الرئيسية الحالية.'); return;
+  }
   const preview = document.getElementById('f-main-preview');
-  const status  = document.getElementById('f-main-status');
+  if (!preview) return;
+  const zone = document.getElementById('f-main-zone');
+  const version = fImageFormVersion;
+  const previous = fMainImgUrl;
+  const folder = `admin-spaces/${editingId || 'new'}`;
   const pUrl = URL.createObjectURL(file);
-  if (preview) preview.innerHTML = `<div style="position:relative"><img src="${pUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);opacity:.6"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;background:rgba(0,0,0,.4);border-radius:var(--r)">⏳ جاري الرفع…</div></div>`;
-  if (status) status.innerHTML = '<span style="color:var(--yw)">⏳ جاري الرفع…</span>';
+  fImageUploads++; setSpaceImageBusy(); zone?.setAttribute('aria-busy', 'true');
+  preview.innerHTML = `<img src="${pUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);opacity:.6">`;
+  spaceImageStatus('main', 'جاري رفع الصورة…');
   try {
-    const folder = editingId?`admin-spaces/${editingId}`:`admin-spaces/new`;
-    const [url]  = await uploadImages([file], folder, null, await upToken());
+    const [url] = await uploadImages([file], folder, null, await upToken());
+    if (!url) throw new Error('لم يكتمل رفع الصورة.');
+    if (!isCurrentImageForm(version, preview)) return;
     fMainImgUrl = url;
-    if (preview) preview.innerHTML = `<div style="position:relative"><img src="${url.replace('_f.webp','_d.webp')}" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);border:2px solid rgba(0,200,83,.35)"><button type="button" onclick="clearMainImg()" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px">✕</button></div>`;
-    if (status) status.innerHTML = '<span style="color:var(--gr)">✅ تم الرفع</span>';
-  } catch(e) {
-    fMainImgUrl = null;
-    if (preview) preview.innerHTML = '';
-    if (status) status.innerHTML = `<span style="color:var(--rd)">❌ فشل: ${esc(e.message)}</span>`;
+    preview.innerHTML = mainSpaceImageHtml(url);
+    spaceImageStatus('main', 'تم رفع الصورة الرئيسية.');
+  } catch {
+    if (!isCurrentImageForm(version, preview)) return;
+    fMainImgUrl = previous;
+    preview.innerHTML = mainSpaceImageHtml(previous);
+    spaceImageStatus('main', previous ? 'تعذر رفع الصورة الجديدة. الصورة السابقة محفوظة.' : 'تعذر رفع الصورة. حاول مرة أخرى.', true);
+  } finally {
+    URL.revokeObjectURL(pUrl);
+    if (isCurrentImageForm(version, preview)) {
+      fImageUploads--; zone?.removeAttribute('aria-busy'); setSpaceImageBusy();
+    }
   }
 }
 function clearMainImg() {
+  if (document.getElementById('f-main-zone')?.getAttribute('aria-busy') === 'true') return;
   fMainImgUrl = null;
   const p = document.getElementById('f-main-preview');
-  const s = document.getElementById('f-main-status');
   if (p) p.innerHTML = '';
-  if (s) s.textContent = 'لم تُرفع';
+  spaceImageStatus('main', 'لم تُرفع');
   const i = document.getElementById('f-main-img');
   if (i) i.value = '';
 }
-
 async function handleExtraImgs(input) {
-  const remaining = 5 - fExtraImgUrls.filter(Boolean).length;
-  const files = Array.from(input.files).slice(0, remaining);
-  const cont  = document.getElementById('f-extra-preview');
-  if (!files.length || !cont) return;
-  for (const file of files) {
-    const idx = fExtraImgUrls.length;
-    fExtraImgUrls.push(null);
-    const div = document.createElement('div');
-    div.className = 'extra-img-wrap'; div.id = 'fei-'+idx;
-    div.innerHTML = `<img src="${URL.createObjectURL(file)}" style="opacity:.6"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:rgba(0,0,0,.4)">⏳</div>`;
-    cont.appendChild(div);
-    try {
-      const folder = editingId?`admin-spaces/${editingId}`:`admin-spaces/new`;
-      const [url]  = await uploadImages([file], folder, null, await upToken());
-      fExtraImgUrls[idx] = url;
-      div.innerHTML = `<img src="${url.replace('_f.webp','_c.webp')}"><button class="extra-img-del" onclick="removeExtraImg(${idx})">✕</button>`;
-    } catch { fExtraImgUrls[idx] = null; div.remove(); }
-  }
+  const files = Array.from(input.files || []);
   input.value = '';
+  if (files.length) await receiveSpaceImages('extra', files);
+}
+async function uploadSpaceExtraImages(images) {
+  const cont = document.getElementById('f-extra-preview');
+  if (!cont) return;
+  const version = fImageFormVersion;
+  const remaining = 5 - fExtraImgUrls.filter(Boolean).length - fExtraPending.size;
+  const files = images.slice(0, Math.max(0, remaining));
+  if (!files.length) { spaceImageStatus('extra', 'الحد الأقصى 5 صور إضافية. احذف صورة لإضافة بديل.', true); return; }
+  const pending = fExtraPending;
+  const urls = fExtraImgUrls;
+  const folder = `admin-spaces/${editingId || 'new'}`;
+  // Reserve the whole batch before awaiting so a second paste cannot exceed five.
+  const tasks = files.map(file => {
+    const idx = urls.length; urls.push(null); pending.add(idx);
+    const pUrl = URL.createObjectURL(file);
+    const div = document.createElement('div');
+    div.className = 'extra-img-wrap'; div.id = 'fei-' + idx;
+    div.innerHTML = `<img src="${pUrl}" style="opacity:.6"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:rgba(0,0,0,.4)">جاري الرفع</div>`;
+    cont.appendChild(div);
+    return { file, idx, pUrl, div };
+  });
+  fImageUploads += tasks.length; setSpaceImageBusy();
+  let failures = 0;
+  spaceImageStatus('extra', files.length < images.length ? 'سيتم رفع الصور المتاحة حتى الحد الأقصى (5).' : 'جاري رفع الصور…');
+  for (const { file, idx, pUrl, div } of tasks) {
+    try {
+      if (!isCurrentImageForm(version, cont)) continue;
+      const [url] = await uploadImages([file], folder, null, await upToken());
+      if (!url) throw new Error('لم يكتمل رفع الصورة.');
+      if (!isCurrentImageForm(version, cont)) continue;
+      urls[idx] = url;
+      div.outerHTML = extraImgHtml(url, idx);
+    } catch {
+      failures++;
+      if (isCurrentImageForm(version, cont)) { urls[idx] = null; div.remove(); }
+    } finally {
+      URL.revokeObjectURL(pUrl); pending.delete(idx);
+      if (isCurrentImageForm(version, cont)) { fImageUploads--; setSpaceImageBusy(); }
+    }
+  }
+  if (isCurrentImageForm(version, cont)) {
+    spaceImageStatus('extra', failures ? 'تعذر رفع بعض الصور. يمكنك المحاولة مجددًا.' : (fExtraPending.size ? 'جاري رفع الصور…' : 'تم رفع الصور الإضافية.'), !!failures);
+  }
 }
 function removeExtraImg(idx) {
+  if (fExtraPending.has(idx)) return;
   fExtraImgUrls[idx] = null;
-  const el = document.getElementById('fei-'+idx);
-  if (el) el.remove();
+  document.getElementById('fei-' + idx)?.remove();
 }
 function extraImgHtml(url, idx) {
-  return `<div class="extra-img-wrap" id="fei-${idx}"><img src="${url.replace('_f.webp','_c.webp')}" onerror="this.src='${url}'"><button class="extra-img-del" onclick="removeExtraImg(${idx})">✕</button></div>`;
+  return `<div class="extra-img-wrap" id="fei-${idx}"><img src="${esc(url.replace('_f.webp','_c.webp'))}" onerror="this.onerror=null;this.src='${esc(url)}'"><button type="button" class="extra-img-del" aria-label="حذف الصورة الإضافية" onclick="removeExtraImg(${idx})">✕</button></div>`;
 }
 
 async function handleUnitImg(input, idx) {
@@ -4033,6 +4166,7 @@ function clearUnitImg(idx) {
    FORM SUBMIT
 ═══════════════════════════════ */
 async function submitSpaceForm() {
+  if (fImageUploads) { showFormMsg('error','انتظر اكتمال رفع الصور قبل حفظ المساحة.'); return; }
   const get = id => document.getElementById(id)?.value?.trim()||'';
   let commerce; try { commerce={...MakaniSpaceCommerceForm.read('f'),...MakaniSpaceCommerceForm.readVenue('f')}; } catch(e) { showFormMsg('error',e.message); return; }
   const name   = get('f-name');
