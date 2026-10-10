@@ -14,7 +14,7 @@
     return '/?p=login&next=' + encodeURIComponent(back.pathname + back.search);
   }
   function render(s, value, compact) {
-    if (!visible(s)) return `<span class="mk-price-lock${compact ? ' is-compact' : ''}"><span class="mk-price-dummy" aria-hidden="true">— — —</span><a href="${esc(loginUrl(s?.id))}" onclick="event.stopPropagation()">${tr('سجّل دخولك لمعرفة السعر','Sign in to see price')}</a></span>`;
+    if (!visible(s)) return `<span class="mk-price-lock${compact ? ' is-compact' : ''}"><span class="mk-price-dummy" aria-hidden="true">— — —</span><a href="${esc(loginUrl(s?.id))}" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>${tr('سجّل دخولك لمعرفة السعر','Sign in to see price')}</span></a></span>`;
     const estimated = s.pricingMode === 'estimated';
     if (s.pricingUnit && s.pricingUnit !== 'month') value = null;
     if (!estimated && value == null && s.price == null) return `<span class="mk-rental-price"><small>${tr('السعر عند التواصل','Contact for price')}</small></span>`;
@@ -22,9 +22,12 @@
     return `<span class="mk-rental-price${estimated ? ' is-estimated' : ''}"><strong>${amount}</strong><small>${unit(s.pricingUnit)}</small>${estimated ? `<span class="mk-estimate-label">${tr('سعر تقديري','Estimated price')}</span>` : ''}</span>`;
   }
   function note(s,compact) {
-    if (!visible(s) || s.pricingMode !== 'estimated') return '';
-    const copy=compact?tr('تقديري؛ يتغير حسب المساحة وشروط المكان. مكاني تساعدك في الوصول لأفضل سعر.','An estimate, subject to area and venue terms. Makani helps you find the best available price.'):s.pricingNote || tr('السعر تقديري ويختلف حسب الموقع والمساحة وشروط المكان والتفاوض مع الإدارة. تساعدك مكاني في الوصول إلى أفضل سعر.','An estimate that varies with location, area, venue terms and negotiation. Makani helps you find the best available price.');
-    return `<p class="mk-price-note">${esc(copy)}</p>`;
+    if (!visible(s)) return '';
+    const estimated=s.pricingMode==='estimated', perMetre=['sqm','sqm_month'].includes(s.pricingUnit);
+    const copy=estimated?(compact?tr('تقديري؛ يتغير حسب المساحة وشروط المكان. مكاني تساعدك في الوصول لأفضل سعر.','An estimate, subject to area and venue terms. Makani helps you find the best available price.'):s.pricingNote || tr('السعر تقديري ويختلف حسب الموقع والمساحة وشروط المكان والتفاوض مع الإدارة. تساعدك مكاني في الوصول إلى أفضل سعر.','An estimate that varies with location, area, venue terms and negotiation. Makani helps you find the best available price.')):'';
+    const metre=perMetre?tr('السعر للمتر المربع. قد يشترط المكان حدًا أدنى للمساحة المستأجرة؛ تُؤكَّد الشروط مع الإدارة.','Price per square metre. The venue may require a minimum rented area; confirm the terms with management.'):'';
+    if(!copy&&!metre)return '';
+    return `<p class="mk-price-note">${copy?esc(copy):''}${copy&&metre?' ':''}${metre?`<span class="mk-price-unit-note">${esc(metre)}</span>`:''}</p>`;
   }
   function unitPrice(s,u) { return render({...s,price:u.price,pricingMode:'fixed',pricingUnit:'month'},u.price,true); }
   function selectSize(button,id,label) {

@@ -5,8 +5,8 @@
   position: relative; isolation: isolate;
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 44px; min-width: 140px; max-width: 100%; padding: 10px 28px;
-  overflow: hidden; border: 1.5px solid var(--orange-200, #ffbf99); border-radius: 100px;
-  background: var(--orange-50, #fff4ed); color: var(--orange-700, #b33f05);
+  overflow: hidden; border: 1.5px solid #C43C24; border-radius: 100px;
+  background: #C43C24; color: #fff;
   font-family: var(--font-display, Cairo, sans-serif); font-size: 13px; font-weight: 700; line-height: 1.5;
   white-space: nowrap; text-decoration: none; cursor: pointer;
   touch-action: manipulation; -webkit-tap-highlight-color: transparent;

@@ -42,5 +42,29 @@
     const phone=get('viewing-phone');if(phone&&!/^\+?[0-9][0-9 ()-]{8,23}$/.test(phone))throw new Error('رقم التواصل للمعاينة غير صالح');
     return {pricing_mode:mode,pricing_unit:get('pricing-unit')||'month',...(mode==='estimated'?{price_min:low,price_max:high,pricing_note:get('pricing-note')||null}:{min_price:fixed}),requires_brand_profile:!!document.getElementById(prefix+'-requires-brand')?.checked,viewing_fee:numeric('viewing-fee',false),viewing_contact_phone:phone||null};
   }
-  window.MakaniSpaceCommerceForm={html,sync,read};
+  function venueHtml(prefix,s={}) {
+    const days=[['sat','السبت'],['sun','الأحد'],['mon','الاثنين'],['tue','الثلاثاء'],['wed','الأربعاء'],['thu','الخميس'],['fri','الجمعة']];
+    return `<section class="mk-commerce-fields mk-venue-fields" id="${prefix}-venue"><h3>معلومات المكان <small>اختياري</small></h3>
+      <p class="mk-commerce-hint" id="${prefix}-venue-hint">أدخل المعلومات التي تحققت منها. الحقول الفارغة لا تظهر في تفاصيل المساحة.</p><div class="mk-commerce-grid">
+      <div><label for="${prefix}-monthly-visitors">الزوار المتوقعون شهريًا</label><input id="${prefix}-monthly-visitors" type="number" min="0" max="2147483647" step="1" inputmode="numeric" value="${esc(s.expected_monthly_visitors)}" aria-describedby="${prefix}-venue-hint" placeholder="مثال: 50000"><p class="mk-commerce-hint">عدد تقديري للشهر؛ لا يُحسب منه رقم يومي.</p></div>
+      <div><label for="${prefix}-google-rating">تقييم Google Maps</label><input id="${prefix}-google-rating" type="number" min="0" max="5" step="0.1" inputmode="decimal" value="${esc(s.google_rating)}" placeholder="مثال: 4.5"><p class="mk-commerce-hint">من 0 إلى 5، بمنزلة عشرية واحدة.</p></div></div>
+      <fieldset class="mk-peak-days"><legend>أيام الذروة</legend><div>${days.map(([key,label])=>`<label><input type="checkbox" name="${prefix}-peak-day" value="${key}" ${s.peak_days?.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}</div></fieldset></section>`;
+  }
+  function readVenue(prefix) {
+    const numeric=(key,label,max,integer)=>{
+      const field=document.getElementById(prefix+'-'+key),raw=field.value.trim(); field.removeAttribute('aria-invalid');
+      if(!raw&&!field.validity.badInput)return null;
+      const n=Number(raw);
+      if(!raw||!Number.isFinite(n)||n<0||n>max||(integer?!Number.isInteger(n):Math.abs(n*10-Math.round(n*10))>1e-8)){
+        field.setAttribute('aria-invalid','true');field.focus();throw new Error(label);
+      }
+      return n;
+    };
+    return {
+      expected_monthly_visitors:numeric('monthly-visitors','أدخل عدد زوار شهريًا صحيحًا وغير سالب',2147483647,true),
+      google_rating:numeric('google-rating','أدخل تقييم Google Maps من 0 إلى 5 بمنزلة عشرية واحدة',5,false),
+      peak_days:Array.from(document.querySelectorAll(`input[name="${prefix}-peak-day"]:checked`),el=>el.value)
+    };
+  }
+  window.MakaniSpaceCommerceForm={html,sync,read,venueHtml,readVenue};
 })();

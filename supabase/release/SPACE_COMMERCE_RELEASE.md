@@ -1,11 +1,13 @@
 # Space commerce release
 
-Status: implemented and tested locally; both commerce migrations unapplied to remote Supabase. No production frontend deployment. Local preview uses an ephemeral PostgreSQL database, not production credentials.
+Status updated 10 October 2026: the owner deployed the compatible frontend and explicitly approved both commerce migrations. Both were applied to remote Supabase and live read-only API checks passed. See `SPACE_COMMERCE_ACTIVATION_2026-10-10.md`. Local preview still uses an ephemeral PostgreSQL database, not production credentials.
 
 ## Exact scope
 
-1. `20261009231431_space_commerce.sql`: additive space/bookings fields; pricing/range/phone/legacy size-price validation; safe public JSON RPCs; existing admin upsert overloads; registered applicant/Drive-link validation in the existing booking trigger; immutable quote/visit snapshots; column UPDATE grants under existing owner/admin RLS. No Storage bucket, upload endpoint or file metadata table.
-2. `20261009231548_space_commerce_access.sql`: compatibility wrapper for existing search; price-safe public publisher profile; registration condition on existing SELECT policies for spaces, space_units and bookings. INSERT/UPDATE/DELETE ownership policies remain intact.
+1. `20261010003938_space_commerce.sql`: additive space/bookings fields; pricing/range/phone/legacy size-price validation; safe public JSON RPCs; existing admin upsert overloads; registered applicant/Drive-link validation in the existing booking trigger; immutable quote/visit snapshots; column UPDATE grants under existing owner/admin RLS. No Storage bucket, upload endpoint or file metadata table.
+2. `20261010004014_space_commerce_access.sql`: compatibility wrapper for existing search; price-safe public publisher profile; registration condition on existing SELECT policies for spaces, space_units and bookings. INSERT/UPDATE/DELETE ownership policies remain intact.
+
+The SQL contents approved as `20261009231431_space_commerce.sql` and `20261009231548_space_commerce_access.sql` are unchanged. Local filenames were aligned with the actual remote migration versions after application, to prevent a later CLI push from attempting them again.
 
 Existing min_price and sizes_prices data are preserved. Existing unit prices remain monthly totals. Existing viewing payment destination remains unchanged; viewing contact is a separate field. Historical booking rows are not backfilled.
 
@@ -17,7 +19,7 @@ Existing min_price and sizes_prices data are preserved. Existing unit prices rem
 4. Immediately apply the access migration in its transaction. Verify unauthenticated and anonymous-authenticated direct table reads expose no space/unit/booking rows; safe search, detail and publisher RPCs continue returning public non-price data. Confirm registered rent prices and public viewing fees. Reload PostgREST schema cache if its normal migration refresh has not completed.
 5. Test a dedicated staging/test account before any real request: admin/owner create/edit, required/optional Drive application, selected unit, free/paid viewing, historical snapshot, request filters and reviewer links. Disable external notification callbacks in staging tests; local tests intentionally omitted them.
 
-The automatic approval review rejected the initial remote preparation attempt because it changed schema, permissions, booking functions and a new storage bucket before full tests. Storage was then removed per the owner's correction, and local tests were completed. No rejected migration was applied by another route. Remote activation remains pending an approved, coordinated release.
+The automatic approval review rejected the initial remote preparation attempt because it changed schema, permissions, booking functions and a new storage bucket before full tests. Storage was then removed per the owner's correction, and local tests were completed. A later attempt required explicit approval of the two production files. After the owner gave that approval, the normal Supabase migration tool applied both successfully; no rejection was bypassed.
 
 ## Rollback
 

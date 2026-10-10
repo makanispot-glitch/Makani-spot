@@ -14,6 +14,8 @@
     check: '<path d="m5 12 4 4L19 6"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    visitors: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>',
+    star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
     external: '<path d="M14 3h7v7m0-7L10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/>',
     copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>'
   };
@@ -140,6 +142,14 @@
   }
   function enhanceInfo(space) {
     const el = document.getElementById('sd-info');
+    el.querySelector('.msd-venue-insights')?.remove();
+    const days = [['sat','السبت','Saturday'],['sun','الأحد','Sunday'],['mon','الاثنين','Monday'],['tue','الثلاثاء','Tuesday'],['wed','الأربعاء','Wednesday'],['thu','الخميس','Thursday'],['fri','الجمعة','Friday']];
+    const peak = days.filter(([key]) => space.peakDays?.includes(key)).map(([,ar,en]) => tr(ar,en));
+    const facts = [];
+    if (space.expectedMonthlyVisitors != null) facts.push(['visitors',tr('الزوار المتوقعون شهريًا','Expected monthly visitors'),price(space.expectedMonthlyVisitors),tr('تقدير لحركة الزوار','Estimated visitor traffic')]);
+    if (space.googleRating != null) facts.push(['star',tr('تقييم Google Maps','Google Maps rating'),Number(space.googleRating).toLocaleString(rtl()?'ar-EG':'en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+' / '+price(5),tr('تقييم المكان على Google','Venue rating on Google')]);
+    if (peak.length) facts.push(['calendar',tr('أيام الذروة','Peak days'),peak.join(tr('، ',' · ')),tr('الأيام الأكثر إقبالًا','Busiest days')]);
+    if (facts.length) el.insertAdjacentHTML('beforeend', `<section class="msd-venue-insights" aria-labelledby="msd-venue-title"><h2 id="msd-venue-title">${tr('المكان في أرقام','Venue at a glance')}</h2><dl class="msd-venue-facts">${facts.map(([symbol,label,value,hint])=>`<div class="msd-venue-fact">${icon(symbol)}<div><dt>${label}</dt><dd><bdi>${esc(value)}</bdi></dd><p>${hint}</p></div></div>`).join('')}</dl></section>`);
     // The home implementation previously omitted the publisher block that /spaces/ has.
     if (!el.querySelector('.sd-owner-card')) {
       const hasOwner = !space.isBroker && !!space.ownerName;
