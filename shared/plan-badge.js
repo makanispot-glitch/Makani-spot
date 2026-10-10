@@ -18,7 +18,7 @@
  */
 function getPlanBadgeInfo(s) {
   const _t = typeof t === 'function' ? t : (k) => k;
-  if (s?.isBroker) return { cls: 'trust-makani', icon: '🏠', text: _t('brand') };
+  if (s?.isBroker) return { cls: 'trust-makani', icon: '', text: _t('brand') };
   const tier = (s?.planTier || 'starter').toLowerCase();
   if (tier === 'broker') return { cls: 'trust-broker', icon: '🏛️', text: _t('planBadge.broker') };
   if (tier === 'pro')    return { cls: 'trust-partner', icon: '🏆', text: _t('planBadge.partner') };
@@ -29,11 +29,11 @@ function getPlanBadgeInfo(s) {
 /** شارة عائمة أعلى صورة بطاقة المساحة (card-trust-badge) */
 function planTrustBadgeCardHtml(s) {
   const b = getPlanBadgeInfo(s);
-  return b ? `<span class="card-trust-badge ${b.cls}">${b.icon} ${b.text}</span>` : '';
+  return b ? `<span class="card-trust-badge ${b.cls}">${b.icon ? b.icon + ' ' : ''}<bdi>${b.text}</bdi></span>` : '';
 }
 
 /** شارة inline بجانب عنوان صفحة تفاصيل المساحة (sd-trust-badge) */
 function planTrustBadgeInlineHtml(s) {
   const b = getPlanBadgeInfo(s);
-  return b ? `<span class="sd-trust-badge ${b.cls}">${b.icon} ${b.text}</span>` : '';
+  return b ? `<span class="sd-trust-badge ${b.cls}">${b.icon ? b.icon + ' ' : ''}<bdi>${b.text}</bdi></span>` : '';
 }

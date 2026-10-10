@@ -3207,6 +3207,33 @@ body.hlp-open {
   transform: scale(1.05);
 }
 
+/* Keep image labels in the top flow; share and unit controls occupy the bottom. */
+.card-image-badges {
+  position: absolute;
+  top: 12px;
+  inset-inline: 12px;
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+.card-image-badges > .card-badge,
+.card-image-badges > .card-trust-badge {
+  position: static;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.space-card:hover .card-image-badges > .card-trust-badge { transform: none; }
+.card-image-badges > .card-trust-badge { order: -1; }
+.space-card .share-btn { top: auto; bottom: 10px; }
+.space-card .units-badge { left: auto; right: 12px; max-width: calc(100% - 60px); }
+
 .trust-verified {
   background: rgba(0, 0, 0, 0.42);
   color: rgba(255, 255, 255, 0.88);

@@ -663,8 +663,10 @@ function buildCardHtml(s, fromPage) {
   <div class="space-card${_cardClass}" data-sid="${s.id}" data-oid="${s.ownerId||''}">
     <div class="card-thumb">
       ${thumbHtml}
-      <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || t('card.badgeDefault')}</span>
-      ${_trustBadge}
+      <div class="card-image-badges">
+        <span class="card-badge ${s.badgeClass || 'badge-avail'}">${s.badge || t('card.badgeDefault')}</span>
+        ${_trustBadge}
+      </div>
       ${unitsBadgeHtml}
       ${_shareSpaceBtn}
     </div>

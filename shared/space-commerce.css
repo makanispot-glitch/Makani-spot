@@ -1,7 +1,25 @@
 .mk-rental-price{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;color:var(--orange-700,#B33F05);line-height:1.5;font-size:18px;font-weight:800}
 .mk-rental-price strong{font-weight:800;color:var(--orange-700,#B33F05)}
 .mk-rental-price small{font-size:13px;font-weight:650;color:var(--orange-700,#B33F05)}
-.mk-estimate-label{flex-basis:100%;font-size:12px;font-weight:650;color:var(--orange-700,#B33F05)}
+.mk-rental-price.mk-price-trigger{border:0;border-radius:8px;background:transparent;padding:0;min-height:44px;min-width:0;max-width:100%;font:inherit;font-size:18px;font-weight:800;color:var(--orange-700,#B33F05);text-align:start;cursor:pointer;white-space:normal}
+.mk-price-trigger strong{flex-basis:100%}
+.mk-price-trigger:focus-visible{outline:3px solid var(--orange-300,#F9AD80);outline-offset:4px}
+.mk-price-trigger .mk-price-trigger-label{display:flex;align-items:center;gap:4px;flex-basis:100%;font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:12px;font-weight:650;color:var(--orange-700,#B33F05);line-height:1.6;text-decoration:underline;text-underline-offset:3px}
+.mk-price-trigger-label svg{width:14px;height:14px;flex-shrink:0;transition:transform 160ms ease-out}.mk-price-trigger[aria-expanded="true"] .mk-price-trigger-label svg{transform:rotate(180deg)}
+.mk-price-tooltip{position:fixed;z-index:10060;box-sizing:border-box;width:350px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 120px);overflow:auto;padding:16px;border:1px solid var(--orange-200,#FCD4BC);border-radius:16px;background:var(--orange-50,#FFF3EB);color:var(--fg,#0E1218);font-family:var(--font-body,'IBM Plex Sans Arabic',sans-serif);font-size:13px;font-weight:400;line-height:1.75;text-align:start;box-shadow:0 10px 30px rgba(80,40,16,.12);animation:mk-price-tip-in 160ms ease-out;overscroll-behavior:contain}
+.mk-price-tooltip[hidden]{display:none}
+.mk-price-tooltip-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--orange-50,#FFF3EB)}
+.mk-price-tooltip-title{display:block;min-width:0;font-family:var(--font-display,'Cairo',sans-serif);font-size:15px;font-weight:750;color:var(--orange-700,#B33F05);line-height:1.6}
+.mk-price-tooltip-close{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;min-height:44px;min-width:44px;padding:8px;border:1px solid var(--orange-200,#FCD4BC);border-radius:10px;background:var(--surface,#fff);color:var(--orange-700,#B33F05);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.mk-price-tooltip-close svg{width:14px;height:14px}.mk-price-tooltip-close:focus-visible{outline:3px solid var(--orange-300,#F9AD80);outline-offset:2px}
+.mk-price-tooltip[data-pinned="false"] .mk-price-tooltip-close{display:none}
+.mk-price-tooltip p{margin:8px 0 0;color:var(--fg,#0E1218);font-size:13px;line-height:1.75}
+.mk-price-tooltip-area{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;border:1px solid var(--orange-200,#FCD4BC);border-radius:12px;background:var(--surface,#fff)}
+.mk-price-tooltip-area svg{flex:0 0 44px;width:44px;height:44px}
+.mk-price-tooltip-size{display:inline-flex;direction:ltr;align-items:baseline;gap:4px;font-size:17px;font-weight:750;color:var(--orange-700,#B33F05)}
+@media(max-width:600px){.mk-price-tooltip{padding:14px;font-size:14px}.mk-price-tooltip p{font-size:14px}.mk-price-tooltip-area{padding:10px;gap:10px}.mk-price-tooltip-title{font-size:14px}}
+@keyframes mk-price-tip-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.mk-price-tooltip{animation:none}.mk-price-trigger-label svg{transition:none}}
 .mk-price-note{font-size:13px;line-height:1.8;color:var(--fg-2,#4b5563);max-width:520px;margin:10px 0 0;font-weight:500}
 .mk-price-unit-note{display:block;margin-top:5px;color:var(--orange-700,#B33F05);font-weight:650}
 .mk-price-lock{display:inline-flex;position:relative;flex-direction:column;align-items:flex-start;gap:2px;font-weight:700;line-height:1.5;max-width:100%}
