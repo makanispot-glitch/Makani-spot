@@ -19,8 +19,25 @@
 #pg-space-detail .msd-action-price .mk-rental-price strong{font-size:16px}
 .vm-fee-box [hidden]{display:none!important}
 .msd-action-price .mk-rental-price{font-size:16px}.msd-action-price .mk-price-note{display:none}
-.mk-brand-required{display:flex;align-items:center;gap:7px;font-size:12px;line-height:1.5;color:#b42318;margin:10px 0 0;font-weight:600}
-.mk-brand-required svg,.mk-brand-link svg{width:18px;height:18px;flex-shrink:0}
+.mk-brand-required{display:flex;align-items:center;gap:9px;width:fit-content;max-width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--orange-200,#FCD4BC);border-radius:10px;background:var(--orange-50,#FFF3EB);color:var(--orange-700,#B33F05);margin:12px 0 0;font-size:12px;line-height:1.6;font-weight:650}
+.mk-brand-required-text{min-width:0;overflow-wrap:anywhere}
+/* Supplied Documents-btn folder design, scaled and scoped to the requirement badge. */
+.mk-brand-folder{position:relative;display:flex;align-items:flex-end;justify-content:center;flex:0 0 28px;width:28px;height:25px}
+.mk-brand-folder svg{display:block;flex-shrink:0;height:auto}
+.mk-brand-folder-back{position:relative;z-index:1;width:80%;fill:var(--orange-700,#B33F05)}
+.mk-brand-folder-page{position:absolute;bottom:2px;z-index:2;width:50%;fill:#fff;stroke:var(--orange-200,#FCD4BC);stroke-width:1.5;transition:transform .3s ease-out}
+.mk-brand-folder-front{position:absolute;bottom:0;z-index:3;width:85%;fill:var(--orange-500,#F36418);transform-origin:bottom;transition:transform .3s ease-out}
+.mk-brand-required--compact{gap:7px;padding:7px 9px;font-size:11px;line-height:1.6;width:100%}
+.mk-brand-required--compact .mk-brand-folder{flex-basis:24px;width:24px;height:22px}
+.mk-brand-link svg{width:18px;height:18px;flex-shrink:0}
+#pg-space-detail .mk-price-guidance{max-width:none;margin:20px 0 0;padding:18px 20px;border:1px solid var(--orange-200,#FCD4BC);border-radius:12px;background:var(--orange-50,#FFF3EB);font-size:14px;line-height:1.8;color:var(--fg-2,#4b5563)}
+#pg-space-detail .mk-price-guidance h2{margin:0 0 10px;font-size:15px;font-weight:750;line-height:1.6;color:var(--orange-700,#B33F05)}
+#pg-space-detail .mk-price-guidance ul{margin:0;padding-inline-start:20px;display:grid;gap:7px}
+#pg-space-detail .mk-price-guidance li{padding-inline-start:3px}
+#pg-space-detail .mk-price-guidance li::marker{color:var(--orange-700,#B33F05)}
+@media(hover:hover) and (pointer:fine){.mk-brand-required:hover .mk-brand-folder-page{transform:translateY(-3px)}.mk-brand-required:hover .mk-brand-folder-front{transform:rotateX(30deg)}}
+@media(max-width:600px){#pg-space-detail .mk-price-guidance{padding:14px;font-size:13px}#pg-market #mp-grid .mk-brand-required--compact{gap:5px;padding:7px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.mk-brand-folder-page,.mk-brand-folder-front{transition:none;transform:none!important}}
 .mk-brand-link label{display:flex;align-items:center;gap:7px;color:#b42318;font-size:13px;font-weight:650}
 .mk-brand-link p,.mk-brand-link ol{font-size:12px;line-height:1.7;color:var(--fg-3,#6b7280);margin:8px 0 0}.mk-brand-link ol{padding-inline-start:20px}.mk-brand-link li{padding-inline-start:2px}
 .mk-brand-review-link{display:inline-flex;align-items:center;min-height:44px;color:inherit;font-size:12px;text-underline-offset:3px}

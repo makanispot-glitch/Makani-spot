@@ -680,7 +680,7 @@ function buildCardHtml(s, fromPage) {
                   onclick="openBooking('${s.id}')">${MakaniFlowButton.content(t('card.bookPlace'))}</button>
         </div>
       </div>
-      ${MakaniSpacePricing.note(s,true)}
+      ${MakaniBrandProfile.badge(s,true)}
       ${(s.season || s.insight) ? `
       <div class="card-tip">
         <div class="tip-dot"></div>

@@ -135,8 +135,8 @@
       <button type="button" class="msd-text-button msd-share" data-share>${icon('share')}${tr('مشاركة','Share')}</button></div>
       <div class="msd-heading"><div><div class="msd-eyebrow">${esc(typeLabel)}${trustBadge || ''}</div><h1 class="sd-name">${esc(space.name)}</h1>
       <div class="sd-meta"><span>${icon('pin')}${esc(space.loc)}</span>${space.subSpaces?.length ? `<span>${tr('وحدات داخل المساحة:','Units in this space:')} ${space.subSpaces.length}</span>` : ''}</div></div>
-      <div class="msd-start-price"><span>${tr('سعر المساحة','Space price')}</span>${MakaniSpacePricing.render(space)}${MakaniSpacePricing.note(space)}</div></div>
-      ${space.requiresBrandProfile ? `<p class="mk-brand-required">${icon('info')}${tr('بروفايل البراند مطلوب عند التقديم','Brand profile required to apply')}</p>` : ''}</div>`;
+      <div class="msd-start-price"><span>${tr('سعر المساحة','Space price')}</span>${MakaniSpacePricing.render(space)}</div></div>
+      ${MakaniBrandProfile.badge(space)}</div>`;
     document.querySelector('#sd-header [data-back]').onclick = () => window.closeSpaceDetail();
     document.querySelector('#sd-header [data-share]').onclick = () => window.shareCard('space', space.id, space.name);
   }
@@ -175,10 +175,11 @@
     const unitsTitle = document.querySelector('#sd-subspaces .sd-section-title');
     if (unitsTitle) unitsTitle.innerHTML = icon('size') + `<span>${esc(cleanLabel(unitsTitle.textContent))}</span>`;
     const oldMap = el.querySelector('.msd-location'); if (oldMap) oldMap.remove();
+    el.querySelector('.mk-price-guidance')?.remove();
     const valid = window.MakaniSpaceLocation.valid(space.mapsUrl || '');
     el.insertAdjacentHTML('beforeend', `<section class="msd-location" aria-labelledby="msd-location-title">
       <div class="msd-location-icon">${icon('pin')}</div><div class="msd-location-copy"><h2 id="msd-location-title">${tr('موقع المساحة','Space location')}</h2><p>${esc(space.loc)}${valid ? '' : `<span>${tr('لم يضف الناشر الموقع الدقيق بعد','The publisher has not added the exact location yet')}</span>`}</p></div>
-      ${valid ? `<a class="msd-map-link" href="${esc(space.mapsUrl)}" target="_blank" rel="noopener noreferrer">${tr('فتح Google Maps','Open Google Maps')}${icon('external')}</a>` : ''}</section>`);
+      ${valid ? `<a class="msd-map-link" href="${esc(space.mapsUrl)}" target="_blank" rel="noopener noreferrer">${tr('فتح Google Maps','Open Google Maps')}${icon('external')}</a>` : ''}</section>${MakaniSpacePricing.detailNote(space)}`);
     const footer = document.querySelector('#pg-space-detail .sd-sticky-footer');
     footer.innerHTML = `<div class="msd-action-inner"><div class="msd-action-price">${MakaniSpacePricing.render(space,null,true)}</div>
       <button type="button" class="msd-visit" data-view>${icon('calendar')}${tr('حجز معاينة','Schedule visit')}</button><button type="button" class="msd-book" data-book>${tr('احجز المساحة','Book this space')}${icon('next')}</button></div>`;

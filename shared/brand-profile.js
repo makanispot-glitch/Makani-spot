@@ -41,5 +41,15 @@
   function linkHtml(link) {
     try {const u=new URL(link);if(!['https:','http:'].includes(u.protocol))return '';return `<a href="${esc(u.href)}" target="_blank" rel="noopener noreferrer" class="mk-brand-review-link">${tr('عرض بروفايل البراند','View brand profile')}</a>`;}catch(_){return '';}
   }
-  window.MakaniBrandProfile={setup,check,valid,linkHtml};
+  // Folder motion adapted from the supplied Uiverse design by vinodjangid07.
+  // An informational requirement, not an upload button.
+  function badge(space,compact=false) {
+    if(!space?.requiresBrandProfile)return '';
+    return `<div class="mk-brand-required${compact?' mk-brand-required--compact':''}"><span class="mk-brand-folder" aria-hidden="true">
+      <svg class="mk-brand-folder-back" viewBox="0 0 40 32"><path d="M3 6a3 3 0 0 1 3-3h10l4 4h14a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/></svg>
+      <svg class="mk-brand-folder-page" viewBox="0 0 24 30"><rect x="2" y="1" width="20" height="27" rx="2"/><path d="M6 8h12M6 13h12M6 18h8"/></svg>
+      <svg class="mk-brand-folder-front" viewBox="0 0 40 25"><path d="M2 3a3 3 0 0 1 3-3h30a3 3 0 0 1 3 3l-3 19a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/></svg>
+      </span><span class="mk-brand-required-text">${tr('بروفايل البراند مطلوب عند التقديم','Brand profile required to apply')}</span></div>`;
+  }
+  window.MakaniBrandProfile={setup,check,valid,linkHtml,badge};
 })();

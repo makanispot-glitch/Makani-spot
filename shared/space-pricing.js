@@ -30,6 +30,17 @@
     return `<p class="mk-price-note">${copy?esc(copy):''}${copy&&metre?' ':''}${metre?`<span class="mk-price-unit-note">${esc(metre)}</span>`:''}</p>`;
   }
   function unitPrice(s,u) { return render({...s,price:u.price,pricingMode:'fixed',pricingUnit:'month'},u.price,true); }
+  function detailNote(s) {
+    if(!visible(s))return '';
+    const estimated=s.pricingMode==='estimated',perMetre=['sqm','sqm_month'].includes(s.pricingUnit);
+    if(!estimated&&!perMetre)return '';
+    const items=[];
+    if(estimated)items.push(tr('السعر المعروض تقديري، وقد يختلف حسب المساحة وموقعها وشروط المكان. يُؤكَّد السعر النهائي مع الإدارة.','The displayed price is an estimate and may vary with area, location and venue terms. Confirm the final price with management.'));
+    if(perMetre)items.push(s.pricingUnit==='sqm_month'?tr('السعر للمتر المربع شهريًا، ويُحسب الإجمالي حسب المساحة المستأجرة.','Price per square metre per month. The total depends on the rented area.'):tr('السعر للمتر المربع، ويُحسب الإجمالي حسب المساحة المستأجرة.','Price per square metre. The total depends on the rented area.'));
+    if(perMetre)items.push(tr('قد يشترط المكان حدًا أدنى للمساحة المستأجرة؛ تأكّد من المساحة المطلوبة وشروط الاستئجار مع الإدارة.','The venue may require a minimum rented area. Confirm the required area and rental terms with management.'));
+    items.push(tr('تساعدك مكاني سبوت في الوصول إلى أفضل سعر متاح والتنسيق مع إدارة المكان.','Makani Spot helps you find the best available price and coordinate with venue management.'));
+    return `<aside class="mk-price-note mk-price-guidance" aria-label="${tr('ملاحظات السعر والاستئجار','Pricing and rental notes')}"><h2>${tr('ملاحظات السعر والاستئجار','Pricing and rental notes')}</h2><ul>${items.map(item=>`<li>${esc(item)}</li>`).join('')}</ul></aside>`;
+  }
   function selectSize(button,id,label) {
     const card=button.closest('.space-card');
     const pool=typeof mpCurrentSpaces !== 'undefined' ? mpCurrentSpaces : typeof mpCurrentItems !== 'undefined' ? [...mpCurrentItems,...(typeof heroItems !== 'undefined' ? heroItems : [])] : [];
@@ -67,5 +78,5 @@
       }catch(_){}
     },0);
   }
-  window.MakaniSpacePricing={render,note,unitPrice,visible,registered,loginUrl,selectSize,filterAccess,unit,number,quoteText,authChanged,escape:esc};
+  window.MakaniSpacePricing={render,note,detailNote,unitPrice,visible,registered,loginUrl,selectSize,filterAccess,unit,number,quoteText,authChanged,escape:esc};
 })();
