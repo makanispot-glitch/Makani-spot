@@ -1289,14 +1289,14 @@
   },
   "profile": {
     "nav": {
-      "title": "👤 الملف الشخصي",
+      "title": "الملف الشخصي",
       "backHome": "← الرئيسية"
     },
     "loading": "جاري تحميل الملف الشخصي…",
     "editModal": {
-      "title": "✍️ تعديل الملف الشخصي",
+      "title": "تعديل الملف الشخصي",
       "photoSectionTitle": "الصورة والغلاف",
-      "photoSectionTip": "تحسّن ظهور ملفك +40%",
+      "photoSectionTip": "الصورة الشخصية والغلاف",
       "changeCoverTooltip": "تغيير صورة الغلاف",
       "changeCoverLabel": "تغيير الغلاف",
       "changeAvatarTooltip": "تغيير الصورة الشخصية",
@@ -1322,7 +1322,7 @@
       "cancelBtn": "إلغاء",
       "saveBtn": "حفظ التعديلات",
       "savingBtn": "جاري الحفظ…",
-      "successToast": "✅ تم حفظ التعديلات بنجاح!"
+      "successToast": "تم حفظ التعديلات بنجاح!"
     },
     "loginWall": {
       "title": "سجّل دخولك أولاً",
@@ -1333,8 +1333,8 @@
     "unknownUser": "مستخدم مجهول",
     "noPublicProfile": "لا يوجد بروفايل عام لهذا الحساب",
     "completion": {
-      "titleOrganizer": "🎯 اكتمال ملفك كمنظّم بازار",
-      "titlePersonal": "🎯 اكتمال ملفك الشخصي",
+      "titleOrganizer": "اكتمال ملفك كمنظّم بازار",
+      "titlePersonal": "اكتمال ملفك الشخصي",
       "lowMsg": "أكمل ملفك لتجذب عارضين أكثر وتتعامل مع المولات الكبرى",
       "midMsg": "أنت على الطريق الصحيح — خطوة أخرى وستصبح Brand حقيقي",
       "highMsg": "ملفك قوي! أضف التفاصيل المتبقية لتميّز نفسك بشكل كامل",
@@ -1350,23 +1350,23 @@
       "checkRegionTip": "يساعد العارضين في إيجادك"
     },
     "hero": {
-      "memberSince": "🗓 عضو منذ {{date}}",
-      "editBtn": "✍️ تعديل البيانات",
-      "shareBtn": "🔗 مشاركة البروفايل",
+      "memberSince": "عضو منذ {{date}}",
+      "editBtn": "تعديل البيانات",
+      "shareBtn": "مشاركة البروفايل",
       "changePhotoTooltip": "اضغط لتغيير الصورة",
       "changePhotoTooltipShort": "تغيير الصورة",
-      "addCoverBtn": "📷 أضف صورة غلاف"
+      "addCoverBtn": "أضف صورة غلاف"
     },
     "orgBadge": {
       "verified": "✓ منظم موثّق",
-      "pending": "⏳ قيد المراجعة"
+      "pending": "قيد المراجعة"
     },
     "quickNav": {
-      "bazaars": "🎪 البازارات",
-      "market": "🛍️ السوق",
-      "dashboard": "📊 لوحة التحكم",
+      "bazaars": "البازارات",
+      "market": "السوق",
+      "dashboard": "لوحة التحكم",
       "newBazaar": "✦ نظّم بازار جديد",
-      "publicProfile": "👁️ بروفايلي العام"
+      "publicProfile": "بروفايلي العام"
     },
     "stats": {
       "bazaarsOrganized": "بازار نظّمته",
@@ -1385,7 +1385,7 @@
       "becomeOwnerDesc": "اعرض مساحتك للإيجار وابدأ في استقبال الحجوزات"
     },
     "dataSection": {
-      "title": "👤 بياناتك الشخصية",
+      "title": "بياناتك الشخصية",
       "editLink": "تعديل",
       "fullName": "الاسم الكامل",
       "email": "البريد الإلكتروني",
@@ -1394,18 +1394,18 @@
       "city": "المدينة",
       "joinDate": "تاريخ الانضمام",
       "password": "كلمة المرور",
-      "organizerDataTitle": "🎪 بيانات المنظّم",
-      "extraDataTitle": "🏪 بيانات إضافية",
+      "organizerDataTitle": "بيانات المنظّم",
+      "extraDataTitle": "بيانات إضافية",
       "organizerVerification": "التوثيق كمنظم",
       "verifiedShort": "✓ موثّق",
       "unverifiedShort": "◌ غير موثّق",
       "whatsapp": "واتساب",
       "region": "المنطقة",
       "spaceOwnerLabel": "صاحب مساحة",
-      "spaceOwnerVerified": "موثّق"
+      "spaceOwnerVerified": "الدور فعّال"
     },
     "listingsSection": {
-      "title": "🛍️ إعلاناتي في السوق",
+      "title": "إعلاناتي في السوق",
       "manageAll": "إدارة الكل ←",
       "empty": "لا توجد إعلانات بعد",
       "addNew": "أضف إعلاناً الآن ←",
@@ -1417,42 +1417,42 @@
       "untitled": "إعلان"
     },
     "myBazaarsSection": {
-      "title": "🎪 بازاراتي كمنظم ({{count}})",
-      "manageBazaarsBtn": "⚙️ إدارة البازارات",
+      "title": "بازاراتي كمنظم ({{count}})",
+      "manageBazaarsBtn": "إدارة البازارات",
       "newBazaarBtn": "+ بازار جديد",
       "viewBtn": "عرض",
       "manageBtn": "إدارة",
       "emptyTitle": "لم تنظّم أي بازار بعد",
       "emptyCta": "ابدأ تنظيم أول بازار →",
-      "statusPublished": "🟢 منشور",
-      "statusActive": "🟢 نشط",
-      "statusUpcoming": "🔵 قادم",
-      "statusPostponed": "🟠 مؤجّل",
-      "statusClosed": "⚫ منتهي",
-      "statusCancelled": "🔴 ملغي",
-      "statusPendingReview": "⏳ قيد المراجعة"
+      "statusPublished": "منشور",
+      "statusActive": "نشط",
+      "statusUpcoming": "قادم",
+      "statusPostponed": "مؤجّل",
+      "statusClosed": "منتهي",
+      "statusCancelled": "ملغي",
+      "statusPendingReview": "قيد المراجعة"
     },
     "rateSection": {
-      "title": "⭐ قيّم المشاركين في بازاراتك",
+      "title": "قيّم المشاركين في بازاراتك",
       "countBadge": "{{count}} مشارك",
       "intro": "قيّم العارضين الذين حجزوا أو شاركوا فعلياً في بازاراتك. تقييمك يُبني سمعتهم على المنصّة ويساعد بقية المنظّمين وأصحاب المساحات على معرفة المتعاملين الجادّين. <strong>التقييم متاح فقط لمن لديه حجز حقيقي معك</strong> — لا تقييم بدون تعامل.",
       "selectParticipantLabel": "اختر المشارك",
       "selectPlaceholder": "— اختر مشاركاً قمت باستضافته —",
-      "ratedMark": " ✓ (مُقيَّم)",
+      "ratedMark": "✓ (مُقيَّم)",
       "defaultParticipantName": "مشارك",
       "defaultBazaarName": "بازار",
       "avgLabel": "متوسط تقييمك",
       "notesLabel": "ملاحظات (اختياري)",
       "notesPlaceholder": "مثال: عارض ملتزم بالمواعيد، ركنه مرتّب، تعامل راقٍ مع الزوار…",
-      "submitBtn": "⭐ حفظ التقييم",
-      "savingBtn": "⏳ جاري الحفظ…",
+      "submitBtn": "حفظ التقييم",
+      "savingBtn": "جاري الحفظ…",
       "emptyTitle": "لا يوجد مشاركون قابلون للتقييم بعد",
       "emptyDesc": "عندما يحجز عارضون أركاناً في بازاراتك ستظهر أسماؤهم هنا لتقييمهم.",
-      "historyTitlePrefix": "📋 سجل تقييماتك",
+      "historyTitlePrefix": "سجل تقييماتك",
       "selectFirstErr": "اختر المشارك أولاً.",
       "rateOneErr": "قيّم معياراً واحداً على الأقل بالنجوم.",
       "connectionErr": "تعذّر الاتصال بالخادم.",
-      "successMsg": "تم حفظ التقييم! التقييم العام: {{overall}}/5 ⭐",
+      "successMsg": "تم حفظ التقييم! التقييم العام: {{overall}}/5",
       "errors": {
         "not_authorized_booking": "لا يمكنك تقييم هذا الحجز — ليس ضمن بازاراتك.",
         "cannot_rate_self": "لا يمكنك تقييم نفسك.",
@@ -1465,38 +1465,38 @@
         "genericUnknown": "خطأ غير معروف"
       },
       "criteria": {
-        "commitment": "⏰ الالتزام بالمواعيد",
-        "cleanliness": "🧹 ترتيب ونظافة الركن",
-        "dealing": "🤝 حسن التعامل",
-        "payment": "💳 الالتزام المالي",
-        "rules": "📋 احترام شروط البازار"
+        "commitment": "الالتزام بالمواعيد",
+        "cleanliness": "ترتيب ونظافة الركن",
+        "dealing": "حسن التعامل",
+        "payment": "الالتزام المالي",
+        "rules": "احترام شروط البازار"
       }
     },
     "reviewsSection": {
-      "titleMy": "⭐ تقييماتي كمنظم ({{count}})",
-      "titlePublic": "⭐ التقييمات ({{count}})",
+      "titleMy": "تقييماتي كمنظم ({{count}})",
+      "titlePublic": "التقييمات ({{count}})",
       "empty": "لا توجد تقييمات بعد"
     },
     "publicSections": {
-      "performanceTitle": "📊 سجل الأداء",
+      "performanceTitle": "سجل الأداء",
       "completedCount": "بازار اكتمل",
       "bookedCount": "مكان محجوز",
       "addedLinksCount": "أضاف روابط",
-      "viewDocsLinksCta": "📎 عرض روابط التوثيق ←",
+      "viewDocsLinksCta": "عرض روابط التوثيق ←",
       "cancelledCount": "إلغاء",
       "successRateLabel": "معدل نجاح التنظيم",
       "reliabilityWarningTitle": "تنبيه موثوقية",
       "reliabilityWarningDesc": "قام هذا المنظم بإلغاء بازار خلال آخر 60 يوماً — تأكد من التواصل معه قبل الحجز",
-      "activeBazaarsTitle": "🟢 البازارات النشطة والقادمة ({{count}})",
-      "pastBazaarsTitle": "📁 البازارات السابقة ({{count}})",
+      "activeBazaarsTitle": "البازارات النشطة والقادمة ({{count}})",
+      "pastBazaarsTitle": "البازارات السابقة ({{count}})",
       "emptyActiveBazaars": "لا توجد بازارات نشطة حالياً",
       "emptyPastBazaars": "لا توجد بازارات منتهية",
-      "docVerified": "🟢 وثّق",
-      "docMissing": "🟡 بدون روابط",
-      "fillRateBadge": "🎫 {{pct}}%"
+      "docVerified": "وثّق",
+      "docMissing": "بدون روابط",
+      "fillRateBadge": "{{pct}}%"
     },
     "docsShowcase": {
-      "title": "📎 روابط التوثيق",
+      "title": "روابط التوثيق",
       "subtitle": "أحدث الفعاليات التي وثّقها هذا المنظّم",
       "footnote": "يُعرض هنا أحدث 5 بازارات موثَّقة فقط"
     },
@@ -1519,14 +1519,14 @@
       "good": "سمعة جيدة",
       "weak": "تحتاج لتحسين",
       "new": "لا توجد تقييمات بعد",
-      "sectionTitle": "🛡️ السمعة كمستأجر ({{count}})",
+      "sectionTitle": "السمعة كمستأجر ({{count}})",
       "sectionDesc": "تقييمات هذا الحساب من أصحاب المساحات ومنظّمي البازارات بعد تعاملات حقيقية عبر المنصة.",
-      "countSuffix": "{{count}} تقييم · 👍 {{positive}} · 👎 {{negative}}",
+      "countSuffix": "{{count}} تقييم ·  {{positive}} ·  {{negative}}",
       "roleOrganizer": "منظّم بازار",
       "roleOwner": "صاحب مساحة",
       "criteria": {
-        "cleanliness": "🧹 نظافة المكان",
-        "rules": "📋 احترام الشروط"
+        "cleanliness": "نظافة المكان",
+        "rules": "احترام الشروط"
       }
     },
     "errors": {
@@ -1539,19 +1539,19 @@
     },
     "share": {
       "myProfileText": "شوف بروفايلي كمنظم بازارات على مكاني Spot",
-      "linkCopied": "✅ تم نسخ رابط البروفايل!",
-      "linkFallback": "📋 الرابط: {{url}}",
+      "linkCopied": "تم نسخ رابط البروفايل!",
+      "linkFallback": "الرابط: {{url}}",
       "publicProfileText": "شوف بروفايل {{name}} على مكاني Spot",
       "defaultOrganizerName": "هذا المنظم"
     },
     "upload": {
       "loginRequired": "يجب تسجيل الدخول أولاً",
-      "coverUploading": "⏳ جارٍ الرفع…",
-      "coverChangeBtn": "📷 تغيير الغلاف",
-      "coverSuccess": "✅ تم تحديث صورة البانر بنجاح",
-      "coverFailed": "❌ تعذّر رفع صورة الغلاف: {{msg}}",
-      "avatarSuccess": "✅ تم تحديث صورة البروفايل بنجاح",
-      "avatarFailed": "❌ تعذّر رفع الصورة: {{msg}}"
+      "coverUploading": "جارٍ الرفع…",
+      "coverChangeBtn": "تغيير الغلاف",
+      "coverSuccess": "تم تحديث صورة البانر بنجاح",
+      "coverFailed": "تعذّر رفع صورة الغلاف: {{msg}}",
+      "avatarSuccess": "تم تحديث صورة البروفايل بنجاح",
+      "avatarFailed": "تعذّر رفع الصورة: {{msg}}"
     }
   },
   "verification": {

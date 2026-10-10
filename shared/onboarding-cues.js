@@ -31,14 +31,14 @@
        ٠) الزائر — الصفحة الرئيسية (Smart Discovery)
        ══════════════════════════════════════════════════════════════ */
 
-    /* نقطة القرار: أمامه ثلاث نيّات ولا يعرف أيّها يخصّه — والخيار الثالث
-       («ساعدني») هو المخرج، لكنه أقلّها وضوحًا لأنه لا يسمّي منتجًا.
+    /* نقطة القرار: أمامه نوعا تأجير ولا يعرف أيّهما يناسبه —
+       «ساعدني» بجوار البحث هو مدخل المساعد الحالي.
        يتقاعد بشرط بيانات: أول ما يختار نية، الإرشاد انتهى دوره. */
     {
       id: 'home.discoveryIntent',
       page: 'home',
       form: 'popover',
-      anchor: '#disc-intent .tab-btn:last-child',
+      anchor: '.home-search-help',
       priority: 10,
       i18n: 'onboarding.home.discoveryIntent',
       when: function (c) { return !c.hasPickedIntent && c.spacesVisible > 0; },

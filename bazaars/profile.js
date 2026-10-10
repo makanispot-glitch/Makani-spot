@@ -50,20 +50,40 @@ function _bzRateCriteria() {
 /* ================================================================
    🚀 بدء التشغيل
    ================================================================ */
+let _profileLoadSequence=0;
+let _profileBooted=false;
 document.addEventListener('DOMContentLoaded', async () => {
+  await initI18n(['bazaars','common','home']);
+  _profileBooted=true;
   try {
     sbClient = createMakaniClient();   // عميل واحد للصفحة — راجع shared/sb-config.js
     const { data: { session } } = await sbClient.auth.getSession();
     currentUser = session?.user || null;
+    sbClient.auth.onAuthStateChange((event, nextSession) => {
+      const nextUser=nextSession?.user || null;
+      if(nextUser?.id===currentUser?.id)return;
+      currentUser=nextUser;
+      ++_profileLoadSequence;
+      _unsubscribeBookings();
+      _accountReady=false;_accountData=null;
+      _accountMemberships=[];_accountUpgradeStatus=null;
+      myProfileData=null;myUserProfile=null;myMergedPhone=null;myMergedCity=null;
+      bzRateableParticipants=[];bzOrganizerRatings=[];
+      document.getElementById('edit-profile-modal')?.classList.remove('open');
+      document.querySelectorAll('#edit-profile-modal input,#edit-profile-modal textarea').forEach(el=>{el.value='';});
+      closeServiceRequest();
+      if(!new URLSearchParams(location.search).has('user') && !new URLSearchParams(location.search).has('organizer')){
+        document.getElementById('op-content').innerHTML='';
+        if(nextUser)setTimeout(_loadMyProfile,0);else _renderLoginWall();
+      }
+    });
   } catch (e) {
     console.warn('[profile] Supabase init:', e.message);
   }
 
   /* إزالة زر تغيير اللغة القديم إذا كان مسجلاً */
   const langBtn = document.getElementById('langSwitchBtn');
-  if (langBtn && currentUser) {
-    langBtn.remove();
-  }
+  if (langBtn) langBtn.hidden=false;
 
   /* جرس الإشعارات الموحّد — نفس موقعه في كل صفحات البازارات */
   if (currentUser) {
@@ -86,6 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /* 🌐 دعم اللغتين — إعادة رسم المحتوى الديناميكي عند تبديل اللغة */
 document.addEventListener('makani:locale-changed', () => {
+  if(!_profileBooted)return;
+  if(_accountReady && _accountData){_renderMyProfile(..._accountData);return;}
   const params = new URLSearchParams(window.location.search);
   const userId = params.get('user') || params.get('organizer');
   if (userId) {
@@ -104,12 +126,12 @@ document.addEventListener('makani:locale-changed', () => {
 function _renderLoginWall() {
   document.getElementById('op-content').innerHTML = `
     <div style="text-align:center;padding:80px 24px;max-width:460px;margin:0 auto">
-      <div style="font-size:52px;margin-bottom:16px">🔐</div>
+      <div style="font-size:52px;margin-bottom:16px">${_accountIcon('lock')}</div>
       <h2 style="font-size:22px;font-weight:900;margin-bottom:10px">${t('profile.loginWall.title')}</h2>
       <p style="font-size:14px;color:var(--ink3);margin-bottom:24px;line-height:1.7">
         ${t('profile.loginWall.desc')}
       </p>
-      <a href="/?p=login" class="btn btn-primary" style="padding:12px 32px;display:inline-block">
+      <a href="/?p=login&next=${encodeURIComponent(location.pathname+location.search+location.hash)}" class="btn btn-primary" style="padding:12px 32px;display:inline-block">
         ${t('profile.loginWall.loginBtn')}
       </a>
     </div>`;
@@ -122,6 +144,9 @@ function _profLocale() { return getLocale() === 'en' ? 'en-US' : 'ar-EG'; }
    👤 ملفي الشخصي — تحميل البيانات
    ================================================================ */
 async function _loadMyProfile() {
+  const sequence=++_profileLoadSequence;
+  const userId=currentUser?.id;
+  if(!userId)return;
   let profile      = null;
   let userProfile  = null;
   let reviews      = [];
@@ -138,7 +163,7 @@ async function _loadMyProfile() {
       orgProfileRes, userProfileRes, reviewsRes,
       reqRes, bazaarsRes, listingsRes, upgradeRes,
       rateableRes, bzRatingsRes, bazaarRatingRes,
-      reputationRes, recvRatingsRes
+      reputationRes, recvRatingsRes, membershipsRes
     ] = await Promise.all([
       sbClient.from('organizer_profiles').select('*')
               .eq('user_id', currentUser.id).single(),
@@ -160,7 +185,7 @@ async function _loadMyProfile() {
               .limit(6),
       sbClient.from('upgrade_requests').select('status')
               .eq('user_id', currentUser.id)
-              .order('created_at', { ascending: false }).limit(1).single(),
+              .order('requested_at', { ascending: false }).limit(1).maybeSingle(),
       /* 🔗 تقييم المشاركين: المشاركون القابلون للتقييم + سجل تقييماتي كمنظم */
       sbClient.rpc('organizer_list_rateable_participants'),
       sbClient.from('user_ratings').select('*')
@@ -173,7 +198,12 @@ async function _loadMyProfile() {
       sbClient.from('user_ratings').select('*')
               .eq('ratee_id', currentUser.id).eq('status', 'visible')
               .order('created_at', { ascending: false }),
+      sbClient.rpc('get_my_org_memberships'),
     ]);
+    if(sequence!==_profileLoadSequence || currentUser?.id!==userId)return;
+    if(userProfileRes.error || !userProfileRes.data)throw userProfileRes.error || new Error('profile_missing');
+    _accountMemberships=(membershipsRes.data || []).filter(m=>m.is_org_active);
+    _accountUpgradeStatus=upgradeRes.data?.status || null;
 
     profile     = orgProfileRes.data  || null;
     userProfile = userProfileRes.data || null;
@@ -198,7 +228,11 @@ async function _loadMyProfile() {
     isSpaceOwner = upgradeStatus === 'approved'
                 || getAccountCapabilities(userProfile, profile).isOwner;
 
-  } catch (_) {}
+  } catch (error) {
+    if(sequence!==_profileLoadSequence || currentUser?.id!==userId)return;
+    document.getElementById('op-content').innerHTML=`<div class="account-empty"><h2>${t('account.loadFailed')}</h2><button class="account-button" onclick="_loadMyProfile()">${t('account.refresh')}</button></div>`;
+    return;
+  }
 
   /* ── حفظ للاستخدام في modal التعديل ── */
   myProfileData = profile;
@@ -222,18 +256,8 @@ async function _loadMyProfile() {
     myMergedCity = profile.region;
   }
 
-  /* ── مزامنة تلقائية إلى profiles إن وجد بيانات ناقصة ── */
-  const syncPayload = {};
-  if (myMergedPhone && !userProfile?.phone) syncPayload.phone = myMergedPhone;
-  if (myMergedCity  && !userProfile?.city)  syncPayload.city  = myMergedCity;
-  if (Object.keys(syncPayload).length > 0) {
-    sbClient.from('profiles')
-            .upsert({ id: currentUser.id, ...syncPayload }, { onConflict: 'id' })
-            .then(() => {}).catch(() => {});
-    /* حدّث النسخة المحلية أيضاً */
-    myUserProfile = { ...(myUserProfile || {}), ...syncPayload };
-  }
-
+  /* Fallback contact data is displayed only; explicit save persists the chosen values. */
+  _accountData=[profile,userProfile,reviews,reqStatus,bazaars,listings,isSpaceOwner,bazaarRating,reputation,recvRatings];
   _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating, reputation, recvRatings);
 }
 
@@ -244,13 +268,14 @@ async function _loadMyProfile() {
 function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSection) {
   const hasSocial = !!(profile?.facebook_url || profile?.instagram_url || profile?.tiktok_url);
   const checks = [
-    { done: !!(profile?.avatar_url),                       pts: 20, label: t('profile.completion.checkAvatarLabel'), tip: t('profile.completion.checkAvatarTip') },
-    { done: !!(profile?.cover_url),                        pts: 15, label: t('profile.completion.checkCoverLabel'),  tip: t('profile.completion.checkCoverTip') },
-    { done: !!(profile?.bio?.trim()),                      pts: 25, label: t('profile.completion.checkBioLabel'),    tip: t('profile.completion.checkBioTip') },
+    { action:'triggerAvatarUpload()', done: !!(userProfile?.avatar_url || profile?.avatar_url),                       pts: 20, label: t('profile.completion.checkAvatarLabel'), tip: t('profile.completion.checkAvatarTip') },
+    { action:'triggerCoverUpload()', done: !!(profile?.cover_url || userProfile?.cover_url),                        pts: 15, label: t('profile.completion.checkCoverLabel'),  tip: t('profile.completion.checkCoverTip') },
+    { done: !!(profile?.bio?.trim() || userProfile?.bio?.trim()),                      pts: 25, label: t('profile.completion.checkBioLabel'),    tip: t('profile.completion.checkBioTip') },
     { done: hasSocial,                                     pts: 25, label: t('profile.completion.checkSocialLabel'), tip: t('profile.completion.checkSocialTip') },
     { done: !!(profile?.region || userProfile?.city),      pts: 15, label: t('profile.completion.checkRegionLabel'), tip: t('profile.completion.checkRegionTip') },
   ];
 
+  const totalWeight=100;
   const pct     = checks.reduce((s, c) => s + (c.done ? c.pts : 0), 0);
   const missing = checks.filter(c => !c.done);
 
@@ -274,14 +299,14 @@ function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSectio
     </div>
     <div style="display:flex;flex-direction:column;gap:4px">
       ${missing.slice(0, 3).map(c => `
-      <div class="op-completion-tip" onclick="openEditModal()">
-        <div class="op-completion-pts" style="background:${color}18;color:${color}">+${c.pts}</div>
+      <button type="button" class="op-completion-tip" onclick="${c.action || 'openEditModal()'}">
+        <span class="op-completion-pts">${Math.round(c.pts/totalWeight*100)}%</span>
         <div style="flex:1">
           <span style="font-weight:700;color:var(--ink);font-size:12.5px">${c.label}</span>
           <span style="color:var(--ink3);font-size:11px"> — ${c.tip}</span>
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2" width="13" height="13"><path d="M15 18l-6-6 6-6"/></svg>
-      </div>`).join('')}
+      </button>`).join('')}
     </div>
   </div>`;
 }
@@ -290,238 +315,44 @@ function _buildCompletionCard(profile, userProfile, bazaars, showOrganizerSectio
 /* ================================================================
    🎨 عرض ملفي الشخصي
    ================================================================ */
-function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, listings, isSpaceOwner, bazaarRating, reputation, recvRatings) {
-  const content = document.getElementById('op-content');
-
-  const caps        = getAccountCapabilities(userProfile, profile);
-  const isVerified   = caps.organizerVerified;
-  const displayName = profile?.full_name || userProfile?.full_name
-                   || currentUser.email?.split('@')[0] || '?';
-  const initial     = displayName[0]?.toUpperCase() || '؟';
-  const joinDate    = (userProfile?.created_at || profile?.joined_at)
-    ? new Date(userProfile?.created_at || profile?.joined_at)
-        .toLocaleDateString(_profLocale(), { year:'numeric', month:'long' })
-    : '—';
-
-  const avatarUrl  = profile?.avatar_url || profile?.logo || profile?.image || '';
-  const avatarHtml = avatarUrl
-    ? `<img src="${_toDirectImgUrl(avatarUrl)}" alt="avatar" onerror="this.outerHTML='<span>${initial}</span>'">`
-    : `<span>${initial}</span>`;
-
-  /* ── Cover / Banner ── */
-  const coverUrl  = _toDirectImgUrl(profile?.cover_url || '');
-  const coverHtml = `
-    <div class="op-cover-section">
-      ${coverUrl ? `<img id="op-cover-img-el" src="${coverUrl}" alt="cover">` : `<img id="op-cover-img-el" style="display:none">`}
-      <button class="op-cover-upload-btn" id="op-cover-upload-btn" onclick="triggerCoverUpload()" title="${t('profile.editModal.changeCoverTooltip')}">
-        ${coverUrl ? t('profile.upload.coverChangeBtn') : t('profile.hero.addCoverBtn')}
-      </button>
-    </div>`;
-
-  /* ── Bio ── */
-  const bioHtml = profile?.bio
-    ? `<div class="op-bio">${profile.bio}</div>`
-    : '';
-
-  /* ── Social Links ── */
-  const socialLinks = [
-    { key: 'facebook_url',  cls: 'fb', title: 'Facebook',
-      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>` },
-    { key: 'instagram_url', cls: 'ig', title: 'Instagram',
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>` },
-    { key: 'tiktok_url',   cls: 'tt', title: 'TikTok',
-      icon: `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.75a4.86 4.86 0 0 1-1-.06z"/></svg>` },
-  ];
-  const socialHtml = (() => {
-    const links = socialLinks
-      .filter(s => profile?.[s.key])
-      .map(s => `<a href="${profile[s.key]}" target="_blank" rel="noopener noreferrer" class="op-social-link ${s.cls}" title="${s.title}">${s.icon}</a>`)
-      .join('');
-    return links ? `<div class="op-social-links">${links}</div>` : '';
-  })();
-
-  /* ── إحصائيات ── */
-  const today          = new Date().toISOString().split('T')[0];
-  const totalBaz       = bazaars.length;
-  const endedBaz       = bazaars.filter(b => b.date_end && b.date_end < today).length;
-  const now            = new Date().toISOString();
-  const activeListings = listings.filter(l =>
-    l.status !== 'sold' && l.status !== 'expired' &&
-    !(l.expires_at && l.expires_at < now)
-  ).length;
-  const avgRating = bazaarRating?.total
-    ? Number(bazaarRating.avg_rating).toFixed(1)
-    : null;
-
-  /* ── هل هذا الحساب "منظم" فعليًا (نشاط حقيقي/توثيق/طلب قيد المراجعة)، وليس مجرد تينانت؟
-     يحكم أي قسم إداري خاص بالمنظّم يظهر في هذه الصفحة الذاتية — لا يُبنى قالب منظم افتراضيًا. ── */
-  const showOrganizerSection = caps.isOrganizer || isVerified || totalBaz > 0 || reqStatus === 'pending';
-
-  /* ── أوسمة ── */
-  const { primary: primaryBadges, secondary: secBadges } = _computeBadges({
-    isVerified, isSpaceOwner,
-    hasBazaars: totalBaz > 0,
-    listings, avgRating: avgRating ? parseFloat(avgRating) : 0,
-    reviewsCount: bazaarRating?.total || 0,
-  });
-
-  /* ── شارة التوثيق (صغيرة في الاسم) ── */
-  let nameBadge = '';
-  if (isVerified)               nameBadge = `<span class="op-verified-badge">${t('profile.orgBadge.verified')}</span>`;
-  else if (reqStatus==='pending') nameBadge = `<span class="op-pending-badge">${t('profile.orgBadge.pending')}</span>`;
-
-  /* ── هل نعرض CTA للمنظم وصاحب المساحة؟ ── */
-  const showOrgCta   = !isVerified && reqStatus !== 'pending' && !primaryBadges.find(b=>b.id==='organizer');
-  const showSpaceCta = !isSpaceOwner;
-
-  content.innerHTML = `
-
-  <!-- ═══════ HERO ═══════ -->
-  <div class="op-hero">
-
-    ${coverHtml}
-
-    <div class="op-hero-top">
-
-      <!-- أفاتار -->
-      <div class="op-avatar-wrap">
-        <div class="op-avatar" onclick="triggerAvatarUpload()" title="${t('profile.hero.changePhotoTooltip')}">
-          <div id="avatar-container-inner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${avatarHtml}</div>
-        </div>
-        <div class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="${t('profile.hero.changePhotoTooltipShort')}">✏️</div>
-      </div>
-
-      <!-- معلومات -->
-      <div class="op-hero-info">
-        <div class="op-name">
-          ${displayName}
-          ${nameBadge}
-        </div>
-        <div class="op-hero-meta">
-          <span>${t('profile.hero.memberSince', { date: joinDate })}</span>
-          ${myMergedCity  ? `<span>📍 ${myMergedCity}</span>` : ''}
-          ${currentUser.email ? `<span style="direction:ltr;unicode-bidi:embed">✉️ ${currentUser.email}</span>` : ''}
-        </div>
-        ${bioHtml}
-        ${socialHtml}
-        <div class="op-hero-actions" style="margin-top:10px">
-          <button class="op-qn-btn primary" onclick="openEditModal()">${t('profile.hero.editBtn')}</button>
-          ${primaryBadges.length ? `<button class="op-qn-btn" onclick="shareMyOrganizerProfile()">${t('profile.hero.shareBtn')}</button>` : ''}
-        </div>
-
-        <!-- الأوسمة الرئيسية -->
-        ${primaryBadges.length ? `
-        <div class="op-primary-badges">
-          ${primaryBadges.map(b => `
-            <div class="op-badge-primary ${b.id}">
-              <span class="op-badge-icon">${b.emoji}</span>
-              <div>
-                <div class="op-badge-label">${b.label}</div>
-                <div class="op-badge-desc">${b.desc}</div>
-              </div>
-            </div>`).join('')}
-        </div>` : ''}
-
-        <!-- الأوسمة الثانوية -->
-        ${secBadges.length ? `
-        <div class="op-sec-badges">
-          ${secBadges.map(b => `<span class="op-sec-badge ${b.tier==='gold'?'gold':''}">${b.emoji} ${b.label}</span>`).join('')}
-        </div>` : ''}
-
-        <!-- CTA cards للتقديم -->
-        ${(showOrgCta || showSpaceCta) ? `
-        <div class="op-cta-wrap">
-
-          ${showOrgCta ? `
-          <a href="/?p=dashboard" class="op-cta-card">
-            <span class="op-cta-emoji">🎪</span>
-            <div class="op-cta-body">
-              <div class="op-cta-title">${t('profile.cta.becomeOrganizerTitle')}</div>
-              <div class="op-cta-desc">${t('profile.cta.becomeOrganizerDesc')}</div>
-            </div>
-            <span class="op-cta-arrow">←</span>
-          </a>` : ''}
-
-          ${showSpaceCta ? `
-          <a href="/?p=owner" class="op-cta-card blue">
-            <span class="op-cta-emoji">🏪</span>
-            <div class="op-cta-body">
-              <div class="op-cta-title">${t('profile.cta.becomeOwnerTitle')}</div>
-              <div class="op-cta-desc">${t('profile.cta.becomeOwnerDesc')}</div>
-            </div>
-            <span class="op-cta-arrow" style="color:#3b82f6">←</span>
-          </a>` : ''}
-
-        </div>` : ''}
-      </div>
-    </div>
-
-    <!-- روابط سريعة -->
-    <div class="op-quick-nav">
-      <a class="op-qn-btn" href="/bazaars/">${t('profile.quickNav.bazaars')}</a>
-      <a class="op-qn-btn" href="/market/">${t('profile.quickNav.market')}</a>
-      <a class="op-qn-btn" href="/?p=dashboard">${t('profile.quickNav.dashboard')}</a>
-      ${isVerified ? `<a class="op-qn-btn primary" href="/bazaars/organize.html">${t('profile.quickNav.newBazaar')}</a>` : ''}
-      ${showOrganizerSection ? `<a class="op-qn-btn" href="/bazaars/profile.html?user=${currentUser.id}" target="_blank">${t('profile.quickNav.publicProfile')}</a>` : ''}
-    </div>
-  </div>
-
-  <!-- ═══════ الإحصائيات ═══════ -->
-  <div class="op-stats-grid">
-    ${showOrganizerSection ? `
-    <div class="op-stat-card">
-      <div class="op-stat-num">${totalBaz}</div>
-      <div class="op-stat-lbl">${t('profile.stats.bazaarsOrganized')}</div>
-    </div>
-    <div class="op-stat-card">
-      <div class="op-stat-num">${endedBaz}</div>
-      <div class="op-stat-lbl">${t('profile.stats.bazaarsEnded')}</div>
-    </div>
-    <div class="op-stat-card">
-      <div class="op-stat-num">${avgRating ? avgRating + ' ⭐' : '—'}</div>
-      <div class="op-stat-lbl">${t('profile.stats.avgRating')}</div>
-      ${bazaarRating?.total > 0 ? `<div class="op-stat-note">${t('profile.stats.basedOnReviews', { count: bazaarRating.total })}</div>` : ''}
-    </div>` : ''}
-    <div class="op-stat-card">
-      <div class="op-stat-num">${activeListings}</div>
-      <div class="op-stat-lbl">${t('profile.stats.activeListings')}</div>
-    </div>
-  </div>
-
-  <!-- ═══════ سمعتي — خاصة بهذه الصفحة الذاتية فقط، لا تُعرض على أي بروفايل عام ═══════ -->
-  ${_pubRepPanelHtml(reputation, recvRatings)}
-
-  <!-- ═══════ كارت اكتمال الملف الشخصي ═══════ -->
-  ${_buildCompletionCard(profile, userProfile, bazaars, showOrganizerSection)}
-
-  <!-- ═══════ عمودان: البيانات الشخصية + الإعلانات ═══════ -->
-  <div class="op-two-col">
-
-    <!-- البيانات الشخصية -->
-    <div class="op-section-card">
+function _renderMyProfile(profile, userProfile, reviewsData, reqStatus, bazaarsData, listingsData, isSpaceOwner, bazaarRating, reputationData, recvRatings) {
+  const content=document.getElementById('op-content');
+  const reviews=reviewsData, bazaars=bazaarsData, listings=listingsData;
+  const caps=getAccountCapabilities(userProfile,profile,_accountMemberships);
+  const isVerified=caps.organizerVerified;
+  const displayName=userProfile?.full_name || profile?.full_name || currentUser.email?.split('@')[0] || '?';
+  const initial=_escR(displayName[0]?.toUpperCase() || '؟');
+  const joinDate=(userProfile?.created_at || profile?.joined_at) ? new Date(userProfile?.created_at || profile?.joined_at).toLocaleDateString(_profLocale(),{year:'numeric',month:'long'}) : '—';
+  const avatarUrl=_toDirectImgUrl(userProfile?.avatar_url || profile?.avatar_url || profile?.logo || profile?.image || '');
+  const avatarHtml=avatarUrl ? `<img src="${_escR(avatarUrl)}" alt="" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span hidden>${initial}</span>` : `<span>${initial}</span>`;
+  const totalBaz=bazaars.length;
+  const showOrganizerSection=caps.isOrganizer || isVerified || totalBaz>0 || reqStatus==='pending';
+  const {primary:primaryBadges,secondary:secBadges}=_computeBadges({isVerified,isSpaceOwner,hasBazaars:totalBaz>0,listings,avgRating:Number(bazaarRating?.avg_rating)||0,reviewsCount:bazaarRating?.total||0});
+  const nameBadge=isVerified ? `<span class="op-verified-badge">${t('profile.orgBadge.verified')}</span>` : reqStatus==='pending' ? `<span class="op-pending-badge">${t('profile.orgBadge.pending')}</span>` : '';
+  const personal=`    <!-- البيانات الشخصية -->
+    <div class="op-section-card account-personal-data">
       <div class="op-section-title">
         <span>${t('profile.dataSection.title')}</span>
-        <a href="#" onclick="openEditModal();return false">${t('profile.dataSection.editLink')}</a>
       </div>
       <div class="op-data-row">
         <div class="op-data-lbl">${t('profile.dataSection.fullName')}</div>
-        <div class="op-data-val">${displayName}</div>
+        <div class="op-data-val">${_escR(displayName)}</div>
       </div>
       <div class="op-data-row">
         <div class="op-data-lbl">${t('profile.dataSection.email')}</div>
-        <div class="op-data-val" style="direction:ltr;text-align:right;font-size:12px">${currentUser.email || '—'}</div>
+        <div class="op-data-val" style="direction:ltr;text-align:right;font-size:12px">${_escR(currentUser.email || '—')}</div>
       </div>
       <div class="op-data-row">
         <div class="op-data-lbl">${t('profile.dataSection.mobile')}</div>
         <div class="op-data-val" style="direction:ltr;text-align:right">
-          ${myMergedPhone || '—'}
+          ${_escR(myMergedPhone || '—')}
           ${(myMergedPhone && !userProfile?.phone) ? `<div class="op-data-synced">${t('profile.dataSection.syncedFromListings')}</div>` : ''}
         </div>
       </div>
       <div class="op-data-row">
         <div class="op-data-lbl">${t('profile.dataSection.city')}</div>
         <div class="op-data-val">
-          ${myMergedCity || '—'}
+          ${_escR(myMergedCity || '—')}
           ${(myMergedCity && !userProfile?.city) ? `<div class="op-data-synced">${t('profile.dataSection.syncedFromListings')}</div>` : ''}
         </div>
       </div>
@@ -529,11 +360,6 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
         <div class="op-data-lbl">${t('profile.dataSection.joinDate')}</div>
         <div class="op-data-val">${joinDate}</div>
       </div>
-      <div class="op-data-row">
-        <div class="op-data-lbl">${t('profile.dataSection.password')}</div>
-        <div class="op-data-val" style="letter-spacing:3px">••••••••</div>
-      </div>
-
       ${(profile?.whatsapp || profile?.region || isVerified || reqStatus || isSpaceOwner) ? `
       <div style="margin-top:14px;padding-top:12px;border-top:1.5px solid var(--border)">
         <div style="font-size:11px;font-weight:900;color:var(--dark);margin-bottom:10px">${showOrganizerSection ? t('profile.dataSection.organizerDataTitle') : t('profile.dataSection.extraDataTitle')}</div>
@@ -551,22 +377,23 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
         ${profile?.whatsapp ? `
         <div class="op-data-row">
           <div class="op-data-lbl">${t('profile.dataSection.whatsapp')}</div>
-          <div class="op-data-val" style="direction:ltr;text-align:right">${profile.whatsapp}</div>
+          <div class="op-data-val" style="direction:ltr;text-align:right">${_escR(profile.whatsapp)}</div>
         </div>` : ''}
         ${profile?.region ? `
         <div class="op-data-row">
           <div class="op-data-lbl">${t('profile.dataSection.region')}</div>
-          <div class="op-data-val">${profile.region}</div>
+          <div class="op-data-val">${_escR(profile.region)}</div>
         </div>` : ''}
         ${isSpaceOwner ? `
         <div class="op-data-row">
           <div class="op-data-lbl">${t('profile.dataSection.spaceOwnerLabel')}</div>
-          <div class="op-data-val"><span class="op-badge-primary space-owner" style="padding:4px 10px;border-radius:10px;display:inline-flex;gap:6px;align-items:center"><span>🏪</span> ${t('profile.dataSection.spaceOwnerVerified')}</span></div>
+          <div class="op-data-val"><span class="op-badge-primary space-owner" style="padding:4px 10px;border-radius:10px;display:inline-flex;gap:6px;align-items:center">${_accountIcon('store')} ${t('profile.dataSection.spaceOwnerVerified')}</span></div>
         </div>` : ''}
       </div>` : ''}
     </div>
 
-    <!-- إعلاناتي -->
+`;
+  const listingsHtml=`    <!-- إعلاناتي -->
     <div class="op-section-card">
       <div class="op-section-title">
         <span>${t('profile.listingsSection.title')}</span>
@@ -574,11 +401,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       </div>
       ${_renderListingsGrid(listings)}
     </div>
-
-  </div>
-
-  <!-- ═══════ بازاراتي — تظهر فقط لمن طابق تعريف المنظّم فعلاً، لا لكل تينانت ═══════ -->
-  ${showOrganizerSection ? `
+`;
+  const bazaarsHtml=`  ${showOrganizerSection ? `
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
       <span>${t('profile.myBazaarsSection.title', { count: totalBaz })}</span>
@@ -598,8 +422,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       const canManage = ['published','active','upcoming','postponed','pending_review'].includes(b.status);
       return `<div class="op-data-row" style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${ds} · ${st}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_escR(b.name)}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${ds} · ${_escR(st)}</div>
         </div>
         <div style="display:flex;gap:5px;flex-shrink:0">
           <a href="/bazaars/?bazaar=${b.id}"
@@ -618,8 +442,8 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     </div>`}
   </div>` : ''}
 
-  <!-- ═══════ تقييم المشاركين في بازاراتك (المنظم → المستأجر) ═══════ -->
-  ${totalBaz > 0 ? `
+`;
+  const ratingsHtml=`  ${totalBaz > 0 ? `
   <div class="op-section-card op-rate-card" style="margin-top:16px">
     <div class="op-section-title">
       <span>${t('profile.rateSection.title')}</span>
@@ -648,7 +472,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
 
       <div class="op-rate-avg-row">
         <span>${t('profile.rateSection.avgLabel')}</span>
-        <span><strong id="bz-rate-avg">${(0).toLocaleString(_profLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong> / ${(5).toLocaleString(_profLocale())} ⭐</span>
+        <span><strong id="bz-rate-avg">${(0).toLocaleString(_profLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong> / ${(5).toLocaleString(_profLocale())} ${_accountIcon('star')}</span>
       </div>
 
       <div class="vr-fg">
@@ -662,7 +486,7 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
       <button id="bz-btn-submit-rating" class="op-rate-submit" onclick="submitBazaarRating()">${t('profile.rateSection.submitBtn')}</button>
     </div>` : `
     <div class="op-empty">
-      <div style="font-size:26px;margin-bottom:8px">🪑</div>
+      <div style="font-size:26px;margin-bottom:8px">${_accountIcon('user')}</div>
       <div>${t('profile.rateSection.emptyTitle')}</div>
       <div style="font-size:11px;margin-top:6px;color:var(--ink3)">
         ${t('profile.rateSection.emptyDesc')}
@@ -676,14 +500,14 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
     </div>
   </div>` : ''}
 
-  <!-- ═══════ التقييمات ═══════ -->
-  ${reviews.length ? `
+`;
+  const reviewsHtml=`  ${reviews.length ? `
   <div class="op-section-card" style="margin-top:16px">
     <div class="op-section-title">
       <span>${t('profile.reviewsSection.titleMy', { count: reviews.length })}</span>
     </div>
     ${reviews.map(r => {
-      const stars = '⭐'.repeat(Math.min(5, Math.round(r.rating || 0)));
+      const stars = _pubRepStars(r.rating,14);
       const rd = r.created_at
         ? new Date(r.created_at).toLocaleDateString(_profLocale(), { month:'short', day:'numeric', year:'numeric' })
         : '';
@@ -693,13 +517,18 @@ function _renderMyProfile(profile, userProfile, reviews, reqStatus, bazaars, lis
             <span style="font-size:14px">${stars || '—'}</span>
             <span style="font-size:11px;color:var(--ink3)">${rd}</span>
           </div>
-          ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${r.comment}</p>` : ''}
+          ${r.comment ? `<p style="font-size:13px;color:var(--ink2);margin:0;line-height:1.7">${_escR(r.comment)}</p>` : ''}
         </div>`;
     }).join('')}
   </div>` : ''}`;
-
-  /* بعد بناء الـ DOM: ارسم نجوم معايير التقييم التفاعلية */
-  if (totalBaz > 0) bzRenderRateStars();
+  const organizerRating=bazaarRating?.total ? `<div class="op-section-card"><h3>${t('profile.stats.avgRating')}</h3><p>${_accountIcon('star')} <strong>${Number(bazaarRating.avg_rating).toFixed(1)} / 5</strong> · ${t('profile.stats.basedOnReviews',{count:bazaarRating.total})}</p></div>` : '';
+  document.body.classList.add('account-self');
+  document.title=t('account.title')+' — مكاني Spot';
+  const navTitle=document.querySelector('.bz-nav-title');if(navTitle){navTitle.removeAttribute('data-i18n');navTitle.textContent=t('account.title');}
+  content.innerHTML=_renderAccountFrame({profile,userProfile,displayName,initial,avatarHtml,joinDate,nameBadge,isSpaceOwner,showOrganizerSection,isVerified,reqStatus,primaryBadges,secBadges,personal,listings:listingsHtml,bazaars:bazaarsHtml,ratings:ratingsHtml,reviews:reviewsHtml,organizerRating,reputation:_pubRepPanelHtml(reputationData,recvRatings),completion:_buildCompletionCard(profile,userProfile,bazaars,showOrganizerSection)});
+  if(totalBaz>0)bzRenderRateStars();
+  _accountReady=true;
+  selectAccountSection(location.hash.slice(1)||_accountSection);
 }
 
 
@@ -720,7 +549,7 @@ function bzRenderRateStars() {
   wrap.innerHTML = _bzRateCriteria().map(c => {
     const v = bzRateVals[c.key] || 0;
     const stars = [1, 2, 3, 4, 5].map(i =>
-      `<button type="button" class="op-si-star${i <= v ? ' on' : ''}" onclick="bzSetRateStar('${c.key}',${i})">★</button>`
+      `<button type="button" class="op-si-star${i <= v ? ' on' : ''}" aria-label="${c.label} ${i} / 5" aria-pressed="${i <= v}" onclick="bzSetRateStar('${c.key}',${i})">${_accountIcon('star')}</button>`
     ).join('');
     return `
       <div class="op-rate-crit">
@@ -761,7 +590,7 @@ function _bzHistoryRowsHtml() {
   return bzOrganizerRatings.map(r => {
     const who   = _escR(nameByBooking[r.booking_id] || t('profile.rateSection.defaultParticipantName'));
     const bz    = _escR(r.context_name || t('profile.rateSection.defaultBazaarName'));
-    const stars = '⭐'.repeat(Math.max(0, Math.min(5, r.overall || 0)));
+    const stars = _pubRepStars(r.overall,14);
     const rd    = r.created_at
       ? new Date(r.created_at).toLocaleDateString(_profLocale(), { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
@@ -771,7 +600,7 @@ function _bzHistoryRowsHtml() {
           <span class="op-rate-hrow-who">${who}</span>
           <span class="op-rate-hrow-stars">${stars || '—'}</span>
         </div>
-        <div class="op-rate-hrow-meta">🎪 ${bz} · ${rd}</div>
+        <div class="op-rate-hrow-meta">${_accountIcon('tent')} ${bz} · ${rd}</div>
         ${r.comment ? `<div class="op-rate-hrow-note">${_escR(r.comment)}</div>` : ''}
       </div>`;
   }).join('');
@@ -787,7 +616,7 @@ function bzOnParticipantChange() {
   if (ctxEl) {
     if (p) {
       const act = p.activity ? ' · ' + _escR(p.activity) : '';
-      ctxEl.innerHTML   = `🎪 ${_escR(p.bazaar_name || t('profile.rateSection.defaultBazaarName'))}${act}`;
+      ctxEl.innerHTML   = `${_accountIcon('tent')} ${_escR(p.bazaar_name || t('profile.rateSection.defaultBazaarName'))}${act}`;
       ctxEl.style.display = 'block';
     } else {
       ctxEl.style.display = 'none';
@@ -810,6 +639,8 @@ function bzOnParticipantChange() {
 }
 
 async function submitBazaarRating() {
+  if(!currentUser || document.getElementById('bz-btn-submit-rating')?.disabled)return;
+  const userId=currentUser.id;
   const sel       = document.getElementById('bz-rate-participant');
   const bookingId = sel?.value;
   const msgEl     = document.getElementById('bz-rate-msg');
@@ -819,7 +650,7 @@ async function submitBazaarRating() {
     if (!msgEl) return;
     msgEl.className = 'op-rate-msg ' + type;
     msgEl.style.display = 'block';
-    msgEl.textContent = (type === 'success' ? '✅ ' : '❌ ') + text;
+    msgEl.textContent = text;
     if (type === 'success') setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
   };
 
@@ -848,6 +679,7 @@ async function submitBazaarRating() {
       p_comment:      notes || null,
     });
     if (error) throw error;
+    if(currentUser?.id!==userId)return;
 
     showMsg('success', t('profile.rateSection.successMsg', { overall }));
     await _reloadBazaarRatings();
@@ -861,7 +693,7 @@ async function submitBazaarRating() {
       invalid_context:            t('profile.rateSection.errors.invalid_context'),
       unauthorized:                t('profile.rateSection.errors.unauthorized'),
     };
-    showMsg('error', map[e?.message] || t('profile.rateSection.errors.generic', { msg: e?.message || t('profile.rateSection.errors.genericUnknown') }));
+    if(currentUser?.id===userId)showMsg('error', map[e?.message] || t('profile.rateSection.errors.generic', { msg: e?.message || t('profile.rateSection.errors.genericUnknown') }));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = t('profile.rateSection.submitBtn'); }
   }
@@ -869,16 +701,20 @@ async function submitBazaarRating() {
 
 /* أعد جلب القوائم وحدّث الودجة دون إعادة رسم الصفحة كاملة */
 async function _reloadBazaarRatings() {
+  const userId=currentUser?.id,sequence=_profileLoadSequence;
+  if(!userId)return;
   try {
     const [rateableRes, ratingsRes] = await Promise.all([
       sbClient.rpc('organizer_list_rateable_participants'),
       sbClient.from('user_ratings').select('*')
-        .eq('rater_id', currentUser.id).eq('context_type', 'bazaar')
+        .eq('rater_id', userId).eq('context_type', 'bazaar')
         .order('created_at', { ascending: false }),
     ]);
+    if(currentUser?.id!==userId || sequence!==_profileLoadSequence)return;
+    if(rateableRes.error || ratingsRes.error)return;
     bzRateableParticipants = rateableRes.data || [];
     bzOrganizerRatings     = ratingsRes.data || [];
-  } catch (_) {}
+  } catch (_) {return;}
 
   /* أعد بناء القائمة المنسدلة (مع علامة ✓ للمُقيَّمين) */
   const sel = document.getElementById('bz-rate-participant');
@@ -959,7 +795,7 @@ function _computeBadges({ isVerified, isSpaceOwner, hasBazaars, listings, avgRat
 function _renderListingsGrid(listings) {
   if (!listings || !listings.length) {
     return `<div class="op-empty">
-      <div style="font-size:26px;margin-bottom:8px">🛍️</div>
+      <div style="font-size:26px;margin-bottom:8px">${_accountIcon('listings')}</div>
       <div>${t('profile.listingsSection.empty')}</div>
       <a href="/post-ad/" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--orange);font-weight:700;text-decoration:none">${t('profile.listingsSection.addNew')}</a>
     </div>`;
@@ -977,21 +813,21 @@ function _renderListingsGrid(listings) {
       if (isPending) { sc = 'pending'; sl = t('profile.listingsSection.statusPending'); }
 
       const imgHtml = l.cover_image
-        ? `<img src="${_toDirectImgUrl(l.cover_image)}" alt="${l.title}" onerror="this.parentElement.innerHTML='🛍️'">`
-        : `<span>🛍️</span>`;
+        ? `<img src="${_escR(_toDirectImgUrl(l.cover_image))}" alt="" onerror="this.style.display='none'">`
+        : _accountIcon('listings');
 
       return `
-        <div class="op-listing-card" onclick="window.open('/market/?manage=${l.id}','_blank')" title="${t('profile.listingsSection.manageTitle', { title: l.title })}">
+        <a class="op-listing-card" href="/market/?manage=${l.id}" title="${_escR(t('profile.listingsSection.manageTitle', { title: l.title }))}">
           <div class="op-listing-img">${imgHtml}</div>
           <div class="op-listing-info">
-            <div class="op-listing-title">${l.title || t('profile.listingsSection.untitled')}</div>
+            <div class="op-listing-title">${_escR(l.title || t('profile.listingsSection.untitled'))}</div>
             <div class="op-listing-meta">
               <span class="op-listing-price">${listingPriceText(l, getLocale())}</span>
               <span style="font-size:11px">${listingTypeLabel(l, getLocale())}</span>
               <span class="op-listing-status ${sc}">${sl}</span>
             </div>
           </div>
-        </div>`;
+        </a>`;
     }).join('') +
     `</div>`;
 }
@@ -1034,6 +870,8 @@ async function _loadPublicProfile(userId) {
     console.warn('[profile] public load error:', e.message);
   }
 
+  document.body.classList.remove('account-self');
+  document.title=t('profile.nav.title')+' — مكاني Spot';
   _renderPublicProfile(userId, publicUser, organizer, reviews, bazaars, totalExhibitors, bazaarRating);
 }
 
@@ -1475,7 +1313,7 @@ function _pubRepPanelHtml(reputation, recvRatings) {
   const panel = `
     <div class="rep-panel">
       <div class="rep-badge ${badge.cls}">
-        <div class="rep-badge-emoji">${badge.emoji}</div>
+        <div class="rep-badge-emoji">${_accountIcon('star')}</div>
         <div class="rep-score">${avg.toFixed(1)}</div>
         <div class="rep-stars">${_pubRepStars(avg, 16)}</div>
         <div class="rep-badge-label">${badge.label}</div>
@@ -1493,7 +1331,7 @@ function _pubRepPanelHtml(reputation, recvRatings) {
 
   const list = (recvRatings || []).map(r => {
     const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString(_profLocale()) : '';
-    const ctxIcon = r.context_type === 'bazaar' ? '🎪' : '🏬';
+    const ctxIcon = _accountIcon(r.context_type === 'bazaar' ? 'tent' : 'store');
     const roleLbl = r.rater_role === 'organizer' ? t('profile.reputation.roleOrganizer') : t('profile.reputation.roleOwner');
     return `
       <div class="recv-rating-card">
@@ -1537,14 +1375,17 @@ function _toDirectImgUrl(url) {
 /* ================================================================
    ✍️ نافذة التعديل
    ================================================================ */
-function openEditModal() {
+let _editReturnFocus=null;
+function openEditModal(section) {
+  if(document.getElementById('edit-save-btn')?.disabled)return;
+  _editReturnFocus=document.activeElement;
   const modal = document.getElementById('edit-profile-modal');
   if (!modal) return;
 
-  document.getElementById('edit-name').value      = myProfileData?.full_name || myUserProfile?.full_name || '';
+  document.getElementById('edit-name').value      = myUserProfile?.full_name || myProfileData?.full_name || '';
   document.getElementById('edit-phone').value     = myMergedPhone || '';
   document.getElementById('edit-region').value    = myProfileData?.region   || '';
-  document.getElementById('edit-bio').value       = myProfileData?.bio      || '';
+  document.getElementById('edit-bio').value       = myProfileData?.bio || myUserProfile?.bio || '';
   document.getElementById('edit-facebook').value  = myProfileData?.facebook_url  || '';
   document.getElementById('edit-instagram').value = myProfileData?.instagram_url || '';
   document.getElementById('edit-tiktok').value    = myProfileData?.tiktok_url    || '';
@@ -1564,19 +1405,19 @@ function openEditModal() {
   /* ── معاينة صورة الغلاف داخل المودال ── */
   const cvThumb = document.getElementById('edit-cover-thumb-inner');
   if (cvThumb) {
-    const cv = _toDirectImgUrl(myProfileData?.cover_url || '');
+    const cv = _toDirectImgUrl(myProfileData?.cover_url || myUserProfile?.cover_url || '');
     cvThumb.innerHTML = cv
-      ? `<img src="${cv}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" onerror="this.style.display='none'">`
+      ? `<img src="${_escR(cv)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" onerror="this.style.display='none'">`
       : '';
   }
 
   /* ── معاينة الأفاتار داخل المودال ── */
   const avThumb = document.getElementById('edit-avatar-thumb-inner');
   if (avThumb) {
-    const av = _toDirectImgUrl(myProfileData?.avatar_url || '');
-    const initial = (myProfileData?.full_name || myUserProfile?.full_name || currentUser?.email || '?')[0].toUpperCase();
+    const av = _toDirectImgUrl(myUserProfile?.avatar_url || myProfileData?.avatar_url || '');
+    const initial = _escR((myUserProfile?.full_name || myProfileData?.full_name || currentUser?.email || '?')[0].toUpperCase());
     avThumb.innerHTML = av
-      ? `<img src="${av}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div class=\\'edit-avatar-thumb-init\\'>${initial}</div>'">`
+      ? `<img src="${_escR(av)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
       : `<div class="edit-avatar-thumb-init">${initial}</div>`;
   }
 
@@ -1587,14 +1428,23 @@ function openEditModal() {
 
   document.getElementById('edit-error').style.display = 'none';
   modal.classList.add('open');
+  document.body.style.overflow='hidden';
+  const focusEl=document.getElementById(section==='security'?'edit-password':'edit-name');
+  focusEl?.focus();
+  if(section==='security')focusEl?.scrollIntoView({block:'center'});
 }
 
 function closeEditModal() {
   const modal = document.getElementById('edit-profile-modal');
+  if(document.getElementById('edit-save-btn')?.disabled)return;
   if (modal) modal.classList.remove('open');
+  document.body.style.overflow='';
+  if(_editReturnFocus?.isConnected)_editReturnFocus.focus({preventScroll:true});
 }
 
 async function saveProfileDetails() {
+  if(!currentUser || document.getElementById('edit-save-btn')?.disabled)return;
+  const userId=currentUser.id;
   const name      = document.getElementById('edit-name').value.trim();
   const phone     = document.getElementById('edit-phone')?.value.trim()     || '';
   const city      = document.getElementById('edit-city')?.value             || '';
@@ -1636,14 +1486,15 @@ async function saveProfileDetails() {
     const { error: profilesErr } = await sbClient
       .from('profiles')
       .upsert(
-        { id: currentUser.id, full_name: name, phone: phone||null, city: city||null },
+        { id: userId, full_name: name, phone: phone||null, city: city||null, bio: bio||null },
         { onConflict: 'id' }
       );
     if (profilesErr) throw new Error(t('profile.errors.savingProfileErr', { msg: profilesErr.message }));
+    if(currentUser?.id!==userId)return;
 
     /* 2. حفظ/تحديث organizer_profiles */
     const orgPayload = {
-      user_id:       currentUser.id,
+      user_id:       userId,
       full_name:     name,
       region:        region  || null,
       bio:           bio     || null,
@@ -1654,21 +1505,24 @@ async function saveProfileDetails() {
 
     const { error: orgErr } = await sbClient.from('organizer_profiles').upsert(orgPayload, { onConflict: 'user_id' });
     if (orgErr) throw new Error(t('profile.errors.savingOrgErr', { msg: orgErr.message }));
+    if(currentUser?.id!==userId)return;
 
     /* 3. تغيير كلمة المرور إن وُجدت */
     if (newPwd) {
       const { error: pwdErr } = await sbClient.auth.updateUser({ password: newPwd });
       if (pwdErr) throw new Error(t('profile.errors.passwordChangeErr', { msg: pwdErr.message }));
+      if(currentUser?.id!==userId)return;
     }
 
     /* 4. مزامنة الاسم الجديد في جميع بازارات المستخدم (طبقة أمان ثانية — الـ Trigger في DB هو الأول) */
     sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
 
+    if(saveBtn)saveBtn.disabled=false;
     closeEditModal();
     showSuccessToast(t('profile.editModal.successToast'));
     await _loadMyProfile();
   } catch (err) {
-    showErr(err.message);
+    if(currentUser?.id===userId)showErr(err.message);
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -1698,6 +1552,7 @@ function _shareOrganizerLink(url, shareText) {
   if (navigator.share) {
     navigator.share({ title: 'مكاني Spot', text: shareText, url }).catch(() => {});
   } else {
+    if(!navigator.clipboard?.writeText){showSuccessToast(t('profile.share.linkFallback',{url}));return;}
     navigator.clipboard.writeText(url)
       .then(() => showSuccessToast(t('profile.share.linkCopied')))
       .catch(() => showSuccessToast(t('profile.share.linkFallback', { url })));
@@ -1736,84 +1591,42 @@ function triggerCoverUpload() {
   document.getElementById('cover-file-input')?.click();
 }
 
-async function uploadCoverImage(inputEl) {
-  const file = inputEl?.files?.[0];
-  if (!file) return;
-
-  const coverEl = document.getElementById('op-cover-img-el');
-  const uploadBtn = document.getElementById('op-cover-upload-btn');
-  if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverUploading');
-
+const _profileUploads = new Set();
+async function _uploadProfileImage(inputEl, kind) {
+  const file=inputEl?.files?.[0];
+  const user=currentUser;
+  if(!file || !user || _profileUploads.has(kind))return;
+  const userId=user.id;
+  const fullName=myUserProfile?.full_name || myProfileData?.full_name || (user.email || '').split('@')[0];
+  const field=kind==='cover'?'cover_url':'avatar_url';
+  _profileUploads.add(kind);
+  const controls=[...document.querySelectorAll(kind==='cover'?'#op-cover-upload-btn,.edit-cover-thumb':'.account-avatar-area button,.edit-avatar-thumb')];
+  controls.forEach(el=>{el.disabled=true;el.setAttribute('aria-busy','true');});
   try {
-    const { data: { session } } = await sbClient.auth.getSession();
-    const authToken = session?.access_token;
-    if (!authToken) throw new Error(t('profile.upload.loginRequired'));
-
-    const r2Path    = `covers/${currentUser.id}/cover-${Date.now()}.webp`;
-    const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
-
-    /* معاينة فورية */
-    if (coverEl) { coverEl.src = publicUrl; coverEl.style.display = 'block'; }
-    if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverChangeBtn');
-
-    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
-      user_id:   currentUser.id,
-      full_name: myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
-      cover_url: publicUrl,
-    }, { onConflict: 'user_id' });
-    if (dbErr) throw new Error(dbErr.message);
-
-    /* 🪪 توحيد: حدّث المصدر الموحّد profiles.cover_url */
-    sbClient.from('profiles').update({ cover_url: publicUrl }).eq('id', currentUser.id).then(null, () => {});
-
-    showSuccessToast(t('profile.upload.coverSuccess'));
+    const {data:{session}}=await sbClient.auth.getSession();
+    if(!session?.access_token || session.user?.id!==userId)throw new Error(t('profile.upload.loginRequired'));
+    if(currentUser?.id!==userId)return;
+    const publicUrl=await uploadSingleImageToR2(file,`${kind}s/${userId}/${kind}-${Date.now()}.webp`,session.access_token);
+    if(currentUser?.id!==userId)return;
+    const {error:orgError}=await sbClient.from('organizer_profiles').upsert({user_id:userId,full_name:fullName,[field]:publicUrl},{onConflict:'user_id'});
+    if(orgError)throw orgError;
+    if(currentUser?.id!==userId)return;
+    const {error:identityError}=await sbClient.from('profiles').update({[field]:publicUrl}).eq('id',userId);
+    if(identityError)throw identityError;
+    if(currentUser?.id!==userId)return;
+    if(kind==='avatar')sbClient.rpc('sync_my_profile_to_bazaars').then(null,()=>{});
+    showSuccessToast(t('profile.upload.'+kind+'Success'));
     await _loadMyProfile();
-  } catch (err) {
-    showSuccessToast(t('profile.upload.coverFailed', { msg: err.message }), true);
-    if (uploadBtn) uploadBtn.textContent = t('profile.upload.coverChangeBtn');
-    await _loadMyProfile();
+  } catch(err) {
+    if(currentUser?.id===userId){
+      showSuccessToast(t('profile.upload.'+kind+'Failed',{msg:err.message}),true);
+      await _loadMyProfile();
+    }
+  } finally {
+    _profileUploads.delete(kind);
+    controls.forEach(el=>{el.disabled=false;el.removeAttribute('aria-busy');});
+    inputEl.value='';
   }
 }
-
-async function uploadAvatarImage(inputEl) {
-  const file = inputEl?.files?.[0];
-  if (!file) return;
-
-  const inner = document.getElementById('avatar-container-inner');
-  if (inner) inner.innerHTML = `<span style="font-size:12px;animation:spin 1s linear infinite">⏳</span>`;
-
-  try {
-    const { data: { session } } = await sbClient.auth.getSession();
-    const authToken = session?.access_token;
-    if (!authToken) throw new Error(t('profile.upload.loginRequired'));
-
-    const r2Path    = `avatars/${currentUser.id}/avatar-${Date.now()}.webp`;
-    const publicUrl = await uploadSingleImageToR2(file, r2Path, authToken);
-
-    /* معاينة فورية — تحديث الأفاتار في الصفحة قبل إعادة التحميل */
-    const avatarImgStyle = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
-    if (inner) inner.innerHTML = `<img src="${publicUrl}" style="${avatarImgStyle}" alt="avatar">`;
-    document.querySelectorAll('.op-avatar').forEach(el => {
-      el.innerHTML = `<img src="${publicUrl}" style="${avatarImgStyle}" alt="avatar">`;
-    });
-
-    const { error: dbErr } = await sbClient.from('organizer_profiles').upsert({
-      user_id:    currentUser.id,
-      full_name:  myProfileData?.full_name || myUserProfile?.full_name || currentUser.email.split('@')[0],
-      avatar_url: publicUrl,
-    }, { onConflict: 'user_id' });
-    if (dbErr) throw new Error(dbErr.message);
-
-    /* 🪪 توحيد: حدّث المصدر الموحّد profiles.avatar_url ليظهر في كل المنصة */
-    sbClient.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id).then(null, () => {});
-
-    /* مزامنة في بازارات المستخدم (الـ Trigger يفعلها تلقائياً، هذا احتياط) */
-    sbClient.rpc('sync_my_profile_to_bazaars').then(null, () => {});
-
-    showSuccessToast(t('profile.upload.avatarSuccess'));
-    await _loadMyProfile();
-  } catch (err) {
-    showSuccessToast(t('profile.upload.avatarFailed', { msg: err.message }), true);
-    await _loadMyProfile();
-  }
-}
+function uploadCoverImage(inputEl){return _uploadProfileImage(inputEl,'cover');}
+function uploadAvatarImage(inputEl){return _uploadProfileImage(inputEl,'avatar');}

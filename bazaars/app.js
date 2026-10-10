@@ -71,6 +71,7 @@ function _bzFmtDateLong(d, opts) { return new Date(d).toLocaleDateString(_bzNumL
 document.addEventListener('makani:locale-changed', () => {
   bzRenderNavUser();
   if (BAZAARS.length) renderBazaarCards();
+  if (document.querySelector('.bz-chip[data-disc]')) _bzRenderDiscoveryChips();
   updateBzSlider();
   if (currentBazaar) openBazaarDetail(currentBazaar.id, { silent: true });
   if (document.getElementById('dlm-modal')?.classList.contains('open')) _dlmRenderRows();
@@ -272,13 +273,9 @@ function bzRenderNavUser() {
             <div class="nav-dropdown-sep"></div>` : ''}
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-              ${t('userNav.profile')}
+              ${t('account.title')}
             </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              ${t('userNav.dashboard')}
-            </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
+            <button class="nav-dropdown-item" onclick="window.location.href='/market/?myListings=1'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
               ${t('userNav.myListings')}
             </button>
@@ -835,7 +832,16 @@ function applyBzFilters() {
     });
   }
 
-  if (region)   data = data.filter(b => (b.region || b.location || '').includes(region));
+  if (region) data = data.filter(b => typeof bazaarMatchesRegion === 'function'
+    ? bazaarMatchesRegion(b, region) : (b.region || b.location || '').includes(region));
+  if (_bzDiscoveryActKw.length && typeof bazaarMatchesActivity === 'function') {
+    data = data.filter(b => bazaarMatchesActivity(b, _bzDiscoveryActKw));
+  }
+  // Rental-search links should show current opportunities, while the existing
+  // past/all navigation remains available for browsing the archive.
+  if (new URLSearchParams(location.search).get('intent') === 'bazaar' && bzTimeNav === 'all') {
+    data = data.filter(b => isBookableBazaar(b));
+  }
   if (dateFrom) data = data.filter(b => b.date_start && b.date_start >= dateFrom);
   if (dateTo)   data = data.filter(b => b.date_start && b.date_start <= dateTo);
   data = data.filter(b => (b.price_per_slot || 0) <= maxPrice);
@@ -888,8 +894,7 @@ async function _bzApplyIncomingDiscovery() {
 
   const res = applyDiscoveryParamsToBazaars(p);
 
-  /* النشاط: ترتيب لا فلترة. ⛔ ما بنكتبوش في #bz-search — ده اللي بينتج
-     «لا توجد بازارات» بينما فيه بازار مناسب فعلًا (category نص حر). */
+  // Activity matches published text and stays separate from free-text search.
   if (res.actId && typeof bazaarActivityKeywords === 'function') {
     _bzDiscoveryActId = res.actId;
     /* التسمية العربية الحيّة بتدخل ككلمة مطابقة احتياطية، فنشاط جديد يضيفه
@@ -929,7 +934,7 @@ function _bzRenderDiscoveryChips() {
   const add = (html) => bar.insertAdjacentHTML('beforeend', html);
   add(`<button class="bz-chip active" data-disc="carried" onclick="clearBzFilters()">${t('discovery.carriedFilters')}</button>`);
   if (_bzDiscoveryActId) {
-    add(`<button class="bz-chip" data-disc="act" onclick="_bzClearDiscoveryAct()">${t('discovery.actRankOnly', { act: _bzActivityLabel(_bzDiscoveryActId) })}</button>`);
+    add(`<button class="bz-chip" data-disc="act" onclick="_bzClearDiscoveryAct()">${t('discovery.actMatch', { act: _bzActivityLabel(_bzDiscoveryActId) })}</button>`);
   }
 }
 

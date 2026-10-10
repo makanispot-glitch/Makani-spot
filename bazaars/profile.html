@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>الملف الشخصي — مكاني Spot</title>
+<title>حسابي — مكاني Spot</title>
 
 <!-- Locale Flicker Prevention — راجع shared/locale-flicker-snippet.html -->
 <script>
@@ -67,8 +67,8 @@
 </script>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json?v=20261007141114">
-<script src="/version.js?v=20261007141114"></script>
+<link rel="manifest" href="/manifest.json?v=20261010033314">
+<script src="/version.js?v=20261010033314"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -78,16 +78,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20261007141114">
+<link rel="stylesheet" href="../style.css?v=20261010033314">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="../shared/sb-config.js?v=20261007141114" defer></script>
-<script src="/pwa-install.js?v=20261007141114" defer></script>
+<script src="../shared/sb-config.js?v=20261010033314" defer></script>
+<script src="/pwa-install.js?v=20261010033314" defer></script>
 
 <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-<script src="/vendor/i18next/i18next.min.js?v=20261007141114" defer></script>
-<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261007141114" defer></script>
-<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261007141114" defer></script>
-<script src="/shared/i18n.js?v=20261007141114" defer></script>
+<script src="/vendor/i18next/i18next.min.js?v=20261010033314" defer></script>
+<script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261010033314" defer></script>
+<script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261010033314" defer></script>
+<script src="/shared/i18n.js?v=20261010033314" defer></script>
 
 <style>
 /* ══════════════════════════════════════════════════
@@ -662,6 +662,8 @@
   .op-content { padding: 14px 12px; }
 }
 </style>
+<link rel="stylesheet" href="/shared/account-ui.css?v=20261010033314">
+<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261010033314">
 
 <!-- Google Analytics 4 — Makani Spot -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -694,6 +696,7 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010033314">
 </head>
 <body>
 
@@ -729,17 +732,17 @@
 
 <!-- ── Edit Modal ── -->
 <div class="op-modal" id="edit-profile-modal">
-  <div class="op-modal-card">
+  <div class="op-modal-card" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
     <div class="op-modal-header">
-      <span class="op-modal-title" data-i18n="profile.editModal.title">✍️ تعديل الملف الشخصي</span>
-      <button class="op-modal-close" onclick="closeEditModal()">×</button>
+      <span id="edit-modal-title" class="op-modal-title" data-i18n="profile.editModal.title">✍️ تعديل الملف الشخصي</span>
+      <button class="op-modal-close" aria-label="إغلاق" data-i18n-attr="aria-label:account.close" onclick="closeEditModal()">×</button>
     </div>
     <div class="op-modal-body">
 
       <!-- ── الصورة والغلاف ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
-          <span class="edit-section-icon">📸</span>
+          <span class="edit-section-icon" data-account-icon="camera"></span>
           <span data-i18n="profile.editModal.photoSectionTitle">الصورة والغلاف</span>
           <span class="edit-section-tip" data-i18n="profile.editModal.photoSectionTip">تحسّن ظهور ملفك +40%</span>
         </div>
@@ -764,7 +767,7 @@
       <!-- ── البيانات الأساسية ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
-          <span class="edit-section-icon">👤</span>
+          <span class="edit-section-icon" data-account-icon="user"></span>
           <span data-i18n="profile.editModal.basicSectionTitle">البيانات الأساسية</span>
         </div>
         <div class="vr-fg">
@@ -799,7 +802,7 @@
       <!-- ── نبذة شخصية ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
-          <span class="edit-section-icon">✍️</span>
+          <span class="edit-section-icon" data-account-icon="edit"></span>
           <span data-i18n="profile.editModal.bioSectionTitle">نبذة شخصية</span>
           <span class="edit-section-tip" data-i18n="profile.editModal.bioSectionTip">يزيد ثقة العارضين بك</span>
         </div>
@@ -815,7 +818,7 @@
       <!-- ── روابط التواصل ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
-          <span class="edit-section-icon">📱</span>
+          <span class="edit-section-icon" data-account-icon="link"></span>
           <span data-i18n="profile.editModal.socialSectionTitle">روابط التواصل الاجتماعي</span>
           <span class="edit-section-tip" data-i18n="profile.editModal.socialSectionTip">تعزّز مصداقيتك مع المولات</span>
         </div>
@@ -848,7 +851,7 @@
       <!-- ── الأمان ── -->
       <div class="edit-section">
         <div class="edit-section-hd">
-          <span class="edit-section-icon">🔒</span>
+          <span class="edit-section-icon" data-account-icon="lock"></span>
           <span data-i18n="profile.editModal.securitySectionTitle">تغيير كلمة المرور</span>
           <span style="margin-right:auto;font-size:10.5px;color:var(--ink3);font-weight:400" data-i18n="profile.editModal.securityHint">اتركها فارغة إن لم تريد التغيير</span>
         </div>
@@ -862,7 +865,7 @@
         </div>
       </div>
 
-      <div id="edit-error" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
+      <div id="edit-error" role="alert" style="display:none;font-size:12px;color:#EF4444;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px"></div>
     </div>
     <div class="op-modal-footer">
       <button class="btn" style="padding:8px 18px;border-radius:50px;font-size:13px" onclick="closeEditModal()" data-i18n="profile.editModal.cancelBtn">إلغاء</button>
@@ -899,11 +902,18 @@
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatarImage(this)">
 <input type="file" id="cover-file-input"  accept="image/*" style="display:none" onchange="uploadCoverImage(this)">
 
-<script src="/notifications.js?v=20261007141114" defer></script>
-<script src="/media-handler.js?v=20261007141114" defer></script>
-<script src="../shared/account.js?v=20261007141114" defer></script>
-<script src="/shared/listing-model.js?v=20261007141114" defer></script>
-<script src="profile.js?v=20261007141114" defer></script>
+<script src="/notifications.js?v=20261010033314" defer></script>
+<script src="/media-handler.js?v=20261010033314" defer></script>
+<script src="../shared/account.js?v=20261010033314" defer></script>
+<script src="/shared/listing-model.js?v=20261010033314" defer></script>
+<script src="/shared/nav-identity.js?v=20261010033314" defer></script>
+<script src="/shared/managed-bazaars.js?v=20261010033314" defer></script>
+<script src="/shared/space-pricing.js?v=20261010033314" defer></script>
+<script src="/shared/brand-profile.js?v=20261010033314" defer></script>
+<script src="/shared/space-commerce-form.js?v=20261010033314" defer></script>
+<script src="/shared/tenant-bookings.js?v=20261010033314" defer></script>
+<script src="/shared/account-ui.js?v=20261010033314" defer></script>
+<script src="profile.js?v=20261010033314" defer></script>
 
 <!-- ── تبديل اللغة (English/عربي) ── -->
 <script>
@@ -915,7 +925,7 @@
     setLocale(getLocale() === 'en' ? 'ar' : 'en', sbClient && currentUser ? { sbClient: sbClient, userId: currentUser.id } : undefined).then(updateLangSwitcherLabel);
   }
   document.addEventListener('DOMContentLoaded', function () {
-    initI18n(['bazaars', 'common']).then(updateLangSwitcherLabel);
+    updateLangSwitcherLabel();
   });
 </script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
@@ -927,6 +937,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
+    if (!reg) return;
     setInterval(() => reg.update().catch(err => console.warn('SW update check failed:', err)), 30 * 60 * 1000);
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
@@ -937,7 +948,7 @@ if ('serviceWorker' in navigator) {
         }
       });
     });
-  });
+  }).catch(err => console.warn('Service worker registration failed:', err));
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data?.type === 'SW_UPDATED') {
       const b = document.getElementById('sw-update-bar');
@@ -946,5 +957,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<div class="svc-detail-overlay" id="svc-detail-modal" onclick="if(event.target===this)closeServiceRequest()"><div class="svc-detail-box" role="dialog" aria-modal="true" aria-label="تفاصيل الطلب" data-i18n-attr="aria-label:account.requestDetails"><button class="svc-detail-close" type="button" onclick="closeServiceRequest()" aria-label="إغلاق" data-i18n-attr="aria-label:account.close">×</button><div id="svc-detail-body"></div></div></div>
 </body>
 </html>

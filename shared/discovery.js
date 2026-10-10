@@ -15,10 +15,8 @@
  *  ١) **URL = Shareable Discovery State.** أي حالة اكتشاف تنتج نتائج
  *     لازم تكون في الرابط. حد يفتح /spaces/?region=…&act=… يلاقي نفس
  *     الاكتشاف. ده أساس مشاركة واتساب وروابط الحملات وصفحات الهبوط.
- *  ٢) **النشاط في البازارات = ترتيب، مش فلترة.** بازار واحد ممكن يضم
- *     ١٢ نوع نشاط و category عنده «بازار خيري». الفلترة النصية هتخفي
- *     بازارات مناسبة فعلًا. فالفلاتر الصارمة للبازار = المنطقة + التوافر
- *     + السعر فقط، والنشاط بيقدّم المطابق ولا يحذف غير المطابق أبدًا.
+ *  ٢) النشاط في بحث البازارات يطابق الوصف المنشور، وليس قائمة قبول
+ *     معتمدة من المنظّم. الواجهة توضح ذلك؛ لا نفترض أن النشاط مقبول.
  *  ٣) **مصدر البيانات مخفي عن الواجهة.** الـUI بتنادي getDiscoveryBazaars()
  *     ولا تعرف إن البيانات جاية من مصفوفة في الذاكرة — عشان استبدالها
  *     بـRPC لاحقًا ما يستلزمش أي تعديل واجهة (شوف getDiscoveryBazaars).
@@ -113,18 +111,18 @@ const DISCOVERY_ACT_ALIASES = Object.freeze({
   sports:  ['رياضه', 'لياقه', 'جيم', 'رياضي', 'سبورت'],
   flowers: ['ورود', 'هدايا', 'زهور', 'بوكيه', 'ديكور', 'مستلزمات منزليه'],
   vending: ['vending', 'ماكينه', 'ماكينات', 'فيندنج'],
-  /* other = «أخرى» — تسمية بلا دلالة مطابقة. فاضية عمدًا: لا ترتيب لها. */
-  other:   [],
+  // «أخرى» تطابق فقط إعلانًا يصف نفسه بأخرى أو متنوع.
+  other:   ['اخرى', 'متنوع', 'other'],
 });
 
 /**
  * كلمات المطابقة لنشاط معيّن على جانب البازارات.
  * @param {string} actId        — id من space_activities
  * @param {string} catalogLabel — تسمية الكتالوج الحيّة («🍰 حلويات ومخبوزات») إن وُجدت
- * @returns {string[]} كلمات مطبَّعة (ممكن تكون فاضية = لا ترتيب)
+ * @returns {string[]} كلمات مطبَّعة (فاضية = لا فلترة بالنشاط)
  */
 function bazaarActivityKeywords(actId, catalogLabel) {
-  if (!actId || actId === 'other') return [];
+  if (!actId) return [];
   const base = DISCOVERY_ACT_ALIASES[actId] || [];
   const extra = catalogLabel ? [_discStripEmoji(catalogLabel)] : [];
   const seen = Object.create(null);
@@ -294,6 +292,7 @@ function buildDiscoveryUrl(target, state) {
     if (k === 'max' && targetFamily && st.family && st.family !== targetFamily) return;
     qs.set(k, String(v));
   });
+  if (targetFamily) qs.set('intent', targetFamily);
 
   const s = qs.toString();
   return s ? base + '?' + s : base;
@@ -350,11 +349,10 @@ function applyDiscoveryParamsToSpaces(p) {
 /**
  * يعبّي فلاتر /bazaars/ من بارامترات الاكتشاف.
  *
- * ⛔ **ما بيكتبش `act` في #bz-search إطلاقًا** (المبدأ ٢). النشاط بيرجع
- * كـkeywords للترتيب بس، والصفحة بتمرّرها لمفتاح فرز ثانوي.
+ * لا يكتب act في البحث الحر: النشاط يبقى فلترًا مستقلًا قابلًا للمسح.
  *
- * المنطقة هنا **تُحقن** لو مالهاش خيار: applyBzFilters بتطابق بسلسلة فرعية
- * فالفلتر بيشتغل بأي نص — عكس /spaces/ بالظبط.
+ * المنطقة تُحقن لو مالهاش خيار؛ applyBzFilters يستخدم التطبيع العربي
+ * والمرادفات نفسها المستخدمة في معاينة الرئيسية.
  *
  * @returns {{applied:string[], dropped:string[], actId:string|null}}
  */
@@ -452,7 +450,7 @@ function setDiscoveryBazaarSource(fn) { _discBazaarSource = fn; }
  *
  * @param {object} filters
  *   region?        منطقة (مطابقة مرادفات + سلسلة فرعية)
- *   activityKeywords? string[] — **ترتيب فقط، لا فلترة** (المبدأ ٢)
+ *   activityKeywords? string[] — مطابقة التصنيف/العنوان/الوصف المنشور
  *   maxPrice?      حد أقصى لسعر المكان
  *   availableOnly? بها أماكن متاحة فقط
  *   excludeId?     استبعاد بازار (البازار المميّز في التيزر مثلًا)
@@ -511,6 +509,7 @@ function _discFilterRankBazaars(rows, f) {
 
   let data = pool;
   if (f.region) data = data.filter(b => bazaarMatchesRegion(b, f.region));
+  if (f.activityKeywords?.length) data = data.filter(b => bazaarMatchesActivity(b, f.activityKeywords));
   if (f.availableOnly) {
     data = data.filter(b => {
       const avail = typeof b.available_slots === 'number' ? b.available_slots : (b.total_slots || 0);
@@ -523,7 +522,7 @@ function _discFilterRankBazaars(rows, f) {
 
   const totalCount = data.length;
 
-  /* الجاري الآن أولًا ثم الأقرب موعدًا — ثم النشاط كمفتاح ثانوي (ترتيب لا فلترة) */
+  /* بعد الفلترة: الجاري الآن أولًا ثم الأقرب موعدًا، ثم درجة مطابقة النشاط. */
   const timeRank = b => {
     const start = b.date_start || '';
     return (start && start <= today) ? 0 : 1;

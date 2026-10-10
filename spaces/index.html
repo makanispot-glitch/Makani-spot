@@ -3,18 +3,18 @@
 
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="/shared/loading-state.css?v=20261007141114">
-  <script src="/shared/loading-state.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/loading-state.css?v=20261010033314">
+  <script src="/shared/loading-state.js?v=20261010033314" defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description"
     content="مكاني Spot — جميع المساحات المتاحة للإيجار في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20261007141114">
+  <link rel="manifest" href="/manifest.json?v=20261010033314">
   <!-- defer: لا يقرأ أي كود runtime window.APP_VERSION (المستهلك الوحيد هو
        build-content.js وقت البناء)، وترويسته no-store تجعله رحلة شبكة مضمونة
        في كل تحميل — فكان يحجب الـparser قبل الناف بلا مقابل. -->
-  <script src="/version.js?v=20261007141114" defer></script>
+  <script src="/version.js?v=20261010033314" defer></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -189,40 +189,46 @@
   </script>
 
   <!-- ملف التصميم المشترك — من المجلد الأب -->
-  <link rel="stylesheet" href="/style.css?v=20261007141114">
-  <link rel="stylesheet" href="/shared/flow-button.css?v=20261007141114">
-  <script src="/shared/flow-button.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/style.css?v=20261010033314">
+  <link rel="stylesheet" href="/shared/flow-button.css?v=20261010033314">
+  <script src="/shared/flow-button.js?v=20261010033314" defer></script>
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="/shared/sb-config.js?v=20261007141114" defer></script>
-  <script src="/pwa-install.js?v=20261007141114" defer></script>
+  <script src="/shared/sb-config.js?v=20261010033314" defer></script>
+  <script src="/pwa-install.js?v=20261010033314" defer></script>
   <!-- createRaceGuard: يجب أن يسبق app.js لأن _mpFilterRace يُنشأ وقت التحميل -->
-  <script src="/shared/race-guard.js?v=20261007141114" defer></script>
-  <script src="/shared/pagination.js?v=20261007141114" defer></script>
-  <script src="/shared/space-model.js?v=20261007141114" defer></script>
+  <script src="/shared/race-guard.js?v=20261010033314" defer></script>
+  <script src="/shared/pagination.js?v=20261010033314" defer></script>
+  <script src="/shared/space-pricing.js?v=20261010033314" defer></script>
+<script src="/shared/brand-profile.js?v=20261010033314" defer></script>
+<script src="/shared/space-commerce-form.js?v=20261010033314" defer></script>
+<script src="/shared/space-model.js?v=20261010033314" defer></script>
+  <script src="/shared/space-location.js?v=20261010033314" defer></script>
+  <script src="/shared/space-detail.js?v=20261010033314" defer></script>
+  <script src="/shared/space-viewing.js?v=20261010033314" defer></script>
   <!-- طبقة الاكتشاف المشتركة — قراءة بارامترات الفلاتر القادمة من الرئيسية/البازارات -->
-  <script src="/shared/discovery.js?v=20261007141114" defer></script>
-  <script src="/shared/booking.js?v=20261007141114" defer></script>
-  <script src="/shared/account.js?v=20261007141114" defer></script>
-  <script src="/shared/plan-badge.js?v=20261007141114" defer></script>
+  <script src="/shared/discovery.js?v=20261010033314" defer></script>
+  <script src="/shared/booking.js?v=20261010033314" defer></script>
+  <script src="/shared/account.js?v=20261010033314" defer></script>
+  <script src="/shared/plan-badge.js?v=20261010033314" defer></script>
   <!-- الوجه الكاتب لكاش عرض الناف؛ الوجه القارئ inline في <head> أعلاه -->
-  <script src="/shared/nav-identity.js?v=20261007141114" defer></script>
+  <script src="/shared/nav-identity.js?v=20261010033314" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20261007141114" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261007141114" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261007141114" defer></script>
-  <script src="/shared/i18n.js?v=20261007141114" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20261010033314" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261010033314" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261010033314" defer></script>
+  <script src="/shared/i18n.js?v=20261010033314" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
   <!-- سياسة انتقال مشتركة: الشريط متاح فورًا بلا طبقة تلاشي فوقه -->
-  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261007141114">
+  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261010033314">
 
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20261007141114">
-  <script src="/shared/onboarding.js?v=20261007141114" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20261010033314">
+  <script src="/shared/onboarding.js?v=20261010033314" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20261010033314" defer></script>
 
   <style>
     /* ── Page-specific overrides — Spaces ── */
@@ -906,8 +912,11 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
   </script>
-  <link rel="stylesheet" href="/shared/nav-shell.css?v=20261007141114">
-  <script src="/shared/nav-shell.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/nav-shell.css?v=20261010033314">
+  <script src="/shared/nav-shell.js?v=20261010033314" defer></script>
+  <link rel="stylesheet" href="/shared/space-detail.css?v=20261010033314">
+  <link rel="stylesheet" href="/shared/space-viewing.css?v=20261010033314">
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010033314">
 </head>
 
 <body>
@@ -1037,13 +1046,9 @@
             </div>
             <button class="nav-dropdown-item" onclick="window.location.href='/bazaars/profile.html'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-              <span data-i18n="userMenu.profile">ملفي الشخصي</span>
+              <span data-i18n="account.title">حسابي</span>
             </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/?p=dashboard'">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              <span data-i18n="userMenu.dashboard">لوحة التحكم</span>
-            </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
+            <button class="nav-dropdown-item" onclick="window.location.href='/market/?myListings=1'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v18l-4-2-4 2-4-2-4 2z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
               <span data-i18n="userMenu.myListings">إعلاناتي</span>
             </button>
@@ -1316,17 +1321,7 @@
       </div>
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
-      <div class="sd-sticky-footer">
-        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)" data-i18n="detail.bookThis">
-          احجز هذا المكان ←
-        </button>
-        <button class="btn sd-visit-btn" onclick="currentSpaceDetail && openViewing(currentSpaceDetail.id)" data-i18n="detail.scheduleVisit">
-          📅 حجز معاينة
-        </button>
-        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()" data-i18n="detail.backToSpacesArrow">
-          → العودة للمساحات
-        </button>
-      </div>
+      <div class="sd-sticky-footer" aria-label="الحجز والمعاينة"></div>
 
     </div>
   </div><!-- end pg-space-detail -->
@@ -1918,8 +1913,8 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript الخاص بصفحة المساحات
      ================================================================ -->
-  <script src="/notifications.js?v=20261007141114" defer></script>
-  <script src="app.js?v=20261007141114" defer></script>
+  <script src="/notifications.js?v=20261010033314" defer></script>
+  <script src="app.js?v=20261010033314" defer></script>
 
   <!-- Bottom Navigation للموبايل -->
   <nav class="bottom-nav" id="bottom-nav">

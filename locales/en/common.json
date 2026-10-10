@@ -181,7 +181,8 @@
     "switchToSpaces": "Try fixed spaces with the same filters",
     "carriedFilters": "Your filters carried over ×",
     "regionUnavailable": "\"{{region}}\" isn't a fixed-space area ×",
-    "actRankOnly": "Activity: {{act}} — ranking only ×"
+    "actRankOnly": "Activity: {{act}} — ranking only ×",
+    "actMatch": "Activity: {{act}} — matches the bazaar description ×"
   },
   "onboarding": {
     "dismiss": "Dismiss",
@@ -245,5 +246,56 @@
         "body": "Only the admin confirms bookings, after contact and deposit collection."
       }
     }
+  },
+  "account": {
+    "title": "My account",
+    "eyebrow": "Your space on Makani Spot",
+    "subtitle": "Your account and activity, in one place.",
+    "backHome": "Home",
+    "identity": "Account information",
+    "navigation": "Account sections",
+    "member": "Makani Spot member",
+    "identityVerified": "Identity verified",
+    "edit": "Edit details",
+    "share": "Share profile",
+    "privateNote": "Your account details and bookings are visible only to you.",
+    "tabs": {
+      "bookings": "Requests & bookings",
+      "activity": "My activity",
+      "personal": "My details",
+      "ratings": "Ratings",
+      "settings": "Settings"
+    },
+    "bookingsDesc": "Track space and bazaar bookings and project service requests.",
+    "activityDesc": "Your listings, spaces and events.",
+    "personalDesc": "Contact details and the profile you share with others.",
+    "ratingsDesc": "Your reputation and reviews, with organizer and participant ratings kept separate.",
+    "settingsDesc": "Account security, language and role tools.",
+    "refresh": "Refresh",
+    "newListing": "New listing",
+    "ownerTools": "Manage spaces",
+    "ownerToolsDesc": "Spaces, incoming requests and contracts",
+    "organizerTools": "Manage bazaars",
+    "organizerToolsDesc": "Your events and exhibitor bookings",
+    "organization": "Manage organization",
+    "organizationDesc": "Organization branches and members",
+    "admin": "Platform administration",
+    "adminDesc": "Tools available to administrator accounts",
+    "publicProfile": "View public profile",
+    "cover": "Cover photo",
+    "noRatings": "No ratings yet",
+    "noRatingsDesc": "Your activity ratings will appear here when added to your account.",
+    "security": "Password",
+    "securityDesc": "Update your password in account settings",
+    "language": "Display language",
+    "roles": "Roles and management tools",
+    "rolesDesc": "Tools follow your account status. New roles require the existing application and review process.",
+    "ownerPending": "Space owner application is under review",
+    "organizerPending": "Organizer verification is under review",
+    "logout": "Sign out",
+    "logoutFailed": "Unable to sign out. Please try again.",
+    "loadFailed": "Unable to load your account",
+    "close": "Close",
+    "requestDetails": "Service request details"
   }
 }

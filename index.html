@@ -4,15 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <script>if(new URLSearchParams(location.search).get('p')==='dashboard')document.documentElement.setAttribute('data-initial-route','dashboard');</script>
-  <link rel="stylesheet" href="/shared/loading-state.css?v=20261007141114">
-  <script src="/shared/loading-state.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/loading-state.css?v=20261010033314">
+  <script src="/shared/loading-state.js?v=20261010033314" defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description"
     content="مكاني Spot — المنصة الأولى لتأجير المساحات الصغيرة في مصر. ابحث عن مساحة في المولات والنوادي والمدارس وابدأ مشروعك بأقل تكلفة.">
 
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=20261007141114">
-<script src="/version.js?v=20261007141114"></script>
+  <link rel="manifest" href="/manifest.json?v=20261010033314">
+<script src="/version.js?v=20261010033314"></script>
 
   <!-- Theme & Brand Colors -->
   <meta name="theme-color" content="#F36418">
@@ -205,24 +205,24 @@
     rel="stylesheet">
 
   <!-- ملف التصميم — الطبقة الثانية -->
-  <link rel="stylesheet" href="style.css?v=20261007141114">
-  <link rel="stylesheet" href="/shared/flow-button.css?v=20261007141114">
-  <script src="/shared/flow-button.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261010033314">
+  <link rel="stylesheet" href="/shared/flow-button.css?v=20261010033314">
+  <script src="/shared/flow-button.js?v=20261010033314" defer></script>
 
   <!-- مكتبة Supabase لتسجيل الدخول -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- دعم اللغتين (i18n) — راجع shared/i18n.js -->
-  <script src="/vendor/i18next/i18next.min.js?v=20261007141114" defer></script>
-  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261007141114" defer></script>
-  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261007141114" defer></script>
-<script src="/shared/i18n.js?v=20261007141114" defer></script>
+  <script src="/vendor/i18next/i18next.min.js?v=20261010033314" defer></script>
+  <script src="/vendor/i18next/i18nextHttpBackend.min.js?v=20261010033314" defer></script>
+  <script src="/vendor/i18next/i18nextBrowserLanguageDetector.min.js?v=20261010033314" defer></script>
+<script src="/shared/i18n.js?v=20261010033314" defer></script>
 
   <!-- الإرشاد السياقي — مكوّن واحد: أنماطه + محرّكه + سجلّه.
        shared/onboarding.css هو المصدر الوحيد لأنماط .obc-* (لا نسخة في style.css). -->
-  <link rel="stylesheet" href="/shared/onboarding.css?v=20261007141114">
-  <script src="/shared/onboarding.js?v=20261007141114" defer></script>
-  <script src="/shared/onboarding-cues.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/onboarding.css?v=20261010033314">
+  <script src="/shared/onboarding.js?v=20261010033314" defer></script>
+  <script src="/shared/onboarding-cues.js?v=20261010033314" defer></script>
 
   <!-- Google Analytics 4 — Makani Spot -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCJNEVKVRH"></script>
@@ -258,10 +258,14 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
   </script>
-  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261007141114">
-  <script src="/shared/nav-identity.js?v=20261007141114" defer></script>
-  <link rel="stylesheet" href="/shared/nav-shell.css?v=20261007141114">
-  <script src="/shared/nav-shell.js?v=20261007141114" defer></script>
+  <link rel="stylesheet" href="/shared/nav-transition.css?v=20261010033314">
+  <script src="/shared/nav-identity.js?v=20261010033314" defer></script>
+  <link rel="stylesheet" href="/shared/nav-shell.css?v=20261010033314">
+  <link rel="stylesheet" href="/shared/home-search.css?v=20261010033314">
+  <script src="/shared/nav-shell.js?v=20261010033314" defer></script>
+  <link rel="stylesheet" href="/shared/space-detail.css?v=20261010033314">
+  <link rel="stylesheet" href="/shared/space-viewing.css?v=20261010033314">
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010033314">
 </head>
 
 <body>
@@ -403,19 +407,9 @@
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 22a8 8 0 0 1 16 0" />
               </svg>
-              <span data-i18n="userMenu.profile">ملفي الشخصي</span>
+              <span data-i18n="account.title">حسابي</span>
             </button>
-            <button class="nav-dropdown-item" onclick="goToDashboard()">
-              <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-              </svg>
-              <span data-i18n="userMenu.dashboard">لوحة التحكم</span>
-            </button>
-            <button class="nav-dropdown-item" onclick="window.location.href='/market/'">
+            <button class="nav-dropdown-item" onclick="window.location.href='/market/?myListings=1'">
               <svg class="dd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 4h16v18l-4-2-4 2-4-2-4 2z" />
@@ -892,171 +886,102 @@
     </svg>
 
     <!-- صندوق البحث والفلترة -->
-    <div class="search-wrap reveal-on-scroll" id="search-anchor">
-      <!-- data-intent هو مفتاح إظهار/إخفاء الحقول حسب النية — يضبطه _syncDiscoveryFields() -->
-      <div class="search-box" id="search-box" data-intent="fixed">
-
-        <!-- ① العنوان نفسه هو مفتاح الشرح — لا أيقونة ⓘ منفصلة.
-             الأيقونات SVG أحادية اللون بـcurrentColor: الإيموجي بيختلف شكله
-             بين الأجهزة وده غير مقبول على منصة تجارية. لاحظ إن كل <svg>
-             **خارج** العنصر اللي عليه data-i18n — applyDomTranslations بتكتب
-             textContent فبتمسح أي عنصر جوّه المترجَم. -->
-        <button type="button" class="disc-head" id="disc-help-btn"
-          aria-expanded="false" aria-controls="disc-help-panel" onclick="toggleDiscoveryHelp()">
-          <span class="search-title" data-i18n="search.discovery.headline">بتدور على إيه؟</span>
-          <svg class="disc-head-chevron" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-chevron"/></svg>
-        </button>
-        <div class="disc-help-panel" id="disc-help-panel" role="region" hidden>
-          <div class="disc-help-item">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-fixed"/></svg>
-            <div><b data-i18n="search.discovery.intentFixed">مكان ثابت</b>
-              <span data-i18n="search.discovery.helpPanelFixed">مساحة صغيرة جوّه مول أو نادي أو مدرسة، مناسبة لو عايز وجود مستمر لمشروعك.</span></div>
-          </div>
-          <div class="disc-help-item">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bazaar"/></svg>
-            <div><b data-i18n="search.discovery.intentBazaar">بازار</b>
-              <span data-i18n="search.discovery.helpPanelBazaar">مساحة مؤقتة تقدر تجرّب فيها مشروعك وتوصل لعملاء جدد بدون التزام طويل.</span></div>
-          </div>
-          <div class="disc-help-item">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-help"/></svg>
-            <div><b data-i18n="search.discovery.intentHelp">ساعدني</b>
-              <span data-i18n="search.discovery.helpPanelHelp">أسئلة بسيطة، وإحنا نساعدك نحدد الخيار الأنسب لمشروعك.</span></div>
-          </div>
-          <div class="disc-help-item">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-tag"/></svg>
-            <div><b data-i18n="search.discovery.actLabel">نشاط مشروعك</b>
-              <span data-i18n="search.discovery.helpPanelAct">اختار نشاط مشروعك عشان نعرض لك الأماكن والبازارات الأقرب لاحتياجك.</span></div>
-          </div>
-        </div>
-
-        <!-- ② اختيار النية — ضغطة واحدة تغيّر الفلتر والنتايج -->
-        <div class="tabs-row disc-intent" id="disc-intent" role="tablist"
-          data-i18n-attr="aria-label:search.discovery.headline" aria-label="بتدور على إيه؟">
-          <button type="button" class="tab-btn active" role="tab" aria-selected="true"
-            onclick="setDiscoveryIntent('fixed',this)">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-fixed"/></svg>
-            <span data-i18n="search.discovery.intentFixed">مكان ثابت</span></button>
-          <button type="button" class="tab-btn" role="tab" aria-selected="false"
-            onclick="setDiscoveryIntent('bazaar',this)">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bazaar"/></svg>
-            <span data-i18n="search.discovery.intentBazaar">بازار</span></button>
-          <button type="button" class="tab-btn" role="tab" aria-selected="false"
-            onclick="setDiscoveryIntent('help',this)">
-            <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-help"/></svg>
-            <span data-i18n="search.discovery.intentHelp">ساعدني</span></button>
-        </div>
-
-        <!-- ③ شريط التوصية — بيفضل بعد قفل المساعد: نصيحة لا فلتر -->
-        <div class="disc-reco" id="disc-reco" role="status" hidden></div>
-
-        <!-- ④ صف الفلاتر — ٤ أبناء بالظبط (كل قواعد الاستجابة الحالية مبنية على العدد ده) -->
-        <div class="filter-row">
+    <div class="search-wrap home-search-wrap" id="search-anchor">
+      <button type="button" class="home-search-trigger" id="home-search-trigger" onclick="openHomeSearch()" aria-haspopup="dialog" aria-controls="home-search-panel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <span class="home-search-trigger-copy"><strong data-i18n="search.rental.start">ابدأ البحث</strong><span id="home-search-summary" data-i18n="search.rental.summary">المنطقة · النشاط · نوع التأجير</span></span>
+      </button>
+      <div id="home-search-inline">
+      <form class="search-box home-search" id="search-box" onsubmit="event.preventDefault();doSearch()" novalidate>
+        <div class="home-search-row">
           <div class="fg">
-            <label id="lbl-mp-region" for="f-region" data-i18n="search.regionLabel">المنطقة</label>
-            <select id="f-region">
+            <label for="f-region" data-i18n="search.regionLabel">المنطقة</label>
+            <select id="f-region" onchange="runDiscoverySearch()">
               <option value="" data-i18n="search.regionAll">كل المناطق</option>
             </select>
           </div>
           <div class="fg" id="fg-act">
-            <label for="f-act" id="act-filter-lbl" data-i18n="search.discovery.actLabel">نشاط مشروعك</label>
+            <label for="f-act" data-i18n="search.discovery.actLabel">نشاط مشروعك</label>
             <select id="f-act" onchange="onActDropdown(this.value)">
-              <option value="" data-i18n="search.activityPick">— اختر النشاط —</option>
+              <option value="" data-i18n="spacesList.activityAllOption">كل الأنشطة</option>
             </select>
           </div>
-          <div class="fg" id="fg-type">
-            <label for="f-type" data-i18n="search.typeLabel">نوع المكان</label>
-            <select id="f-type">
-              <option value="" data-i18n="search.typeAll">الكل</option>
-              <option value="mall" data-i18n="search.typeMall">مول تجاري</option>
-              <option value="club" data-i18n="search.typeClub">نادي رياضي</option>
-              <option value="school" data-i18n="search.typeSchool">مدرسة</option>
+          <div class="fg home-rental-field">
+            <label id="home-rental-label" for="f-rental" data-i18n="search.rental.label">نوع تأجير المكان</label>
+            <select id="f-rental" aria-describedby="rental-hint rental-error" onchange="setDiscoveryIntent(this.value)">
+              <option value="" data-i18n="search.rental.pick">اختر نوع التأجير</option>
+              <option value="fixed" data-i18n="search.rental.fixed">مكان ثابت</option>
+              <option value="bazaar" data-i18n="search.rental.temporary">مكان مؤقت</option>
             </select>
+            <details class="home-rental-options" id="home-rental-options">
+              <summary id="home-rental-toggle" aria-labelledby="home-rental-label home-rental-value" aria-describedby="rental-error">
+                <span id="home-rental-value" data-i18n="search.rental.pick">اختر نوع التأجير</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </summary>
+              <div class="home-rental-choices" role="radiogroup" aria-labelledby="home-rental-label">
+                <label class="home-rental-choice">
+                  <input type="radio" name="home-rental-choice" value="fixed" onchange="chooseHomeRental(this.value)">
+                  <span><strong data-i18n="search.rental.fixed">مكان ثابت</strong><small data-i18n="search.rental.fixedDescription">مكان يستقر فيه مشروعك لفترة أطول، مثل ٦ شهور أو سنة.</small></span>
+                </label>
+                <label class="home-rental-choice">
+                  <input type="radio" name="home-rental-choice" value="bazaar" onchange="chooseHomeRental(this.value)">
+                  <span><strong data-i18n="search.rental.temporary">مكان مؤقت</strong><small data-i18n="search.rental.temporaryDescription">مكان في بازار أو فعالية لبيع منتجك لفترة قصيرة، مثل ٣ أيام إلى أسبوع.</small></span>
+                </label>
+              </div>
+            </details>
           </div>
-          <div class="fg">
-            <label aria-hidden="true">&nbsp;</label>
-            <button class="btn btn-primary" id="disc-search-btn" onclick="doSearch()" style="height:45px;padding:0 26px"
-              data-i18n="search.discovery.searchBtnFixed">شوف الأماكن المناسبة</button>
+          <div class="home-search-actions">
+            <button type="submit" class="btn home-search-submit" id="disc-search-btn" aria-label="ابحث" data-i18n-attr="aria-label:search.rental.search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+            </button>
+            <button type="button" class="home-search-help" onclick="closeHomeSearch();openAssistant()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-help"/></svg>
+              <span data-i18n="search.discovery.intentHelp">ساعدني</span>
+            </button>
+            <button type="button" class="home-search-reset" onclick="resetHomeSearch()" data-i18n="search.rental.reset">مسح الكل</button>
           </div>
         </div>
-
-        <!-- مؤشر السعر — نقطة واحدة (الحد الأقصى) -->
-        <div class="price-slider-wrap">
-          <div class="price-slider-label-row">
-            <span class="price-slider-title" id="price-slider-title" data-i18n="search.priceLabel">الحد الأقصى للسعر / شهر</span>
-            <span class="price-single-val" id="price-max-label">بلا حد</span>
-          </div>
-          <div class="slider-container slider-single">
-            <div class="slider-track" id="slider-track"></div>
-            <input type="range" class="price-slider" id="slider-max" aria-labelledby="price-slider-title" min="0" max="50000" value="50000" step="500"
-              oninput="updateMainSlider()">
-          </div>
-          <div class="slider-hints">
-            <span data-i18n="search.priceZero">٠ ج</span>
-            <span data-i18n="search.price25k">٢٥,٠٠٠ ج</span>
-            <span data-i18n="search.priceNoLimit">بلا حد</span>
-          </div>
-        </div>
-
-        <!-- Chips الفلاتر المحددة -->
-        <div class="active-chips" id="active-chips"></div>
-
-        <!-- سطر طمأنة واحد — بديل أي شرح طويل -->
-        <div class="disc-foot">
-          <svg class="disc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-bulb"/></svg>
-          <span data-i18n="search.discovery.foot">بنرشّح لك الخيارات على أساس اختيارك</span>
-        </div>
-
+        <p class="home-search-hint" id="rental-hint" data-i18n="search.rental.hint">مكان ثابت لاستقرار مشروعك، أو مكان مؤقت في بازار.</p>
+        <p class="home-search-error" id="rental-error" role="alert" hidden data-i18n="search.rental.required">اختر نوع تأجير المكان أولًا: مكان ثابت أو مكان مؤقت.</p>
+        <div class="disc-reco" id="disc-reco" role="status" hidden></div>
+      </form>
       </div>
+      <dialog id="home-search-panel" class="home-search-panel" aria-labelledby="home-search-panel-title">
+        <div class="home-search-panel-head">
+          <h2 id="home-search-panel-title" data-i18n="search.rental.panelTitle">ابحث عن مكان لمشروعك</h2>
+          <button type="button" onclick="closeHomeSearch()" class="home-search-close" aria-label="إغلاق البحث" data-i18n-attr="aria-label:search.rental.close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div id="home-search-panel-body"></div>
+      </dialog>
     </div><!-- end search-wrap -->
 
 
     <!-- قسم كروت المساحات -->
-    <div class="section">
+    <div class="section home-results-section">
 
-      <!-- البانر الترويجي -->
-      <div class="cta-banner reveal-on-scroll">
-        <div class="cta-text">
-          <div class="cta-title" data-i18n="ctaBanner.title">ابدأ مشروعك من أفضل المواقع في مصر</div>
-          <div class="cta-sub" data-i18n="ctaBanner.sub">اختر المساحة المناسبة — ابعث طلب حجز — سنتواصل معك وننهي الإجراءات خلال ٢٤ ساعة</div>
-        </div>
-        <div class="cta-btns">
-          <button class="btn btn-primary" onclick="scrollToSearch()" data-i18n="ctaBanner.bookBtn">احجز مساحتك</button>
-          <button class="btn btn-ghost" onclick="showPage('owner')"
-            style="color:#fff;border-color:rgba(255,255,255,0.22)" data-i18n="ctaBanner.ownerBtn">عندك مساحة فاضية؟</button>
-        </div>
-      </div>
-
-      <!-- ════════════════════════════════════════════════════════════
-           منطقة النتائج الموحّدة — الفلتر فوقها مباشرةً وهي اللي بتتغيّر.
-           الفلتر ما بيفتحش قسمًا جديدًا في مكان تاني: نية «ثابت» بتعرض
-           كتلة المساحات، ونية «بازار» بتستبدلها بكتلة البازارات، و«ساعدني»
-           بتعرض الاتنين مرتَّبتين. التبديل في _syncDiscoveryFields().
-           ════════════════════════════════════════════════════════════ -->
       <div id="disc-results">
 
         <!-- ① نتائج المساحات الثابتة -->
         <div id="spaces-results">
-          <div class="section-head reveal-on-scroll" id="spaces-section-head">
+          <div class="section-head" id="spaces-section-head">
             <div>
               <div class="section-title" data-i18n="sectionHead.title">المساحات المتاحة حالياً</div>
               <div class="section-sub" data-i18n="sectionHead.sub">اختار مساحتك المفضلة، عاين على الطبيعة وابدأ مشروعك فوراً</div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <span class="result-badge" id="res-count" data-i18n="sectionHead.loading">جاري تحميل البيانات…</span>
-              <div class="tabs-row">
-                <button class="tab-btn active" onclick="setTab(this,'')" data-i18n="sectionHead.tabAll">الكل</button>
-                <button class="tab-btn" onclick="setTab(this,'mall')" data-i18n="sectionHead.tabMalls">مولات</button>
-                <button class="tab-btn" onclick="setTab(this,'club')" data-i18n="sectionHead.tabClubs">نوادي</button>
-                <button class="tab-btn" onclick="setTab(this,'school')" data-i18n="sectionHead.tabSchools">مدارس</button>
+            <div class="home-results-actions">
+              <a class="home-view-all" id="home-spaces-viewall" href="/spaces/" data-i18n="search.rental.viewAll">عرض كل المساحات</a>
+              <div class="home-carousel-controls" role="group" aria-label="التنقل بين المساحات" data-i18n-attr="aria-label:search.rental.navigation">
+                <button type="button" class="home-carousel-arrow" id="home-spaces-prev" aria-controls="spaces-grid" aria-label="المساحات السابقة" data-i18n-attr="aria-label:search.rental.previous" onclick="scrollHomeSpaces(-1)" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+                </button>
+                <button type="button" class="home-carousel-arrow" id="home-spaces-next" aria-controls="spaces-grid" aria-label="المساحات التالية" data-i18n-attr="aria-label:search.rental.next" onclick="scrollHomeSpaces(1)" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- شبكة الكروت — تُملأ من search_public_spaces -->
-          <!-- سطر التوسيع التلقائي — بيوضّح إننا وسّعنا البحث، فالنتايج ما تبانش
-             وكأنها تجاهلت اختيار المستخدم -->
-        <div class="disc-widen-note" id="spaces-widen-note" hidden></div>
-        <div class="cards-grid reveal-on-scroll" id="spaces-grid"></div>
+          <div class="cards-grid home-spaces-rail" id="spaces-grid" role="region" tabindex="0" aria-label="المساحات المتاحة" data-i18n-attr="aria-label:sectionHead.title"></div>
         </div>
 
         <!-- ② نتائج البازارات — نفس المكان، بلا reveal-on-scroll لأنها تبدأ مخفية -->
@@ -3341,14 +3266,7 @@
       </div>
 
       <!-- زرار الحجز السفلي (ثابت في أسفل الصفحة على الموبايل) -->
-      <div class="sd-sticky-footer">
-        <button class="btn btn-primary sd-book-btn" onclick="currentSpaceDetail && openBooking(currentSpaceDetail.id)" data-i18n="spaceDetail.bookBtn">
-          احجز هذا المكان ←
-        </button>
-        <button class="btn sd-back-btn-footer" onclick="closeSpaceDetail()" data-i18n="spaceDetail.backBtn">
-          → العودة
-        </button>
-      </div>
+      <div class="sd-sticky-footer" aria-label="الحجز والمعاينة"></div>
 
     </div>
   </div>
@@ -3434,21 +3352,29 @@
   <!-- ================================================================
      ⚙️ ملف JavaScript — الطبقة الثالثة
      ================================================================ -->
-  <script src="shared/sb-config.js?v=20261007141114" defer></script>
-  <script src="/pwa-install.js?v=20261007141114" defer></script>
-  <script src="shared/space-model.js?v=20261007141114" defer></script>
+  <script src="shared/sb-config.js?v=20261010033314" defer></script>
+  <script src="/pwa-install.js?v=20261010033314" defer></script>
+  <script src="/shared/space-pricing.js?v=20261010033314" defer></script>
+<script src="/shared/brand-profile.js?v=20261010033314" defer></script>
+<script src="/shared/space-commerce-form.js?v=20261010033314" defer></script>
+<script src="shared/space-model.js?v=20261010033314" defer></script>
+  <script src="/shared/space-location.js?v=20261010033314" defer></script>
+  <script src="/shared/space-detail.js?v=20261010033314" defer></script>
+  <script src="/shared/space-viewing.js?v=20261010033314" defer></script>
   <!-- طبقة الاكتشاف المشتركة — لازم تسبق app.js (buildDiscoveryUrl/getDiscoveryBazaars) -->
-  <script src="shared/discovery.js?v=20261007141114" defer></script>
+  <script src="shared/discovery.js?v=20261010033314" defer></script>
   <!-- شجرة أسئلة «ساعدني» وسلّم التوصيات — الرئيسية فقط -->
-  <script src="shared/discovery-assistant.js?v=20261007141114" defer></script>
-  <script src="shared/booking.js?v=20261007141114" defer></script>
-  <script src="shared/account.js?v=20261007141114" defer></script>
-  <script src="shared/plan-badge.js?v=20261007141114" defer></script>
-  <script src="/notifications.js?v=20261007141114" defer></script>
-<script src="shared/listing-model.js?v=20261007141114" defer></script>
-<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261007141114">
-<script src="/shared/managed-bazaars.js?v=20261007141114" defer></script>
-<script src="app.js?v=20261007141114" defer></script>
+  <script src="shared/discovery-assistant.js?v=20261010033314" defer></script>
+  <script src="shared/booking.js?v=20261010033314" defer></script>
+  <script src="shared/account.js?v=20261010033314" defer></script>
+  <script src="shared/plan-badge.js?v=20261010033314" defer></script>
+  <script src="/notifications.js?v=20261010033314" defer></script>
+<script src="shared/listing-model.js?v=20261010033314" defer></script>
+<link rel="stylesheet" href="/shared/managed-bazaars.css?v=20261010033314">
+<script src="/shared/managed-bazaars.js?v=20261010033314" defer></script>
+<script src="/shared/tenant-bookings.js?v=20261010033314" defer></script>
+<script src="app.js?v=20261010033314" defer></script>
+<script src="shared/home-search.js?v=20261010033314" defer></script>
 
   <!-- Bottom Navigation للموبايل — محسّن -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -3749,6 +3675,95 @@
   </div>
 </div>
 
+<div class="visit-modal-overlay" id="visit-modal" onclick="closeViewingOnBg(event)">
+    <div class="visit-modal">
+
+      <!-- حالة الفورم -->
+      <div id="vm-form-wrap">
+        <div class="vm-header">
+          <div>
+            <div class="vm-title" data-i18n="spaces:visitModal.title">احجز معاينة</div>
+            <div class="vm-sub" data-i18n="spaces:visitModal.subtitle">شاهد المساحة بنفسك قبل أن تقرر</div>
+          </div>
+          <button class="vm-close" onclick="closeViewingModal()">×</button>
+        </div>
+
+        <!-- بيانات المساحة -->
+        <div style="padding: 12px 22px 0">
+          <div class="vm-space-box">
+            <div class="vm-space-name" id="vm-space-name">—</div>
+            <div class="vm-space-loc"  id="vm-space-loc">—</div>
+          </div>
+        </div>
+
+        <!-- صندوق الرسوم وطريقة الدفع -->
+        <div class="vm-fee-box">
+          <div class="vm-fee-title" data-i18n="spaces:visitModal.feeTitle">رسوم المعاينة — ١٥٠ ج.م.</div>
+          <div class="vm-fee-row">
+            <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span data-i18n-html="visitModal.feeNote1">يُحسب المبلغ كاملاً من <strong>أول شهر إيجار</strong> عند توقيع العقد</span>
+          </div>
+          <div class="vm-fee-row">
+            <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            <span data-i18n-html="visitModal.feeNote2">ادفع الرسوم <strong>قبل</strong> موعد المعاينة — لا يتأكد الموعد إلا بعد الاستلام</span>
+          </div>
+          <div class="vm-pay-methods">
+            <div class="vm-pay-row">
+              <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+              <span class="vm-pay-label">InstaPay</span>
+              <span class="vm-pay-num">01103467711</span>
+            </div>
+            <div class="vm-pay-row">
+              <span class="vm-fee-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+              <span class="vm-pay-label">Vodafone Cash</span>
+              <span class="vm-pay-num">01103467711</span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3,#888);margin-top:8px;line-height:1.5" data-i18n="spaces:visitModal.payNote">
+            * بعد التحويل ابعت صورة الإيصال على الواتساب وهيتم تأكيد موعدك.
+          </div>
+        </div>
+
+        <!-- الفورم -->
+        <div class="vm-body">
+          <div class="vm-field">
+            <label for="vm-name" data-i18n="spaces:visitModal.nameLabel">الاسم الكريم *</label>
+            <input type="text" id="vm-name" data-i18n-attr="placeholder:visitModal.namePlaceholder" placeholder="اسمك الكريم">
+          </div>
+          <div class="vm-field">
+            <label for="vm-phone" data-i18n="spaces:visitModal.phoneLabel">رقم الموبايل *</label>
+            <input type="tel" id="vm-phone" placeholder="01xxxxxxxxx" dir="ltr">
+          </div>
+          <div class="vm-field">
+            <label for="vm-date" data-i18n="spaces:visitModal.dateLabel">تاريخ المعاينة المقترح (اختياري)</label>
+            <input type="date" id="vm-date">
+          </div>
+          <div class="vm-error" id="vm-error"></div>
+          <button class="vm-submit" id="vm-submit-btn" onclick="submitViewing()" data-i18n="spaces:visitModal.submit">
+            تأكيد طلب المعاينة ←
+          </button>
+          <div class="vm-hint" data-i18n-html="visitModal.hint">
+            هيتواصل معاك فريق مكاني Spot خلال <strong>٢٤ ساعة</strong> لتأكيد الموعد
+          </div>
+        </div>
+      </div>
+
+      <!-- حالة النجاح -->
+      <div class="vm-success" id="vm-success">
+        <div class="vm-success-circle">✓</div>
+        <div class="vm-success-title" data-i18n="spaces:visitModal.successTitle">اتبعت طلبك بنجاح!</div>
+        <div class="vm-success-body" data-i18n-html="visitModal.successBody">
+          شكراً — فريق <strong>مكاني Spot</strong> هيتواصل معاك في <strong>٢٤ ساعة</strong> لتأكيد موعد المعاينة.<br><br>
+          تذكر تحول <strong>١٥٠ ج.م.</strong> على InstaPay أو Vodafone Cash<br>
+          على رقم <strong>01103467711</strong> وتبعت صورة الإيصال.
+        </div>
+        <button class="vm-submit" onclick="closeViewingModal()" style="max-width:200px;margin:0 auto" data-i18n="spaces:visitModal.successOk">
+          تمام، شكراً ←
+        </button>
+      </div>
+
+    </div>
+  </div>
 </body>
 
 </html>

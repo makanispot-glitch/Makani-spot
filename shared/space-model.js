@@ -39,8 +39,18 @@ function mapSpaceRow(row, profilesMap) {
     ownerId: row.owner_id || null,
     name: row.name || '',
     loc: row.region || '',
+    mapsUrl: row.maps_url,
     type: row.type || '',
-    price: row.min_price || 0,
+    price: row.min_price ?? null,
+    priceVisible: row.prices_visible ?? (row.min_price != null),
+    pricingMode: row.pricing_mode || 'fixed',
+    pricingUnit: row.pricing_unit || 'month',
+    priceMin: row.price_min ?? null,
+    priceMax: row.price_max ?? null,
+    pricingNote: row.pricing_note || '',
+    requiresBrandProfile: !!row.requires_brand_profile,
+    viewingFee: row.viewing_fee ?? 150,
+    viewingContactPhone: row.viewing_contact_phone || '01103467711',
     sizes: sizes,
     acts: row.activities || [],
     allActs: row.all_acts || false,
@@ -65,7 +75,7 @@ function mapSpaceRow(row, profilesMap) {
       name: u.name || '',
       location: u.location || '',
       size: u.size || '',
-      price: u.price || 0,
+      price: u.price ?? null,
       status: u.status || 'available',
       image: u.image_url || '',
       floor: u.floor || '',
@@ -77,6 +87,8 @@ function mapSpaceRow(row, profilesMap) {
 /** يحسم السعر الرقمي الحقيقي لحجم مُختار من space.sizes — بديل عن استخراجه من نص العرض */
 function resolveSizePrice(space, sizeLabel) {
   if (!space) return 0;
+  if (space.pricingMode === 'estimated') return null;
+  if (space.pricingUnit && space.pricingUnit !== 'month') return space.price;
   for (const sz of (space.sizes || [])) {
     const parts = sz.split(':');
     if (parts[0].trim() === sizeLabel) {
@@ -111,24 +123,9 @@ async function fetchActivitiesCatalog(sbClient) {
  */
 async function fetchSpaceById(sbClient, spaceId) {
   if (!sbClient || !spaceId) return null;
-  const { data, error } = await sbClient
-    .from('spaces')
-    .select('*, space_units(unit_id, name, floor, size, price, status, location, image_url, notes)')
-    .eq('id', spaceId)
-    .eq('status', SPACE_STATUS.LIVE)
-    .maybeSingle();
-  if (error || !data) return null;
-
-  let profilesMap = {};
-  if (data.owner_id) {
-    // public_profiles: عرض آمن بأعمدة عامة فقط (بديل profiles_public_read_basic المحذوفة)
-    const { data: profiles } = await sbClient
-      .from('public_profiles')
-      .select('id, plan_tier, full_name, avatar_url, entity_name, is_verified')
-      .eq('id', data.owner_id);
-    (profiles || []).forEach(p => { profilesMap[p.id] = p; });
-  }
-  return mapSpaceRow(data, profilesMap);
+  const { data, error } = await sbClient.rpc('get_public_space', { p_space_id: spaceId });
+  if (error || !data?.id) return null;
+  return mapSearchRow(data);
 }
 
 /**
@@ -157,7 +154,7 @@ function mapSearchRow(row) {
  */
 async function searchPublicSpaces(sbClient, opts) {
   opts = opts || {};
-  const { data, error } = await sbClient.rpc('search_public_spaces', {
+  const { data, error } = await sbClient.rpc('search_public_spaces_v2', {
     p_region:     opts.region || null,
     p_types:      (opts.types && opts.types.length) ? opts.types : null,
     p_activities: (opts.activities && opts.activities.length) ? opts.activities : null,

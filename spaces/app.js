@@ -120,7 +120,6 @@ let currentAnnDetail = null;
 // ── نظام الـ Slider ──
 const _sliders = {};
 const CS_AUTO_DELAY = 3800;
-const SD_AUTO_DELAY = 4500;
 
 
 /* ================================================================
@@ -235,7 +234,9 @@ function _obMark(sig, value) {
 /* يبحث عن مساحة فيما هو معروض حاليًا (شبكة الماركت بليس)، وإلا يجلبها مباشرة
    بالمعرّف — مصدر واحد لكل أزرار الإجراء السريع (تفاصيل/حجز) */
 async function findOrFetchSpace(spaceId) {
-  return mpCurrentSpaces.find(x => x.id === spaceId) || await fetchSpaceById(sbClient, spaceId);
+  const cached=mpCurrentSpaces.find(x=>x.id===spaceId);
+  if(cached && (cached.priceVisible==null || cached.priceVisible===MakaniSpacePricing.registered()))return cached;
+  return await fetchSpaceById(sbClient,spaceId);
 }
 
 
@@ -257,6 +258,12 @@ async function loadData() {
       id:    a.id,
       label: `${a.emoji || ''} ${a.name_ar}`.trim(),
     }));
+
+    // Direct details may arrive before the activity catalog; refresh labels without reopening the gallery.
+    if (currentSpaceDetail) {
+      _renderDetailInfo(currentSpaceDetail);
+      MakaniSpaceDetail.enhanceInfo(currentSpaceDetail);
+    }
 
     // تحميل المناطق المعتمدة (space_areas) — نفس مصدر لوحة الأدمن ولوحة المالك
     const { data: areasData } = areasResult;
@@ -630,9 +637,7 @@ function buildCardHtml(s, fromPage) {
 
   const _perMonthLabel = t('card.perMonth');
   const _currency      = t('card.currency');
-  const sizesHtml = sizesClean.map((sz, i) =>
-    `<span class="size-chip${i === 0 ? ' on' : ''}" data-price="${sizePrices[sz]}" onclick="event.stopPropagation(); var c=this.closest('.space-card'); c.querySelectorAll('.size-chip').forEach(x=>x.classList.remove('on')); this.classList.add('on'); c.querySelector('.price-main').innerHTML=Number(this.dataset.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')+' ${_currency} <span>${_perMonthLabel}</span>';">${sz}</span>`
-  ).join('');
+  const sizesHtml = sizesClean.map((sz,i) => `<span class="size-chip${i===0?' on':''}" onclick="event.stopPropagation();MakaniSpacePricing.selectSize(this,${MakaniSpacePricing.escape(JSON.stringify(s.id))},${MakaniSpacePricing.escape(JSON.stringify(sz))})">${MakaniSpacePricing.escape(sz)}</span>`).join('');
 
   const hasDetails = (s.subSpaces && s.subSpaces.length > 0) ||
                      (s.extraImages && s.extraImages.length > 0) ||
@@ -670,13 +675,14 @@ function buildCardHtml(s, fromPage) {
       <div class="card-acts">${actsHtml}</div>
       <div class="card-sizes">${sizesHtml}</div>
       <div class="card-footer">
-        <div class="price-main">${Number(defaultPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_currency} <span>${_perMonthLabel}</span></div>
+        <div class="price-main">${MakaniSpacePricing.render(s,defaultPrice,true)}</div>
         <div class="card-booking-actions">
           ${detailsBtnHtml}
           <button type="button" class="mk-flow-button"
                   onclick="openBooking('${s.id}')">${MakaniFlowButton.content(t('card.bookPlace'))}</button>
         </div>
       </div>
+      ${MakaniSpacePricing.note(s,true)}
       ${(s.season || s.insight) ? `
       <div class="card-tip">
         <div class="tip-dot"></div>
@@ -860,8 +866,10 @@ function renderCards(data, gridId, showViewAll, fromPage) {
 
 
 async function openSpaceDetail(spaceId, fromPage) {
-  const s = await findOrFetchSpace(spaceId);
+  let s = await findOrFetchSpace(spaceId);
   if (!s) return;
+  // Older listing RPCs omit maps_url. Fetch canonical detail once without changing their contract.
+  if (s.mapsUrl === undefined) s = await fetchSpaceById(sbClient, spaceId) || s;
 
   _trackSpaceEvent(s.id, s.ownerId, 'detail_click');
   _obMark('hasOpenedDetail');
@@ -869,48 +877,12 @@ async function openSpaceDetail(spaceId, fromPage) {
   currentSpaceDetail = s;
   detailPrevPage = fromPage || 'market';
 
-  const headerEl = document.getElementById('sd-header');
-  if (headerEl) {
-    headerEl.innerHTML = `
-      <div class="sd-header-inner">
-        <div class="sd-back-row">
-          <button class="sd-back-btn" onclick="closeSpaceDetail()">
-            ${t('detail.back')}
-          </button>
-          <div class="sd-breadcrumb">
-            <span onclick="window.location.href='/'" style="cursor:pointer">${t('detail.home')}</span>
-            <span class="sd-bc-sep">·</span>
-            <span onclick="showPage('market')" style="cursor:pointer">${t('detail.spacesCrumb')}</span>
-            <span class="sd-bc-sep">·</span>
-            <span style="color:var(--orange)">${s.name}</span>
-          </div>
-        </div>
-        <div class="sd-title-row">
-          <div>
-            <h1 class="sd-name">${s.name}</h1>
-            <div class="sd-meta">
-              <span>📍 ${s.loc}</span>
-              <span class="sd-meta-sep">·</span>
-              <span class="sd-type-badge sd-type-${s.type}">${_typeLabel(s.type)}</span>
-              ${s.subSpaces && s.subSpaces.length > 0
-                ? `<span class="sd-meta-sep">·</span>
-                   <span style="color:var(--orange);font-weight:700">${t('detail.unitsCount', { count: s.subSpaces.length })}</span>`
-                : ''}
-            </div>
-          </div>
-          <div class="sd-price-box">
-            <div class="sd-price-val">${Number(s.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')}</div>
-            <div class="sd-price-lbl">${t('detail.startingFrom')}</div>
-            <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center"
-                    onclick="openBooking('${s.id}')">${t('card.bookNow')}</button>
-          </div>
-        </div>
-      </div>`;
-  }
+  MakaniSpaceDetail.renderHeader(s, _typeLabel(s.type), typeof planTrustBadgeInlineHtml === 'function' ? planTrustBadgeInlineHtml(s) : '');
 
   _renderDetailGallery(s);
   _renderDetailInfo(s);
   _renderSubSpaces(s);
+  MakaniSpaceDetail.enhanceInfo(s);
 
   showPage('space-detail');
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -933,85 +905,7 @@ function goToOwnerProfile(ownerId) {
 }
 
 function _renderDetailGallery(s) {
-  const galleryEl = document.getElementById('sd-gallery');
-  if (!galleryEl) return;
-
-  const rawExtra = s.extraImages || [];
-  const extraList = Array.isArray(rawExtra)
-    ? rawExtra
-    : String(rawExtra).split('|').map(u => u.trim()).filter(Boolean);
-
-  const allImages = [];
-  if (s.image) allImages.push({ url: s.image, caption: s.name });
-  extraList.forEach((url, i) => {
-    if (url && url !== s.image)
-      allImages.push({ url, caption: t('detail.imageCaption', { name: s.name, n: i + 2 }) });
-  });
-
-  if (!allImages.length) {
-    galleryEl.innerHTML = `
-      <div class="sd-gallery-placeholder">
-        <div style="font-size:64px;opacity:0.25">${s.icon || '🏪'}</div>
-        <div style="font-size:13px;color:var(--ink3);margin-top:10px">${t('detail.noImages')}</div>
-      </div>`;
-    return;
-  }
-
-  if (allImages.length === 1) {
-    galleryEl.innerHTML = `
-      <div class="sd-gallery-wrap">
-        <div class="sd-main-img-wrap">
-          <img src="${allImages[0].url}" alt="${allImages[0].caption}"
-               style="width:100%;height:100%;object-fit:cover"
-               onerror="this.parentElement.innerHTML='<div class=sd-gallery-placeholder><div style=font-size:64px;opacity:.25>${s.icon || '🏪'}</div></div>'">
-        </div>
-      </div>`;
-    return;
-  }
-
-  const detailSliderId = `detail-${s.id}`;
-
-  const slidesHtml = allImages.map((img, i) => `
-    <div class="sd-slide${i === 0 ? ' sd-slide-active' : ''}" data-index="${i}">
-      <img src="${img.url}" alt="${img.caption}"
-           loading="${i === 0 ? 'eager' : 'lazy'}"
-           onerror="this.parentElement.style.display='none'">
-    </div>`).join('');
-
-  const dotsHtml = allImages.map((_, i) =>
-    `<span class="sd-dot${i === 0 ? ' sd-dot-on' : ''}"
-           onclick="event.stopPropagation();sdGoTo('${detailSliderId}',${i})"></span>`
-  ).join('');
-
-  const thumbsHtml = allImages.map((img, i) => `
-    <div class="sd-thumb-item${i === 0 ? ' sd-thumb-on' : ''}"
-         data-thumb-index="${i}"
-         onclick="sdGoTo('${detailSliderId}',${i})">
-      <img src="${img.url}" alt="${img.caption}" loading="lazy"
-           onerror="this.parentElement.style.display='none'">
-    </div>`).join('');
-
-  galleryEl.innerHTML = `
-    <div class="sd-gallery-wrap">
-      <div class="sd-slider" id="${detailSliderId}"
-           onmouseenter="sdPause('${detailSliderId}')"
-           onmouseleave="sdResume('${detailSliderId}')">
-        <div class="sd-slides-track">${slidesHtml}</div>
-        <button class="sd-arrow sd-arrow-next"
-                onclick="event.stopPropagation();sdNext('${detailSliderId}')"
-                title="${t('detail.nextImage')}">&#8250;</button>
-        <button class="sd-arrow sd-arrow-prev"
-                onclick="event.stopPropagation();sdPrev('${detailSliderId}')"
-                title="${t('detail.prevImage')}">&#8249;</button>
-        <div class="sd-counter" id="${detailSliderId}-counter">1 / ${allImages.length}</div>
-        <div class="sd-dots" id="${detailSliderId}-dots">${dotsHtml}</div>
-      </div>
-      <div class="sd-thumbs-row" id="${detailSliderId}-thumbs">
-        ${thumbsHtml}
-      </div>
-    </div>`;
-
-  _sdInit(detailSliderId, allImages.length);
+  MakaniSpaceDetail.renderGallery(s);
 }
 
 function _renderDetailInfo(s) {
@@ -1032,7 +926,7 @@ function _renderDetailInfo(s) {
     return `
       <div class="sd-size-row">
         <span class="sd-size-label">${label}</span>
-        <span class="sd-size-price">${Number(price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')} ${t('card.perMonth')}</span>
+        <span class="sd-size-price">${MakaniSpacePricing.render(s,price,true)}</span>
       </div>`;
   }).join('');
 
@@ -1065,11 +959,11 @@ function _renderDetailInfo(s) {
         <div class="sd-amenities-wrap" style="margin-top:10px">${amenitiesHtml}</div>
       </div>` : ''}
 
-      ${s.season ? `
+      ${(s.season || s.insight) ? `
       <div class="sd-info-card">
         <div class="sd-info-title">${t('detail.additionalInfoTitle')}</div>
         <div style="margin-top:8px">
-          <div class="sd-extra-row"><span>${t('card.season')}</span><span>${s.season}</span></div>
+          ${s.season ? `<div class="sd-extra-row"><span>${t('card.season')}</span><span>${s.season}</span></div>` : ''}
           ${s.insight ? `<div style="font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.7">${s.insight}</div>` : ''}
         </div>
       </div>` : ''}
@@ -1187,7 +1081,7 @@ function _renderSubSpaces(s) {
         <div class="sub-footer">
           <div class="sub-specs">
             ${unit.size ? `<span class="sub-spec">📐 ${unit.size}</span>` : ''}
-            ${unit.price ? `<span class="sub-spec sub-price">${Number(unit.price).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${t('card.currency')}${t('card.perMonth')}</span>` : ''}
+            ${unit.price != null || !MakaniSpacePricing.visible(s) ? `<span class="sub-spec sub-price">${MakaniSpacePricing.unitPrice(s,unit)}</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${!isBlocked
@@ -1227,6 +1121,15 @@ function _typeLabel(type) {
 
 async function openBookingForUnit(spaceId, unitId) {
   const opened = await openBooking(spaceId);
+  if (opened) {
+    bookingSpace.selectedUnitId=unitId;
+    const unit=opened.subSpaces?.find(u=>u.unitId===unitId);
+    if(unit){
+      document.getElementById('msi-meta').innerHTML=MakaniSpacePricing.escape(opened.loc)+' · '+MakaniSpacePricing.unitPrice(opened,unit);
+      const sizeSelect=document.getElementById('bk-size');sizeSelect.disabled=true;
+      sizeSelect.insertAdjacentHTML('beforeend','<option value="'+MakaniSpacePricing.escape(unit.size||unitId)+'" selected>'+MakaniSpacePricing.escape(unit.size||unitId)+'</option>');
+    }
+  }
   if (!opened) return;
 
   setTimeout(() => {
@@ -1763,96 +1666,7 @@ function _csInitSwipe(el, id) {
 
 /* ── Slider صفحة التفاصيل ── */
 
-function _sdInit(id, total) {
-  _sliders[id] = { index: 0, total, autoTimer: null, paused: false };
-  const el = document.getElementById(id);
-  if (!el) return;
-  _sdStartAuto(id);
-  _sdInitSwipe(el, id);
-}
-
-function sdGoTo(id, idx) {
-  const el = document.getElementById(id);
-  if (!el || !_sliders[id]) return;
-  const state = _sliders[id];
-  state.index = (idx + state.total) % state.total;
-
-  el.querySelectorAll('.sd-slide').forEach((s, i) =>
-    s.classList.toggle('sd-slide-active', i === state.index));
-
-  const dotsEl = document.getElementById(`${id}-dots`);
-  if (dotsEl) {
-    dotsEl.querySelectorAll('.sd-dot').forEach((d, i) =>
-      d.classList.toggle('sd-dot-on', i === state.index));
-  }
-
-  const thumbsEl = document.getElementById(`${id}-thumbs`);
-  if (thumbsEl) {
-    thumbsEl.querySelectorAll('.sd-thumb-item').forEach((t, i) =>
-      t.classList.toggle('sd-thumb-on', i === state.index));
-    const activeThumb = thumbsEl.querySelector('.sd-thumb-on');
-    if (activeThumb) {
-      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  }
-
-  const counterEl = document.getElementById(`${id}-counter`);
-  if (counterEl) counterEl.textContent = `${state.index + 1} / ${state.total}`;
-}
-
-function sdNext(id) { sdGoTo(id, (_sliders[id]?.index ?? 0) + 1); }
-function sdPrev(id) { sdGoTo(id, (_sliders[id]?.index ?? 0) - 1); }
-
-function sdPause(id) {
-  if (_sliders[id]) {
-    _sliders[id].paused = true;
-    clearInterval(_sliders[id].autoTimer);
-  }
-}
-
-function sdResume(id) {
-  if (_sliders[id] && _sliders[id].paused) {
-    _sliders[id].paused = false;
-    _sdStartAuto(id);
-  }
-}
-
-function _sdStartAuto(id) {
-  if (!_sliders[id]) return;
-  clearInterval(_sliders[id].autoTimer);
-  _sliders[id].autoTimer = setInterval(() => {
-    if (!_sliders[id]?.paused) sdNext(id);
-  }, SD_AUTO_DELAY);
-}
-
-function _sdInitSwipe(el, id) {
-  let startX = 0, startY = 0;
-  el.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  el.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = Math.abs(e.changedTouches[0].clientY - startY);
-    if (Math.abs(dx) > 40 && dy < 60) {
-      dx < 0 ? sdNext(id) : sdPrev(id);
-      sdPause(id);
-      setTimeout(() => sdResume(id), 3000);
-    }
-  }, { passive: true });
-}
-
-function _sdCleanup(id) {
-  if (_sliders[id]) {
-    clearInterval(_sliders[id].autoTimer);
-    delete _sliders[id];
-  }
-}
-
-
-/* ================================================================
-   📋 القسم الحادي عشر: مودال الحجز
-   ================================================================ */
+function _sdCleanup() { MakaniSpaceDetail.closeGallery(); }
 
 async function openBooking(spaceId) {
   const s = await findOrFetchSpace(spaceId);
@@ -1861,13 +1675,14 @@ async function openBooking(spaceId) {
   /* بوابة الدخول عند لحظة النية فقط — التفاصيل مفتوحة للجميع، والحجز وحده يتطلّب
      حسابًا (لربط الطلب بالمستخدم وصاحب المساحة). نمرّر next= ليعود الزائر لنفس
      المساحة ويُفتح النموذج تلقائيًا عبر book=1 المدعوم أصلًا في deep-link أعلى الملف. */
-  if (!currentUser) {
+  if (!currentUser || currentUser.is_anonymous) {
     const back = `/spaces/?space=${encodeURIComponent(s.id)}&book=1`;
     window.location.href = `/?p=login&next=${encodeURIComponent(back)}`;
     return null;
   }
 
   bookingSpace = s;   // ربط الحجز بالمساحة وصاحبها (نظام التقييمات)
+  bookingSpace.selectedUnitId=null;
   trackEvent('booking_button_clicked', { space_id: spaceId, space_name: s.name });
 
   const sizePrices = {};
@@ -1881,22 +1696,21 @@ async function openBooking(spaceId) {
   });
 
   const selSize  = sizesClean[0] || '';
-  const selPrice = sizePrices[selSize] || s.price;
+  const selPrice = sizePrices[selSize] ?? s.price;
 
   const _curr = t('card.currency');
   document.getElementById('msi-name').textContent = s.name;
-  document.getElementById('msi-meta').innerHTML =
-    `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(selPrice).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_curr}${t('card.perMonth')}</strong>`;
+  document.getElementById('msi-meta').innerHTML = `${MakaniSpacePricing.escape(s.loc)} · ${MakaniSpacePricing.render(s,selPrice)}${MakaniSpacePricing.note(s)}`;
 
   const sizeSelect = document.getElementById('bk-size');
+  sizeSelect.disabled=false;
   sizeSelect.innerHTML = `<option value="">${t('bookingModal.sizePick')}</option>` +
     sizesClean.map(sz => `<option value="${sz}" ${sz === selSize ? 'selected' : ''}>${sz}</option>`).join('') +
     `<option value="مخصص">${t('bookingModal.customSize')}</option>`;
 
   sizeSelect.onchange = function () {
-    const p = sizePrices[this.value] || s.price;
-    document.getElementById('msi-meta').innerHTML =
-      `📍 ${s.loc} · <strong style="color:var(--orange)">${Number(p).toLocaleString(getLocale()==='en'?'en-US':'ar-EG')} ${_curr}${t('card.perMonth')}</strong>`;
+    const p = sizePrices[this.value] ?? s.price;
+    document.getElementById('msi-meta').innerHTML = `${MakaniSpacePricing.escape(s.loc)} · ${MakaniSpacePricing.render(s,p)}${MakaniSpacePricing.note(s)}`;
   };
 
   if (currentUser) {
@@ -1933,6 +1747,8 @@ async function openBooking(spaceId) {
   const otherWrap  = document.getElementById('other-act-wrap');
   if (otherWrap) otherWrap.style.display = 'none';
 
+  buildModalActivityPicker();
+  MakaniBrandProfile.setup(s);
   document.getElementById('booking-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
   return s;
@@ -1966,107 +1782,7 @@ function _applyWaitlistMode(isWaitlist) {
    📅 حجز المعاينة — Viewing System
    ================================================================ */
 
-let _viewingSpaceId = null;
 
-async function openViewing(spaceId) {
-  const s = await findOrFetchSpace(spaceId);
-  if (!s) return;
-  _viewingSpaceId = spaceId;
-
-  // بيانات المساحة في الموديل
-  document.getElementById('vm-space-name').textContent = s.name || '—';
-  document.getElementById('vm-space-loc').textContent  = s.loc  ? '📍 ' + s.loc : '—';
-
-  // تعبئة الاسم والموبايل لو المستخدم مسجل
-  if (currentUser) {
-    const nameEl  = document.getElementById('vm-name');
-    const phoneEl = document.getElementById('vm-phone');
-    if (nameEl)  nameEl.value  = currentProfile?.full_name || currentUser.user_metadata?.full_name || '';
-    if (phoneEl) phoneEl.value = currentProfile?.phone || '';
-  } else {
-    ['vm-name', 'vm-phone'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  }
-
-  // تاريخ افتراضي = بكره
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dateEl = document.getElementById('vm-date');
-  if (dateEl) {
-    dateEl.min   = tomorrow.toISOString().split('T')[0];
-    dateEl.value = '';
-  }
-
-  // إظهار الفورم وإخفاء النجاح
-  document.getElementById('vm-form-wrap').style.display = 'block';
-  document.getElementById('vm-success').style.display   = 'none';
-  document.getElementById('vm-error').style.display     = 'none';
-
-  document.getElementById('visit-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeViewingModal() {
-  document.getElementById('visit-modal').classList.remove('open');
-  document.body.style.overflow = '';
-  _viewingSpaceId = null;
-}
-
-function closeViewingOnBg(e) {
-  if (e.target === document.getElementById('visit-modal')) closeViewingModal();
-}
-
-async function submitViewing() {
-  const name  = document.getElementById('vm-name').value.trim();
-  const phone = document.getElementById('vm-phone').value.trim();
-  const date  = document.getElementById('vm-date').value;
-
-  const errEl = document.getElementById('vm-error');
-  const show  = msg => { errEl.textContent = '⚠ ' + msg; errEl.style.display = 'block'; };
-
-  if (!name)  { show(t('validation.nameRequired')); return; }
-  if (!phone || phone.replace(/\D/g,'').length < 10) {
-    show(t('validation.phoneInvalid')); return;
-  }
-  if (!currentUser) { show(t('validation.loginRequiredViewing')); return; }
-  errEl.style.display = 'none';
-
-  const btn = document.getElementById('vm-submit-btn');
-  btn.innerHTML = t('auth2.sending');
-  btn.disabled  = true;
-
-  const s = await findOrFetchSpace(_viewingSpaceId);
-
-  try {
-    const { error } = await sbClient.from('bookings').insert({
-      id:         crypto.randomUUID(),
-      user_id:    currentUser.id,
-      owner_id:   s?.ownerId || null,   // ربط طلب المعاينة بصاحب المساحة → يظهر في لوحة أصحاب المساحات
-      space_id:   s?.id || null,         // ربط بالمساحة
-      space_name: s?.name || '',
-      space_loc:  s?.loc  || '',
-      activity:   'معاينة',
-      duration:   'معاينة - 150 ج',
-      start_date: date || null,
-      notes:      'طلب معاينة — ١٥٠ ج.م.',
-      status:     'viewing_pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-
-    if (error) throw error;
-
-    document.getElementById('vm-form-wrap').style.display = 'none';
-    document.getElementById('vm-success').style.display   = 'block';
-
-  } catch (err) {
-    btn.innerHTML = t('visitModal.submit');
-    btn.disabled  = false;
-    show(t('validation.sendError'));
-  }
-}
 
 async function submitBooking() {
   const name         = document.getElementById('bk-name').value.trim();
@@ -2094,6 +1810,8 @@ async function submitBooking() {
   }
   if (!actId) { showFormError(t('validation.activityRequired')); return; }
   if (!currentUser) { showFormError(t('validation.loginRequiredBooking')); return; }
+  const brandCheck=MakaniBrandProfile.check(!!bookingSpace?.requiresBrandProfile);
+  if(!brandCheck.ok){showFormError(brandCheck.error);return;}
 
   document.getElementById('bk-error').style.display = 'none';
 
@@ -2115,6 +1833,8 @@ async function submitBooking() {
   const result = await submitSpaceBookingRequest(sbClient, currentUser, {
     spaceId:  bookingSpace?.id,
     ownerId:  bookingSpace?.ownerId,
+    requiresBrandProfile: !!bookingSpace?.requiresBrandProfile,
+    requestedUnitId: bookingSpace?.selectedUnitId || null,
     spaceName, spaceLoc, price,
     activity: actLabel,
     size, duration: dur, startDate: date,
@@ -2286,6 +2006,7 @@ async function initAuth() {
 function setNavUser(user, profile) {
   // يُزامن الـ class مع الحالة النهائية (بعد تأكيد getSession)
   document.documentElement.classList.toggle('sb-authed', !!user);
+  MakaniSpacePricing.authChanged(sbClient);
 
   const guestEl  = document.getElementById('nav-guest');
   const loggedEl = document.getElementById('nav-logged');
@@ -2664,13 +2385,7 @@ function shareCard(type, id, name) {
     shareText = t('share.checkOutSpace', { name });
   }
 
-  if (navigator.share) {
-    navigator.share({ title: t('brand'), text: shareText, url }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(url)
-      .then(()  => _showShareToast(t('share.linkCopied')))
-      .catch(() => _showShareToast(t('share.linkFallback', { url })));
-  }
+  MakaniSpaceDetail.shareUrl(url, shareText, t('brand'));
 }
 
 function _showShareToast(msg) {

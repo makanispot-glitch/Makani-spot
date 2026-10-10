@@ -58,7 +58,7 @@ input,select,textarea{font-family:inherit;color:var(--tx)}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 
 /* ── Main wrap ── */
-.main-wrap{margin-right:var(--sb);min-height:100vh;display:flex;flex-direction:column;transition:margin-right .28s}
+.main-wrap{margin-right:var(--sb);min-height:100vh;display:flex;flex:1;min-width:0;flex-direction:column;transition:margin-right .28s}
 .topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
 .topbar-menu{background:transparent;border:none;color:var(--tx2);font-size:20px;padding:4px 8px;border-radius:6px;transition:color .2s;display:none}
 .topbar-menu:hover{color:var(--or)}
@@ -333,9 +333,9 @@ textarea.fc{resize:vertical;min-height:72px}
 
 @media(max-width:900px){
   :root{--sb:0px}
-  .sidebar{transform:translateX(100%)}
+  .sidebar{width:min(280px,85vw);transform:translateX(100%)}
   .sidebar.open{transform:translateX(0)}
-  .sb-overlay{display:block}
+  .sb-overlay{display:none}
   .sb-overlay.visible{display:block;z-index:99}
   .topbar-menu{display:block}
   .main-wrap{margin-right:0}
@@ -346,7 +346,12 @@ textarea.fc{resize:vertical;min-height:72px}
   .owner-detail-inner{grid-template-columns:1fr}
   .topbar{padding:10px 14px}
   .sub-kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .bk-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .bk-row>div{min-width:0;overflow-wrap:anywhere}
+  .bk-row>div:last-child{grid-column:1/-1}
+  .bk-row-hd{display:none}
 }
+@media(max-width:600px){.topbar{flex-wrap:wrap}}
 
 /* ══ Subscription Management ══ */
 .sub-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
@@ -434,6 +439,11 @@ textarea.fc{resize:vertical;min-height:72px}
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/shared/space-location.js?v=20261010033314" defer></script>
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010033314">
+<script src="/shared/space-pricing.js?v=20261010033314"></script>
+<script src="/shared/brand-profile.js?v=20261010033314"></script>
+<script src="/shared/space-commerce-form.js?v=20261010033314"></script>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -599,8 +609,8 @@ textarea.fc{resize:vertical;min-height:72px}
 </div>
 <div class="toast-wrap" id="toasts"></div>
 
-<script src="../media-handler.js?v=20261007141114"></script>
-<script src="../shared/sb-config.js?v=20261007141114"></script>
+<script src="../media-handler.js?v=20261010033314"></script>
+<script src="../shared/sb-config.js?v=20261010033314"></script>
 <script>
 /* ═══════════════════════════════
    CONFIG
@@ -623,6 +633,8 @@ const SEASON_PRESETS = ['رمضان والأعياد','الصيف وإجازة �
 const AMENITY_PRESETS = ['واي فاي','كهرباء','أمن 24 ساعة','باركينج','تكييف','مصاعد','كاميرات','دورات مياه','مطاعم','منطقة جلوس','مدخل مستقل','واجهة رئيسية'];
 
 let adminHash   = null;
+let adminDataReady = null;
+let adminDataLoaded = false;
 let allSpaces   = [];
 let allOwners   = [];
 let allActivities    = [];
@@ -692,7 +704,7 @@ async function doLogout() {
   }
   adminHash = 'authenticated';
   document.getElementById('app').classList.add('visible');
-  setTimeout(loadAll, 100);
+  adminDataReady = loadAll();
 })();
 
 /* ═══════════════════════════════
@@ -711,7 +723,8 @@ async function sbRpc(fn, params) {
 ═══════════════════════════════ */
 async function loadAll() {
   if (!adminHash) return;
-  setPageLoading(currentPage);
+  // Forms own their loading state; a background refresh must preserve the draft.
+  if (currentPage !== 'form' && currentPage !== 'ann-form') setPageLoading(currentPage);
   try {
     let ownerReqsErr = null;
     const [spaces, owners, activities, areas, ownerReqs, announcements] = await Promise.all([
@@ -729,6 +742,7 @@ async function loadAll() {
     allAreas         = areas         || [];
     allOwnerRequests = ownerReqs     || [];
     allAnnouncements = announcements || [];
+    adminDataLoaded = true;
     if (ownerReqsErr) console.error('[upgrade_requests]', ownerReqsErr.message);
     updatePendingBadge();
     const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
@@ -741,6 +755,10 @@ async function loadAll() {
       if (_goto) gp(_goto);
     }
   } catch(e) {
+    if (currentPage === 'form' || currentPage === 'ann-form') {
+      toast('تعذّر تحديث القوائم: ' + e.message, 'e');
+      return;
+    }
     setPageContent(currentPage, `<div class="empty-state"><div class="empty-ico">⚠️</div><div class="empty-title">${esc(e.message)}</div><button class="btn btn-neu" style="margin-top:12px" onclick="loadAll()">🔄 حاول تاني</button></div>`);
   }
 }
@@ -2844,9 +2862,7 @@ async function renderBookings() {
       const typeLabel = b.is_waitlist ? '⏳ قائمة انتظار' : isViewing ? '👁 معاينة' : '📅 حجز';
       const date = b.start_date ? fmtDate(b.start_date) : fmtDate(b.created_at);
       const isPending = b.status === 'pending' || b.status === 'viewing_pending';
-      const profileLinkHtml = b.profile_link
-        ? `<div style="font-size:10px"><a href="${esc(b.profile_link)}" target="_blank" rel="noopener" style="color:var(--or)">📁 بروفايل النشاط ↗</a></div>`
-        : '';
+      const profileLinkHtml = MakaniBrandProfile.linkHtml(b.profile_link);
       return `<div class="bk-row"${b.is_waitlist?' style="background:rgba(255,184,0,.05)"':''}>
         <div style="color:var(--mu);font-size:11px">${date}</div>
         <div>
@@ -2854,11 +2870,13 @@ async function renderBookings() {
           ${b.space_loc ? `<div style="font-size:10px;color:var(--mu)">${esc(b.space_loc)}</div>` : ''}
           ${b.size ? `<div style="font-size:10px;color:var(--mu)">${esc(b.size)}</div>` : ''}
           ${profileLinkHtml}
+          ${isViewing ? `<div style="font-size:12px">رسوم وقت الطلب: ${esc(MakaniSpacePricing.quoteText(b))}${b.viewing_contact_phone?` · التواصل: <bdi>${esc(b.viewing_contact_phone)}</bdi>`:''}</div>` : ''}
         </div>
         <div style="font-size:11px">${esc(b.owner_name||'—')}</div>
         <div><span style="font-size:11px;color:${b.is_waitlist?'var(--yw)':'var(--mu)'}">${typeLabel}</span></div>
         <div><span class="badge ${sCls(b.status)}">${sLbl(b.status)}</span></div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${isViewing && b.space_id ? `<button class="btn btn-neu" style="font-size:11px;min-height:44px" onclick="editSpace('${esc(b.space_id)}')">إعدادات معاينة المساحة</button>` : ''}
           ${isPending ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','confirmed',this)">✓ تأكيد</button>` : ''}
           ${b.status==='confirmed' ? `<button class="btn btn-neu" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','completed',this)">✅ إكمال</button>` : ''}
           ${b.status!=='cancelled'&&b.status!=='completed' ? `<button class="btn btn-err" style="font-size:10px;padding:3px 8px" onclick="doBookingStatus('${esc(b.id)}','cancelled',this)">✕ إلغاء</button>` : ''}
@@ -3566,7 +3584,9 @@ async function loadAndRenderAuditSection(containerEl) {
 /* ═══════════════════════════════
    ADD / EDIT FORM
 ═══════════════════════════════ */
-function openAddForm() {
+async function openAddForm() {
+  if (adminDataReady) await adminDataReady;
+  if (!adminDataLoaded) { toast('انتظر تحميل بيانات المساحات أو أعد التحديث.', 'e'); return; }
   editingId     = null;
   fMainImgUrl   = null;
   fExtraImgUrls = [];
@@ -3582,6 +3602,8 @@ function openAddForm() {
 }
 
 async function editSpace(id) {
+  if (adminDataReady) await adminDataReady;
+  if (!adminDataLoaded) { toast('انتظر تحميل بيانات المساحات أو أعد التحديث.', 'e'); return; }
   currentPage = 'form';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg-form').classList.add('active');
@@ -3630,6 +3652,9 @@ function renderFormPage(sp, units) {
         <div id="f-region-warn" class="f-warn-msg" style="display:${(sp.region&&!getKnownRegions().includes(sp.region))?'flex':'none'}">
           ⚠ منطقة غير موجودة في القائمة — تحقق من الإملاء لتجنب التكرار
         </div></div>
+      <div class="fg" style="grid-column:1/-1"><label class="fl" for="f-maps">موقع المساحة على Google Maps ${!isEdit || sp.maps_url ? '<span class="rq">*</span>' : ''}</label>
+        <input class="fc" type="url" id="f-maps" data-space-maps dir="ltr" value="${esc(sp.maps_url||'')}" ${!isEdit || sp.maps_url ? 'required' : ''} placeholder="https://maps.app.goo.gl/…" aria-describedby="f-maps-help">
+        <div id="f-maps-help" style="font-size:12px;color:var(--mu);margin-top:6px">افتح الموقع الدقيق في Google Maps ثم اختر مشاركة وانسخ الرابط. مطلوب للمساحات الجديدة؛ يمكن استكمال مواقع الإعلانات القديمة لاحقًا.</div></div>
       <div class="fg"><label class="fl">أيقونة</label>
         <input class="fc" id="f-icon" value="${esc(sp.icon_emoji||'🏪')}" placeholder="🏬"></div>
       <div class="fg"><label class="fl">الترتيب (رقم أقل = يظهر أولاً)</label>
@@ -3653,6 +3678,7 @@ function renderFormPage(sp, units) {
         <select class="fc" id="f-owner" onchange="onOwnerSelectChange(this)">
           <option value=""          ${!sp.owner_id&&!sp.is_broker?'selected':''}>— بدون مالك (مساحة مباشرة) —</option>
           <option value="__broker__" ${sp.is_broker?'selected':''}>🏛️ مكاني سبوت (بروكر)</option>
+          ${sp.owner_id&&!sp.is_broker&&!allOwners.some(o=>o.id===sp.owner_id)?`<option value="${esc(sp.owner_id)}" selected>مالك المساحة الحالي</option>`:''}
           ${allOwners.map(o=>`<option value="${esc(o.id)}" ${sp.owner_id===o.id?'selected':''}>${esc(o.full_name||o.name||o.email||o.id)} — ${esc(o.plan_tier||'starter')}</option>`).join('')}
         </select>
         <div id="f-owner-note" style="font-size:11px;color:var(--or);margin-top:5px;display:${sp.is_broker?'block':'none'}">
@@ -3700,10 +3726,10 @@ function renderFormPage(sp, units) {
           <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('2×3 م')">2×3</button>
           <button type="button" class="size-preset-chip" onclick="addPresetSizeRow('3×3 م')">3×3</button>
         </div>
-        <div id="f-sizes-container"></div>
-        <div id="f-sizes-empty" style="text-align:center;color:var(--mu);padding:14px;font-size:12px">📐 لم تُضَف أحجام بعد — اختر مقاسًا شائعًا أعلاه أو اضغط "+ مقاس مخصص"</div>
+        <div id="f-sizes-container" data-fixed-pricing></div>
+        <div id="f-sizes-empty" data-fixed-pricing style="text-align:center;color:var(--mu);padding:14px;font-size:12px">📐 لم تُضَف أحجام بعد — اختر مقاسًا شائعًا أعلاه أو اضغط "+ مقاس مخصص"</div>
       </div>
-      <div class="fg"><label class="fl">أدنى سعر (ج.م.)</label>
+      <div class="fg" hidden><label class="fl">أدنى سعر (ج.م.)</label>
         <input class="fc" type="number" id="f-price" value="${sp.min_price||''}" placeholder="0" min="0"></div>
       <div class="fg"><label class="fl">الأنشطة (مفصولة بـ · )</label>
         ${activityPickerHtml(sp.activities||[])}</div>
@@ -3785,6 +3811,8 @@ function renderFormPage(sp, units) {
   </div>`;
 
   setPageContent('form', html);
+  document.getElementById('f-price').closest('.form-sec').insertAdjacentHTML('beforebegin',MakaniSpaceCommerceForm.html('f',sp));
+  MakaniSpaceCommerceForm.sync('f');
   fUnitCounter = units.length;
   fSizeRowCount = 0;
   parseSizesToRows(sp.sizes_prices).forEach(r => addSizeRow(r.label, r.price));
@@ -4006,16 +4034,19 @@ function clearUnitImg(idx) {
 ═══════════════════════════════ */
 async function submitSpaceForm() {
   const get = id => document.getElementById(id)?.value?.trim()||'';
+  let commerce; try { commerce=MakaniSpaceCommerceForm.read('f'); } catch(e) { showFormMsg('error',e.message); return; }
   const name   = get('f-name');
   const region = get('f-region');
   if (!name || !region) { showFormMsg('error','اسم المساحة والمنطقة مطلوبان'); return; }
+
+  if (!MakaniSpaceLocation.checkInput(document.getElementById('f-maps'), document.getElementById('f-maps').required)) return;
 
   /* ── Soft warnings (skip once if user bypassed) ── */
   if (!formBypassWarnings) {
     const warnings = [];
     if (!fMainImgUrl) warnings.push({ icon:'🖼', text:'لا توجد صورة رئيسية — ستظهر المساحة بدون صورة على الماركت' });
     if (!get('f-desc'))  warnings.push({ icon:'📝', text:'لا يوجد وصف — العملاء لن يعرفوا تفاصيل المساحة' });
-    if (!get('f-price') && !getSizesString()) warnings.push({ icon:'💰', text:'لا يوجد سعر أو أحجام — يصعب على العملاء اتخاذ القرار' });
+    if (commerce.pricing_mode==='fixed' && !commerce.min_price && !getSizesString()) warnings.push({ icon:'💰', text:'لا يوجد سعر أو أحجام — يصعب على العملاء اتخاذ القرار' });
     if (warnings.length) {
       const existing = document.getElementById('form-warn-modal');
       if (existing) existing.remove();
@@ -4061,11 +4092,12 @@ async function submitSpaceForm() {
     ...(ownerVal && !isBroker ? {owner_id: ownerVal} : {owner_id: ''}),
     is_broker: isBroker,
     name, region,
+    maps_url:     get('f-maps') || null,
     type:         get('f-type'),
     icon_emoji:   get('f-icon')||'🏪',
     thumb_color:  get('f-thumb'),
-    sizes_prices: getSizesString(),
-    min_price:    parseInt(get('f-price'))||0,
+    ...(commerce.pricing_mode==='fixed'?{sizes_prices:getSizesString()}:{}),
+    ...commerce,
     all_acts:     document.getElementById('f-allacts')?.checked||false,
     activities:   acts,
     season:       get('f-season')||null,

@@ -1305,14 +1305,14 @@
   },
   "profile": {
     "nav": {
-      "title": "👤 Profile",
+      "title": "Profile",
       "backHome": "← Home"
     },
     "loading": "Loading profile…",
     "editModal": {
-      "title": "✍️ Edit Profile",
+      "title": "Edit Profile",
       "photoSectionTitle": "Photo & Cover",
-      "photoSectionTip": "Boosts your profile visibility +40%",
+      "photoSectionTip": "Avatar and cover",
       "changeCoverTooltip": "Change cover photo",
       "changeCoverLabel": "Change Cover",
       "changeAvatarTooltip": "Change profile photo",
@@ -1338,7 +1338,7 @@
       "cancelBtn": "Cancel",
       "saveBtn": "Save Changes",
       "savingBtn": "Saving…",
-      "successToast": "✅ Changes saved successfully!"
+      "successToast": "Changes saved successfully!"
     },
     "loginWall": {
       "title": "Log In First",
@@ -1349,8 +1349,8 @@
     "unknownUser": "Unknown User",
     "noPublicProfile": "This account doesn't have a public profile",
     "completion": {
-      "titleOrganizer": "🎯 Bazaar Organizer Profile Completion",
-      "titlePersonal": "🎯 Profile Completion",
+      "titleOrganizer": "Bazaar Organizer Profile Completion",
+      "titlePersonal": "Profile Completion",
       "lowMsg": "Complete your profile to attract more exhibitors and work with major malls",
       "midMsg": "You're on the right track — one more step to become a real brand",
       "highMsg": "Your profile is strong! Add the remaining details to fully stand out",
@@ -1366,23 +1366,23 @@
       "checkRegionTip": "Helps exhibitors find you"
     },
     "hero": {
-      "memberSince": "🗓 Member since {{date}}",
-      "editBtn": "✍️ Edit Info",
-      "shareBtn": "🔗 Share Profile",
+      "memberSince": "Member since {{date}}",
+      "editBtn": "Edit Info",
+      "shareBtn": "Share Profile",
       "changePhotoTooltip": "Click to change photo",
       "changePhotoTooltipShort": "Change photo",
-      "addCoverBtn": "📷 Add Cover Photo"
+      "addCoverBtn": "Add Cover Photo"
     },
     "orgBadge": {
       "verified": "✓ Verified Organizer",
-      "pending": "⏳ Under Review"
+      "pending": "Under Review"
     },
     "quickNav": {
-      "bazaars": "🎪 Bazaars",
-      "market": "🛍️ Market",
-      "dashboard": "📊 Dashboard",
+      "bazaars": "Bazaars",
+      "market": "Market",
+      "dashboard": "Dashboard",
       "newBazaar": "✦ Organize New Bazaar",
-      "publicProfile": "👁️ My Public Profile"
+      "publicProfile": "My Public Profile"
     },
     "stats": {
       "bazaarsOrganized": "Bazaars organized",
@@ -1402,7 +1402,7 @@
       "becomeOwnerDesc": "List your space for rent and start receiving bookings"
     },
     "dataSection": {
-      "title": "👤 Your Personal Info",
+      "title": "Your Personal Info",
       "editLink": "Edit",
       "fullName": "Full Name",
       "email": "Email",
@@ -1411,18 +1411,18 @@
       "city": "City",
       "joinDate": "Join Date",
       "password": "Password",
-      "organizerDataTitle": "🎪 Organizer Info",
-      "extraDataTitle": "🏪 Additional Info",
+      "organizerDataTitle": "Organizer Info",
+      "extraDataTitle": "Additional Info",
       "organizerVerification": "Organizer Verification",
       "verifiedShort": "✓ Verified",
       "unverifiedShort": "◌ Not Verified",
       "whatsapp": "WhatsApp",
       "region": "Area",
       "spaceOwnerLabel": "Space Owner",
-      "spaceOwnerVerified": "Verified"
+      "spaceOwnerVerified": "Role active"
     },
     "listingsSection": {
-      "title": "🛍️ My Market Listings",
+      "title": "My Market Listings",
       "manageAll": "Manage All ←",
       "empty": "No listings yet",
       "addNew": "Add a Listing Now ←",
@@ -1434,43 +1434,43 @@
       "untitled": "Listing"
     },
     "myBazaarsSection": {
-      "title": "🎪 My Bazaars ({{count}})",
-      "manageBazaarsBtn": "⚙️ Manage Bazaars",
+      "title": "My Bazaars ({{count}})",
+      "manageBazaarsBtn": "Manage Bazaars",
       "newBazaarBtn": "+ New Bazaar",
       "viewBtn": "View",
       "manageBtn": "Manage",
       "emptyTitle": "You haven't organized a bazaar yet",
       "emptyCta": "Organize your first bazaar →",
-      "statusPublished": "🟢 Published",
-      "statusActive": "🟢 Active",
-      "statusUpcoming": "🔵 Upcoming",
-      "statusPostponed": "🟠 Postponed",
-      "statusClosed": "⚫ Ended",
-      "statusCancelled": "🔴 Cancelled",
-      "statusPendingReview": "⏳ Under Review"
+      "statusPublished": "Published",
+      "statusActive": "Active",
+      "statusUpcoming": "Upcoming",
+      "statusPostponed": "Postponed",
+      "statusClosed": "Ended",
+      "statusCancelled": "Cancelled",
+      "statusPendingReview": "Under Review"
     },
     "rateSection": {
-      "title": "⭐ Rate Your Bazaar Participants",
+      "title": "Rate Your Bazaar Participants",
       "countBadge_one": "{{count}} participant",
       "countBadge_other": "{{count}} participants",
       "intro": "Rate exhibitors who actually booked or took part in your bazaars. Your rating builds their reputation on the platform and helps other organizers and space owners recognize serious dealers. <strong>Rating is only available for exhibitors with a real booking with you</strong> — no rating without an actual transaction.",
       "selectParticipantLabel": "Select Participant",
       "selectPlaceholder": "— Choose an exhibitor you hosted —",
-      "ratedMark": " ✓ (Rated)",
+      "ratedMark": "✓ (Rated)",
       "defaultParticipantName": "Participant",
       "defaultBazaarName": "Bazaar",
       "avgLabel": "Your average rating",
       "notesLabel": "Notes (optional)",
       "notesPlaceholder": "e.g. Punctual exhibitor, kept their spot tidy, treated visitors well…",
-      "submitBtn": "⭐ Save Rating",
-      "savingBtn": "⏳ Saving…",
+      "submitBtn": "Save Rating",
+      "savingBtn": "Saving…",
       "emptyTitle": "No participants available to rate yet",
       "emptyDesc": "Once exhibitors book spots in your bazaars, their names will appear here for you to rate.",
-      "historyTitlePrefix": "📋 Your Rating History",
+      "historyTitlePrefix": "Your Rating History",
       "selectFirstErr": "Please select a participant first.",
       "rateOneErr": "Rate at least one criterion with stars.",
       "connectionErr": "Couldn't connect to the server.",
-      "successMsg": "Rating saved! Overall rating: {{overall}}/5 ⭐",
+      "successMsg": "Rating saved! Overall rating: {{overall}}/5",
       "errors": {
         "not_authorized_booking": "You can't rate this booking — it's not part of your bazaars.",
         "cannot_rate_self": "You can't rate yourself.",
@@ -1483,38 +1483,38 @@
         "genericUnknown": "Unknown error"
       },
       "criteria": {
-        "commitment": "⏰ Punctuality",
-        "cleanliness": "🧹 Spot Tidiness",
-        "dealing": "🤝 Conduct",
-        "payment": "💳 Payment Reliability",
-        "rules": "📋 Rule Compliance"
+        "commitment": "Punctuality",
+        "cleanliness": "Spot Tidiness",
+        "dealing": "Conduct",
+        "payment": "Payment Reliability",
+        "rules": "Rule Compliance"
       }
     },
     "reviewsSection": {
-      "titleMy": "⭐ My Reviews as Organizer ({{count}})",
-      "titlePublic": "⭐ Reviews ({{count}})",
+      "titleMy": "My Reviews as Organizer ({{count}})",
+      "titlePublic": "Reviews ({{count}})",
       "empty": "No reviews yet"
     },
     "publicSections": {
-      "performanceTitle": "📊 Performance Record",
+      "performanceTitle": "Performance Record",
       "completedCount": "Bazaars completed",
       "bookedCount": "Spots booked",
       "addedLinksCount": "Added documentation",
-      "viewDocsLinksCta": "📎 View documentation links →",
+      "viewDocsLinksCta": "View documentation links →",
       "cancelledCount": "Cancelled",
       "successRateLabel": "Organizing success rate",
       "reliabilityWarningTitle": "Reliability Notice",
       "reliabilityWarningDesc": "This organizer cancelled a bazaar within the last 60 days — be sure to reach out before booking",
-      "activeBazaarsTitle": "🟢 Active & Upcoming Bazaars ({{count}})",
-      "pastBazaarsTitle": "📁 Past Bazaars ({{count}})",
+      "activeBazaarsTitle": "Active & Upcoming Bazaars ({{count}})",
+      "pastBazaarsTitle": "Past Bazaars ({{count}})",
       "emptyActiveBazaars": "No active bazaars right now",
       "emptyPastBazaars": "No past bazaars",
-      "docVerified": "🟢 Documented",
-      "docMissing": "🟡 No links yet",
-      "fillRateBadge": "🎫 {{pct}}%"
+      "docVerified": "Documented",
+      "docMissing": "No links yet",
+      "fillRateBadge": "{{pct}}%"
     },
     "docsShowcase": {
-      "title": "📎 Documentation Links",
+      "title": "Documentation Links",
       "subtitle": "The most recent events this organizer has documented",
       "footnote": "Only the latest 5 documented bazaars are shown here"
     },
@@ -1537,15 +1537,15 @@
       "good": "Good Reputation",
       "weak": "Needs Improvement",
       "new": "No Reviews Yet",
-      "sectionTitle": "🛡️ Reputation as a Tenant ({{count}})",
+      "sectionTitle": "Reputation as a Tenant ({{count}})",
       "sectionDesc": "Ratings this account received from space owners and bazaar organizers after real transactions on the platform.",
-      "countSuffix_one": "{{count}} review · 👍 {{positive}} · 👎 {{negative}}",
-      "countSuffix_other": "{{count}} reviews · 👍 {{positive}} · 👎 {{negative}}",
+      "countSuffix_one": "{{count}} review ·  {{positive}} ·  {{negative}}",
+      "countSuffix_other": "{{count}} reviews ·  {{positive}} ·  {{negative}}",
       "roleOrganizer": "Bazaar Organizer",
       "roleOwner": "Space Owner",
       "criteria": {
-        "cleanliness": "🧹 Space Cleanliness",
-        "rules": "📋 Rule Compliance"
+        "cleanliness": "Space Cleanliness",
+        "rules": "Rule Compliance"
       }
     },
     "errors": {
@@ -1558,19 +1558,19 @@
     },
     "share": {
       "myProfileText": "Check out my bazaar organizer profile on Makani Spot",
-      "linkCopied": "✅ Profile link copied!",
-      "linkFallback": "📋 Link: {{url}}",
+      "linkCopied": "Profile link copied!",
+      "linkFallback": "Link: {{url}}",
       "publicProfileText": "Check out {{name}}'s profile on Makani Spot",
       "defaultOrganizerName": "this organizer"
     },
     "upload": {
       "loginRequired": "Please log in first",
-      "coverUploading": "⏳ Uploading…",
-      "coverChangeBtn": "📷 Change Cover",
-      "coverSuccess": "✅ Cover photo updated successfully",
-      "coverFailed": "❌ Couldn't upload cover photo: {{msg}}",
-      "avatarSuccess": "✅ Profile photo updated successfully",
-      "avatarFailed": "❌ Couldn't upload photo: {{msg}}"
+      "coverUploading": "Uploading…",
+      "coverChangeBtn": "Change Cover",
+      "coverSuccess": "Cover photo updated successfully",
+      "coverFailed": "Couldn't upload cover photo: {{msg}}",
+      "avatarSuccess": "Profile photo updated successfully",
+      "avatarFailed": "Couldn't upload photo: {{msg}}"
     }
   },
   "verification": {

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>مكاني Spot — لوحة تحكم أصحاب المساحات</title>
-<link rel="manifest" href="/manifest.json?v=20261007141114">
-<script src="/version.js?v=20261007141114"></script>
+<link rel="manifest" href="/manifest.json?v=20261010033314">
+<script src="/version.js?v=20261010033314"></script>
 <meta name="theme-color" content="#F36418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -2418,6 +2418,10 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "x75f1lzib4");
 </script>
+<link rel="stylesheet" href="/shared/space-commerce.css?v=20261010033314">
+<script src="/shared/space-pricing.js?v=20261010033314"></script>
+<script src="/shared/brand-profile.js?v=20261010033314"></script>
+<script src="/shared/space-commerce-form.js?v=20261010033314"></script>
 </head>
 <body>
 
@@ -3053,20 +3057,26 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <div class="form-group" style="margin:0"><label>المنطقة *</label><input type="text" id="se-region" list="area-presets" placeholder="مثال: مدينة نصر، القاهرة"></div>
               </div>
               <div class="form-group" style="margin-top:12px">
+                <label for="se-maps">موقع المساحة على Google Maps</label>
+                <input type="url" id="se-maps" data-space-maps dir="ltr" placeholder="https://maps.app.goo.gl/…" aria-describedby="se-maps-help">
+                <div id="se-maps-help" style="font-size:12px;color:var(--text3);margin-top:6px">افتح الموقع الدقيق في Google Maps ثم اختر مشاركة وانسخ الرابط. يمكن استكماله لاحقًا للمساحات القديمة التي لم يُضف لها موقع.</div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
                 <label>وصف المساحة</label>
                 <textarea id="se-desc" style="min-height:72px" placeholder="اكتب وصفاً جذاباً يشرح مزايا الموقع والحركة التجارية…"></textarea>
               </div>
 
+              <div id="se-commerce-slot"></div>
               <!-- الأسعار -->
               <div class="se-section-title" style="margin-top:20px">💰 الأسعار والأحجام</div>
               <div class="form-row">
-                <div class="form-group" style="margin:0">
+                <div class="form-group" hidden style="margin:0">
                   <label>أدنى سعر (ج.م./شهر)</label>
-                  <input type="number" id="se-price" min="0" style="font-family:'Space Mono',monospace" placeholder="5000">
+                  <input hidden type="number" id="se-price" min="0" style="font-family:'Space Mono',monospace" placeholder="5000">
                 </div>
                 <div class="form-group" style="margin:0">
                   <label>جدول الأحجام والأسعار</label>
-                  <input type="text" id="se-sizes" placeholder="صغير 3000 · متوسط 5000 · كبير 8000">
+                  <input type="text" id="se-sizes" data-fixed-pricing placeholder="صغير 3000 · متوسط 5000 · كبير 8000">
                 </div>
               </div>
               <div class="form-row" style="margin-top:12px">
@@ -3599,6 +3609,11 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                   </div>
                 </div>
 
+                <div class="form-group" style="margin-top:12px">
+                  <label for="as-maps">موقع المساحة على Google Maps *</label>
+                  <input type="url" id="as-maps" data-space-maps dir="ltr" placeholder="https://maps.app.goo.gl/…" required aria-describedby="as-maps-help">
+                  <div id="as-maps-help" style="font-size:12px;color:var(--text3);margin-top:6px">افتح الموقع الدقيق في Google Maps ثم اختر مشاركة وانسخ الرابط. مطلوب لنشر مساحة جديدة.</div>
+                </div>
                 <!-- allActs toggle -->
                 <div class="form-group" style="margin-top:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--r)">
                   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;margin:0">
@@ -3735,7 +3750,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
                 <button type="button" class="size-preset-chip" onclick="addPresetSizeRow(3,3)">3×3</button>
               </div>
 
-              <div id="as-sizes-container"></div>
+              <div id="as-sizes-container" data-fixed-pricing></div>
               <div id="as-sizes-empty-msg" style="text-align:center;color:var(--text3);padding:16px;font-size:12px">
                 📐 لم تُضَف أحجام بعد — اختر مقاساً شائعاً أعلاه أو اضغط "+ مقاس مخصص"
               </div>
@@ -3743,6 +3758,7 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
             </div>
           </div>
 
+          <div id="as-commerce-slot"></div>
           <!-- ═══ الوحدات الفرعية ═══ -->
           <div class="pcard" style="margin-top:20px">
             <div class="pcard-head">
@@ -4279,15 +4295,16 @@ select:focus-visible, textarea:focus-visible, [role=button]:focus-visible { outl
 <!-- SheetJS: Excel multi-sheet export with full Arabic/Unicode support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Media handler: WebP compression + R2 upload pipeline -->
-<script src="../media-handler.js?v=20261007141114"></script>
+<script src="../media-handler.js?v=20261010033314"></script>
 <!-- ================================================================
      APP LOGIC → makani-dashboard-app.js (منفصل عن app.js)
      ================================================================ -->
-<script src="/notifications.js?v=20261007141114"></script>
-<script src="../shared/sb-config.js?v=20261007141114"></script>
-<script src="../shared/account.js?v=20261007141114"></script>
-<script src="/pwa-install.js?v=20261007141114" defer></script>
-<script src="app.js?v=20261007141114"></script>
+<script src="/notifications.js?v=20261010033314"></script>
+<script src="../shared/sb-config.js?v=20261010033314"></script>
+<script src="../shared/account.js?v=20261010033314"></script>
+<script src="/pwa-install.js?v=20261010033314" defer></script>
+<script src="/shared/space-location.js?v=20261010033314"></script>
+<script src="app.js?v=20261010033314"></script>
 <div id="sw-update-bar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;border:1.5px solid rgba(255,107,0,.6);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:12px;white-space:nowrap;font-family:'Cairo',sans-serif;">
   <span style="font-size:20px">🚀</span>
   <span style="color:#e8e8f0;font-size:13px;font-weight:600">تحديث جديد متاح!</span>
@@ -4344,4 +4361,3 @@ document.addEventListener('keydown', function(e){
 </script>
 </body>
 </html>
-

@@ -235,8 +235,8 @@ function _mapBookingRow(b, profilesMap) {
     spaceId:     b.space_id,
     spaceName:   b.space_name   || '—',
     spaceLoc:    b.space_loc    || '—',
-    price:       priceDisplay,
-    priceRaw:    priceNum,
+    price:       b.rent_quote || b.viewing_fee != null || b.activity==='معاينة' || b.status==='viewing_pending' ? MakaniSpacePricing.quoteText(b) : priceDisplay,
+    priceRaw:    b.rent_quote && (b.rent_quote.mode==='estimated' || b.rent_quote.unit!=='month') || b.viewing_fee != null || b.activity==='معاينة' || b.status==='viewing_pending' ? null : priceNum,
     activity:    b.activity     || '—',
     size:        b.size         || '—',
     duration:    b.duration     || '—',
@@ -246,6 +246,7 @@ function _mapBookingRow(b, profilesMap) {
     createdAt:   b.created_at   || '',
     isWaitlist:  !!b.is_waitlist,
     profileLink: b.profile_link || '',
+    viewingPhone: b.viewing_contact_phone || '',
     /* ── هوية الحاجز (البراند/المشروع) ── */
     bookerName:       brand || '—',
     bookerPhone:      prof.phone || '—',
@@ -1213,9 +1214,10 @@ async function loadOwnerData() {
     /* كل مساحات المالك غير المحذوفة (بأي حالة نشر) + وحداتها — النشر فوري، لا مراجعة مسبقة */
     const { data: spacesData, error: spacesErr } = await sb
       .from('spaces')
-      .select(`id, name, type, region, sort_order, status, reject_reason,
+      .select(`id, name, type, region, maps_url, sort_order, status, reject_reason,
                description, activities, amenities, image_url, extra_images,
                min_price, sizes_prices, all_acts, season, insight,
+                pricing_mode, pricing_unit, price_min, price_max, pricing_note, requires_brand_profile, viewing_fee, viewing_contact_phone,
                badge, icon_emoji,
                space_units(id, unit_id, name, floor, size, price, status, location, notes, image_url, created_at)`)
       .eq('owner_id', currentOwner.id)
@@ -1230,12 +1232,14 @@ async function loadOwnerData() {
       name:        s.name       || '',
       type:        s.type       || '',
       region:      s.region     || '',
+      mapsUrl:     s.maps_url || '',
       description: s.description || '',
       activities:  Array.isArray(s.activities) ? s.activities : [],
       amenities:   Array.isArray(s.amenities)  ? s.amenities  : [],
       imageUrl:    s.image_url   || null,
       extraImages: Array.isArray(s.extra_images) ? s.extra_images.filter(Boolean) : [],
       minPrice:    s.min_price   || 0,
+      commerce: {...s},
       sizesStr:    _toLatinDigits(s.sizes_prices || ''),
       allActs:     !!s.all_acts,
       season:      s.season     || '',
@@ -4121,7 +4125,12 @@ function openSpaceEdit(spaceId) {
   set('se-id',     spaceId);
   set('se-name',   s.name);
   set('se-region', s.region);
+  set('se-maps', s.mapsUrl);
+  const mapInput = document.getElementById('se-maps');
+  mapInput.required = !!s.mapsUrl; mapInput.setCustomValidity(''); mapInput.removeAttribute('aria-invalid');
   set('se-desc',   s.description);
+  document.getElementById('se-commerce-slot').innerHTML=MakaniSpaceCommerceForm.html('se',s.commerce || {min_price:s.minPrice});
+  MakaniSpaceCommerceForm.sync('se');
   set('se-price',  s.minPrice || '');
   set('se-sizes',  s.sizesStr);
   set('se-season', s.season);
@@ -4254,8 +4263,14 @@ async function submitSpaceEdit() {
   const region = get('se-region');
   if (!name || !region) { showMsg('danger', 'اسم المساحة والمنطقة مطلوبان.'); return; }
 
+  if (!MakaniSpaceLocation.checkInput(document.getElementById('se-maps'), !!ownerSpacesFull.find(x => x.id === spaceId)?.mapsUrl)) return;
+
   const sb = getSB();
   if (!sb || !currentOwner?.id) { showMsg('danger', 'تعذّر الاتصال.'); return; }
+
+  let commerce;
+  try { commerce=MakaniSpaceCommerceForm.read('se'); }
+  catch(err) { showMsg('danger',err.message); return; }
 
   if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الحفظ…'; }
 
@@ -4274,9 +4289,10 @@ async function submitSpaceEdit() {
   const payload = {
     name:         name,
     region:       region,
+    maps_url:     get('se-maps') || null,
     description:  get('se-desc')   || null,
-    min_price:    parseInt(get('se-price')) || 0,
-    sizes_prices: get('se-sizes')  || null,
+    ...commerce,
+    ...(document.getElementById('se-pricing-mode').value==='fixed'?{sizes_prices:get('se-sizes')||null}:{}),
     season:       get('se-season') || null,
     insight:      get('se-insight')|| null,
     activities:   actsArr,
@@ -4458,7 +4474,8 @@ function renderSpaces() {
               <div class="sc-region">📍 ${space.region}${space.type?' · '+space.type:''}</div>
               <div class="sc-stats">
                 ${pauseBadge}
-                <span style="font-size:11px;color:var(--text3)">${space.units.length} وحدة${space.minPrice?` · من ${space.minPrice.toLocaleString('ar-EG')} ج/شهر`:''}</span>
+                <span style="font-size:11px;color:var(--text3)">${space.units.length} وحدة</span>
+                ${MakaniSpacePricing.render({id:space.id,priceVisible:true,price:space.commerce?.min_price??space.minPrice,pricingMode:space.commerce?.pricing_mode||'fixed',pricingUnit:space.commerce?.pricing_unit||'month',priceMin:space.commerce?.price_min,priceMax:space.commerce?.price_max},null,true)}
               </div>
             </div>
           </div>
@@ -5150,6 +5167,8 @@ function renderBookings() {
           </div>
           ${_bkBookerBlock(b)}
           ${_bkContactStrip(b)}
+          ${MakaniBrandProfile.linkHtml(b.profileLink)}
+          ${b.viewingPhone?`<div class="bk-val">رقم المعاينة وقت الطلب: <bdi>${_escBk(b.viewingPhone)}</bdi></div>`:''}
           <div class="bk-card-body">
             <div class="bk-info-grid">
               <span class="bk-lbl">🏷️ النشاط</span><span class="bk-val">${_escBk(b.activity)}</span>
@@ -5941,6 +5960,8 @@ function calcDefaultPrice() {
   const hiddenEl  = document.getElementById('as-default-price');
   const displayEl = document.getElementById('as-price-display');
   if (hiddenEl) hiddenEl.value = avg;
+  const fixedField=document.getElementById('as-fixed-price');
+  if(fixedField && !fixedField.dataset.manual && document.getElementById('as-pricing-unit')?.value==='month')fixedField.value=avg;
   if (displayEl) {
     if (avg > 0) {
       displayEl.style.display = 'block';
@@ -5992,6 +6013,10 @@ function entityTypeToSpaceType(entityType) {
 /* ── تهيئة فورم إضافة المساحة عند فتح الصفحة ── */
 function initAddSpaceForm() {
   if (!currentOwner) return;
+  const commerceSlot=document.getElementById('as-commerce-slot');
+  if(!document.getElementById('as-commerce'))commerceSlot.innerHTML=MakaniSpaceCommerceForm.html('as');
+  const fixedField=document.getElementById('as-fixed-price');fixedField.oninput=()=>{fixedField.dataset.manual='true'};
+  MakaniSpaceCommerceForm.sync('as');
 
   /* نوع المكان — من البروفايل */
   const spaceType = entityTypeToSpaceType(currentOwner.entityType);
@@ -6374,6 +6399,7 @@ async function submitAddSpace(e) {
   const spaceName = get('as-name');
   const spaceType = get('as-type');
   const spaceLoc  = get('as-loc');
+  if (!MakaniSpaceLocation.checkInput(document.getElementById('as-maps'), true)) return;
 
   /* نوع المكان يُكمَّل تلقائياً من البروفايل لو لم يُحدد */
   const resolvedType = spaceType || entityTypeToSpaceType(currentOwner?.entityType || '');
@@ -6434,12 +6460,13 @@ async function submitAddSpace(e) {
       name:         spaceName,
       type:         resolvedType,
       region:       spaceLoc,
+      maps_url:     get('as-maps'),
       badge:        get('as-badge') || tm.badge,
       badge_class:  tm.badgeClass,
       icon_emoji:   get('as-icon') || '🏬',
       thumb_color:  tm.thumbClass,
-      sizes_prices: getSizesString(),
-      min_price:    parseInt(get('as-default-price')) || 0,
+      ...(document.getElementById('as-pricing-mode').value==='fixed'?{sizes_prices:getSizesString()}:{}),
+      ...MakaniSpaceCommerceForm.read('as'),
       all_acts:     document.getElementById('as-all-acts')?.checked || false,
       activities:   actsArr,
       season:       get('as-season') || null,
@@ -6494,12 +6521,14 @@ async function submitAddSpace(e) {
       name:        spaceName,
       type:        resolvedType,
       region:      spaceLoc,
+      mapsUrl:     get('as-maps'),
       description: get('as-desc') || '',
       activities:  actsArr,
       amenities:   amenArr,
       imageUrl:    asMainImgUrl || null,
       extraImages: asExtraImgUrls.filter(Boolean),
-      minPrice:    parseInt(get('as-default-price')) || 0,
+      minPrice:    spacePayload.min_price || 0,
+      commerce: {...spacePayload},
       sizesStr:    getSizesString(),
       allActs:     document.getElementById('as-all-acts')?.checked || false,
       season:      get('as-season') || '',
@@ -6524,6 +6553,8 @@ async function submitAddSpace(e) {
 
     /* إعادة ضبط النموذج */
     document.getElementById('add-space-form')?.reset();
+    document.getElementById('as-commerce-slot').innerHTML=MakaniSpaceCommerceForm.html('as');
+    MakaniSpaceCommerceForm.sync('as');
     clearMainSpaceImage();
     asExtraImgUrls = []; asUnitImgUrls = {};
     const extraCont = document.getElementById('as-extra-imgs-container');
